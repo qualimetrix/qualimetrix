@@ -246,6 +246,19 @@ final class DeclaredFields
         $this->required[$key] = ['report' => $report, 'case' => $case, 'view' => $view, 'side' => $side];
     }
 
+    /** @return list<array{report:string,case:string,view:string,side:string,supplied:bool}> */
+    public function requiredPublications(string $case): array
+    {
+        $references = [];
+        foreach ($this->required as $key => $publication) {
+            if ($publication['case'] !== $case || $this->changes($publication['report'], $publication['view']) === []) {
+                continue;
+            }
+            $references[] = [...$publication, 'supplied' => isset($this->measurements[$key])];
+        }
+        return $references;
+    }
+
     /** @param list<Record> $records */
     public function supply(string $report, string $case, string $view, string $side, array $records): void
     {

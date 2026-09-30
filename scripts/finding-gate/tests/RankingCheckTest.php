@@ -468,6 +468,63 @@ final class RankingCheckTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
         }
+        foreach (['check:parallel', 'format:checkstyle'] as $surface) {
+            $alias = $tree;
+            if ($surface === 'check:parallel') {
+                for ($index = 0; $index < 101; ++$index) {
+                    $alias['declarations']['cases/alpha/src/Shard' . $index . '.php'] = "<?php\n";
+                }
+            }
+            $key = 'case:alpha|' . $surface;
+            self::assertSame($alias['answers'][$key] ?? null, $alias['candidateAnswers'][$key] ?? $alias['answers'][$key] ?? null);
+            $alias['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
+                ['alpha', $surface, 'declared-exact-surfaces/alias.diff', 'The complete projected finding authority changes.'],
+            ]);
+            $alias['candidateDeclarations']['declared-exact-surfaces/alias.diff'] = "pending\n";
+            $aliasRoot = SyntheticTree::fixture($alias);
+            try {
+                $observed = null;
+                [$aliasReport, $aliasWritten] = RecordedComparison::derive(
+                    $alias,
+                    $aliasRoot,
+                    null,
+                    static function (\QmxFindingGate\CaptureResult $first) use (&$observed): \QmxFindingGate\CaptureResult {
+                        $observed = $first;
+                        return $first;
+                    },
+                );
+                self::assertInstanceOf(\QmxFindingGate\CaptureResult::class, $observed);
+                self::assertArrayHasKey($key, $observed->artifacts);
+                $candidateAnswers = json_decode(Fs::read($aliasRoot . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+                self::assertSame($candidateAnswers[$key]['stdout'], $observed->artifacts[$key]);
+                $referenceRoot = SyntheticTree::fixture($alias, candidate: false);
+                try {
+                    $referenceAnswers = json_decode(Fs::read($referenceRoot . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+                    self::assertSame($referenceAnswers[$key]['stdout'], $observed->artifacts[$key]);
+                } finally {
+                    SyntheticTree::remove($referenceRoot);
+                }
+                self::assertArrayHasKey('case:alpha|format:json', $observed->artifacts);
+                $candidateVisible = $alias['candidateAnswers']['case:alpha|format:json']['stdout']
+                    ?? throw new GateError('The candidate JSON publication is absent.');
+                self::assertSame(
+                    $candidateVisible,
+                    $observed->artifacts['case:alpha|format:json'],
+                );
+                $referencePhysical = $alias['answers']['case:alpha|format:json']['physical']['stdout']
+                    ?? throw new GateError('The reference physical authority is absent.');
+                $actualPhysical = $observed->rankings['case:alpha|format:json']['physical']['stdout']
+                    ?? throw new GateError('The candidate physical authority is absent.');
+                self::assertNotSame(
+                    $referencePhysical,
+                    $actualPhysical,
+                );
+                self::assertContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $aliasWritten, $surface . ': ' . $aliasReport->render());
+                self::assertNotSame("pending\n", Fs::read($aliasRoot . '/finding-gate/' . Tsv::rows($aliasRoot . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, \QmxFindingGate\DeclaredExactSurfaces::COLUMNS)[0]['file']));
+            } finally {
+                SyntheticTree::remove($aliasRoot);
+            }
+        }
     }
 
     #[Test]

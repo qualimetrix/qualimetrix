@@ -114,6 +114,43 @@ final class SurfaceComparisonTest extends TestCase
                     self::assertSame($candidateState === false && $referenceState === false, !$pair->settled);
                 }
             }
+            Fs::write($configuredRoot . '/finding-gate/' . \QmxFindingGate\DeclaredFields::INDEX, Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+                ['added', 'json', 'format:json', 'extra', 'The physical source adds this field.'],
+                ['added', 'json', 'ranking', 'extra', 'The ranking source adds this field.'],
+                ['added', 'json-document', 'format:json', 'extra', 'The JSON document adds this field.'],
+                ['added', 'json', 'check:baseline-source', 'extra', 'The configured source adds this field.'],
+                ['added', 'json-document', 'check:baseline-source', 'extra', 'The configured document adds this field.'],
+            ]));
+            $maps = RenameMaps::load($configuredRoot . '/finding-gate/maps', MetricVocabulary::ofTree($configuredRoot));
+            $run = new RunContext(
+                Options::parse(['gate', '--candidate=' . $configuredRoot, '--reference=HEAD'], $configuredRoot),
+                new GateReport(),
+                Corpus::load($configuredRoot),
+                $maps,
+                ChannelSplit::of($maps),
+                MetricVocabulary::ofTree($configuredRoot),
+                Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($configuredRoot),
+                $configuredRoot,
+            );
+            foreach (['json' => ['format:json', 'ranking', 'check:baseline-source'], 'json-document' => ['format:json', 'check:baseline-source']] as $report => $views) {
+                foreach ($views as $view) {
+                    $run->declarations->fields->requireMeasurements($report, 'alpha', $view, 'candidate');
+                }
+            }
+            $legacy = ['side' => 'candidate', 'key' => 'case:alpha|format:json', 'role' => 'schema', 'supplied' => false];
+            $ranked = ['side' => 'candidate', 'key' => 'case:alpha|ranking', 'role' => 'schema', 'supplied' => false];
+            $configured = ['side' => 'candidate', 'key' => 'case:alpha|check:baseline-source', 'role' => 'schema', 'supplied' => false];
+            $lifecycleSchemas = ExactSurfaceAuthority::footprint('case:alpha|baseline:cleanup:file', $run)['schemas'];
+            self::assertContains($legacy, $lifecycleSchemas);
+            self::assertContains($ranked, $lifecycleSchemas);
+            self::assertNotContains($configured, $lifecycleSchemas);
+            self::assertCount(2, $lifecycleSchemas);
+            $baselineSchemas = ExactSurfaceAuthority::footprint('case:alpha|baseline-file', $run)['schemas'];
+            self::assertContains($legacy, $baselineSchemas);
+            self::assertContains($ranked, $baselineSchemas);
+            self::assertContains($configured, $baselineSchemas);
+            self::assertCount(4, $baselineSchemas);
         } finally {
             SyntheticTree::remove($configuredRoot);
         }
@@ -461,6 +498,191 @@ final class SurfaceComparisonTest extends TestCase
         } finally {
             SyntheticTree::remove($root);
         }
+        $documentTree = SyntheticTree::clean();
+        $document = $answers['case:alpha|format:json'];
+        $document['stdout'] = substr_replace($document['stdout'], '"unrelatedResidual":1,', (int) strpos($document['stdout'], '{') + 1, 0);
+        $documentTree['candidateAnswers']['case:alpha|format:json'] = $document;
+        $documentTree['candidateAnswers']['case:alpha|check:output'] = ['file' => $document['stdout']];
+        $documentTree['candidateAnswers']['case:alpha|check:parallel'] = ['stdout' => $document['stdout']];
+        $documentTree['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+        $documentTree['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+            ['added', 'json-document', 'format:json', 'extra', 'The JSON document requires this member.'],
+        ]);
+        $documentTree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'format:json', 'declared-exact-surfaces/json.diff', 'Measure the remaining JSON document change.'],
+            ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'Measure the independent rule listing.'],
+        ]);
+        $documentTree['candidateDeclarations']['declared-exact-surfaces/json.diff'] = "pending json\n";
+        $documentTree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+        $documentRoot = SyntheticTree::fixture($documentTree);
+        try {
+            [$documentReport, $documentWritten] = RecordedComparison::derive($documentTree, $documentRoot);
+            self::assertTrue($documentReport->sourceRejected('candidate', 'case:alpha|format:json', 'schema'), $documentReport->render());
+            self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $documentReport->failureClasses(), $documentReport->render());
+            self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|format:json') . '.diff', $documentWritten, $documentReport->render());
+            self::assertSame("pending json\n", Fs::read($documentRoot . '/finding-gate/declared-exact-surfaces/json.diff'));
+            self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $documentWritten, $documentReport->render());
+            $documentRows = Tsv::rows($documentRoot . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS);
+            self::assertSame('declared-exact-surfaces/json.diff', $documentRows[0]['file']);
+        } finally {
+            SyntheticTree::remove($documentRoot);
+        }
+        $missingSupplier = $documentTree;
+        $missingSupplier['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+            ['added', 'json', 'format:json', 'extra', 'The complete physical report requires this field.'],
+        ]);
+        $missingRoot = SyntheticTree::fixture($missingSupplier);
+        try {
+            $refusal = null;
+            try {
+                RecordedComparison::derive($missingSupplier, $missingRoot);
+            } catch (GateError $error) {
+                $refusal = $error;
+            }
+            self::assertInstanceOf(GateError::class, $refusal);
+            self::assertStringContainsString('A required record publication was not supplied', $refusal->getMessage());
+            self::assertSame("pending json\n", Fs::read($missingRoot . '/finding-gate/declared-exact-surfaces/json.diff'));
+            self::assertSame($missingSupplier['candidateDeclarations'][DeclaredExactSurfaces::INDEX], Fs::read($missingRoot . '/finding-gate/' . DeclaredExactSurfaces::INDEX));
+            self::assertSame('declared-exact-surfaces/json.diff', Tsv::rows($missingRoot . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS)[0]['file']);
+        } finally {
+            SyntheticTree::remove($missingRoot);
+        }
+        foreach (['check:output:file' => 'check:output', 'check:parallel' => 'check:parallel'] as $view => $invocation) {
+            $aliasTree = SyntheticTree::clean();
+            $aliasDocument = $answers['case:alpha|format:json'];
+            $aliasDocument['stdout'] = substr_replace($aliasDocument['stdout'], '"unrelatedResidual":1,', (int) strpos($aliasDocument['stdout'], '{') + 1, 0);
+            $aliasTree['candidateAnswers']['case:alpha|format:json'] = $aliasDocument;
+            $aliasTree['candidateAnswers']['case:alpha|' . $invocation] = $view === 'check:output:file'
+                ? ['file' => $aliasDocument['stdout']]
+                : ['stdout' => $aliasDocument['stdout']];
+            if ($view === 'check:parallel') {
+                for ($index = 0; $index < 101; ++$index) {
+                    $aliasTree['declarations']['cases/alpha/src/Shard' . $index . '.php'] = "<?php\n";
+                }
+            }
+            $aliasTree['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+            $aliasTree['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+                ['added', 'json-document', $view, 'extra', 'The alias document requires this member.'],
+            ]);
+            $aliasTree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                ['alpha', $view, 'declared-exact-surfaces/alias.diff', 'Measure the remaining alias document change.'],
+                ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'Measure the independent rule listing.'],
+            ]);
+            $aliasTree['candidateDeclarations']['declared-exact-surfaces/alias.diff'] = "pending alias\n";
+            $aliasTree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+            $aliasRoot = SyntheticTree::fixture($aliasTree);
+            try {
+                [$aliasReport, $aliasWritten] = RecordedComparison::derive($aliasTree, $aliasRoot);
+                self::assertTrue($aliasReport->sourceRejected('candidate', 'case:alpha|' . $view, 'schema'), $view . ': ' . $aliasReport->render());
+                self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $aliasReport->failureClasses(), $view . ': ' . $aliasReport->render());
+                self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|' . $view) . '.diff', $aliasWritten, $view . ': ' . $aliasReport->render());
+                self::assertSame("pending alias\n", Fs::read($aliasRoot . '/finding-gate/declared-exact-surfaces/alias.diff'));
+                self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $aliasWritten, $view . ': ' . $aliasReport->render());
+            } finally {
+                SyntheticTree::remove($aliasRoot);
+            }
+        }
+        $lifecycle = SyntheticTree::clean();
+        $lifecycle['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+        $baseline = \QmxFindingGate\ReportRecords::decode($answers['case:alpha|baseline-file']['file']);
+        $baseline['version'] = 14;
+        $lifecycle['candidateAnswers']['case:alpha|baseline:cleanup'] = ['file' => \QmxFindingGate\ValueCheck::value($baseline)];
+        $lifecycle['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+            ['added', 'json-document', 'format:json', 'extra', 'An unrelated JSON document requires this field.'],
+        ]);
+        $lifecycle['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'baseline:cleanup:file', 'declared-exact-surfaces/cleanup.diff', 'Measure the independent cleanup document.'],
+        ]);
+        $lifecycle['candidateDeclarations']['declared-exact-surfaces/cleanup.diff'] = "pending cleanup\n";
+        $lifecycleRoot = SyntheticTree::fixture($lifecycle);
+        try {
+            [$lifecycleReport, $lifecycleWritten] = RecordedComparison::derive($lifecycle, $lifecycleRoot);
+            self::assertTrue($lifecycleReport->sourceRejected('candidate', 'case:alpha|format:json', 'schema'), $lifecycleReport->render());
+            self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $lifecycleReport->failureClasses(), $lifecycleReport->render());
+            self::assertContains(DeclaredExactSurfaces::INDEX, $lifecycleWritten, $lifecycleReport->render());
+            self::assertNotSame("pending cleanup\n", Fs::read($lifecycleRoot . '/finding-gate/' . Tsv::rows($lifecycleRoot . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS)[0]['file']));
+        } finally {
+            SyntheticTree::remove($lifecycleRoot);
+        }
+        $baselineSource = SyntheticTree::clean();
+        $baselineSource['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+        $configured = $answers['case:alpha|check:baseline-source'];
+        $configured['stdout'] = substr_replace($configured['stdout'], '"unrelatedResidual":1,', (int) strpos($configured['stdout'], '{') + 1, 0);
+        $baselineSource['candidateAnswers']['case:alpha|check:baseline-source'] = $configured;
+        $baselineSource['candidateAnswers']['case:alpha|baseline-file'] = ['file' => \QmxFindingGate\ValueCheck::value($baseline)];
+        $baselineSource['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+        $baselineSource['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+            ['added', 'json-document', 'check:baseline-source', 'extra', 'The configured source requires this member.'],
+        ]);
+        $baselineSource['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'baseline-file', 'declared-exact-surfaces/baseline.diff', 'Measure the baseline document.'],
+            ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'Measure the independent rule listing.'],
+        ]);
+        $baselineSource['candidateDeclarations']['declared-exact-surfaces/baseline.diff'] = "pending baseline\n";
+        $baselineSource['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+        $baselineRoot = SyntheticTree::fixture($baselineSource);
+        try {
+            [$baselineReport, $baselineWritten] = RecordedComparison::derive($baselineSource, $baselineRoot);
+            self::assertTrue($baselineReport->sourceRejected('candidate', 'case:alpha|check:baseline-source', 'schema'), $baselineReport->render());
+            self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $baselineReport->failureClasses(), $baselineReport->render());
+            self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|baseline-file') . '.diff', $baselineWritten, $baselineReport->render());
+            self::assertSame("pending baseline\n", Fs::read($baselineRoot . '/finding-gate/declared-exact-surfaces/baseline.diff'));
+            self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $baselineWritten, $baselineReport->render());
+        } finally {
+            SyntheticTree::remove($baselineRoot);
+        }
+        foreach ([
+            ['baseline-file', 'check:baseline-source'],
+            ['baseline:cleanup:file', 'format:json'],
+        ] as [$surface, $sourceView]) {
+            $residualOnly = SyntheticTree::clean();
+            if ($sourceView === 'check:baseline-source') {
+                $residualOnly['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+                $sourceAnswer = $answers['case:alpha|' . $sourceView];
+                foreach (['stdout', 'ranked', 'physical'] as $slot) {
+                    $text = $slot === 'stdout' ? $sourceAnswer['stdout'] : $sourceAnswer[$slot]['stdout'];
+                    $document = \QmxFindingGate\ReportRecords::decode($text);
+                    $document['violations'][0]['message'] = 'changed source message';
+                    $document['topIssues'][0]['message'] = 'changed source message';
+                    if ($slot === 'stdout') {
+                        $sourceAnswer['stdout'] = \QmxFindingGate\ValueCheck::value($document);
+                    } else {
+                        $sourceAnswer[$slot]['stdout'] = \QmxFindingGate\ValueCheck::value($document);
+                    }
+                }
+                $residualOnly['candidateAnswers']['case:alpha|' . $sourceView] = $sourceAnswer;
+            } else {
+                $residualOnly['candidateFindings']['alpha'] = $residualOnly['findings']['alpha'];
+                $residualOnly['candidateFindings']['alpha'][0]['message'] = 'changed source message';
+            }
+            $residualOnly['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+            $residualOnly['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                ['alpha', $surface, 'declared-exact-surfaces/source-only.diff', 'Measure only a changed baseline document.'],
+                ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'Measure the independent rule listing.'],
+            ]);
+            $residualOnly['candidateDeclarations']['declared-exact-surfaces/source-only.diff'] = "pending source-only\n";
+            $residualOnly['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+            $residualRoot = SyntheticTree::fixture($residualOnly);
+            try {
+                $capturedAnswers = json_decode(Fs::read($residualRoot . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+                $ownInvocation = $surface === 'baseline-file' ? 'baseline-file' : 'baseline:cleanup';
+                self::assertSame($answers['case:alpha|' . $ownInvocation]['file'], $capturedAnswers['case:alpha|' . $ownInvocation]['file']);
+                [$sourceReport, $sourceWritten] = RecordedComparison::derive($residualOnly, $residualRoot);
+                self::assertTrue($sourceReport->hasSemanticResidual('case:alpha|' . $sourceView), $surface . ': ' . $sourceReport->render());
+                self::assertFalse($sourceReport->hasSemanticResidual('case:alpha|' . $surface), $surface . ': ' . $sourceReport->render());
+                self::assertContains(FailureClass::VALUE_MISMATCH, $sourceReport->failureClasses(), $surface . ': ' . $sourceReport->render());
+                self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|' . $surface) . '.diff', $sourceWritten, $surface . ': ' . $sourceReport->render());
+                self::assertSame("pending source-only\n", Fs::read($residualRoot . '/finding-gate/declared-exact-surfaces/source-only.diff'));
+                self::assertSame(
+                    ['case' => 'alpha', 'surface' => $surface, 'file' => 'declared-exact-surfaces/source-only.diff', 'reason' => 'Measure only a changed baseline document.'],
+                    Tsv::rows($residualRoot . '/finding-gate/' . DeclaredExactSurfaces::INDEX, DeclaredExactSurfaces::COLUMNS)[0],
+                );
+                self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $sourceWritten, $surface . ': ' . $sourceReport->render());
+                self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::reportAt($residualOnly, $residualRoot)->failureClasses(), $surface);
+            } finally {
+                SyntheticTree::remove($residualRoot);
+            }
+        }
         unset($answer['physical']);
         $tree['candidateAnswers']['case:alpha|format:json'] = $answer;
         $root = SyntheticTree::fixture($tree);
@@ -501,6 +723,35 @@ final class SurfaceComparisonTest extends TestCase
             self::assertSame([], RecordedComparison::reportAt($tree, $root)->failureClasses());
         } finally {
             SyntheticTree::remove($root);
+        }
+        $answers = json_decode(Fs::read($this->root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+        foreach (['format:metrics', 'directives', 'format:suppressed'] as $surface) {
+            $independent = SyntheticTree::clean();
+            $publication = \QmxFindingGate\ReportRecords::decode($answers['case:alpha|' . $surface]['stdout']);
+            if ($surface === 'format:metrics') {
+                $publication['symbols'][0]['metrics']['ccn'] = 2;
+            } elseif ($surface === 'directives') {
+                $publication['directives'][0]['reason'] = 'changed';
+            } else {
+                $publication['byMechanism'] = ['probe' => 1];
+            }
+            $independent['candidateAnswers']['case:alpha|' . $surface] = ['stdout' => \QmxFindingGate\ValueCheck::value($publication)];
+            $independent['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+                ['added', 'json-document', 'format:json', 'extra', 'The unrelated finding document requires this member.'],
+            ]);
+            $independent['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                ['alpha', $surface, 'declared-exact-surfaces/independent.diff', 'Measure only this own publication.'],
+            ]);
+            $independent['candidateDeclarations']['declared-exact-surfaces/independent.diff'] = "pending\n";
+            $independentRoot = SyntheticTree::fixture($independent);
+            try {
+                [$independentReport, $independentWritten] = RecordedComparison::derive($independent, $independentRoot);
+                self::assertTrue($independentReport->sourceRejected('candidate', 'case:alpha|format:json', 'schema'), $surface . ': ' . $independentReport->render());
+                self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $independentReport->failureClasses(), $surface . ': ' . $independentReport->render());
+                self::assertContains(DeclaredExactSurfaces::INDEX, $independentWritten, $surface . ': ' . $independentReport->render());
+            } finally {
+                SyntheticTree::remove($independentRoot);
+            }
         }
     }
 
@@ -629,6 +880,34 @@ final class SurfaceComparisonTest extends TestCase
             self::assertContains(DeclaredExactSurfaces::INDEX, $written, $report->render());
         } finally {
             SyntheticTree::remove($root);
+        }
+        foreach (['check:baseline-source', 'check:baseline'] as $view) {
+            $filtered = SyntheticTree::clean();
+            $filtered['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+            $answer = $answers['case:alpha|' . $view];
+            $answer['stdout'] = substr_replace($answer['stdout'], '"unrelatedResidual":1,', (int) strpos($answer['stdout'], '{') + 1, 0);
+            $filtered['candidateAnswers']['case:alpha|' . $view] = $answer;
+            $filtered['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing.\n"];
+            $filtered['candidateDeclarations'][\QmxFindingGate\DeclaredFields::INDEX] = Tsv::render(\QmxFindingGate\DeclaredFields::COLUMNS, [
+                ['added', 'json-document', $view, 'extra', 'The filtered document requires this member.'],
+            ]);
+            $filtered['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                ['alpha', $view, 'declared-exact-surfaces/filtered.diff', 'Measure the remaining filtered document change.'],
+                ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'Measure the independent rule listing.'],
+            ]);
+            $filtered['candidateDeclarations']['declared-exact-surfaces/filtered.diff'] = "pending filtered\n";
+            $filtered['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = "pending rules\n";
+            $filteredRoot = SyntheticTree::fixture($filtered);
+            try {
+                [$filteredReport, $filteredWritten] = RecordedComparison::derive($filtered, $filteredRoot);
+                self::assertTrue($filteredReport->sourceRejected('candidate', 'case:alpha|' . $view, 'schema'), $view . ': ' . $filteredReport->render());
+                self::assertContains(FailureClass::FIELD_VALUES_MISMATCH, $filteredReport->failureClasses(), $view . ': ' . $filteredReport->render());
+                self::assertNotContains('declared-exact-surfaces/' . md5('case:alpha|' . $view) . '.diff', $filteredWritten, $view . ': ' . $filteredReport->render());
+                self::assertSame("pending filtered\n", Fs::read($filteredRoot . '/finding-gate/declared-exact-surfaces/filtered.diff'));
+                self::assertContains('declared-exact-surfaces/' . md5('case:alpha|rules') . '.diff', $filteredWritten, $view . ': ' . $filteredReport->render());
+            } finally {
+                SyntheticTree::remove($filteredRoot);
+            }
         }
     }
 

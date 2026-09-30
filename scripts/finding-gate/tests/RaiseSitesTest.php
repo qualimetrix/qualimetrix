@@ -658,6 +658,12 @@ final class RaiseSitesTest extends TestCase
         self::assertSame([], $read->problems);
         self::assertArrayNotHasKey('RecordStage::applyStage <- SurfaceComparison::trialSurface', $read->sites);
         self::assertArrayNotHasKey('CaseOutcomeCheck::mismatch <- probe-baseline::(file)', $read->sites);
+        foreach (['checkPublishedOrder', 'compareFindingCounts', 'extractPayload', 'mismatch'] as $method) {
+            self::assertArrayNotHasKey('SurfaceComparison::' . $method . ' <- ExactSurfaceDeltaCheck::plan', $read->sites);
+            self::assertArrayHasKey('SurfaceComparison::' . $method . ' <- Gate::compare', $read->sites);
+        }
+        self::assertArrayHasKey('RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages', $read->sites);
+        self::assertArrayHasKey('ExactSurfaceDeltaCheck::checkExact <- SurfaceComparison::compareSurfaces', $read->sites);
         $declarations = RaiseSites::DECLARED_NAMES;
         $declarations[2][1] .= ' changed';
         $refused = RaiseSites::of(\dirname(__DIR__), $declarations);

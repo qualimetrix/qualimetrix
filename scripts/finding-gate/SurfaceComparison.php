@@ -39,10 +39,6 @@ final class SurfaceComparison
     /** @var array<string, list<SurfaceStage>> built-in step => the registered stages that run before it */
     private readonly array $registered;
 
-    private bool $trialMode = false;
-    /** @var array{valid:bool,visibleResidual:bool,authorityResidual:bool}|null */
-    private ?array $trialResult = null;
-
     /** @param list<SurfaceStage> $stages the forms' registered stages, in wiring order */
     public function __construct(
         private readonly GateReport $report,
@@ -86,9 +82,7 @@ final class SurfaceComparison
                 [$countCandidate, $countReference] = $stage->countInputs($candidate, $reference);
             }
         }
-        if (!$this->trialMode) {
-            $this->compareFindingCounts($countCandidate, $countReference);
-        }
+        $this->compareFindingCounts($countCandidate, $countReference);
         $keys = array_keys($candidate + $reference);
         sort($keys);
 
@@ -99,10 +93,8 @@ final class SurfaceComparison
             Interruption::raiseIfRequested();
 
             $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate[$key] ?? null, $reference[$key] ?? null);
-            if (!$this->trialMode) {
-                foreach (['candidate', 'reference'] as $side) {
-                    $this->report->sourceEvidence($side, $key, 'surface', $pair->candidate !== null && $pair->reference !== null);
-                }
+            foreach (['candidate', 'reference'] as $side) {
+                $this->report->sourceEvidence($side, $key, 'surface', $pair->candidate !== null && $pair->reference !== null);
             }
 
             foreach (self::STAGES as $step) {
@@ -111,58 +103,64 @@ final class SurfaceComparison
                     $pair->settle();
                     continue 2;
                 }
-                foreach ($this->registered[$step] ?? [] as $stage) {
-                    $stage->applyStage($pair);
-
-                    if ($pair->settled) {
-                        if ($this->trialMode) {
-                            $this->trialResult = ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => $this->report->hasSemanticResidual($key)];
-                            return;
-                        }
-                        continue 3;
-                    }
+                if ($this->applyRegisteredStages($step, $pair)) {
+                    continue 2;
                 }
-
-                if ($this->trialMode) {
-                    $result = $this->trialStep($step, $pair);
-                    if ($result !== null) {
-                        $this->trialResult = $result;
-                        return;
-                    }
-                } else {
-                    $this->step($step, $pair);
-                }
+                $this->step($step, $pair);
 
                 if ($pair->settled) {
-                    if ($this->trialMode) {
-                        $this->trialResult = ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
-                        return;
-                    }
                     continue 2;
                 }
             }
         }
     }
 
-    /** @return array{valid:bool,visibleResidual:bool,authorityResidual:bool} */
-    public function trialSurface(string $key, string $candidate, string $reference): array
+    /** @param list<string> $residualViews
+     * @return array{valid:bool,visibleResidual:bool,authorityResidual:bool}
+     */
+    public function trialSurface(string $key, string $candidate, string $reference, array $residualViews): array
     {
-        $this->trialMode = true;
-        $this->trialResult = null;
-        try {
-            $this->compareSurfaces([$key => $candidate], [$key => $reference]);
-            return $this->trialResult ?? throw new GateError('The semantic surface trial has no difference step.');
-        } finally {
-            $this->trialMode = false;
-            $this->trialResult = null;
+        Interruption::raiseIfRequested();
+        foreach ($this->registered['difference'] ?? [] as $stage) {
+            if ($stage instanceof RecordStage) {
+                $stage->countInputs([$key => $candidate], [$key => $reference]);
+            }
         }
+        $pair = new SurfacePair($key, Surfaces::surfaceClass($key), $candidate, $reference);
+        foreach (self::STAGES as $step) {
+            if ($this->applyRegisteredStages($step, $pair)) {
+                return ['valid' => false, 'visibleResidual' => false, 'authorityResidual' => false];
+            }
+            $result = $this->trialStep($step, $pair, $residualViews);
+            if ($result !== null) {
+                return $result;
+            }
+        }
+        throw new GateError('The semantic surface trial has no difference step.');
     }
 
-    /** @return array{valid:bool,visibleResidual:bool,authorityResidual:bool}|null */
-    private function trialStep(string $step, SurfacePair $pair): ?array
+    private function applyRegisteredStages(string $step, SurfacePair $pair): bool
+    {
+        foreach ($this->registered[$step] ?? [] as $stage) {
+            $stage->applyStage($pair);
+            if ($pair->settled) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** @param list<string> $residualViews
+     * @return array{valid:bool,visibleResidual:bool,authorityResidual:bool}|null
+     */
+    private function trialStep(string $step, SurfacePair $pair, array $residualViews): ?array
     {
         if ($step === 'difference') {
-            return ['valid' => true, 'visibleResidual' => $pair->candidate !== $pair->reference, 'authorityResidual' => $this->report->hasSemanticResidual($pair->key)];
+            $authorityResidual = false;
+            foreach ($residualViews as $view) {
+                $authorityResidual = $authorityResidual || $this->report->hasSemanticResidual($view);
+            }
+            return ['valid' => true, 'visibleResidual' => $pair->candidate !== $pair->reference, 'authorityResidual' => $authorityResidual];
         }
         if ($step === 'presence') {
             return null;

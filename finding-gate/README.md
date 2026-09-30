@@ -477,7 +477,12 @@ physical finding and ranking identity/value multisets, including hidden
 occurrences and their multiplicity. These raw sets preserve JSON scalar tokens
 through measurement without attributing occurrences through decoded floats.
 Metrics, directives and suppressed findings retain their complete raw population;
-baseline surfaces retain their full normalized entries. Same-side source,
+baseline surfaces retain their complete canonical documents. Projections and
+invocation aliases use their actual complete finding source when judging a
+hidden semantic residual, even when their own visible bytes are unchanged.
+Filtered JSON views use their own source. A finding source used to validate a
+baseline document is not part of that document's frame and cannot select its
+exact route by itself. Same-side source,
 projection, completeness and validity checks still run. Support metadata and
 hidden-tail ordering acquire no additional promise.
 
@@ -485,12 +490,22 @@ The measurement is a byte-exact diff of length-framed visible bytes and record
 evidence. A neighbouring undeclared byte or hidden record change refuses.
 There is no 200-line cap on this route. Derivation requires positive validity
 and completeness evidence for the concrete publication and each of its own
-suppliers, including repeated candidate authority. An invalid supplier prevents
+suppliers, including repeated candidate authority and applicable declared
+schema suppliers. Schema obligations come from the registered report, case,
+view and side, including JSON document obligations for the measured document
+and its population suppliers. A source used only for an outcome or tuple check
+does not acquire an unrelated whole-document schema obligation. An invalid
+supplier prevents
 its dependent measurement from being written; an independent valid surface
 can still be measured. Existing rows and diff bytes for invalid measurements
 remain unchanged. Semantic residuals do not make an otherwise valid source
 invalid. It is exact but coarse: prefer semantic intentions because their
 measurements explain which record or value changed.
+
+Baseline document writes retain the existing physical JSON and ranking schema
+prerequisites when those schema changes apply. These validity checks do not
+extend the document's frame or make a finding-source residual select its exact
+route.
 
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;

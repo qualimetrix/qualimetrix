@@ -31,10 +31,14 @@ A separate exact case/surface intention is the last resort after semantic
 forms. An isolated trial preserves the main pass's derive mode, authored
 intentions, required-publication registry and verified authority, with separate
 credits and measurements. It decides whether those forms explain the visible
-publication and complete hidden population; a fully explained surface makes
-the exact intention stale. Otherwise the
-whole normalized surface is measured before semantic erasure, and its records
+publication and the hidden populations included in that surface's frame;
+projections and aliases judge the residual at their actual source view. A fully
+explained surface makes the exact intention stale. Otherwise the whole
+normalized surface is measured before semantic erasure, and its records
 are judged through this exact measurement rather than cross-side pairing.
+Ordinary comparison and the isolated trial share only their registered-stage
+invocation, preserving observable main refusals without making ordinary refusal
+paths reachable from the trial.
 
 The measurement includes length-framed visible bytes and the complete
 record authority. For finding projections this is independent raw physical
@@ -43,7 +47,17 @@ multiplicity. JSON numeric tokens remain precise throughout measurement;
 decoded float joins cannot attribute these raw occurrences. Same-side source,
 projection, completeness and validity checks remain mandatory. Each exact
 write requires positive producer-scoped evidence for its own visible and
-support suppliers, including candidate repeatability. An invalid supplier
+support suppliers, including candidate repeatability. One dependency footprint
+governs framing, residual selection and write eligibility, distinguishing
+measured populations from sources used only for validation. Baseline documents
+frame their own canonical bytes; a validated finding source does not become a
+hidden population claim or a selection licence for that document.
+Applicable schema obligations come from the registered report, case, view and
+side, including JSON document suppliers. Outcome-only and tuple-only sources
+do not imply unrelated whole-document schema obligations. Baseline document
+writes retain the existing applicable physical JSON and ranking schema
+prerequisites as validity checks, separate from framing and residual selection.
+An invalid supplier
 blocks only dependent measurements; an independent valid surface can still
 be derived. Invalid rows retain their previous paths, reasons and diff bytes.
 Support metadata and order outside published slices remain outside the

@@ -18,18 +18,37 @@ final class ExactSurfaceAuthority
         ];
     }
 
-    /** @return list<array{side:string,key:string,role:string}> */
-    public static function requiredEvidence(string $key, RunContext $run): array
+    /**
+     * @return array{
+     *   rawSources:list<string>,residualViews:list<string>,
+     *   required:list<array{side:string,key:string,role:string}>,
+     *   schemas:list<array{side:string,key:string,role:string,supplied:bool}>
+     * }
+     */
+    public static function footprint(string $key, RunContext $run): array
     {
         $surface = Surfaces::surfaceClass($key);
         $case = str_starts_with($key, 'case:') ? substr($key, 5, (int) strpos($key, '|') - 5) : null;
+        $bearing = $case !== null && ReportViews::recordBearingSurface($surface);
+        $source = $bearing ? self::source($surface, $case) : null;
+        $rawSources = $source === null ? [] : [$source];
+        $residualViews = [$key];
+        if ($source !== null && $source !== $key) {
+            $residualViews[] = $source;
+        }
         $sources = [$key => ['capture', 'surface', 'normalization', 'path']];
-        if ($case !== null && ReportViews::recordBearingSurface($surface)) {
-            $source = self::source($surface, $case, $run);
+        $schemaViews = [];
+        if ($bearing) {
             if ($source !== null) {
                 $sources[$source] = array_values(array_unique([...($sources[$source] ?? []), 'capture', 'surface', 'normalization', 'path', 'records']));
                 if (!\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
                     $sources[$source][] = 'ranking';
+                    $sourceView = Surfaces::surfaceClass($source);
+                    $schemaViews['json' . "\0" . $sourceView] = true;
+                    $schemaViews['json-document' . "\0" . $sourceView] = true;
+                    $schemaViews['json' . "\0" . 'ranking'] = true;
+                } elseif ($surface !== 'format:suppressed') {
+                    $schemaViews[($surface === 'format:metrics' ? 'metrics' : 'directives') . "\0" . $surface] = true;
                 }
             }
             $sources['case:' . $case . '|format:json'][] = 'outcome';
@@ -39,18 +58,12 @@ final class ExactSurfaceAuthority
             if (\in_array($surface, ['format:sarif', 'format:gitlab'], true)) {
                 $sources[$key][] = 'fingerprint';
             }
-            $schemaReport = match ($surface) {
-                'format:metrics' => 'metrics',
-                'format:suppressed' => 'suppressed',
-                'directives' => 'directives',
-                default => 'json',
-            };
-            $schemaView = \in_array($surface, ['check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'], true) ? $surface : ReportViews::main($schemaReport);
-            if ($run->declarations->fields->changes($schemaReport, $schemaView) !== []) {
-                $sources['case:' . $case . '|' . $schemaView][] = 'schema';
+            if (\in_array($surface, ['check:output:file', 'check:parallel'], true)) {
+                $schemaViews['json-document' . "\0" . $surface] = true;
             }
-            if ($schemaReport === 'json' && $run->declarations->fields->changes('json', 'ranking') !== []) {
-                $sources['case:' . $case . '|ranking'][] = 'schema';
+            if (\in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
+                $schemaViews['json' . "\0" . 'format:json'] = true;
+                $schemaViews['json' . "\0" . 'ranking'] = true;
             }
             if ($surface === 'baseline-file') {
                 $sources[$key][] = 'records';
@@ -64,26 +77,44 @@ final class ExactSurfaceAuthority
                 }
                 $baselineSource = 'case:' . $case . '|' . ($definition?->baselineSource() === null ? 'format:json' : 'check:baseline-source');
                 $sources[$baselineSource] = array_values(array_unique([...($sources[$baselineSource] ?? []), 'capture', 'surface', 'normalization', 'path', 'records', 'ranking']));
+                $baselineView = Surfaces::surfaceClass($baselineSource);
+                $schemaViews['json' . "\0" . $baselineView] = true;
+                $schemaViews['json-document' . "\0" . $baselineView] = true;
+                $schemaViews['json' . "\0" . 'ranking'] = true;
+            }
+        }
+        $schemas = [];
+        if ($case !== null) {
+            foreach ($run->declarations->fields->requiredPublications($case) as $publication) {
+                if (!isset($schemaViews[$publication['report'] . "\0" . $publication['view']])) {
+                    continue;
+                }
+                $schemas[] = [
+                    'side' => $publication['side'],
+                    'key' => 'case:' . $case . '|' . $publication['view'],
+                    'role' => 'schema',
+                    'supplied' => $publication['supplied'],
+                ];
             }
         }
         $required = [];
-        foreach ($sources as $source => $roles) {
+        foreach ($sources as $sourceKey => $roles) {
             foreach (['candidate', 'reference'] as $side) {
                 foreach (array_unique($roles) as $role) {
-                    $required[] = ['side' => $side, 'key' => $source, 'role' => $role];
+                    $required[] = ['side' => $side, 'key' => $sourceKey, 'role' => $role];
                 }
                 if ($side === 'candidate') {
-                    $required[] = ['side' => $side, 'key' => $source, 'role' => 'repeatable'];
+                    $required[] = ['side' => $side, 'key' => $sourceKey, 'role' => 'repeatable'];
                 }
             }
         }
-        if ($case !== null && ReportViews::recordBearingSurface($surface) && !\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
+        if ($bearing && !\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
             $required[] = ['side' => '*', 'key' => 'finding', 'role' => 'tuple-schema'];
             foreach (['candidate', 'reference'] as $side) {
                 $required[] = ['side' => $side, 'key' => 'case:' . $case . '|format:json', 'role' => 'tuple'];
             }
         }
-        return $required;
+        return ['rawSources' => $rawSources, 'residualViews' => $residualViews, 'required' => $required, 'schemas' => $schemas];
     }
 
     private static function one(SurfacePair $pair, string $side, CaptureResult $capture, RunContext $run): string
@@ -96,8 +127,8 @@ final class ExactSurfaceAuthority
         if (!ReportViews::recordBearingSurface($pair->surface)) {
             return $framed;
         }
-        $case = substr($pair->key, 5, (int) strpos($pair->key, '|') - 5);
-        $source = self::source($pair->surface, $case, $run);
+        $footprint = self::footprint($pair->key, $run);
+        $source = $footprint['rawSources'][0] ?? null;
         if ($source === null) {
             return $framed . self::frame('records', self::canonical($visible));
         }
@@ -150,7 +181,7 @@ final class ExactSurfaceAuthority
         ];
     }
 
-    private static function source(string $surface, string $case, RunContext $run): ?string
+    private static function source(string $surface, string $case): ?string
     {
         if (\in_array($surface, ['baseline-file', 'baseline:cleanup:file', 'baseline:rename-channels:file', 'baseline:update:file'], true)) {
             return null;
