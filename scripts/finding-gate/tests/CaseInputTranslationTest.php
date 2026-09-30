@@ -21,9 +21,13 @@ use QmxFindingGate\Options;
 use QmxFindingGate\RenameMaps;
 use QmxFindingGate\SyntheticTree;
 use QmxFindingGate\Tsv;
+use QmxFindingGateControls\ChannelRenamePlants;
 use QmxFindingGateControls\RenameControls;
 use QmxFindingGateControls\Scratch;
 use QmxFindingGateControls\Shell;
+use ReflectionMethod;
+use ReflectionProperty;
+use RuntimeException;
 
 final class CaseInputTranslationTest extends TestCase
 {
@@ -229,6 +233,39 @@ final class CaseInputTranslationTest extends TestCase
             ], json_decode($result['stdout'], true, 512, \JSON_THROW_ON_ERROR));
         } finally {
             $scratch->remove();
+        }
+
+        $listing = new ReflectionMethod(ChannelRenamePlants::class, 'publishedRules');
+        self::assertTrue($listing->invoke(null, 'probe', ['exit' => 0, 'stdout' => "one rule\n", 'stderr' => '']));
+        self::assertFalse($listing->invoke(null, 'probe', ['exit' => 3, 'stdout' => '', 'stderr' => "Configuration error\n"]));
+        foreach ([
+            ['exit' => 0, 'stdout' => '', 'stderr' => ''],
+            ['exit' => 3, 'stdout' => 'partial', 'stderr' => 'refusal'],
+            ['exit' => 1, 'stdout' => '', 'stderr' => 'failed'],
+            ['exit' => 2, 'stdout' => '', 'stderr' => 'failed'],
+        ] as $invalid) {
+            try {
+                $listing->invoke(null, 'probe', $invalid);
+                self::fail('An unexpected rules result must be refused.');
+            } catch (RuntimeException $error) {
+                self::assertStringContainsString('Cannot classify the source rules listing', $error->getMessage());
+            }
+        }
+
+        $expectations = ChannelRenamePlants::caseListingFailures(declarationReplaced: true);
+        $scopes = array_map(static fn($expectation): ?string => $expectation->scopeContains, $expectations);
+        $selector = CaseDefinition::load(\dirname(__DIR__, 3) . '/finding-gate/cases/selector-after-split');
+        self::assertSame(\QmxFindingGate\CaseOutcome::REFUSAL, $selector->outcome);
+        self::assertContains('case:selector-after-split|rules', $scopes);
+        self::assertNotContains('case:computed-cross-level|rules', $scopes);
+        self::assertCount(32, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
+        self::assertNotContains(
+            'case:complexity|rules',
+            array_map(static fn($expectation): ?string => $expectation->scopeContains, ChannelRenamePlants::caseListingFailures('complexity', true)),
+        );
+        self::assertCount(32, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
+        foreach ($expectations as $expectation) {
+            self::assertTrue($expectation->exactScope);
         }
     }
 

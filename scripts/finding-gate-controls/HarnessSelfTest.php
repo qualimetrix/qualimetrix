@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace QmxFindingGateControls;
 
 use QmxFindingGate\GateReport;
+use QmxFindingGate\Tsv;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 use RuntimeException;
+use Throwable;
 
 /**
  * The harness's own mechanics, checked without running a control.
@@ -26,6 +31,8 @@ final class HarnessSelfTest
         $this->referenceResolvesBeforeTheClone();
         $this->greenIsHeldToEveryDeclarationCount();
         $this->exactScopesDoNotAcceptNeighbouringPublications();
+        $this->inheritedPermissionsAreClearedOnlyInThePrivateTree();
+        $this->childStreamsArriveBeforeExitAndRetainTheirBuffers();
 
         return $this->failures;
     }
@@ -50,6 +57,175 @@ final class HarnessSelfTest
             }
             $this->same(true, $refused, 'an exact expectation without a scope is refused');
         }
+    }
+
+    private function inheritedPermissionsAreClearedOnlyInThePrivateTree(): void
+    {
+        $repository = \dirname(__DIR__, 2);
+        $originalMap = Shell::read($repository . '/finding-gate/maps/channels.tsv');
+        $originalDelta = Shell::read($repository . '/finding-gate/declared-delta.tsv');
+        $scratch = null;
+
+        try {
+            $scratch = Scratch::contentOf($repository);
+            $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
+            (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $scratch->tree);
+            $hasPermissions = new ReflectionMethod(Harness::class, 'hasInheritedPermissions');
+            $prepare = new ReflectionMethod(Harness::class, 'prepareIdentityPermissions');
+
+            Shell::replace($scratch->path('finding-gate/maps/channels.tsv'), "invalid header\n");
+            $refused = false;
+            try {
+                $hasPermissions->invoke($harness);
+            } catch (Throwable) {
+                $refused = true;
+            }
+            $this->same(true, $refused, 'an invalid inherited map is refused before preparation');
+            $this->same("invalid header\n", Shell::read($scratch->path('finding-gate/maps/channels.tsv')), 'the invalid original permission has not been cleared');
+
+            Shell::replace($scratch->path('finding-gate/maps/channels.tsv'), Tsv::render(['old', 'new', 'reason'], [
+                ['code-smell.unused-private', 'code-smell.unused-privat2', 'A private inherited transition.'],
+            ]));
+            $productPath = 'src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php';
+            $originalProduct = Shell::read($repository . '/' . $productPath);
+            $dirtyProduct = $originalProduct . "\n// A private working-tree variation.\n";
+            Shell::replace($scratch->path($productPath), $dirtyProduct);
+            $this->same(true, $hasPermissions->invoke($harness), 'the inherited transition is present before preparation');
+            $orphan = $scratch->path('finding-gate/declared-outcomes');
+            if (!is_dir($orphan)) {
+                mkdir($orphan);
+            }
+            file_put_contents($orphan . '/orphan.txt', 'A private orphan.');
+            $prepare->invoke(null, $scratch);
+
+            foreach ((new ReflectionMethod(Harness::class, 'permissionTables'))->invoke(null) as $path => $columns) {
+                if (is_file($repository . '/' . $path)) {
+                    $this->same(Tsv::render($columns, []), Shell::read($scratch->path($path)), $path . ' is header-only in the comparison tree');
+                } else {
+                    $this->same(false, is_file($scratch->path($path)), $path . ' stays absent');
+                }
+            }
+            foreach ((new ReflectionMethod(Harness::class, 'permissionDirectories'))->invoke(null) as $directory) {
+                $this->same(false, is_dir($scratch->path($directory)), $directory . ' is absent in the comparison tree');
+            }
+            $this->same(false, $hasPermissions->invoke($harness), 'the prepared child cannot delegate again');
+            $this->same($dirtyProduct, Shell::read($scratch->path($productPath)), 'private product bytes survive identity preparation');
+            $this->same($originalProduct, Shell::read($repository . '/' . $productPath), 'the original product bytes stay intact');
+            $this->same($originalMap, Shell::read($repository . '/finding-gate/maps/channels.tsv'), 'the original map retains its bytes');
+            $this->same($originalDelta, Shell::read($repository . '/finding-gate/declared-delta.tsv'), 'the original delta index retains its bytes');
+
+            $commit = str_repeat('a', 40);
+            (new ReflectionProperty(Harness::class, 'reference'))->setValue($harness, $commit);
+            (new ReflectionProperty(Harness::class, 'reportDirectory'))->setValue($harness, 'relative-reports');
+            (new ReflectionProperty(Harness::class, 'referenceName'))->setValue($harness, 'HEAD');
+            $delegationCommand = new ReflectionMethod(Harness::class, 'delegationCommand');
+            $this->same(
+                [
+                    \PHP_BINARY,
+                    $scratch->path('scripts/finding-gate-controls.php'),
+                    '--reference=' . $commit,
+                    '--only=positive,rename-no-map',
+                    '--jobs=2',
+                    '--force-expect=positive:surface-mismatch',
+                    '--detached',
+                    '--report-dir=' . getcwd() . '/relative-reports',
+                ],
+                $delegationCommand->invoke($harness, $scratch, ['positive', 'rename-no-map'], ['positive' => 'surface-mismatch'], 2, false),
+                'the child receives the resolved reference and original absolute report destination',
+            );
+
+            $factoryProbe = <<<'PHP'
+                require getcwd() . '/scripts/finding-gate/classes.php';
+                require getcwd() . '/scripts/finding-gate-controls/classes.php';
+                $controls = \QmxFindingGateControls\Controls::all();
+                $map = null;
+                $restoration = null;
+                foreach ($controls as $control) {
+                    if ($control->id === 'fingerprint-declared-rename') {
+                        foreach ((new ReflectionProperty(\QmxFindingGateControls\Mutation::class, 'actions'))->getValue($control->mutation) as $action) {
+                            if ($action['path'] === 'finding-gate/maps/channels.tsv') {
+                                $map = $action['contents'];
+                            }
+                        }
+                    }
+                    if ($control->id === 'derive-writes-green-run') {
+                        $restoration = [$control->restoredAfterRun, $control->restoredContent];
+                    }
+                }
+                echo json_encode([
+                    'ids' => array_map(static fn($control): string => $control->id, $controls),
+                    'map' => $map,
+                    'restoration' => $restoration,
+                ], JSON_THROW_ON_ERROR);
+                PHP;
+            $factory = Shell::run([\PHP_BINARY, '-r', $factoryProbe], $scratch->tree);
+            $this->same(0, $factory['exit'], 'the prepared tree builds every control factory: ' . $factory['stderr']);
+            if ($factory['exit'] === 0) {
+                $metadata = json_decode($factory['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+                $ids = $metadata['ids'];
+                $this->same(31, \count($ids), 'the prepared tree retains all 31 controls');
+                $this->same('positive', $ids[0] ?? null, 'the first control keeps its place');
+                $this->same('report-value-no-row', $ids[20] ?? null, 'the fixed factories keep their order');
+                $this->same(
+                    Tsv::render(['old', 'new', 'reason'], [])
+                        . "code-smell.unused-private\tcode-smell.unused-privat2\tthe control renames the channel's code\n",
+                    $metadata['map'],
+                    'the own map carries one control row and no inherited transition',
+                );
+                $this->same(
+                    ['finding-gate/declared-delta.tsv', 'finding-gate/declared-delta'],
+                    $metadata['restoration'][0],
+                    'the derive control keeps the index and directory restoration targets',
+                );
+                $this->same(
+                    ['finding-gate/declared-delta.tsv' => Tsv::render(['surface', 'file', 'reason'], [])],
+                    $metadata['restoration'][1],
+                    'the derive control restores the identity index bytes',
+                );
+            }
+        } catch (Throwable $error) {
+            $this->failures[] = 'a private comparison context (' . $error->getMessage() . ')';
+        } finally {
+            $scratch?->remove();
+        }
+    }
+
+    private function childStreamsArriveBeforeExitAndRetainTheirBuffers(): void
+    {
+        $events = [];
+        $child = null;
+        $script = 'fwrite(STDOUT,"first\\n"); fflush(STDOUT); usleep(250000); fwrite(STDERR,"second\\n"); exit(7);';
+        $child = Shell::start([\PHP_BINARY, '-r', $script], \dirname(__DIR__, 2), onOutput: static function (int $stream, string $chunk) use (&$events, &$child): void {
+            $events[] = [$stream, $chunk, $child?->settled()];
+        });
+        while (!$child->settled()) {
+            Shell::poll();
+        }
+        $result = $child->result();
+        $this->same([1, "first\n", false], $events[0] ?? null, 'stdout arrives before child exit');
+        $this->same([2, "second\n", false], $events[1] ?? null, 'stderr arrives before child exit');
+        $this->same('first' . "\n", $result['stdout'], 'streamed stdout remains buffered once');
+        $this->same('second' . "\n", $result['stderr'], 'streamed stderr remains buffered once');
+        $this->same(7, $result['exit'], 'the child exit code survives streaming');
+
+        $interruption = <<<'PHP'
+            require $argv[1] . '/scripts/finding-gate-controls/Shell.php';
+            require $argv[1] . '/scripts/finding-gate-controls/Scratch.php';
+            $scratch = \QmxFindingGateControls\Scratch::contentOf($argv[1]);
+            register_shutdown_function(static function (): void {
+                \QmxFindingGateControls\Shell::terminateAll();
+                \QmxFindingGateControls\Scratch::removeAll();
+            });
+            \QmxFindingGateControls\Shell::superviseFor(false, static function (string $reason): void {});
+            echo $scratch->tree, "\n";
+            fflush(STDOUT);
+            \QmxFindingGateControls\Shell::start([PHP_BINARY, '-r', 'sleep(30);'], $scratch->tree);
+            \QmxFindingGateControls\Shell::requestStop('self-test');
+            \QmxFindingGateControls\Shell::poll();
+            PHP;
+        $stopped = Shell::run([\PHP_BINARY, '-r', $interruption, \dirname(__DIR__, 2)], \dirname(__DIR__, 2));
+        $this->same(130, $stopped['exit'], 'a supervised interruption keeps its exit status');
+        $this->same(false, is_dir(trim($stopped['stdout'])), 'a supervised interruption removes its private tree');
     }
 
     /**
@@ -104,6 +280,13 @@ final class HarnessSelfTest
                 self::registeredWorktrees($repository),
                 'a worktree the clone adds is registered in the clone, never in the repository it was cloned from',
             );
+
+            $guard = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
+            (new ReflectionProperty(Harness::class, 'repository'))->setValue($guard, $linked);
+            $workingTreeState = new ReflectionMethod(Harness::class, 'workingTreeState');
+            $before = $workingTreeState->invoke($guard);
+            file_put_contents($scratch->path('committed.txt'), "hardlink write-through\n");
+            $this->same(false, $before === $workingTreeState->invoke($guard), 'the original-tree guard sees a write through a hardlink');
         } catch (RuntimeException $error) {
             $this->failures[] = 'a control\'s clone owns its repository (' . $error->getMessage() . ')';
         } finally {

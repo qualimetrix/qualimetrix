@@ -4,9 +4,20 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use ArrayObject;
 use QmxFindingGate\Declarations;
 use QmxFindingGate\DeclaredDelta;
+use QmxFindingGate\DeclaredExactSurfaces;
 use QmxFindingGate\DeclaredFieldMoves;
+use QmxFindingGate\DeclaredFields;
+use QmxFindingGate\DeclaredOutcomes;
+use QmxFindingGate\DeclaredRecords;
+use QmxFindingGate\DeclaredStructuralMaps;
+use QmxFindingGate\DeclaredSurfaces;
+use QmxFindingGate\DeclaredValues;
+use QmxFindingGate\MetricVocabulary;
+use QmxFindingGate\RenameMaps;
+use QmxFindingGate\Tsv;
 use RuntimeException;
 use Throwable;
 
@@ -125,9 +136,22 @@ final class Harness
         // reads, killing the whole descendant tree first. The shutdown function
         // is the backstop for the paths no handler sees — a fatal error, or an
         // exit from somewhere else.
-        register_shutdown_function(static function (): void {
+        $outerGuard = self::outerGuard();
+        register_shutdown_function(static function () use ($outerGuard): void {
             Shell::terminateAll();
             Scratch::removeAll();
+            $outer = $outerGuard['harness'] ?? null;
+            $outerBefore = $outerGuard['before'] ?? null;
+            if ($outer instanceof self && \is_string($outerBefore)) {
+                Shell::allowShutdownGuard();
+                try {
+                    if ($outer->workingTreeState() !== $outerBefore) {
+                        fwrite(\STDERR, "\nThe original working tree changed during delegated controls. Do not trust the result.\n");
+                    }
+                } catch (Throwable $error) {
+                    fwrite(\STDERR, "\nCannot verify the original working tree after interruption: " . $error->getMessage() . "\n");
+                }
+            }
         });
 
         Shell::superviseFor($watchLauncher, static function (string $reason): void {
@@ -147,17 +171,186 @@ final class Harness
             }
         }
 
+        $result = 3;
         try {
             $commit = self::resolveReference($repository, $reference);
-
-            return (new self($repository, $commit, $reportDirectory, $reference))->run(Controls::all($forced), $only, $jobs);
+            $harness = new self($repository, $commit, $reportDirectory, $reference);
+            if ($commit === self::resolveReference($repository, 'HEAD')) {
+                $outerGuard['harness'] = $harness;
+                $outerGuard['before'] = $harness->workingTreeState();
+                if ($harness->hasInheritedPermissions()) {
+                    $result = $harness->delegate($only, $forced, $jobs, $watchLauncher);
+                } else {
+                    unset($outerGuard['before']);
+                    $result = $harness->run(Controls::all($forced), $only, $jobs);
+                }
+            } else {
+                $result = $harness->run(Controls::all($forced), $only, $jobs);
+            }
         } catch (Throwable $error) {
             fwrite(\STDERR, 'finding-gate-controls: ' . $error->getMessage() . "\n");
-
-            return 3;
         } finally {
             Scratch::removeAll();
+            $outer = $outerGuard['harness'] ?? null;
+            $outerBefore = $outerGuard['before'] ?? null;
+            if ($outer instanceof self && \is_string($outerBefore)) {
+                try {
+                    if ($outer->workingTreeState() !== $outerBefore) {
+                        fwrite(\STDERR, "\nThe original working tree changed during delegated controls. Do not trust the result.\n");
+                        $result = 2;
+                    }
+                } catch (Throwable $error) {
+                    fwrite(\STDERR, "\nCannot verify the original working tree: " . $error->getMessage() . "\n");
+                    $result = 3;
+                }
+                unset($outerGuard['before']);
+            }
         }
+
+        return $result;
+    }
+
+    /** @return ArrayObject<string, self|string> */
+    private static function outerGuard(): ArrayObject
+    {
+        return new ArrayObject();
+    }
+
+    /** @return array<string, list<string>> */
+    private static function permissionTables(): array
+    {
+        return [
+            'finding-gate/' . DeclaredDelta::INDEX => DeclaredDelta::COLUMNS,
+            'finding-gate/' . DeclaredExactSurfaces::INDEX => DeclaredExactSurfaces::COLUMNS,
+            'finding-gate/' . DeclaredFieldMoves::INDEX => DeclaredFieldMoves::COLUMNS,
+            'finding-gate/' . DeclaredRecords::INDEX => DeclaredRecords::COLUMNS,
+            'finding-gate/' . DeclaredRecords::DERIVED => DeclaredRecords::DERIVED_COLUMNS,
+            'finding-gate/' . DeclaredValues::INDEX => DeclaredValues::COLUMNS,
+            'finding-gate/' . DeclaredValues::DERIVED => DeclaredValues::DERIVED_COLUMNS,
+            'finding-gate/' . DeclaredFields::INDEX => DeclaredFields::COLUMNS,
+            'finding-gate/' . DeclaredFields::DERIVED => DeclaredFields::DERIVED_COLUMNS,
+            'finding-gate/' . DeclaredOutcomes::INDEX => DeclaredOutcomes::COLUMNS,
+            'finding-gate/' . DeclaredSurfaces::INDEX => DeclaredSurfaces::COLUMNS,
+            'finding-gate/' . DeclaredStructuralMaps::INDEX => DeclaredStructuralMaps::COLUMNS,
+            'finding-gate/maps/' . RenameMaps::CHANNELS => ['old', 'new', 'reason'],
+            'finding-gate/maps/' . RenameMaps::SYMBOLS => ['old', 'new', 'reason'],
+            'finding-gate/maps/' . RenameMaps::METRIC_KEYS => ['old', 'new', 'reason'],
+            'finding-gate/maps/' . RenameMaps::INPUTS => ['old', 'new', 'reason'],
+            'finding-gate/maps/' . RenameMaps::REPORT_VALUES => ['old', 'new', 'reason'],
+        ];
+    }
+
+    /** @return list<string> */
+    private static function permissionDirectories(): array
+    {
+        return [
+            'finding-gate/' . DeclaredDelta::DIRECTORY,
+            'finding-gate/' . DeclaredExactSurfaces::DIRECTORY,
+            'finding-gate/' . DeclaredSurfaces::DIRECTORY,
+            'finding-gate/' . DeclaredOutcomes::DIRECTORY,
+        ];
+    }
+
+    private function hasInheritedPermissions(): bool
+    {
+        Declarations::load($this->repository);
+        RenameMaps::load($this->repository . '/finding-gate/maps', MetricVocabulary::ofTree($this->repository));
+        $present = false;
+        foreach (self::permissionTables() as $path => $columns) {
+            if (is_file($this->repository . '/' . $path) && Tsv::rows($this->repository . '/' . $path, $columns) !== []) {
+                $present = true;
+            }
+        }
+        foreach (self::permissionDirectories() as $directory) {
+            if (is_dir($this->repository . '/' . $directory)) {
+                $present = true;
+            }
+        }
+
+        return $present;
+    }
+
+    private static function prepareIdentityPermissions(Scratch $scratch): void
+    {
+        foreach (self::permissionTables() as $path => $columns) {
+            if (is_file($scratch->path($path))) {
+                Shell::replace($scratch->path($path), Tsv::render($columns, []));
+            }
+        }
+        foreach (self::permissionDirectories() as $directory) {
+            if (is_dir($scratch->path($directory))) {
+                Shell::removeRecursively($scratch->path($directory));
+                if (self::permissionDirectoryStillExists($scratch->path($directory))) {
+                    throw new RuntimeException('Cannot remove inherited permission directory ' . $directory . '.');
+                }
+            }
+        }
+    }
+
+    private static function permissionDirectoryStillExists(string $path): bool
+    {
+        clearstatcache(true, $path);
+
+        return file_exists($path);
+    }
+
+    /** @param list<string> $only
+     * @param array<string, string> $forced
+     */
+    private function delegate(array $only, array $forced, ?int $jobs, bool $watchLauncher): int
+    {
+        $scratch = Scratch::cloneOf($this->repository);
+        try {
+            self::prepareIdentityPermissions($scratch);
+            $command = $this->delegationCommand($scratch, $only, $forced, $jobs, $watchLauncher);
+            printf("finding-gate controls — original reference=%s (%s), prepared comparison context\n", $this->referenceName, $this->reference);
+            $child = Shell::start($command, $scratch->tree, onOutput: static function (int $stream, string $chunk): void {
+                fwrite($stream === 1 ? \STDOUT : \STDERR, $chunk);
+            });
+            while (!$child->settled()) {
+                Shell::poll();
+            }
+
+            return $child->result()['exit'];
+        } catch (Throwable $error) {
+            Shell::terminateAll();
+            throw $error;
+        } finally {
+            $scratch->remove();
+        }
+    }
+
+    /** @param list<string> $only
+     * @param array<string, string> $forced
+     *
+     * @return list<string>
+     */
+    private function delegationCommand(Scratch $scratch, array $only, array $forced, ?int $jobs, bool $watchLauncher): array
+    {
+        $command = [\PHP_BINARY, $scratch->path('scripts/finding-gate-controls.php'), '--reference=' . $this->reference];
+        if ($only !== []) {
+            $command[] = '--only=' . implode(',', $only);
+        }
+        if ($jobs !== null) {
+            $command[] = '--jobs=' . $jobs;
+        }
+        foreach ($forced as $id => $failureClass) {
+            $command[] = '--force-expect=' . $id . ':' . $failureClass;
+        }
+        if (!$watchLauncher) {
+            $command[] = '--detached';
+        }
+        if ($this->reportDirectory !== null) {
+            $cwd = getcwd();
+            if ($cwd === false) {
+                throw new RuntimeException('Cannot resolve the original working directory for delegated reports.');
+            }
+            $command[] = '--report-dir=' . (str_starts_with($this->reportDirectory, '/')
+                ? $this->reportDirectory
+                : $cwd . '/' . $this->reportDirectory);
+        }
+
+        return $command;
     }
 
     /**

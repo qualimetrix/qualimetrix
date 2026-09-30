@@ -611,6 +611,27 @@ idle tolerations fail. Corpus controls require exact full scopes, preventing
 a `text` expectation from absorbing `text-verbose` or another case.
 Green controls are held to all declaration counts, not just exit 0.
 
+When the resolved reference is `HEAD`, inherited transition declarations and
+rename maps belong to an earlier comparison. Before building control factories,
+the harness validates those permissions, copies the working tree into one
+private repository and prepares an identity comparison there: existing
+permission tables retain only their headers, and the four permission payload
+directories are absent. Control mutations and their own declarations then share
+that repository. Malformed inherited permissions still fail before preparation.
+A non-HEAD reference retains the authored transition context. Dirty working-tree
+product bytes survive the copy and are compared against the committed reference.
+The original tree is checked after delegation and on handled interruption;
+streamed progress and the child exit status remain visible. Relative report
+paths resolve against the original working directory and survive cleanup.
+
+Channel-rename controls require a case's exact `rules` surface only when the
+unmodified command actually publishes its catalogue. The harness observes
+`bin/qmx rules --no-ansi` once per eligible case and reuses that result across
+factory consumers. Exit 0 with a nonempty catalogue requires the surface; exit 3
+with empty stdout and nonempty stderr publishes none. Other results, start
+failures and timeouts fail before controls run. A refusal outcome for analysis
+alone does not determine whether `rules` publishes a catalogue.
+
 `composer gate:self-test` runs the gate's observed witnesses and the
 controls harness's mechanics. Recognized raise sites are enumerated with their
 nearest callers and observed through a whole synthetic run. An unexplained source
