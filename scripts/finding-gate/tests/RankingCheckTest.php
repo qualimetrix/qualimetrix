@@ -897,9 +897,15 @@ final class RankingCheckTest extends TestCase
     #[Test]
     public function itMeasuresRankingSchemaExtensionsAndRemovedMembersWithoutAddingAG1View(): void
     {
-        foreach (['added-probe', 'removed-rank', 'removed-impactScore', 'removed-file'] as $change) {
+        foreach (['added-probe', 'removed-rank', 'removed-impactScore', 'removed-file', 'removed-probe'] as $change) {
             $records = self::records(2);
             $issues = self::issues($records, [30, 20]);
+            if ($change === 'removed-probe') {
+                foreach ($issues as &$issue) {
+                    $issue['probe'] = 7;
+                }
+                unset($issue);
+            }
             $tree = self::rankedTree($records, $issues, 0);
             [$direction, $field] = explode('-', $change, 2);
             $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [[$direction, 'json', 'ranking', $field, 'Change the explicitly classified ranked member.']]);
@@ -921,16 +927,67 @@ final class RankingCheckTest extends TestCase
             }
             sort($rows);
             $tree['declarations'][DeclaredFields::DERIVED] = Tsv::render(DeclaredFields::DERIVED_COLUMNS, $rows);
-            $report = $this->reportFor($tree, static function (string $root) use ($direction, $field): void {
+            $prepare = static function (string $root) use ($direction, $field): void {
                 $path = $root . '/src/Reporting/Formatter/Json/JsonFormatter.php';
                 $source = Fs::read($path);
                 $source = $direction === 'added'
                     ? str_replace("                'rank' => null,", "                'rank' => null,\n                'probe' => null,", $source)
-                    : str_replace("                '" . $field . "' => null,\n", '', $source);
+                    : ($field === 'probe' ? str_replace("                'rank' => null,", "                'rank' => null,\n                'probe' => null,", $source) : str_replace("                '" . $field . "' => null,\n", '', $source));
                 Fs::write($path, $source);
-            });
+            };
+            if ($change === 'removed-probe') {
+                $root = SyntheticTree::fixture($tree);
+                try {
+                    $report = RecordedComparison::reportAt($tree, $root, $prepare);
+                } finally {
+                    SyntheticTree::remove($root);
+                }
+            } else {
+                $report = $this->reportFor($tree, $prepare);
+            }
             self::assertSame(GateReport::EXIT_GREEN, $report->exitCode(), $change . ': ' . $report->render());
             self::assertNotContains('ranking', \QmxFindingGate\ReportViews::views('json'));
+        }
+        $records = self::records(1);
+        $issues = self::issues($records, [30]);
+        $tree = self::rankedTree($records, $issues, 0);
+        self::completeReadableAnswers($tree, $records);
+        $candidateRecords = $records;
+        $candidateRecords[0]['message'] = 'Licensed replacement message';
+        $candidateIssues = self::issues($candidateRecords, [30]);
+        $candidateIssues[0]['probe'] = 7;
+        $tree['candidateFindings']['alpha'] = $candidateRecords;
+        self::publish($tree, 'candidateAnswers', $candidateRecords, $candidateIssues, 0);
+        $candidateReadable = $tree;
+        self::completeReadableAnswers($candidateReadable, $candidateRecords);
+        foreach (['format:gitlab', 'format:checkstyle', 'format:text', 'format:text-verbose', 'show-suppressed', 'format:github'] as $surface) {
+            $tree['candidateAnswers']['case:alpha|' . $surface] = $candidateReadable['answers']['case:alpha|' . $surface];
+        }
+        $tree['candidateDeclarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [
+            ['added', 'json', 'ranking', 'probe', 'The ranked publisher adds a measured member.'],
+        ]);
+        $tree['candidateDeclarations'][DeclaredValues::INDEX] = Tsv::render(DeclaredValues::COLUMNS, [
+            ['field', 'message', '*', 'The finding message changes.'],
+        ]);
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $path = $root . '/src/Reporting/Formatter/Json/JsonFormatter.php';
+            Fs::write($path, str_replace("                'rank' => null,", "                'rank' => null,\n                'probe' => null,", Fs::read($path)));
+            [$semantic, $semanticWritten] = RecordedComparison::derive($tree, $root);
+            self::assertSame([], $semantic->failureClasses(), $semantic->render());
+            self::assertContains(DeclaredFields::DERIVED, $semanticWritten, $semantic->render());
+            self::assertContains(DeclaredValues::DERIVED, $semanticWritten, $semantic->render());
+            self::assertSame([], RecordedComparison::reportAt($tree, $root)->failureClasses());
+            Fs::write($root . '/finding-gate/' . \QmxFindingGate\DeclaredExactSurfaces::INDEX, Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
+                ['alpha', 'format:json', 'declared-exact-surfaces/schema-value.diff', 'Measure any remaining complete finding authority.'],
+            ]));
+            Fs::write($root . '/finding-gate/declared-exact-surfaces/schema-value.diff', "pending\n");
+            [$redundant, $redundantWritten] = RecordedComparison::derive($tree, $root);
+            self::assertNotContains(\QmxFindingGate\DeclaredExactSurfaces::INDEX, $redundantWritten, $redundant->render());
+            self::assertSame("pending\n", Fs::read($root . '/finding-gate/declared-exact-surfaces/schema-value.diff'));
+            self::assertContains(FailureClass::DELTA_STALE, RecordedComparison::reportAt($tree, $root)->failureClasses());
+        } finally {
+            SyntheticTree::remove($root);
         }
     }
 

@@ -229,9 +229,10 @@ final class ExactSurfaceAuthority
                 }
             }
             $operations = $records->exactOperations($case, $view);
-            $allowed = self::admissible($rows, $operations, $kind, $report);
+            $schema = self::schemaUnits($rows, $kind, $report, $view, $case, $run, $records);
+            $allowed = self::admissible($rows, $operations, $kind, $report, $schema);
             foreach (['candidate', 'reference'] as $side) {
-                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $view, $case, $run, $allowed);
+                $rows[$side] = self::erase($rows[$side] ?? [], $operations, $side, $kind, $report, $schema, $allowed);
                 $bags[$kind][$side] = array_column($rows[$side], 'raw');
                 sort($bags[$kind][$side], \SORT_STRING);
             }
@@ -292,17 +293,96 @@ final class ExactSurfaceAuthority
     }
 
     /** @param array<string,list<array{raw:string,decoded:array<string,mixed>}>> $rows
+     * @return array<string,list<string>>
+     */
+    private static function schemaUnits(array $rows, string $kind, string $report, string $view, string $case, RunContext $run, RecordCheck $records): array
+    {
+        $units = ['candidate' => [], 'reference' => []];
+        $schemaReport = $kind === 'ranking' ? 'json' : $report;
+        $schemaView = $kind === 'ranking' ? 'ranking' : $view;
+        $changes = $report === 'suppressed' ? [] : $run->declarations->fields->changes($schemaReport, $schemaView);
+        if ($changes === []) {
+            return $units;
+        }
+        $supplied = [];
+        foreach ($run->declarations->fields->requiredPublications($case) as $publication) {
+            if ($publication['report'] === $schemaReport && $publication['view'] === $schemaView && $publication['supplied']) {
+                $supplied[$publication['side']] = true;
+            }
+        }
+        if (!isset($supplied['candidate'], $supplied['reference'])) {
+            return $units;
+        }
+        $rankedFields = $kind === 'ranking' ? RankingSchema::derive($run->options->candidateRoot)->fields : [];
+        $physicalFields = [];
+        if ($kind === 'physical' && $report === 'json') {
+            try {
+                $physicalFields = EquivalenceTuple::derive($run->options->candidateRoot)->fields;
+            } catch (GateError) {
+                return $units;
+            }
+        }
+        foreach (['candidate', 'reference'] as $side) {
+            try {
+                if ($report === 'json') {
+                    $records->rawAuthority($case, $view, $side);
+                } else {
+                    $records->comparative($case, $view, $side);
+                }
+            } catch (GateError) {
+                return $units;
+            }
+        }
+        foreach ($changes as $field => $change) {
+            $proved = true;
+            foreach (['candidate', 'reference'] as $side) {
+                $publisher = match (true) {
+                    $kind === 'ranking' => $side === 'candidate' ? $rankedFields : $run->declarations->fields->referenceFields('json', 'ranking', $rankedFields),
+                    $report === 'json' => $side === 'candidate' ? $physicalFields : $run->declarations->fields->referenceFields('json', $view, $physicalFields),
+                    default => $records->fields($schemaReport, $schemaView, $side),
+                };
+                $present = ($change === DeclaredFields::ADDED) === ($side === 'candidate');
+                if (\in_array($field, $publisher, true) !== $present
+                    || ($present && ($rows[$side] ?? []) === [])) {
+                    $proved = false;
+                    break;
+                }
+                foreach ($rows[$side] ?? [] as $row) {
+                    if ($field !== 'rank' && \array_key_exists($field, $row['decoded']) !== $present) {
+                        $proved = false;
+                        break 2;
+                    }
+                }
+            }
+            if ($proved && $field !== 'rank') {
+                $units['candidate'][] = $field;
+                $units['reference'][] = $field;
+            }
+        }
+        return $units;
+    }
+
+    /** @param array<string,mixed> $endpoint
+     * @param list<string> $schema
+     */
+    private static function compatibleKey(array $endpoint, array $schema): string
+    {
+        return self::decodedKey(array_diff_key($endpoint, array_flip($schema)));
+    }
+
+    /** @param array<string,list<array{raw:string,decoded:array<string,mixed>}>> $rows
      * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
+     * @param array<string,list<string>> $schema
      *
      * @return array<string,true>
      */
-    private static function admissible(array $rows, array $operations, string $kind, string $report): array
+    private static function admissible(array $rows, array $operations, string $kind, string $report, array $schema): array
     {
         $allowed = [];
         foreach (['candidate', 'reference'] as $side) {
             $indicesByDecoded = [];
             foreach ($rows[$side] ?? [] as $index => $row) {
-                $indicesByDecoded[self::decodedKey($row['decoded'])][] = $index;
+                $indicesByDecoded[self::compatibleKey($row['decoded'], $schema[$side])][] = $index;
             }
             $cohorts = [];
             foreach ($operations as $operation) {
@@ -315,7 +395,7 @@ final class ExactSurfaceAuthority
                     continue;
                 }
                 $expected = $report === 'json' ? self::endpoint($endpoint, $kind) : $endpoint;
-                $cohort = self::decodedKey($expected);
+                $cohort = self::compatibleKey($expected, $schema[$side]);
                 $signature = self::operationKey($operation, $kind, $report);
                 $cohorts[$cohort]['signatures'][$signature] = ($cohorts[$cohort]['signatures'][$signature] ?? 0) + 1;
             }
@@ -394,15 +474,16 @@ final class ExactSurfaceAuthority
 
     /** @param list<array{raw:string,decoded:array<string,mixed>}> $rows
      * @param list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> $operations
+     * @param array<string,list<string>> $schema
      * @param array<string,true> $allowed
      *
      * @return list<array{raw:string,decoded:array<string,mixed>}>
      */
-    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, string $view, string $case, RunContext $run, array $allowed): array
+    private static function erase(array $rows, array $operations, string $side, string $kind, string $report, array $schema, array $allowed): array
     {
         $indicesByDecoded = [];
         foreach ($rows as $index => $row) {
-            $indicesByDecoded[self::decodedKey($row['decoded'])][] = $index;
+            $indicesByDecoded[self::compatibleKey($row['decoded'], $schema[$side])][] = $index;
         }
         $groups = [];
         foreach ($operations as $operation) {
@@ -415,7 +496,7 @@ final class ExactSurfaceAuthority
             if ($paths === [] && !$operation['whole']) {
                 continue;
             }
-            $cohort = self::decodedKey($expected);
+            $cohort = self::compatibleKey($expected, $schema[$side]);
             $signature = self::operationKey($operation, $kind, $report);
             if (!isset($allowed[$signature])) {
                 continue;
@@ -460,30 +541,19 @@ final class ExactSurfaceAuthority
                 }
             }
         }
-        $schema = $report === 'suppressed' ? [] : $run->declarations->fields->changes($kind === 'ranking' ? 'json' : $report, $kind === 'ranking' ? 'ranking' : $view);
-        if ($schema !== []) {
-            $supplied = [];
-            foreach ($run->declarations->fields->requiredPublications($case) as $publication) {
-                if ($publication['report'] === ($kind === 'ranking' ? 'json' : $report)
-                    && $publication['view'] === ($kind === 'ranking' ? 'ranking' : $view)
-                    && $publication['supplied']) {
-                    $supplied[$publication['side']] = true;
-                }
-            }
-            if (isset($supplied['candidate'], $supplied['reference'])) {
-                foreach ($rows as &$row) {
-                    $edits = [];
-                    foreach (array_keys($schema) as $field) {
-                        if (\array_key_exists($field, $row['decoded'])) {
-                            $edits[ValueCheck::value([$field])] = null;
-                        }
-                    }
-                    if ($edits !== []) {
-                        $row['raw'] = self::canonical(ReportRecords::edit($row['raw'], $edits));
+        if ($schema[$side] !== []) {
+            foreach ($rows as &$row) {
+                $edits = [];
+                foreach ($schema[$side] as $field) {
+                    if (\array_key_exists($field, $row['decoded'])) {
+                        $edits[ValueCheck::value([$field])] = null;
                     }
                 }
-                unset($row);
+                if ($edits !== []) {
+                    $row['raw'] = self::canonical(ReportRecords::edit($row['raw'], $edits));
+                }
             }
+            unset($row);
         }
         return array_values($rows);
     }

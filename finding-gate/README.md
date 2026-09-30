@@ -476,9 +476,18 @@ intention or another record's measurement is not an erasure licence.
 Operations from one record pair remain a joint bundle with an occurrence
 budget. Physical and ranked records establish their bindings independently.
 
+A simultaneous schema change can supply a compatibility index for endpoint
+binding only when its own publication is registered and supplied, the member
+agrees with the classified publisher, and its directed presence agrees with
+the complete captured population. The index omits those proved schema members;
+original raw records, joint transitions and occurrence budgets remain intact.
+All original competing cohorts in that compatibility family participate in
+the binding proof. Schema compatibility does not grant measurement credit or
+replace the later positive producer checks required for a write.
+
 Erasure requires a unique original endpoint, raw-identical interchangeable
-instances with exact counts, or a complete decoded-equivalent cohort covered
-uniformly by the same complete operation. Partial or competing operations on
+instances with exact counts, or the entire original compatibility family
+covered uniformly by the same complete operation. Partial or competing operations on
 raw-distinct duplicates leave a remainder; the trial does not choose a
 convenient assignment. This conservatively limits what semantic forms can
 prove explained in an ambiguous cohort. Such a remainder uses the exact route

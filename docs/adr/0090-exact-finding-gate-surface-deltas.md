@@ -47,12 +47,21 @@ member transitions and an occurrence budget. An untouched decoded-equal
 member retains its raw tokens. Physical and ranked endpoint bindings are
 proved independently. Erasure is admissible for unique endpoints,
 raw-identical interchangeable instances with exact counts, or entire original
-decoded-equivalent cohorts uniformly covered by one complete operation.
+compatibility families uniformly covered by one complete operation.
 Partial or competing operations on raw-distinct duplicates preserve a
 remainder instead of selecting a convenient assignment. This narrows semantic
 coverage proof where provenance is ambiguous; the exact measurement remains
 precise. It reuses captured lists and effective preparation evidence without
 another form, capture or diagnostic path.
+
+For simultaneous schema and value changes, a schema-elided decoded key is only
+a compatibility index. A member is eligible only through its actual registered
+and supplied publication, classified publisher and directed presence throughout
+the complete captured population. Every original competing cohort in that
+family remains in the proof, with unchanged raw endpoints, joint transitions
+and occurrence counts. This early binding does not require a schema verdict
+that the later pipeline has not produced yet; positive producer checks still
+guard measurement writes.
 
 The measurement includes length-framed visible bytes and the complete
 record authority. For finding projections this is independent raw physical
