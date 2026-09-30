@@ -34,7 +34,7 @@ final class GodClassRuleTest extends TestCase
     {
         $rule = new GodClassRule(new GodClassOptions());
 
-        self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule->getDescription());
+        self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule::getDescription());
     }
 
     #[Test]
@@ -493,11 +493,10 @@ final class GodClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = GodClassOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new GodClassOptions(), GodClassOptions::fromArray([]));
+        self::assertFalse(GodClassOptions::fromArray(['enabled' => false])->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void

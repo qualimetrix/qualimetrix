@@ -43,10 +43,6 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 80.0, 50.0);
 
         return new self(

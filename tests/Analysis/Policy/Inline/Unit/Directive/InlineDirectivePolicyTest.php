@@ -32,6 +32,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Usage accounting for the three suppression forms.
@@ -113,7 +114,7 @@ final class InlineDirectivePolicyTest extends TestCase
     public function itIgnoresDirectivesAddressingARuleThisRunDisabled(): void
     {
         $configuration = new RuleOptionsRegistry();
-        $configuration->configureSelection(new RuleSelection([], ['code-smell.goto']));
+        ResolvedOptionsFixture::selection($configuration, new RuleSelection([], ['code-smell.goto']));
 
         $policy = self::policy($configuration);
         $policy->prepare(
@@ -154,7 +155,7 @@ final class InlineDirectivePolicyTest extends TestCase
     public function itStillAccountsForARuleLeftEnabledByItsOptions(): void
     {
         $configuration = new RuleOptionsRegistry();
-        $configuration->setConfigFileOptions(['code-smell.goto' => ['enabled' => true]]);
+        ResolvedOptionsFixture::file($configuration, ['code-smell.goto' => ['enabled' => true]]);
 
         $policy = self::policy($configuration);
         $policy->prepare(

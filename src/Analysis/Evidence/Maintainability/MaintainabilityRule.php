@@ -49,7 +49,7 @@ final class MaintainabilityRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Maintainability Index (lower values indicate harder to maintain code)';
     }

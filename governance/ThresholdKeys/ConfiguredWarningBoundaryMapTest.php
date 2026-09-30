@@ -7,7 +7,9 @@ namespace Qualimetrix\Governance\ThresholdKeys;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -111,8 +113,12 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         $rules = $container->get(RuleRegistryInterface::class);
         \assert($rules instanceof RuleRegistryInterface);
 
-        $options = $container->get(RuleOptionsFactory::class);
-        \assert($options instanceof RuleOptionsFactory);
+        $options = $container->get(RuleConfigurationInterface::class);
+        \assert($options instanceof RuleConfigurationInterface);
+        $configuration = FindingConfiguration::none();
+        $builder = $container->get(RuleOptionsBuild::class);
+        \assert($builder instanceof RuleOptionsBuild);
+        $options->replace($configuration->withResolvedOptions($builder->build($configuration)));
 
         $map = (new BaselineConfiguredThresholds($rules, $options))->resolve();
         ksort($map);

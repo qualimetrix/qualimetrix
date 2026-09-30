@@ -110,36 +110,6 @@ final readonly class RuleOptionsParser
     }
 
     /**
-     * Parses disabled rules from CLI.
-     *
-     * @param list<string> $disableRules List of rule names to disable
-     *
-     * @return list<string> Normalized rule names
-     */
-    public function parseDisabledRules(array $disableRules): array
-    {
-        return array_values(array_map(
-            fn(string $rule) => $this->normalizeRuleName($rule),
-            $disableRules,
-        ));
-    }
-
-    /**
-     * Parses only rules from CLI.
-     *
-     * @param list<string> $onlyRules List of rule names to run
-     *
-     * @return list<string> Normalized rule names
-     */
-    public function parseOnlyRules(array $onlyRules): array
-    {
-        return array_values(array_map(
-            fn(string $rule) => $this->normalizeRuleName($rule),
-            $onlyRules,
-        ));
-    }
-
-    /**
      * Parses a single rule option.
      *
      * @return array{0: string, 1: string, 2: mixed}|null [ruleName, option, value] or null if invalid

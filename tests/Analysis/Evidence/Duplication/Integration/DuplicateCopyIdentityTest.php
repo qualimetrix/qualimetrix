@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
 /**
@@ -267,7 +268,7 @@ final class DuplicateCopyIdentityTest extends TestCase
         $files = array_map(static fn(string $path): SplFileInfo => new SplFileInfo($path), $this->sourceFiles());
 
         $configuration = new RuleOptionsRegistry();
-        $configuration->setConfigFileOptions(['duplication.clone' => []]);
+        ResolvedOptionsFixture::file($configuration, ['duplication.clone' => []]);
         $provider = new DuplicationResultProvider();
         (new DuplicationDetector($configuration, $provider))->inspect($files, AbsolutePath::fromString($this->tmpDir));
 

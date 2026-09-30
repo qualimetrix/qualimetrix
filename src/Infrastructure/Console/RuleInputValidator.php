@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -31,6 +32,7 @@ final readonly class RuleInputValidator
         private RuleSelector $ruleSelector,
         private FindingConfigurationResolverInterface $findingConfigurationResolver,
         private RuleChannelSnapshotFactoryInterface $ruleChannelSnapshotFactory,
+        private RuleOptionsBuild $optionsBuild,
     ) {}
 
     public function resolve(ConfigurationDocument $document, InputInterface $input): FindingConfiguration
@@ -38,7 +40,8 @@ final readonly class RuleInputValidator
         $parser = (new RuleOptionsParserFactory())->createFromClasses($this->ruleRegistry->getClasses());
         $cliRuleOptions = (new CliOptionsParser($parser))->parseRuleOptions($input);
 
-        return $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides($cliRuleOptions));
+        $configuration = $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides($cliRuleOptions));
+        return $configuration->withResolvedOptions($this->optionsBuild->build($configuration));
     }
 
     public function validate(

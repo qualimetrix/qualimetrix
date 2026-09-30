@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -417,12 +418,15 @@ final class SuppressionCompositionBuilderTest extends TestCase
     private function ruleConfiguration(array $rulesConfig): RuleConfigurationInterface
     {
         return new class ($rulesConfig) implements RuleConfigurationInterface {
+            public function resolvedOptions(): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions
+            {
+                throw new LogicException('This projection does not read rule options.');
+            }
+
             /** @param array<string, array<string, mixed>> $rulesConfig */
             public function __construct(private array $rulesConfig) {}
 
             public function replace(FindingConfiguration $configuration): void {}
-
-            public function configureCli(string $ruleName, array $options): void {}
 
             public function configFileOptions(): array
             {
@@ -438,8 +442,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             {
                 return $this->rulesConfig;
             }
-
-            public function configureSelection(RuleSelection $selection): void {}
 
             public function selection(): RuleSelection
             {

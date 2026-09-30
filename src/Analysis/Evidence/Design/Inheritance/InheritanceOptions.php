@@ -38,10 +38,6 @@ final readonly class InheritanceOptions implements RuleOptionsInterface, Thresho
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 4, 6);
 
         return new self(

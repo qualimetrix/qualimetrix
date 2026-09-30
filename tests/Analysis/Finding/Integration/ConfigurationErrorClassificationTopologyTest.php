@@ -28,6 +28,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarati
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
@@ -108,12 +109,17 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
     #[Test]
     public function itEndsTheRunWhenAValidatorEmitsOnAChannelItDoesNotDeclare(): void
     {
+        $rule = new StampRule();
+        $lookup = ResolvedOptionsFixture::lookup($rule);
+        $registry = new RuleOptionsRegistry();
+        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none();
+        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, [$lookup['metadata']])));
         $execution = new RuleExecution(
-            [new StampRule()],
+            [$lookup],
             self::createStub(ProfilerInterface::class),
-            new RuleOptionsRegistry(),
+            $registry,
             null,
-            [new TrespassingValidator()],
+            [['producer' => TrespassingValidator::producerRuleName(), 'create' => static fn(): TrespassingValidator => new TrespassingValidator()]],
         );
 
         self::expectException(LogicException::class);
@@ -156,7 +162,7 @@ final class StampRule implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule.';
     }

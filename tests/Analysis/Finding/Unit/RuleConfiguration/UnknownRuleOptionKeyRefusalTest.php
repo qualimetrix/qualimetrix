@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
@@ -27,6 +27,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Throwable;
 
 /**
@@ -49,7 +50,7 @@ use Throwable;
  * is written beside the spelling that must still work — and the working half
  * asserts the value arrived, never merely that nothing was thrown.
  */
-#[CoversClass(RuleOptionsFactory::class)]
+#[CoversClass(RuleOptionsBuild::class)]
 final class UnknownRuleOptionKeyRefusalTest extends TestCase
 {
     // -- depth 2: a key written inside a level slot ---------------------------
@@ -559,7 +560,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     {
         $registry = new RuleOptionsRegistry();
         $this->configure($registry, "  complexity.ccn:\n    suppress_paths: [{regex: 'src/Generated/.*'}]\n");
-        (new RuleOptionsFactory($registry))->create('complexity.ccn', ComplexityOptions::class);
+        (new ResolvedOptionsFixture($registry))->create('complexity.ccn', ComplexityOptions::class);
 
         self::assertTrue($registry->isPathExcluded('complexity.ccn', RelativePath::fromString('src/Generated/Table.php')));
         self::assertFalse($registry->isPathExcluded('complexity.ccn', RelativePath::fromString('src/Handwritten/Table.php')));
@@ -613,10 +614,10 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     public function itKeepsTheRetiredKeyRefusalAtDepthOneAndTheGenericOneInsideASlot(): void
     {
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions(['complexity.ccn' => ['excludePaths' => ['*']]]);
+        ResolvedOptionsFixture::file($registry, ['complexity.ccn' => ['excludePaths' => ['*']]]);
 
         $atDepthOne = $this->capture(
-            static fn() => (new RuleOptionsFactory($registry))->create('complexity.ccn', ComplexityOptions::class),
+            static fn() => (new ResolvedOptionsFixture($registry))->create('complexity.ccn', ComplexityOptions::class),
         );
 
         self::assertInstanceOf(ConfigurationRefusal::class, $atDepthOne);
@@ -659,12 +660,12 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
 
         foreach ($rules as $rule) {
             $registry = new RuleOptionsRegistry();
-            $registry->setConfigFileOptions([$rule->name => false]);
+            ResolvedOptionsFixture::file($registry, [$rule->name => false]);
 
             $options = null;
             $refusal = $this->capture(
                 static function () use ($registry, $rule, &$options): void {
-                    $options = (new RuleOptionsFactory($registry))->create($rule->name, $rule->optionsClass);
+                    $options = (new ResolvedOptionsFixture($registry))->create($rule->name, $rule->optionsClass);
                 },
             );
 
@@ -711,7 +712,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         $registry = new RuleOptionsRegistry();
         $this->configure($registry, $rulesBlock);
 
-        return (new RuleOptionsFactory($registry))->create($ruleName, $optionsClass);
+        return (new ResolvedOptionsFixture($registry))->create($ruleName, $optionsClass);
     }
 
     /**
@@ -744,7 +745,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
 
         /** @var array<string, mixed> $rules */
         $rules = $config['rules'] ?? [];
-        $registry->setConfigFileOptions($rules);
+        ResolvedOptionsFixture::file($registry, $rules);
     }
 
     private function capture(callable $act): ?Throwable

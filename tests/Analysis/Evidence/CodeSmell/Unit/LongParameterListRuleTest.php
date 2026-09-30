@@ -51,7 +51,7 @@ final class LongParameterListRuleTest extends TestCase
     {
         $rule = new LongParameterListRule(new LongParameterListOptions());
 
-        self::assertSame('Checks number of parameters per method', $rule->getDescription());
+        self::assertSame('Checks number of parameters per method', $rule::getDescription());
     }
 
     #[Test]
@@ -275,11 +275,10 @@ final class LongParameterListRuleTest extends TestCase
     }
 
     #[Test]
-    public function itOptionsFromEmptyArrayDisabled(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = LongParameterListOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new LongParameterListOptions(), LongParameterListOptions::fromArray([]));
+        self::assertFalse(LongParameterListOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     // -- VO Constructor Tests ------------------------------------------------

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -24,7 +25,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
@@ -34,14 +35,15 @@ use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithUnionType;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use stdClass;
 
-#[CoversClass(RuleOptionsFactory::class)]
+#[CoversClass(RuleOptionsBuild::class)]
 #[CoversClass(RuleOptionsRegistry::class)]
 final class RuleOptionsFactoryTest extends TestCase
 {
     private RuleOptionsRegistry $registry;
-    private RuleOptionsFactory $factory;
+    private ResolvedOptionsFixture $factory;
 
     /** @var array<string, mixed> the configuration file's `rules:` written so far */
     private array $configFileRules = [];
@@ -52,7 +54,7 @@ final class RuleOptionsFactoryTest extends TestCase
     protected function setUp(): void
     {
         $this->registry = new RuleOptionsRegistry();
-        $this->factory = new RuleOptionsFactory($this->registry);
+        $this->factory = new ResolvedOptionsFixture($this->registry);
     }
 
     #[Test]
@@ -626,11 +628,9 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        /** @var TestRuleOptions $options */
-        $options = $this->factory->create('', TestRuleOptions::class);
-
-        // Empty rule name is valid, should use its config
-        self::assertSame(5, $options->warningThreshold);
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Producer "" has no family: its name must start with a non-empty dot-separated segment, which is what `qmx rules` groups it under.');
+        $this->factory->create('', TestRuleOptions::class);
     }
 
     #[Test]
@@ -1147,9 +1147,9 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $provider = new RuleNamespaceExclusionProvider();
         $registry = new RuleOptionsRegistry($provider);
-        $factory = new RuleOptionsFactory($registry);
+        $factory = new ResolvedOptionsFixture($registry);
 
-        $registry->replace(self::configuration([
+        ResolvedOptionsFixture::configure($registry, self::configuration([
             'test.rule' => ['suppress_namespaces' => [['subtree' => 'App\\Tests']]],
         ]));
         $factory->create('test.rule', TestRuleOptions::class);
@@ -2223,7 +2223,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
     private function install(): void
     {
-        $this->registry->replace(self::configuration($this->configFileRules, $this->cliRules));
+        ResolvedOptionsFixture::configure($this->registry, self::configuration($this->configFileRules, $this->cliRules));
     }
 
     /**

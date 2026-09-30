@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Configuration says "off" in two spellings, and the rule must read both.
@@ -59,9 +59,9 @@ final class LevelActivityReadsBothDisablingSpellingsTest extends TestCase
     private static function levelsOfAGotoRuleConfiguredWith(array|false $configured): array
     {
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions($configured === [] ? [] : [GotoRule::NAME => $configured]);
+        ResolvedOptionsFixture::file($registry, $configured === [] ? [] : [GotoRule::NAME => $configured]);
 
-        $options = (new RuleOptionsFactory($registry))->create(GotoRule::NAME, GotoRule::getOptionsClass());
+        $options = (new ResolvedOptionsFixture($registry))->create(GotoRule::NAME, GotoRule::getOptionsClass());
 
         return (new GotoRule($options))->levelActivity()[GotoRule::NAME] ?? [];
     }

@@ -40,7 +40,7 @@ final class UnreachableCodeRuleTest extends TestCase
     {
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
-        self::assertSame('Detects unreachable code after terminal statements', $rule->getDescription());
+        self::assertSame('Detects unreachable code after terminal statements', $rule::getDescription());
     }
 
     #[Test]
@@ -213,11 +213,10 @@ final class UnreachableCodeRuleTest extends TestCase
     }
 
     #[Test]
-    public function itOptionsFromEmptyArrayDisabled(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = UnreachableCodeOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new UnreachableCodeOptions(), UnreachableCodeOptions::fromArray([]));
+        self::assertFalse(UnreachableCodeOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

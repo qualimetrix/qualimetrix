@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 final class RuleConfigurationIsolationTest extends TestCase
 {
@@ -18,7 +19,7 @@ final class RuleConfigurationIsolationTest extends TestCase
     public function itClearsEveryPerRunValueBeforeTheNextConfiguration(): void
     {
         $registry = new RuleOptionsRegistry();
-        $registry->replace(new FindingConfiguration(
+        ResolvedOptionsFixture::configure($registry, new FindingConfiguration(
             new RuleOptionsDocument(['size.loc' => ['warning' => 10]]),
             new FindingCliOverrides(['size.loc' => ['error' => 20]]),
             new RuleSelection(['size'], ['security']),

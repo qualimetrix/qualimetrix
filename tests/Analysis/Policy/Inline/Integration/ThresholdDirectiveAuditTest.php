@@ -31,6 +31,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Policy\Inline\Support\MultiRuleThresholdRuleExecution;
 use Qualimetrix\Tests\Analysis\Policy\Inline\Support\ScriptedThresholdRuleExecution;
 
@@ -522,7 +523,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         );
 
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection(new RuleSelection());
+        ResolvedOptionsFixture::selection($registry, new RuleSelection());
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
@@ -593,7 +594,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $baseline = $executor->execute($context);
 
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection(new RuleSelection());
+        ResolvedOptionsFixture::selection($registry, new RuleSelection());
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
@@ -647,7 +648,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $baseline = $executor->execute($context);
 
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection(new RuleSelection());
+        ResolvedOptionsFixture::selection($registry, new RuleSelection());
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
             new RuleSelector(new InMemoryRuleChannelRegistry()),
@@ -695,7 +696,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         ?RuleSelection $selection = null,
     ): array {
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection($selection ?? new RuleSelection());
+        ResolvedOptionsFixture::selection($registry, $selection ?? new RuleSelection());
 
         return self::auditWith($executor, $overrides, $registry);
     }

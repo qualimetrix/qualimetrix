@@ -41,10 +41,6 @@ final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareO
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 10, 15);
 
         return new self(

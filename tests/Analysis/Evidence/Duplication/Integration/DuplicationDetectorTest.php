@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
@@ -611,7 +612,7 @@ PHP;
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
         $ruleConfiguration = new RuleOptionsRegistry();
-        $ruleConfiguration->setConfigFileOptions([
+        ResolvedOptionsFixture::file($ruleConfiguration, [
             'duplication.clone' => [
                 'min_tokens' => $minTokens,
                 'min_lines' => $minLines,

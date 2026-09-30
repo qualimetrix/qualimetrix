@@ -53,10 +53,6 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             wocThreshold: (int) ($config['woc_threshold'] ?? $config['wocThreshold'] ?? 33),

@@ -521,7 +521,7 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule with no channelDeclarations() method, for the compiler pass "declares nothing" case.';
     }
@@ -580,7 +580,7 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule whose declared shape disagrees with its channel.';
     }
@@ -650,7 +650,7 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule half of a mismatched producer pair.';
     }
@@ -782,7 +782,7 @@ final class FixtureRuleWithoutAFamily implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule whose name has no non-empty first segment.';
     }
@@ -839,7 +839,7 @@ final class FixtureRuleJudgingAnUnknownMetric implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -907,7 +907,7 @@ final class FixtureRuleJudgingAnAggregate implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -975,7 +975,7 @@ final class FixtureOccurrenceRuleJudgingAMetric implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -1044,7 +1044,7 @@ final class FixtureRuleWithUndescribedSecondaryChannel implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule with an undescribed secondary channel.';
     }
@@ -1100,7 +1100,7 @@ final class FixtureRuleDescribingItsOwnChannel implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule describing its own channel twice.';
     }

@@ -45,7 +45,7 @@ final class MaintainabilityRuleTest extends TestCase
 
         self::assertSame(
             'Checks Maintainability Index (lower values indicate harder to maintain code)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -265,11 +265,10 @@ final class MaintainabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = MaintainabilityOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new MaintainabilityOptions(), MaintainabilityOptions::fromArray([]));
+        self::assertFalse(MaintainabilityOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

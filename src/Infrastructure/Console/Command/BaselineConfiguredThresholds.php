@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Throwable;
@@ -33,12 +33,9 @@ use Throwable;
  * `ChannelLevelRefusalTopologyTest` holds that boundary, and pins this class as
  * a reader that refuses nothing.
  *
- * **Why it lives here and not in `Baseline`.** `qmx.yaml`'s own architecture
- * section allows the `Baseline` layer to depend on `Core` and nothing else,
- * while resolving a rule's configured options means going through
- * {@see RuleOptionsFactory}, which is `Configuration`. The command is already
- * on the far side of that boundary, so it resolves the numbers and hands
- * {@see \Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService} data.
+ * The delivery adapter reads Finding's ready options snapshot and hands
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService} the
+ * configured boundaries without making Baseline depend on rule construction.
  *
  * **The warning boundary, not the error one.** It is the number at which a
  * channel starts reporting, which is the boundary a user compares a baseline
@@ -59,8 +56,8 @@ use Throwable;
  * `coupling.distance`, whose `maxDistanceWarning` was not on the list.
  *
  * **The value is what the object holds, and this class asks an object no
- * override has touched.** {@see RuleOptionsFactory} builds options from
- * configuration alone, so "configured" is a property of who is asking rather
+ * override has touched.** {@see RuleConfigurationInterface} exposes options built
+ * from configuration alone, so "configured" is a property of who is asking rather
  * than of the method; on a copy from `withOverride()` the same call reports the
  * overridden number.
  *
@@ -90,7 +87,7 @@ final readonly class BaselineConfiguredThresholds
 {
     public function __construct(
         private RuleRegistryInterface $rules,
-        private RuleOptionsFactory $optionsFactory,
+        private RuleConfigurationInterface $configuration,
     ) {}
 
     /**
@@ -109,10 +106,6 @@ final readonly class BaselineConfiguredThresholds
 
             $options = $this->optionsFor($ruleClass);
 
-            if ($options === null) {
-                continue;
-            }
-
             foreach ($declarations as $channelKey => $declaration) {
                 foreach ($declaration->levels as $level) {
                     $threshold = self::thresholdFor($options, $level);
@@ -130,17 +123,9 @@ final readonly class BaselineConfiguredThresholds
     /**
      * @param class-string<RuleDefinitionInterface> $ruleClass
      */
-    private function optionsFor(string $ruleClass): ?RuleOptionsInterface
+    private function optionsFor(string $ruleClass): RuleOptionsInterface
     {
-        try {
-            return $this->optionsFactory->create(RuleNameReader::read($ruleClass), $ruleClass::getOptionsClass());
-        } catch (Throwable) {
-            // A rule whose options cannot be built under the current
-            // configuration has no configured boundary to report. That is a
-            // gap in one line of `explain`'s output, not a reason to refuse
-            // to explain anything.
-            return null;
-        }
+        return $this->configuration->resolvedOptions()->for(RuleNameReader::read($ruleClass));
     }
 
     /**

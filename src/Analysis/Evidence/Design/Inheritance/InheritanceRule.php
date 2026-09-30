@@ -43,7 +43,7 @@ final class InheritanceRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)';
     }

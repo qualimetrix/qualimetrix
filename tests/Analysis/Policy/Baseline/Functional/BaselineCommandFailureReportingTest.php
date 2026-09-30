@@ -271,6 +271,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $ruleSelector,
             new FindingConfigurationResolver(),
             $staticChannels,
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );
 
         $errorStream = new ErrorStream();
@@ -308,6 +309,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new RuleSelector($staticChannels),
             new FindingConfigurationResolver(),
             $staticChannels,
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );
     }
 

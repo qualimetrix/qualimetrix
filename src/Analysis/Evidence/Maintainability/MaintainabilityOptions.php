@@ -39,10 +39,6 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 40.0, 20.0);
 
         return new self(

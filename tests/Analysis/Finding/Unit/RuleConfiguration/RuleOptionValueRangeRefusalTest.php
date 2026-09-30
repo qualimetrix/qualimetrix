@@ -24,10 +24,11 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Throwable;
 
 /**
@@ -42,7 +43,7 @@ use Throwable;
  * Each refusal sits beside the neighbouring value that must keep working, and
  * the working half asserts the value arrived rather than that nothing threw.
  */
-#[CoversClass(RuleOptionsFactory::class)]
+#[CoversClass(RuleOptionsBuild::class)]
 #[CoversClass(RuleOptionKeyRecognition::class)]
 final class RuleOptionValueRangeRefusalTest extends TestCase
 {
@@ -257,9 +258,9 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
     private function create(FindingConfiguration $configuration, string $ruleName, string $optionsClass): RuleOptionsInterface
     {
         $registry = new RuleOptionsRegistry();
-        $registry->replace($configuration);
+        ResolvedOptionsFixture::configure($registry, $configuration);
 
-        return (new RuleOptionsFactory($registry))->create($ruleName, $optionsClass);
+        return (new ResolvedOptionsFixture($registry))->create($ruleName, $optionsClass);
     }
 
     private function capture(callable $act): ?Throwable

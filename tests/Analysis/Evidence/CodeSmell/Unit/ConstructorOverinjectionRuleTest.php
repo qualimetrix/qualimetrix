@@ -41,7 +41,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
-        self::assertSame('Checks number of constructor parameters (dependencies)', $rule->getDescription());
+        self::assertSame('Checks number of constructor parameters (dependencies)', $rule::getDescription());
     }
 
     #[Test]
@@ -337,11 +337,10 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itOptionsFromEmptyArrayDisabled(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new ConstructorOverinjectionOptions(), ConstructorOverinjectionOptions::fromArray([]));
+        self::assertFalse(ConstructorOverinjectionOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo

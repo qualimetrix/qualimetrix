@@ -62,10 +62,6 @@ final readonly class GodClassOptions implements RuleOptionsInterface, ThresholdA
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 47),

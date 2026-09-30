@@ -12,8 +12,8 @@ use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
@@ -503,7 +503,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(BaselineConfiguredThresholds::class)
             ->setArguments([
                 new Reference(RuleRegistryInterface::class),
-                new Reference(RuleOptionsFactory::class),
+                new Reference(RuleConfigurationInterface::class),
             ]);
 
         // Every one of the five gets RefusalPresenter through a method call

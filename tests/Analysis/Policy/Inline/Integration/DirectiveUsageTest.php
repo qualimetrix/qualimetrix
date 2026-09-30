@@ -37,6 +37,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * What each authored suppression did, against the real channel universe.
@@ -128,7 +129,7 @@ final class DirectiveUsageTest extends TestCase
     public function itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff(): void
     {
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection(new RuleSelection(disabled: [self::CHANNEL]));
+        ResolvedOptionsFixture::selection($registry, new RuleSelection(disabled: [self::CHANNEL]));
 
         $verdicts = self::usage($registry)->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
 

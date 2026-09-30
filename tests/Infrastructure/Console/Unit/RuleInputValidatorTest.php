@@ -314,7 +314,7 @@ final class RuleInputValidatorTest extends TestCase
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $static = self::universe($rules);
         $selector = new RuleSelector($static);
-        $validator = new RuleInputValidator($rules, $selector, new FindingConfigurationResolver(), $static);
+        $validator = new RuleInputValidator($rules, $selector, new FindingConfigurationResolver(), $static, new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)));
         $disabled = ['health.complexity:class'];
 
         $snapshot = $validator->validate(
@@ -419,6 +419,7 @@ final class RuleInputValidatorTest extends TestCase
             new RuleSelector($static),
             new FindingConfigurationResolver(),
             $static,
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );
     }
 

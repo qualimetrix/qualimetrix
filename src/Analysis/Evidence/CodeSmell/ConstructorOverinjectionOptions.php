@@ -37,10 +37,6 @@ final readonly class ConstructorOverinjectionOptions implements RuleOptionsInter
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 8, 12);
 
         return new self(

@@ -35,12 +35,12 @@ interface RuleInterface extends RuleDefinitionInterface
     /**
      * Returns human-readable description.
      */
-    public function getDescription(): string;
+    public static function getDescription(): string;
 
     /**
      * Analyzes metrics and generates findings.
      *
-     * One instance serves the whole process and is asked more than once per
+     * One instance serves one configured invocation and is asked more than once per
      * run — once for the run itself, and once per authored threshold-override
      * group inside the directive audit — so it must carry nothing from one
      * call to the next: every property readonly and written only in the

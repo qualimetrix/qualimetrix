@@ -40,7 +40,7 @@ final class LcomRuleTest extends TestCase
 
         self::assertSame(
             'Checks Lack of Cohesion of Methods (high values indicate class should be split)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -247,11 +247,10 @@ final class LcomRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = LcomOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new LcomOptions(), LcomOptions::fromArray([]));
+        self::assertFalse(LcomOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

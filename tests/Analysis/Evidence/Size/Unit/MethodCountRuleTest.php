@@ -37,7 +37,7 @@ final class MethodCountRuleTest extends TestCase
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
-        self::assertSame('Checks number of methods per class', $rule->getDescription());
+        self::assertSame('Checks number of methods per class', $rule::getDescription());
     }
 
     #[Test]
@@ -237,11 +237,10 @@ final class MethodCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = MethodCountOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new MethodCountOptions(), MethodCountOptions::fromArray([]));
+        self::assertFalse(MethodCountOptions::fromArray(['enabled' => false])->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void

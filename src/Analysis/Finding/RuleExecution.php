@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding;
 
+use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
@@ -11,8 +12,8 @@ use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -41,10 +42,18 @@ use Traversable;
  */
 final class RuleExecution implements RuleExecutionInterface
 {
-    /** @var list<RuleInterface> */
+    /** @var list<array{metadata: RuleMetadata, create: Closure(): RuleInterface}> */
     private readonly array $allRules;
 
-    /** @var array<string, list<ConfigurationValidatorInterface>> producer rule name => its validators */
+    private ?ResolvedRuleOptions $snapshot = null;
+
+    /** @var array<int, RuleInterface> */
+    private array $materializedRules = [];
+
+    /** @var array<string, list<ConfigurationValidatorInterface>> */
+    private array $materializedValidators = [];
+
+    /** @var array<string, list<Closure(): ConfigurationValidatorInterface>> */
     private readonly array $validatorsByProducer;
 
     private readonly RuleSelector $ruleSelector;
@@ -55,9 +64,9 @@ final class RuleExecution implements RuleExecutionInterface
     private readonly array $classlessProducers;
 
     /**
-     * @param iterable<RuleInterface> $rules All registered rules
-     * @param iterable<ConfigurationValidatorInterface> $configurationValidators Every registered validator; each
-     *                                                                           runs in its producer rule's slot, see {@see execute()}
+     * @param iterable<array{metadata: RuleMetadata, create: Closure(): RuleInterface}> $rules Ordered deferred rules
+     * @param iterable<array{producer: string, create: Closure(): ConfigurationValidatorInterface}> $configurationValidators Every deferred validator; each
+     *                                                                                                                       runs in its producer rule's slot, see {@see execute()}
      * @param iterable<ProducerDeclaration> $classlessProducers Producers a capability owns without a rule
      *                                                          class of their own; they are part of every
      *                                                          "registered rule" answer and of none of the
@@ -85,6 +94,7 @@ final class RuleExecution implements RuleExecutionInterface
 
     public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
     {
+        $this->readySnapshot();
         $produced = [];
         $published = [];
         $profiler = $this->profiler;
@@ -103,7 +113,7 @@ final class RuleExecution implements RuleExecutionInterface
             $spanName = 'rule.' . $ruleName;
             $profiler->start($spanName, 'rules');
             $ruleFindings = $rule->analyze($context);
-            foreach ($this->validatorsByProducer[$ruleName] ?? [] as $validator) {
+            foreach ($this->validatorsFor($ruleName) as $validator) {
                 $ruleFindings = [...$ruleFindings, ...$this->validate($validator, $context)];
             }
             $profiler->stop($spanName);
@@ -162,7 +172,12 @@ final class RuleExecution implements RuleExecutionInterface
 
     public function levelActivity(): LevelActivity
     {
-        return new ConfiguredLevelActivity($this->allRules, $this->channelIdentity)->activity();
+        $this->readySnapshot();
+        $rules = [];
+        foreach (array_keys($this->allRules) as $index) {
+            $rules[] = $this->ruleAt($index);
+        }
+        return new ConfiguredLevelActivity($rules, $this->channelIdentity)->activity();
     }
 
     /**
@@ -274,16 +289,16 @@ final class RuleExecution implements RuleExecutionInterface
     }
 
     /**
-     * @param iterable<ConfigurationValidatorInterface> $validators
+     * @param iterable<array{producer: string, create: Closure(): ConfigurationValidatorInterface}> $validators
      *
-     * @return array<string, list<ConfigurationValidatorInterface>>
+     * @return array<string, list<Closure(): ConfigurationValidatorInterface>>
      */
     private static function groupByProducer(iterable $validators): array
     {
         $grouped = [];
 
         foreach ($validators as $validator) {
-            $grouped[$validator::producerRuleName()][] = $validator;
+            $grouped[$validator['producer']][] = $validator['create'];
         }
 
         return $grouped;
@@ -295,7 +310,7 @@ final class RuleExecution implements RuleExecutionInterface
     }
 
     /**
-     * Every producer this container knows, rule instances and classless
+     * Every producer this container knows, static rule metadata and classless
      * declarations alike, each carrying whether `$selection` leaves it enabled.
      *
      * @return list<RuleMetadata>
@@ -304,13 +319,14 @@ final class RuleExecution implements RuleExecutionInterface
     {
         $producers = [];
 
-        foreach ($this->allRules as $rule) {
+        foreach ($this->allRules as $lookup) {
+            $metadata = $lookup['metadata'];
             $producers[] = new RuleMetadata(
-                name: $rule->getName(),
-                optionsClass: $rule::getOptionsClass(),
-                description: $rule->getDescription(),
-                aliases: CliAliasReader::read($rule::class),
-                active: $this->isEnabled($rule->getName(), $selection),
+                name: $metadata->name,
+                optionsClass: $metadata->optionsClass,
+                description: $metadata->description,
+                aliases: $metadata->aliases,
+                active: $this->isEnabled($metadata->name, $selection),
             );
         }
 
@@ -371,11 +387,17 @@ final class RuleExecution implements RuleExecutionInterface
      */
     private function activeRuleInstances(RuleSelection $selection, ?string $restrictToProducer): array
     {
-        return array_values(array_filter(
-            $this->allRules,
-            fn(RuleInterface $rule): bool => $this->isEnabled($rule->getName(), $selection, $restrictToProducer)
-                || $this->hostsAnEnabledProducer($rule->getName(), $selection, $restrictToProducer),
-        ));
+        $snapshot = $this->readySnapshot();
+        $active = [];
+        foreach ($this->allRules as $index => $lookup) {
+            $name = $lookup['metadata']->name;
+            $ownEnabled = $this->isEnabled($name, $selection, $restrictToProducer)
+                && $snapshot->for($name)->isEnabled();
+            if ($ownEnabled || $this->hostsAnEnabledProducer($name, $selection, $restrictToProducer)) {
+                $active[] = $this->ruleAt($index);
+            }
+        }
+        return $active;
     }
 
     private function hostsAnEnabledProducer(
@@ -387,6 +409,7 @@ final class RuleExecution implements RuleExecutionInterface
             if (
                 $producer->hostRuleName === $hostRuleName
                 && $this->isEnabled($producer->name, $selection, $restrictToProducer)
+                && $this->readySnapshot()->for($producer->name)->isEnabled()
             ) {
                 return true;
             }
@@ -394,4 +417,34 @@ final class RuleExecution implements RuleExecutionInterface
 
         return false;
     }
+    private function readySnapshot(): ResolvedRuleOptions
+    {
+        $snapshot = $this->ruleOptionsRegistry->resolvedOptions();
+        if ($this->snapshot !== $snapshot) {
+            $this->materializedRules = [];
+            $this->materializedValidators = [];
+            $this->snapshot = $snapshot;
+        }
+        return $snapshot;
+    }
+
+    private function ruleAt(int $index): RuleInterface
+    {
+        $this->readySnapshot();
+        return $this->materializedRules[$index] ??= ($this->allRules[$index]['create'])();
+    }
+
+    /** @return list<ConfigurationValidatorInterface> */
+    private function validatorsFor(string $producer): array
+    {
+        $this->readySnapshot();
+        if (!isset($this->materializedValidators[$producer])) {
+            $this->materializedValidators[$producer] = [];
+            foreach ($this->validatorsByProducer[$producer] ?? [] as $create) {
+                $this->materializedValidators[$producer][] = $create();
+            }
+        }
+        return $this->materializedValidators[$producer];
+    }
+
 }

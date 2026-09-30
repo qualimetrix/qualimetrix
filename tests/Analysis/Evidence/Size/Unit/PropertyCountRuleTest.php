@@ -355,6 +355,13 @@ final class PropertyCountRuleTest extends TestCase
         ], $subjects);
     }
 
+    #[Test]
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
+    {
+        self::assertEquals(new PropertyCountOptions(), PropertyCountOptions::fromArray([]));
+        self::assertFalse(PropertyCountOptions::fromArray(['enabled' => false])->isEnabled());
+    }
+
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {
         $type = $symbolPath->getType();

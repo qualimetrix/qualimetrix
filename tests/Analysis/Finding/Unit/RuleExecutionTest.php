@@ -40,6 +40,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleExecution::class)]
 final class RuleExecutionTest extends TestCase
@@ -1146,7 +1147,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('computed.health', [$excludedFinding]);
 
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions([$channel => [
+        ResolvedOptionsFixture::file($registry, [$channel => [
             'suppress_namespaces' => [['subtree' => 'App\\Metrics']],
         ]]);
         $registry->configureNamespaceExclusions($channel, [$this->namespaceSubtree('App\\Metrics')]);
@@ -1182,7 +1183,7 @@ final class RuleExecutionTest extends TestCase
         );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
-        $registry->setConfigFileOptions(['computed.health' => [
+        ResolvedOptionsFixture::file($registry, ['computed.health' => [
             'suppress_namespace_channels' => [$channel => [['subtree' => 'App\\Metrics']]],
         ]]);
 
@@ -1222,7 +1223,7 @@ final class RuleExecutionTest extends TestCase
         ]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
-        $registry->setConfigFileOptions(['rule1' => ['suppress_paths' => [
+        ResolvedOptionsFixture::file($registry, ['rule1' => ['suppress_paths' => [
             ['subtree' => 'src/Excluded'],
             ['subtree' => 'src/Excluded/Deep'],
         ]]]);
@@ -1310,7 +1311,7 @@ final class RuleExecutionTest extends TestCase
     {
         $selection ??= new RuleSelection();
         $provider = new RuleOptionsRegistry();
-        $provider->configureSelection($selection);
+        ResolvedOptionsFixture::selection($provider, $selection);
 
         return $provider;
     }
@@ -1331,8 +1332,31 @@ final class RuleExecutionTest extends TestCase
             $registry->captureExcludedFindings();
         }
 
+        $lookups = array_map(ResolvedOptionsFixture::lookup(...), \is_array($rules) ? $rules : iterator_to_array($rules, false));
+        $metadata = array_column($lookups, 'metadata');
+        foreach ($classlessProducers as $producer) {
+            $metadata[] = new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer->name, $producer->optionsClass, $producer->description, $producer->aliases, false);
+        }
+        $manual = [];
+        foreach (array_unique([...array_column($metadata, 'name'), ...array_keys($registry->configFileOptions())]) as $producerName) {
+            $manual[$producerName] = [$registry->namespaceExclusions($producerName), $registry->namespaceChannelExclusions($producerName), $registry->pathExclusions($producerName)];
+        }
+        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
+            ->withRuleOptions($registry->configFileOptions())->withCliOverrides($registry->cliOptions())->withSelection($registry->selection());
+        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, $metadata)));
+        foreach ($manual as $producer => [$namespaces, $channels, $paths]) {
+            if ($namespaces !== []) {
+                $registry->configureNamespaceExclusions($producer, $namespaces);
+            }
+            if ($channels !== []) {
+                $registry->configureNamespaceChannelExclusions($producer, $channels);
+            }
+            if ($paths !== []) {
+                $registry->configurePathExclusions($producer, $paths);
+            }
+        }
         return new RuleExecution(
-            $rules,
+            $lookups,
             self::createStub(ProfilerInterface::class),
             $registry,
             $ruleSelector,
@@ -1362,9 +1386,9 @@ final class RuleExecutionTest extends TestCase
             {
                 return $this->name;
             }
-            public function getDescription(): string
+            public static function getDescription(): string
             {
-                return $this->name;
+                return 'Fixture rule';
             }
             public static function shape(): ChannelShape
             {
@@ -1626,7 +1650,7 @@ final readonly class RuleMetadataFixtureRule implements RuleInterface
     {
         return 'fixture.metadata';
     }
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Metadata fixture';
     }

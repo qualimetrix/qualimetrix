@@ -69,7 +69,7 @@ final class DataClassRuleTest extends TestCase
 
         self::assertSame(
             'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -484,11 +484,10 @@ final class DataClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = DataClassOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new DataClassOptions(), DataClassOptions::fromArray([]));
+        self::assertFalse(DataClassOptions::fromArray(['enabled' => false])->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void

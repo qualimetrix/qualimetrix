@@ -35,10 +35,6 @@ final readonly class UnreachableCodeOptions implements RuleOptionsInterface, Thr
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 1, 2);
 
         return new self(

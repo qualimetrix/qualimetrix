@@ -15,12 +15,12 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 
@@ -70,12 +70,12 @@ final class RuleOptionAliasRangeRefusalTest extends TestCase
         $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
 
         $registry = new RuleOptionsRegistry();
-        $registry->replace(new FindingConfiguration(
+        ResolvedOptionsFixture::configure($registry, new FindingConfiguration(
             new RuleOptionsDocument(),
             new FindingCliOverrides($parser->parseRuleOptions($input)),
             new RuleSelection(),
         ));
 
-        return (new RuleOptionsFactory($registry))->create(CircularDependencyRule::NAME, CircularDependencyOptions::class);
+        return (new ResolvedOptionsFixture($registry))->create(CircularDependencyRule::NAME, CircularDependencyOptions::class);
     }
 }

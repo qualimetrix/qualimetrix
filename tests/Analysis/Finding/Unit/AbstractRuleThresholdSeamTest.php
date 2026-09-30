@@ -61,7 +61,7 @@ final class SubjectControlHarness extends AbstractRule
         return 'test.subject-control';
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Test harness';
     }

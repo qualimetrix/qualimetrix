@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -93,8 +94,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationReso
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -219,8 +219,8 @@ final class ContainerFactoryTest extends TestCase
         $pipelineLogger = (new ReflectionProperty(AnalysisPipeline::class, 'logger'))->getValue($pipeline);
         self::assertInstanceOf(DelegatingLogger::class, $evaluatorLogger);
         self::assertSame($pipelineLogger, $evaluatorLogger);
-        $ruleOptionsFactory = $container->get(RuleOptionsFactory::class);
-        self::assertInstanceOf(RuleOptionsFactory::class, $ruleOptionsFactory);
+        $ruleOptionsFactory = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $ruleOptionsFactory);
 
         $annotationSuppression = $container->get(AnnotationSuppressionInterface::class);
         $gitScopeQuery = $container->get(GitScopeQueryInterface::class);
@@ -367,11 +367,12 @@ final class ContainerFactoryTest extends TestCase
 
         $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
         self::assertInstanceOf(RuleConfigurationInterface::class, $ruleConfiguration);
-        $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
-        $ruleConfiguration->configureCli(CodeDuplicationRule::NAME, [
-            'min_lines' => 2,
-            'min_tokens' => 10,
-        ]);
+        $finding = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
+            ->withSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]))
+            ->withCliOverrides([CodeDuplicationRule::NAME => ['min_lines' => 2, 'min_tokens' => 10]]);
+        $builder = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $builder);
+        $ruleConfiguration->replace($finding->withResolvedOptions($builder->build($finding)));
 
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
         $source = <<<'PHP'
@@ -406,7 +407,7 @@ PHP;
         $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
 
-        $ruleConfiguration->configureSelection(new RuleSelection(disabled: [CodeDuplicationRule::NAME]));
+        $ruleConfiguration->replace($finding->withResolvedOptions($builder->build($finding))->withSelection(new RuleSelection(disabled: [CodeDuplicationRule::NAME])));
         $selection = $ruleConfiguration->selection();
         $fileSetInspection->inspect(
             $duplicateFiles,
@@ -418,7 +419,7 @@ PHP;
 
         self::assertSame([], $resultProvider->all());
 
-        $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
+        $ruleConfiguration->replace($finding->withResolvedOptions($builder->build($finding))->withSelection(new RuleSelection(only: [CodeDuplicationRule::NAME])));
         $selection = $ruleConfiguration->selection();
         $fileSetInspection->inspect(
             $duplicateFiles,
@@ -617,7 +618,11 @@ PHP;
         $rules = (new ReflectionProperty(RuleExecution::class, 'allRules'))->getValue($execution);
 
         self::assertNotSame([], $rules, 'RuleCompilerPass injected no rules at all.');
-        self::assertContainsOnlyInstancesOf(RuleInterface::class, $rules);
+        foreach ($rules as $lookup) {
+            self::assertIsArray($lookup);
+            self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleMetadata::class, $lookup['metadata']);
+            self::assertInstanceOf(Closure::class, $lookup['create']);
+        }
     }
 
     /**
@@ -682,10 +687,11 @@ PHP;
             (new ReflectionProperty($ruleExecution, 'ruleOptionsRegistry'))->getValue($ruleExecution),
         );
 
-        $ruleOptionsRegistry->configureCli('cyclomatic-complexity', [
-            'warningThreshold' => 20,
-            'errorThreshold' => 40,
-        ]);
+        $finding = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
+            ->withCliOverrides(['complexity.ccn' => ['callable.warning' => 20, 'callable.error' => 40]]);
+        $builder = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $builder);
+        $ruleOptionsRegistry->replace($finding->withResolvedOptions($builder->build($finding)));
 
         // Container should still work after configuration
         self::assertTrue($container->isCompiled());

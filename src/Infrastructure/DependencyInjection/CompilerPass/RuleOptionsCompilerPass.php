@@ -8,7 +8,7 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -21,7 +21,7 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * For each tagged Rule, this pass:
  * 1. Calls Rule::getOptionsClass() to get the Options class
- * 2. Registers producer-specific Options with RuleOptionsFactory::create() as factory
+ * 2. Registers producer-specific Options with RuleOptionsRegistry::optionsFor() as factory
  * 3. Binds the Options to the Rule via setArgument('$options', ...)
  *
  * This allows Rules to be auto-registered via registerClasses() without
@@ -35,14 +35,14 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
 
     public static function consumerServiceIds(): array
     {
-        return [RuleOptionsFactory::class];
+        return [RuleOptionsRegistry::class];
     }
 
     public function process(ContainerBuilder $container): void
     {
         // hasDefinition(), not has(): the check ConsumerRegistrationCompilerPass
         // makes on the product container must be this very question.
-        if (!$container->hasDefinition(RuleOptionsFactory::class)) {
+        if (!$container->hasDefinition(RuleOptionsRegistry::class)) {
             return;
         }
 
@@ -75,8 +75,9 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
 
             if (!$container->hasDefinition($optionsServiceId)) {
                 $container->register($optionsServiceId, $optionsClass)
-                    ->setFactory([new Reference(RuleOptionsFactory::class), 'create'])
-                    ->setArguments([$ruleName, $optionsClass]);
+                    ->setFactory([new Reference(RuleOptionsRegistry::class), 'optionsFor'])
+                    ->setArguments([$ruleName, $optionsClass])
+                    ->setShared(false);
                 // Note: Options are NOT lazy - they're simple value objects
             }
 

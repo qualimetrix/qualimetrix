@@ -23,7 +23,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -31,6 +30,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CboRule::class)]
 #[CoversClass(CboOptions::class)]
@@ -53,7 +53,7 @@ final class CboRuleTest extends TestCase
 
         self::assertSame(
             'Checks CBO (Coupling Between Objects) at class and namespace levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -1052,8 +1052,8 @@ final class CboRuleTest extends TestCase
     public function itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutRefusingTheKey(): void
     {
         $registry = new RuleOptionsRegistry();
-        $factory = new RuleOptionsFactory($registry);
-        $registry->setConfigFileOptions([
+        $factory = new ResolvedOptionsFixture($registry);
+        ResolvedOptionsFixture::file($registry, [
             'coupling.cbo' => [
                 'scope' => 'application',
                 'class' => ['warning' => 5, 'error' => 10],

@@ -37,9 +37,10 @@ final class TypeCoverageOptionsTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOnAnEmptyConfig(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertFalse(TypeCoverageOptions::fromArray([])->isEnabled());
+        self::assertEquals(new TypeCoverageOptions(), TypeCoverageOptions::fromArray([]));
+        self::assertFalse(TypeCoverageOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

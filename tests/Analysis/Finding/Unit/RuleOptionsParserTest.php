@@ -184,32 +184,6 @@ final class RuleOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function itParsesDisabledRules(): void
-    {
-        $result = $this->parser->parseDisabledRules([
-            'cyclomatic-complexity',
-            'NAMESPACE-SIZE',
-            '  some-rule  ',
-        ]);
-
-        self::assertSame([
-            'cyclomatic-complexity',
-            'namespace-size',
-            'some-rule',
-        ], $result);
-    }
-
-    #[Test]
-    public function itParsesOnlyRules(): void
-    {
-        $result = $this->parser->parseOnlyRules([
-            'cyclomatic-complexity',
-        ]);
-
-        self::assertSame(['cyclomatic-complexity'], $result);
-    }
-
-    #[Test]
     public function itHandlesParserWithoutAliases(): void
     {
         $parser = new RuleOptionsParser();
@@ -238,38 +212,6 @@ final class RuleOptionsParserTest extends TestCase
         $parser = new RuleOptionsParser();
 
         self::assertSame([], $parser->getAliasNames());
-    }
-
-    #[Test]
-    public function itParsesDisabledRulesWithDotNotation(): void
-    {
-        $result = $this->parser->parseDisabledRules([
-            'complexity',
-            'complexity.class',
-            'complexity.method',
-            'size.namespace',
-        ]);
-
-        self::assertSame([
-            'complexity',
-            'complexity.class',
-            'complexity.method',
-            'size.namespace',
-        ], $result);
-    }
-
-    #[Test]
-    public function itParsesOnlyRulesWithDotNotation(): void
-    {
-        $result = $this->parser->parseOnlyRules([
-            'complexity.method',
-            'size.namespace',
-        ]);
-
-        self::assertSame([
-            'complexity.method',
-            'size.namespace',
-        ], $result);
     }
 
     /**

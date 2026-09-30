@@ -40,7 +40,7 @@ final class NocRuleTest extends TestCase
 
         self::assertSame(
             'Checks Number of Children (many direct subclasses indicate wide impact)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -256,11 +256,10 @@ final class NocRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = NocOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new NocOptions(), NocOptions::fromArray([]));
+        self::assertFalse(NocOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

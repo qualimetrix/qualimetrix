@@ -40,10 +40,6 @@ final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareO
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 50, 80);
 
         return new self(

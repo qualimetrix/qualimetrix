@@ -64,7 +64,7 @@ abstract class AbstractRule implements RuleInterface
 
     abstract public function getName(): string;
 
-    abstract public function getDescription(): string;
+    abstract public static function getDescription(): string;
 
     /**
      * The default answer, and the only one 44 of the 45 registered rule

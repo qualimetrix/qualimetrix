@@ -38,10 +38,6 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 0.02, 0.05);
 
         return new self(

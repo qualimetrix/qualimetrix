@@ -33,10 +33,6 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface, Thres
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 20);
 
         return new self(

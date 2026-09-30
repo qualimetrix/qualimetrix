@@ -39,7 +39,7 @@ final class ClassRankRuleTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        self::assertNotEmpty($rule->getDescription());
+        self::assertNotEmpty($rule::getDescription());
     }
 
     #[Test]
@@ -499,11 +499,10 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesTheRuleWhenConstructedFromAnEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = ClassRankOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new ClassRankOptions(), ClassRankOptions::fromArray([]));
+        self::assertFalse(ClassRankOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

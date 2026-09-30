@@ -34,6 +34,7 @@ use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleProducerPreparation::class)]
 final class RuleProducerPreparationTest extends TestCase
@@ -351,8 +352,8 @@ final class RuleProducerPreparationTest extends TestCase
     ): RuleProducerPreparation {
         $selector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection($selection ?? new RuleSelection());
-        $registry->setConfigFileOptions($ruleOptions);
+        ResolvedOptionsFixture::selection($registry, $selection ?? new RuleSelection());
+        ResolvedOptionsFixture::file($registry, $ruleOptions);
 
         // One gate, handed to both collaborators, exactly as the container
         // composes them.

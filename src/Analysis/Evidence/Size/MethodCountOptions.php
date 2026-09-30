@@ -37,10 +37,6 @@ final readonly class MethodCountOptions implements RuleOptionsInterface, Thresho
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 20, 30);
 
         return new self(

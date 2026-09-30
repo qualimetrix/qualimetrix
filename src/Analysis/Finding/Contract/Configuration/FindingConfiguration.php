@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Configuration;
 
+use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 
@@ -13,7 +14,13 @@ final readonly class FindingConfiguration
         public RuleOptionsDocument $ruleOptions,
         public FindingCliOverrides $cliOverrides,
         public RuleSelection $selection,
+        public ?ResolvedRuleOptions $resolvedOptions = null,
     ) {}
+
+    public function withResolvedOptions(ResolvedRuleOptions $options): self
+    {
+        return new self($this->ruleOptions, $this->cliOverrides, $this->selection, $options);
+    }
 
     /** No rule options, no command-line overrides, every rule selected. */
     public static function none(): self
@@ -35,6 +42,6 @@ final readonly class FindingConfiguration
 
     public function withSelection(RuleSelection $selection): self
     {
-        return new self($this->ruleOptions, $this->cliOverrides, $selection);
+        return new self($this->ruleOptions, $this->cliOverrides, $selection, $this->resolvedOptions);
     }
 }

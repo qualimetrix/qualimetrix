@@ -39,7 +39,7 @@ final class InheritanceRuleTest extends TestCase
 
         self::assertSame(
             'Checks Depth of Inheritance Tree (deep hierarchies increase complexity)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -207,11 +207,10 @@ final class InheritanceRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = InheritanceOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new InheritanceOptions(), InheritanceOptions::fromArray([]));
+        self::assertFalse(InheritanceOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

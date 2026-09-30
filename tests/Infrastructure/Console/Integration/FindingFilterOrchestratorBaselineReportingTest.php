@@ -339,11 +339,13 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
      */
     private static function silentSuppressionAudit(): UnboundSuppressionAudit
     {
-        return new UnboundSuppressionAudit(
-            new UnboundSuppressionOptions(enabled: false),
-            self::createStub(RuleExecutionInterface::class),
-            self::createStub(RuleConfigurationInterface::class),
+        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions([\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => ['enabled' => false]]),
+            [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
         );
+        $configuration->method('resolvedOptions')->willReturn($snapshot);
+        return new UnboundSuppressionAudit(self::createStub(RuleExecutionInterface::class), $configuration);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput

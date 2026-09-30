@@ -37,7 +37,7 @@ final class ClassCountRuleTest extends TestCase
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
-        self::assertSame('Checks number of classes per namespace', $rule->getDescription());
+        self::assertSame('Checks number of classes per namespace', $rule::getDescription());
     }
 
     #[Test]
@@ -302,11 +302,10 @@ final class ClassCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = ClassCountOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new ClassCountOptions(), ClassCountOptions::fromArray([]));
+        self::assertFalse(ClassCountOptions::fromArray(['enabled' => false])->isEnabled());
     }
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {

@@ -14,10 +14,11 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Regression test: composite (multi-word) rule option names — `vo-warning` /
@@ -48,7 +49,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
  * now a refusal, so `create()` returning at all is what says the spelling was
  * recognised, and {@see itRefusesAGenuinelyUnknownOption} holds the other half.
  */
-#[CoversClass(RuleOptionsFactory::class)]
+#[CoversClass(RuleOptionsBuild::class)]
 #[CoversClass(RuleOptionsParser::class)]
 #[CoversClass(LongParameterListOptions::class)]
 #[CoversClass(TypeCoverageOptions::class)]
@@ -57,14 +58,14 @@ final class RuleOptionKeyNormalizationTest extends TestCase
 {
     private RuleOptionsRegistry $registry;
 
-    private RuleOptionsFactory $factory;
+    private ResolvedOptionsFixture $factory;
 
     private RuleOptionsParser $ruleOptionsParser;
 
     protected function setUp(): void
     {
         $this->registry = new RuleOptionsRegistry();
-        $this->factory = new RuleOptionsFactory($this->registry);
+        $this->factory = new ResolvedOptionsFixture($this->registry);
         $this->ruleOptionsParser = (new RuleOptionsParserFactory())->createFromClasses([
             LongParameterListRule::class,
             ParamTypeCoverageRule::class,
@@ -77,7 +78,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesVoErrorViaConfigFileKebabKey(): void
     {
-        $this->registry->setConfigFileOptions([
+        ResolvedOptionsFixture::file($this->registry, [
             'code-smell.long-parameter-list' => ['vo-error' => 3],
         ]);
 
@@ -119,7 +120,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
         $parsed = $this->ruleOptionsParser->parseShortAlias('long-parameter-list-vo-error', 3);
         self::assertNotNull($parsed);
 
-        $this->registry->setCliOptions($parsed['rule'], [$parsed['option'] => $parsed['value']]);
+        ResolvedOptionsFixture::cli($this->registry, $parsed['rule'], [$parsed['option'] => $parsed['value']]);
 
         /** @var LongParameterListOptions $options */
         $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
@@ -137,7 +138,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itRefusesAGenuinelyUnknownOption(): void
     {
-        $this->registry->setConfigFileOptions([
+        ResolvedOptionsFixture::file($this->registry, [
             'code-smell.long-parameter-list' => ['not_a_real_option' => 3],
         ]);
 
@@ -176,7 +177,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
         $parsed = $this->ruleOptionsParser->parseShortAlias('param-type-coverage-error', 90.0);
         self::assertNotNull($parsed);
 
-        $this->registry->setCliOptions($parsed['rule'], [$parsed['option'] => $parsed['value']]);
+        ResolvedOptionsFixture::cli($this->registry, $parsed['rule'], [$parsed['option'] => $parsed['value']]);
 
         /** @var TypeCoverageOptions $options */
         $options = $this->factory->create('design.type-coverage.param', TypeCoverageOptions::class);
@@ -210,7 +211,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     private function applyCliOptions(array $cliOptionsByRule): void
     {
         foreach ($cliOptionsByRule as $ruleName => $options) {
-            $this->registry->setCliOptions($ruleName, $options);
+            ResolvedOptionsFixture::cli($this->registry, $ruleName, $options);
         }
     }
 }

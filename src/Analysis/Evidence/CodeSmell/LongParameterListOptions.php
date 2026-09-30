@@ -54,10 +54,6 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 4, 6);
         $voThresholds = ThresholdParser::parse(
             $config,

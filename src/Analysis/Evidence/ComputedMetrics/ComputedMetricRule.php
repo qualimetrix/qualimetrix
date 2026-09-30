@@ -52,7 +52,7 @@ final class ComputedMetricRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return ComputedMetricChannelFamily::descriptionOf(self::NAME);
     }

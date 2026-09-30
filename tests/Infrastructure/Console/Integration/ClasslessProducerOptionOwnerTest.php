@@ -339,6 +339,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
             new RuleSelector($universe),
             new FindingConfigurationResolver(),
             $universe,
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );
     }
 

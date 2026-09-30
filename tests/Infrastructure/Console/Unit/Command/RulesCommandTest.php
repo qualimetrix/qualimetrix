@@ -316,15 +316,9 @@ final class RulesCommandTest extends TestCase
         self::assertStringNotContainsString('judges', $tester->getDisplay());
     }
 
-    private function createRuleMock(
-        string $name,
-        string $description,
-    ): RuleInterface {
-        $rule = self::createStub(RuleInterface::class);
-        $rule->method('getName')->willReturn($name);
-        $rule->method('getDescription')->willReturn($description);
-
-        return $rule;
+    private function createRuleMock(string $name, string $description): RuleMetadata
+    {
+        return new RuleMetadata($name, StubRuleOptions::class, $description, [], true);
     }
 
     /**
@@ -390,17 +384,17 @@ final class RulesCommandTest extends TestCase
      * A rule absent from `$judged` produces no channel at all; a channel
      * mapped to an empty list is declared, produced, and judges no metric.
      *
-     * @param list<RuleInterface> $rules
+     * @param list<RuleInterface|RuleMetadata> $rules
      * @param list<ComputedMetricDefinition> $definitions
      * @param array<string, array<string, list<string>>> $judged rule name => channel code => judged metric keys
      */
     private function createCommand(array $rules, array $judged = [], ?RuleSelection $selection = null, array $definitions = []): RulesCommand
     {
         $metadata = array_map(
-            static fn(RuleInterface $rule): RuleMetadata => new RuleMetadata(
+            static fn(RuleInterface|RuleMetadata $rule): RuleMetadata => $rule instanceof RuleMetadata ? $rule : new RuleMetadata(
                 name: $rule->getName(),
                 optionsClass: StubRuleOptions::class,
-                description: $rule->getDescription(),
+                description: $rule::getDescription(),
                 aliases: CliAliasReader::read($rule::class),
                 active: true,
             ),
@@ -501,7 +495,7 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
         return 'complexity.ccn';
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Cyclomatic complexity';
     }

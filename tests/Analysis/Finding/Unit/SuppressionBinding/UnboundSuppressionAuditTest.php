@@ -323,6 +323,30 @@ final class UnboundSuppressionAuditTest extends TestCase
         self::assertStringNotContainsString('glob character', implode(' ', $recommendations));
     }
 
+    #[Test]
+    public function itReadsEachInvocationSnapshotFromTheSameAuditInstance(): void
+    {
+        $registry = new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry();
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('publishable')->willReturnArgument(0);
+        $audit = new UnboundSuppressionAudit($execution, $registry);
+        $producer = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME;
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer, UnboundSuppressionOptions::class, '', [], false)];
+        foreach ([true, false, true] as $enabled) {
+            $registry->resetRuntimeState();
+            $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions([$producer => ['enabled' => $enabled]]);
+            $registry->replace($configuration->withResolvedOptions(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $metadata)));
+            $findings = $audit->findings(
+                [$this->path(SelectorKind::Subtree, 'src/Gone')],
+                [],
+                [RelativePath::fromString('src/Service.php')],
+                null,
+                $this->scope(),
+            );
+            self::assertCount($enabled ? 1 : 0, $findings);
+        }
+    }
+
     /**
      * @param list<Finding> $findings
      *
@@ -366,8 +390,12 @@ final class UnboundSuppressionAuditTest extends TestCase
             static fn(string $ruleName): array => $channelLedger[$ruleName] ?? [],
         );
 
+        $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions([\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => ['enabled' => $enabled]]),
+            [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
+        );
+        $configuration->method('resolvedOptions')->willReturn($snapshot);
         return new UnboundSuppressionAudit(
-            new UnboundSuppressionOptions($enabled),
             $execution,
             $configuration,
         );

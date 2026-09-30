@@ -94,7 +94,7 @@ final class LayerViolationRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects dependencies between layers that are not explicitly allowed by the architecture policy.';
     }

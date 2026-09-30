@@ -44,10 +44,6 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 3, 5);
 
         $excludeMethods = null;

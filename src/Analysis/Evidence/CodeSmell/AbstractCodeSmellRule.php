@@ -61,7 +61,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
         return static::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return static::DESCRIPTION;
     }

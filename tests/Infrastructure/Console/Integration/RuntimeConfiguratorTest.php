@@ -154,6 +154,7 @@ final class RuntimeConfiguratorTest extends TestCase
             $ruleSelector,
             new FindingConfigurationResolver(),
             $snapshotFactoryOverride ?? $staticChannels,
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );
         $analysis = new AnalysisRuntimeConfigurator(
             $this->rules,
@@ -608,7 +609,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         $this->configurator->resetRunState();
 
         $document = $this->customDocument();
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, AbsolutePath::fromString($this->projectRoot)), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function configure(
@@ -617,7 +618,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         ArrayInput $input,
         BufferedOutput $output,
     ): void {
-        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([])), $input, $output);
+        $this->configurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($document), (new CacheConfigurationResolver())->resolve($document, $projectRoot), (new ParallelConfigurationResolver())->resolve($document)), $this->findingConfigurationFor($document), $input, $output);
     }
 
     private function customDocument(): ConfigurationDocument
@@ -657,6 +658,13 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
+    }
+
+    private function findingConfigurationFor(ConfigurationDocument $document): \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration
+    {
+        $configuration = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([]));
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
+        return $configuration->withResolvedOptions(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $metadata));
     }
 
 }

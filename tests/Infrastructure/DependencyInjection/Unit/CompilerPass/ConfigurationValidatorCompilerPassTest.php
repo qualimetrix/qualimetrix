@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use stdClass;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -46,11 +47,10 @@ final class ConfigurationValidatorCompilerPassTest extends TestCase
             ->getDefinition('Qualimetrix\\Analysis\\Finding\\RuleExecution')
             ->getArgument('$configurationValidators');
         self::assertIsArray($executorArgument);
-        self::assertContainsOnlyInstancesOf(Reference::class, $executorArgument);
-        self::assertSame(
-            ['validator.arriving'],
-            array_map(static fn(Reference $reference): string => (string) $reference, $executorArgument),
-        );
+        self::assertEquals([
+            ['producer' => 'test.rule', 'create' => new ServiceClosureArgument(new Reference('validator.arriving'))],
+        ], $executorArgument);
+        self::assertFalse($container->getDefinition('validator.arriving')->isShared());
 
         self::assertSame(
             [ArrivingValidator::class],

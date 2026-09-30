@@ -37,10 +37,6 @@ final readonly class ClassCountOptions implements RuleOptionsInterface, Threshol
      */
     public static function fromArray(array $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 25);
 
         return new self(

@@ -8,12 +8,11 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -28,9 +27,9 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(RuleConfigurationInterface::class, RuleOptionsRegistry::class)
             ->setPublic(true);
 
-        $container->register(RuleOptionsFactory::class)
+        $container->register(RuleOptionsBuild::class)
             ->setArguments([
-                new Reference(RuleOptionsRegistry::class),
+                new Reference(RuleExecutionInterface::class),
             ])
             ->setPublic(true);
 
@@ -59,19 +58,12 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
      * a pattern over this namespace would silently enrol the next class added
      * to it.
      *
-     * The audit answers to the rule's **own** Options service, derived the way
-     * {@see RuleOptionsCompilerPass} derives it when it registers that service
-     * later in the build, so one setting is read in one place. It is lazy for
-     * the reason its discovery sibling is: constructed eagerly, together with
-     * the console command that holds its consumer, it would capture the
-     * options as they stood before the runtime configuration applied
-     * `rules.<name>.enabled` or `--rule-opt`. Its first call is after the run.
+     * The shared audit reads invocation options through the live registry.
      */
     private function registerUnboundSuppressionProducer(ContainerBuilder $container): void
     {
         $container->register(self::UNBOUND_SUPPRESSION_AUDIT_CLASS, self::UNBOUND_SUPPRESSION_AUDIT_CLASS)
             ->setArguments([
-                new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(UnboundSuppressionRule::class)),
                 new Reference(RuleExecutionInterface::class),
                 new Reference(RuleOptionsRegistry::class),
             ])

@@ -41,7 +41,7 @@ final class WmcRuleTest extends TestCase
 
         self::assertSame(
             'Checks Weighted Methods per Class (sum of method complexities)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -412,11 +412,10 @@ final class WmcRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = WmcOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new WmcOptions(), WmcOptions::fromArray([]));
+        self::assertFalse(WmcOptions::fromArray(['enabled' => false])->isEnabled());
     }
 
     #[Test]

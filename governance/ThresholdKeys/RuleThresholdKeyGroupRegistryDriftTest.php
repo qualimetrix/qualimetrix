@@ -8,11 +8,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry;
 use ReflectionClass;
 use ReflectionClassConstant;
@@ -57,13 +59,13 @@ use RuntimeException;
  *   ({@see itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite}).
  * - **Key-name accuracy**: every individual key string declared in every
  *   group (including legacy aliases) is exercised through the REAL
- *   {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}, config-file
+ *   {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild}, config-file
  *   channel, with a differential probe — a baseline run and a run with only
  *   that key set to a sentinel must produce different results
  *   ({@see itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance}). Going
  *   through the factory (not calling `Options::fromArray()` directly)
  *   matters: a top-level rule config key is snake/kebab-case-normalized to
- *   camelCase by `RuleOptionsFactory::normalizeKeys()` before it reaches
+ *   camelCase by `RuleOptionsBuild::normalizeKeys()` before it reaches
  *   `fromArray()` (so a registry entry may name either the call site's
  *   primary spelling or one of its camelCase legacy aliases — both are
  *   real, reachable spellings), while nested dict values are NOT
@@ -215,16 +217,14 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         $baselineConfig = self::wrapAtPath($path, ['enabled' => true]);
         $probeConfig = self::wrapAtPath($path, ['enabled' => true, $key => self::SENTINEL]);
 
-        // Goes through the real RuleOptionsFactory (config-file channel), not
+        // Goes through the real RuleOptionsBuild (config-file channel), not
         // Options::fromArray() directly — see this class's docblock for why
         // that matters for top-level (non-normalized-elsewhere) keys.
-        $baselineRegistry = new RuleOptionsRegistry();
-        $baselineRegistry->setConfigFileOptions([$ruleName => $baselineConfig]);
-        $baseline = (new RuleOptionsFactory($baselineRegistry))->create($ruleName, $optionsClass);
-
-        $probeRegistry = new RuleOptionsRegistry();
-        $probeRegistry->setConfigFileOptions([$ruleName => $probeConfig]);
-        $probe = (new RuleOptionsFactory($probeRegistry))->create($ruleName, $optionsClass);
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('allRules')->willReturn([new RuleMetadata($ruleName, $optionsClass, '', [], false)]);
+        $builder = new RuleOptionsBuild($execution);
+        $baseline = $builder->build(FindingConfiguration::none()->withRuleOptions([$ruleName => $baselineConfig]))->for($ruleName);
+        $probe = $builder->build(FindingConfiguration::none()->withRuleOptions([$ruleName => $probeConfig]))->for($ruleName);
 
         $baselineTargets = self::inspectionTargets($baseline, $path, $isHierarchical);
         $probeTargets = self::inspectionTargets($probe, $path, $isHierarchical);

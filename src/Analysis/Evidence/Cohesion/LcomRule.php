@@ -50,7 +50,7 @@ final class LcomRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
     }
