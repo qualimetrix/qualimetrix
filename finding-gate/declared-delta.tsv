@@ -18,6 +18,7 @@ case:complexity|check:output:file	declared-delta/case-complexity-check-output-fi
 case:complexity|format:json	declared-delta/case-complexity-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:complexity|format:metrics	declared-delta/case-complexity-format-metrics.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:complexity|format:suppressed	declared-delta/case-complexity-format-suppressed.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
+case:computed-cross-level|rules	declared-delta/case-computed-cross-level-rules.diff	Rules now refuses the invalid complete configuration document before publishing the rule listing.
 case:computed-cross-level|stderr:rules	declared-delta/case-computed-cross-level-stderr-rules.diff	Rules reads the complete configuration document and publishes its exact refusal source.
 case:config-precedence|check:output:file	declared-delta/case-config-precedence-check-output-file.diff	Project-scope reports now publish typed reason records alongside the measured verdict.
 case:config-precedence|format:json	declared-delta/case-config-precedence-format-json.diff	Project-scope reports now publish typed reason records alongside the measured verdict.

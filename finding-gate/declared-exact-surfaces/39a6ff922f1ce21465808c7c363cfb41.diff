@@ -1,0 +1,134 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 3625
++visible 7281
+@@ -14,6 +14,6 @@
+-        "violationCount": 1,
+-        "errorCount": 1,
+-        "warningCount": 0,
+-        "infoCount": 0,
+-        "techDebtMinutes": 15,
+-        "debtPer1kLoc": 1363.6
++        "violationCount": 3,
++        "errorCount": 3,
++        "warningCount": 0,
++        "infoCount": 0,
++        "techDebtMinutes": 45,
++        "debtPer1kLoc": 4090.9
+@@ -31,19 +31,4 @@
+-        "state": "unmeasured",
+-        "uncoveredAutoloadTargets": [],
+-        "unjudgedChannels": [
+-            "architecture.empty-template",
+-            "architecture.unmatched-exclude",
+-            "architecture.unreachable-layer",
+-            "coupling.unmatched-framework-namespace",
+-            "discovery.unmatched-exclude",
+-            "suppression.unmatched-namespace",
+-            "suppression.unmatched-path",
+-            "suppression.unmatched-rule-ledger"
+-        ],
+-        "unjudgedValues": [],
+-        "reasons": [
+-            {
+-                "kind": "no-declared-code",
+-                "source": "composer.json"
+-            }
+-        ]
++        "state": "unknown",
++        "uncoveredAutoloadTargets": [],
++        "unjudgedChannels": [],
++        "unjudgedValues": []
+@@ -58,0 +43,26 @@
++            "file": null,
++            "line": null,
++            "symbol": "(project)",
++            "rule": "architecture.unreachable-layer",
++            "severity": "error",
++            "message": "Layer \"service-shadow\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (suffix: \"Service\") match no class in the analysed codebase. Run \"qmx debug:layer-assignment <class>\" to inspect specific classes.",
++            "recommendation": "Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \"pending: true\" if the code it describes has not been written yet.",
++            "impactScore": 45,
++            "coupling.class-rank": null,
++            "debtMinutes": 15
++        },
++        {
++            "rank": 2,
++            "file": null,
++            "line": null,
++            "symbol": "(project)",
++            "rule": "architecture.unreachable-layer",
++            "severity": "error",
++            "message": "Layer \"outside-slice\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (patterns: \"Corpus\\ScopedLayers\\Other\") match no class in the analysed codebase. Run \"qmx debug:layer-assignment <class>\" to inspect specific classes.",
++            "recommendation": "Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \"pending: true\" if the code it describes has not been written yet.",
++            "impactScore": 45,
++            "coupling.class-rank": null,
++            "debtMinutes": 15
++        },
++        {
++            "rank": 3,
+@@ -89,8 +100,47 @@
+-        }
+-    ],
+-    "violationsMeta": {
+-        "total": 1,
+-        "shown": 1,
+-        "limit": null,
+-        "truncated": false,
+-        "byRule": {
++        },
++        {
++            "file": null,
++            "line": null,
++            "subject": "project:",
++            "symbol": "(project)",
++            "channel": "architecture.unreachable-layer",
++            "occurrence": null,
++            "edge": null,
++            "namespace": "(project)",
++            "rule": "architecture.unreachable-layer",
++            "code": "architecture.unreachable-layer",
++            "severity": "error",
++            "message": "Layer \"service-shadow\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (suffix: \"Service\") match no class in the analysed codebase. Run \"qmx debug:layer-assignment <class>\" to inspect specific classes.",
++            "recommendation": "Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \"pending: true\" if the code it describes has not been written yet.",
++            "metricValue": null,
++            "threshold": null,
++            "techDebtMinutes": 15,
++            "acceptedLevel": null
++        },
++        {
++            "file": null,
++            "line": null,
++            "subject": "project:",
++            "symbol": "(project)",
++            "channel": "architecture.unreachable-layer",
++            "occurrence": null,
++            "edge": null,
++            "namespace": "(project)",
++            "rule": "architecture.unreachable-layer",
++            "code": "architecture.unreachable-layer",
++            "severity": "error",
++            "message": "Layer \"outside-slice\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (patterns: \"Corpus\\ScopedLayers\\Other\") match no class in the analysed codebase. Run \"qmx debug:layer-assignment <class>\" to inspect specific classes.",
++            "recommendation": "Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \"pending: true\" if the code it describes has not been written yet.",
++            "metricValue": null,
++            "threshold": null,
++            "techDebtMinutes": 15,
++            "acceptedLevel": null
++        }
++    ],
++    "violationsMeta": {
++        "total": 3,
++        "shown": 3,
++        "limit": null,
++        "truncated": false,
++        "byRule": {
++            "architecture.unreachable-layer": 2,
+@@ -101,4 +151,4 @@
+-physical-records 903
+-["{\"acceptedLevel\":null,\"channel\":\"architecture.potential-shadow\",\"code\":\"architecture.potential-shadow\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"Layer \\\"service-broad\\\" (pattern \\\"Corpus\\\\ScopedLayers\\\\Service\\\") shadows layer \\\"service-shadow\\\" (suffix \\\"Service\\\") for 1 class(es) including Corpus\\\\ScopedLayers\\\\Service. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific cases.\",\"metricValue\":null,\"namespace\":\"(project)\",\"occurrence\":null,\"recommendation\":\"If layer \\\"service-shadow\\\" should own these classes, declare it BEFORE \\\"service-broad\\\" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.\",\"rule\":\"architecture.potential-shadow\",\"severity\":\"error\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":15,\"threshold\":null}"]
+-ranking-records 708
+-["{\"coupling.class-rank\":null,\"debtMinutes\":15,\"file\":null,\"impactScore\":45,\"line\":null,\"message\":\"Layer \\\"service-broad\\\" (pattern \\\"Corpus\\\\ScopedLayers\\\\Service\\\") shadows layer \\\"service-shadow\\\" (suffix \\\"Service\\\") for 1 class(es) including Corpus\\\\ScopedLayers\\\\Service. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific cases.\",\"recommendation\":\"If layer \\\"service-shadow\\\" should own these classes, declare it BEFORE \\\"service-broad\\\" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.\",\"rule\":\"architecture.potential-shadow\",\"severity\":\"error\",\"symbol\":\"(project)\"}"]
++physical-records 2852
++["{\"acceptedLevel\":null,\"channel\":\"architecture.potential-shadow\",\"code\":\"architecture.potential-shadow\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"Layer \\\"service-broad\\\" (pattern \\\"Corpus\\\\ScopedLayers\\\\Service\\\") shadows layer \\\"service-shadow\\\" (suffix \\\"Service\\\") for 1 class(es) including Corpus\\\\ScopedLayers\\\\Service. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific cases.\",\"metricValue\":null,\"namespace\":\"(project)\",\"occurrence\":null,\"recommendation\":\"If layer \\\"service-shadow\\\" should own these classes, declare it BEFORE \\\"service-broad\\\" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.\",\"rule\":\"architecture.potential-shadow\",\"severity\":\"error\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"channel\":\"architecture.unreachable-layer\",\"code\":\"architecture.unreachable-layer\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"Layer \\\"outside-slice\\\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (patterns: \\\"Corpus\\\\ScopedLayers\\\\Other\\\") match no class in the analysed codebase. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific classes.\",\"metricValue\":null,\"namespace\":\"(project)\",\"occurrence\":null,\"recommendation\":\"Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \\\"pending: true\\\" if the code it describes has not been written yet.\",\"rule\":\"architecture.unreachable-layer\",\"severity\":\"error\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":15,\"threshold\":null}","{\"acceptedLevel\":null,\"channel\":\"architecture.unreachable-layer\",\"code\":\"architecture.unreachable-layer\",\"edge\":null,\"file\":null,\"line\":null,\"message\":\"Layer \\\"service-shadow\\\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (suffix: \\\"Service\\\") match no class in the analysed codebase. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific classes.\",\"metricValue\":null,\"namespace\":\"(project)\",\"occurrence\":null,\"recommendation\":\"Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \\\"pending: true\\\" if the code it describes has not been written yet.\",\"rule\":\"architecture.unreachable-layer\",\"severity\":\"error\",\"subject\":\"project:\",\"symbol\":\"(project)\",\"techDebtMinutes\":15,\"threshold\":null}"]
++ranking-records 2263
++["{\"coupling.class-rank\":null,\"debtMinutes\":15,\"file\":null,\"impactScore\":45,\"line\":null,\"message\":\"Layer \\\"outside-slice\\\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (patterns: \\\"Corpus\\\\ScopedLayers\\\\Other\\\") match no class in the analysed codebase. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific classes.\",\"recommendation\":\"Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \\\"pending: true\\\" if the code it describes has not been written yet.\",\"rule\":\"architecture.unreachable-layer\",\"severity\":\"error\",\"symbol\":\"(project)\"}","{\"coupling.class-rank\":null,\"debtMinutes\":15,\"file\":null,\"impactScore\":45,\"line\":null,\"message\":\"Layer \\\"service-broad\\\" (pattern \\\"Corpus\\\\ScopedLayers\\\\Service\\\") shadows layer \\\"service-shadow\\\" (suffix \\\"Service\\\") for 1 class(es) including Corpus\\\\ScopedLayers\\\\Service. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific cases.\",\"recommendation\":\"If layer \\\"service-shadow\\\" should own these classes, declare it BEFORE \\\"service-broad\\\" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.\",\"rule\":\"architecture.potential-shadow\",\"severity\":\"error\",\"symbol\":\"(project)\"}","{\"coupling.class-rank\":null,\"debtMinutes\":15,\"file\":null,\"impactScore\":45,\"line\":null,\"message\":\"Layer \\\"service-shadow\\\" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (suffix: \\\"Service\\\") match no class in the analysed codebase. Run \\\"qmx debug:layer-assignment <class>\\\" to inspect specific classes.\",\"recommendation\":\"Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare \\\"pending: true\\\" if the code it describes has not been written yet.\",\"rule\":\"architecture.unreachable-layer\",\"severity\":\"error\",\"symbol\":\"(project)\"}"]

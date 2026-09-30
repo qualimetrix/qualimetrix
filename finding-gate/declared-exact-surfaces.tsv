@@ -1,0 +1,2 @@
+case	surface	file	reason
+scoped-layers	check:baseline-source	declared-exact-surfaces/39a6ff922f1ce21465808c7c363cfb41.diff	The source report changes to unmeasured scope with typed reasons and withheld project findings; the semantic withdrawal route cannot serialize this record population, so the complete original publication is compared exactly.
