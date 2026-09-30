@@ -32,6 +32,8 @@ final class RecordCheck implements CaseCheck, RunCheck
     private array $derived = [];
     /** @var array<string,array<string,array<string,int>>> */
     private array $producerCountChanges = [];
+    /** @var array<string,array<string,list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}>>> */
+    private array $exactOperations = [];
     private bool $deriving = false;
 
     private function __construct(private readonly RunContext $run, private readonly ValueCheck $values, private readonly RankingCheck $ranking) {}
@@ -46,6 +48,18 @@ final class RecordCheck implements CaseCheck, RunCheck
         $check = new self($run, ValueCheck::create($run), RankingCheck::create($run));
         self::$runs[$run] = WeakReference::create($check);
         return $check;
+    }
+
+    public function trialCopy(RunContext $trial): self
+    {
+        $copy = self::create($trial);
+        $copy->records = $this->records;
+        $copy->publications = $this->publications;
+        $copy->physical = $this->physical;
+        $copy->raw = $this->raw;
+        $copy->identityReady = $this->identityReady;
+        $copy->deriving = $this->deriving;
+        return $copy;
     }
 
     public function name(): string
@@ -99,6 +113,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                         $observed = $this->ranking->observe($side, $case, $surface, $raw, $artifacts);
                     } catch (GateError $error) {
                         $this->identityReady[$case->id][$surface][$side] = false;
+                        $this->run->report->sourceEvidence($side, $key, 'records', false);
                         continue;
                     }
                     $this->publications[$case->id][$surface][$side] = $observed['published'];
@@ -106,6 +121,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     $this->raw[$case->id][$surface][$side] = $observed['rawAuthority'];
                     $this->records[$case->id][$surface][$side] = $observed['comparative'];
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', $this->identityReady[$case->id][$surface][$side]);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -156,6 +172,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 } elseif (!self::sameMultiset($actual, $expected)) {
                     throw new GateError('The readable finding projection differs from the complete authoritative record multiset.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -168,6 +185,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 if (!self::sameMultiset($actual, $expected)) {
                     throw new GateError('The complete checkstyle projection multiset differs from authoritative records.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -199,6 +217,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 if ($surface !== 'format:summary' && $budget !== [] && (preg_match('~^\.\.\. and ([0-9]+) more\. Use --detail=all to see all violations$~m', $artifacts[$key], $remaining) !== 1 || (int) $remaining[1] !== \count($budget))) {
                     throw new GateError('The prose publication omitted an authoritative finding projection.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -209,6 +228,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             try {
                 $sourceRecords = $this->physical[$case->id][$source][$side] ?? throw new GateError('The baseline source publication is unavailable.');
                 ReportRecords::baselineEntries($this->mapped($side, 'baseline-file', $artifacts[$key]), $sourceRecords);
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -223,6 +243,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 if ($projected !== $this->publications[$case->id]['format:json'][$side]) {
                     throw new GateError('A same-input check publication differs from its authoritative JSON records.');
                 }
+                $this->run->report->sourceEvidence($side, $key, 'records', true);
             } catch (GateError $error) {
                 $this->publicationProblem($side, $key, $error);
             }
@@ -231,6 +252,7 @@ final class RecordCheck implements CaseCheck, RunCheck
 
     private function publicationProblem(string $side, string $key, GateError $error): void
     {
+        $this->run->report->sourceEvidence($side, $key, 'records', false);
         $this->run->report->fail(FailureClass::RECORD_PROJECTION_MISMATCH, $side . ' / ' . $key, $error->getMessage());
     }
 
@@ -320,6 +342,9 @@ final class RecordCheck implements CaseCheck, RunCheck
                     $this->run->declarations->fields->supply($report, $case, $view, $side, $supplied);
                 }
             }
+            if ($this->run->isExactSurface('case:' . $case . '|' . $view)) {
+                continue;
+            }
             if (!$identityReady || $candidate === null || $reference === null) {
                 continue;
             }
@@ -332,9 +357,27 @@ final class RecordCheck implements CaseCheck, RunCheck
             if ($report === 'json') {
                 $this->ranking->prepareRanking($case, $view, $paired['pairs']);
             }
+            $positions = ['candidate' => [], 'reference' => []];
+            foreach (['candidate' => $left, 'reference' => $right] as $side => $pool) {
+                foreach ($pool as $index => $record) {
+                    $positions[$side][DeclaredRecords::canonical($record)][] = $index;
+                }
+            }
+            $used = ['candidate' => [], 'reference' => []];
             foreach ($paired['pairs'] as $pair) {
                 $a = $pair['candidate'];
                 $b = $pair['reference'];
+                $originalCandidate = $a;
+                $originalReference = $b;
+                $candidateKey = DeclaredRecords::canonical($a);
+                $referenceKey = DeclaredRecords::canonical($b);
+                $candidateIndex = $positions['candidate'][$candidateKey][$used['candidate'][$candidateKey] ?? 0] ?? null;
+                $referenceIndex = $positions['reference'][$referenceKey][$used['reference'][$referenceKey] ?? 0] ?? null;
+                if (!\is_int($candidateIndex) || !\is_int($referenceIndex)) {
+                    throw new GateError('A paired record has no original complete occurrence.');
+                }
+                $used['candidate'][$candidateKey] = ($used['candidate'][$candidateKey] ?? 0) + 1;
+                $used['reference'][$referenceKey] = ($used['reference'][$referenceKey] ?? 0) + 1;
                 $subject = 'case:' . $case . '|' . $view . '|record:' . $pair['key'];
                 $level = $report === 'metrics' ? MetricsRecords::level($a) : (isset($a['subject']) && \is_string($a['subject']) ? SubjectLevel::of($a['subject']) : 'file');
                 foreach (array_keys($a + $b) as $field) {
@@ -379,6 +422,20 @@ final class RecordCheck implements CaseCheck, RunCheck
                         )) {
                         unset($a[$field], $b[$field]);
                     }
+                }
+                $paths = self::changedPaths($originalCandidate, $a);
+                foreach (self::changedPaths($originalReference, $b) as $path) {
+                    if (!\in_array($path, $paths, true)) {
+                        $paths[] = $path;
+                    }
+                }
+                if ($paths !== []) {
+                    $this->exactOperations[$case][$view][] = [
+                        'candidate' => $candidate[$candidateIndex],
+                        'reference' => $reference[$referenceIndex],
+                        'paths' => $paths,
+                        'whole' => false,
+                    ];
                 }
                 $this->replacements[$case][$view]['candidate'][DeclaredRecords::canonical($pair['candidate'])] = $a;
                 $this->replacements[$case][$view]['reference'][DeclaredRecords::canonical($pair['reference'])] = $b;
@@ -428,6 +485,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             break;
         }
         if (!$intent || (!$this->deriving && !$this->run->declarations->records->claim($change, $case, $report, $view, $canonical))) {
+            $this->run->report->semanticResidual('case:' . $case . '|' . $view);
             $this->run->report->fail(FailureClass::RECORD_UNDECLARED, 'case:' . $case . '|' . $view, 'No exact declared record instance licenses this ' . $change . ' residual.', [$canonical]);
             return;
         }
@@ -435,6 +493,41 @@ final class RecordCheck implements CaseCheck, RunCheck
         $this->run->declarations->records->creditMeasurement($change, $case, $report, $view, $canonical);
         $side = $change === DeclaredRecords::INTRODUCED ? 'candidate' : 'reference';
         $this->removed[$case][$view][$side][] = $record;
+        $this->exactOperations[$case][$view][] = [
+            'candidate' => $side === 'candidate' ? $record : null,
+            'reference' => $side === 'reference' ? $record : null,
+            'paths' => [],
+            'whole' => true,
+        ];
+    }
+
+    /** @param array<string,mixed> $before
+     * @param array<string,mixed> $after
+     * @param list<string> $prefix
+     *
+     * @return list<list<string>>
+     */
+    private static function changedPaths(array $before, array $after, array $prefix = []): array
+    {
+        $paths = [];
+        foreach (array_keys($before + $after) as $field) {
+            $path = [...$prefix, $field];
+            if ($prefix === [] && $field === 'metrics'
+                && \array_key_exists($field, $before) && \array_key_exists($field, $after)
+                && \is_array($before[$field]) && \is_array($after[$field])) {
+                array_push($paths, ...self::changedPaths($before[$field], $after[$field], $path));
+            } elseif (($before[$field] ?? null) !== ($after[$field] ?? null)
+                || \array_key_exists($field, $before) !== \array_key_exists($field, $after)) {
+                $paths[] = $path;
+            }
+        }
+        return $paths;
+    }
+
+    /** @return list<array{candidate:?array<string,mixed>,reference:?array<string,mixed>,paths:list<list<string>>,whole:bool}> */
+    public function exactOperations(string $case, string $view): array
+    {
+        return $this->exactOperations[$case][$view] ?? [];
     }
 
     /**

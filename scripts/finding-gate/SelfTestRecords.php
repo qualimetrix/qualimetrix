@@ -40,7 +40,7 @@ final class SelfTestRecords extends SelfTestGroup
                 return $tree;
             }, [
                 [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:record-shape|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 [FailureClass::SURFACE_MISMATCH, 'case:record-shape|check:output:file', 'SurfaceComparison::mismatch <- Gate::compare'],
                 [FailureClass::RUN_FAILED, 'candidate-2 / record-shape', 'Gate::captureAuthority <- GateModes::compare'],
             ], [

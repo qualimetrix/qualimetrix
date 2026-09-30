@@ -801,6 +801,12 @@ final class SyntheticTree
             }
 
             namespace Qualimetrix\\Core\\Path {
+                final class RelativePath
+                {
+                    public static function fromString(string \$value): self { return new self(\$value); }
+                    public function __construct(public readonly string \$value) {}
+                }
+
                 final class AbsolutePath
                 {
                     public static function fromString(string \$path): self
@@ -808,6 +814,26 @@ final class SyntheticTree
                         return new self();
                     }
                 }
+            }
+
+            namespace Qualimetrix\\Core\\Symbol {
+                final class SymbolPath
+                {
+                    public static function forFile(\\Qualimetrix\\Core\\Path\\RelativePath \$path): self { return new self(\$path); }
+                    public function __construct(public readonly \\Qualimetrix\\Core\\Path\\RelativePath \$path) {}
+                    public function toCanonical(): string { return 'file:' . \$this->path->value; }
+                }
+                final class MetricSubject
+                {
+                    public static function aggregate(SymbolPath \$path): self { return new self(\$path); }
+                    public function __construct(private readonly SymbolPath \$path) {}
+                    public function toCanonical(): string { return \$this->path->toCanonical(); }
+                    public function toSymbolPath(): SymbolPath { return \$this->path; }
+                }
+            }
+
+            namespace Qualimetrix\\Core\\Time {
+                final class SystemClock {}
             }
 
             namespace Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline {
@@ -826,6 +852,47 @@ final class SyntheticTree
                 interface ChannelDeclarationRegistryInterface
                 {
                     public function staticDeclarations(): array;
+                }
+                interface ChannelUniverseInterface extends ChannelDeclarationRegistryInterface {}
+                final class Location
+                {
+                    public static function none(): self { return new self(); }
+                }
+                enum Severity: string { case Error = 'error'; }
+                final class Finding
+                {
+                    public function __construct(
+                        public Location \$location,
+                        public \\Qualimetrix\\Core\\Symbol\\MetricSubject \$subject,
+                        public \\Qualimetrix\\Core\\Symbol\\SymbolPath \$symbolPath,
+                        public string \$ruleName,
+                        public string \$code,
+                        public string \$message,
+                        public Severity \$severity,
+                        public int|float|null \$metricValue,
+                    ) {}
+                }
+            }
+
+            namespace Qualimetrix\\Infrastructure\\Rule\\Contract {
+                interface RuleChannelSnapshotFactoryInterface
+                {
+                    public function snapshot(object \$definitions): \\Qualimetrix\\Analysis\\Finding\\Contract\\ChannelUniverseInterface;
+                }
+            }
+
+            namespace Qualimetrix\\Analysis\\Policy\\Baseline {
+                final class BaselineGenerator
+                {
+                    public function __construct(object \$channels, object \$clock) {}
+                    public function generate(array \$findings, array \$scope): object
+                    {
+                        \$entries = [];
+                        foreach (\$findings as \$finding) {
+                            \$entries[] = (object) ['identity' => (object) ['subjectKey' => \$finding->subject->toCanonical()]];
+                        }
+                        return (object) ['baseline' => (object) ['entries' => \$entries], 'uncaptured' => []];
+                    }
                 }
             }
 
@@ -891,6 +958,7 @@ final class SyntheticTree
                 use Qualimetrix\\Analysis\\Configuration\\Contract\\Pipeline\\ConfigurationResolutionRequest;
                 use Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface;
                 use Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface;
+                use Qualimetrix\\Analysis\\Finding\\Contract\\ChannelUniverseInterface;
                 use Qualimetrix\\Core\\Symbol\\SymbolLevel;
                 use Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface;
 
@@ -911,6 +979,10 @@ final class SyntheticTree
 
                                     return \$declarations;
                                 }
+                            },
+                            ChannelUniverseInterface::class => new class implements ChannelUniverseInterface, \\Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface {
+                                public function staticDeclarations(): array { return []; }
+                                public function snapshot(object \$definitions): ChannelUniverseInterface { return \$this; }
                             },
                             ConfigurationPipelineInterface::class => new class implements ConfigurationPipelineInterface {
                                 public function resolve(ConfigurationResolutionRequest \$request): mixed

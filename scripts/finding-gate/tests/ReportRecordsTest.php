@@ -233,6 +233,9 @@ final class ReportRecordsTest extends TestCase
     public function itSuppliesCompleteMeasurementsOnceBeforeRecordAndFieldProjection(): void
     {
         Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [['added', 'json', 'format:json', 'fresh', 'A new observation.']]));
+        $publisher = $this->root . '/src/Reporting/Formatter/Json/JsonFindingSection.php';
+        Fs::write($publisher, str_replace("            'message' => null,", "            'message' => null,\n            'fresh' => null,", Fs::read($publisher)));
+        self::assertContains('fresh', \QmxFindingGate\EquivalenceTuple::derive($this->root)->fields);
         $run = $this->context();
         foreach (['candidate', 'reference'] as $side) {
             $run->declarations->fields->requireMeasurements('json', 'alpha', 'format:json', $side);
@@ -241,8 +244,15 @@ final class ReportRecordsTest extends TestCase
         $records = RecordCheck::create($run);
         $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]));
         $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([self::finding()]));
+        $source = 'case:alpha|format:json';
+        $captures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $captures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $run->rankings->of($side, $source)]);
+        }
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, $records));
         $records->prepare('alpha');
         $records->prepare('alpha');
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, $records));
         $measurements = $run->declarations->fields->measurements('json');
         self::assertCount(2, $measurements);
         self::assertSame(7, $measurements[0]['records'][0]['fields']['fresh']);
@@ -276,15 +286,51 @@ final class ReportRecordsTest extends TestCase
         $derivation = RecordDerivation::create($run);
         $derivation->startDeriving();
         $a = self::finding();
+        $a['metricValue'] = 3.0;
         $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
         $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a]));
+        $source = 'case:alpha|format:json';
+        $captures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $captures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $run->rankings->of($side, $source)]);
+        }
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, $records));
         $records->prepare('alpha');
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, $records));
         self::assertSame([], $run->report->raised());
         self::assertSame([DeclaredRecords::DERIVED], $derivation->rewriteDerived());
         $rows = Tsv::rows($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, DeclaredRecords::DERIVED_COLUMNS);
         self::assertCount(2, $rows);
         self::assertSame(DeclaredRecords::canonical(self::comparativeFinding($a)), $rows[0]['record']);
         self::assertSame($rows[0], $rows[1]);
+        $referenceSlot = $captures['reference']->rankings[$source];
+        $referenceSlot['ranked']['stdout'] = ReportRecords::edit($referenceSlot['ranked']['stdout'], [ValueCheck::value(['violations', 1, 'metricValue']) => '3.00000000000000001']);
+        self::assertSame(ReportRecords::decode($captures['reference']->rankings[$source]['ranked']['stdout']), ReportRecords::decode($referenceSlot['ranked']['stdout']));
+        $distinctRaw = ['candidate' => $captures['candidate'], 'reference' => new \QmxFindingGate\CaptureResult([], [$source => $referenceSlot])];
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $distinctRaw, $run, $records));
+        $rawOccurrences = ReportRecords::rawRecords($referenceSlot['ranked']['stdout'], 'violations');
+        $permutedSlot = $referenceSlot;
+        $permutedSlot['ranked']['stdout'] = ReportRecords::edit($referenceSlot['ranked']['stdout'], [
+            ValueCheck::value(['violations', 0]) => $rawOccurrences[1],
+            ValueCheck::value(['violations', 1]) => $rawOccurrences[0],
+        ]);
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, [
+            'candidate' => $captures['candidate'],
+            'reference' => new \QmxFindingGate\CaptureResult([], [$source => $permutedSlot]),
+        ], $run, $records));
+
+        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::DERIVED, Tsv::render(DeclaredRecords::DERIVED_COLUMNS, [array_values($rows[0])]));
+        $partialRun = $this->context();
+        $partialRecords = RecordCheck::create($partialRun);
+        $this->observeRecords($partialRun, $partialRecords, 'candidate', $partialRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
+        $this->observeRecords($partialRun, $partialRecords, 'reference', $partialRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a, $a]));
+        $partialRecords->prepare('alpha');
+        self::assertContains(FailureClass::RECORD_UNDECLARED, $partialRun->report->failureClasses());
+        $partialCaptures = [
+            'candidate' => new \QmxFindingGate\CaptureResult([], [$source => $partialRun->rankings->of('candidate', $source)]),
+            'reference' => new \QmxFindingGate\CaptureResult([], [$source => $referenceSlot]),
+        ];
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $partialCaptures, $partialRun, $partialRecords));
     }
 
     #[Test]
@@ -444,12 +490,18 @@ final class ReportRecordsTest extends TestCase
     #[Test]
     public function itRewritesOnlyLicensedFindingValuesOnEveryReadableProjection(): void
     {
-        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [['field', 'message', '*', 'Change this finding message.']]));
+        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredValues::INDEX, Tsv::render(\QmxFindingGate\DeclaredValues::COLUMNS, [
+            ['field', 'message', '*', 'Change this finding message.'],
+            ['field', 'metricValue', '*', 'Change this finding magnitude.'],
+        ]));
         $run = $this->context();
         ValueCheck::create($run)->startDeriving();
         $a = self::finding();
         $a['message'] = 'New (term)';
+        $a['metricValue'] = 4;
+        $a['threshold'] = 1.0;
         $b = self::finding();
+        $b['threshold'] = 1.0;
         $candidate = self::artifacts([$a]);
         $reference = self::artifacts([$b]);
         foreach (['candidate' => $a, 'reference' => $b] as $side => $record) {
@@ -480,6 +532,263 @@ final class ReportRecordsTest extends TestCase
             self::assertSame($pair->reference, $pair->candidate, $surface);
         }
         self::assertSame([], $run->report->raised());
+        $source = 'case:alpha|format:json';
+        $captures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $captures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $run->rankings->of($side, $source)]);
+        }
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, $check));
+        $candidateSlot = $captures['candidate']->rankings[$source];
+        $candidateSlot['ranked']['stdout'] = str_replace('"threshold":1.0', '"threshold":1.00000000000000001', $candidateSlot['ranked']['stdout']);
+        $captures['candidate'] = new \QmxFindingGate\CaptureResult([], [$source => $candidateSlot]);
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $captures, $run, $check));
+
+        $first = $b;
+        $first['techDebtMinutes'] = 15.0;
+        $second = $first;
+        $second['subject'] = 'declaration:callable:App\\B::run@src/A.php';
+        $referenceRows = [$first, $second];
+        $candidateRows = array_map(static fn(array $record): array => array_replace($record, ['message' => 'New (term)', 'metricValue' => 4]), $referenceRows);
+        $rankedSpelling = static function (array $slots): array {
+            $source = 'case:alpha|format:json';
+            $slots[$source]['ranked']['stdout'] = ReportRecords::edit($slots[$source]['ranked']['stdout'], [
+                ValueCheck::value(['topIssues', 1, 'debtMinutes']) => '15.00000000000000001',
+            ]);
+            return $slots;
+        };
+        $cohortRun = $this->context();
+        ValueCheck::create($cohortRun)->startDeriving();
+        $cohortRecords = RecordCheck::create($cohortRun);
+        $this->observeRecords($cohortRun, $cohortRecords, 'candidate', $cohortRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($candidateRows), $rankedSpelling);
+        $this->observeRecords($cohortRun, $cohortRecords, 'reference', $cohortRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($referenceRows), $rankedSpelling);
+        $cohortRecords->prepare('alpha');
+        $cohortCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $cohortCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $cohortRun->rankings->of($side, $source)]);
+        }
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $cohortCaptures, $cohortRun, $cohortRecords), $cohortRun->report->render());
+        $permutedSpelling = static function (array $slots): array {
+            $source = 'case:alpha|format:json';
+            $slots[$source]['ranked']['stdout'] = ReportRecords::edit($slots[$source]['ranked']['stdout'], [
+                ValueCheck::value(['topIssues', 0, 'debtMinutes']) => '15.00000000000000001',
+                ValueCheck::value(['topIssues', 1, 'debtMinutes']) => '15.0',
+            ]);
+            return $slots;
+        };
+        $permutedRun = $this->context();
+        ValueCheck::create($permutedRun)->startDeriving();
+        $permutedRecords = RecordCheck::create($permutedRun);
+        $this->observeRecords($permutedRun, $permutedRecords, 'candidate', $permutedRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($candidateRows), $permutedSpelling);
+        $this->observeRecords($permutedRun, $permutedRecords, 'reference', $permutedRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($referenceRows), $permutedSpelling);
+        $permutedRecords->prepare('alpha');
+        $permutedCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $permutedCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $permutedRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $permutedRun->report->raised());
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $permutedCaptures, $permutedRun, $permutedRecords));
+        $competingRows = $candidateRows;
+        $competingRows[1]['metricValue'] = 5;
+        $competingRun = $this->context();
+        ValueCheck::create($competingRun)->startDeriving();
+        $competingRecords = RecordCheck::create($competingRun);
+        $this->observeRecords($competingRun, $competingRecords, 'candidate', $competingRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($competingRows), $rankedSpelling);
+        $this->observeRecords($competingRun, $competingRecords, 'reference', $competingRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($referenceRows), $rankedSpelling);
+        $competingRecords->prepare('alpha');
+        $competingCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $competingCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $competingRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $competingRun->report->raised());
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $competingCaptures, $competingRun, $competingRecords));
+        $unspelledCompetingRun = $this->context();
+        ValueCheck::create($unspelledCompetingRun)->startDeriving();
+        $unspelledCompetingRecords = RecordCheck::create($unspelledCompetingRun);
+        $this->observeRecords($unspelledCompetingRun, $unspelledCompetingRecords, 'candidate', $unspelledCompetingRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($competingRows));
+        $this->observeRecords($unspelledCompetingRun, $unspelledCompetingRecords, 'reference', $unspelledCompetingRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($referenceRows));
+        $unspelledCompetingRecords->prepare('alpha');
+        $unspelledCompetingCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $unspelledCompetingCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $unspelledCompetingRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $unspelledCompetingRun->report->raised());
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $unspelledCompetingCaptures, $unspelledCompetingRun, $unspelledCompetingRecords));
+        $partialReferenceRows = $referenceRows;
+        $partialReferenceRows[1] = $candidateRows[1];
+        $partialRun = $this->context();
+        ValueCheck::create($partialRun)->startDeriving();
+        $partialRecords = RecordCheck::create($partialRun);
+        $this->observeRecords($partialRun, $partialRecords, 'candidate', $partialRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($candidateRows), $rankedSpelling);
+        $this->observeRecords($partialRun, $partialRecords, 'reference', $partialRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($partialReferenceRows), $rankedSpelling);
+        $partialRecords->prepare('alpha');
+        self::assertSame([], $partialRun->report->raised());
+        $partialCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $partialCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $partialRun->rankings->of($side, $source)]);
+        }
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $partialCaptures, $partialRun, $partialRecords));
+        $partialPermutedRun = $this->context();
+        ValueCheck::create($partialPermutedRun)->startDeriving();
+        $partialPermutedRecords = RecordCheck::create($partialPermutedRun);
+        $this->observeRecords($partialPermutedRun, $partialPermutedRecords, 'candidate', $partialPermutedRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($candidateRows), $permutedSpelling);
+        $this->observeRecords($partialPermutedRun, $partialPermutedRecords, 'reference', $partialPermutedRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($partialReferenceRows), $permutedSpelling);
+        $partialPermutedRecords->prepare('alpha');
+        $partialPermutedCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $partialPermutedCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $partialPermutedRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $partialPermutedRun->report->raised());
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $partialPermutedCaptures, $partialPermutedRun, $partialPermutedRecords));
+        $uniformRun = $this->context();
+        ValueCheck::create($uniformRun)->startDeriving();
+        $uniformRecords = RecordCheck::create($uniformRun);
+        $this->observeRecords($uniformRun, $uniformRecords, 'candidate', $uniformRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($candidateRows));
+        $this->observeRecords($uniformRun, $uniformRecords, 'reference', $uniformRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($partialReferenceRows));
+        $uniformRecords->prepare('alpha');
+        $uniformCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $uniformCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $uniformRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $uniformRun->report->raised());
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $uniformCaptures, $uniformRun, $uniformRecords));
+
+        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
+            ['added', 'json', 'ranking', 'probe', 'Publish the measured ranked member.'],
+        ]));
+        $formatter = $this->root . '/src/Reporting/Formatter/Json/JsonFormatter.php';
+        Fs::write($formatter, str_replace("                'rank' => null,", "                'rank' => null,\n                'probe' => null,", Fs::read($formatter)));
+        $schemaRun = $this->context();
+        ValueCheck::create($schemaRun)->startDeriving();
+        $schemaRecords = RecordCheck::create($schemaRun);
+        foreach (['candidate', 'reference'] as $side) {
+            $schemaRun->declarations->fields->requireMeasurements('json', 'alpha', 'ranking', $side);
+        }
+        $withProbe = static function (array $slots): array {
+            $key = 'case:alpha|format:json';
+            $document = ReportRecords::decode($slots[$key]['ranked']['stdout']);
+            foreach ($document['topIssues'] as &$issue) {
+                $issue['probe'] = 7;
+            }
+            unset($issue);
+            $slots[$key]['ranked']['stdout'] = ValueCheck::value($document);
+            return $slots;
+        };
+        $this->observeRecords($schemaRun, $schemaRecords, 'candidate', $schemaRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$a]), $withProbe);
+        $this->observeRecords($schemaRun, $schemaRecords, 'reference', $schemaRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$b]));
+        $schemaRecords->prepare('alpha');
+        $schemaCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $schemaCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $schemaRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $schemaRun->report->raised());
+        self::assertSame([true, true], array_column($schemaRun->declarations->fields->requiredPublications('alpha'), 'supplied'));
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $schemaCaptures, $schemaRun, $schemaRecords));
+        foreach ([
+            'identical' => [$candidateRows, $referenceRows, static fn(array $slots): array => $slots, false],
+            'uniform' => [$candidateRows, $referenceRows, $rankedSpelling, false],
+            'permuted' => [$candidateRows, $referenceRows, $permutedSpelling, false],
+            'partial' => [$candidateRows, $partialReferenceRows, $rankedSpelling, true],
+            'competing' => [$competingRows, $referenceRows, $rankedSpelling, true],
+        ] as $name => [$left, $right, $spelling, $residual]) {
+            $jointRun = $this->context();
+            ValueCheck::create($jointRun)->startDeriving();
+            $jointRecords = RecordCheck::create($jointRun);
+            foreach (['candidate', 'reference'] as $side) {
+                $jointRun->declarations->fields->requireMeasurements('json', 'alpha', 'ranking', $side);
+            }
+            $candidateRanking = static fn(array $slots): array => $spelling($withProbe($slots));
+            $this->observeRecords($jointRun, $jointRecords, 'candidate', $jointRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($left), $candidateRanking);
+            $this->observeRecords($jointRun, $jointRecords, 'reference', $jointRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts($right), $spelling);
+            $jointRecords->prepare('alpha');
+            $jointCaptures = [];
+            foreach (['candidate', 'reference'] as $side) {
+                $jointCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $jointRun->rankings->of($side, $source)]);
+            }
+            self::assertSame([], $jointRun->report->raised(), $name);
+            self::assertSame([true, true], array_column($jointRun->declarations->fields->requiredPublications('alpha'), 'supplied'), $name);
+            self::assertSame($residual, \QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $jointCaptures, $jointRun, $jointRecords), $name);
+        }
+        $mixedCandidate = $a;
+        $mixedReference = $b;
+        $mixedCandidate['techDebtMinutes'] = 15.0;
+        $mixedReference['techDebtMinutes'] = 15.0;
+        $mixedRun = $this->context();
+        ValueCheck::create($mixedRun)->startDeriving();
+        $mixedRecords = RecordCheck::create($mixedRun);
+        foreach (['candidate', 'reference'] as $side) {
+            $mixedRun->declarations->fields->requireMeasurements('json', 'alpha', 'ranking', $side);
+        }
+        $withUntouchedToken = static function (array $slots) use ($withProbe): array {
+            $key = 'case:alpha|format:json';
+            $slots = $withProbe($slots);
+            $slots[$key]['ranked']['stdout'] = ReportRecords::edit($slots[$key]['ranked']['stdout'], [
+                ValueCheck::value(['topIssues', 0, 'debtMinutes']) => '15.00000000000000001',
+            ]);
+            return $slots;
+        };
+        $this->observeRecords($mixedRun, $mixedRecords, 'candidate', $mixedRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$mixedCandidate]), $withUntouchedToken);
+        $this->observeRecords($mixedRun, $mixedRecords, 'reference', $mixedRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$mixedReference]));
+        $mixedRecords->prepare('alpha');
+        $mixedCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $mixedCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $mixedRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $mixedRun->report->raised());
+        self::assertSame([true, true], array_column($mixedRun->declarations->fields->requiredPublications('alpha'), 'supplied'));
+        self::assertTrue(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $mixedCaptures, $mixedRun, $mixedRecords));
+
+        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
+            ['added', 'json', 'format:json', 'probe', 'Publish the measured physical member.'],
+        ]));
+        Fs::write($formatter, str_replace("                'probe' => null,\n", '', Fs::read($formatter)));
+        $findingSection = $this->root . '/src/Reporting/Formatter/Json/JsonFindingSection.php';
+        Fs::write($findingSection, str_replace("            'message' => null,", "            'message' => null,\n            'probe' => null,", Fs::read($findingSection)));
+        self::assertContains('probe', \QmxFindingGate\EquivalenceTuple::derive($this->root)->fields);
+        $physicalRun = $this->context();
+        ValueCheck::create($physicalRun)->startDeriving();
+        $physicalRecords = RecordCheck::create($physicalRun);
+        foreach (['candidate', 'reference'] as $side) {
+            $physicalRun->declarations->fields->requireMeasurements('json', 'alpha', 'format:json', $side);
+        }
+        $physicalCandidate = $a;
+        $physicalCandidate['probe'] = 7;
+        $this->observeRecords($physicalRun, $physicalRecords, 'candidate', $physicalRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$physicalCandidate]));
+        $this->observeRecords($physicalRun, $physicalRecords, 'reference', $physicalRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$b]));
+        $physicalRecords->prepare('alpha');
+        $physicalCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $physicalCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $physicalRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $physicalRun->report->raised());
+        self::assertSame([true, true], array_column($physicalRun->declarations->fields->requiredPublications('alpha'), 'supplied'));
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $physicalCaptures, $physicalRun, $physicalRecords));
+
+        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
+            ['removed', 'json', 'format:json', 'probe', 'Withdraw the measured physical member.'],
+        ]));
+        Fs::write($findingSection, str_replace("            'probe' => null,\n", '', Fs::read($findingSection)));
+        Fs::write($this->root . '/finding-gate/' . DeclaredRecords::INDEX, Tsv::render(DeclaredRecords::COLUMNS, [
+            ['withdrawn', 'alpha', 'json', 'format:json', '{"channel":"a.b"}', 'Withdraw the complete observation.'],
+        ]));
+        $wholeRun = $this->context();
+        ValueCheck::create($wholeRun)->startDeriving();
+        $wholeRecords = RecordCheck::create($wholeRun);
+        RecordDerivation::create($wholeRun)->startDeriving();
+        foreach (['candidate', 'reference'] as $side) {
+            $wholeRun->declarations->fields->requireMeasurements('json', 'alpha', 'format:json', $side);
+        }
+        $wholeReference = $b;
+        $wholeReference['probe'] = 7;
+        $this->observeRecords($wholeRun, $wholeRecords, 'candidate', $wholeRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([]));
+        $this->observeRecords($wholeRun, $wholeRecords, 'reference', $wholeRun->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$wholeReference]));
+        $wholeRecords->prepare('alpha');
+        $wholeCaptures = [];
+        foreach (['candidate', 'reference'] as $side) {
+            $wholeCaptures[$side] = new \QmxFindingGate\CaptureResult([], [$source => $wholeRun->rankings->of($side, $source)]);
+        }
+        self::assertSame([], $wholeRun->report->raised());
+        self::assertSame([true, true], array_column($wholeRun->declarations->fields->requiredPublications('alpha'), 'supplied'));
+        self::assertFalse(\QmxFindingGate\ExactSurfaceAuthority::rawResidual($source, $wholeCaptures, $wholeRun, $wholeRecords));
     }
 
     #[Test]
@@ -542,6 +851,9 @@ final class ReportRecordsTest extends TestCase
         $records = RecordCheck::create($run);
         $this->observeRecords($run, $records, 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept]));
         $this->observeRecords($run, $records, 'reference', $run->corpus->cases[0], CaseOutcome::ANALYSIS, self::artifacts([$kept, $removed]));
+        $source = 'case:alpha|format:json';
+        $run->baselineEligibility->supply('candidate', [$source => array_fill_keys(array_keys(\QmxFindingGate\BaselineEligibility::groups([$kept])), true)]);
+        $run->baselineEligibility->supply('reference', [$source => array_fill_keys(array_keys(\QmxFindingGate\BaselineEligibility::groups([$kept, $removed])), true)]);
         $records->prepare('alpha');
         $baseline = '{"version":14,"entries":{"class:App\\\\A":[{"channel":"a.b","magnitudes":[3.000000]}],"class:App\\\\B":[{"channel":"c.d","magnitudes":[3]}]},"neighbour":{"spelling":1.00}}';
         $xml = '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="M"/></file><file name="src/B.php"><error line="1" severity="error" source="qmx.c.d" message="M"/></file><file name="unused.php"></file></checkstyle>';
@@ -737,7 +1049,7 @@ final class ReportRecordsTest extends TestCase
     }
 
     /** @param array<string,string> $artifacts */
-    private function observeRecords(RunContext $run, RecordCheck $check, string $side, \QmxFindingGate\CaseDefinition $case, string $outcome, array $artifacts): void
+    private function observeRecords(RunContext $run, RecordCheck $check, string $side, \QmxFindingGate\CaseDefinition $case, string $outcome, array $artifacts, ?callable $editRanking = null): void
     {
         if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)) {
             $check->checkCase($side, $case, $outcome, $artifacts);
@@ -796,7 +1108,7 @@ final class ReportRecordsTest extends TestCase
             }
         }
         $artifacts[$scope . '|format:summary'] ??= 'Analysis complete.';
-        $run->rankings->supply($side, $slots);
+        $run->rankings->supply($side, $editRanking === null ? $slots : $editRanking($slots));
         $check->checkCase($side, $case, $outcome, $artifacts);
     }
 

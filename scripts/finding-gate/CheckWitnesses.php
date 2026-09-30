@@ -496,18 +496,17 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::FINDING_TUPLE_MISMATCH, 'reference / alpha / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:github', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:html', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
             ),
             self::witness(
@@ -531,7 +530,6 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
                 ],
             ),
             self::witness(
@@ -585,7 +583,7 @@ final class CheckWitnesses
                 [
                     [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
                     [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json', 'NormalizationCheck::checkNormalizationLeavesFindings <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::NORMALIZATION_OVERREACH, 'candidate / case:alpha|format:json', 'NormalizationCheck::checkRun <- Gate::compare'],
                     [FailureClass::NORMALIZATION_OVERREACH, 'reference / case:alpha|format:json', 'NormalizationCheck::checkRun <- Gate::compare'],
                 ],
@@ -633,18 +631,17 @@ final class CheckWitnesses
                     [FailureClass::FINDING_TUPLE_MISMATCH, 'candidate / gamma / finding #0', 'TupleCheck::checkTupleAgainstFindings <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:gamma|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|check:output:file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:github', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:html', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
                 [[FailureClass::FINDING_TUPLE_MISMATCH, 'reference / gamma / finding #0']],
             ),
@@ -700,7 +697,7 @@ final class CheckWitnesses
                     [FailureClass::RUN_FAILED, 'candidate / alpha / format:sarif', 'FingerprintCheck::decodeFingerprintSurface <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|format:sarif', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
                 [[FailureClass::RUN_FAILED, 'reference / alpha / format:sarif']],
             ),
@@ -718,17 +715,16 @@ final class CheckWitnesses
                     [FailureClass::RUN_FAILED, '* / omega', 'CaseOutcomeCheck::findingsOf#1 <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:omega|format:json', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:github', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:html', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:summary', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:checkstyle', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:github', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:gitlab', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:html', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:json', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega', 'CoverageCheck::inputRefused <- Gate::compare'],
                 ],
                 [
@@ -776,7 +772,7 @@ final class CheckWitnesses
                     [FailureClass::RUN_FAILED, '* / alpha / baseline:generate', 'CaseOutcomeCheck::checkBaselineSurface#1 <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:alpha|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::SURFACE_MISMATCH, 'candidate / case:alpha|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
                     [FailureClass::SURFACE_MISMATCH, 'reference / case:alpha|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
                 ],
@@ -794,7 +790,7 @@ final class CheckWitnesses
                     [FailureClass::RUN_FAILED, '* / eta / baseline-file', 'CaseOutcomeCheck::checkBaselineSurface#2 <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'reference / case:eta|baseline-file', 'RecordCheck::publicationProblem <- Gate::checkFindings'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::compareSurfaces'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:eta|baseline-file', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::SURFACE_MISMATCH, 'candidate / case:eta|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
                     [FailureClass::SURFACE_MISMATCH, 'reference / case:eta|baseline-file', 'CaptureCheck::publicationFailure <- Gate::compare'],
                 ],
@@ -959,6 +955,31 @@ final class CheckWitnesses
                     return $tree;
                 },
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:summary', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#3 <- SurfaceComparison::compareFinalBytes']],
+            ),
+            self::witness(
+                'exact-surface-mismatch',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['candidateAnswers']['case:alpha|rules'] = ['stdout' => "Changed rule listing\n"];
+                    $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                        ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'The complete rule listing changes.'],
+                    ]);
+                    $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = self::NO_DIFF;
+                    return $tree;
+                },
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|rules', 'ExactSurfaceDeltaCheck::checkExact <- SurfaceComparison::compareSurfaces']],
+            ),
+            self::witness(
+                'exact-surface-stale',
+                self::DECLARATIONS,
+                static function (array $tree): array {
+                    $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+                        ['alpha', 'rules', 'declared-exact-surfaces/rules.diff', 'The complete rule listing changes.'],
+                    ]);
+                    $tree['candidateDeclarations']['declared-exact-surfaces/rules.diff'] = self::NO_DIFF;
+                    return $tree;
+                },
+                [[FailureClass::DELTA_STALE, 'case:alpha|rules', 'ExactSurfaceDeltaCheck::checkStale <- Gate::compare']],
             ),
             self::witness(
                 'delta-too-large',
@@ -1235,7 +1256,10 @@ final class CheckWitnesses
                 ]);
                 return $tree;
             },
-            [[FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json', 'RankingCheck::checkRepeatedCaptures <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')]],
+            [
+                [FailureClass::NONDETERMINISM_UNDECLARED, 'baseline eligibility', 'RankingCheck::checkRepeatedCaptures#1 <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')],
+                [FailureClass::NONDETERMINISM_UNDECLARED, 'case:alpha|format:json', 'RankingCheck::checkRepeatedCaptures#2 <- ' . ($scenario === self::WHOLE_RUN ? 'Gate::compare' : 'Gate::deriveNormalization')],
+            ],
             [],
             static function (string $root): void {
                 $file = $root . '/bin/qmx';
@@ -1257,6 +1281,20 @@ final class CheckWitnesses
                     throw new GateError('The repeated-value witness has no unique private capture site.');
                 }
                 Fs::write($file, str_replace($anchor, $fault, $source));
+
+                $probe = $root . '/vendor/autoload.php';
+                $source = Fs::read($probe);
+                $anchor = "return (object) ['baseline' => (object) ['entries' => \$entries], 'uncaptured' => []];";
+                $marker = var_export($root . '/replay/baseline-partition-pass', true);
+                $fault = "                        \$marker = " . $marker . ";\n"
+                    . "                        \$seen = is_file(\$marker) ? (int) file_get_contents(\$marker) : 0;\n"
+                    . "                        file_put_contents(\$marker, (string) (\$seen + 1));\n"
+                    . "                        \$uncaptured = \$seen === 1 ? [array_shift(\$entries)] : [];\n"
+                    . "                        return (object) ['baseline' => (object) ['entries' => \$entries], 'uncaptured' => \$uncaptured];";
+                if (substr_count($source, $anchor) !== 1) {
+                    throw new GateError('The repeated-value witness has no unique baseline generator site.');
+                }
+                Fs::write($probe, str_replace($anchor, $fault, $source));
             },
         );
     }

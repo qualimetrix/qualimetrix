@@ -3,7 +3,7 @@
 The finding gate compares a candidate with a Git reference over the same
 external PHP corpus. Every observable change must be explained by an exact
 rename, a declared record change, a measured value change, a schema change,
-an outcome change, a surface change or a bounded structural diff.
+an outcome change, a surface change or an exact measured diff.
 A declaration is evidence of what changed; it does not prove the new behaviour
 is correct. Product tests make that separate claim.
 
@@ -36,6 +36,8 @@ finding-gate/
 ├── declared-structural-maps.tsv # translated configuration paths
 ├── declared-delta.tsv           # exact residual diffs, after record/value work
 ├── declared-delta/
+├── declared-exact-surfaces.tsv # last-resort exact case/surface intentions
+├── declared-exact-surfaces/
 ├── declared-field-moves.tsv     # exact field moves permitted inside a diff
 ├── normalization.tsv           # exclusions measured from repeated runs
 ├── equivalence-tuple.tsv       # physical finding fields derived from code
@@ -238,8 +240,12 @@ Each format's records are checked against its physical authority before a
 declared record is removed or substituted. Checkstyle projections retain
 multiplicity. SARIF catalogues and result indices are canonicalized together.
 Baseline entries are joined to their complete source groups; counts and
-magnitude lists must agree. Product groups that cannot be captured in a
-baseline are not invented as entries.
+magnitude lists must agree. Each tree supplies eligibility by running its own baseline generator on
+the complete raw source groups under the captured configuration, before
+rename maps. The resulting captured/uncaptured partition is complete and
+occurrence-preserving. Groups the product does not write are not required to
+have a baseline projection; eligible groups still require exact paired entries.
+A missing eligibility supplier refuses rather than implying no eligible groups.
 
 ## Ranking values, order and published slices
 
@@ -446,13 +452,88 @@ diffs under `declared-delta/`. A row can name one case surface or a surface
 class with the same measured diff across its cases. The measured diff must
 equal the declaration. Unused rows, excessive changes and unexplained record
 field moves are respectively `delta-stale`, `delta-too-large` and
-`delta-overreach`. Size counts actual changed lines, not context padding.
-A diff whose decomposition cannot be computed within its limit is refused.
+`delta-overreach`. The 200 changed-line limit applies only to record-bearing surfaces.
+Non-record surfaces have no changed-line limit. Size counts actual changed
+lines, not context padding. Both routes retain the diff computation budget;
+a decomposition exceeding that budget is refused.
 
 `declared-field-moves.tsv` has `surface, field, from, to, reason` columns.
 It permits one exact typed field move inside a separately declared diff;
 it does not authorize a record population change. The field must actually be
 published and readable on that surface. An unused row is `field-move-stale`.
+
+`declared-exact-surfaces.tsv` has `case, surface, file, reason` columns.
+It names one concrete case and surface with a nonempty reason and a measured
+file under `declared-exact-surfaces/`. It cannot overlap an ordinary delta
+intention. Semantic forms run first in an isolated trial. A fully explained
+surface has no exact remainder and its exact intention is stale; derive does
+not write a measurement for it.
+
+Hidden authority is compared as raw multisets after the trial's effective
+semantic operations. A measured transition can erase only its own member
+paths; a decoded-equal member retains its original tokens. An authored
+intention or another record's measurement is not an erasure licence.
+Operations from one record pair remain a joint bundle with an occurrence
+budget. Physical and ranked records establish their bindings independently.
+
+A simultaneous schema change can supply a compatibility index for endpoint
+binding only when its own publication is registered and supplied, the member
+agrees with the classified publisher, and its directed presence agrees with
+the complete captured population. The index omits those proved schema members;
+original raw records, joint transitions and occurrence budgets remain intact.
+All original competing cohorts in that compatibility family participate in
+the binding proof. Schema compatibility does not grant measurement credit or
+replace the later positive producer checks required for a write.
+
+Erasure requires a unique original endpoint, raw-identical interchangeable
+instances with exact counts, or the entire original compatibility family
+covered uniformly by the same complete operation. Partial or competing operations on
+raw-distinct duplicates leave a remainder; the trial does not choose a
+convenient assignment. This conservatively limits what semantic forms can
+prove explained in an ambiguous cohort. Such a remainder uses the exact route
+without reducing its byte precision. Fully covered operations retain every
+untouched raw member and occurrence for comparison.
+
+When semantic forms leave a residual, this last resort compares the whole
+normalized publication before semantic fields or records are removed. Records
+on that selected surface are judged by the exact delta, without cross-side
+pairing. The isolated trial does not credit the main run's semantic intentions.
+Retire intentions superseded only by that whole-surface measurement;
+intentions genuinely measured on another surface retain their normal credit.
+Record-bearing surfaces also retain complete authority: independent
+physical finding and ranking identity/value multisets, including hidden
+occurrences and their multiplicity. These raw sets preserve JSON scalar tokens
+through measurement without attributing occurrences through decoded floats.
+Metrics, directives and suppressed findings retain their complete raw population;
+baseline surfaces retain their complete canonical documents. Projections and
+invocation aliases use their actual complete finding source when judging a
+hidden semantic residual, even when their own visible bytes are unchanged.
+Filtered JSON views use their own source. A finding source used to validate a
+baseline document is not part of that document's frame and cannot select its
+exact route by itself. Same-side source,
+projection, completeness and validity checks still run. Support metadata and
+hidden-tail ordering acquire no additional promise.
+
+The measurement is a byte-exact diff of length-framed visible bytes and record
+evidence. A neighbouring undeclared byte or hidden record change refuses.
+There is no 200-line cap on this route. Derivation requires positive validity
+and completeness evidence for the concrete publication and each of its own
+suppliers, including repeated candidate authority and applicable declared
+schema suppliers. Schema obligations come from the registered report, case,
+view and side, including JSON document obligations for the measured document
+and its population suppliers. A source used only for an outcome or tuple check
+does not acquire an unrelated whole-document schema obligation. An invalid
+supplier prevents
+its dependent measurement from being written; an independent valid surface
+can still be measured. Existing rows and diff bytes for invalid measurements
+remain unchanged. Semantic residuals do not make an otherwise valid source
+invalid. It is exact but coarse: prefer semantic intentions because their
+measurements explain which record or value changed.
+
+Baseline document writes retain the existing physical JSON and ranking schema
+prerequisites when those schema changes apply. These validity checks do not
+extend the document's frame or make a finding-source residual select its exact
+route.
 
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;
@@ -463,7 +544,7 @@ carrying them forward creates stale exceptions.
 Author intentions and reasons, then run
 `composer gate -- --reference=<commit> --derive-declarations`.
 It is the single writer for measured record, value, field, outcome, surface
-and residual-diff tables. It writes complete expressible measurements even if
+and residual-diff tables, including exact whole-surface residuals. It writes complete expressible measurements even if
 another change remains unexpressed. It lists the written files and refuses
 with exit 5 and the remaining failure classes. A form whose own measurement
 failed is not written; incomplete capture cannot produce successful data.

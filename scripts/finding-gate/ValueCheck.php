@@ -35,6 +35,13 @@ final class ValueCheck implements RunCheck
         $this->deriving = true;
     }
 
+    public function trialCopy(RunContext $trial): self
+    {
+        $copy = self::create($trial);
+        $copy->deriving = $this->deriving;
+        return $copy;
+    }
+
     public function measure(string $kind, string $key, string $subject, string $level, mixed $from, mixed $to): bool
     {
         if ($from === $to && $kind !== DeclaredValues::ORDER) {
@@ -48,6 +55,10 @@ final class ValueCheck implements RunCheck
             }
         }
         if (!$licensed) {
+            if (str_starts_with($subject, 'case:')) {
+                $surface = explode('|record:', $subject, 2)[0];
+                $this->run->report->semanticResidual($surface);
+            }
             $this->run->report->fail(FailureClass::VALUE_MISMATCH, $subject, 'An exact published value moved outside its declared kind, key or level: ' . $kind . ' / ' . $key);
             return false;
         }

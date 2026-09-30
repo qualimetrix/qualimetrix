@@ -46,8 +46,10 @@ final class TreeRun
         $baseline = $this->scratch('baseline-' . $case->id) . '.json';
         $artifacts = [];
         $rankings = [];
+        $baselineEligibility = [];
         $baselineWorkingDirectory = $case->directory;
         $baselineMeasured = $measured;
+        $baselineSourceCommand = [...$check, '-f', 'json'];
 
         foreach ($plan->invocations() as $descriptor) {
             if ($descriptor['scope'] !== 'case:' . $case->id) {
@@ -86,6 +88,7 @@ final class TreeRun
                 $baselineMeasured = [...$sourceCase->paths, '--no-ansi', '-c', $sourceConfig, ...$sourceArguments];
                 $cwd = $baselineWorkingDirectory;
                 $command = ['check', ...$sourceCase->paths, ...self::CHECK_ARGUMENTS, '-c', $sourceConfig, ...$sourceArguments, '-f', 'json'];
+                $baselineSourceCommand = $command;
             } elseif ($surface === 'baseline-file') {
                 $cwd = $baselineWorkingDirectory;
                 $file = $baseline;
@@ -152,7 +155,22 @@ final class TreeRun
             }
         }
 
-        return new CaptureResult($artifacts, $rankings);
+        $view = $originalCase->baselineSource() === null ? 'format:json' : 'check:baseline-source';
+        $sourceKey = Surfaces::key('case:' . $case->id, $view);
+        if (CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($originalCase, $this->label === 'reference' ? 'reference' : 'candidate'))
+            && isset($rankings[$sourceKey])) {
+            $source = $rankings[$sourceKey]['physical'] ?? $rankings[$sourceKey]['ranked'];
+            $document = ReportRecords::decode($source['stdout']);
+            if (\is_array($document['violations'] ?? null)) {
+                $baselineEligibility[$sourceKey] = BaselineEligibility::capture(
+                    $this->treeRoot,
+                    $view === 'format:json' ? $case->directory : $baselineWorkingDirectory,
+                    $baselineSourceCommand,
+                    BaselineEligibility::validatedRecords($document['violations']),
+                );
+            }
+        }
+        return new CaptureResult($artifacts, $rankings, $baselineEligibility);
     }
 
     /**

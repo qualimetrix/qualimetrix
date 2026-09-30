@@ -110,11 +110,14 @@ final class DeclaredFieldsTest extends TestCase
     #[Test]
     public function itRefusesARequiredPublicationWithNoSupplier(): void
     {
+        $this->write(DeclaredFields::INDEX, DeclaredFields::COLUMNS, [['added', 'json-document', 'format:json', 'extra', 'The document needs this field.']]);
         $fields = DeclaredFields::load($this->root);
-        $fields->requireMeasurements('json', 'smells', 'format:json', 'candidate');
+        $fields->requireMeasurements('json-document', 'smells', 'format:json', 'candidate');
+        self::assertSame([['report' => 'json-document', 'case' => 'smells', 'view' => 'format:json', 'side' => 'candidate', 'supplied' => false]], $fields->requiredPublications('smells'));
+        self::assertSame([], $fields->requiredPublications('other'));
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('not supplied');
-        $fields->measurements('json');
+        $fields->measurements('json-document');
     }
 
     #[Test]
@@ -169,6 +172,10 @@ final class DeclaredFieldsTest extends TestCase
             ['case' => 'smells', 'view' => 'format:json', 'side' => 'candidate', 'records' => [$record, $record]],
             ['case' => 'smells', 'view' => 'check:baseline-source', 'side' => 'candidate', 'records' => [$record, $record]],
         ], $fields->measurements('json'));
+        self::assertSame([
+            ['report' => 'json', 'case' => 'smells', 'view' => 'format:json', 'side' => 'candidate', 'supplied' => true],
+            ['report' => 'json', 'case' => 'smells', 'view' => 'check:baseline-source', 'side' => 'candidate', 'supplied' => true],
+        ], $fields->requiredPublications('smells'));
         $fields->credit('json', 'format:json', 'probe');
         self::assertCount(1, $fields->stale());
         self::assertStringContainsString('check:baseline-source', $fields->stale()[0]['detail']);

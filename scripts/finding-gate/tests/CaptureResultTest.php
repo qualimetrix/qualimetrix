@@ -21,11 +21,13 @@ final class CaptureResultTest extends TestCase
     public function itCarriesPrivateEvidenceWithoutCreatingPublishedArtifacts(): void
     {
         $slot = ['ranked' => ['stdout' => 'private', 'stderr' => '', 'exit' => 2], 'physical' => null];
+        $eligibility = ['case:alpha|format:json' => ['exact raw group' => false]];
         $result = (new CaptureResult(['tree|rules' => 'catalog'], []))->merge(
-            new CaptureResult(['case:alpha|format:json' => 'original'], ['case:alpha|format:json' => $slot]),
+            new CaptureResult(['case:alpha|format:json' => 'original'], ['case:alpha|format:json' => $slot], $eligibility),
         );
         self::assertSame(['tree|rules' => 'catalog', 'case:alpha|format:json' => 'original'], $result->artifacts);
         self::assertSame(['case:alpha|format:json' => $slot], $result->rankings);
+        self::assertSame($eligibility, $result->baselineEligibility);
         $captures = new RankingCaptures();
         $captures->supply('candidate', $result->rankings);
         self::assertSame($slot, $captures->of('candidate', 'case:alpha|format:json'));

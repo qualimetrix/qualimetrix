@@ -2414,6 +2414,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0086-one-configuration-document-merged-by-declared-policy.md' => 'Analysis.Configuration',
         'docs/adr/0087-the-finding-gate-declares-measured-changes.md' => 'Architecture.Governance',
         'docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md' => 'Analysis.Configuration',
+        'docs/adr/0090-exact-finding-gate-surface-deltas.md' => 'Architecture.Governance',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/Evidence/CircularDependency/README.md' => 'Analysis.Evidence.CircularDependency',

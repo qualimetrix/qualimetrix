@@ -54,6 +54,8 @@ final class Gate
 
     private readonly DeclaredDeltaCheck $declaredDeltaCheck;
 
+    private readonly ExactSurfaceDeltaCheck $exactSurfaceDeltaCheck;
+
     private readonly SurfaceComparison $surfaceComparison;
 
     private readonly CoverageCheck $coverageCheck;
@@ -86,43 +88,7 @@ final class Gate
         $this->split = ChannelSplit::of($this->maps);
         $this->corpus = Corpus::load($this->options->candidateRoot, $this->options->cases);
         $capturePlan = CapturePlan::forCorpus($this->corpus, $this->declarations->surfaces);
-        $outcomeCases = [];
-        foreach ($this->corpus->cases as $outcomeCase) {
-            $outcomeCases['case:' . $outcomeCase->id] = $outcomeCase;
-        }
-        foreach (DeclaredFields::REPORTS as $fieldReport) {
-            foreach ($this->declarations->fields->views($fieldReport) as $view) {
-                if ($fieldReport === 'json' && $view === 'ranking') {
-                    foreach ($this->corpus->cases as $case) {
-                        foreach (['candidate', 'reference'] as $side) {
-                            if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, $side))) {
-                                continue;
-                            }
-                            foreach ($capturePlan->rankingInvocations() as $source) {
-                                $key = Surfaces::key($source['scope'], $source['surface']);
-                                if ($source['scope'] === 'case:' . $case->id && $capturePlan->requiredOn($key, $side)) {
-                                    $this->declarations->fields->requireMeasurements('json', $case->id, 'ranking', $side);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    continue;
-                }
-                foreach ($capturePlan->invocations() as $invocation) {
-                    if (($invocation['surface'] !== $view && ($fieldReport !== 'json-document' || $invocation['outputFileKind'] !== $view)) || !str_starts_with($invocation['scope'], 'case:')) {
-                        continue;
-                    }
-                    $key = Surfaces::key($invocation['scope'], $invocation['surface']);
-                    foreach (['candidate', 'reference'] as $side) {
-                        if ($capturePlan->requiredOn($key, $side)
-                            && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($outcomeCases[$invocation['scope']], $side))) {
-                            $this->declarations->fields->requireMeasurements($fieldReport, substr($invocation['scope'], 5), $view, $side);
-                        }
-                    }
-                }
-            }
-        }
+        $this->declarations->fields->registerRequired($this->corpus, $capturePlan);
         $witness = new ChannelWitness($this->options->candidateRoot);
         $this->temporaryDirectory = Fs::temporaryDirectory('finding-gate-run-');
 
@@ -153,12 +119,13 @@ final class Gate
         );
         $this->rankings = $run->rankings;
         $this->context = $run;
+        $this->exactSurfaceDeltaCheck = new ExactSurfaceDeltaCheck($run);
         $this->records = RecordCheck::create($run);
         $this->caseOutcomeCheck = CaseOutcomeCheck::create($run);
         $wiring = Wiring::of(__DIR__);
         $this->caseChecks = self::registered($wiring, 'caseChecks', CaseCheck::class, $run);
         $this->runChecks = self::registered($wiring, 'runChecks', RunCheck::class, $run);
-        $this->derivations = self::registered($wiring, 'derivations', Derivation::class, $run);
+        $this->derivations = [...self::registered($wiring, 'derivations', Derivation::class, $run), $this->exactSurfaceDeltaCheck];
 
         foreach ($this->caseChecks as $check) {
             CaseOutcome::applies($check->name(), CaseOutcome::ANALYSIS);
@@ -179,6 +146,7 @@ final class Gate
             $this->temporaryDirectory,
             self::registered($wiring, 'surfaceStages', SurfaceStage::class, $run),
             $this->records,
+            $this->exactSurfaceDeltaCheck,
         );
     }
 
@@ -206,6 +174,8 @@ final class Gate
             $this->declaredDelta->totalBytes(),
         ));
         $this->report->countDeclaredDeltas($this->declaredDelta->count());
+        $this->report->fact('declared exact surfaces', $this->declarations->exactSurfaces->count());
+        $this->report->countExactSurfaces($this->declarations->exactSurfaces->count());
 
         if (!$this->declaredDelta->isEmpty()) {
             $this->report->warn(\sprintf(
@@ -276,6 +246,8 @@ final class Gate
             $referenceArtifacts = $referenceCapture->artifacts;
             $this->rankings->supply('candidate', $firstCapture->rankings);
             $this->rankings->supply('reference', $referenceCapture->rankings);
+            $this->context->baselineEligibility->supply('candidate', $firstCapture->baselineEligibility);
+            $this->context->baselineEligibility->supply('reference', $referenceCapture->baselineEligibility);
 
             $this->renameMapCheck->checkReferenceInput($first, $referenceArtifacts);
             if (\in_array(FailureClass::REFERENCE_INPUT_UNTRANSLATED, $this->report->failureClasses(), true)) {
@@ -283,6 +255,7 @@ final class Gate
             }
             $this->checkFindings('candidate', $first, trackObserved: true);
             $this->checkFindings('reference', $referenceArtifacts, trackObserved: false);
+            $this->exactSurfaceDeltaCheck->plan(['candidate' => $firstCapture, 'reference' => $referenceCapture], $this->records, $this->fingerprintCheck);
             $this->renameMapCheck->checkSplitExplanation($first, $referenceArtifacts);
             $this->surfaceComparison->compareSurfaces($first, $referenceArtifacts);
 
@@ -305,6 +278,7 @@ final class Gate
             $this->normalizationCheck->checkStaleNormalization();
             $this->renameMapCheck->checkStaleMaps();
             $this->declaredDeltaCheck->checkStaleDeclaredDelta();
+            $this->exactSurfaceDeltaCheck->checkStale();
             $this->declaredDeltaCheck->checkStaleFieldMoves();
             $this->staleDeclarationCheck->checkStaleDeclarations();
             $secondAuthority = $this->captureAuthority('candidate-2', $secondCapture);

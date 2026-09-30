@@ -111,6 +111,7 @@ final class GateModes
                     [
                         'artifacts' => $capture->artifacts,
                         'rankings' => $capture->rankings,
+                        'baselineEligibility' => $capture->baselineEligibility,
                         'mapHits' => $maps->firedRows(),
                         'structuralMapHits' => $structuralMaps->firedRows(),
                     ],

@@ -7,7 +7,21 @@ namespace QmxFindingGate;
 /** What one comparison run is made of, as a registered form sees it. */
 final class RunContext
 {
+    /** @var array<string,true> */
+    private array $exactSurfaces = [];
+
+    public function selectExactSurface(string $key): void
+    {
+        $this->exactSurfaces[$key] = true;
+    }
+
+    public function isExactSurface(string $key): bool
+    {
+        return isset($this->exactSurfaces[$key]);
+    }
     public readonly RankingCaptures $rankings;
+
+    public readonly BaselineEligibility $baselineEligibility;
 
     public readonly CapturePlan $capturePlan;
 
@@ -23,6 +37,7 @@ final class RunContext
         public readonly string $temporaryDirectory,
     ) {
         $this->rankings = new RankingCaptures();
+        $this->baselineEligibility = new BaselineEligibility();
         $this->capturePlan = CapturePlan::forCorpus($corpus, $declarations->surfaces);
     }
 
@@ -40,6 +55,7 @@ final class RunContext
             $this->temporaryDirectory,
         );
         $pass->rankings->supply('candidate', $capture->rankings);
+        $pass->baselineEligibility->supply('candidate', $capture->baselineEligibility);
         return $pass;
     }
 }

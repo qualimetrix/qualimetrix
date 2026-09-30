@@ -255,7 +255,7 @@ final class Harness
             throw new RuntimeException('No control selected.');
         }
 
-        $declaredSurfaces = $this->declaredSurfaces();
+        $declaredSurfaces = [...$this->declaredSurfaces(), ...$this->declaredExactSurfaces()];
 
         // Before the first clone: an expectation pinned to a surface this
         // repository declares a delta for can never be met, and a twenty-minute
@@ -486,6 +486,7 @@ final class Harness
                 self::touched($attempt['scratch'], $attempt['tracked']),
                 $this->declaredFieldMoveCount(),
                 Declarations::load($this->repository)->counts(),
+                $this->declaredExactSurfaces(),
             );
         } catch (Throwable $error) {
             return Outcome::crashed($attempt['control'], $error->getMessage());
@@ -620,6 +621,12 @@ final class Harness
         }
 
         return DeclaredDelta::load($this->repository . '/finding-gate')->surfaces();
+    }
+
+    /** @return list<string> */
+    private function declaredExactSurfaces(): array
+    {
+        return Declarations::load($this->repository)->exactSurfaces->keys();
     }
 
     /**

@@ -103,16 +103,17 @@ final class CaseScheduler
 
                     $artifacts = \is_array($payload) ? ($payload['artifacts'] ?? null) : null;
                     $rankings = \is_array($payload) ? ($payload['rankings'] ?? null) : null;
+                    $baselineEligibility = \is_array($payload) ? ($payload['baselineEligibility'] ?? null) : null;
                     $hits = \is_array($payload) ? ($payload['mapHits'] ?? null) : null;
                     $structuralHits = \is_array($payload) ? ($payload['structuralMapHits'] ?? null) : null;
 
-                    if (!\is_array($artifacts) || !\is_array($rankings) || !\is_array($hits) || !\is_array($structuralHits)
+                    if (!\is_array($artifacts) || !\is_array($rankings) || !\is_array($baselineEligibility) || !\is_array($hits) || !\is_array($structuralHits)
                         || array_filter($hits, static fn(mixed $count): bool => !\is_int($count)) !== []
                     ) {
                         throw new GateError(\sprintf('Case worker "%s" in %s wrote an invalid artifact map.', $worker['case']->id, $this->label));
                     }
 
-                    $capture = new CaptureResult($artifacts, $rankings);
+                    $capture = new CaptureResult($artifacts, $rankings, $baselineEligibility);
                     /** @var array<string, int> $hits */
                     $this->maps->creditRowsFiredElsewhere($hits);
                     $this->structuralMaps->creditRowsFiredElsewhere($structuralHits);

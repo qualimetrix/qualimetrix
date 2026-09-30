@@ -199,7 +199,7 @@ final class HarnessSelfTest
 
         try {
             $counts = array_fill_keys(array_keys(GateReport::DECLARATION_COUNTS), 0);
-            file_put_contents($report, (string) json_encode(['failures' => [], 'declaredDeltaCount' => 0, 'fieldMoveCount' => 0, ...$counts, 'declaredRecordCount' => 1]));
+            file_put_contents($report, (string) json_encode(['failures' => [], 'declaredDeltaCount' => 0, 'declaredExactSurfaceCount' => 0, 'exactSurfaceUsedCount' => 0, 'fieldMoveCount' => 0, ...$counts, 'declaredRecordCount' => 1]));
 
             $this->same(
                 false,
