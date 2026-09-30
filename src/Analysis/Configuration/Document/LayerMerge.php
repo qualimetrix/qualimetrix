@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 use SplObjectStorage;
 
 /**
@@ -83,12 +84,21 @@ final class LayerMerge
     private function mergeBodies(NodeSchema $schema, ResolvedValueInterface $lower, ResolvedValueInterface $upper): ResolvedValueInterface
     {
         return match ($schema->policy) {
-            MergePolicy::LastWriterWins => $upper,
+            MergePolicy::LastWriterWins => self::lastWriterWins($lower, $upper),
             MergePolicy::DeepMerge, MergePolicy::ByName => $this->mergeMaps($schema, self::map($lower), self::map($upper)),
             MergePolicy::Replace => $this->replace($schema, self::list($lower), self::list($upper)),
             MergePolicy::Accumulate => self::accumulate(self::list($lower), self::list($upper)),
             MergePolicy::PerLayer => new ResolvedOpaque([...self::opaque($lower)->contributions(), ...self::opaque($upper)->contributions()]),
         };
+    }
+
+    private static function lastWriterWins(ResolvedValueInterface $lower, ResolvedValueInterface $upper): ResolvedScalar
+    {
+        if (!$lower instanceof ResolvedScalar || !$upper instanceof ResolvedScalar) {
+            throw self::mismatch($upper);
+        }
+
+        return new ResolvedScalar($upper->value, $upper->provenance, [...$lower->writes(), ...$upper->writes()]);
     }
 
     /** A body on either side stands; a name written bare by both keeps every writer. */
@@ -106,9 +116,18 @@ final class LayerMerge
         $entries = $lower->entries();
 
         foreach ($upper->entries() as $key => $value) {
-            $entrySchema = $schema->policy === MergePolicy::ByName
-                ? $schema->element()
-                : $schema->fields()[$key] ?? NodeSchema::opaque();
+            if ($schema->policy === MergePolicy::ByName) {
+                $entrySchema = $schema->entryForName($key);
+                if ($entrySchema === null) {
+                    if (!$value instanceof ResolvedBareName || (isset($entries[$key]) && !$entries[$key] instanceof ResolvedBareName)) {
+                        throw new LogicException(\sprintf('No schema is declared for named entry "%s".', $key));
+                    }
+                    $entries[$key] = $this->merge($schema, $entries[$key] ?? null, $value) ?? $value;
+                    continue;
+                }
+            } else {
+                $entrySchema = $schema->fields()[$key] ?? NodeSchema::opaque();
+            }
 
             $entries[$key] = $this->merge($entrySchema, $entries[$key] ?? null, $value) ?? $value;
         }
@@ -122,8 +141,10 @@ final class LayerMerge
         $replaced = isset($this->emptyOverrides[$lower]) ? $this->emptyOverrides[$lower] : null;
         unset($this->emptyOverrides[$lower]);
 
+        $result = new ResolvedList($upper->items(), $upper->contributors(), [...$lower->writes(), ...$upper->writes()]);
+
         if ($notice === null || $upper->items() !== []) {
-            return $upper;
+            return $result;
         }
 
         // An empty list over an empty one that already lifted a filter keeps
@@ -133,10 +154,10 @@ final class LayerMerge
             : $replaced[1] ?? null;
 
         if ($lowerWriter !== null) {
-            $this->emptyOverrides[$upper] = [$upper->contributors()[0], $lowerWriter, $notice];
+            $this->emptyOverrides[$result] = [$upper->contributors()[0], $lowerWriter, $notice];
         }
 
-        return $upper;
+        return $result;
     }
 
     private static function accumulate(ResolvedList $lower, ResolvedList $upper): ResolvedList
@@ -155,7 +176,7 @@ final class LayerMerge
             }
         }
 
-        return new ResolvedList($items, [...$lower->contributors(), ...$upper->contributors()]);
+        return new ResolvedList($items, [...$lower->contributors(), ...$upper->contributors()], [...$lower->writes(), ...$upper->writes()]);
     }
 
     private static function named(Provenance $writer): string

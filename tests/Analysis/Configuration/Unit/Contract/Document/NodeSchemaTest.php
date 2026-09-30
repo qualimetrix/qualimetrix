@@ -107,4 +107,17 @@ final class NodeSchemaTest extends TestCase
         self::assertSame([ScalarForm::String], $element->withHint('x')->scalarForms());
         self::assertNull($element->hint());
     }
+
+    #[Test]
+    public function itDescribesTheDeclaredFormAndRetainsItAcrossModifiers(): void
+    {
+        $word = NodeSchema::scalar(ScalarForm::String)->oneOf(['warn', 'error'], true)->nonEmpty();
+        self::assertSame('non-empty string (one of warn, error, case-insensitive)', $word->describe());
+        self::assertSame($word->describe(), $word->withHint('Choose one.')->describe());
+        self::assertSame('integer at least 1', NodeSchema::scalar(ScalarForm::Integer)->atLeast(1)->describe());
+        self::assertSame('a list or one element', NodeSchema::stringList()->admittingBareElement()->describe());
+        self::assertSame('a map or a boolean for "enabled"', NodeSchema::map([
+            'enabled' => NodeSchema::scalar(ScalarForm::Boolean),
+        ])->bareFor('enabled')->describe());
+    }
 }

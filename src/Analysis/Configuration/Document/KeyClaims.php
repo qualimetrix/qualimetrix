@@ -15,16 +15,23 @@ final class KeyClaims
     /** @var array<string, string> canonical key => the spelling that claimed it */
     private array $claimed = [];
 
-    /** @param list<string> $dictionary canonical keys */
+    /**
+     * @param list<string> $dictionary canonical keys
+     * @param array<string, string> $retired
+     */
     private function __construct(
         private readonly array $dictionary,
         private readonly ReadingContext $at,
+        private readonly array $retired = [],
     ) {}
 
-    /** @param list<string> $dictionary canonical keys */
-    public static function of(array $dictionary, ReadingContext $at): self
+    /**
+     * @param list<string> $dictionary canonical keys
+     * @param array<string, string> $retired
+     */
+    public static function of(array $dictionary, ReadingContext $at, array $retired = []): self
     {
-        return new self($dictionary, $at);
+        return new self($dictionary, $at, $retired);
     }
 
     /**
@@ -34,7 +41,7 @@ final class KeyClaims
      */
     public function claim(string $written, AuthoredNode $node): string
     {
-        $canonical = KeyRecognition::recognise($written, $this->dictionary, $this->at->child($written, $written, $node));
+        $canonical = KeyRecognition::recognise($written, $this->dictionary, $this->at->child($written, $written, $node), $this->retired);
 
         $first = $this->claimed[$canonical] ?? null;
         if ($first !== null) {

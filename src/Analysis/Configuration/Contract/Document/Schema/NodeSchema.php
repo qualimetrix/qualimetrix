@@ -28,6 +28,9 @@ final readonly class NodeSchema
     /**
      * @param list<ScalarForm> $scalarForms
      * @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement|null $layerJudge
+     * @param ?Closure(string): ?self $namedEntrySchema
+     * @param array<string, string> $retiredKeys
+     * @param list<string> $choices
      */
     private function __construct(
         public MergePolicy $policy,
@@ -37,6 +40,14 @@ final readonly class NodeSchema
         private ?NameVocabulary $names = null,
         private NodeWording $wording = new NodeWording(),
         private Closure|IntegerJudgement|null $layerJudge = null,
+        private ?Closure $namedEntrySchema = null,
+        private ?string $bareField = null,
+        private bool $bareElement = false,
+        private array $retiredKeys = [],
+        private int|float|null $minimum = null,
+        private array $choices = [],
+        private bool $foldCase = false,
+        private bool $nonEmpty = false,
     ) {}
 
     /** A scalar leaf written as one of `$forms`; no form accepts any scalar. */
@@ -83,6 +94,12 @@ final readonly class NodeSchema
         return new self(MergePolicy::ByName, element: $entry, names: $names);
     }
 
+    /** @param Closure(string): ?self $entryForName */
+    public static function namedMapOf(Closure $entryForName, NameVocabulary $names): self
+    {
+        return new self(MergePolicy::ByName, names: $names, namedEntrySchema: $entryForName);
+    }
+
     /** A subtree the engine carries per layer without reading it. */
     public static function opaque(): self
     {
@@ -100,7 +117,7 @@ final readonly class NodeSchema
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
 
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording->with(emptyOverrideNotice: $notice), $this->layerJudge);
+        return $this->with(wording: $this->wording->with(emptyOverrideNotice: $notice));
     }
 
     /**
@@ -110,7 +127,7 @@ final readonly class NodeSchema
      */
     public function withHint(string $hint): self
     {
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording->with(hint: $hint), $this->layerJudge);
+        return $this->with(wording: $this->wording->with(hint: $hint));
     }
 
     /**
@@ -128,7 +145,172 @@ final readonly class NodeSchema
             throw new LogicException('An integer judgement requires a last-writer-wins integer scalar.');
         }
 
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording, $judge);
+        return $this->with(layerJudge: $judge);
+    }
+
+    /** A boolean scalar in place of this map writes its declared field. */
+    public function bareFor(string $field): self
+    {
+        $target = $this->fields()[$field] ?? null;
+        if ($this->policy !== MergePolicy::DeepMerge || $target?->scalarForms() !== [ScalarForm::Boolean]) {
+            throw new LogicException('A bare map value requires a declared boolean field.');
+        }
+
+        return $this->with(bareField: $field);
+    }
+
+    /** A scalar at this list node writes a one-element list. */
+    public function admittingBareElement(): self
+    {
+        if ($this->policy !== MergePolicy::Replace && $this->policy !== MergePolicy::Accumulate) {
+            throw new LogicException('Only a list can admit a bare element.');
+        }
+
+        return $this->with(bareElement: true);
+    }
+
+    /** @param array<string, string> $sentenceByRetiredKey */
+    public function retiring(array $sentenceByRetiredKey): self
+    {
+        if ($this->policy !== MergePolicy::DeepMerge) {
+            throw new LogicException('Only a map can retire keys.');
+        }
+        foreach ($sentenceByRetiredKey as $key => $sentence) {
+            KeyDictionary::assertCanonical($key);
+            if (\in_array($key, $this->keys()->keys(), true)) {
+                throw new LogicException(\sprintf('Retired key "%s" is still declared.', $key));
+            }
+            if ($sentence === '') {
+                throw new LogicException('A retired key needs replacement wording.');
+            }
+        }
+
+        return $this->with(retiredKeys: $sentenceByRetiredKey);
+    }
+
+    public function atLeast(int|float $minimum): self
+    {
+        if ($this->policy !== MergePolicy::LastWriterWins || (!\in_array(ScalarForm::Integer, $this->scalarForms, true) && !\in_array(ScalarForm::Number, $this->scalarForms, true))) {
+            throw new LogicException('A numeric floor requires a numeric scalar.');
+        }
+
+        return $this->with(minimum: $minimum);
+    }
+
+    /** @param non-empty-list<string> $choices */
+    public function oneOf(array $choices, bool $foldCase = false): self
+    {
+        if ($this->policy !== MergePolicy::LastWriterWins || !\in_array(ScalarForm::String, $this->scalarForms, true) || $choices === []) {
+            throw new LogicException('A word vocabulary requires a string scalar and at least one word.');
+        }
+
+        return $this->with(choices: array_values($choices), foldCase: $foldCase);
+    }
+
+    public function nonEmpty(): self
+    {
+        if ($this->policy !== MergePolicy::LastWriterWins || !\in_array(ScalarForm::String, $this->scalarForms, true)) {
+            throw new LogicException('Non-empty text requires a string scalar.');
+        }
+
+        return $this->with(nonEmpty: true);
+    }
+
+    public function describe(): string
+    {
+        return match ($this->policy) {
+            MergePolicy::LastWriterWins => $this->describeScalar(),
+            MergePolicy::DeepMerge => $this->bareField === null ? 'a map' : \sprintf('a map or a boolean for "%s"', $this->bareField),
+            MergePolicy::Replace, MergePolicy::Accumulate => $this->bareElement ? 'a list or one element' : 'a list',
+            MergePolicy::ByName => 'a map of named entries',
+            MergePolicy::PerLayer => 'a value carried per layer',
+        };
+    }
+
+    private function describeScalar(): string
+    {
+        $form = $this->scalarForms === [] ? 'a scalar' : implode(' or ', array_map(static fn(ScalarForm $form): string => $form->value, $this->scalarForms));
+        if ($this->minimum !== null) {
+            $form .= \sprintf(' at least %s', $this->minimum);
+        }
+        if ($this->nonEmpty) {
+            $form = 'non-empty ' . $form;
+        }
+        if ($this->choices !== []) {
+            $form .= \sprintf(' (one of %s%s)', implode(', ', $this->choices), $this->foldCase ? ', case-insensitive' : '');
+        }
+
+        return $form;
+    }
+
+    public function entryForName(string $name): ?self
+    {
+        return $this->namedEntrySchema === null ? $this->element : ($this->namedEntrySchema)($name);
+    }
+
+    public function bareField(): ?string
+    {
+        return $this->bareField;
+    }
+    public function admitsBareElement(): bool
+    {
+        return $this->bareElement;
+    }
+    /** @return array<string, string> */
+    public function retiredKeys(): array
+    {
+        return $this->retiredKeys;
+    }
+    public function minimum(): int|float|null
+    {
+        return $this->minimum;
+    }
+    /** @return list<string> */
+    public function choices(): array
+    {
+        return $this->choices;
+    }
+    public function foldsCase(): bool
+    {
+        return $this->foldCase;
+    }
+    public function requiresNonEmpty(): bool
+    {
+        return $this->nonEmpty;
+    }
+
+    /**
+     * @param ?array<string, string> $retiredKeys
+     * @param ?list<string> $choices
+     */
+    private function with(
+        ?NodeWording $wording = null,
+        Closure|IntegerJudgement|null $layerJudge = null,
+        ?string $bareField = null,
+        ?bool $bareElement = null,
+        ?array $retiredKeys = null,
+        int|float|null $minimum = null,
+        ?array $choices = null,
+        ?bool $foldCase = null,
+        ?bool $nonEmpty = null,
+    ): self {
+        return new self(
+            $this->policy,
+            $this->scalarForms,
+            $this->keys,
+            $this->element,
+            $this->names,
+            $wording ?? $this->wording,
+            $layerJudge ?? $this->layerJudge,
+            $this->namedEntrySchema,
+            $bareField ?? $this->bareField,
+            $bareElement ?? $this->bareElement,
+            $retiredKeys ?? $this->retiredKeys,
+            $minimum ?? $this->minimum,
+            $choices ?? $this->choices,
+            $foldCase ?? $this->foldCase,
+            $nonEmpty ?? $this->nonEmpty,
+        );
     }
 
     /**

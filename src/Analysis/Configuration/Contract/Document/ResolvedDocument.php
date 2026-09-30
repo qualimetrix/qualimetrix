@@ -55,10 +55,10 @@ final readonly class ResolvedDocument
     private function assertDeclared(array $path): void
     {
         $schema = $this->schema;
-        foreach ($path as $segment) {
+        foreach ($path as $index => $segment) {
             $schema = match ($schema->policy) {
                 MergePolicy::DeepMerge => $schema->fields()[$segment] ?? self::undeclared($path),
-                MergePolicy::ByName => self::namedEntry($schema, $segment, $path),
+                MergePolicy::ByName => self::namedEntry($schema, $segment, $path, $index === \count($path) - 1),
                 MergePolicy::Replace, MergePolicy::Accumulate => preg_match('/^(0|[1-9][0-9]*)$/D', $segment) === 1
                     ? $schema->element()
                     : self::undeclared($path),
@@ -68,14 +68,23 @@ final readonly class ResolvedDocument
     }
 
     /** @param non-empty-list<string> $path */
-    private static function namedEntry(NodeSchema $schema, string $name, array $path): NodeSchema
+    private static function namedEntry(NodeSchema $schema, string $name, array $path, bool $last): NodeSchema
     {
         $names = $schema->names();
         if ($names?->isFixed() === true && !\in_array($name, $names->fixedNames(), true)) {
             self::undeclared($path);
         }
 
-        return $schema->element();
+        $entry = $schema->entryForName($name);
+        if ($entry === null) {
+            if (!$last) {
+                self::undeclared($path);
+            }
+
+            return NodeSchema::opaque();
+        }
+
+        return $entry;
     }
 
     /** @param non-empty-list<string> $path */

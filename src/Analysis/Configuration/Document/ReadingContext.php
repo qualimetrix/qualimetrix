@@ -49,6 +49,19 @@ final readonly class ReadingContext
         return $this->descend($authored, $canonical, null);
     }
 
+    /** @param list<string> $path */
+    public function atCanonicalPath(array $path): self
+    {
+        return new self(
+            $this->origin,
+            $this->positioned,
+            $this->authoredPath,
+            $path,
+            $this->insideList,
+            $this->layerIndex,
+        );
+    }
+
     private function descend(string $authored, string $canonical, ?string $locator): self
     {
         return new self(

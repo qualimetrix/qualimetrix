@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 
@@ -26,7 +25,7 @@ final class WrittenForm
         }
 
         $forms = $schema->scalarForms();
-        $expected = $forms === [] ? 'a scalar' : implode(' or ', array_map(static fn(ScalarForm $form): string => $form->value, $forms));
+        $expected = $schema->describe();
 
         if ($node->shape !== AuthoredShape::Scalar || $node->scalar === null) {
             throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)), $schema));
@@ -34,6 +33,8 @@ final class WrittenForm
 
         foreach ($forms as $form) {
             if ($form->accepts($node->scalar)) {
+                self::judgeScalar($schema, $node->scalar, $at);
+
                 return new ResolvedScalar($node->scalar, $at->provenance($node));
             }
         }
@@ -42,7 +43,31 @@ final class WrittenForm
             throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)), $schema));
         }
 
+        self::judgeScalar($schema, $node->scalar, $at);
+
         return new ResolvedScalar($node->scalar, $at->provenance($node));
+    }
+
+    private static function judgeScalar(NodeSchema $schema, int|float|string|bool $value, ReadingContext $at): void
+    {
+        $minimum = $schema->minimum();
+        if ($minimum !== null && (\is_int($value) || \is_float($value)) && $value < $minimum) {
+            throw $at->refusal(\sprintf('%s must be at least %s, got %s.', ucfirst($at->where()), $minimum, $value));
+        }
+
+        if ($schema->requiresNonEmpty() && \is_string($value) && trim($value) === '') {
+            throw $at->refusal(\sprintf('%s must be non-empty text.', ucfirst($at->where())));
+        }
+
+        $choices = $schema->choices();
+        if ($choices !== [] && \is_string($value)) {
+            $matches = static fn(string $choice): bool => $schema->foldsCase()
+                ? strcasecmp($value, $choice) === 0
+                : $value === $choice;
+            if (!array_any($choices, $matches)) {
+                throw $at->refusal(\sprintf('%s must be one of %s, got "%s".', ucfirst($at->where()), implode(', ', $choices), $value));
+            }
+        }
     }
 
     /**
