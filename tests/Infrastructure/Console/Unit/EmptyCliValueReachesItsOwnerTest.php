@@ -121,6 +121,6 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
             }
         };
 
-        return (new ConfigurationInputAdapter($pipeline, new ErrorStream()))->adapt($input, '/project');
+        return (new ConfigurationInputAdapter($pipeline, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)))->adapt($input, '/project');
     }
 }

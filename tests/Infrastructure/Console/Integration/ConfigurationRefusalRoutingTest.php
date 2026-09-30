@@ -478,7 +478,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             {
                 throw $this->refusal;
             }
-        }, new ErrorStream());
+        }, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class));
     }
 
     private function realRuntimeConfigurator(): RuntimeConfigurator

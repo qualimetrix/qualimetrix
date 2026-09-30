@@ -7,11 +7,29 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
+use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\RuntimeException as ConsoleRuntimeException;
+use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,18 +38,40 @@ use Symfony\Component\Console\Input\InputOption;
 final class CliOptionsParserTest extends TestCase
 {
     #[Test]
+    public function itTargetsTheDeclaredSchemaAndKeepsSelectorPayloadPlain(): void
+    {
+        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
+        $definition = new InputDefinition([
+            new InputOption('distance-warning', null, InputOption::VALUE_REQUIRED),
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]);
+        $input = new ArrayInput([
+            '--distance-warning' => '0.5',
+            '--rule-opt' => ['coupling.distance:include-namespaces=exact:App\\Domain'],
+        ], $definition);
+
+        $writes = $parser->pathWrites($input);
+        self::assertCount(2, $writes);
+        self::assertSame(['rules', 'coupling.distance', 'max-distance-warning'], $writes[0]->path);
+        self::assertSame(0, $writes[0]->target->minimum());
+        self::assertSame(['rules', 'coupling.distance', 'include-namespaces'], $writes[1]->path);
+        self::assertSame([['exact' => 'App\\Domain']], $writes[1]->selectorValue);
+    }
+
+    #[Test]
     public function itDecodesTheDistanceNamespaceSelectorAfterRawRuleOptionParsing(): void
     {
-        $parser = new CliOptionsParser(new RuleOptionsParser());
+        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]);
 
-        $result = $parser->parseRuleOptions(new ArrayInput([
+        $result = $this->resolvedRuleOptions($parser, new ArrayInput([
             '--rule-opt' => ['coupling.distance:include-namespaces=regex:App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*'],
         ], $definition));
 
-        $selector = $result['coupling.distance']['includeNamespaces'] ?? null;
+        self::assertSame([['regex' => 'App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*']], $result['coupling.distance']['include-namespaces']);
+        $selector = DistanceOptions::fromArray(['include_namespaces' => $result['coupling.distance']['include-namespaces']])->includeNamespaces[0] ?? null;
         self::assertInstanceOf(NamespacePattern::class, $selector);
         self::assertSame('regex:App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*', $selector->definition->display());
 
@@ -45,7 +85,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itRefusesABareDistanceNamespaceCliValue(): void
     {
-        $parser = new CliOptionsParser(new RuleOptionsParser());
+        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]);
@@ -53,7 +93,7 @@ final class CliOptionsParserTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('must use KIND:VALUE');
 
-        $parser->parseRuleOptions(new ArrayInput([
+        $this->resolvedRuleOptions($parser, new ArrayInput([
             '--rule-opt' => ['coupling.distance:include-namespaces=App\\Domain'],
         ], $definition));
     }
@@ -61,20 +101,20 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itDecodesPerRuleSuppressionSelectors(): void
     {
-        $parser = new CliOptionsParser(new RuleOptionsParser());
+        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([ComplexityRule::class]));
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]);
 
-        $result = $parser->parseRuleOptions(new ArrayInput([
+        $result = $this->resolvedRuleOptions($parser, new ArrayInput([
             '--rule-opt' => [
                 'complexity.ccn:suppress-paths=regex:.*Generated\\.php',
                 'complexity.ccn:suppress-namespaces=subtree:App\\Generated',
             ],
         ], $definition));
 
-        self::assertSame([['regex' => '.*Generated\\.php']], $result['complexity.ccn']['suppressPaths']);
-        self::assertSame([['subtree' => 'App\\Generated']], $result['complexity.ccn']['suppressNamespaces']);
+        self::assertSame([['regex' => '.*Generated\\.php']], $result['complexity.ccn']['suppress-paths']);
+        self::assertSame([['subtree' => 'App\\Generated']], $result['complexity.ccn']['suppress-namespaces']);
     }
 
     #[Test]
@@ -85,7 +125,7 @@ final class CliOptionsParserTest extends TestCase
             'cyclomatic-warning' => ['rule' => 'complexity.ccn', 'option' => 'warning'],
             'mi-warning' => ['rule' => 'maintainability.mi', 'option' => 'warning'],
             'cbo-error' => ['rule' => 'coupling.cbo', 'option' => 'error'],
-        ]);
+        ], ['maintainability.mi' => MaintainabilityOptions::class, 'coupling.cbo' => CboOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -102,7 +142,7 @@ final class CliOptionsParserTest extends TestCase
         ], $definition);
 
         // Act
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
         // Assert: non-hardcoded aliases should be processed
         self::assertArrayHasKey('maintainability.mi', $result);
@@ -113,15 +153,8 @@ final class CliOptionsParserTest extends TestCase
     }
 
     #[Test]
-    public function itPrefersRuleOptOverAConflictingAlias(): void
+    public function itRefusesAConflictingAliasAndRuleOptionBeforeMerge(): void
     {
-        // Arrange: --rule-opt and alias both set same rule option
-        $ruleOptionsParser = new RuleOptionsParser([
-            'mi-warning' => ['rule' => 'maintainability.mi', 'option' => 'warning'],
-        ]);
-
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
-
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
             new InputOption('mi-warning', null, InputOption::VALUE_REQUIRED),
@@ -132,11 +165,22 @@ final class CliOptionsParserTest extends TestCase
             '--mi-warning' => '30',
         ], $definition);
 
-        // Act
-        $result = $cliParser->parseRuleOptions($input);
+        $cliParser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([MaintainabilityRule::class]));
+        $writes = $cliParser->pathWrites($input);
+        self::assertCount(2, $writes);
+        self::assertSame(['rules', 'maintainability.mi', 'warning'], $writes[0]->path);
+        self::assertSame(['rules', 'maintainability.mi', 'warning'], $writes[1]->path);
+        self::assertSame('--mi-warning', $writes[0]->optionName);
+        self::assertSame('--rule-opt', $writes[1]->optionName);
+        self::assertSame('30', $writes[0]->text);
+        self::assertSame('50', $writes[1]->text);
 
-        // Assert: --rule-opt should take priority
-        self::assertSame(50, $result['maintainability.mi']['warning']);
+        try {
+            CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
+            self::fail('Overlapping rule option writes must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Options --mi-warning and --rule-opt both write overlapping rule option paths.', $refusal->summary());
+        }
     }
 
     #[Test]
@@ -144,7 +188,7 @@ final class CliOptionsParserTest extends TestCase
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'param-type-coverage-warning' => ['rule' => 'design.type-coverage.param', 'option' => 'warning'],
-        ]);
+        ], ['design.type-coverage.param' => TypeCoverageOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -157,7 +201,7 @@ final class CliOptionsParserTest extends TestCase
             '--param-type-coverage-warning' => '0.7',
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
         self::assertArrayHasKey('design.type-coverage.param', $result);
         self::assertSame(0.7, $result['design.type-coverage.param']['warning']);
@@ -166,37 +210,39 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itNormalizesAliasValuesToBooleans(): void
     {
-        $ruleOptionsParser = new RuleOptionsParser([
-            'rule-enabled' => ['rule' => 'test.rule', 'option' => 'enabled'],
-            'rule-disabled' => ['rule' => 'test.rule', 'option' => 'countNullsafe'],
-        ]);
-
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
-
-        $definition = new InputDefinition([
-            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
-            new InputOption('rule-enabled', null, InputOption::VALUE_REQUIRED),
-            new InputOption('rule-disabled', null, InputOption::VALUE_REQUIRED),
-        ]);
+        $cliParser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
+        $command = new Command('check');
+        CheckCommandDefinition::addOptions($command, new RuleRegistry([CircularDependencyRule::class]));
+        $definition = $command->getDefinition();
+        self::assertFalse($definition->getOption('circular-deps')->acceptValue());
 
         $input = new ArrayInput([
-            '--rule-enabled' => 'true',
-            '--rule-disabled' => 'false',
+            '--circular-deps' => true,
+            '--rule-opt' => ['architecture.circular-dependency:direct-as-error=false'],
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
-        self::assertArrayHasKey('test.rule', $result);
-        self::assertTrue($result['test.rule']['enabled']);
-        self::assertFalse($result['test.rule']['countNullsafe']);
+        self::assertArrayHasKey('architecture.circular-dependency', $result);
+        self::assertTrue($result['architecture.circular-dependency']['enabled']);
+        self::assertFalse($result['architecture.circular-dependency']['direct-as-error']);
+
+        $rawWrites = $cliParser->pathWrites(new ArgvInput([
+            'qmx', '--circular-deps', '--rule-opt=architecture.circular-dependency:direct-as-error=false',
+        ], $definition));
+        self::assertCount(2, $rawWrites);
+        self::assertSame(['rules', 'architecture.circular-dependency', 'enabled'], $rawWrites[0]->path);
+        self::assertSame('true', $rawWrites[0]->text);
+        self::assertSame(['rules', 'architecture.circular-dependency', 'direct-as-error'], $rawWrites[1]->path);
+        self::assertSame('false', $rawWrites[1]->text);
     }
 
     #[Test]
     public function itNormalizesAnAliasValueToInt(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
-            'ccn-warning' => ['rule' => 'complexity.ccn', 'option' => 'warning'],
-        ]);
+            'ccn-warning' => ['rule' => 'complexity.ccn', 'option' => 'callable.warning'],
+        ], ['complexity.ccn' => ComplexityRule::getOptionsClass()]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -209,10 +255,10 @@ final class CliOptionsParserTest extends TestCase
             '--ccn-warning' => '10',
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
         self::assertArrayHasKey('complexity.ccn', $result);
-        self::assertSame(10, $result['complexity.ccn']['warning']);
+        self::assertSame(10, $result['complexity.ccn']['callable']['warning']);
     }
 
     #[Test]
@@ -220,7 +266,7 @@ final class CliOptionsParserTest extends TestCase
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
-        ]);
+        ], ['architecture.circular-dependency' => CircularDependencyOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -234,7 +280,7 @@ final class CliOptionsParserTest extends TestCase
             '--circular-deps' => true,
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
         self::assertArrayHasKey('architecture.circular-dependency', $result);
         self::assertTrue($result['architecture.circular-dependency']['enabled']);
@@ -245,7 +291,7 @@ final class CliOptionsParserTest extends TestCase
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
-        ]);
+        ], ['architecture.circular-dependency' => CircularDependencyOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -257,7 +303,7 @@ final class CliOptionsParserTest extends TestCase
         // Not passing the option — VALUE_NONE default is false
         $input = new ArrayInput([], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
         self::assertArrayNotHasKey('architecture.circular-dependency', $result);
     }
@@ -266,8 +312,8 @@ final class CliOptionsParserTest extends TestCase
     public function itNormalizesScientificNotationToFloat(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
-            'threshold' => ['rule' => 'test.rule', 'option' => 'threshold'],
-        ]);
+            'threshold' => ['rule' => 'coupling.distance', 'option' => 'max-distance-warning'],
+        ], ['coupling.distance' => DistanceOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -280,19 +326,18 @@ final class CliOptionsParserTest extends TestCase
             '--threshold' => '1e3',
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
-        self::assertArrayHasKey('test.rule', $result);
-        // 1e3 should be parsed as float 1000.0, not int 1
-        self::assertSame(1000.0, $result['test.rule']['threshold']);
+        self::assertArrayHasKey('coupling.distance', $result);
+        self::assertSame(1000.0, $result['coupling.distance']['max-distance-warning']);
     }
 
     #[Test]
     public function itNormalizesScientificNotationWithADecimalPointToFloat(): void
     {
         $ruleOptionsParser = new RuleOptionsParser([
-            'threshold' => ['rule' => 'test.rule', 'option' => 'threshold'],
-        ]);
+            'threshold' => ['rule' => 'coupling.distance', 'option' => 'max-distance-warning'],
+        ], ['coupling.distance' => DistanceOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -305,10 +350,10 @@ final class CliOptionsParserTest extends TestCase
             '--threshold' => '1.5e2',
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
-        self::assertArrayHasKey('test.rule', $result);
-        self::assertSame(150.0, $result['test.rule']['threshold']);
+        self::assertArrayHasKey('coupling.distance', $result);
+        self::assertSame(150.0, $result['coupling.distance']['max-distance-warning']);
     }
 
     /**
@@ -328,7 +373,7 @@ final class CliOptionsParserTest extends TestCase
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
-        ]);
+        ], ['cohesion.lcom' => LcomOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -347,7 +392,7 @@ final class CliOptionsParserTest extends TestCase
             . ' was written with an empty value ("--lcom-exclude-methods=").',
         );
 
-        $cliParser->parseRuleOptions($input);
+        $this->resolvedRuleOptions($cliParser, $input);
     }
 
     /**
@@ -359,7 +404,7 @@ final class CliOptionsParserTest extends TestCase
     {
         $ruleOptionsParser = new RuleOptionsParser([
             'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
-        ]);
+        ], ['cohesion.lcom' => LcomOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -372,40 +417,24 @@ final class CliOptionsParserTest extends TestCase
             '--lcom-exclude-methods' => 'getName',
         ], $definition);
 
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
-        self::assertSame('getName', $result['cohesion.lcom']['excludeMethods']);
+        self::assertSame(['getName'], $result['cohesion.lcom']['exclude-methods']);
     }
 
-    /**
-     * The sixteen aliases with no external carrier for `null_means` (their CLI
-     * option never appears in the CLI options table) are refused the same
-     * way: this door has one code path for every alias, and there is no
-     * reason an undocumented alias should behave differently from a
-     * documented one for the same empty-value input.
-     */
+    /** A boolean alias is a switch, so an attached empty value is refused during Symfony binding. */
     #[Test]
-    public function itRefusesAnEmptyValueOnAnUndocumentedAliasTheSameWay(): void
+    public function itRefusesAnEmptyValueOnABooleanAliasAtTheRealCliDefinition(): void
     {
-        $ruleOptionsParser = new RuleOptionsParser([
-            'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
-        ]);
+        $command = new Command('check');
+        CheckCommandDefinition::addOptions($command, new RuleRegistry([CircularDependencyRule::class]));
+        $definition = $command->getDefinition();
+        self::assertFalse($definition->getOption('circular-deps')->acceptValue());
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $this->expectException(ConsoleRuntimeException::class);
+        $this->expectExceptionMessage('The "--circular-deps" option does not accept a value.');
 
-        $definition = new InputDefinition([
-            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
-            new InputOption('circular-deps', null, InputOption::VALUE_REQUIRED),
-        ]);
-
-        $input = new ArrayInput([
-            '--circular-deps' => '',
-        ], $definition);
-
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Option --circular-deps (rule "architecture.circular-dependency", option "enabled") was written with an empty value');
-
-        $cliParser->parseRuleOptions($input);
+        new ArgvInput(['qmx', '--circular-deps='], $definition);
     }
 
     #[Test]
@@ -415,7 +444,7 @@ final class CliOptionsParserTest extends TestCase
         $ruleOptionsParser = new RuleOptionsParser([
             'mi-warning' => ['rule' => 'maintainability.mi', 'option' => 'warning'],
             'mi-error' => ['rule' => 'maintainability.mi', 'option' => 'error'],
-        ]);
+        ], ['maintainability.mi' => MaintainabilityOptions::class]);
 
         $cliParser = new CliOptionsParser($ruleOptionsParser);
 
@@ -431,7 +460,7 @@ final class CliOptionsParserTest extends TestCase
         ], $definition);
 
         // Act
-        $result = $cliParser->parseRuleOptions($input);
+        $result = $this->resolvedRuleOptions($cliParser, $input);
 
         // Assert: only mi-warning should be in result
         self::assertArrayHasKey('maintainability.mi', $result);
@@ -439,4 +468,12 @@ final class CliOptionsParserTest extends TestCase
         self::assertArrayNotHasKey('error', $result['maintainability.mi']);
     }
 
+    /** @return array<string, array<string, mixed>> */
+    private function resolvedRuleOptions(CliOptionsParser $parser, ArrayInput $input): array
+    {
+        $writes = $parser->pathWrites($input);
+        $layer = CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
+        $plain = $layer->root->plain();
+        return $plain['rules'] ?? [];
+    }
 }

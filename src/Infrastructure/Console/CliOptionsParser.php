@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
-use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
-use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -23,182 +25,95 @@ final readonly class CliOptionsParser
     ) {}
 
     /**
-     * Parse CLI input into rule options.
+     * @param ?list<array{optionName: string, text: string, ordinal: int}> $records
      *
-     * Defensive about option presence: commands other than `check` (e.g.
-     * `debug:layer-assignment`) reuse {@see RuntimeConfigurator}, which calls
-     * this parser, but do not expose `--rule-opt` or per-rule short aliases.
-     * Missing options are treated as "no value supplied".
-     *
-     * @return array<string, array<string, mixed>>
+     * @return list<CommandLinePathWrite>
      */
-    public function parseRuleOptions(InputInterface $input): array
+    public function pathWrites(InputInterface $input, ?array $records = null): array
     {
-        $ruleOptions = $this->ruleOptionsParser->parseRuleOptions(CommandLineSpelling::options($input, 'rule-opt'));
-
-        // Parse all registered short aliases (from rule definitions)
+        $aliasForms = [];
         foreach ($this->ruleOptionsParser->getAliasNames() as $alias) {
-            $value = $this->optionValue($input, $alias);
+            $target = $this->ruleOptionsParser->aliasTarget($alias);
+            $surface = $target === null ? null : $this->ruleOptionsParser->surfaceFor($target['rule']);
+            $address = $surface?->locate($target['option'] ?? '');
+            if ($address !== null) {
+                $aliasForms[$alias] = $surface->schemaAt($address)->scalarForms() !== [ScalarForm::Boolean];
+            }
+        }
+        $records ??= AuthoredRuleOptionWrites::fromInput($input, $aliasForms);
+        usort($records, static fn(array $a, array $b): int => $a['ordinal'] <=> $b['ordinal']);
 
-            // VALUE_REQUIRED: null when not provided; VALUE_NONE: false when not provided
-            if ($value === null || $value === false) {
-                continue;
+        $writes = [];
+        foreach ($records as $record) {
+            $optionName = $record['optionName'];
+            if ($optionName === '--rule-opt') {
+                $parsed = $this->ruleOptionsParser->parseAuthoredRuleOption($record['text']);
+                $rule = $parsed['rule'];
+                $option = $parsed['option'];
+                $text = $parsed['text'];
+            } else {
+                $alias = substr($optionName, 2);
+                $target = $this->ruleOptionsParser->aliasTarget($alias);
+                if ($target === null || !$input->hasOption($alias)) {
+                    throw ConfigurationRefusal::aboutCommandLineInput($optionName, 'Unknown rule option alias.');
+                }
+                $rule = $target['rule'];
+                $option = $target['option'];
+                $text = $record['text'];
+                if (trim($text) === '') {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        $optionName,
+                        \sprintf(
+                            'Option %s (rule "%s", option "%s") was written with an empty value ("%s="). '
+                            . 'Write a value after "=", or omit %s entirely to use its default.',
+                            $optionName,
+                            $rule,
+                            $option,
+                            $optionName,
+                            $optionName,
+                        ),
+                    );
+                }
             }
 
-            $this->refuseEmptyAliasValue($alias, $value);
-
-            $parsed = $this->ruleOptionsParser->parseShortAlias($alias, $this->normalizeValue($value));
-            if ($parsed === null) {
-                continue;
+            $surface = $this->ruleOptionsParser->surfaceFor($rule);
+            if ($surface === null) {
+                throw ConfigurationRefusal::aboutCommandLineInput($optionName, \sprintf('Rule option owner "%s" does not match any registered producer rule.', $rule));
+            }
+            $address = $surface->locate($option);
+            if ($address === null) {
+                $framework = FrameworkOptionKeys::declared();
+                $key = $framework->spellingOf(ConfigKeySpelling::normalize($option));
+                if ($key !== null) {
+                    $address = new RuleOptionAddress(null, $key);
+                }
+            }
+            if ($address === null) {
+                $parts = explode('.', $option, 2);
+                $level = \count($parts) === 2 ? $surface->levelNamed($parts[0]) : null;
+                $message = $level === null
+                    ? RuleOptionRefusalWording::notAnOptionOfRule($option, $rule, $surface->writableAt(null))
+                    : RuleOptionRefusalWording::notAnOptionAtLevel($parts[1], $rule, $level, $surface->writableAt($level));
+                throw ConfigurationRefusal::aboutCommandLineInput($optionName, $message);
             }
 
-            $ruleName = $parsed['rule'];
-            $optionName = $parsed['option'];
-
-            // Short aliases have lower priority than --rule-opt
-            $ruleOptions[$ruleName] ??= [];
-            $ruleOptions[$ruleName][$optionName] ??= $parsed['value'];
-        }
-
-        return $this->decodeSelectorOptions($ruleOptions);
-    }
-
-    /**
-     * Returns the option value when the input defines it, or `$default` when
-     * the command does not expose this option at all.
-     *
-     * Centralising the `hasOption()` guard keeps {@see parseRuleOptions()}
-     * focused on the parsing flow.
-     */
-    private function optionValue(InputInterface $input, string $name, mixed $default = null): mixed
-    {
-        return $input->hasOption($name) ? $input->getOption($name) : $default;
-    }
-
-    /**
-     * Refuses a short alias written with an empty value (`--some-alias=`).
-     *
-     * The alias resolves to the same rule/option pair {@see RuleOptionsParser::normalizeValue()}
-     * guards against on the sibling `--rule-opt` door: this door also carries
-     * text only, so an empty value is never a genuine "explicitly nothing" —
-     * it is the same one-element-empty-string defect the CLI cannot express
-     * on purpose (see `promise-effect/promise-ledger.tsv`, `cli-alias` rows).
-     * Applied uniformly to every alias, including the sixteen whose door-null
-     * meaning no external carrier documents: the reasoning is the same
-     * regardless of whether the alias appears in the CLI options table, and
-     * this door has one code path for all of them.
-     */
-    private function refuseEmptyAliasValue(string $alias, mixed $value): void
-    {
-        if (!\is_string($value) || trim($value) !== '') {
-            return;
-        }
-
-        $target = $this->ruleOptionsParser->aliasTarget($alias);
-        $targetPhrase = $target !== null
-            ? \sprintf(' (rule "%s", option "%s")', $target['rule'], $target['option'])
-            : '';
-
-        throw ConfigurationRefusal::aboutCommandLineInput(
-            '--' . $alias,
-            \sprintf(
-                'Option --%s%s was written with an empty value ("--%s="). '
-                . 'Write a value after "=", or omit --%s entirely to use its default.',
-                $alias,
-                $targetPhrase,
-                $alias,
-                $alias,
-            ),
-        );
-    }
-
-    /**
-     * Normalizes a CLI option value to the appropriate PHP type.
-     *
-     * Handles boolean strings ('true'/'false'), floats, and integers.
-     *
-     * Never receives an empty string: its only caller runs
-     * {@see self::refuseEmptyAliasValue()} first.
-     */
-    private function normalizeValue(mixed $value): mixed
-    {
-        if (!\is_string($value)) {
-            return $value;
-        }
-
-        // Boolean strings
-        if ($value === 'true') {
-            return true;
-        }
-        if ($value === 'false') {
-            return false;
-        }
-
-        // Numeric: float (contains dot) vs int
-        if (is_numeric($value)) {
-            return str_contains($value, '.') || stripos($value, 'e') !== false ? (float) $value : (int) $value;
-        }
-
-        return $value;
-    }
-
-    /**
-     * @param array<string, array<string, mixed>> $options
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function decodeSelectorOptions(array $options): array
-    {
-        foreach ($options as $ruleName => &$ruleOptions) {
-            $this->decodePathSuppression($ruleOptions);
-            $this->decodeNamespaceSuppression($ruleOptions);
-
-            $value = $ruleOptions['includeNamespaces'] ?? null;
-            if ($value === null) {
-                continue;
+            $path = ['rules', $rule];
+            if ($address->level !== null) {
+                $path[] = $address->level;
             }
-
-            if (!\is_string($value)) {
-                throw ConfigurationRefusal::aboutCommandLineInput(
-                    '--rule-opt',
-                    \sprintf('Option "include-namespaces" of rule "%s" must be one KIND:VALUE namespace selector.', $ruleName),
-                );
+            $path[] = $address->key;
+            $selector = null;
+            if ($address->level === null && $address->key === FrameworkOptionKeys::PATHS) {
+                $selector = $this->selectorDecoder->pathPayload($text, $optionName);
+            } elseif ($address->level === null && $address->key === FrameworkOptionKeys::NAMESPACES) {
+                $selector = $this->selectorDecoder->namespacePayload($text, $optionName);
+            } elseif ($address->level === null && ConfigKeySpelling::normalize($address->key) === 'includeNamespaces') {
+                $selector = $this->selectorDecoder->namespacePayload($text, $optionName);
             }
-
-            $ruleOptions['includeNamespaces'] = $this->selectorDecoder->decodeNamespace($value, '--rule-opt');
-        }
-        unset($ruleOptions);
-
-        return $options;
-    }
-
-    /** @param array<string, mixed> $options */
-    private function decodePathSuppression(array &$options): void
-    {
-        $value = ConfiguredSuppression::rawPaths($options);
-        if ($value === null || !\is_string($value)) {
-            return;
+            $writes[] = new CommandLinePathWrite($path, $text, $optionName, $surface->schemaAt($address), $selector);
         }
 
-        $selector = $this->selectorDecoder->decodePath($value, '--rule-opt');
-        $options[ConfigKeySpelling::normalize(FrameworkOptionKeys::PATHS)] = [self::selectorMapping($selector->definition)];
+        return $writes;
     }
 
-    /** @param array<string, mixed> $options */
-    private function decodeNamespaceSuppression(array &$options): void
-    {
-        $value = ConfiguredSuppression::rawNamespaces($options);
-        if ($value === null || !\is_string($value)) {
-            return;
-        }
-
-        $selector = $this->selectorDecoder->decodeNamespace($value, '--rule-opt');
-        $options[ConfigKeySpelling::normalize(FrameworkOptionKeys::NAMESPACES)] = [self::selectorMapping($selector->definition)];
-    }
-
-    /** @return array<string, string> */
-    private static function selectorMapping(SelectorDefinition $definition): array
-    {
-        return [$definition->kind->value => $definition->value];
-    }
 }

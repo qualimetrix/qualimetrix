@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 
 /**
  * Where a rule option key may be written, and which declaration answers there.
@@ -131,6 +133,33 @@ final readonly class RuleOptionSurface
         sort($keys);
 
         return $keys;
+    }
+
+    /** The declared document form at an accepted option address. */
+    public function schemaAt(RuleOptionAddress $address): NodeSchema
+    {
+        $set = $address->level === null ? $this->ownKeySet() : $this->keySetAtLevel($address->level);
+        $shape = $set?->shapeOf(ConfigKeySpelling::normalize($address->key));
+
+        if ($shape === null && $address->level === null) {
+            $shape = FrameworkOptionKeys::declared()->shapeOf(ConfigKeySpelling::normalize($address->key));
+        }
+
+        if ($shape === null) {
+            throw new LogicException(\sprintf('Rule option "%s" has no declared document form.', $address->written()));
+        }
+
+        $slot = $address->level === null ? $this->levelNamed($address->key) : null;
+        if ($slot === null) {
+            return $shape->asNodeSchema();
+        }
+
+        $children = [];
+        foreach ($this->keySetAtLevel($slot)?->acceptedForDisplay() ?? [] as $key) {
+            $children[$key] = $this->schemaAt(new RuleOptionAddress($slot, $key));
+        }
+
+        return $shape->asNodeSchema(NodeSchema::map($children));
     }
 
     /**

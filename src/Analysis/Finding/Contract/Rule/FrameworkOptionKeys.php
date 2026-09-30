@@ -39,6 +39,19 @@ final readonly class FrameworkOptionKeys
     public const string NAMESPACES = 'suppress-namespaces';
     public const string NAMESPACE_CHANNELS = 'suppress-namespace-channels';
 
+    /** The forms of framework-owned keys at a producer's root depth. */
+    public static function declared(): RuleOptionKeySet
+    {
+        $selector = RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText());
+        $selectors = RuleOptionShape::listOf($selector)->orNull();
+
+        return RuleOptionKeySet::of([
+            self::PATHS => $selectors,
+            self::NAMESPACES => $selectors,
+            self::NAMESPACE_CHANNELS => RuleOptionShape::mapOf(RuleOptionShape::listOf($selector))->orNull(),
+        ]);
+    }
+
     /**
      * Canonical kebab spellings, sorted — the order the "allowed here" sentence
      * and the listing's footer both print them in.
@@ -47,9 +60,6 @@ final readonly class FrameworkOptionKeys
      */
     public static function all(): array
     {
-        $keys = [self::NAMESPACE_CHANNELS, self::NAMESPACES, self::PATHS];
-        sort($keys);
-
-        return $keys;
+        return self::declared()->acceptedForDisplay();
     }
 }

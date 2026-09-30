@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 
@@ -54,10 +53,13 @@ final class RuleOptionKeyRecognition
      */
     public static function refuseMalformedFrameworkKeys(array $userConfig, string $ruleName): void
     {
-        $shapes = self::frameworkKeyShapes();
+        $shapes = FrameworkOptionKeys::declared();
 
         foreach ($userConfig as $writtenKey => $value) {
             $key = (string) $writtenKey;
+            if (ConfigKeySpelling::normalize($key) !== ConfigKeySpelling::normalize(FrameworkOptionKeys::PATHS)) {
+                continue;
+            }
             $shape = $shapes->shapeOf(ConfigKeySpelling::normalize($key));
 
             if ($shape === null || $shape->matches($value)) {
@@ -69,21 +71,6 @@ final class RuleOptionKeyRecognition
                 RuleOptionRefusalWording::valueOfTheWrongShape($key, $ruleName, null, $shape, $value),
             );
         }
-    }
-
-    /**
-     * The coarse container form of the framework key whose detailed selector
-     * decoding belongs to {@see RuleOptionsFactory}. `null` means the key was
-     * written with nothing under it; each list entry is an authored mapping
-     * that the Finding-owned ingress validates as one selector definition.
-     */
-    private static function frameworkKeyShapes(): RuleOptionKeySet
-    {
-        return RuleOptionKeySet::of([
-            FrameworkOptionKeys::PATHS => RuleOptionShape::listOf(
-                RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText()),
-            )->orNull(),
-        ]);
     }
 
     /**

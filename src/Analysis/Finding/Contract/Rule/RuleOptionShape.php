@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 
 /**
  * The form a rule option's value may take, in the words the refusal prints.
@@ -240,6 +243,52 @@ final readonly class RuleOptionShape
     public function wordsDeclared(): ?RuleOptionWordSet
     {
         return $this->kind === self::ONE_OF ? $this->words : null;
+    }
+
+    /** The document form of this declaration; a block receives its declared child schema. */
+    public function asNodeSchema(?NodeSchema $block = null): NodeSchema
+    {
+        if ($this->kind instanceof RuleOptionValueForm) {
+            return match ($this->kind) {
+                RuleOptionValueForm::Boolean => NodeSchema::scalar(ScalarForm::Boolean),
+                RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast(0),
+                RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast(0),
+                RuleOptionValueForm::SignedNumber => NodeSchema::scalar(ScalarForm::Number),
+                RuleOptionValueForm::Text => NodeSchema::scalar(ScalarForm::String),
+                RuleOptionValueForm::NonEmptyText => NodeSchema::scalar(ScalarForm::String)->nonEmpty(),
+                RuleOptionValueForm::Block => $block ?? throw new LogicException('A block needs its declared child schema.'),
+            };
+        }
+
+        return match ($this->kind) {
+            self::LIST_OF => NodeSchema::list($this->element?->asNodeSchema() ?? throw new LogicException('A list needs an element form.')),
+            self::MAP_OF => NodeSchema::namedMap($this->element?->asNodeSchema() ?? throw new LogicException('A map needs a value form.'), NameVocabulary::predicate(static fn(string $name) => null)),
+            self::ONE_OF => $this->wordSchema(),
+            self::EITHER => $this->unionAsNodeSchema(),
+            default => throw new LogicException('Unknown rule option shape.'),
+        };
+    }
+
+    private function wordSchema(): NodeSchema
+    {
+        $words = $this->words->words;
+        if ($words === []) {
+            throw new LogicException('A word set needs at least one word.');
+        }
+
+        return NodeSchema::scalar(ScalarForm::String)->oneOf($words, $this->words->foldsCase());
+    }
+
+    private function unionAsNodeSchema(): NodeSchema
+    {
+        if (\count($this->alternatives) === 2) {
+            [$first, $second] = $this->alternatives;
+            if ($first->kind === RuleOptionValueForm::Text && $second->kind === self::LIST_OF && $second->element?->kind === RuleOptionValueForm::Text) {
+                return $second->asNodeSchema()->admittingBareElement();
+            }
+        }
+
+        throw new LogicException('The declared union has no document form.');
     }
 
     /** The expected form, as the refusal names it. */

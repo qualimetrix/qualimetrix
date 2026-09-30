@@ -444,7 +444,7 @@ final class RulesCommandTest extends TestCase
             $channels,
             $registry,
             new RuleListingPresenter(),
-            new ConfigurationInputAdapter($pipeline, new ErrorStream()),
+            new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution),
             $findingConfigurationResolver,
             $computedMetrics,
         );

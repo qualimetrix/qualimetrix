@@ -21,8 +21,8 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
  * - **accepted** — written here, read here, printed in the "allowed here"
  *   sentence;
  * - **accepted and validated by the class** — writable and printed like an
- *   accepted key, but its ingress-specific carrier has no generic
- *   {@see RuleOptionShape}; the options class validates it in its own words;
+ *   accepted key; its coarse ingress form is declared while the options class
+ *   validates its own detailed semantics;
  * - **answered by the class** — recognised only so that `fromArray()` may
  *   refuse it in its own words, or accept a spelling that means "leave things
  *   as they are". A reader must neither warn nor refuse on these: the class
@@ -94,14 +94,15 @@ final readonly class RuleOptionKeySet
      * validates itself because no generic {@see RuleOptionShape} describes
      * them without importing an owner-specific type.
      */
-    public function alsoAcceptedAndValidatedByTheClass(string ...$keys): self
+    public function alsoAcceptedAndValidatedByTheClass(string $key, RuleOptionShape $ingressShape): self
     {
         $taken = $this->accepted + $this->acceptedAndValidatedByTheClass + $this->answeredByTheClass;
+        $indexed = self::index([$key], $taken);
 
         return new self(
             $this->accepted,
-            $this->shapes,
-            $this->acceptedAndValidatedByTheClass + self::index(array_values($keys), $taken),
+            $this->shapes + [ConfigKeySpelling::normalize($key) => $ingressShape],
+            $this->acceptedAndValidatedByTheClass + $indexed,
             $this->answeredByTheClass,
         );
     }
@@ -175,9 +176,8 @@ final readonly class RuleOptionKeySet
     }
 
     /**
-     * The declared form of a generically validated accepted key — already
-     * folded through `ConfigKeySpelling::normalize()` — or null when the class
-     * validates the carrier itself or the key is not accepted.
+     * The declared ingress form of an accepted key — already folded through
+     * `ConfigKeySpelling::normalize()` — or null when the key is not accepted.
      */
     public function shapeOf(string $key): ?RuleOptionShape
     {

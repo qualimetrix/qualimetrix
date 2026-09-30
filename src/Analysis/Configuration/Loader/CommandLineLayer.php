@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Loader;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
@@ -31,7 +32,36 @@ final class CommandLineLayer
             );
         }
 
+        $seen = [];
+        foreach ($request->cliPathWrites as $write) {
+            foreach ($seen as [$path, $optionName]) {
+                if (self::prefix($path, $write->path) || self::prefix($write->path, $path)) {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        $write->optionName,
+                        \sprintf('Options %s and %s both write overlapping rule option paths.', $optionName, $write->optionName),
+                    );
+                }
+            }
+            $seen[] = [$write->path, $write->optionName];
+            $tree = self::placed(
+                $tree,
+                $write->path,
+                $write->selectorValue === null
+                    ? CommandLineValue::read($write->text, $write->target, $write->optionName)
+                    : CommandLineValue::selector($write->selectorValue, $write->target, $write->optionName),
+            );
+        }
+
         return new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::CommandLine), self::mapping($tree), positioned: false);
+    }
+
+    /**
+     * @param list<string> $prefix
+     * @param list<string> $path
+     */
+    private static function prefix(array $prefix, array $path): bool
+    {
+        return \count($prefix) <= \count($path) && \array_slice($path, 0, \count($prefix)) === $prefix;
     }
 
     /**

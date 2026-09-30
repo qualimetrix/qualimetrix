@@ -7,6 +7,8 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 
 /**
  * Parses CLI rule options.
@@ -19,39 +21,12 @@ final readonly class RuleOptionsParser
 {
     /**
      * @param array<string, array{rule: string, option: string}> $shortAliases
+     * @param array<string, class-string<RuleOptionsInterface>> $optionsClasses
      */
     public function __construct(
         private array $shortAliases = [],
+        private array $optionsClasses = [],
     ) {}
-
-    /**
-     * Parses --rule-opt format options.
-     *
-     * @param list<string> $ruleOpts List of rule options in format "RULE:OPTION=VALUE"
-     *
-     * @return array<string, array<string, mixed>> Parsed options grouped by rule
-     */
-    public function parseRuleOptions(array $ruleOpts): array
-    {
-        $result = [];
-
-        foreach ($ruleOpts as $opt) {
-            $parsed = $this->parseRuleOption($opt);
-            if ($parsed === null) {
-                continue;
-            }
-
-            [$ruleName, $option, $value] = $parsed;
-
-            if (!isset($result[$ruleName])) {
-                $result[$ruleName] = [];
-            }
-
-            $result[$ruleName][$option] = $value;
-        }
-
-        return $result;
-    }
 
     /**
      * Returns list of all registered short alias names.
@@ -63,36 +38,43 @@ final readonly class RuleOptionsParser
         return array_keys($this->shortAliases);
     }
 
-    /**
-     * Parses a short alias option.
-     *
-     * The option name declared on `#[CliAlias(...)]` is normalized the same
-     * way as `--rule-opt` option names ({@see ConfigKeySpelling::normalize()}), so both
-     * channels converge on the same internal (camelCase) key before reaching
-     * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}. Without this, a
-     * rule author who wrote a kebab-case/snake_case second argument (matching
-     * the option's `ThresholdParser` key rather than its camelCase property
-     * name) would produce a key that `RuleOptionsFactory::refuseUnknownKeys()`
-     * does not know, and the run would be refused over a flag the product
-     * itself declared.
-     *
-     * @return array{rule: string, option: string, value: mixed}|null
-     */
-    public function parseShortAlias(string $alias, mixed $value): ?array
+    public function surfaceFor(string $rule): ?RuleOptionSurface
     {
-        $target = $this->aliasTarget($alias);
-        if ($target === null) {
-            return null;
+        $class = $this->optionsClasses[$rule] ?? null;
+
+        return $class === null ? null : RuleOptionSurface::of($class);
+    }
+
+    /** @return array{rule: string, option: string, text: string} */
+    public function parseAuthoredRuleOption(string $text): array
+    {
+        $colon = strpos($text, ':');
+        $equals = $colon === false ? false : strpos($text, '=', $colon + 1);
+        if ($colon === false || $colon === 0 || $equals === false || $equals <= $colon + 1) {
+            throw ConfigurationRefusal::aboutCommandLineInput('--rule-opt', \sprintf('Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.', $text));
+        }
+        $rule = $this->normalizeRuleName(substr($text, 0, $colon));
+        $authoredOption = substr($text, $colon + 1, $equals - $colon - 1);
+        RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
+        $value = substr($text, $equals + 1);
+        if (trim($value) === '') {
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--rule-opt',
+                \sprintf(
+                    'Option "%s" of rule "%s" was written with an empty value ("--rule-opt %s"). '
+                    . 'Write a value after "=", or omit this --rule-opt entry entirely to use the option\'s default.',
+                    ConfigKeySpelling::normalize($authoredOption),
+                    $rule,
+                    $text,
+                ),
+            );
         }
 
-        return [...$target, 'value' => $value];
+        return ['rule' => $rule, 'option' => $authoredOption, 'text' => $value];
     }
 
     /**
      * The rule/option a short alias resolves to, without attaching a value.
-     *
-     * Used to name the target in a refusal raised before {@see self::parseShortAlias()}
-     * would run — an empty CLI value is refused before any value is attached to it.
      *
      * @return array{rule: string, option: string}|null
      */
@@ -109,99 +91,9 @@ final readonly class RuleOptionsParser
         ];
     }
 
-    /**
-     * Parses a single rule option.
-     *
-     * @return array{0: string, 1: string, 2: mixed}|null [ruleName, option, value] or null if invalid
-     */
-    private function parseRuleOption(string $opt): ?array
-    {
-        // Format: RULE:OPTION=VALUE
-        if (!str_contains($opt, ':') || !str_contains($opt, '=')) {
-            return null;
-        }
-
-        $colonPos = strpos($opt, ':');
-        if ($colonPos === false) {
-            return null;
-        }
-
-        $ruleName = $this->normalizeRuleName(substr($opt, 0, $colonPos));
-        $rest = substr($opt, $colonPos + 1);
-
-        $equalsPos = strpos($rest, '=');
-        if ($equalsPos === false) {
-            return null;
-        }
-
-        // Before normalization, while the option is still spelled the way it
-        // was typed: `--rule-opt` accepts kebab, snake and camel alike, and a
-        // refusal raised after the fold can only answer in one of the three.
-        $authoredOption = substr($rest, 0, $equalsPos);
-        RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
-
-        $option = ConfigKeySpelling::normalize($authoredOption);
-        $rawValue = substr($rest, $equalsPos + 1);
-
-        if (trim($rawValue) === '') {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                '--rule-opt',
-                \sprintf(
-                    'Option "%s" of rule "%s" was written with an empty value ("--rule-opt %s"). '
-                    . 'Write a value after "=", or omit this --rule-opt entry entirely to use the option\'s default.',
-                    $option,
-                    $ruleName,
-                    $opt,
-                ),
-            );
-        }
-
-        $value = $this->normalizeValue($rawValue);
-
-        return [$ruleName, $option, $value];
-    }
-
-    /**
-     * Normalizes rule name to kebab-case.
-     */
+    /** Normalizes a rule name to kebab case. */
     private function normalizeRuleName(string $name): string
     {
         return strtolower(trim($name));
-    }
-
-    /**
-     * Normalizes value to appropriate type.
-     *
-     * Never receives an empty string: {@see self::parseRuleOption()} refuses
-     * an empty value after `=` before this is called, because this door
-     * carries text only and has no way to type PHP's `null` directly — a
-     * silent fold to "unwritten" would accept what the door's promise (see
-     * `promise-effect/promise-ledger.tsv`, `rule-opt` rows) says must be
-     * refused.
-     */
-    private function normalizeValue(string $value): mixed
-    {
-        $value = trim($value);
-
-        // Boolean
-        if ($value === 'true') {
-            return true;
-        }
-        if ($value === 'false') {
-            return false;
-        }
-
-        // Integer
-        if (ctype_digit($value) || (str_starts_with($value, '-') && ctype_digit(substr($value, 1)))) {
-            return (int) $value;
-        }
-
-        // Float
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
-        // String
-        return $value;
     }
 }

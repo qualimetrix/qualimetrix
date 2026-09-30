@@ -84,7 +84,10 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             'max-distance-warning' => RuleOptionShape::number()->orNull(),
             'min-class-count' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
-        ])->alsoAcceptedAndValidatedByTheClass('include-namespaces');
+        ])->alsoAcceptedAndValidatedByTheClass(
+            'include-namespaces',
+            RuleOptionShape::listOf(RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText())),
+        );
     }
 
     public function isEnabled(): bool

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
@@ -14,6 +15,38 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class RuleOptionsPreflightWiringTest extends TestCase
 {
+    /** @return iterable<string, array{list<string>, string, string}> */
+    public static function duplicateCliWrites(): iterable
+    {
+        yield 'same alias and value' => [['--cyclomatic-warning=10', '--cyclomatic-warning=10'], '--cyclomatic-warning', '--cyclomatic-warning'];
+        yield 'same alias different value' => [['--cyclomatic-warning=10', '--cyclomatic-warning=20'], '--cyclomatic-warning', '--cyclomatic-warning'];
+        yield 'alias and rule option' => [['--cyclomatic-warning=10', '--rule-opt=complexity.ccn:callable.warning=20'], '--cyclomatic-warning', '--rule-opt'];
+        yield 'two rule options' => [['--rule-opt=complexity.ccn:callable.warning=10', '--rule-opt=complexity.ccn:callable.warning=20'], '--rule-opt', '--rule-opt'];
+    }
+
+    /** @param list<string> $options */
+    #[Test]
+    #[DataProvider('duplicateCliWrites')]
+    public function itRefusesEveryDuplicateCliWriteBeforeAnalysis(array $options, string $first, string $second): void
+    {
+        $root = \dirname(__DIR__, 4);
+        $process = proc_open([
+            \PHP_BINARY, '-d', 'xdebug.mode=off', $root . '/bin/qmx', 'check', __DIR__,
+            '--no-cache', '--workers=1', ...$options,
+        ], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+
+        self::assertSame(3, proc_close($process), (string) $stdout . (string) $stderr);
+        self::assertStringContainsString($first, (string) $stderr);
+        self::assertStringContainsString($second, (string) $stderr);
+        self::assertStringContainsString('overlapping rule option paths', (string) $stderr);
+    }
+
     #[Test]
     public function itRefusesAnInvalidDisabledProducerBeforeTheDiscoveryFactoryIsCalled(): void
     {

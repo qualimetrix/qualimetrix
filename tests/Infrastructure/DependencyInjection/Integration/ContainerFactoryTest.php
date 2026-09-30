@@ -370,6 +370,9 @@ final class ContainerFactoryTest extends TestCase
         $finding = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
             ->withSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]))
             ->withCliOverrides([CodeDuplicationRule::NAME => ['min_lines' => 2, 'min_tokens' => 10]]);
+        $finding = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($finding, [
+            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(CodeDuplicationRule::NAME, CodeDuplicationRule::getOptionsClass(), '', [], false),
+        ]);
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $ruleConfiguration->replace($finding->withResolvedOptions($builder->build($finding)));
@@ -689,6 +692,9 @@ PHP;
 
         $finding = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
             ->withCliOverrides(['complexity.ccn' => ['callable.warning' => 20, 'callable.error' => 40]]);
+        $finding = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($finding, [
+            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(ComplexityRule::NAME, ComplexityRule::getOptionsClass(), '', [], false),
+        ]);
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $ruleOptionsRegistry->replace($finding->withResolvedOptions($builder->build($finding)));

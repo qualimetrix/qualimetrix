@@ -8,7 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
@@ -17,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
+use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
@@ -27,8 +32,13 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\WrittenFile;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
 /**
@@ -111,6 +121,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
     /**
      * @param class-string<RuleDefinitionInterface> $ruleClass
      * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param list<string> $expectedPath
      */
     #[Test]
     #[DataProvider('provideNegativeValuesWrittenOnTheCommandLine')]
@@ -120,15 +131,18 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
         string $ruleName,
         string $optionsClass,
         string $expectedSentence,
+        array $expectedPath,
     ): void {
-        $refusal = $this->capture(fn() => $this->fromCommandLine($ruleOpt, $ruleClass, $ruleName, $optionsClass));
+        $refusal = $this->capture(fn() => $this->fromCommandLine($ruleOpt, $ruleClass, $ruleName, $optionsClass, $expectedPath));
 
         self::assertInstanceOf(ConfigurationRefusal::class, $refusal, 'a negative value was accepted');
-        self::assertStringContainsString($expectedSentence, $refusal->getMessage());
+        self::assertSame($expectedSentence, $refusal->getMessage());
+        self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+        self::assertSame('--rule-opt', $refusal->sources()[0]->locator());
     }
 
     /**
-     * @return iterable<string, array{string, class-string<RuleDefinitionInterface>, string, class-string<RuleOptionsInterface>, string}>
+     * @return iterable<string, array{string, class-string<RuleDefinitionInterface>, string, class-string<RuleOptionsInterface>, string, list<string>}>
      */
     public static function provideNegativeValuesWrittenOnTheCommandLine(): iterable
     {
@@ -137,7 +151,8 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             MethodCountRule::class,
             'size.method-count',
             MethodCountOptions::class,
-            'Option "threshold" of rule "size.method-count" must be a non-negative whole number or null, got -1.',
+            'Option --rule-opt must be at least 0, got -1.',
+            ['rules', 'size.method-count', 'threshold'],
         ];
 
         yield 'a boundary inside a level slot' => [
@@ -145,7 +160,8 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             ComplexityRule::class,
             'complexity.ccn',
             ComplexityOptions::class,
-            'Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got -5.',
+            'Option --rule-opt must be at least 0, got -5.',
+            ['rules', 'complexity.ccn', 'callable', 'warning'],
         ];
 
         yield 'a minimum count' => [
@@ -153,7 +169,8 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             LcomRule::class,
             'cohesion.lcom',
             LcomOptions::class,
-            'Option "minMethods" of rule "cohesion.lcom" must be a non-negative whole number or null, got -3.',
+            'Option --rule-opt must be at least 0, got -3.',
+            ['rules', 'cohesion.lcom', 'min-methods'],
         ];
 
         yield 'a fractional boundary' => [
@@ -161,7 +178,8 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             InstabilityRule::class,
             'coupling.instability',
             InstabilityOptions::class,
-            'must be a non-negative number or null, got -0.5.',
+            'Option --rule-opt must be at least 0, got -0.5.',
+            ['rules', 'coupling.instability', 'class', 'max-warning'],
         ];
     }
 
@@ -241,15 +259,28 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
      * @param class-string<RuleDefinitionInterface> $ruleClass
      * @param class-string<RuleOptionsInterface> $optionsClass
      */
-    private function fromCommandLine(string $ruleOpt, string $ruleClass, string $ruleName, string $optionsClass): RuleOptionsInterface
+    /**
+     * @param class-string<RuleDefinitionInterface> $ruleClass
+     * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param ?list<string> $expectedPath
+     */
+    private function fromCommandLine(string $ruleOpt, string $ruleClass, string $ruleName, string $optionsClass, ?array $expectedPath = null): RuleOptionsInterface
     {
         $parser = (new RuleOptionsParserFactory())->createFromClasses([$ruleClass]);
+        $input = new ArrayInput(['--rule-opt' => [$ruleOpt]], new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]));
+        $writes = (new CliOptionsParser($parser))->pathWrites($input);
+        if ($expectedPath !== null) {
+            self::assertCount(1, $writes);
+            self::assertSame($expectedPath, $writes[0]->path);
+        }
+        $pipeline = new ConfigurationPipeline();
+        $pipeline->addStage(new CliStage());
+        $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
+        $configuration = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides());
 
-        return $this->create(new FindingConfiguration(
-            new RuleOptionsDocument(),
-            new FindingCliOverrides($parser->parseRuleOptions([$ruleOpt])),
-            new RuleSelection(),
-        ), $ruleName, $optionsClass);
+        return $this->create($configuration, $ruleName, $optionsClass);
     }
 
     /**

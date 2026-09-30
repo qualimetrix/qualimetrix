@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -30,13 +32,15 @@ final class ConfigurationInputAdapter
     public function __construct(
         private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly ErrorStream $errorStream,
+        private readonly RuleExecutionInterface $ruleExecution,
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
-    public function resolve(InputInterface $input, ?AnalysisPreflightProfile $profile = null): ConfigurationDocument
+    /** @param ?list<array{optionName: string, text: string, ordinal: int}> $authoredRuleRecords */
+    public function resolve(InputInterface $input, ?AnalysisPreflightProfile $profile = null, ?array $authoredRuleRecords = null): ConfigurationDocument
     {
         return $this->configurationPipeline->resolve(
-            $this->adapt($input, self::currentWorkingDirectory()->value(), $profile ?? AnalysisPreflightProfile::analysis()),
+            $this->adapt($input, self::currentWorkingDirectory()->value(), $profile ?? AnalysisPreflightProfile::analysis(), $authoredRuleRecords),
         );
     }
 
@@ -87,11 +91,18 @@ final class ConfigurationInputAdapter
         return ExitPolicy::fromResolvedValue($document->resolved()->get(ConfigSchema::FAIL_ON));
     }
 
-    public function adapt(InputInterface $input, string $workingDirectory, ?AnalysisPreflightProfile $profile = null): ConfigurationResolutionRequest
+    /** @param ?list<array{optionName: string, text: string, ordinal: int}> $authoredRuleRecords */
+    public function adapt(InputInterface $input, string $workingDirectory, ?AnalysisPreflightProfile $profile = null, ?array $authoredRuleRecords = null): ConfigurationResolutionRequest
     {
         $this->refuseEmptyValues($input);
 
-        [$values, $optionNames] = $this->overrides($input, $profile ?? AnalysisPreflightProfile::analysis());
+        $profile ??= AnalysisPreflightProfile::analysis();
+        [$values, $optionNames] = $this->overrides($input, $profile);
+        $writes = [];
+        if ($profile->requiresFindingConfiguration) {
+            $parser = (new RuleOptionsParserFactory())->createFromMetadata($this->ruleExecution->allRules());
+            $writes = (new CliOptionsParser($parser, $this->selectorDecoder))->pathWrites($input, $authoredRuleRecords);
+        }
 
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
@@ -99,6 +110,7 @@ final class ConfigurationInputAdapter
             CommandLineSpelling::options($input, 'preset'),
             $values,
             $optionNames,
+            $writes,
         );
     }
 

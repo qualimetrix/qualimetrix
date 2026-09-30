@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Command\Command;
@@ -37,10 +36,7 @@ final readonly class RuleInputValidator
 
     public function resolve(ConfigurationDocument $document, InputInterface $input): FindingConfiguration
     {
-        $parser = (new RuleOptionsParserFactory())->createFromClasses($this->ruleRegistry->getClasses());
-        $cliRuleOptions = (new CliOptionsParser($parser))->parseRuleOptions($input);
-
-        $configuration = $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides($cliRuleOptions));
+        $configuration = $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides());
         return $configuration->withResolvedOptions($this->optionsBuild->build($configuration));
     }
 

@@ -319,6 +319,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         return new ConfigurationInputAdapter(
             $pipeline,
             new ErrorStream(),
+            self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class),
         );
     }
 
