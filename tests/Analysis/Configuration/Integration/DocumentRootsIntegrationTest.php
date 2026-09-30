@@ -93,7 +93,7 @@ final class DocumentRootsIntegrationTest extends TestCase
         $refusal = $this->refusal(\sprintf("%s: 5\n", $key));
 
         self::assertSame(
-            \sprintf('"%s" in configuration file "%s" must be boolean, got int.', $key, $this->directory . '/qmx.yaml'),
+            \sprintf('"%s" in configuration file "%s" must be boolean, got int.', $key, 'qmx.yaml'),
             $refusal->summary(),
         );
         self::assertSame([$key], $refusal->position()?->segments);
@@ -164,7 +164,7 @@ fail_on: error
     {
         $refusal = $this->refusal($yaml);
 
-        self::assertStringContainsString(\sprintf($expected, $this->directory . '/qmx.yaml'), $refusal->summary());
+        self::assertStringContainsString(\sprintf($expected, 'qmx.yaml'), $refusal->summary());
     }
 
     /** @return iterable<string, array{string, string}> */
@@ -207,7 +207,7 @@ fail_on: error
 
         self::assertCount(1, $refusal->sources());
         self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
-        self::assertSame($this->directory . '/qmx.yaml', $refusal->sources()[0]->locator());
+        self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
     }
 
     /** The command line has no document positions: its values are named by the option that wrote them. */
@@ -260,7 +260,7 @@ fail_on: error
         self::assertSame([], $document->resolved()->get(ConfigurationRoot::OnlyRules->value)?->plain());
         self::assertCount(1, $document->diagnostics());
         self::assertSame(
-            ['./focused.yaml', $this->directory . '/qmx.yaml'],
+            ['./focused.yaml', 'qmx.yaml'],
             array_map(static fn($source): ?string => $source->origin->locator(), $document->diagnostics()[0]->sources),
         );
     }
