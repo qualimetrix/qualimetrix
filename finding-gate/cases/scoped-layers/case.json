@@ -1,6 +1,6 @@
 {
     "id": "scoped-layers",
-    "description": "The main run is narrowed to one file; its baseline source has no readable autoload and is unknown. Both report a proven shadow, but only unknown judges a layer absent from the explicitly analysed path.",
+    "description": "The main run is narrowed to one file; its baseline source has no readable production autoload and has unknown scope. Both report a proven shadow; the unknown source withholds claims that a declared layer is unreachable.",
     "coverage": "auxiliary",
     "paths": [
         "src/Service.php"

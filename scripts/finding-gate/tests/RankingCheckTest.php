@@ -786,6 +786,31 @@ final class RankingCheckTest extends TestCase
         $tree = self::rankedTree($reference, self::issues($reference, [10, 10, 10, 10]), 4);
         self::publish($tree, 'candidateAnswers', $reference, self::issues($candidate, [10, 10, 10, 10]), 4);
         $this->red($tree, FailureClass::RANKING_ORDER_MISMATCH);
+
+        foreach ([[$records[0]], $records] as $source) {
+            $tree = self::rankedTree($records, $old, 3);
+            $tree['declarations']['cases/alpha/baseline-src/src/Alpha.php'] = "<?php\n";
+            $issues = self::issues($source, array_fill(0, \count($source), 10));
+            $sourceAnswer = ['stdout' => self::document($source, $issues), 'ranked' => ['stdout' => self::document($source, $issues)]];
+            $tree['answers']['case:alpha|check:baseline-source'] = $sourceAnswer;
+            $tree['candidateAnswers']['case:alpha|check:baseline-source'] = $sourceAnswer;
+            $entries = [];
+            foreach ($source as $record) {
+                $entries[$record['subject']] = [['channel' => $record['channel'], 'magnitudes' => [$record['metricValue']]]];
+            }
+            $baseline = ValueCheck::value(['version' => 13, 'scope' => ['src'], 'entries' => $entries]);
+            $tree['answers']['case:alpha|baseline-file'] = ['stdout' => $baseline, 'file' => $baseline];
+            if (\count($source) === 1) {
+                $this->green($tree);
+                continue;
+            }
+            $reordered = [$source[1], $source[0], $source[2]];
+            $reorderedAnswer = self::document($source, self::issues($reordered, [10, 10, 10]));
+            $tree['candidateAnswers']['case:alpha|check:baseline-source'] = ['stdout' => $reorderedAnswer, 'ranked' => ['stdout' => $reorderedAnswer]];
+            $report = $this->reportFor($tree);
+            self::assertSame([FailureClass::RANKING_ORDER_MISMATCH], $report->failureClasses(), $report->render());
+            self::assertNotSame([], array_values(array_filter($report->raised(), static fn(array $row): bool => $row['class'] === FailureClass::RANKING_ORDER_MISMATCH && str_starts_with($row['scope'], 'case:alpha|check:baseline-source|record:'))), $report->render());
+        }
     }
 
     #[Test]

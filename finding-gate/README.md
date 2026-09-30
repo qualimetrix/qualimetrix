@@ -611,6 +611,12 @@ idle tolerations fail. Corpus controls require exact full scopes, preventing
 a `text` expectation from absorbing `text-verbose` or another case.
 Green controls are held to all declaration counts, not just exit 0.
 
+The `ranking-input-order` control requires an order mismatch on JSON findings.
+It does not require one on the `scoped-layers` baseline source: that
+unknown-scope source publishes one finding. Baseline-source ranking permutations
+remain checked by the comparator when multiple matched findings have unchanged
+ranking values.
+
 When the resolved reference is `HEAD`, inherited transition declarations and
 rename maps belong to an earlier comparison. Before building control factories,
 the harness validates those permissions, copies the working tree into one
