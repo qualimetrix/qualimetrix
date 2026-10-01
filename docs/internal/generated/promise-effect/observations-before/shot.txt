@@ -1,5 +1,5 @@
 product-commit	02a6ca66
-tree-commit	458d22ccb5f76ff40df9c1381a28d64d78597b9e
-taken	2026-09-12
+tree-commit	1e562066ecf44fca410b8971bcf7252bfb639b4a
+taken	2026-10-01
 axes	A,B,C,D,E
-reason	the pair and neighbour generators changed: axes B and E now write the counter-default magnitudes declared in the new effect-magnitudes.tsv wherever the canonical one is what the product already does without the key. The canonical bool write `true` is the standing value of almost every `enabled` key, and 117 of 117 pair sides writing that key had stopped moving the object; three enumerated keys (scope, unused-directive-severity, mode) were refused or silently defaulted for a spelling the row is not about. An input moved, so the shot is retaken against the same product (02a6ca66, src/ identical) rather than left to be compared across two different stands.
+reason	Retake native 02a6ca66 with lawful same-field band companions, declared typed selectors and formula contexts, real valueless CLI admission, literal cache scalar path spellings, fixed formula thresholds 10000/10000 and unrestricted native CLI list effects, and cache directory identity; no product or classifier substitution.
