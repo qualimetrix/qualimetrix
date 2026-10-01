@@ -7,6 +7,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Core\Path\RelativePath;
@@ -44,17 +45,19 @@ $container = (new ContainerFactory())->create();
 $pipeline = $container->get(ConfigurationPipelineInterface::class);
 $computed = $container->get(ComputedMetricConfiguratorInterface::class);
 $rules = $container->get(RuleRegistryInterface::class);
+$execution = $container->get(RuleExecutionInterface::class);
 $snapshot = $container->get(ChannelUniverseInterface::class);
 assert($pipeline instanceof ConfigurationPipelineInterface);
 assert($computed instanceof ComputedMetricConfiguratorInterface);
 assert($rules instanceof RuleRegistryInterface);
+assert($execution instanceof RuleExecutionInterface);
 assert($snapshot instanceof RuleChannelSnapshotFactoryInterface);
 $command = new Command('check');
 $command->setApplication(new Application());
 CheckCommandDefinition::addOptions($command, $rules);
 $command->mergeApplicationDefinition(false);
 $arguments = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-$document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline, new ErrorStream()))->adapt($arguments, $directory));
+$document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution))->adapt($arguments, $directory));
 $generator = new BaselineGenerator($snapshot->snapshot($computed->resolve($document)), new SystemClock());
 
 $findings = [];
