@@ -282,7 +282,9 @@ final readonly class RuleOptionShape
                 RuleOptionValueForm::Boolean => NodeSchema::scalar(ScalarForm::Boolean),
                 RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast($this->minimum ?? 0),
                 RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast($this->minimum ?? 0),
-                RuleOptionValueForm::SignedNumber => NodeSchema::scalar(ScalarForm::Number),
+                RuleOptionValueForm::SignedNumber => $this->minimum === null
+                    ? NodeSchema::scalar(ScalarForm::Number)
+                    : NodeSchema::scalar(ScalarForm::Number)->atLeast($this->minimum),
                 RuleOptionValueForm::Text => NodeSchema::scalar(ScalarForm::String),
                 RuleOptionValueForm::NonEmptyText => NodeSchema::scalar(ScalarForm::String)->nonEmpty(),
                 RuleOptionValueForm::Block => $block ?? throw new LogicException('A block needs its declared child schema.'),

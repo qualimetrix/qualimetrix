@@ -9,6 +9,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
 
@@ -244,6 +251,25 @@ final class RuleOptionShapeTest extends TestCase
         self::assertTrue($shape->matches(7));
         self::assertFalse($shape->matches('-2'));
         self::assertSame('a number or null', $shape->describe());
+    }
+
+    #[Test]
+    public function itAppliesAnExplicitSignedFloorToAuthoredDocumentValues(): void
+    {
+        $schema = NodeSchema::map(['boundary' => RuleOptionShape::signedNumber()->atLeast(-1)->asNodeSchema()]);
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/floor.yaml');
+        $reader = new LayerReading();
+        $valid = new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => -1]));
+        self::assertSame(-1, $reader->readRoot($schema, $valid, 0)?->plain()['boundary']);
+
+        try {
+            $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => -2])), 0);
+            self::fail('The authored value below its explicit signed floor was accepted.');
+        } catch (ConfigurationRefusal $error) {
+            self::assertSame('"boundary" in configuration file "/floor.yaml" must be at least -1, got -2.', $error->summary());
+            self::assertSame(['/floor.yaml'], array_map(static fn(ConfigurationOrigin $source): ?string => $source->locator(), $error->sources()));
+            self::assertSame(['boundary'], $error->position()?->segments);
+        }
     }
 
     /**

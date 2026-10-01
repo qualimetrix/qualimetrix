@@ -53,10 +53,10 @@ final class RulesSectionTest extends TestCase
     #[Test]
     public function itPreservesBareSwitchAndIndependentSelectionMergePolicies(): void
     {
-        $document = DocumentComposer::compose(self::schema(), [self::layer(['rules' => [ComplexityRule::NAME => false], 'only_rules' => ['complexity.*'], 'disabled_rules' => ['size.*']], '/base.yaml'), self::layer(['only_rules' => [], 'disabled_rules' => ['size.*', 'coupling.*']], '/overlay.yaml')]);
+        $document = DocumentComposer::compose(self::schema(), [self::layer(['rules' => [ComplexityRule::NAME => false], 'only_rules' => ['complexity.*'], 'disabled_rules' => ['size.*', 'design.*']], '/base.yaml'), self::layer(['only_rules' => [], 'disabled_rules' => ['size.*', 'coupling.*']], '/overlay.yaml')]);
         self::assertFalse($document->get('rules', ComplexityRule::NAME, 'enabled')?->plain());
         self::assertSame([], $document->get('only_rules')?->plain());
-        self::assertSame(['size.*', 'coupling.*'], $document->get('disabled_rules')?->plain());
+        self::assertSame(['size.*', 'design.*', 'coupling.*'], $document->get('disabled_rules')?->plain());
         self::assertCount(1, $document->diagnostics());
     }
 
