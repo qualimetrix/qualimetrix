@@ -1583,6 +1583,28 @@ final class Stand
             return [false];
         }
 
+        $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
+
+        if ($leaf !== null) {
+            /** @var mixed $declared */
+            $declared = self::parse($leaf);
+
+            if (!$shape->matches($declared)) {
+                // Keep the exact authored magnitude for the frozen product:
+                // its older shape may refuse a selector that the current
+                // product accepts. An old-lawful substitute would measure a
+                // different input rather than that native refusal.
+                if ($this->inProcess->nativeProfile() === 'old') {
+                    return [$declared];
+                }
+
+                throw new LedgerError(
+                    'effect-magnitudes.tsv declares "' . $leaf . '" for the leaf "' . self::leafOf($key)
+                    . '", which the shape of "' . $rule . '.' . $key . '" refuses',
+                );
+            }
+        }
+
         $writes = [];
 
         // FIRST, so the side that declares one writes it. A shape with no
@@ -1600,19 +1622,7 @@ final class Stand
         }
 
         $writes[] = $this->writeForShape($shape, $this->literals(null), $rule . '.' . $key, $key);
-        $leaf = $this->declarations->leafAlternates[self::leafOf($key)] ?? null;
-
         if ($leaf !== null) {
-            /** @var mixed $declared */
-            $declared = self::parse($leaf);
-
-            if (!$shape->matches($declared)) {
-                throw new LedgerError(
-                    'effect-magnitudes.tsv declares "' . $leaf . '" for the leaf "' . self::leafOf($key)
-                    . '", which the shape of "' . $rule . '.' . $key . '" refuses',
-                );
-            }
-
             $writes[] = $declared;
         }
 

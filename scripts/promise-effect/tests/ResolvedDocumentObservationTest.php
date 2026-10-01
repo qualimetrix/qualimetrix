@@ -254,11 +254,57 @@ final class ResolvedDocumentObservationTest extends TestCase
             } catch (LedgerError $error) {
                 self::fail('A declared namespace selector was not supplied: ' . $error->getMessage());
             }
-            self::assertSame([[['exact' => 'App']]], $writes);
-            $observations = $helper->take(['rules' => ['coupling.distance' => ['include-namespaces' => $writes[0]]]], [], [], '');
-            self::assertSame(Observation::ACCEPTED, $observations['merged']->outcome, $observations['merged']->text);
-            $values = json_decode($observations['merged']->text, true, 512, \JSON_THROW_ON_ERROR);
-            self::assertSame([['exact' => 'App']], $values['rules']['coupling.distance']['include-namespaces']);
+            $selector = [['exact' => 'App']];
+
+            if ($helper->nativeProfile() === 'old') {
+                self::assertSame([$selector], $writes);
+                $observations = $helper->take(['rules' => ['coupling.distance' => ['include-namespaces' => $selector]]], [], [], 'coupling.distance');
+                self::assertSame(Observation::REFUSED_FRAMED, $observations['object']->outcome);
+                self::assertSame(
+                    'Option "includeNamespaces" of rule "coupling.distance" must be a string or a list of strings or null, got a list.',
+                    $observations['object']->text,
+                );
+            } else {
+                self::assertSame([$selector], $writes);
+                $observations = $helper->take(['rules' => ['coupling.distance' => ['include-namespaces' => $writes[0]]]], [], [], '');
+                self::assertSame(Observation::ACCEPTED, $observations['merged']->outcome, $observations['merged']->text);
+                $values = json_decode($observations['merged']->text, true, 512, \JSON_THROW_ON_ERROR);
+                self::assertSame($selector, $values['rules']['coupling.distance']['include-namespaces']);
+
+                $fixture = $scratch . '/promise-effect';
+                $files = new Filesystem();
+                $files->mkdir($fixture);
+
+                foreach ([
+                    'axis-a-hits.tsv',
+                    'axis-d-envelopes.tsv',
+                    'composition-magnitudes.tsv',
+                    'effect-magnitudes.tsv',
+                    'forms.tsv',
+                    'pair-kind-scope.tsv',
+                    'witness-envelopes.tsv',
+                ] as $name) {
+                    $files->copy($root . '/promise-effect/' . $name, $fixture . '/' . $name);
+                }
+
+                file_put_contents(
+                    $fixture . '/effect-magnitudes.tsv',
+                    "\noption_leaf\tmax-distance-warning\t[App]\tA list is not a numeric magnitude\n",
+                    \FILE_APPEND,
+                );
+                $wrong = Declarations::load($scratch);
+                $strict = new Stand($root, Ledger::load($root), $wrong, $helper, new ProcessProbe($root, $scratch));
+
+                try {
+                    $supply->invoke($strict, 'coupling.distance', 'max-distance-warning');
+                    self::fail('The typed declaration accepted a list for a numeric option.');
+                } catch (LedgerError $error) {
+                    self::assertStringContainsString(
+                        'effect-magnitudes.tsv declares "[App]" for the leaf "max-distance-warning"',
+                        $error->getMessage(),
+                    );
+                }
+            }
         } finally {
             (new Filesystem())->remove($scratch);
         }
