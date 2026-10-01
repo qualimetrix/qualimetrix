@@ -1683,6 +1683,7 @@ Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget	Analys
 Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\RuleOptionForms	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -1766,6 +1767,14 @@ Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor	Analysis.Po
 Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor	Analysis.Policy.Inline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms	Analysis.Policy.Inline	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\RuleOptionForms	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideValueParser	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideValueParser	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideValueParser	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest	Analysis.Finding	contract
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder	Analysis.ProjectManifest	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.ProjectManifest	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract

@@ -21,9 +21,15 @@ Finding/
 │   ├── Control/          # finding control scope vocabulary
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
+│   │   └── Override/     # numeric validation and authored request
+│   │       ├── ThresholdOverrideRequest.php # values, syntax and written axes
+│   │       ├── OverrideAxis.php # warning or error
+│   │       └── OverrideSyntax.php # shorthand or explicit axes
 │   └── Threshold/        # threshold override value
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
+│   └── Override/
+│       └── NonNegativeOverrideThresholds.php # shared numeric judgement and spelling
 ├── RuleConfiguration/    # private RulesSection schema, suppression decoder and invocation stores
 │   ├── ProducerOptionsBuild.php # immutable options for one producer
 │   ├── OptionActivityResolution.php # per-cell mode and level activity
@@ -253,6 +259,17 @@ the same decide/build/conclude publication boundary.
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies
 them while selecting effective rule thresholds.
+
+NonNegativeOverrideThresholds owns Warning-first/Error-second non-negativity
+and diagnostic number spelling. WarningOnlyValidator asks only about its
+Warning before refusing an authored Error; pair strategies judge both values
+before their own ordering constraint.
+
+Rule-specific override validators receive one ThresholdOverrideRequest. Its
+constructor admits equal non-null shorthand or distinct explicit axes matching
+the non-null values. The consumer skips validation when no override exists;
+malformed authored input remains a diagnostic. Warning-only validation refuses
+actually authored Error, while an implicit equal shorthand stays lawful.
 
 Infrastructure composes these internals through `FindingConfigurator`. Rule discovery and container construction remain Infrastructure concerns.
 

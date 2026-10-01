@@ -578,8 +578,11 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues'
@@ -638,6 +641,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\ThresholdBandRefusal'
         - 'Qualimetrix\Analysis\Finding\RuleExecution'
         - 'Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry'
+        - 'Qualimetrix\Analysis\Finding\Rule\Override\NonNegativeOverrideThresholds'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Rule\RuleInterface'
@@ -835,6 +839,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms'
+        - 'Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideValueParser'
     - name: analysis-projectmanifest
       patterns:
         - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection'
@@ -1416,6 +1422,7 @@ architecture:
       - core-symbol
       - external
     analysis-policy-inline:
+      - analysis-configuration
       - analysis-evidence-measurement
       - analysis-finding
       - core-path

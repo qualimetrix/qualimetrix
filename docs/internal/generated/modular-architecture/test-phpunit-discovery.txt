@@ -8669,26 +8669,31 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"closure as an expression statement"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillRefusesAThresholdOverAStatementThatOnlyContainsAClosure
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsArbitraryOrdering
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsNullsAsNoOpHalves
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itIgnoresErrorWasExplicitFlag
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsPartialAxesAndRefusesAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itIsASharedSingleton
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itRejectsNegativeValues
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itAcceptsNullsAsNoOpHalves
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itUsesTheSameNumericalOrderingForBothAuthoredPairs
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itAcceptsPartialAxesAndRefusesAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itAcceptsWarningAboveError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itAcceptsWarningEqualsError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itHandlesFloatThresholds
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itIsASharedSingleton
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itRejectsNegativeValues
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itRejectsWarningBelowError
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsNullsAsNoOpHalves
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsNumericallyEqualShorthandValuesAcrossNumberKinds
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsPartialAxesAndRefusesAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsWarningBelowError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsWarningEqualsError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itHandlesFloatThresholds
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itIgnoresErrorWasExplicitFlag
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itIsASharedSingleton
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRefusesARepeatedAuthoredAxis
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRefusesAxesThatDoNotCorrespondToTheirValues
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRefusesEmptyExplicitAxes
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRefusesUnequalShorthandValues
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRejectsNegativeError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRejectsNegativeWarning
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itRejectsWarningAboveError
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itUsesTheSameNumericalOrderingForBothAuthoredPairs
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itBacktickEscapedIgnoreFileInRegularComment
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itBacktickEscapedIgnoreFileIsNotExtracted
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itBacktickEscapedIgnoreFileNotExtractedAtFileLevel
@@ -8851,10 +8856,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itReturnsEmptyForNoDocComment
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itSkipsInvalidSyntax
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itSkipsWarningGreaterThanError
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itAcceptsAllNullsAsNoOp
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itAcceptsShorthandFormEvenThoughErrorEqualsWarning
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itAcceptsWarningOnly
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itIsASharedSingleton
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRefusesAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsExplicitErrorEvenWhenItEqualsWarning
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsExplicitErrorValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\WarningOnlyValidatorTest::itRejectsNegativeWarning

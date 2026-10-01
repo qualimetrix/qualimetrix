@@ -38,6 +38,12 @@ from the first decisive writer, so callers cannot supply independent display fac
 Private selection indexes and option builders keep the decide/build/conclude
 publication boundary and preserve writer ordering and refusals.
 
+Finding owns a threshold override request with its numeric values, syntax and
+actually authored axes. Inline parses that request and judges every declared
+level and axis before handing it to the rule-specific validator. Worker
+transport keeps the existing ThresholdOverride value. Absence is a consumer
+choice to skip validation; a malformed authored annotation still diagnoses.
+
 ## Consumer migration
 
 Replace `NodeSchema::stringList()` with a list of ScalarForm::String nodes.
@@ -58,9 +64,19 @@ Replace independent `EnablementDecision` constructor arguments with
 Provide all decisive writers; the first writer supplies statement and provenance.
 Readers retain the existing readonly observation names.
 
+Replace validate(warning, error, errorWasExplicit) with
+validate(ThresholdOverrideRequest). Skip constructing a request when no override
+was authored. A shorthand supplies equal non-null warning/error values,
+OverrideSyntax::Shorthand and no written axes. Explicit tokens supply
+OverrideSyntax::ExplicitAxes with each distinct OverrideAxis whose value is
+non-null. Warning alone remains lawful; WarningOnlyValidator refuses authored
+Error. Unequal algorithm pairs use both explicit axes. An all-null request,
+empty or mismatched explicit axes and unequal shorthand now refuse at
+construction instead of representing an absent or inconsistent override.
+
 ## Consequences
 
-The public declaration APIs change while configuration grammar,
+The public declaration and override programming APIs change while configuration grammar,
 numeric defaults, metric formulas, provenance and published diagnostics remain
 the same. Exact manifest consumers must reflect the new contracts; internal
 matching, construction and delivery helpers remain private to their owners.

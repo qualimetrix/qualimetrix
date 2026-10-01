@@ -767,12 +767,6 @@
         {
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
-        },
-        {
-          "owner": "Analysis.Finding",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleOptionForms",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
         },
@@ -780,6 +774,18 @@
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
         }
       ]
@@ -820,11 +826,19 @@
         },
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RulesSection"
         },
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms"
         },
         {
           "owner": "Analysis.Run",
@@ -845,10 +859,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
         }
       ]
     },
@@ -895,6 +905,10 @@
         },
         {
           "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
+        },
+        {
+          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RulesSection"
         },
         {
@@ -902,8 +916,18 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection"
         },
         {
+          "owner": "Analysis.Policy.Inline",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeScalarFacts"
+        },
+        {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\PathsSection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         },
         {
           "owner": "Infrastructure.Console",
@@ -920,14 +944,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -8097,6 +8113,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\ThresholdOverrideExtractor"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms"
         }
       ]
     },
@@ -8969,6 +8989,34 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override\\OverrideAxis": {
+      "path": "src/Analysis/Finding/Contract/Rule/Override/OverrideAxis.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\ThresholdOverrideValueParser"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override\\OverrideSyntax": {
+      "path": "src/Analysis/Finding/Contract/Rule/Override/OverrideSyntax.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\ThresholdOverrideValueParser"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override\\OverrideValidatorInterface": {
       "path": "src/Analysis/Finding/Contract/Rule/Override/OverrideValidatorInterface.php",
       "kind": "interface",
@@ -9094,6 +9142,26 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountOptions"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\Override\\ThresholdOverrideRequest": {
+      "path": "src/Analysis/Finding/Contract/Rule/Override/ThresholdOverrideRequest.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\ThresholdOverrideExtractor"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\ThresholdOverrideValueParser"
         }
       ]
     },
@@ -11539,6 +11607,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Finding\\Rule\\Override\\NonNegativeOverrideThresholds": {
+      "path": "src/Analysis/Finding/Rule/Override/NonNegativeOverrideThresholds.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Rule\\Override\\OverrideValidationFailure": {
       "path": "src/Analysis/Finding/Rule/Override/OverrideValidationFailure.php",
       "kind": "class",
@@ -13303,6 +13378,20 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\ThresholdOverrideExtractionResult": {
       "path": "src/Analysis/Policy/Inline/ThresholdOverrideExtractionResult.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms": {
+      "path": "src/Analysis/Policy/Inline/Threshold/DeclaredOverrideForms.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\ThresholdOverrideValueParser": {
+      "path": "src/Analysis/Policy/Inline/Threshold/ThresholdOverrideValueParser.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
@@ -16610,6 +16699,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationControlBindings"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Threshold\\DeclaredOverrideForms"
         },
         {
           "owner": "Analysis.Run",

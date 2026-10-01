@@ -15,7 +15,7 @@ Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterfa
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface	Analysis.Configuration	10	8
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	4	3
-Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	15	8
+Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	16	9
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	Analysis.Configuration	12	8
 Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet	Analysis.Configuration	1	1
@@ -138,7 +138,7 @@ Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	10	5
 Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult	Analysis.Finding	6	3
 Qualimetrix\Analysis\Finding\Contract\RuleMetadata	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\RuleOptionForms	Analysis.Finding	2	1
+Qualimetrix\Analysis\Finding\Contract\RuleOptionForms	Analysis.Finding	3	1
 Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	35	14
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	44	14
 Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	26	9
@@ -156,8 +156,11 @@ Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator	Analysis.Finding	2	2
+Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis	Analysis.Finding	2	1
+Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	23	7
+Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest	Analysis.Finding	3	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	47	14
@@ -292,7 +295,7 @@ Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1
 Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	8	3
 Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	52	17
+Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	53	17
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	2	1
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3

@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
@@ -57,12 +58,9 @@ final readonly class RuleOptionForms implements OverrideValidatorInterface
         return self::keyForAxis($set, $overrideAxis);
     }
 
-    public function validate(
-        int|float|null $warning,
-        int|float|null $error,
-        bool $errorWasExplicit,
-    ): ?OverrideValidationFailure {
-        return $this->strategy->validate($warning, $error, $errorWasExplicit);
+    public function validate(ThresholdOverrideRequest $request): ?OverrideValidationFailure
+    {
+        return $this->strategy->validate($request);
     }
 
     private static function keyForAxis(RuleOptionKeySet $set, string $axis): ?string

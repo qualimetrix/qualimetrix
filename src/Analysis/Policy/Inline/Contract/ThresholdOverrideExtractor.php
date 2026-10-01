@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract;
 
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms;
+use Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideValueParser;
 use Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
@@ -170,7 +174,7 @@ final readonly class ThresholdOverrideExtractor
 
             $valueString = self::cleanTrailingDocblock($match[2][0] ?? '');
             $line = self::lineAtOffset($text, $docComment->getStartLine(), $match[0][1]);
-            $parsed = self::parseValues($valueString);
+            $parsed = new ThresholdOverrideValueParser()->parse($valueString);
 
             $problem = $this->problemWith($rulePattern, $valueString, $parsed, $line, $subject, $seenRules);
             if ($problem !== null) {
@@ -181,13 +185,13 @@ final readonly class ThresholdOverrideExtractor
             }
 
             $seenRules[$rulePattern] = true;
-            [$warning, $error] = $parsed ?? [null, null];
+            $request = $parsed ?? throw new LogicException('An admitted threshold annotation requires parsed values.');
 
             $read['overrideTags'][] = [$docComment, $match[0][1]];
             $read['overrides'][] = new ThresholdOverride(
                 rulePattern: $rulePattern,
-                warning: $warning,
-                error: $error,
+                warning: $request->warning,
+                error: $request->error,
                 line: $line,
                 subject: $subject,
                 controlScope: $controlScope,
@@ -203,13 +207,12 @@ final readonly class ThresholdOverrideExtractor
      * outcome: values that do not parse, values a rule's own validator
      * rejects, and a rule already retuned on this declaration.
      *
-     * @param array{int|float|null, int|float|null, bool}|null $parsed
      * @param array<string, true> $seenRules
      */
     private function problemWith(
         string $rulePattern,
         string $valueString,
-        ?array $parsed,
+        ?ThresholdOverrideRequest $parsed,
         int $line,
         MetricSubject $subject,
         array $seenRules,
@@ -231,7 +234,7 @@ final readonly class ThresholdOverrideExtractor
         // the post-analysis `annotation.unsupported-threshold` diagnostic
         // surfaces those instead.
         $validator = $this->validators[$rulePattern] ?? null;
-        $failure = $validator?->validate($parsed[0], $parsed[1], $parsed[2]);
+        $failure = $validator?->validate($parsed);
         if ($failure !== null) {
             return new ThresholdDiagnostic(
                 line: $line,
@@ -244,7 +247,7 @@ final readonly class ThresholdOverrideExtractor
         }
 
         if ($validator instanceof RuleOptionForms) {
-            $formProblem = self::formProblem($validator, $rulePattern, $parsed, $line, $subject);
+            $formProblem = new DeclaredOverrideForms($validator, $rulePattern, $line, $subject)->problem($parsed);
             if ($formProblem !== null) {
                 return $formProblem;
             }
@@ -264,180 +267,6 @@ final readonly class ThresholdOverrideExtractor
                 $rulePattern,
             ),
         );
-    }
-
-    /**
-     * An annotation addresses a rule, not one level. Every level it can retune
-     * must accept each written axis before an Options class converts it.
-     *
-     * @param array{int|float|null, int|float|null, bool} $parsed
-     */
-    private static function formProblem(
-        RuleOptionForms $forms,
-        string $rulePattern,
-        array $parsed,
-        int $line,
-        MetricSubject $subject,
-    ): ?ThresholdDiagnostic {
-        foreach ($forms->levels() as $level) {
-            foreach (['warning' => $parsed[0], 'error' => $parsed[1]] as $axis => $value) {
-                if ($value === null || ($axis === 'error' && !$parsed[2] && !$forms->hasAxis($rulePattern, $level, $axis))) {
-                    continue;
-                }
-
-                if (!$forms->hasAxis($rulePattern, $level, $axis)) {
-                    return new ThresholdDiagnostic(
-                        line: $line,
-                        subject: $subject,
-                        rulePattern: $rulePattern,
-                        code: 'unsupported_' . $axis . '_axis',
-                        message: \sprintf('@qmx-threshold %s: %s threshold has no declared override form%s', $rulePattern, $axis, $level === null ? '' : ' at ' . $level . ' level'),
-                    );
-                }
-                $form = $forms->formOf($rulePattern, $level, $axis);
-
-                $accepts = false;
-                foreach ($form->scalar->forms as $scalarForm) {
-                    $accepts = $accepts || $scalarForm->accepts($value);
-                }
-                if (!$accepts || ($form->scalar->minimum !== null && $value < $form->scalar->minimum)) {
-                    return new ThresholdDiagnostic(
-                        line: $line,
-                        subject: $subject,
-                        rulePattern: $rulePattern,
-                        code: 'invalid_' . $axis . '_form',
-                        message: \sprintf('@qmx-threshold %s: %s threshold%s must be %s (got %s)', $rulePattern, $axis, $level === null ? '' : ' at ' . $level . ' level', $form->describe(), $value),
-                    );
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Parses the value portion of a `@qmx-threshold` annotation.
-     *
-     * A human-readable reason is accepted only after `--` or `—`. The
-     * value portion itself must be entirely one shorthand number or one or
-     * two distinct explicit `warning=N` / `error=N` tokens.
-     *
-     * Returns [warning, error, errorWasExplicit] or null if unparseable.
-     * `errorWasExplicit` distinguishes the shorthand form
-     * (`@qmx-threshold X N`, parsed as W=N, E=N, errorWasExplicit=false)
-     * from the explicit form (`@qmx-threshold X warning=N error=M`,
-     * errorWasExplicit=true) so warning-only rules can keep the shorthand
-     * working while rejecting deliberate error= values.
-     *
-     * @return array{int|float|null, int|float|null, bool}|null
-     */
-    private static function parseValues(string $valueString): ?array
-    {
-        $values = self::extractValuesBeforeReason($valueString);
-        if ($values === null) {
-            return null;
-        }
-
-        return self::parseShorthand($values) ?? self::parseExplicitValues($values);
-    }
-
-    /**
-     * Returns the value portion after validating an optional reason separator.
-     */
-    private static function extractValuesBeforeReason(string $valueString): ?string
-    {
-        $valueString = trim($valueString);
-
-        if ($valueString === '') {
-            return null;
-        }
-
-        $parts = preg_split('/\s+(?:--|—)\s*/u', $valueString, 2);
-        if ($parts === false) {
-            return null;
-        }
-
-        $values = trim($parts[0]);
-        if ($values === '' || (isset($parts[1]) && trim($parts[1]) === '')) {
-            return null;
-        }
-
-        return $values;
-    }
-
-    /**
-     * Parses a shorthand number, which applies to both thresholds.
-     *
-     * @return array{int|float, int|float, false}|null
-     */
-    private static function parseShorthand(string $values): ?array
-    {
-        if (preg_match('/^(\d+(?:\.\d+)?)$/', $values, $match) === 1) {
-            $value = self::parseNumber($match[1]);
-
-            return [$value, $value, false];
-        }
-
-        return null;
-    }
-
-    /**
-     * Parses one or two distinct explicit warning=N / error=N tokens.
-     *
-     * @return array{int|float|null, int|float|null, bool}|null
-     */
-    private static function parseExplicitValues(string $values): ?array
-    {
-        $tokens = preg_split('/\s+/', $values);
-        if ($tokens === false || \count($tokens) < 1 || \count($tokens) > 2) {
-            return null;
-        }
-
-        /** @var array<'warning'|'error', int|float> $thresholds */
-        $thresholds = [];
-        foreach ($tokens as $token) {
-            $parsedToken = self::parseExplicitToken($token);
-            if ($parsedToken === null) {
-                return null;
-            }
-
-            [$name, $value] = $parsedToken;
-            if (isset($thresholds[$name])) {
-                return null;
-            }
-
-            $thresholds[$name] = $value;
-        }
-
-        return [
-            $thresholds['warning'] ?? null,
-            $thresholds['error'] ?? null,
-            isset($thresholds['error']),
-        ];
-    }
-
-    /**
-     * @return array{'warning'|'error', int|float}|null
-     */
-    private static function parseExplicitToken(string $token): ?array
-    {
-        if (preg_match('/^(warning|error)=(\d+(?:\.\d+)?)$/', $token, $match) !== 1) {
-            return null;
-        }
-
-        return [$match[1], self::parseNumber($match[2])];
-    }
-
-    /**
-     * Parses a numeric string into int or float.
-     */
-    private static function parseNumber(string $value): int|float
-    {
-        if (str_contains($value, '.')) {
-            return (float) $value;
-        }
-
-        return (int) $value;
     }
 
     /**

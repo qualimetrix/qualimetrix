@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Authored threshold override requests.** Replace validate(warning, error,
+errorWasExplicit) with validate(ThresholdOverrideRequest). An absent override
+skips validation; equal non-null shorthand and explicit corresponding axes
+are the two supported requests. Empty or inconsistent requests refuse at
+construction. See ADR 0092 for migration steps.
+
 **Linked enablement decisions.** Replace independent EnablementDecision constructor
 arguments with SelectionCellAddress, AuthoredCellDecision and OptionActivity.
 Use CellSwitch and CellAdmission for the choice and pass the complete decisive

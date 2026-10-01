@@ -166,8 +166,8 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     #[Test]
     public function itExpandsAWarningOnlyShorthandToEqualWarningAndError(): void
     {
-        // GodClass: shorthand `@qmx-threshold X N` parses as W=N, E=N with
-        // errorWasExplicit=false. WarningOnly must accept this so the
+        // GodClass: shorthand `@qmx-threshold X N` carries equal values without
+        // authored axes. WarningOnly must accept this so the
         // shorthand path keeps working — the user did not write `error=N`.
         $result = $this->extract(
             ruleName: GodClassRule::NAME,

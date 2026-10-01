@@ -51,6 +51,9 @@ Inline/
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
 │   └── UnusedDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
+├── Threshold/
+│   ├── ThresholdOverrideValueParser.php # authored number or axis tokens
+│   └── DeclaredOverrideForms.php # every declared level and written axis
 ├── Suppression/
 │   └── SuppressionFilter.php   # internal annotation matching
 └── ThresholdOverrideExtractionResult.php
@@ -91,6 +94,12 @@ Inline/
   question to the same consumer, and `ThresholdDirectiveAuditInput` is the
   prepared run it needs to answer: the context the rules already ran against,
   the executor that ran them, and what they produced.
+
+ThresholdOverrideValueParser constructs the Finding-owned typed request, and
+DeclaredOverrideForms checks each declared level and its admitted numeric axes.
+The extractor retains diagnostic codes, first-refusal order, reason syntax and
+worker-safe output. An absent annotation creates no request; malformed authored
+text still reports its existing syntax or form diagnostic.
 
 ## The directive report
 
