@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigura
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolationProjector;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
 
 /**
  * Pins the Phase-1-shape (post-ADR 0006) YAML schema against every
@@ -67,24 +67,21 @@ final class Phase1ConfigCompatibilityTest extends TestCase
 
         self::assertSame([], $result->warnings, 'Phase-1 config must not produce deferred warnings.');
 
-        $container = (new ContainerFactory())->create();
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
+        $container = $fixture->container();
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($result->configuration);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $analysis = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
+        try {
+            $analysis = $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
         $actual = ArchitectureViolationProjector::project($analysis->findings);
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {

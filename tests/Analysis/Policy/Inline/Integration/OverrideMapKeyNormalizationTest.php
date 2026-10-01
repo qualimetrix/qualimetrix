@@ -10,18 +10,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\AuthoredDirectiveGroup;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
 
 /**
  * The keys of the run's per-file threshold-override map are already what
@@ -92,33 +86,19 @@ final class OverrideMapKeyNormalizationTest extends TestCase
      */
     private static function producedOverrides(): array
     {
-        $container = (new ContainerFactory())->create();
-
-        // The layer policy is bound by the composition root in production; a
-        // run that never binds it fails in preparation, which says nothing
-        // about override keys.
+        $root = AbsolutePath::fromString(self::FIXTURE);
+        $fixture = PreparedAnalysisFixture::start($root, [$root], ['include_generated' => true]);
+        $container = $fixture->container();
         $architecture = $container->get(LayerPolicyPreparationInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $architecture);
-        $architecture->bind(new ArchitectureConfiguration(
-            new LayerRegistry([]),
-            AllowListBuilder::policyFromExactMap([]),
-            CoverageMode::Ignore,
-        ));
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $root = AbsolutePath::fromString(self::FIXTURE);
-
-        return $pipeline->analyze(
-            new RunConfiguration(
-                pathExcludes: [],
-                projectRoot: $root,
-                generatedFilePolicy: GeneratedFilePolicy::Include,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-                authoredPathExcludes: [],
-                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-            ),
-        )->thresholdOverrides;
+        try {
+            return $pipeline->analyze($fixture->prepared()->runConfiguration)->thresholdOverrides;
+        } finally {
+            $fixture->close();
+        }
     }
 }

@@ -30,6 +30,7 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
     protected const string MESSAGE_TEMPLATE = 'Boolean argument detected - consider splitting methods or using enums';
     protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA = 'Boolean argument $%s detected - consider splitting methods or using enums';
     protected const ?string RECOMMENDATION = 'Replace boolean parameter with two explicit methods or use an enum.';
+    protected const bool FILE_OCCURRENCES = false;
 
     /**
      * @return class-string<BooleanArgumentOptions>

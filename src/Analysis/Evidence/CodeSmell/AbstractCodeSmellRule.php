@@ -55,6 +55,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     protected const string MESSAGE_TEMPLATE = '';
     protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA = null;
     protected const ?string RECOMMENDATION = null;
+    protected const bool FILE_OCCURRENCES = true;
 
     public function getName(): string
     {
@@ -105,7 +106,9 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            static::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            static::NAME => static::FILE_OCCURRENCES
+                ? ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File)
+                : ChannelDeclaration::occurrence(SymbolLevel::Callable),
         ];
     }
 

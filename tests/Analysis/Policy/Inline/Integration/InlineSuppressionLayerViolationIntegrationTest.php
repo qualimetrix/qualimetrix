@@ -10,19 +10,13 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
 
 /**
  * Verifies that {@code @qmx-ignore architecture.layer-violation} on a source
@@ -52,30 +46,21 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
     #[Test]
     public function itDoesNotDropATargetAttributedLayerViolationWhenTheSourceCarriesQmxIgnore(): void
     {
-        $registry = new LayerRegistry([
-            new LayerDefinition('controller', new MembershipSpec([self::FIXTURE_NAMESPACE . '\\Controller'])),
-            new LayerDefinition('service', new MembershipSpec([self::FIXTURE_NAMESPACE . '\\Service'])),
-            new LayerDefinition('repository', new MembershipSpec([self::FIXTURE_NAMESPACE . '\\Repository'])),
-            new LayerDefinition('domain', new MembershipSpec([self::FIXTURE_NAMESPACE . '\\Domain'])),
+        $analysisResult = $this->analyse([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Controller']],
+                ['name' => 'service', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Service']],
+                ['name' => 'repository', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Repository']],
+                ['name' => 'domain', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Domain']],
+            ],
+            'allow' => [
+                'controller' => ['service'],
+                'service' => ['repository', 'domain'],
+                'repository' => ['domain'],
+                'domain' => [],
+            ],
+            'coverage-gap' => 'ignore',
         ]);
-        $policy = AllowListBuilder::policyFromExactMap([
-            'controller' => ['service'],
-            'service' => ['repository', 'domain'],
-            'repository' => ['domain'],
-            'domain' => [],
-        ]);
-        $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
-
-        $pipeline = $this->createPipelineWithArchitecture($architecture);
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $analysisResult = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
 
         // Sanity: AnalysisPipeline must surface BOTH controllers as raw
         // findings — suppression is applied downstream, not inside the
@@ -124,18 +109,20 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
         }
     }
 
-    private function createPipelineWithArchitecture(ArchitectureConfiguration $architecture): AnalysisPipelineInterface
+    /** @param array<string, mixed> $architecture */
+    private function analyse(array $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        $container = (new ContainerFactory())->create();
-
-        $holder = $container->get(LayerPolicyPreparationInterface::class);
-        self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($architecture);
-
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
-
-        return $pipeline;
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        try {
+            $holder = $fixture->container()->get(LayerPolicyPreparationInterface::class);
+            self::assertInstanceOf(ArchitecturePolicy::class, $holder);
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
+            return $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
     }
 
     /**

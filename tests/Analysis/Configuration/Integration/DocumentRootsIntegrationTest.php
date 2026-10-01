@@ -22,11 +22,6 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
-use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -307,13 +302,8 @@ fail_on: error
     private function pipeline(): ConfigurationPipeline
     {
         $loader = new YamlConfigLoader();
-        $execution = self::createStub(RuleExecutionInterface::class);
-        $execution->method('allRules')->willReturn([new RuleMetadata(ComplexityRule::NAME, ComplexityOptions::class, '', [], false)]);
         $pipeline = new ConfigurationPipeline([
             ...LayeredDocument::standaloneSections(),
-            new RulesSection($execution, 'rules'),
-            new RulesSection($execution, 'only_rules'),
-            new RulesSection($execution, 'disabled_rules'),
         ]);
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));

@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -85,6 +86,15 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         self::assertStringContainsString('operator', $findings[0]->message);
         self::assertSame('code-smell.identical-subexpression', $findings[0]->code);
         self::assertSame(1.0, $findings[0]->metricValue);
+        self::assertSame(SymbolLevel::File, $findings[0]->subject::levelOfCanonical($findings[0]->subject->toCanonical()));
+        self::assertSame(
+            [SymbolLevel::Callable, SymbolLevel::File],
+            IdenticalSubExpressionRule::channelDeclarations()['code-smell.identical-subexpression']->levels,
+        );
+        self::assertSame(
+            [SymbolLevel::Callable],
+            BooleanArgumentRule::channelDeclarations()['code-smell.boolean-argument']->levels,
+        );
     }
 
     /**

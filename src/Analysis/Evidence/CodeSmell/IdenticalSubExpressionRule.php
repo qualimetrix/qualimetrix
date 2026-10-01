@@ -130,7 +130,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
         ];
     }
 }
