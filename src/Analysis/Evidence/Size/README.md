@@ -369,17 +369,15 @@ anonymous classes, methods, properties, thresholds, and property exclusions.
   LOC, statement, method, property, and class counts.
 
 
-## Rule option key declarations
+## Declared options
 
-`ClassCountOptions`, `MethodCountOptions` and `PropertyCountOptions` declare
-their accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`, `threshold`,
-`warning` for the first two; `PropertyCountOptions` adds
-`exclude-promoted-only` and `exclude-readonly`. Each declaration transcribes
-the class's own constructor parameters plus the `threshold` shorthand. Those
-declarations are what `RuleOptionKeyRecognition` compares an incoming key against: a
-key none of them knows is refused with exit 3, at the rule's own level and
-inside a level slot alike.
+Size options declare key/value forms and bands through `acceptedOptionKeys()`.
+`RuleOptionSurface` registers those forms in `RulesSection`; framework enabled
+and root suppression keys are added once by Finding. `fromResolved` reads the
+judged snapshot, not a constructor-reflected or raw-array dictionary. Unknown
+keys refuse with their authored full path before Discovery. Empty maps preserve
+lower writes and effective warning/error bands must be coherent. Existing size
+algorithms, levels and numeric defaults are unchanged.
 
 ## Locality
 

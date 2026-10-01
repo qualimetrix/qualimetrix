@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Finding\Selection;
+namespace Qualimetrix\Analysis\Finding\Contract\Selection;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
+use Qualimetrix\Analysis\Finding\Selection\RetiredRuleNames;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Resolves authored cell statements, then adds final option activity. */

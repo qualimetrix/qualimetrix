@@ -331,7 +331,7 @@ instance API, factory, registration mechanism, or optional reflection metadata.
 Base options interface for all rules.
 
 **Methods:**
-- `fromArray(array $config): self` — create options from configuration array (static)
+- `fromResolved(ResolvedRuleOptionValues $config): self` — construct from judged resolved values (static)
 - `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this class answers for (static)
 - `isEnabled(): bool` — whether the rule is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for a metric value (null if acceptable)
@@ -351,7 +351,7 @@ Extends `RuleOptionsInterface` with level-specific capabilities.
 Options for a specific level of a hierarchical rule.
 
 **Methods:**
-- `fromArray(array $config): self` — create from configuration array (static)
+- `fromResolved(ResolvedRuleOptionValues $config): self` — construct level options from judged resolved values (static)
 - `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this slot answers for (static)
 - `isEnabled(): bool` — whether this level is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for the given metric value
@@ -367,26 +367,27 @@ Note that whether a rule *supports* an override is no longer read off this inter
 
 ### RuleOptionKeySet
 
-The value `acceptedOptionKeys()` returns: the option keys one options class — or one level
-slot of one — answers for. It replaces the old derivation from constructor parameters plus
-`ShorthandOptionKeysInterface` / `AdditionalOptionKeysInterface`, both of which are gone.
-Reflection cannot see into a method body, and `fromArray()` is a method body, so the class
-states its keys instead of the reader guessing them (ADR 0038's pattern, applied in ADR 0049).
+Finding owns the declaration returned by `acceptedOptionKeys()`. Each rule or
+level states its admitted keys and value forms before an Options instance
+exists; constructor reflection is not another schema. `RuleOptionSurface`
+combines the owner declaration with framework keys and declared level slots.
 
-A key is in exactly one of three states, disjoint and exhaustive:
+A key has exactly one of four states:
 
-- **accepted** — read here, and printed in the "options here" sentence of a refusal
-- **answered by the class** — recognised only so that `fromArray()` may refuse it in its own
-  words, or accept a spelling meaning "leave things as they are"; a reader must neither warn
-  nor refuse on these (`UnassignedClassOptions::assertNoContradictoryEnabled()` is the case
-  that forces the state to exist)
-- **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a
-  `ConfigurationRefusal` at whichever depth it was written (exit 3 under `check`, uniformly
-  across commands)
+- **accepted** — writable with its declared value form and printed as allowed;
+- **accepted and validated by the class** — writable with a declared coarse
+  ingress form; the owning Options class judges its detailed semantics;
+- **answered by the class** — recognized so its owner can give the declared
+  refusal rather than a guessed unknown-key message;
+- **unknown** — not admitted by this owner at this depth.
 
-Keys are declared in the canonical kebab spelling users type. Comparison folds both sides
-through `ConfigKeySpelling::normalize()`, so snake, camel and kebab spellings of one key stay
-the same key — and a refusal therefore quotes the key in its folded spelling.
+The same declaration carries threshold bands, shorthand spreading, override
+axes and retired-option hints. `RulesSection` uses it for each authored layer;
+`fromResolved` constructs options from the resulting values and judges effective
+bands with their real contributing writers. Declared snake, camel and kebab
+spellings denote one key; other case variants refuse. Diagnostics retain the
+authored spelling and position when available instead of guessing them from a
+normalized runtime array. These contracts remain Finding-owned, not Core types.
 
 ### NameSelector
 
@@ -963,6 +964,14 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - Unit tests for Finding::getFingerprint()
 - Unit tests for MetricDefinition::aggregatedName()
 - PHPStan level 8 with no errors
+
+## Integer boundary overrides
+
+Finding and Inline own the rule-specific threshold grammar. An integer boundary
+refuses a fractional annotation override instead of truncating it and reports
+annotation.invalid-threshold; floating boundaries preserve their declared numeric
+form. Core supplies neutral values only: typed options, producer enablement and
+rule-specific validation do not move into Core.
 
 ## Locality
 

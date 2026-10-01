@@ -99,7 +99,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php' =>
             'enumerates the configured warning boundary of each channel at each level it declares, for'
             . ' baseline:explain; it judges no authored text and refuses nothing',
-        'src/Analysis/Finding/Selection/RuleEnablementResolver.php' =>
+        'src/Analysis/Finding/Contract/Selection/RuleEnablementResolver.php' =>
             'enumerates declared channel levels to build invocation cells; authored channel:level judgement'
             . ' belongs to RuleNameJudge through ChannelLevelAddressing, rather than to this enumeration',
         'src/Infrastructure/Console/Command/RulesCommand.php' =>
@@ -119,7 +119,7 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
     private const array LEVEL_WORDING_AUTHORS = [
         'src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php' =>
             'the seam itself: every sentence a refusal of an authored pair is made of',
-        'src/Analysis/Finding/Selection/RuleEnablementResolver.php' =>
+        'src/Analysis/Finding/Contract/Selection/RuleEnablementResolver.php' =>
             'says that a final option level is inactive by default when explaining selection; that activity'
             . ' is distinct from whether an authored channel:level pair is declared, which the seam judges',
         'src/Analysis/Finding/Contract/FindingChannel.php' =>

@@ -541,3 +541,7 @@ rules:
 bin/qmx check src/ --rule-opt="complexity.wmc:warning=60"
 bin/qmx check src/ --rule-opt="complexity.wmc:error=100"
 ```
+
+## Per-layer shorthand and class activation
+
+A top shorthand for CCN, cognitive complexity or NPath changes callable and preserves the class band. It conflicts with explicit target level blocks in the same layer, while separate layers merge their expanded leaves. NPath written class bands activate without a redundant true; class.enabled:false still turns them off. Integer bands refuse fractional values; effective ordering includes default halves. Existing academic algorithms and default numbers are unchanged. See [Configuration forms](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

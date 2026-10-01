@@ -74,7 +74,7 @@ src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	16	coup
 src/Analysis/Evidence/Measurement/Contract/ResettableVisitorInterface.php	10	coupling.cbo	23 -- Measurement visitors intentionally share this lifecycle promise; current raw CBO 22 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.cbo	22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
 src/Analysis/Finding/RuleExecution.php	33	coupling.cbo	warning=22 -- Ce is 18, one of them the publication
-src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	80	coupling.cbo	21 -- Raw CBO 20: an audit that answers what a directive did must
+src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	79	coupling.cbo	21 -- Raw CBO 20: an audit that answers what a directive did must
 src/Analysis/Run/Configuration/RunConfigurationResolver.php	27	coupling.cbo	warning=21 -- Raw CBO 20 (Ce=19, Ca=1). Initial
 src/Core/ProductIdentity.php	17	coupling.cbo	24 -- Every output channel reads its documentation address from here
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's                                    signature depends on.                                          also names it directly to refuse a               or           value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
@@ -82,17 +82,17 @@ src/Reporting/Report.php	19	coupling.cbo	warning=32 error=32 -- Report is the tr
 src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	34	coupling.class-rank	warning=0.03 -- The paragraph above is the
 src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	16	coupling.class-rank	warning=0.025 -- ClassRank hands a zero-Ce enum
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
-src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
-src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	21	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	25	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	25	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	22	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricAuthorship.php	20	coupling.instability	warning=0.82 -- Ca=2, Ce=9: it reads the resolved
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	23	coupling.instability	0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
-src/Analysis/Evidence/Coupling/ClassCboOptions.php	30	coupling.instability	warning=0.84 -- The docblock this annotation replaced
-src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	23	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	32	coupling.instability	warning=0.84 -- The docblock this annotation replaced
+src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	26	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Coupling/CouplingAnalysis.php	21	coupling.instability	warning=0.85 -- The Coupling configuration-document adapter has Ca=2 and Ce=11 (I=0.84615); the next outward dependency, Ce=12 (I=0.85714), remains a warning.
-src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	24	coupling.instability	warning=0.81 -- The eighth efferent edge is
-src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	27	coupling.instability	warning=0.81 -- The eighth efferent edge is
-src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	35	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Design/DataClass/DataClassOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is
+src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	36	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	26	coupling.instability	warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
 src/Analysis/Finding/RuleExecution.php	38	coupling.instability	warning=0.86 -- The same three composition edges
 src/Analysis/Policy/Architecture/Layer/ClassContextFactory.php	82	coupling.instability	warning=0.81 -- Ca=2, Ce=8 is exactly 0.800 against an

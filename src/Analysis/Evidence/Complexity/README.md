@@ -272,21 +272,6 @@ with data-class and method-count evidence; it does not collect or aggregate
 WMC itself. Its `complexity.wmc` channel retains the existing warning/error
 thresholds and `excludeDataClasses` option.
 
-## Rule option key declarations
-
-`ComplexityOptions`, `CognitiveComplexityOptions`, `NpathComplexityOptions` and
-`WmcOptions` declare their accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`; the three hierarchical wrappers
-also declare `levelOptionsClasses()`, mapping the `callable`/`class` slots to
-their level classes. The two slots do not share one key set: `callable`
-accepts `enabled`, `error`, `threshold`, `warning`; `class` accepts `enabled`,
-`max-error`, `max-warning`, `threshold` — each level class declares its own set
-through the same method. `WmcOptions` (flat, not hierarchical) accepts
-`enabled`, `error`, `exclude-data-classes`, `threshold`, `warning`.
-`RuleOptionKeyRecognition` reads these declarations and refuses an unrecognised key
-by name at both depths — the rule's own top level and inside a `callable`/
-`class` level slot, each compared against its own declared set.
-
 ## Test ownership and Definition of Done
 
 Owned tests live under `tests/Analysis/Evidence/Complexity/`: the unit test
@@ -296,6 +281,22 @@ when every owned test class is discovered, collector `requires()`/`provides()`
 sets and all rule IDs/channels/options are unchanged, and no old Complexity
 production or test FQCN remains in this leaf.
 
+
+## Declared forms and activation
+
+Each options/level class declares its `RuleOptionKeySet` including value forms
+and bands; `RuleOptionSurface` and `RulesSection` read it before construction.
+Framework `enabled` belongs to the common root form, while a level declares its
+own enabled slot. Owners build with `fromResolved`, never `fromArray` or constructor
+reflection as a schema.
+
+Top-level CCN/cognitive/NPath shorthand changes the callable band and preserves
+the class band. Same-layer shorthand plus explicit target level blocks refuses;
+different layers merge the expanded leaves. A written NPath class band activates
+without an extra true switch. An explicit class.enabled:false still turns it off.
+DoD retains independent callable/class defaults, effective-band ordering and
+pre-discovery refusal of every malformed authored layer. Metric algorithms and
+all default band numbers are unchanged.
 
 ## Locality
 

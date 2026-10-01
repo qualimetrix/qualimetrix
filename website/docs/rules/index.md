@@ -258,3 +258,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 
 Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->
+
+## Producers and channels
+
+Rule metadata names producers; a producer may publish several channels. Computed/health channel names and reporting levels come from the invocation snapshot, not a fixed count. Bare producer selectors address the producer; channel-name:level uses a declared channel code with one real level witness. Diagnostic roles may admit additional publication under only filters. See [Rule selection](../usage/cli-options.md#rule-options).

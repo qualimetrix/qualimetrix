@@ -16,7 +16,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * The addressing vocabulary has five values, so a level a channel does not
  * report at is something a user can write. There
  * was no seam that could refuse it: the configuration one
- * ({@see \Qualimetrix\Analysis\Finding\Selection\RuleNameJudge})
+ * ({@see \Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge})
  * throws, but only on the option whose key is a channel, and the inline one
  * ({@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability})
  * reports, but only on a target that already parsed. Two seams deciding this

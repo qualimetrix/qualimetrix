@@ -107,7 +107,7 @@ final class PromiseEffectP1Set
         'src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php' => 'contract stating acceptedOptionKeys()',
         'src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php' => 'contract stating a level slot key set',
         'src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php' => 'contract stating levelOptionsClasses(), the source of slot existence',
-        'src/Analysis/Finding/RuleConfiguration/RuleOptionsBuild.php' => 'the consumer constructing typed options and attributing refusals to authored writes',
+        'src/Analysis/Finding/Contract/Configuration/RuleOptionsBuild.php' => 'the consumer constructing typed options and attributing refusals to authored writes',
         'src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php' => 'the words of every rule-option refusal, including the one about a value\'s form',
         'src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php' => 'the throw site behind most malformed framework-key cells, in no other package set',
         'src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php' => 'its neighbour, which judged no form at all',

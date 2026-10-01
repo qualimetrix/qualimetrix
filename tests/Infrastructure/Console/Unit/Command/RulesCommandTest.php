@@ -497,7 +497,7 @@ final class RulesCommandTest extends TestCase
         return new RulesCommand(
             $execution,
             $snapshots,
-            new \Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver(),
+            new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
             new RuleListingPresenter(),
             new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution),
             $computedMetrics,

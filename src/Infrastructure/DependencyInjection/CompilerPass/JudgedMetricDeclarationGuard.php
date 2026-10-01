@@ -40,9 +40,9 @@ final class JudgedMetricDeclarationGuard
      * body actually reads: that is a property of an observed run, and only a
      * run comparing published magnitudes against the declaration can say it.
      *
-     * **The channels this check says nothing about — six, named, so the set
-     * cannot grow in silence.** Five are static channels that declare no
-     * judged metric at all, and the sixth is a whole run-time family:
+     * **The channels this check says nothing about — seven, named, so the set
+     * cannot grow in silence.** Six are static channels that declare no
+     * judged metric at all, and the seventh is a whole run-time family:
      *
      * 1. `architecture.circular-dependency` — magnitude, publishes a cycle's
      *    member count from the dependency graph.
@@ -57,7 +57,10 @@ final class JudgedMetricDeclarationGuard
      *    `occurrence` (ADR 0017 point 5), so this check stays silent over a
      *    live `coupling.class-rank` value. The trade is recorded, not
      *    overlooked.
-     * 6. every channel of the computed-metric family — resolved at run time
+     * 6. `cohesion.unmatched-exclude-method` — a secondary LCOM channel,
+     *    publishes magnitude 1 per unmatched configured method name from
+     *    whole-project declaration evidence, not the primary LCOM metric.
+     * 7. every channel of the computed-metric family — resolved at run time
      *    from configuration, so no build-time pass can see its keys at all.
      *
      * @param class-string $class

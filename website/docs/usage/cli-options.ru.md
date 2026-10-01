@@ -544,7 +544,7 @@ bin/qmx check src/ --show-suppressed
 незаметно — ничто в стандартном выводе не сигнализирует о том, что оно произошло.
 
 `--show-suppressed` выводит прозой лишь часть этого.
-`--format=suppressed` публикует полный состав — все семь механизмов подавления,
+`--format=suppressed` публикует полный состав — все восемь механизмов подавления,
 а не только эти два, — как машиночитаемый JSON; см.
 [«Форматы вывода»](output-formats.ru.md#suppressed). Для взведения
 per-rule-захвата достаточно либо `--show-suppressed`, либо выбора
@@ -553,17 +553,12 @@ per-rule-захвата достаточно либо `--show-suppressed`, ли�
 показывает каждая, см. в разделе
 [suppressed](output-formats.ru.md#suppressed).
 
-Подавление — закрытое множество из семи механизмов. Несколько соседних
-решений тоже делают находку невидимой, но подавлением не являются, и ни одна
-из поверхностей их не покрывает: правило, которое вообще не исполнялось
-(`--disable-rule`, `--only-rule`, `enabled: false`), не породило находку,
-которую можно было бы подавить; отключённый канал для правила без класса
-(виден в `qmx rules`) снимается тем же способом, ещё до леджера; порог,
-из-за которого находка вообще не родилась (`@qmx-threshold`), проверяется
-отдельным аудитом, а не через эту поверхность; усечение форматтером
-(`--detail`, `violations=N`) оставляет находку в payload и лишь помечает её
-`truncated`; а сужение вывода `--namespace`/`--class` меняет только
-представление конкретного запуска, ничего не убирая из самого результата.
+Suppression composition включает восемь механизмов, включая снятие реально
+порождённых находок механизмом `selection`. Producer, который не исполнялся,
+ничего не породил для снятия и описан отдельно в `notRun`, не в byMechanism.
+Threshold-audit effects, усечение форматтером и namespace/class drill-down
+сохраняют отдельный смысл; усечение/drill-down меняют представление, а не
+identity исходных находок.
 
 ### `--no-suppression-annotations`
 
@@ -846,25 +841,19 @@ Rule selector "complexity" does not match any registered producer or channel. A 
 producer-rule, а не группой или каналом — группа или канал здесь являются ошибкой. То же
 правило действует и для ключей секции `rules:` в YAML.
 
-!!! note "Отбору подчиняется каждый канал, включая собираемый последним"
-    `annotation.unused-directive` — вердикт «это подавление ничего не погасило» — можно вынести
-    только после того, как все прочие правила выдали свои находки, поэтому прогон собирает его
-    после исполнения правил. Тем не менее он отбирается как любой другой канал:
-    `--disable-rule=annotation.unused-directive` (или `annotation.unused-directive:file`) гасит
-    его, а `--only-rule`, назвавший другие каналы `annotation.directive`, но не назвавший этот,
-    его не публикует.
-
-    Опции исключений, ключёванные продюсером, — отдельный вопрос, и до этого канала они не
-    достают: `rules.annotation.directive.suppress_paths` действует только на его ранние каналы, а
-    `suppress_namespaces` не действует ни на один из них, поскольку эти находки сообщаются о файле,
-    в котором написана аннотация.
+!!! note "Роль selection объявлена для каждого канала"
+    annotation.unused-directive выбирается напрямую, хотя собирается после
+    исполнения. Другие directive diagnostics могут быть filter-exempt или
+    следовать addressed producer. Явный disable annotation.directive останавливает
+    producer. Применимость path/namespace exclusions остаётся отдельным вопросом.
 
 ### `--rule-opt`
 
 Переопределить опции правил из командной строки. Формат: `rule-name:option=value`, где
 `rule-name` должен быть точным producer-rule — никогда группой, никогда каналом и никогда
-wildcard. Это то же ограничение, что действует для владельца перед `:` в
-`--only-rule`/`--disable-rule` и для ключей секции `rules:` в YAML. Можно указывать несколько раз:
+wildcard. То же ограничение точного producer действует для ключей `rules:`
+в YAML. Selection с `:level` адресует объявленный channel code, а не иначе
+названного producer. Опцию можно указывать несколько раз:
 
 ```bash
 bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
@@ -878,7 +867,8 @@ bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
 правило принимает.
 
 `suppress_namespace_channels` настраивается в YAML, а не через `--rule-opt`: каждому селектору
-нужен непустой список паттернов неймспейсов, тогда как `--rule-opt` передаёт скалярные значения.
+нужен непустой список паттернов неймспейсов, а channel-keyed dictionaries
+не являются объявленными dotted option addresses CLI.
 Его ключи — это селекторы каналов, подчиняющиеся тому же правилу «точное имя или `X.*`», что
 и `@qmx-ignore`: голый префикс вроде `health` теперь ошибка, а не сокращение для `health.*`.
 Ключ может добавить `:namespace` и никакой другой уровень: опции достаются только агрегаты по
@@ -947,7 +937,7 @@ bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
 | `--lcom-error=N`                     | cohesion.lcom                 | error               |
 | `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
 | `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
-| `--lcom-exclude-methods=NAME`        | cohesion.lcom                 | excludeMethods      |
+| `--lcom-exclude-methods='[NAME]'`    | cohesion.lcom                 | excludeMethods      |
 | `--noc-warning=N`                    | design.noc                    | warning             |
 | `--noc-error=N`                      | design.noc                    | error               |
 | `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
@@ -1275,3 +1265,43 @@ CLI-алиас. Три ключа в подвале допустимы под л
 Каждый CLI-алиас показан вместе с длинной формой `--rule-opt`, в которую он
 разворачивается. Значения порогов по умолчанию в этот вывод не входят — см.
 [Пороги по умолчанию](../reference/default-thresholds.ru.md).
+
+## Typed values правил и итоговый selection
+
+`--rule-opt` и dedicated aliases разбирают одну объявленную YAML-форму значения.
+Например, `--lcom-exclude-methods='[getName, getDescription]'` пишет sequence;
+CSV или scalar не заменяют список. Null не превращается в текст. Две записи
+одной canonical option через aliases или `--rule-opt` в одном invocation отказывают.
+Точка в option address проходит только объявленный level slot, а не произвольный
+channel-keyed dictionary. `suppress_namespace_channels` maps пиши в YAML.
+
+Голое имя выбирает точный producer или channel, `X.*` — строгих потомков.
+Пара `channel-name:level` требует, чтобы именно объявленный channel code публиковался
+на этом уровне. Совпадающие producer/channel names работают как имя канала;
+отдельного alias producer:level для иначе названных channels нет. Для namespace-channel
+exclusion тот же свидетель обязан принадлежать указанному producer/множеству.
+
+Сначала сравниваются слои, затем specificity; в одном слое exact producer enable
+сильнее group disable. Поздний exact enable может снять нижний disable.
+Exact enable и disable одного producer в одном слое отказывают даже при позднем
+перекрытии. `only_rules` задаёт filter и не включает неактивный producer.
+Пустой итоговый selection, dead exact selector, enable вне своего/нижнего итогового
+filter и explicit enable при muted option activity отказывают. Высокий disable
+может намеренно сузить ранний filter. Пустой only_rules убирает нижний filter,
+но пустые maps никогда не сбрасывают options.
+
+Обычно канал выбирается напрямую. Объявленные роли допускают filter-exempt
+channels или diagnostics, следующие за выбранным addressed producer. Это не
+дополнительные включения: explicit disable их producer по-прежнему останавливает
+его. annotation.unused-directive выбирается напрямую; unresolved directive errors
+filter-exempt, а unsupported/invalid threshold errors следуют за addressed producer.
+Исправь входное значение вместо сокрытия configuration error посторонним only filter.
+
+`bin/qmx rules` печатает accepted root/level options отдельно от CLI aliases,
+затем итоговый only filter и все tied decisive disabled texts. Строка
+`Selection source: ... (...; layer N)` берёт реальный origin и layer index.
+Один writer, повторённый в cells, выводится один раз; одинаковый текст разных слоёв
+не смешивается. Listing проверяет документ и stated selection, но не effective-band
+build/conclude и не runtime state. Directive text/JSON сохраняют все decisive disabling
+texts и исключают снятые поздним enable; JSON selection.disabled остаётся списком
+строк. Формы значений и слоёв см. в [конфигурации](../getting-started/configuration.ru.md).

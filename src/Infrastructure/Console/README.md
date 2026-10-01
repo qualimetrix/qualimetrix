@@ -265,8 +265,8 @@ format. No Finding selection or analysis-format consumer runs on this path.
 With no path argument, graph export uses resolved document or Composer defaults.
 `rules` reads and judges the document without requesting a Run configuration or
 refusing an empty analysis tree. It includes named computed metrics and marks
-the current final `only_rules`/`disabled_rules` selection. Raw `rules` enable
-switches remain owned by Finding's rule resolution, not a second Console parser.
+the current stated `only_rules`/`disabled_rules` selection. Finding owns the
+shared resolver; Console has no second raw rule parser.
 `debug:layer-assignment` accepts `--preset`; all four measuring baseline commands
 share `--no-cache`, `--workers` and `--memory-limit`.
 
@@ -337,7 +337,7 @@ not against the working directory `--working-dir` has since changed.
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                                                                                        |
 | `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                                                                                          |
-| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all seven suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
+| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all eight suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
 | `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--suppress-path`, `--suppress-namespace`), never widen it                                                           |
 
 ### `check`'s baseline reporting
@@ -472,6 +472,23 @@ bin/qmx hook:uninstall
 - Unit tests for commands
 - End-to-end integration tests
 
+
+## Prepared rule handoff and listing
+
+The configuration input adapter resolves the complete declared document and
+builds the actual invocation channel snapshot. Measurement commands perform
+RuleEnablementResolver decide → RuleOptionsBuild build → conclude before runtime
+publication. Aliases and rule-opt contribute to one authored CLI layer with the
+same YAML value grammar, duplicate-write refusal and actual option locator.
+The shared document/run doors and mandatory scope remain unchanged.
+
+`rules` reads declared forms and resolves stated selection without build,
+conclude or store commit. It lists accepted root and level options separately
+from aliases and shared framework footer. It retains the effective only filter
+and all tied decisive disabling writers. `Selection source` names actual
+origin.describe() and zero-based layerIndex; repeated cells of a writer collapse,
+while identical displayed text from distinct writers remains distinct.
+DoD distinguishes a valid listing from successful effective-band preflight.
 
 ## Locality
 

@@ -705,9 +705,9 @@ payload never changes shape for a feature it did not ask for (see
 `FindingProjection\SuppressionCompositionBuilder`), never the finding list
 every other formatter reads.
 
-The composition is a multiset over mechanism x finding across seven
-mechanisms — `SuppressionMechanism`'s five global stages plus the two
-per-rule exclusion-ledger halves — not a set of findings: a finding removed
+The composition is a multiset over mechanism x finding across eight
+mechanisms — the five global stages, two per-rule exclusion-ledger halves
+and final produced-finding selection — not a set of findings: a finding removed
 by more than one mechanism appears once per mechanism, so `byMechanism`
 counts do not sum to a distinct-finding total. A separate `neverMatched` list
 publishes configured suppressors (a path/namespace pattern, a per-rule
@@ -954,6 +954,18 @@ Possible extensions:
 
 - **Markdown** — for documentation and PR comments
 - **JUnit XML** — for integration with test frameworks
+
+## Selection audit
+
+The suppression composition has eight mechanisms, adding `selection` to the
+seven existing mechanisms. Only actually produced findings removed by final
+publication selection enter that multiset and its byMechanism counts.
+`SuppressionComposition::notRun` separately records producers that never ran:
+producer, reason (`disabled` or `filtered`), decisive statement and layer. It is
+metadata, not fabricated findings, and contributes no suppression count.
+Drill-down and formatter truncation remain presentation operations; neither is
+selection. Capture and output use the same committed options/enablement snapshot.
+DoD preserves produced-removal identity and empty/not-run separation.
 
 ## Locality
 

@@ -9,7 +9,6 @@ computed_metrics:
 only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]
 rules:
   complexity.ccn:
-    threshold: 3
     callable:
       warning: 100
       error: 200

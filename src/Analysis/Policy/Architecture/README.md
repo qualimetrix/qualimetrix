@@ -369,22 +369,6 @@ matched tally sees even when a broader layer wins every assignment.
 The Console debug command invokes the inspector contract over the same collected
 graph and class universe.
 
-## Rule option key declarations
-
-`LayerViolationOptions` and `UnassignedClassOptions` declare their accepted
-option keys through `RuleOptionsInterface::acceptedOptionKeys()`.
-`LayerViolationOptions` accepts `enabled`, `severity`, and additionally
-declares `empty-template-severity`, `potential-shadow-severity` and
-`unreachable-layer-severity` as answered-by-the-class: `fromArray()` refuses
-these three in its own words (the diagnostics they used to tune now gate the
-run unconditionally) rather than through the generic "unknown option"
-warning. `UnassignedClassOptions` accepts only `mode`, and declares `enabled`
-as answered-by-the-class: `fromArray()` accepts `enabled: false` when it
-agrees with `mode: ignore` and refuses it otherwise, naming `mode` as the
-replacement. `RuleOptionsFactory` reads these declarations and refuses an
-unrecognised key by name — an answered-by-the-class key reaches the class's own
-bespoke refusal unchallenged; anything else is rejected before construction.
-
 ## Definition of Done
 
 - Keep public consumers on the declared contracts; do not import an internal
@@ -394,6 +378,21 @@ bespoke refusal unchallenged; anything else is rejected before construction.
 - Update this README, the manifest inventory, topology tests, and exact
   generated projection whenever the leaf surface or zone DAG changes.
 
+
+## Declared options and preparation
+
+`LayerViolationOptions` and `UnassignedClassOptions` use `fromResolved` and
+owner-declared forms. Framework `enabled` is legal for both producers. Unassigned
+mode independently determines reportability: false+warn is lawful and off,
+explicit true+ignore refuses, and warn/error activates an otherwise enabled
+producer. Retired severity keys refuse through their declared replacement hint.
+
+Preparation reads final `RuleEnablement::runs` for each producer. The shared
+layer evidence walk is needed when either lawful producer runs; it must not gate
+one producer through a sibling's options. Reset, no-layer short-circuiting,
+The captured project universe and all layer assignment judgments are unchanged.
+DoD retains either-producer preparation, no work for muted/off producers and
+full authored provenance of malformed options.
 
 ## Locality
 

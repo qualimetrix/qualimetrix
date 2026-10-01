@@ -23,8 +23,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -156,7 +156,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
             $this->snapshotFactory,
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),
             $computedMetrics,
             new RuleEnablementResolver(),
         );

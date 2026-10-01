@@ -10,9 +10,9 @@ owner-local runtime state exists only where a long-lived service needs it.
 
 The document is a narrow public source seam: it carries the invocation working
 directory, a resolved document with provenance and diagnostics, and Composer's
-two non-authored autoload-target facts. Its only raw-layer access is the three
-named temporary reads Finding needs for `rules`, `only_rules` and
-`disabled_rules` until Finding declares its rule subtree. Symfony input remains inside the Console adapter.
+two non-authored autoload-target facts. Finding declares `rules`, `only_rules`
+and `disabled_rules` and reads their resolved nodes and authored history.
+There are no raw rule contribution getters. Symfony input remains inside the Console adapter.
 It does not expose a generic configuration interface, a universal invocation
 context, or a carrier for feature fields.
 
@@ -21,8 +21,7 @@ context, or a carrier for feature fields.
 ```text
 Configuration/
 ├── Contract/
-│   ├── ConfigurationDocument.php # resolved document, named temporary Finding reads,
-│   │                              # and Composer's non-authored target facts
+│   ├── ConfigurationDocument.php # resolved document, diagnostics and Composer target facts
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
@@ -37,16 +36,14 @@ Configuration/
 │   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
 ├── Loader/             # each source as a written layer for the engine (YAML file or preset →
 │                       # LoadedDocument; command line → CommandLineLayer), plus the narrow
-│                       # configuration-file ingress and raw rules boundaries
-├── Pipeline/           # ordered stage runner, source-layer value, rule-name validator, the
-│   │                   # `~`-as-unwritten normalizer (ConfigDataNormalizer)
+│                       # source-origin and positioned-node preservation
+├── Pipeline/           # ordered source stages and authored layer assembly
 │   └── Stage/          # defaults, Composer, preset, file, CLI stages
 ├── Preset/             # built-in and custom preset resolution
 ├── ConfigKeySpelling.php   # the snake/kebab/camel fold of a key, and its inverse
 ├── ConfigSchema.php        # canonical ingress keys and legacy flat mappings
 ├── ConfigurationRoot.php   # the roots Configuration declares: one atomic declaration each
-├── DocumentRoots.php       # every root of the document and who declares it
-├── UndeclaredRoot.php      # the stand-in for a known root no owner has declared yet
+├── DocumentRoots.php       # canonical root dictionary and CLI document paths
 ├── SelectorYamlDecoder.php  # explicit selector mapping → Core path/namespace pattern
 └── RetiredSuppressionOptions.php # the retired `exclude*` spellings and the one refusal
 ```
@@ -78,18 +75,11 @@ refused rather than resolved by whichever comes last. Any other spelling of
 the same words (`Fail_On`, `FAIL_ON`) is refused with the canonical key
 offered, at every depth the engine reads. A refusal about a key answers in the
 spelling its author used.
-`RetiredSuppressionOptions` holds the retired `exclude*` suppression spellings
-and the one sentence refusing them, for all four doors: the YAML root, a
-`rules:` block, `--rule-opt`, and the rule-option factory behind it. Each door
-used to carry its own copy of the family and of the sentence, and the copies had
-already drifted apart in wording. A refusal answers in the spelling its author
-wrote, so the doors that still hold it — the loader, handed the
-*pre-normalization* `rules:` section by `YamlConfigLoader`, and the `--rule-opt`
-parser — are the ones that raise it: below them `exclude_paths`,
-`exclude-paths` and `excludePaths` are one key. Configuration owns the subject
-because the rule layer already imports Configuration and the reverse edge would
-be a cycle. `ConfigKeySpelling` is that fold and its inverse, shared by every
-door rather than spelled out again in each.
+`RetiredSuppressionOptions` holds the retired suppression spellings and their
+replacement hint. Registered owner schemas reject those spellings before merging,
+while authored nodes still retain the spelling, path and layer. `ConfigKeySpelling`
+provides the shared spelling vocabulary; no later raw rule-option walk guesses
+what an author wrote.
 
 `ConfigurationDocument` exposes the resolved document, its diagnostics and the
 working directory to named owners. Architecture reads its registered
@@ -195,8 +185,7 @@ precedence index within this composed document).
 
 The author-facing table of every node's policy, `~` and empty value is
 generated from these declarations — the sections the container registers,
-completed by `DocumentRoots::completing()` exactly as the pipeline completes
-them — into `website/docs/getting-started/configuration.md` and its Russian
+the same complete registered section set the pipeline consumes — into `website/docs/getting-started/configuration.md` and its Russian
 twin by `scripts/generate-configuration-merge-table.php`
 (`composer configuration:merge-table`). `configuration:merge-table:check`, in
 `check:artifacts`, fails when a declaration changed and the page did not. The
@@ -204,10 +193,10 @@ decision and what it leaves unexpressible are recorded in
 [ADR 0086](../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
 
 The engine runs in every resolution. Cache, Coupling, Console, Parallel, Run,
-Reporting and FindingProjection read their declared resolved values. Finding's
-narrow rule boundary alone retains the three named raw reads
-`ruleContributions()`, `onlyRuleContributions()` and
-`disabledRuleContributions()` until Finding declares its rule subtree. `rules` remains an undeclared root.
+Reporting, FindingProjection and Finding read their declared resolved values.
+Finding registers a `RulesSection` for each of `rules`, `only_rules` and
+`disabled_rules`; option keys, level slots, shorthands and values are judged
+in every authored layer before winners are chosen.
 Composer discovery uses the invocation facts supplied by
 `Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface`.
 Infrastructure's Composer adapter alone reads, decodes and caches the analysed
@@ -233,27 +222,24 @@ forms. Run declares `paths`, Console declares `fail_on` and `memory_limit`,
 Parallel declares `parallel`, and Reporting declares `format`; the evidence
 and policy owners declare their own sections. Each owner registers its section
 autoconfigured, and the container hands those instances to
-`ConfigurationPipeline`. A known root nobody declared yet is
-carried unread (`UndeclaredRoot`), and any other root is refused as unknown,
-`~` or not. A suggestion offers the canonical key, whatever the style of the
+`ConfigurationPipeline`. Every accepted root has an actual registered declaration. A known but
+undeclared root is a configuration error, not an unread transport escape;
+an unknown root is refused, `~` or not. A suggestion offers the canonical key, whatever the style of the
 key it answers.
 
-The loader still judges the raw `rules` block that Finding has not declared.
-The `ConfigFileStage` ingress boundary also remains outside this document's ownership;
-this README does not claim that the engine has already declared every nested
-rule form. A refusal from that fold is held in the layer
-(`LoadedDocument::$deferredRefusal`) and raised only after the engine accepted
-every layer, so a root the engine declares is refused in the engine's words,
-naming the layer that wrote it.
+`YamlConfigLoader` returns the positioned authored document. The stage supplies
+its real ConfigFile or Preset origin; the document engine reads it against all
+registered declarations. There is no deferred raw-rule refusal or second
+normalization pass after composition. Command-line values arrive as one authored
+layer through the same schema, with their option locator and no file position.
 
 `SelectorYamlDecoder` is the configuration ingress for the shared selector
 language. A selector list entry is exactly one mapping — `{exact: value}`,
 `{subtree: value}`, or `{regex: value}` — never a bare string. It retains the
 document origin and list position when translating mapping or PCRE validation
 failures to `ConfigurationRefusal`, then builds the separator-bound Core value.
-`ConfigDataNormalizer` preserves those mappings, including malformed null
-values, until this decoder can reject them instead of silently treating them as
-unwritten configuration.
+The declared entry form preserves malformed selector mappings for an authored
+refusal rather than silently converting them into unwritten configuration.
 
 ## Public contracts and adapters
 
@@ -287,10 +273,9 @@ An open named map declares a name slot structurally: a read of an unwritten
 name returns `null`. Lookup does not repeat the owner's authored-name judgement;
 fixed dictionaries still reject an undeclared name.
 
-`ConfigurationDocument` has no generic raw-value operation. Its three named
-Finding reads and two Composer discovery facts are temporary or source-specific
-exceptions, respectively; neither is a route for another owner to bypass its
-declared resolved section.
+`ConfigurationDocument` has no generic raw-value operation or temporary rule
+contribution getters. Its two Composer discovery facts are source-specific;
+all authored feature values are consumed through their declared resolved section.
 
 ## CLI option aliases
 
@@ -393,6 +378,23 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
   declared by its natural owner (`ConfigurationRoot` or an owner section),
   rather than extending a generic configuration carrier.
 
+
+## Document and transport contracts
+
+`ConfigLoaderInterface::read(physicalPath, sourceName)` returns `LoadedDocument`
+containing the positioned `AuthoredNode`, not a normalized rule contribution.
+The source stage carries its real origin in `ConfigurationLayer::authored` and
+passes source diagnostics independently. `ConfigurationPipeline` composes those
+layers against Configuration-owned roots and the registered owner sections.
+`ConfigurationDocument::resolved()` is the authored feature read port; its
+working directory, applied sources, diagnostics and two Composer discovery target
+facts remain available. There are no raw rules/only/disabled contribution getters.
+
+`ConfigSchema::DOCUMENT_ROOTS` includes `RULES`: this is one canonical dictionary
+entry for the Finding-owned document root, not a legacy alias, another owner or
+a second rule validator. `DocumentRoots` describes canonical keys/CLI paths;
+actual `DocumentSectionSchemaInterface` declarations provide their forms and
+merge semantics. The known dictionary alone cannot enroll an undeclared section.
 
 ## Locality
 

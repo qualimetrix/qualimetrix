@@ -9,9 +9,9 @@ needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
 visitors.
 
-`Contract/Configuration/` exposes the exact
+`Contract/` exposes the exact
 `LcomCollectionConfiguration` value; `Runtime/` owns its scoped store and
-resolver. Measurement remains the owner of cross-capability metric and
+`Configuration/` owns the typed projection resolver. Measurement remains the owner of cross-capability metric and
 aggregation contracts, while Finding owns rule options and findings.
 
 ## Structure
@@ -20,14 +20,18 @@ aggregation contracts, while Finding owns rule options and findings.
 Cohesion/
 ├── ClassVisitorStackTrait.php
 ├── Contract/
-│   └── Configuration/       # LCOM configuration promise for named consumers
+│   ├── LcomCollectionConfiguration.php
+│   ├── LcomCollectionConfigurationResolverInterface.php
+│   ├── LcomCollectionConfigurationStoreInterface.php
+│   └── LcomCollectionConfigurableInterface.php
 ├── LcomClassData.php
 ├── LcomCollector.php
 ├── LcomGraphCalculator.php
 ├── LcomOptions.php
 ├── LcomRule.php
 ├── LcomVisitor.php
-├── Runtime/                 # LCOM store and owner-local resolver
+├── Configuration/           # projection of the prepared typed LCOM options
+├── Runtime/                 # invocation-owned LCOM store
 ├── TccLccClassData.php
 ├── TccLccCollector.php
 └── TccLccVisitor.php
@@ -98,15 +102,25 @@ eligibility, thresholds, controls and output identity.
 - LCOM and TCC/LCC continue to ignore anonymous classes.
 
 
-## Rule option key declarations
+## Typed LCOM options and exclusions
 
-`LcomOptions` declares its accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`: `enabled`, `error`,
-`exclude-methods`, `exclude-readonly`, `min-methods`, `threshold`, `warning` —
-its constructor parameters plus the `threshold` shorthand. That declaration is
-what `RuleOptionKeyRecognition` compares an incoming key against: a key it does not
-know is refused with exit 3, at the rule's own level and inside a level slot
-alike.
+`LcomOptions::fromResolved()` consumes the judged values in the invocation's
+`ResolvedRuleOptions`; the collection resolver projects exactly that snapshot
+into `LcomCollectionConfiguration`, never a raw option map or fallback defaults.
+`exclude_methods` is a sequence. PHP method matching folds case, deduplicates
+normalized names and retains the first authored spelling in diagnostics.
+
+`cohesion.unmatched-exclude-method` is a secondary channel of the LCOM producer.
+On a covered whole-project run it reports each configured normalized name that
+matches no precomputed Method-kind declaration. Functions and property hooks do
+not witness a method; partial runs make no project-wide absence claim. Its project
+magnitude is 1, its occurrence identifies the normalized name, and it explicitly
+declines the producer's configured warning boundary. The primary 3/5 LCOM band,
+LCOM4 graph algorithm and lifecycle are unchanged.
+
+DoD includes typed snapshot handoff, case-insensitive matching with original
+spelling, normalized duplicate handling, method-kind-only whole-project evidence
+and silence on a partial run.
 
 ## Locality
 

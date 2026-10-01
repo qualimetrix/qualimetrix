@@ -7,14 +7,21 @@ The Finding capability owns analysis-rule vocabulary, rule execution, rule confi
 ```text
 Finding/
 ├── Contract/             # Published metadata, configuration, finding, channel, and filter contracts
+│   ├── Configuration/    # completed carrier and public typed options construction
+│   │   ├── FindingConfiguration.php
+│   │   └── RuleOptionsBuild.php
+│   ├── Selection/        # public authored decisions and name judgement
+│   │   ├── RuleEnablementResolver.php
+│   │   ├── RuleNameJudge.php
+│   │   └── StatedEnablement.php
 │   ├── Control/          # finding control scope vocabulary
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
 │   └── Threshold/        # threshold override value
-├── Configuration/        # FindingConfigurationResolver — merges `rules:` across ordered configuration layers
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
-├── RuleConfiguration/    # Option parsing, selector decoding, key recognition, normalization, and per-run state
+├── RuleConfiguration/    # private RulesSection schema, suppression decoder and invocation stores
+├── Selection/            # private retired-name advice
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 └── ChannelPresentationView.php # Joins a channel to its description and its producer's docs page
@@ -25,18 +32,18 @@ rather than a bare finding list: `$produced` (everything rules and their
 configuration validators produced, before the per-rule exclusion ledger and
 per-finding channel selection ran), `$published` (the subset `execute()` used
 to return), `$exclusions` (`RuleExclusionStats`, unchanged), and
-`$levelActivity` (`LevelActivity`). Reporting's
+`$levelActivity` (`LevelActivity`), and `$selection` (`SelectionTrace`). Reporting's
 `SuppressionCompositionBuilder` reads `$produced` and `$exclusions` to publish
 `--format=suppressed`; every other caller keeps reading `$published`. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md`.
 
-Only the ledger half of the `$produced`/`$published` difference is accounted
-for in `$exclusions`. Channel selection is deliberately outside it: a
-selection says what the invocation asks to see and carries no premise about
-the code that could go stale, and it is the same request as a level switched
-off in the rule's options, which produces nothing to account for.
-`RuleExecutionResult`'s docblock says where a reader finds what selection
-removed.
+The ledger half of the `$produced`/`$published` difference is in `$exclusions`.
+The selection half is in `$selection`: retained produced findings removed by
+channel selection carry their deciding statement. Reporting accounts for them
+under mechanism `selection`. A producer skipped before execution created no
+findings; its reason is separate `notRun` metadata, never an invented removal.
+Selection has no stale-suppression count because it states what this invocation
+asks to publish rather than a premise about accepted code debt.
 
 `SuppressionBinding/` answers a question no rule can: whether a `suppress_paths`
 or `suppress_namespaces` value — global or under `rules.<name>` — named any file
@@ -70,29 +77,24 @@ and their channels, on a `covered` run too. The judgement is built at the same
 call site from the run's shape, so this namespace does not read
 `composer.json` itself.
 
-`LevelActivity` records which producer/level pairs this configuration let run,
-asked of the rules themselves during execution and published beside the
-findings it explains (`RuleExecutionInterface::levelActivity()` answers the same
-question without executing anything, because it is a fact about configuration).
-A rule answers for itself through `RuleInterface::levelActivity()`, whose
-default on `AbstractRule` reads its own channel declarations and its options —
-per level when they are hierarchical; `ComputedMetricRule` overrides it for the
-producers it hosts without a class of their own. `RuleExecution` completes the
-record for channels a configuration validator declares in its producer's slot.
+`LevelActivity` records the producer/level cells admitted by the committed
+`RuleEnablement`. `RuleExecutionInterface::levelActivity()` reads that immutable
+answer without running rules. Rule instances no longer provide a second activity
+algorithm or reconstruct selection from their options. The directive audit keeps
+the distinction between a level not declared and a declared level switched off.
 
-The directive audit reads this record instead of re-deriving enablement from
-the merged configuration: three answers, not two, because a producer that does
-not declare a level at all is a different fact from one switched off there.
+`RuleExecutionInterface::publication()` returns `ChannelPublication`; its
+`publishes(producer, channel, level, addressedProducer)` query reads the same
+completed enablement for Baseline cleanup/explain and other identity-only readers.
+Channel/level selection, option activity and declared diagnostic roles therefore
+do not drift between execution and those readers.
 
-`RuleExecutionInterface::publishesAt(producer, channel, level)` answers for a
-reader that holds only an identity — Baseline's cleanup and explain, about an
-entry the run did not report — whether this run publishes that channel at that
-level. It asks both switches: the selection, where a level-narrowed selector
-(`X:namespace`) lives and which this record never sees, and this record, where
-a level switched off in the rule's options lives and which the selection never
-sees.
-
-`RuleExecutionInterface` exposes immutable `RuleMetadata`; concrete rule instances never cross the capability boundary. `RuleConfigurationInterface` is the only external mutation/query surface for per-run options, selection, and exclusions. `replace(FindingConfiguration)` is the door the product configures a run through, and `RuleOptionsRegistry`'s narrower setters are written in terms of it. `resetRuntimeState()` is the one reset point, clearing options, selection and exclusion state before every run.
+`RuleExecutionInterface` exposes immutable `RuleMetadata`, not concrete instances.
+`RuleConfigurationInterface::replace(FindingConfiguration)` publishes resolved
+options, final enablement and the invocation channel snapshot. No raw options,
+`RuleSelection` DTO or live catalogue is an alternate committed configuration.
+`resetRuntimeState()` clears invocation configuration and exclusions before a new
+run; configuration must complete preflight before the next replacement.
 
 A rule instance is shared by the process and executed more than once per run,
 so it carries no state between calls: `RuleInterface::analyze()` states the
@@ -113,9 +115,9 @@ only for rules that delegate to it. See
 `RuleOptionKeySet` is how an options class states which option keys it answers
 for, at the rule's own depth and inside each level slot, instead of the reader
 reconstructing that set from constructor reflection plus opt-in interfaces. It
-holds three disjoint states — accepted, answered by the class itself (so that a
-class such as `UnassignedClassOptions` keeps refusing `enabled` in its own
-words), and unknown — declared in the canonical kebab spelling users type, and
+holds four disjoint states — accepted, accepted with detailed owner validation,
+answered by the class for its declared refusal, and unknown — declared in the
+canonical kebab spelling users type, and
 compared after `ConfigKeySpelling::normalize()` on both sides so snake, camel
 and kebab stay one key. `RuleOptionsInterface::acceptedOptionKeys()` and
 `LevelOptionsInterface::acceptedOptionKeys()` publish it; a hierarchical
@@ -158,48 +160,63 @@ here: `RuleOptionKeySet::withLevelSlots()` takes them from
 `levelOptionsClasses()`, which stays the single source of a slot's existence
 and form.
 
-`RuleOptionKeyRecognition` compares what the user wrote against those
-declarations at both depths and refuses — `ConfigurationRefusal`
-(`Analysis\Configuration\Contract\Refusal`), which `check` prints as
-`Configuration error: …` and exits 3 on, uniformly across commands — the
-first key in document order that nothing at its depth answers for.
-`RuleOptionsFactory` calls it on the user-written config, after the
-framework keys are taken out and before
-`fromArray()`. A key the class declared as answered by itself passes through
-untouched, so `fromArray()` may refuse it in its own words; the three framework
-keys (`suppress-paths`, `suppress-namespaces`, `suppress-namespace-channels`)
-are legal at the rule's own depth only and are declared by no options class.
-The factory takes the three values out through `Exclusion\ConfiguredSuppression::take()`,
-the one reader of a producer's raw suppression options, rather than deriving
-their spellings itself.
-`FrameworkOptionKeys` (`Contract\Rule`) is where those three are named, so that
-a refusal for a mistyped one can name the spelling that works and the `rules`
-listing can advertise them. `RuleOptionSurface` beside it answers the question
-both of those sides ask — which declaration answers at which depth, and what may
-legally stand there — and the walk addresses through it rather than deriving the
-pair itself.
-`RuleOptionRefusalWording` holds the sentences, beside `ChannelLevelRefusalWording`
-and for the same reason. Every sentence prints the key exactly as the walk
-received it: each door folds separators before the factory exists, so there is
-no authored spelling left to quote and none is guessed at.
+`RuleOptionsInterface::acceptedOptionKeys()` and each hierarchical
+`levelOptionsClasses()` are the owner declarations. `RuleOptionSurface` combines
+those declarations with framework-owned `enabled` and suppression keys, and
+provides the same accepted root/level sets to the document schema and listing.
+The constructor is not another dictionary. `RulesSection` is registered for
+`rules`, `only_rules` and `disabled_rules`; no undeclared raw rule subtree remains.
 
-A rule's `threshold` shorthand and the graduated `warning`/`error` pair it
-stands for are two spellings of one concept, and each configuration layer
-(preset, config file, CLI) is free to pick either. `RuleOptionThresholdShorthand::unfold()`
-rewrites one layer's `threshold` key, for every group `RuleThresholdKeyGroupRegistry`
-declares at that rule/path, into the graduated pair before that layer is
-merged with any other — called on both sides of a merge by both merge sites,
-`RuleOptionsFactory` (config file ↔ CLI) and `Configuration/FindingConfigurationResolver`
-(config-file layers among themselves), and at every nesting level. Unfolding
-both layers before they meet removes the base/overlay asymmetry a prior design
-(the deleted `RuleOptionThresholdModeResolver`) could not express: that design
-evicted the lower layer's keys of whichever mode the higher layer switched
-away from, which silently dropped a value the lower layer wrote instead of
-merely leaving it unrewritten. `RuleOptionValueWrittenness::isWritten()` is the
-one place both merge sites (and `ThresholdParser`) ask whether a value counts
-as written — `null` (an author's `~`) does not, so an overlay's `~` selects no
-mode and leaves the layer below it alone rather than erasing it. See
-`docs/adr/0058-a-layers-value-survives-the-layers-above-it.md`.
+The named external operations are published by
+`Contract\Configuration\RuleOptionsBuild` and
+`Contract\Selection\{RuleEnablementResolver,RuleNameJudge,StatedEnablement}`.
+Console preflight consumes Build/Resolver, RulesCommand consumes Resolver,
+CliOptionsParser consumes Judge, and DI composes the same concrete services.
+The returned StatedEnablement exposes decisions, diagnostics and the only filter.
+Build takes only RuleExecutionInterface; its suppression decoder remains private,
+not a constructor dependency exposed to consumers.
+
+`RuleEnablementResolver::decide()` reads every authored enabled/disabled writer
+and the effective only filter against the invocation's immutable channel universe.
+`RuleOptionsBuild::build()` constructs every producer's options through
+`fromResolved(ResolvedRuleOptionValues)`, including inactive producers, and
+projects typed suppression values. `conclude()` adds each cell's option activity,
+refuses contradictory, empty, dead, outside-filter or explicitly muted enables,
+and returns the single final `RuleEnablement`. Configuration publishers commit
+that completed carrier atomically; lazy rule execution never parses raw arrays.
+
+Forms are expanded in the layer that wrote them, before merging. `threshold`
+and its graduated pair are mutually exclusive in one band in one layer. A top
+hierarchical shorthand conflicts with explicit target level blocks in that layer;
+different layers merge their expanded leaves. Empty rule/level maps and null
+write nothing. The boolean rule form changes enabled only and preserves lower
+options. A reset without enumerating defaults is not expressed by this language.
+
+`ResolvedRuleOptionValues` exposes the declared values and their authored history.
+Owners perform their numeric judgement on effective bands; a refusal retains
+full rules/producer/key paths, the real contributing sources and any default half.
+No winner masks malformed lower-layer input. Existing academic algorithms and
+numeric defaults are independent of these configuration semantics.
+
+The threshold completeness guard checks judge-call counts per path and membership
+of named band references. It does not establish a bijection between distinct bands
+and calls: a repeated known band can satisfy count/membership while another band
+is not independently witnessed. Owner builder differential/drift regressions
+observe the resulting behaviour; documentation must not promise exactly one call
+per distinct band from that guard alone.
+
+Namespace-channel exclusions use `ChannelLevelAddressing` with the producer's
+actual channels and required Namespace level. One channel must witness selector
+membership, producer membership and declared level simultaneously. Unknown and
+retired keys are refused through the declared vocabulary with one replacement
+hint, not by a second raw dictionary walk.
+
+`RuleEnablement` distinguishes execution (`runs`) from finding publication
+(`publishes`). Declaration roles are `Selectable`, `FilterExempt` and
+`FollowsAddressedRule`; a role is not an implicit exact enable. Produced findings
+removed by the final selection are recorded separately from producers that never
+ran. Decisive tied writers remain attached to the decision, so listings and audit
+publishers do not reconstruct provenance from displayed text.
 
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies
@@ -217,7 +234,8 @@ Matching stays string comparison in `NameSelector`, the one selector grammar
 there is now that a channel is one name; it does not consult the universe, and
 the universe validates and resolves. `ChannelDeclaration` carries `direction`
 (present only for a `magnitude` producer's channel), `levels`,
-`configurationError`, and `description` (ADR 0081).
+`configurationError`, `description`, the selection role and warning-boundary
+eligibility. These are channel facts, not another producer option store.
 
 `description` is the channel's own display text, declared with `describedAs()`.
 The channel named after its producer declares none — the producer's
@@ -290,6 +308,22 @@ closing a dependency cycle back onto this capability; that preference is
 layered on by `Infrastructure\Rule\ComputedMetricChannelPresentation`, a
 decorator registered in front of the public alias.
 
+
+## Producer and channel identity
+
+The registered metadata set is a set of producers, not a channel count. A producer
+may emit several named channels; computed/health channels and their reporting
+levels depend on the immutable definition snapshot for this invocation. Never
+substitute a static producer list for the channel universe. Level-qualified
+selection addresses a declared channel code, not an alias for every producer.
+
+`usesProducerWarningBoundary` defaults to true. A secondary channel may opt out
+with `withoutConfiguredWarningBoundary()` without changing its producer's
+magnitude shape. The options still own the actual warning number or reason none
+exists. LCOM's primary boundary remains 3; `cohesion.unmatched-exclude-method`
+uses project magnitude 1 and no configured boundary. Judged catalog membership
+is not boundary eligibility: GodClass legitimately has no catalog judge but has
+an options boundary.
 
 ## Locality
 

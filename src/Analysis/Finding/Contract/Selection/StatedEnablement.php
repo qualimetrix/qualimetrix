@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Finding\Selection;
+namespace Qualimetrix\Analysis\Finding\Contract\Selection;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;

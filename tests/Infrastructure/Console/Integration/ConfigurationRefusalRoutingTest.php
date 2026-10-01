@@ -529,9 +529,9 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         return new RuleInputValidator(
             $ruleRegistry,
             $this->inert('Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'),
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             $this->inert('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface'),
-            new \Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver(),
+            new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
         );
     }
 

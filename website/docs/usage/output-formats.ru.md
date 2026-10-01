@@ -869,18 +869,19 @@ xdg-open report.html  # Linux
 пер-рулевые исключения. Глобальные `path-suppression` и `namespace-suppression`
 там видны только как счётчик под `-v`, а не по находкам; снятия `baseline` и
 `git-scope` не выводятся вовсе; текстового аналога `neverMatched` нет.
-`suppressed` — единственная поверхность, публикующая все семь механизмов
+`suppressed` — единственная поверхность, публикующая все восемь механизмов
 по отдельным находкам.
 
 **Состав — это мультимножество, а не множество находок.** Одна находка может
 попасть под несколько механизмов сразу — например, находку, которую убрал бы
 инлайновый `@qmx-ignore`, могло раньше убрать исключение по неймспейсу. Всего
-семь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
+восемь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
 `@qmx-ignore-next-line`), `path-suppression` и `namespace-suppression` (глобальные
 `suppress_paths`/`suppress_namespaces`), `baseline` (потолок принятого уровня),
 `git-scope` (сужение `--report=git:*`) и две половины пер-рулевого леджера
 исключений, настраиваемого под ключом `rules: {<имя-правила>: {...}}` —
-`rule-namespace-suppression` и `rule-path-suppression`. `byMechanism` считает
+`rule-namespace-suppression`, `rule-path-suppression` и снятие реально
+порождённых находок механизмом `selection`. `byMechanism` считает
 записи по каждому механизму отдельно; поскольку одна и та же находка может
 попасть под несколько механизмов, эти счётчики **не складываются** в число
 различных подавленных находок — об этом прямо говорит поле `note` самого
@@ -897,8 +898,9 @@ xdg-open report.html  # Linux
 `json`, — аудит неполного прогона говорит, что он неполон), `projectScope`
 (тот же объект, что у `json`, — аудит суженного прогона называет каналы
 подавлений, которые не судились), `mechanisms` (все
-семь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
-нулевые), `suppressed` (само мультимножество), `neverMatched`.
+восемь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
+нулевые), `suppressed` (само мультимножество), `neverMatched` и `notRun`
+(metadata producers).
 
 Каждая запись `suppressed` несёт идентичность, которую публикует `json`, —
 `channel` (здесь это код находки), `subject`, `occurrence`, `edge`, — чтобы её
@@ -936,7 +938,8 @@ xdg-open report.html  # Linux
         "baseline",
         "git-scope",
         "rule-namespace-suppression",
-        "rule-path-suppression"
+        "rule-path-suppression",
+        "selection"
     ],
     "byMechanism": {
         "suppression": 12,
@@ -945,7 +948,8 @@ xdg-open report.html  # Linux
         "baseline": 0,
         "git-scope": 0,
         "rule-namespace-suppression": 58,
-        "rule-path-suppression": 131
+        "rule-path-suppression": 131,
+        "selection": 0
     },
     "suppressed": [
         {
@@ -979,6 +983,7 @@ xdg-open report.html  # Linux
             "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
+    "notRun": [],
     "neverMatched": [
         {
             "mechanism": "rule-path-suppression",
@@ -1201,3 +1206,22 @@ development-цели. При отсутствии манифеста или це
 
 !!! note "Примечание"
     Все диагностические сообщения `check` вне выбранного report-payload (уведомления и ошибки конфигурации, deprecation, logging и сообщения о записи файла) выводятся в **stderr**, а не в stdout. Это позволяет безопасно перенаправлять вывод анализа в файл или другой инструмент: `bin/qmx check src/ --format=json > results.json`.
+
+## Selection removals и skipped producers
+
+`selection` — восьмой suppression mechanism. Он содержит реально порождённые
+находки, снятые итоговым publication selection. `byMechanism.selection` считает
+только эти multiset entries, никогда не число неисполненных producers.
+
+`notRun` всегда массив. У записи есть `producer`, `reason` (`disabled` или
+`filtered`), decisive `statement` и описание `layer`. Skipped producer не даёт
+искусственной находки или suppression count. У выключенного channel может быть
+живой sibling, поэтому producer notRun и channel removal — разные исходы.
+Обычные suppressed identity/multiset rules сохраняются; drill-down и formatter
+truncation остаются presentation, а не selection.
+
+Directive JSON сохраняет `selection.only` и `selection.disabled` как списки
+строк. Публикуются итоговый filter и все tied decisive disabling texts;
+повторяющиеся cells удалены, нижние disables, снятые поздним enable, отсутствуют.
+qmx rules печатает реальные origins/layer indices отдельно в human listing;
+это не меняет молча форму directive JSON.

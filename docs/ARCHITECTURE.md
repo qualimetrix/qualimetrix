@@ -77,9 +77,10 @@ diagnostics, and Composer's two non-authored discovery target lists; it is not
 a generic configuration interface or invocation context. Architecture,
 ComputedMetrics, Coupling, Cache, Console, Parallel, Run, Reporting and
 FindingProjection read their owner-declared values from the resolved document.
-Only Finding's three named temporary reads for `rules`, `only_rules` and
-`disabled_rules` retain ordered raw contributions until Finding declares that
-subtree. Mutable state remains only inside the owner that needs a
+Finding also reads its declared `rules`, `only_rules` and `disabled_rules`
+sections. Authored values and history are judged before the one immutable
+options/enablement snapshot is published; no temporary raw contribution reads
+remain. Mutable state remains only inside the owner that needs a
 per-container store.
 
 `Analysis\ProjectManifest` owns the analysed Composer source facts and their

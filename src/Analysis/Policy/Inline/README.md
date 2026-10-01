@@ -285,7 +285,7 @@ and still judged by `directives`.
 The ban is not an exemption from the report. Unlike the three configuration
 errors, a finding on this channel stays inside the pipeline: the top-level
 `suppress_paths` drops it, a baseline ceiling accepts it, a git scope narrows it,
-and the run's channel selection decides it exactly as it decides every other
+and the run's channel selection treats it as a directly selectable
 channel — `--disable-rule=annotation.unused-directive` silences it, an
 `--only-rule` that never names it does not report it, and both spellings reach
 it through `RuleExecutionInterface::publishable()`, which
@@ -350,15 +350,6 @@ When changing an inline annotation or its wire value:
 5. update the manifest and generated architecture inventory in the publication
    package; never expose `Extraction` internals to Run.
 
-## Rule option key declarations
-
-`InlineDirectiveOptions` declares its accepted option keys through
-`RuleOptionsInterface::acceptedOptionKeys()`: `enabled` and
-`unused-directive-severity`, a plain transcription of its constructor
-parameters — there is no answered-by-the-class key here, unlike the
-Architecture capability's two options classes. `RuleOptionsFactory` reads this
-declaration and refuses any other key by name.
-
 ## Definition of Done
 
 - Run imports only Inline contracts and stores no policy state.
@@ -366,6 +357,27 @@ declaration and refuses any other key by name.
 - Two sequential runs cannot retain a previous suppression or threshold set.
 - Inline has no dependency on Baseline or Reporting.
 
+
+## Typed directive construction and admission
+
+`InlineDirectiveOptions::fromResolved` reads declared framework enabled and
+owner severity values from the completed snapshot. The validator constructor is
+`InlineDirectiveValidator(policy, identity)`; it no longer accepts unused options.
+RuleExecution applies the producer activity gate before invocation. Integer
+threshold boundaries refuse fractional overrides as annotation.invalid-threshold;
+non-integer owners keep their own numeric grammar.
+
+Channel roles govern publication after selection. Unresolved directive errors
+are filter-exempt; unsupported/invalid threshold diagnostics follow the addressed
+rule; unused-directive is directly selectable. An explicit annotation.directive
+disable still stops the producer. These roles do not invent findings for a
+producer that never ran. Directive text/JSON retain every tied decisive disabling
+text in resolver order, deduplicate repeated cells and omit writes canceled by a
+later enable; selection.disabled remains a string list.
+
+Fingerprint identity excludes the internal addressedProducer used for admission.
+Its separate invariance observation complements public identity/boundary field
+coverage; the numeric/message boundary split and audit lifecycle do not change.
 
 ## Locality
 
@@ -416,7 +428,7 @@ materialises on the class and on every declaration inside it; removing the
 first of those and leaving the rest would report an annotation still in force
 as inert.
 
-**The fingerprint is the whole finding, split in two.** `threshold` and the
+**The fingerprint is the public finding, split in two.** `threshold` and the
 prose that quotes it — `message` and `recommendation` — are the boundary a
 finding names; every other field is what the finding *is*. When two runs differ only in the boundary half, the directive
 applied and the finding fired regardless — `Overrun`, a promise made and not

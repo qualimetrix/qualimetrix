@@ -867,19 +867,19 @@ disagree.
 exclusions as prose. Global `path-suppression` and `namespace-suppression` appear
 there only as `-v` counts, not per finding; `baseline` and `git-scope`
 removals are not listed at all; and there is no text equivalent of
-`neverMatched`. `suppressed` is the only surface that publishes all seven
+`neverMatched`. `suppressed` is the only surface that publishes all eight
 mechanisms as individual findings.
 
 **The composition is a multiset, not a set of findings.** One finding can be
 removed by more than one mechanism — for example, a finding an inline
 `@qmx-ignore` would suppress may already have been removed earlier by a
-namespace exclusion. There are seven mechanisms: `suppression` (inline
+namespace exclusion. There are eight mechanisms: `suppression` (inline
 `@qmx-ignore`/`@qmx-ignore-file`/`@qmx-ignore-next-line`), `path-suppression` and
 `namespace-suppression` (global `suppress_paths`/`suppress_namespaces`),
 `baseline` (the accepted-level ceiling), `git-scope` (`--report=git:*`
 narrowing), and the two halves of the per-rule exclusion ledger configured
 under `rules: {<rule-name>: {...}}` — `rule-namespace-suppression` and
-`rule-path-suppression`. `byMechanism` counts entries per mechanism; because the
+`rule-path-suppression`, plus produced-finding `selection` removals. `byMechanism` counts entries per mechanism; because the
 same finding can appear under more than one, those counts **do not sum** to
 the number of distinct findings suppressed — the format's own `note` field
 says so.
@@ -893,9 +893,9 @@ deleted file is indistinguishable from one that was never written.
 **Top-level keys:** `meta`, `note`, `coverage` (the same object `json`
 carries, so an audit of an incomplete run says so), `projectScope` (the same
 object `json` carries, so an audit of a narrowed run names the suppression
-channels it did not judge), `mechanisms` (all seven,
+channels it did not judge), `mechanisms` (all eight,
 always present), `byMechanism` (count per mechanism, including zero),
-`suppressed` (the multiset), `neverMatched`.
+`suppressed` (the multiset), `neverMatched`, and `notRun` (producer metadata).
 
 Each `suppressed` entry carries the identity `json` publishes — `channel`
 (here the finding's code), `subject`, `occurrence`, `edge` — so it can be
@@ -933,7 +933,8 @@ a finding back, and the identity leads to the finding's own record.
         "baseline",
         "git-scope",
         "rule-namespace-suppression",
-        "rule-path-suppression"
+        "rule-path-suppression",
+        "selection"
     ],
     "byMechanism": {
         "suppression": 12,
@@ -942,7 +943,8 @@ a finding back, and the identity leads to the finding's own record.
         "baseline": 0,
         "git-scope": 0,
         "rule-namespace-suppression": 58,
-        "rule-path-suppression": 131
+        "rule-path-suppression": 131,
+        "selection": 0
     },
     "suppressed": [
         {
@@ -976,6 +978,7 @@ a finding back, and the identity leads to the finding's own record.
             "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
+    "notRun": [],
     "neverMatched": [
         {
             "mechanism": "rule-path-suppression",
@@ -1197,3 +1200,22 @@ A symbolic link **named as a scanned path** is the one exception: `qmx check src
 
 !!! note
     All `check` diagnostics outside the selected report payload (configuration notices and errors, deprecation messages, logging, and output-file notices) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.
+
+## Selection removals and skipped producers
+
+`selection` is the eighth suppression mechanism. It contains actual produced
+findings removed by final publication selection. `byMechanism.selection` counts
+only these multiset entries, never the producers that did not run.
+
+`notRun` is always an array. Each entry has `producer`, `reason` (`disabled` or
+`filtered`), the decisive `statement`, and its `layer` description. A skipped
+producer contributes no fabricated finding or suppression count. A disabled
+channel may still have a live sibling, so producer notRun and channel removal
+are separate outcomes. The standard suppressed identity and multiset rules stay
+unchanged; drill-down and formatter truncation remain presentation, not selection.
+
+Directive JSON keeps `selection.only` and `selection.disabled` as string lists.
+Only the effective filter and all tied decisive disabling texts are published;
+repeated cells are deduplicated and lower disables canceled by a later enable
+are omitted. qmx rules prints actual selection writer origins/layer indices on
+its separate human listing; these do not silently change the directive JSON shape.

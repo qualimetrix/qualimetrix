@@ -230,3 +230,7 @@ bin/qmx check src/ --disable-rule=duplication.clone
 
 !!! note "Потребление памяти"
     Обнаружение дубликатов использует алгоритм скользящего хеша Рабина-Карпа, который требует хранения нормализованных токенов всех файлов с совпавшими хешами в памяти одновременно. На больших кодовых базах (500+ файлов) это может потреблять значительный объём памяти. Отключение правила — `--disable-rule=duplication.clone` или `enabled: false` в разделе `duplication.clone` конфигурации — полностью пропускает фазу обнаружения и освобождает память.
+
+## Корректное окно и явное выключение
+
+min_tokens — integer не меньше 1; ноль и отрицательные значения отказывают до discovery. Чтобы пропустить detection, выключи duplication.clone через configuration/selection. Detector читает prepared immutable options snapshot без raw fallback; normalization, minimum-line logic и copy attribution не меняются. enabled:true в example намеренно включает поверх нижних disables и не обязателен для defaults.

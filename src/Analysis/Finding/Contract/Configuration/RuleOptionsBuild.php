@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
+namespace Qualimetrix\Analysis\Finding\Contract\Configuration;
 
 use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\OptionActivity;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
@@ -19,15 +18,18 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSuppression;
-use Qualimetrix\Analysis\Finding\Selection\StatedEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder;
 
 /** Builds every producer's immutable options from the judged document. */
 final readonly class RuleOptionsBuild
 {
-    public function __construct(
-        private RuleExecutionInterface $execution,
-        private RuleSuppressionSelectorDecoder $suppressionSelectors = new RuleSuppressionSelectorDecoder(),
-    ) {}
+    private RuleSuppressionSelectorDecoder $suppressionSelectors;
+
+    public function __construct(private RuleExecutionInterface $execution)
+    {
+        $this->suppressionSelectors = new RuleSuppressionSelectorDecoder();
+    }
 
     public function build(FindingConfiguration $configuration, StatedEnablement $stated): ResolvedRuleOptions
     {

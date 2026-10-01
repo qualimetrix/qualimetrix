@@ -13,8 +13,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
-use Qualimetrix\Analysis\Finding\Selection\RuleNameJudge;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**

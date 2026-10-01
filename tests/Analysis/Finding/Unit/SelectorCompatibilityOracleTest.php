@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
@@ -78,7 +78,7 @@ final class SelectorCompatibilityOracleTest extends TestCase
         yield 'bare prefix without a star is refused' => [
             'demo',
             [],
-            "Rule selector \"demo\" does not match any registered producer or channel.",
+            "Rule selector \"demo\" does not match any registered producer or channel. Write \"demo.*\" to select its descendants.",
         ];
 
         yield 'lone wildcard is refused' => [
@@ -187,12 +187,15 @@ final class SelectorCompatibilityOracleTest extends TestCase
         self::assertTrue(self::enablement(['demo.rule.leaf'])->runs(self::PRODUCER));
         self::assertTrue(self::enablement(['demo.rule.*'])->runs(self::PRODUCER));
         self::assertFalse(self::enablement(['demo.rule.*'])->runs(self::SIBLING_PRODUCER));
-        foreach (['demo', '*'] as $selector) {
+        foreach ([
+            'demo' => 'Rule selector "demo" does not match any registered producer or channel. Write "demo.*" to select its descendants.',
+            '*' => 'Rule selector "*" does not match any registered producer or channel.',
+        ] as $selector => $refusal) {
             try {
                 self::enablement([$selector]);
                 self::fail('A reverse prefix or lone wildcard must not become a selector.');
             } catch (ConfigurationRefusal $exception) {
-                self::assertSame(\sprintf('Rule selector "%s" does not match any registered producer or channel.', $selector), $exception->getMessage());
+                self::assertSame($refusal, $exception->getMessage());
             }
         }
     }

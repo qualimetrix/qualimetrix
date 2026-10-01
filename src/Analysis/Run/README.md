@@ -225,7 +225,7 @@ duration negative.
 - `LayerPolicyPreparationInterface` and
 `CircularDependencyPreparationInterface` are capability-specific
   contracts, not a generic lifecycle or graph-participant registry.
-- `RuleProducerPreparation` coordinates their rule selection, reset and
+- `RuleProducerPreparation` coordinates their final producer enablement, reset and
   profiling with file-set inspection while `AnalysisPipeline` retains the
   complete phase order. It stores no capability result. It is also where Run
   asks the inline-directive capability its two post-execution questions —
@@ -350,6 +350,20 @@ participant ordering is deterministic, and two sequential runs reset state.
 - Run imports capability promises only through declared contracts and stores no
   capability payload.
 
+
+## Final producer preparation
+
+Before Discovery, the document is judged and one invocation channel snapshot
+feeds decide/build/conclude. `RuleProducerPreparation` reads the committed final
+`RuleEnablement::runs` answer, resets participants once and prepares only live
+producers. It does not apply a second string-selection algorithm or turn an only
+filter into an enable. FileSet inspection uses the same answer.
+
+The mandatory `ProjectScopeMeasurement`, captured universe, authored paths
+and whole-project verdict remain the authority. Selection does not manufacture
+complete coverage or turn a partial run into a project-wide absence statement.
+DoD preserves reset/prepare ordering, independent either-producer participants
+and zero inspection for an inactive producer.
 
 ## Locality
 

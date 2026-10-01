@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -291,7 +291,7 @@ final class RuleInputValidatorTest extends TestCase
         $validator = new RuleInputValidator(
             $rules,
             $static,
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
             new RuleEnablementResolver(),
         );
@@ -400,7 +400,7 @@ final class RuleInputValidatorTest extends TestCase
         return new RuleInputValidator(
             $rules,
             $static,
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
             new RuleEnablementResolver(),
         );
@@ -425,7 +425,7 @@ final class RuleInputValidatorTest extends TestCase
         $resolved = (new RuleInputValidator(
             self::createStub(RuleRegistryInterface::class),
             $channels,
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild($execution),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild($execution),
             $computed,
             new RuleEnablementResolver(),
         ))->resolve($document, $input);

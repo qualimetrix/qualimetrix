@@ -1069,3 +1069,7 @@ bin/qmx check src/ --disable-rule=code-smell.exit
 # Disable all code smell rules at once (wildcard match; matches descendants only, not "code-smell" itself)
 bin/qmx check src/ --disable-rule=code-smell.*
 ```
+
+## Authored enabling and forms
+
+A written enabled:true can reverse a lower preset disable; retain it when that is intended. Empty maps preserve lower options, and a rule true writes enabled only rather than resetting severity/options. All malformed lower writes refuse before discovery. Code-smell algorithms and fixed severities are unchanged. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

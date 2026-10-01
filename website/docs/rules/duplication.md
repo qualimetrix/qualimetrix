@@ -230,3 +230,7 @@ bin/qmx check src/ --disable-rule=duplication.clone
 
 !!! note "Memory usage"
     Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule — `--disable-rule=duplication.clone`, or `enabled: false` under `duplication.clone` in the configuration — skips the detection phase entirely and frees the memory.
+
+## Valid window and explicit disabling
+
+min_tokens is an integer at least 1; zero/negative values refuse before discovery. To skip detection, disable duplication.clone through configuration/selection. The detector consumes the prepared immutable options snapshot, with no raw fallback; existing normalization, minimum-line logic and copy attribution are unchanged. An enabled:true example is an intentional exact enable over lower disables, not a mandatory incantation.

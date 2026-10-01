@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Finding\Selection;
+namespace Qualimetrix\Analysis\Finding\Contract\Selection;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Selection\RetiredRuleNames;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** Authored producer owners and selectors judged against their declared universe. */

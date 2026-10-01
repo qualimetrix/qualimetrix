@@ -260,3 +260,7 @@ rules:
 ```bash
 bin/qmx check src/ --rule-opt="annotation.directive:unused_directive_severity=warning"
 ```
+
+## Directive admission
+
+Integer-boundary annotations require an integer; fractions produce annotation.invalid-threshold instead of truncation. Unresolved directive errors are filter-exempt; unsupported/invalid threshold errors follow the selected addressed producer. The unused-directive channel is directly selectable. Explicitly disable annotation.directive to stop the whole producer. Existing enabled:true examples are intentional exact enables; see [Rule selection](../usage/cli-options.md#rule-options).

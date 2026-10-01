@@ -92,3 +92,7 @@ rules:
 ```bash
 bin/qmx check src/ --disable-rule=suppression.configuration
 ```
+
+## Owner and namespace membership
+
+A suppress_namespace_channels key must address a channel of its configured producer at Namespace level. One channel must witness both owner membership and the applied level; a level from a sibling channel cannot justify it. Write the keyed map in YAML. The audit itself uses final selection and keeps its existing whole/partial-coverage limits. enabled:true is an intentional exact enable over a lower disable.
