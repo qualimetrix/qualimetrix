@@ -405,6 +405,9 @@ final class ChannelEmissionStaticGuardTest extends TestCase
     private static function delegatedEmitters(): array
     {
         return [
+            'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' =>
+                'LcomRule delegates its unmatched-exclusion channel here; the scanner follows rule inheritance'
+                . ' rather than helper calls. LcomRuleTest checks the emitted channel, declaration and scope.',
             'src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php' =>
                 'AbstractCodeSmellRule hands a collected entry to this value object, which builds the finding;'
                 . ' the resolver follows constructions declared on a rule chain, not one method call further.',
