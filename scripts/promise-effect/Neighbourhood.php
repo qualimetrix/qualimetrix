@@ -128,8 +128,25 @@ final class Neighbourhood
     {
         $class = $optionsClasses[$rule] ?? null;
 
-        return $class !== null && is_a($class, RuleOptionsInterface::class, true)
-            && RuleOptionSurface::of($class)->locate($key) !== null;
+        if ($class === null || !is_a($class, RuleOptionsInterface::class, true)) {
+            return false;
+        }
+
+        if (class_exists(RuleOptionSurface::class)) {
+            return RuleOptionSurface::of($class)->locate($key) !== null;
+        }
+
+        $segments = explode('.', $key);
+        $slots = is_a($class, HierarchicalRuleOptionsInterface::class, true) ? $class::levelOptionsClasses() : [];
+        $head = ConfigKeySpelling::normalize($segments[0]);
+        $set = \count($segments) > 1 && isset($slots[$head])
+            ? $slots[$head]::acceptedOptionKeys()
+            : $class::acceptedOptionKeys();
+        $tail = \count($segments) > 1 && isset($slots[$head])
+            ? implode('.', \array_slice($segments, 1))
+            : $key;
+
+        return $set->knows(ConfigKeySpelling::normalize($tail));
     }
 
     /**

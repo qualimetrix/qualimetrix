@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\PromiseEffect\Classifier;
 use Qualimetrix\PromiseEffect\Declarations;
+use Qualimetrix\PromiseEffect\FormRow;
 use Qualimetrix\PromiseEffect\InProcess;
 use Qualimetrix\PromiseEffect\Ledger;
 use Qualimetrix\PromiseEffect\LedgerError;
@@ -16,6 +17,7 @@ use Qualimetrix\PromiseEffect\Observation;
 use Qualimetrix\PromiseEffect\ProcessProbe;
 use Qualimetrix\PromiseEffect\Stand;
 use Qualimetrix\PromiseEffect\Verdict;
+use ReflectionClass;
 use ReflectionMethod;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -91,6 +93,116 @@ final class ResolvedDocumentObservationTest extends TestCase
                 $refused = $helper->take(['rules' => ['complexity.ccn' => [$key => $value]]], [], [], 'complexity.ccn');
                 self::assertSame(Observation::REFUSED_FRAMED, $refused['object']->outcome, $refused['object']->text);
             }
+        } finally {
+            (new Filesystem())->remove($scratch);
+        }
+    }
+
+    #[Test]
+    public function itKeepsTheSameAuthoredThresholdCompanionAtEveryDoorAndChangesTheTarget(): void
+    {
+        $root = \dirname(__DIR__, 3);
+        $scratch = sys_get_temp_dir() . '/qmx-threshold-context-' . bin2hex(random_bytes(6));
+
+        try {
+            $helper = new InProcess($scratch);
+            $original = Declarations::load($root);
+            $path = 'rules.complexity.ccn.callable.warning';
+            $base = ['rules' => ['complexity.ccn' => ['callable' => ['error' => 10000]]]];
+            $contexts = ['cli-alias|rules.coupling.class-rank.warning' => ['rules' => ['coupling.class-rank' => ['error' => 10000]]]];
+
+            foreach (['yaml', 'rule-opt', 'cli-alias'] as $door) {
+                $contexts[$door . '|' . $path] = $base;
+            }
+
+            $declarations = self::declarationsWith($original, $original->axisAHits, $contexts);
+            $stand = new Stand($root, Ledger::load($root), $declarations, $helper, new ProcessProbe($root, $scratch));
+            $write = new ReflectionMethod(Stand::class, 'write');
+
+            foreach (['yaml' => '', 'rule-opt' => '', 'cli-alias' => 'cyclomatic-warning'] as $door => $alias) {
+                $row = new FormRow($door, $path, ['int'], 'unwritten', '', '', 'PROMISED', '', ['int'], $alias);
+                $omitted = $write->invoke($stand, $row, 'complexity.ccn', 'callable.warning', null);
+                $written = $write->invoke($stand, $row, 'complexity.ccn', 'callable.warning', $original->forms['int']);
+                self::assertSame(Observation::ACCEPTED, $omitted['object']->outcome, $omitted['object']->text);
+                self::assertSame(Observation::ACCEPTED, $written['object']->outcome, $written['object']->text);
+                $omittedOptions = json_decode($omitted['object']->text, true, 512, \JSON_THROW_ON_ERROR)['options'];
+                $writtenOptions = json_decode($written['object']->text, true, 512, \JSON_THROW_ON_ERROR)['options'];
+                self::assertSame(10000, $omittedOptions['callable']['error'], $door);
+                self::assertSame(10000, $writtenOptions['callable']['error'], $door);
+                self::assertSame(7331, $writtenOptions['callable']['warning'], $door);
+                self::assertNotSame($omittedOptions['callable']['warning'], $writtenOptions['callable']['warning'], $door);
+            }
+
+            $wrongType = $write->invoke(
+                $stand,
+                new FormRow('yaml', $path, ['int'], 'unwritten', '', '', 'PROMISED', '', ['int']),
+                'complexity.ccn',
+                'callable.warning',
+                $original->forms['map'],
+            );
+            self::assertSame(Observation::REFUSED_FRAMED, $wrongType['object']->outcome, $wrongType['object']->text);
+
+            $floatPath = 'rules.coupling.class-rank.warning';
+            $floatRow = new FormRow('cli-alias', $floatPath, ['float'], 'unwritten', '', '', 'PROMISED', '', ['float'], 'class-rank-warning');
+            $float = $write->invoke($stand, $floatRow, 'coupling.class-rank', 'warning', $original->forms['float']);
+            $comparand = $write->invoke($stand, $floatRow, 'coupling.class-rank', 'warning', $original->forms['float']->comparand());
+            self::assertSame(Observation::ACCEPTED, $float['object']->outcome, $float['object']->text);
+            self::assertSame(Observation::ACCEPTED, $comparand['object']->outcome, $comparand['object']->text);
+            self::assertNotSame($float['object']->text, $comparand['object']->text);
+            $floatOptions = json_decode($float['object']->text, true, 512, \JSON_THROW_ON_ERROR)['options'];
+            self::assertSame(7331.9, $floatOptions['warning']);
+            self::assertSame(10000, $floatOptions['error']);
+        } finally {
+            (new Filesystem())->remove($scratch);
+        }
+    }
+
+    #[Test]
+    public function itKeepsTypedYamlAndScalarCliSelectorHitsOnTheirOwnDoors(): void
+    {
+        $scratch = sys_get_temp_dir() . '/qmx-selector-door-hit-' . bin2hex(random_bytes(6));
+
+        try {
+            $helper = new InProcess($scratch);
+            $yaml = $helper->take(['rules' => ['complexity.ccn' => ['suppress-paths' => [['subtree' => 'src/Sub']]]]], [], [], 'complexity.ccn');
+            $cli = $helper->take([], ['complexity.ccn:suppress-paths=subtree:src/Sub'], [], 'complexity.ccn');
+            self::assertSame(Observation::ACCEPTED, $yaml['object']->outcome, $yaml['object']->text);
+            self::assertSame(Observation::ACCEPTED, $cli['object']->outcome, $cli['object']->text);
+            $yamlObject = json_decode($yaml['object']->text, true, 512, \JSON_THROW_ON_ERROR);
+            $cliObject = json_decode($cli['object']->text, true, 512, \JSON_THROW_ON_ERROR);
+            self::assertTrue($yamlObject['excluded']['path']);
+            self::assertTrue($cliObject['excluded']['path']);
+
+            $root = \dirname(__DIR__, 3);
+            $original = Declarations::load($root);
+            $hits = $original->axisAHits;
+            $hits['yaml|suppress-paths|list'] = '[{subtree: src/Sub}]';
+            $stand = new Stand($root, Ledger::load($root), self::declarationsWith($original, $hits, []), $helper, new ProcessProbe($root, $scratch));
+            $hit = new ReflectionMethod(Stand::class, 'hitFor');
+            $yamlRow = new FormRow('yaml', 'rules.complexity.ccn.suppress-paths', ['list'], 'unwritten', '', '', 'PROMISED', '', ['list']);
+            $cliRow = new FormRow('rule-opt', 'rules.complexity.ccn.suppress-paths', ['list'], 'unwritten', '', '', 'PROMISED', '', ['list']);
+            self::assertSame('[{subtree: src/Sub}]', $hit->invoke($stand, $yamlRow, 'suppress-paths', 'list'));
+            self::assertSame('[src/Sub]', $hit->invoke($stand, $cliRow, 'suppress-paths', 'list'));
+        } finally {
+            (new Filesystem())->remove($scratch);
+        }
+    }
+
+    #[Test]
+    public function itDistinguishesOwnedCacheDirectoriesWithEqualFileCountsByName(): void
+    {
+        $scratch = sys_get_temp_dir() . '/qmx-cache-observation-' . bin2hex(random_bytes(6));
+        mkdir($scratch, 0o775, true);
+        $count = new ReflectionMethod(ProcessProbe::class, 'newDirectoryCounts');
+
+        try {
+            mkdir($scratch . '/first');
+            file_put_contents($scratch . '/first/item', 'same');
+            self::assertSame('first:files=1', $count->invoke(null, $scratch, []));
+            (new Filesystem())->remove($scratch . '/first');
+            mkdir($scratch . '/second');
+            file_put_contents($scratch . '/second/item', 'same');
+            self::assertSame('second:files=1', $count->invoke(null, $scratch, []));
         } finally {
             (new Filesystem())->remove($scratch);
         }
@@ -176,5 +288,29 @@ final class ResolvedDocumentObservationTest extends TestCase
         } finally {
             (new Filesystem())->remove($scratch);
         }
+    }
+    /**
+     * @param array<string, string> $hits
+     * @param array<string, array<string, mixed>> $contexts
+     */
+    private static function declarationsWith(Declarations $original, array $hits, array $contexts): Declarations
+    {
+        $reflection = new ReflectionClass(Declarations::class);
+        $declarations = $reflection->newInstanceWithoutConstructor();
+        (new ReflectionMethod(Declarations::class, '__construct'))->invoke(
+            $declarations,
+            $original->forms,
+            $original->envelopes,
+            $original->witnessEnvelopes,
+            $hits,
+            $contexts,
+            $original->pairScopes,
+            $original->magnitudes,
+            $original->formAlternates,
+            $original->leafAlternates,
+            $original->sideBLiterals,
+        );
+
+        return $declarations;
     }
 }

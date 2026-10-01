@@ -169,3 +169,24 @@ php scripts/promise-effect.php --freeze-before --reason='…'
 input stamp. It does not measure current product behaviour; only the full stand
 does that. A narrowed `--axis=` run rewrites the published grid partially, so
 follow it with a full run before relying on generated verdict data.
+
+Form probes carry a fixed authored context when a canonical magnitude would
+otherwise contradict a sibling band boundary. The same document is used for
+omission, the value and its comparand on both versions; the target itself is not
+seeded. Exact door/path/form hits keep typed YAML selectors separate from native
+scalar CLI selector spellings. A presence-only alias has no payload spelling,
+so only its presence form is measured, without a self-equal collapse comparand.
+
+A before retake uses the native pipeline and option declarations of the declared
+old product. Pending cures remain pending: the frozen side must still observe
+the old defect, and the live side must observe its repair. Full population,
+frozen floor, old-source and reason guards complete before any capture artifact
+is published. A normal live run may publish a red measurement.
+
+The formula placeholder is instantiated as `health.complexity.formula` at the
+project level, with the built-in formula as its lawful omitted/default case.
+The formulas-map placeholder remains `computed.probe-metric.formulas`, with a
+sibling `formula: "1"` and class thresholds 1.5/1.8. Its `{class: "1 + 1"}`
+write changes the reported findings; `null` leaves the sibling formula in place.
+Cache-owned observations retain named/default sentinels and also compare newly
+created directory names with their file counts, excluding fixture directories.

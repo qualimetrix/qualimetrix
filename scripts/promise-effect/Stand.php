@@ -515,7 +515,7 @@ final class Stand
             // `isPathExcluded()` / `isNamespaceExcluded()`, and a path that is
             // not in the fixture excludes nothing. The form the write stands
             // for is unchanged.
-            $hit = $reference === null ? '' : $this->hitFor($option);
+            $hit = $reference === null ? '' : $this->hitFor($row, $option, $reference);
             $referenceSpelling = $reference === null
                 ? null
                 : ($hit === '' ? $this->declarations->forms[$reference] : new FormSpelling($reference, $hit, $hit, '', ''));
@@ -527,6 +527,13 @@ final class Stand
             $this->record('A', $row->key(), 'equivalent', $equivalent['object']);
 
             foreach ($this->declarations->formNames() as $form) {
+                if ($row->door === 'cli-alias' && !$this->inProcess->aliasAcceptsValue($row->alias) && $form !== 'bool') {
+                    $cells[] = new Cell('A', $row->key() . '|' . $form, $form, 'optionsObject', Verdict::NOT_OBSERVABLE, self::UNWRITABLE, $row->status, false);
+                    $this->record('A', $row->key() . '|' . $form, 'unwritable', new Observation(Observation::ACCEPTED, ''));
+
+                    continue;
+                }
+
                 // The hit is the reference form's own write too. Substituting
                 // it only into `equivalent` would leave this cell writing a
                 // magnitude that names nothing, and the stand would read the
@@ -540,7 +547,8 @@ final class Stand
                 // The comparand costs a probe and only ever decides a cell the
                 // product accepted and moved; taking it for a refused form buys
                 // nothing and, on axis D, buys it with a process.
-                $collapse = $spelling->collapseYaml === '' || !$value['object']->accepted() || $value['object']->text === $omitted['object']->text
+                $collapse = ($row->door === 'cli-alias' && !$this->inProcess->aliasAcceptsValue($row->alias))
+                    || $spelling->collapseYaml === '' || !$value['object']->accepted() || $value['object']->text === $omitted['object']->text
                     ? null
                     : $this->write($row, $rule, $option, $spelling->comparand());
 
@@ -1228,17 +1236,19 @@ final class Stand
      */
     private function write(FormRow $row, string $rule, string $option, ?FormSpelling $spelling, bool $respell = false): array
     {
+        $base = $this->axisABase($row);
+
         if ($spelling === null) {
-            return $this->inProcess->take([], [], [], $rule);
+            return $this->inProcess->take($base, [], [], $rule);
         }
 
         $key = $respell ? self::respell($option) : $option;
 
         return match ($row->door) {
-            'rule-opt' => $this->inProcess->take([], [$rule . ':' . $key . '=' . $spelling->cliWrite], [], $rule),
-            'cli-alias' => $this->inProcess->take([], [], [ltrim($row->alias, '-') => $spelling->cliWrite], $rule),
+            'rule-opt' => $this->inProcess->take($base, [$rule . ':' . $key . '=' . $spelling->cliWrite], [], $rule),
+            'cli-alias' => $this->inProcess->take($base, [], [ltrim($row->alias, '-') => $spelling->cliWrite], $rule),
             default => $this->inProcess->take(
-                ['rules' => [$rule => self::place([], explode('.', $key), self::parse($spelling->yamlWrite))]],
+                self::place($base, ['rules', $rule, ...explode('.', $key)], self::parse($spelling->yamlWrite)),
                 [],
                 [],
                 $rule,
@@ -1302,16 +1312,26 @@ final class Stand
         return array_values(array_map(static fn(string $segment): string => str_replace('\\.', '.', $segment), $segments));
     }
 
-    /**
-     * The declared hit for an option leaf, or the empty string when the
-     * canonical magnitude is fine. Keyed on the LEAF rather than the whole
-     * path: the three framework keys repeat under all 54 producers, and an
-     * enumeration of 162 paths would be the same four statements written 162
-     * times.
-     */
-    private function hitFor(string $option): string
+    /** The exact door and form take precedence; legacy leaf hits remain valid. */
+    private function hitFor(FormRow $row, string $option, string $form): string
     {
-        return $this->declarations->axisAHits[self::leafOf($option)] ?? '';
+        $hits = $this->declarations->axisAHits;
+        $leaf = self::leafOf($option);
+
+        return $hits[$row->door . '|' . $row->path . '|' . $form]
+            ?? $hits[$row->door . '|' . $leaf . '|' . $form]
+            ?? $hits[$row->door . '|' . $row->path]
+            ?? $hits[$row->door . '|' . $leaf]
+            ?? $hits[$leaf]
+            ?? '';
+    }
+
+    /** @return array<string, mixed> */
+    private function axisABase(FormRow $row): array
+    {
+        return $this->declarations->axisABases[$row->door . '|' . $row->path]
+            ?? $this->declarations->axisABases[$row->path]
+            ?? [];
     }
 
     /**
@@ -1328,12 +1348,16 @@ final class Stand
     private function referenceForm(FormRow $row, string $rule, string $option, array $omitted): ?string
     {
         foreach ($row->promisedForms as $form) {
-            if ($form !== 'null') {
+            if ($form !== 'null' && ($row->door !== 'cli-alias' || $this->inProcess->aliasAcceptsValue($row->alias) || $form === 'bool')) {
                 return $form;
             }
         }
 
         foreach (['int', 'bool', 'string-nonnumber', 'list', 'map'] as $form) {
+            if ($row->door === 'cli-alias' && !$this->inProcess->aliasAcceptsValue($row->alias) && $form !== 'bool') {
+                continue;
+            }
+
             $probe = $this->write($row, $rule, $option, $this->declarations->forms[$form]);
 
             if ($probe['object']->accepted() && $probe['object']->text !== $omitted['object']->text) {
@@ -1537,9 +1561,11 @@ final class Stand
             $normalized = ConfigKeySpelling::normalize($key);
         }
 
-        $framework = \count($segments) === 1 ? FrameworkOptionKeys::declared() : null;
+        $framework = \count($segments) === 1 && $this->inProcess->nativeProfile() === 'typed'
+            ? FrameworkOptionKeys::declared()
+            : null;
 
-        foreach (array_keys($set->retired()) as $retired) {
+        foreach (array_keys($this->inProcess->nativeProfile() === 'typed' ? $set->retired() : []) as $retired) {
             if (ConfigKeySpelling::normalize($retired) === $normalized) {
                 return [false];
             }

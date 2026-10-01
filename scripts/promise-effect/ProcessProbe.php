@@ -161,6 +161,7 @@ final class ProcessProbe
         $runDirectory = $this->scratchRoot . '/run/' . $key;
         self::remove($runDirectory);
         self::copy($this->repositoryRoot . '/promise-effect/fixtures/probe', $runDirectory);
+        $fixtureDirectories = $cacheOwned ? self::topLevelDirectories($runDirectory) : [];
 
         $cacheDirectory = $runDirectory . '/probe-cache';
 
@@ -253,7 +254,7 @@ final class ProcessProbe
 
         $observation = new ProcessObservation(
             $exit,
-            self::observable($observable, $stdout, $runDirectory, $cacheDirectory, $logFile),
+            self::observable($observable, $stdout, $runDirectory, $cacheDirectory, $logFile, $cacheOwned ? $fixtureDirectories : null),
             $this->tokenize(substr($stdout, 0, 400), $runDirectory),
             $this->tokenize(substr($stderr, 0, 400), $runDirectory),
             $cacheNote,
@@ -275,8 +276,10 @@ final class ProcessProbe
      * `parallel.workers` a number that only reaches the debug log — and a
      * stand that asked all of them for a finding digest would report the three
      * of them as NOT OBSERVABLE and call that a property of the product.
+     *
+     * @param list<string>|null $fixtureDirectories
      */
-    private static function observable(string $observable, string $stdout, string $runDirectory, string $cacheDirectory, string $logFile): string
+    private static function observable(string $observable, string $stdout, string $runDirectory, string $cacheDirectory, string $logFile, ?array $fixtureDirectories = null): string
     {
         // A witness whose envelope enables a second rule beside the probed
         // one cannot read "the run said something" as "this producer spoke".
@@ -294,7 +297,8 @@ final class ProcessProbe
             'stdout' => 'shape=' . substr(md5(preg_replace('/\\d/', '#', $stdout) ?? $stdout), 0, 10),
             'exitcode' => 'exit-only',
             'cachedir' => 'named=' . (is_dir($cacheDirectory) ? self::countFiles($cacheDirectory) : 'absent')
-                . ' default=' . (is_dir($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) ? self::countFiles($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) : 'absent'),
+                . ' default=' . (is_dir($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) ? self::countFiles($runDirectory . '/' . self::DEFAULT_CACHE_DIRECTORY) : 'absent')
+                . ($fixtureDirectories === null ? '' : ' owned=' . self::newDirectoryCounts($runDirectory, $fixtureDirectories)),
             'logfile' => self::workerDecision($logFile),
             default => self::digest($stdout),
         };
@@ -328,6 +332,40 @@ final class ProcessProbe
         sort($tuples, \SORT_STRING);
 
         return substr(md5(implode("\n", $tuples)), 0, 10) . '/n=' . \count($tuples);
+    }
+
+    /** @return list<string> */
+    private static function topLevelDirectories(string $runDirectory): array
+    {
+        $entries = scandir($runDirectory);
+
+        if ($entries === false) {
+            throw new ProbeFailure('cannot list the owned probe directory');
+        }
+
+        $directories = [];
+
+        foreach ($entries as $entry) {
+            if ($entry !== '.' && $entry !== '..' && is_dir($runDirectory . '/' . $entry)) {
+                $directories[] = $entry;
+            }
+        }
+
+        sort($directories, \SORT_STRING);
+
+        return $directories;
+    }
+
+    /** @param list<string> $fixtureDirectories */
+    private static function newDirectoryCounts(string $runDirectory, array $fixtureDirectories): string
+    {
+        $counts = [];
+
+        foreach (array_diff(self::topLevelDirectories($runDirectory), $fixtureDirectories) as $name) {
+            $counts[] = $name . ':' . self::countFiles($runDirectory . '/' . $name);
+        }
+
+        return $counts === [] ? 'absent' : implode(',', $counts);
     }
 
     private static function countFiles(string $directory): string

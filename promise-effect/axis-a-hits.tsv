@@ -1,31 +1,9 @@
-# Axis A: the option leaves whose canonical magnitude names nothing, and what
-# a hit looks like for them.
-#
-# This is the same mechanism `axis-d-observables.tsv` declares for a root
-# outside `rules:`, applied where the round measured it to be needed on axis A.
-# The three framework keys are not read through `fromArray()`: the factory
-# drains them into the registry's providers, and the stand observes them by
-# asking the predicates themselves — `isPathExcluded('src/Sub/Helper.php')` and
-# `isNamespaceExcluded('Probe\Sub')`. A canonical `[7331]` names neither, so
-# the probe changes nothing, so `omitted == equivalent` and every one of the
-# row's eight cells reads NOT OBSERVABLE for a reason that belongs to the
-# stand.
-#
-# The hit replaces the MAGNITUDE of the reference form's write; its shape is
-# unchanged. It is used for the `equivalent` side AND for the cell of that same
-# form — a hit on `equivalent` alone would leave the form's own cell writing a
-# magnitude that names nothing, and the stand would then read the correct
-# behaviour "accepted a list of a path that is not here, changed nothing" as
-# the INERT defect. That asymmetry is a measured defect of the axis-D code and
-# is corrected in the same place.
-#
-# WHAT THIS DOES NOT FIX, stated rather than left to be discovered: the other
-# seven forms of a hit-carrying row still write 7331. `suppress-paths: 7331`
-# reading INERT cannot be split by this stand into "the int form was accepted
-# and dropped" and "the int form was coerced into a path that names nothing".
-# The row is the form of the container (README, "What the oracle does not
-# prove"), and that limit is unchanged here.
-option_leaf	hit	why the canonical write cannot hit
+# Authored magnitudes and fixed lawful companions for form probes.
+# Exact door/path/form hits precede exact door/leaf/form and legacy leaf hits.
+# A context applies unchanged to omitted, value, equivalent and comparand,
+# on both product versions. It writes a sibling band boundary, never the target.
+# Typed YAML selectors and native scalar CLI selectors carry different spellings.
+option_leaf	hit	why the canonical write cannot hit	authored_base
 suppress-paths	[src/Sub]	the value is a path prefix; 7331 is not a path in this fixture
 suppress_paths	[src/Sub]	the same leaf in its snake spelling
 suppress-namespaces	[Probe\Sub]	the value is a namespace prefix
@@ -34,3 +12,97 @@ unused-directive-severity	warning	the value is one of three words; `abc` is not 
 unused_directive_severity	warning	the same leaf in its snake spelling
 mode	warn	the value is one of `ignore`/`warn`/`error`; `abc` is none of them, and `warn` differs from the reader's default `ignore`
 severity	error	the value is one of `info`/`warning`/`error`; `abc` is none of them, and `error` differs from the reader's default `warning`
+cli-alias|rules.code-smell.constructor-overinjection.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.constructor-overinjection":{"error":10000}}}
+cli-alias|rules.code-smell.long-parameter-list.vo-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.long-parameter-list":{"vo-error":10000}}}
+cli-alias|rules.code-smell.long-parameter-list.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.long-parameter-list":{"error":10000}}}
+cli-alias|rules.code-smell.unreachable-code.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.unreachable-code":{"error":10000}}}
+cli-alias|rules.cohesion.lcom.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"cohesion.lcom":{"error":10000}}}
+cli-alias|rules.complexity.ccn.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.ccn":{"callable":{"error":10000}}}}
+cli-alias|rules.complexity.ccn.class.max_warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.ccn":{"class":{"max-error":10000}}}}
+cli-alias|rules.complexity.cognitive.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.cognitive":{"callable":{"error":10000}}}}
+cli-alias|rules.complexity.cognitive.class.max_warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.cognitive":{"class":{"max-error":10000}}}}
+cli-alias|rules.complexity.npath.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.npath":{"callable":{"error":10000}}}}
+cli-alias|rules.complexity.npath.class.max_warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.npath":{"class":{"max-error":10000}}}}
+cli-alias|rules.complexity.wmc.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.wmc":{"error":10000}}}
+cli-alias|rules.coupling.cbo.class.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"class":{"error":10000}}}}
+cli-alias|rules.coupling.cbo.namespace.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"namespace":{"error":10000}}}}
+cli-alias|rules.coupling.class-rank.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.class-rank":{"error":10000}}}
+cli-alias|rules.coupling.distance.max_distance_warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.distance":{"max-distance-error":10000}}}
+cli-alias|rules.coupling.instability.class.max_warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"class":{"max-error":10000}}}}
+cli-alias|rules.coupling.instability.namespace.max_warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"namespace":{"max-error":10000}}}}
+cli-alias|rules.design.dit.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.dit":{"error":10000}}}
+cli-alias|rules.design.noc.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.noc":{"error":10000}}}
+cli-alias|rules.design.type-coverage.param.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.param":{"warning":10000}}}
+cli-alias|rules.design.type-coverage.property.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.property":{"warning":10000}}}
+cli-alias|rules.design.type-coverage.return.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.return":{"warning":10000}}}
+cli-alias|rules.maintainability.mi.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"maintainability.mi":{"warning":10000}}}
+cli-alias|rules.size.class-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.class-count":{"error":10000}}}
+cli-alias|rules.size.method-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.method-count":{"error":10000}}}
+cli-alias|rules.size.property-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.property-count":{"error":10000}}}
+rule-opt|rules.code-smell.constructor-overinjection.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.constructor-overinjection":{"error":10000}}}
+rule-opt|rules.code-smell.long-parameter-list.vo-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.long-parameter-list":{"vo-error":10000}}}
+rule-opt|rules.code-smell.long-parameter-list.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.long-parameter-list":{"error":10000}}}
+rule-opt|rules.code-smell.unreachable-code.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.unreachable-code":{"error":10000}}}
+rule-opt|rules.cohesion.lcom.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"cohesion.lcom":{"error":10000}}}
+rule-opt|rules.complexity.ccn.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.ccn":{"callable":{"error":10000}}}}
+rule-opt|rules.complexity.ccn.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.ccn":{"class":{"max-error":10000}}}}
+rule-opt|rules.complexity.cognitive.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.cognitive":{"callable":{"error":10000}}}}
+rule-opt|rules.complexity.cognitive.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.cognitive":{"class":{"max-error":10000}}}}
+rule-opt|rules.complexity.npath.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.npath":{"callable":{"error":10000}}}}
+rule-opt|rules.complexity.npath.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.npath":{"class":{"max-error":10000}}}}
+rule-opt|rules.complexity.wmc.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.wmc":{"error":10000}}}
+rule-opt|rules.coupling.cbo.class.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"class":{"error":10000}}}}
+rule-opt|rules.coupling.cbo.namespace.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"namespace":{"error":10000}}}}
+rule-opt|rules.coupling.cbo.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"error":10000}}}
+rule-opt|rules.coupling.class-rank.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.class-rank":{"error":10000}}}
+rule-opt|rules.coupling.distance.max-distance-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.distance":{"max-distance-error":10000}}}
+rule-opt|rules.coupling.instability.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"class":{"max-error":10000}}}}
+rule-opt|rules.coupling.instability.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"max-error":10000}}}
+rule-opt|rules.coupling.instability.namespace.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"namespace":{"max-error":10000}}}}
+rule-opt|rules.design.dit.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.dit":{"error":10000}}}
+rule-opt|rules.design.noc.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.noc":{"error":10000}}}
+rule-opt|rules.design.type-coverage.param.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.param":{"warning":10000}}}
+rule-opt|rules.design.type-coverage.property.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.property":{"warning":10000}}}
+rule-opt|rules.design.type-coverage.return.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.return":{"warning":10000}}}
+rule-opt|rules.duplication.clone.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"duplication.clone":{"error":10000}}}
+rule-opt|rules.maintainability.mi.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"maintainability.mi":{"warning":10000}}}
+rule-opt|rules.size.class-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.class-count":{"error":10000}}}
+rule-opt|rules.size.method-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.method-count":{"error":10000}}}
+rule-opt|rules.size.property-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.property-count":{"error":10000}}}
+yaml|rules.code-smell.constructor-overinjection.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.constructor-overinjection":{"error":10000}}}
+yaml|rules.code-smell.long-parameter-list.vo-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.long-parameter-list":{"vo-error":10000}}}
+yaml|rules.code-smell.long-parameter-list.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.long-parameter-list":{"error":10000}}}
+yaml|rules.code-smell.unreachable-code.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"code-smell.unreachable-code":{"error":10000}}}
+yaml|rules.cohesion.lcom.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"cohesion.lcom":{"error":10000}}}
+yaml|rules.complexity.ccn.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.ccn":{"callable":{"error":10000}}}}
+yaml|rules.complexity.ccn.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.ccn":{"class":{"max-error":10000}}}}
+yaml|rules.complexity.cognitive.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.cognitive":{"callable":{"error":10000}}}}
+yaml|rules.complexity.cognitive.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.cognitive":{"class":{"max-error":10000}}}}
+yaml|rules.complexity.npath.callable.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.npath":{"callable":{"error":10000}}}}
+yaml|rules.complexity.npath.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.npath":{"class":{"max-error":10000}}}}
+yaml|rules.complexity.wmc.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"complexity.wmc":{"error":10000}}}
+yaml|rules.coupling.cbo.class.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"class":{"error":10000}}}}
+yaml|rules.coupling.cbo.namespace.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"namespace":{"error":10000}}}}
+yaml|rules.coupling.cbo.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.cbo":{"error":10000}}}
+yaml|rules.coupling.class-rank.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.class-rank":{"error":10000}}}
+yaml|rules.coupling.distance.max-distance-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.distance":{"max-distance-error":10000}}}
+yaml|rules.coupling.instability.class.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"class":{"max-error":10000}}}}
+yaml|rules.coupling.instability.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"max-error":10000}}}
+yaml|rules.coupling.instability.namespace.max-warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"coupling.instability":{"namespace":{"max-error":10000}}}}
+yaml|rules.design.dit.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.dit":{"error":10000}}}
+yaml|rules.design.noc.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.noc":{"error":10000}}}
+yaml|rules.design.type-coverage.param.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.param":{"warning":10000}}}
+yaml|rules.design.type-coverage.property.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.property":{"warning":10000}}}
+yaml|rules.design.type-coverage.return.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"design.type-coverage.return":{"warning":10000}}}
+yaml|rules.duplication.clone.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"duplication.clone":{"error":10000}}}
+yaml|rules.maintainability.mi.error		The same lawful companion band applies to omission, value and comparand.	{"rules":{"maintainability.mi":{"warning":10000}}}
+yaml|rules.size.class-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.class-count":{"error":10000}}}
+yaml|rules.size.method-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.method-count":{"error":10000}}}
+yaml|rules.size.property-count.warning		The same lawful companion band applies to omission, value and comparand.	{"rules":{"size.property-count":{"error":10000}}}
+yaml|suppress-paths|list	[{subtree: src/Sub}]	A typed path selector names the fixture subtree.
+yaml|suppress-namespaces|list	[{subtree: Probe\Sub}]	A typed namespace selector names the fixture namespace.
+yaml|rules.code-smell.boolean-argument.allowed-prefixes|list	[is]	A list of text changes the accepted prefix set.
+yaml|rules.code-smell.error-suppression.allowed-functions|list	[foo]	A list of text changes the accepted function set.
+yaml|rules.cohesion.lcom.exclude-methods|list	[getName]	The method list names a fixture declaration.
+yaml|rules.coupling.distance.include-namespaces|list	[{subtree: Probe\Sub}]	The YAML selector is a sequence of explicit selectors.
+rule-opt|rules.coupling.distance.include-namespaces|string-nonnumber	subtree:Probe\Sub	The CLI selector is its native scalar spelling.
