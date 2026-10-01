@@ -269,6 +269,10 @@ final class DuplicateCopyIdentityTest extends TestCase
 
         $configuration = new RuleOptionsRegistry();
         ResolvedOptionsFixture::file($configuration, ['duplication.clone' => []]);
+        $findingConfiguration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions($configuration->configFileOptions());
+        $configuration->replace($findingConfiguration->withResolvedOptions(ResolvedOptionsFixture::build($findingConfiguration, [
+            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false),
+        ])));
         $provider = new DuplicationResultProvider();
         (new DuplicationDetector($configuration, $provider))->inspect($files, AbsolutePath::fromString($this->tmpDir));
 

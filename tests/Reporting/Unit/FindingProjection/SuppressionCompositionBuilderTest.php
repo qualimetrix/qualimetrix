@@ -420,7 +420,17 @@ final class SuppressionCompositionBuilderTest extends TestCase
         return new class ($rulesConfig) implements RuleConfigurationInterface {
             public function resolvedOptions(): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions
             {
-                throw new LogicException('This projection does not read rule options.');
+                $options = [];
+                $suppressions = [];
+                foreach ($this->rulesConfig as $producer => $config) {
+                    $options[$producer] = new \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions();
+                    $suppressions[$producer] = new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(
+                        paths: $config['suppress_paths'] ?? [],
+                        namespaces: $config['suppress_namespaces'] ?? [],
+                        namespaceChannels: $config['suppress_namespace_channels'] ?? [],
+                    );
+                }
+                return new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, $suppressions);
             }
 
             /** @param array<string, array<string, mixed>> $rulesConfig */
@@ -440,7 +450,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
             public function all(): array
             {
-                return $this->rulesConfig;
+                throw new LogicException('The projection must read the typed snapshot.');
             }
 
             public function selection(): RuleSelection
@@ -463,17 +473,17 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
             public function namespaceExclusions(string $ruleName): array
             {
-                return $this->rulesConfig[$ruleName]['suppress_namespaces'] ?? [];
+                throw new LogicException('The projection must read typed suppression.');
             }
 
             public function namespaceChannelExclusions(string $ruleName): array
             {
-                return $this->rulesConfig[$ruleName]['suppress_namespace_channels'] ?? [];
+                throw new LogicException('The projection must read typed suppression.');
             }
 
             public function pathExclusions(string $ruleName): array
             {
-                return $this->rulesConfig[$ruleName]['suppress_paths'] ?? [];
+                throw new LogicException('The projection must read typed suppression.');
             }
 
             public function isNamespaceExcluded(string $ruleName, string $namespace): bool

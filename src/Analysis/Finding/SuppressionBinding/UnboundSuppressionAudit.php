@@ -165,10 +165,8 @@ final readonly class UnboundSuppressionAudit
      * Every configured value, global and per-rule, with the channel that
      * reports it.
      *
-     * Per-rule entries are read through {@see ConfiguredSuppression} — the one
-     * reader {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} also
-     * uses when it applies them, so "bound" here and "applied" there cannot
-     * mean two different pattern sets.
+     * Per-rule entries come from the current typed snapshot's suppression
+     * values, so the audit cannot re-parse a different pattern set.
      *
      * **All three per-rule options, including `suppress_namespace_channels`.**
      * That one was applied and not judged while each side enumerated the
@@ -202,18 +200,15 @@ final readonly class UnboundSuppressionAudit
             $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'rule' => null, 'option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern];
         }
 
-        foreach ($this->ruleConfiguration->all() as $ruleName => $options) {
-            if (!\is_array($options)) {
-                continue;
-            }
-
-            $rule = (string) $ruleName;
+        $snapshot = $this->ruleConfiguration->resolvedOptions();
+        foreach ($snapshot->all() as $rule => $options) {
+            $suppression = $snapshot->suppressionFor($rule);
             $entries = [
-                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $this->ruleConfiguration->pathExclusions($rule)),
-                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $this->ruleConfiguration->namespaceExclusions($rule)),
+                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $suppression->paths),
+                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $suppression->namespaces),
             ];
 
-            foreach ($this->ruleConfiguration->namespaceChannelExclusions($rule) as $selector => $patterns) {
+            foreach ($suppression->namespaceChannels as $selector => $patterns) {
                 foreach ($patterns as $pattern) {
                     $entries[] = [ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector, $pattern];
                 }
