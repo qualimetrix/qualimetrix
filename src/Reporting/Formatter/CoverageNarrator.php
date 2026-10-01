@@ -34,10 +34,21 @@ final readonly class CoverageNarrator
     public static function describe(ReportCoverage $coverage): string
     {
         if (!$coverage->isComplete()) {
+            $byKind = [];
+            foreach ($coverage->failures as $failure) {
+                $byKind[$failure->kind] = ($byKind[$failure->kind] ?? 0) + 1;
+            }
+            ksort($byKind);
+            $kinds = [];
+            foreach ($byKind as $kind => $count) {
+                $kinds[] = \sprintf('%d %s', $count, $kind);
+            }
+
             return \sprintf(
-                'Analysis incomplete: %d of %d discovered PHP file(s) failed; policy results are not authoritative.',
+                'Analysis incomplete: %d of %d discovered entries failed%s; policy results are not authoritative.',
                 $coverage->failed,
                 $coverage->discovered,
+                $kinds === [] ? '' : ' (' . implode(', ', $kinds) . ')',
             );
         }
 
