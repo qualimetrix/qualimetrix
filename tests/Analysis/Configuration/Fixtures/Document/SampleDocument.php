@@ -38,16 +38,16 @@ final class SampleDocument
                 'dir' => NodeSchema::scalar(ScalarForm::String),
                 'enabled' => NodeSchema::scalar(ScalarForm::Boolean),
             ])),
-            self::section('paths', NodeSchema::stringList()),
-            self::section('only_rules', NodeSchema::stringList()->announcingEmptyOverride('Every rule runs.')),
+            self::section('paths', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))),
+            self::section('only_rules', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->announcingEmptyOverride('Every rule runs.')),
             self::section('exclude', NodeSchema::set(NodeSchema::scalar(ScalarForm::String))),
             self::section('architecture', NodeSchema::map([
                 'layers' => NodeSchema::list(NodeSchema::map([
                     'name' => NodeSchema::scalar(ScalarForm::String),
-                    'patterns' => NodeSchema::stringList(),
+                    'patterns' => NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                 ])),
                 'allow' => NodeSchema::namedMap(
-                    NodeSchema::stringList(),
+                    NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                     NameVocabulary::fromSibling('layers', self::layerNames(...)),
                 ),
                 'coverage-gap' => NodeSchema::scalar(ScalarForm::String),

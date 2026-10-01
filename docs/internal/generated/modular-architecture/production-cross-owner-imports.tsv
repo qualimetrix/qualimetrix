@@ -591,6 +591,7 @@ Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qua
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboOptions	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\CboRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
@@ -616,6 +617,7 @@ Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Couplin
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
@@ -1428,9 +1430,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Fin
 Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	contract
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand	Analysis.Configuration	contract
@@ -1455,6 +1455,12 @@ Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider	Analysis.Findin
 Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\FindingExclusionLedger	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
+Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet	Analysis.Configuration	contract
+Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	Qualimetrix\Analysis\Configuration\ConfigKeySpelling	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	contract
@@ -1533,6 +1539,7 @@ Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding	An
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	contract
@@ -1557,6 +1564,7 @@ Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	A
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule	Analysis.Policy.Architecture	Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	contract
@@ -1714,6 +1722,7 @@ Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints	Analysis.Policy.
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\LevelActivity	Analysis.Finding	contract

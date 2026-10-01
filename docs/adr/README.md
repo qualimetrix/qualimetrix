@@ -123,6 +123,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0091 — Declared Rule Options and Enablement](0091-declared-rule-options-and-enablement.md) — typed authored forms and one immutable execution/publication snapshot.
 
+- [0092 — Typed Document Declarations and Option Judgement](0092-typed-document-declarations-and-option-judgement.md) — typed document facts and rule option form projection.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

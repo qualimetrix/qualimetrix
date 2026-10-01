@@ -1645,6 +1645,7 @@ Available tests:
  - Qualimetrix\PromiseEffect\Tests\LedgerVocabularyTest::itRefusesACoexistenceTheClassifierWouldSilentlyReadAsCompose
  - Qualimetrix\PromiseEffect\Tests\LedgerVocabularyTest::itRefusesACompositionPromiseNoClassifierBranchAwards
  - Qualimetrix\PromiseEffect\Tests\LedgerVocabularyTest::itRefusesAnEmptyCoexistenceOnARowThatReachesTheClassifier
+ - Qualimetrix\PromiseEffect\Tests\P1DeclarationHalvesTest::itSeparatesOrdinaryAcceptedAndAnsweredKeysFromClassValidatedKeys
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itDeclaresNoPerSideValueForTheFormsThatHaveNoThird
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itNamesEveryTripleJudgedUnderMoreThanOneKind
  - Qualimetrix\PromiseEffect\Tests\PerSideMagnitudeTest::itRefusesAPerSideLiteralEqualToItsFormsAlternate
@@ -1759,6 +1760,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesAnIntegerJudgementOnANonIntegerScalar
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesToDeclareANonCanonicalKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRefusesTwoShorthandsSpreadingToOneKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Document\NodeSchemaTest::itRetainsBlankWordsInAScalarVocabulary
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itCarriesTheSourceAndLocatorItWasBuiltWith
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDefaultsTheLocatorToNull
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Contract\Refusal\ConfigurationOriginTest::itDescribesEverySourceKind
@@ -6584,6 +6586,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"the empty string where text is named"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsAValueOfTheFormItNames"whole number"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAcceptsOnlyTheWordsAClosedSetNames
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAdmitsBareTextOnlyForTheDirectTextAndListPair
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itAppliesAnExplicitSignedFloorToAuthoredDocumentValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itKeepsBothSignsForASignedNumber
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionShapeTest::itKeepsTheWordsWhenTheClosedSetIsMadeNullable

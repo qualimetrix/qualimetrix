@@ -56,35 +56,48 @@ final readonly class ResolvedDocument
     {
         $schema = $this->schema;
         foreach ($path as $index => $segment) {
-            $schema = match ($schema->policy) {
-                MergePolicy::DeepMerge => $schema->fields()[$segment] ?? self::undeclared($path),
-                MergePolicy::ByName => self::namedEntry($schema, $segment, $path, $index === \count($path) - 1),
-                MergePolicy::Replace, MergePolicy::Accumulate => preg_match('/^(0|[1-9][0-9]*)$/D', $segment) === 1
-                    ? $schema->element()
-                    : self::undeclared($path),
-                default => self::undeclared($path),
-            };
+            if ($schema->policy === MergePolicy::ByName && $index === \count($path) - 1) {
+                self::terminalNamedEntry($schema, $segment, $path);
+                return;
+            }
+            $schema = self::declaredChild($schema, $segment, $path);
         }
     }
 
     /** @param non-empty-list<string> $path */
-    private static function namedEntry(NodeSchema $schema, string $name, array $path, bool $last): NodeSchema
+    private static function declaredChild(NodeSchema $schema, string $segment, array $path): NodeSchema
     {
-        $names = $schema->names();
-        if ($names?->isFixed() === true && !\in_array($name, $names->fixedNames(), true)) {
+        return match ($schema->policy) {
+            MergePolicy::DeepMerge => $schema->map->keys->fields()[$segment] ?? self::undeclared($path),
+            MergePolicy::ByName => self::descendNamedEntry($schema, $segment, $path),
+            MergePolicy::Replace, MergePolicy::Accumulate => self::listElement($schema, $segment, $path),
+            default => self::undeclared($path),
+        };
+    }
+
+    /** @param non-empty-list<string> $path */
+    private static function listElement(NodeSchema $schema, string $index, array $path): NodeSchema
+    {
+        if (preg_match('/^(0|[1-9][0-9]*)$/D', $index) !== 1) {
             self::undeclared($path);
         }
+        return ($schema->collection ?? throw new LogicException(\sprintf('A %s node has no element schema.', $schema->policy->value)))->element;
+    }
 
-        $entry = $schema->entryForName($name);
-        if ($entry === null) {
-            if (!$last) {
-                self::undeclared($path);
-            }
-
-            return NodeSchema::opaque();
+    /** @param non-empty-list<string> $path */
+    private static function terminalNamedEntry(NodeSchema $schema, string $name, array $path): void
+    {
+        if ($schema->map->names?->isFixed() === true && !\in_array($name, $schema->map->names->fixedNames(), true)) {
+            self::undeclared($path);
         }
+    }
 
-        return $entry;
+    /** @param non-empty-list<string> $path */
+    private static function descendNamedEntry(NodeSchema $schema, string $name, array $path): NodeSchema
+    {
+        self::terminalNamedEntry($schema, $name, $path);
+        $entry = $schema->map->entryForName($name);
+        return $entry ?? self::undeclared($path);
     }
 
     /** @param non-empty-list<string> $path */

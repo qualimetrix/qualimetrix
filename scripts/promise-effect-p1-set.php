@@ -26,10 +26,10 @@ declare(strict_types=1);
  *
  * The declared side is asked of the product, never hand-typed: the container
  * yields producers, each producer's options class states its own key set, and
- * the private halves of `RuleOptionKeySet` are read by reflection because
- * `acceptedForDisplay()` prints only one of them. Axis A counts the `accepted`
- * half alone; the `answered-by-the-class` half is reported separately so the
- * guard cannot overlook it.
+ * its private declarations are read by reflection because
+ * `acceptedForDisplay()` combines accepted and class-validated writable keys.
+ * Axis A counts the ordinary `accepted` half alone; the `answered-by-the-class`
+ * half is reported separately so the guard cannot overlook it.
  *
  * The script is also the package's regression guard: run without `--write` it
  * regenerates the set and compares it with the artefact on disk, exiting 1 on
@@ -331,9 +331,9 @@ final class PromiseEffectP1Set
     }
 
     /**
-     * Both halves of a class's key set. `acceptedForDisplay()` prints only the
-     * accepted one, and axis A counts only that one, so the second is read by
-     * reflection rather than left unnamed.
+     * Axis A counts ordinary accepted keys, excluding class-validated ones.
+     * The display reader combines both writable states, so the two measured
+     * halves are read from their declarations instead.
      *
      * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
      *
@@ -344,12 +344,14 @@ final class PromiseEffectP1Set
         $keySet = $optionsClass::acceptedOptionKeys();
         assert($keySet instanceof RuleOptionKeySet);
 
-        $reflection = new ReflectionClass($keySet);
+        $declarations = new ReflectionProperty($keySet, 'declarations')->getValue($keySet);
+        assert($declarations instanceof Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations);
+        $reflection = new ReflectionClass($declarations);
 
         /** @var array<string, string> $accepted */
-        $accepted = $reflection->getProperty('accepted')->getValue($keySet);
+        $accepted = $reflection->getProperty('accepted')->getValue($declarations);
         /** @var array<string, string> $answered */
-        $answered = $reflection->getProperty('answeredByTheClass')->getValue($keySet);
+        $answered = $reflection->getProperty('answered')->getValue($declarations);
 
         return ['accepted' => array_values($accepted), 'answered' => array_values($answered)];
     }

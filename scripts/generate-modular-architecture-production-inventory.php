@@ -2423,6 +2423,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0089-composer-manifest-facts-and-project-scope-reasons.md' => 'Analysis.ProjectManifest',
         'docs/adr/0090-exact-finding-gate-surface-deltas.md' => 'Architecture.Governance',
         'docs/adr/0091-declared-rule-options-and-enablement.md' => 'Analysis.Finding',
+        'docs/adr/0092-typed-document-declarations-and-option-judgement.md' => 'Analysis.Configuration',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

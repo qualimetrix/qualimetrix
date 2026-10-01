@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\ConfigurationMergeTable;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
@@ -160,7 +161,7 @@ function shorthandTargetSchema(NodeSchema $map, string $target, array $visiting 
         }
 
         if ($index === \count($segments) - 1) {
-            $shorthand = $node->keys()->shorthand($segment);
+            $shorthand = $node->map->keys->shorthand($segment);
             if ($shorthand !== null) {
                 $address = spl_object_id($node) . ':' . $segment;
                 if (isset($visiting[$address])) {
@@ -172,7 +173,7 @@ function shorthandTargetSchema(NodeSchema $map, string $target, array $visiting 
             }
         }
 
-        $field = $node->fields()[$segment] ?? null;
+        $field = $node->map->keys->fields()[$segment] ?? null;
         if ($field === null) {
             fail(\sprintf('shorthand target "%s" is not declared', $target));
         }
@@ -194,13 +195,13 @@ function shorthandTargetSchema(NodeSchema $map, string $target, array $visiting 
 function below(NodeSchema $node, string $path, array $rows, array $ruleNames, bool $inItem): array
 {
     if ($node->policy === MergePolicy::DeepMerge) {
-        $fields = $node->fields();
+        $fields = $node->map->keys->fields();
 
         foreach ($fields as $key => $child) {
             $rows = walk($child, $path . '.' . $key, KEY, $path, $rows, $ruleNames, $inItem);
         }
 
-        foreach ($node->shorthands() as $shorthand) {
+        foreach ($node->map->keys->shorthands() as $shorthand) {
             $rows[] = [
                 'path' => $path . '.' . $shorthand->key,
                 'node' => shorthandTargetSchema($node, $shorthand->targets[0]),
@@ -215,20 +216,20 @@ function below(NodeSchema $node, string $path, array $rows, array $ruleNames, bo
     if ($node->policy === MergePolicy::ByName) {
         if ($path === 'rules') {
             foreach ($ruleNames as $name) {
-                $entry = $node->entryForName($name);
+                $entry = $node->map->entryForName($name);
                 if ($entry === null) {
                     fail(\sprintf('rule "%s" has no declared document schema', $name));
                 }
                 $rows = walk($entry, $path . '.' . $name, ENTRY, $path, $rows, $ruleNames, $inItem);
             }
         } else {
-            $rows = walk($node->element(), $path . '.<name>', ENTRY, $path, $rows, $ruleNames, $inItem);
+            $rows = walk($node->map->entry ?? throw new LogicException('A named map needs an entry schema.'), $path . '.<name>', ENTRY, $path, $rows, $ruleNames, $inItem);
         }
     }
 
     $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
-    if ($isList && $node->element()->policy === MergePolicy::DeepMerge) {
-        $rows = below($node->element(), $path . '[]', $rows, $ruleNames, true);
+    if ($isList && ($node->collection ?? throw new LogicException('A list needs an element schema.'))->element->policy === MergePolicy::DeepMerge) {
+        $rows = below(($node->collection ?? throw new LogicException('A list needs an element schema.'))->element, $path . '[]', $rows, $ruleNames, true);
     }
 
     return $rows;
@@ -254,7 +255,7 @@ function scalarForm(ScalarForm $form, string $language): string
 
 function scalar(NodeSchema $node, string $language): string
 {
-    $forms = array_map(static fn(ScalarForm $form): string => scalarForm($form, $language), $node->scalarForms());
+    $forms = array_map(static fn(ScalarForm $form): string => scalarForm($form, $language), $node->scalar->forms);
 
     if ($forms === []) {
         return $language === 'ru' ? 'скаляр' : 'scalar';
@@ -311,8 +312,8 @@ function valueCell(array $row, string $language): string
     return match ($node->policy) {
         MergePolicy::LastWriterWins => scalar($node, $language),
         MergePolicy::DeepMerge => $ru ? 'карта' : 'map',
-        MergePolicy::Replace, MergePolicy::Accumulate => \sprintf($ru ? 'список (элемент: %s)' : 'list (item: %s)', item($node->element(), $language)),
-        MergePolicy::ByName => \sprintf($ru ? 'карта по имени: %s' : 'map by name: %s', vocabulary($node->names(), dotParent($row['path']), $language)),
+        MergePolicy::Replace, MergePolicy::Accumulate => \sprintf($ru ? 'список (элемент: %s)' : 'list (item: %s)', item(($node->collection ?? throw new LogicException('A list needs an element schema.'))->element, $language)),
+        MergePolicy::ByName => \sprintf($ru ? 'карта по имени: %s' : 'map by name: %s', vocabulary($node->map->names, dotParent($row['path']), $language)),
         MergePolicy::PerLayer => $ru ? 'читает владелец' : 'read by its owner',
     };
 }
@@ -376,7 +377,7 @@ function tildeCell(array $row, string $language): string
     $node = $row['node'];
     $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
 
-    if ($isList && $node->element()->policy !== MergePolicy::PerLayer) {
+    if ($isList && ($node->collection ?? throw new LogicException('A list needs an element schema.'))->element->policy !== MergePolicy::PerLayer) {
         $cell .= $ru ? ' Элемент `~` — отказ.' : ' An item written `~` is refused.';
     }
 
@@ -402,7 +403,7 @@ function emptyCell(array $row, string $language): string
         MergePolicy::LastWriterWins => $ru ? 'Отказ: ожидается скаляр.' : 'Refused: a scalar is expected.',
         MergePolicy::DeepMerge, MergePolicy::ByName => $ru ? 'Ничего не меняет.' : 'Changes nothing.',
         MergePolicy::Replace => ($ru ? 'Заменяет нижний список пустым.' : 'Replaces the list below with an empty one.')
-            . ($node->emptyOverrideNotice() === null
+            . ($node->wording->emptyOverrideNotice === null
                 ? ''
                 : ($ru ? ' Если нижний список не пуст, выводится предупреждение.' : ' A warning says so when the list below was not empty.')),
         MergePolicy::Accumulate => $ru ? 'Ничего не добавляет.' : 'Adds nothing.',

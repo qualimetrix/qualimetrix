@@ -82,7 +82,7 @@ final class CliOptionsParserTest extends TestCase
         $writes = $parser->pathWrites($input);
         self::assertCount(2, $writes);
         self::assertSame(['rules', 'coupling.distance', 'max-distance-warning'], $writes[0]->path);
-        self::assertSame(0, $writes[0]->target->minimum());
+        self::assertSame(0, $writes[0]->target->scalar->minimum);
         self::assertSame(['rules', 'coupling.distance', 'include-namespaces'], $writes[1]->path);
         self::assertSame([['exact' => 'App\\Domain']], $writes[1]->selectorValue);
     }

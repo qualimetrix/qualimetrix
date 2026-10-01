@@ -10,9 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Loader\CommandLineSyntax;
 use Qualimetrix\Analysis\Configuration\Loader\CommandLineValue;
 
 #[CoversClass(CommandLineValue::class)]
+#[CoversClass(CommandLineSyntax::class)]
 final class CommandLineValueTest extends TestCase
 {
     #[Test]
@@ -47,7 +49,7 @@ final class CommandLineValueTest extends TestCase
     #[Test]
     public function itReadsOnlyFlowListsAndPreservesQuotedCommas(): void
     {
-        $list = NodeSchema::stringList();
+        $list = NodeSchema::list(NodeSchema::scalar(ScalarForm::String));
         self::assertSame(['a', 'b'], CommandLineValue::read('[a,b]', $list, '--rule-opt')->plain());
         self::assertSame(['a,b'], CommandLineValue::read('["a,b"]', $list, '--rule-opt')->plain());
 
@@ -62,7 +64,7 @@ final class CommandLineValueTest extends TestCase
     #[Test]
     public function itAdmitsQuotedCommaAsOneBareElementOnlyWhereTheSchemaAllowsIt(): void
     {
-        $list = NodeSchema::stringList()->admittingBareElement();
+        $list = NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->admittingBareElement();
         self::assertSame(['a,b'], CommandLineValue::read('"a,b"', $list, '--rule-opt')->plain());
         self::assertSame(['a,b'], CommandLineValue::read('["a,b"]', $list, '--rule-opt')->plain());
 
@@ -74,7 +76,7 @@ final class CommandLineValueTest extends TestCase
         }
 
         $this->expectException(ConfigurationRefusal::class);
-        CommandLineValue::read('"a,b"', NodeSchema::stringList(), '--rule-opt');
+        CommandLineValue::read('"a,b"', NodeSchema::list(NodeSchema::scalar(ScalarForm::String)), '--rule-opt');
     }
 
     #[Test]
@@ -82,7 +84,7 @@ final class CommandLineValueTest extends TestCase
     {
         foreach (['null', '~', '{a: b}', '[{a: b}]'] as $text) {
             try {
-                CommandLineValue::read($text, NodeSchema::stringList(), '--rule-opt');
+                CommandLineValue::read($text, NodeSchema::list(NodeSchema::scalar(ScalarForm::String)), '--rule-opt');
                 self::fail($text . ' should be refused.');
             } catch (ConfigurationRefusal $refusal) {
                 self::assertNotSame('', $refusal->getMessage());

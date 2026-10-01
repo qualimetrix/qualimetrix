@@ -22,7 +22,7 @@ final class WrittenNames
     /** @throws LogicException for a sibling's vocabulary inside a list item, which no single sibling holds */
     public static function vocabulary(NodeSchema $schema, ReadingContext $at): ?NameVocabulary
     {
-        $vocabulary = $schema->names();
+        $vocabulary = $schema->map->names;
         if ($vocabulary?->isFromSibling() === true && $at->insideList) {
             throw new LogicException(\sprintf('"%s": a name vocabulary drawn from a sibling cannot be judged inside a list item.', implode('.', $at->canonicalPath)));
         }

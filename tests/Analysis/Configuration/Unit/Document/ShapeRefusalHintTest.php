@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionS
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -21,11 +22,13 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
+use Qualimetrix\Analysis\Configuration\Document\ScalarConstraints;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 
 /** A node's hint follows the engine's refusal of the form written at that node, and only there. */
 #[CoversClass(LayerReading::class)]
 #[CoversClass(WrittenForm::class)]
+#[CoversClass(ScalarConstraints::class)]
 final class ShapeRefusalHintTest extends TestCase
 {
     /** @return iterable<string, array{array<string, mixed>, non-empty-string}> */
@@ -86,8 +89,8 @@ final class ShapeRefusalHintTest extends TestCase
     public function itAcceptsOneBareElementOnlyWhereTheListDeclaresIt(): void
     {
         $schema = new DocumentSchema([
-            self::section('selected', NodeSchema::stringList()->admittingBareElement()),
-            self::section('strict', NodeSchema::stringList()),
+            self::section('selected', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->admittingBareElement()),
+            self::section('strict', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))),
         ]);
         $document = DocumentComposer::compose($schema, [new AuthoredLayer(
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
@@ -130,7 +133,7 @@ final class ShapeRefusalHintTest extends TestCase
     public function itJudgesClosedWordsNumericFloorsAndNonEmptyTextInEachLayer(): void
     {
         $schema = new DocumentSchema([
-            self::section('mode', NodeSchema::scalar(ScalarForm::String)->oneOf(['warn', 'error'], true)),
+            self::section('mode', NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::foldingCase('warn', 'error'))),
             self::section('count', NodeSchema::scalar(ScalarForm::Integer)->atLeast(1)),
             self::section('name', NodeSchema::scalar(ScalarForm::String)->nonEmpty()),
         ]);

@@ -87,7 +87,7 @@ src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	25	coupling.instabil
 src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	22	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent
 src/Analysis/Evidence/ComputedMetrics/Configuration/ComputedMetricAuthorship.php	20	coupling.instability	warning=0.82 -- Ca=2, Ce=9: it reads the resolved
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/DrillDown/WorstClassDrillDown.php	23	coupling.instability	0.81 -- Namespace drill-down intentionally composes eight stable contracts while two reporting services depend on it. Raw instability 0.80 is accepted; further outward growth is reported.
-src/Analysis/Evidence/Coupling/ClassCboOptions.php	32	coupling.instability	warning=0.84 -- The docblock this annotation replaced
+src/Analysis/Evidence/Coupling/ClassCboOptions.php	33	coupling.instability	warning=0.84 -- The docblock this annotation replaced
 src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	26	coupling.instability	warning=0.81 -- The eighth efferent edge is
 src/Analysis/Evidence/Coupling/CouplingAnalysis.php	21	coupling.instability	warning=0.85 -- The Coupling configuration-document adapter has Ca=2 and Ce=11 (I=0.84615); the next outward dependency, Ce=12 (I=0.85714), remains a warning.
 src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	28	coupling.instability	warning=0.81 -- The eighth efferent edge is

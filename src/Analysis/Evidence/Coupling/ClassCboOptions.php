@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -77,7 +78,7 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
         return RuleOptionKeySet::of([
             'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
-            'scope' => RuleOptionShape::oneOf('all', 'application')->orNull(),
+            'scope' => RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
         ])->band('threshold', 'warning', 'error', BandDirection::Rising);

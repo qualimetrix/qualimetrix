@@ -18,8 +18,17 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDefinition;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection;
 
 #[CoversClass(RuleOptionShape::class)]
+#[CoversClass(RuleOptionSchemaProjection::class)]
+#[CoversClass(RuleOptionDefinition::class)]
+#[CoversClass(CompoundRuleOptionForm::class)]
+#[CoversClass(CompoundOptionKind::class)]
 #[CoversClass(RuleOptionValueForm::class)]
 final class RuleOptionShapeTest extends TestCase
 {
@@ -153,9 +162,28 @@ final class RuleOptionShapeTest extends TestCase
     }
 
     #[Test]
+    public function itAdmitsBareTextOnlyForTheDirectTextAndListPair(): void
+    {
+        $text = RuleOptionShape::text();
+        $list = RuleOptionShape::listOf($text);
+        $schema = RuleOptionShape::either($text, $list)->asNodeSchema();
+        self::assertSame('a list or one element', $schema->describe());
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/scope.yaml');
+        $reader = new LayerReading();
+        foreach (['App\\', ['App\\']] as $written) {
+            $layer = new AuthoredLayer($origin, AuthoredNode::fromPlain(['scope' => $written]));
+            self::assertSame(['App\\'], $reader->readRoot(NodeSchema::map(['scope' => $schema]), $layer, 0)?->plain()['scope']);
+        }
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('The declared union has no document form.');
+        RuleOptionShape::either($text, RuleOptionShape::either($text, $list))->asNodeSchema();
+    }
+
+    #[Test]
     public function itAcceptsOnlyTheWordsAClosedSetNames(): void
     {
-        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
         self::assertTrue($shape->matches('warning'));
         self::assertFalse($shape->matches('warnin'));
@@ -171,7 +199,7 @@ final class RuleOptionShapeTest extends TestCase
         // the reader it stands for: `scope: APPLICATION` passed the shape and
         // then fell back to the reader's default in silence -- the very defect
         // declaring a closed set exists to close.
-        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
         self::assertFalse($shape->matches('WARNING'));
         self::assertFalse($shape->matches('Error'));
@@ -183,18 +211,18 @@ final class RuleOptionShapeTest extends TestCase
     {
         self::assertSame(
             'one of "info", "warning", "error"',
-            RuleOptionShape::oneOf('info', 'warning', 'error')->describe(),
+            RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'))->describe(),
         );
         self::assertSame(
             'one of "all", "application" or null',
-            RuleOptionShape::oneOf('all', 'application')->orNull()->describe(),
+            RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull()->describe(),
         );
     }
 
     #[Test]
     public function itKeepsTheWordsWhenTheClosedSetIsMadeNullable(): void
     {
-        $shape = RuleOptionShape::oneOf('all', 'application')->orNull();
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull();
 
         self::assertTrue($shape->matches(null));
         self::assertTrue($shape->matches('application'));
@@ -204,7 +232,7 @@ final class RuleOptionShapeTest extends TestCase
     #[Test]
     public function itNamesTheWordThatWasWrittenWhenAClosedSetRefuses(): void
     {
-        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
         self::assertSame('"warnin"', $shape->describeWritten('warnin'));
         self::assertSame('a whole number', $shape->describeWritten(7331));
@@ -311,7 +339,7 @@ final class RuleOptionShapeTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('at least one word');
 
-        RuleOptionShape::oneOf();
+        RuleOptionShape::words(RuleOptionWordSet::of());
     }
 
     #[Test]
@@ -320,6 +348,6 @@ final class RuleOptionShapeTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('blank word');
 
-        RuleOptionShape::oneOf('info', '  ');
+        RuleOptionShape::words(RuleOptionWordSet::of('info', '  '));
     }
 }

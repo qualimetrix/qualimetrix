@@ -297,10 +297,10 @@ final readonly class ThresholdOverrideExtractor
                 $form = $forms->formOf($rulePattern, $level, $axis);
 
                 $accepts = false;
-                foreach ($form->scalarForms() as $scalarForm) {
+                foreach ($form->scalar->forms as $scalarForm) {
                     $accepts = $accepts || $scalarForm->accepts($value);
                 }
-                if (!$accepts || ($form->minimum() !== null && $value < $form->minimum())) {
+                if (!$accepts || ($form->scalar->minimum !== null && $value < $form->scalar->minimum)) {
                     return new ThresholdDiagnostic(
                         line: $line,
                         subject: $subject,

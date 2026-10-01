@@ -71,6 +71,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDeclarations"
         }
       ]
     },
@@ -582,6 +586,20 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\BareElementPolicy": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/BareElementPolicy.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeCollectionFacts"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\DocumentSectionSchemaInterface": {
       "path": "src/Analysis/Configuration/Contract/Document/Schema/DocumentSectionSchemaInterface.php",
       "kind": "interface",
@@ -668,15 +686,69 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShape"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RulesSection"
         },
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeCollectionFacts": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/NodeCollectionFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeMapFacts": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/NodeMapFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeScalarFacts": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/NodeScalarFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleOptionForms",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
         }
       ]
     },
@@ -741,6 +813,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
         }
       ]
     },
@@ -787,10 +863,6 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShape"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RulesSection"
         },
         {
@@ -824,6 +896,22 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Configuration\\OutputFormatSection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\SchemaWordSet": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/SchemaWordSet.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
         }
       ]
     },
@@ -888,6 +976,32 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\TextRequirement": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/TextRequirement.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\WordComparison": {
+      "path": "src/Analysis/Configuration/Contract/Document/Schema/WordComparison.php",
+      "kind": "enum",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\SchemaWordSet"
         }
       ]
     },
@@ -1237,6 +1351,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\EmptyListOverrides": {
+      "path": "src/Analysis/Configuration/Document/EmptyListOverrides.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Document\\KeyClaims": {
       "path": "src/Analysis/Configuration/Document/KeyClaims.php",
       "kind": "class",
@@ -1267,6 +1388,13 @@
     },
     "Qualimetrix\\Analysis\\Configuration\\Document\\NameRecognition": {
       "path": "src/Analysis/Configuration/Document/NameRecognition.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\NamedEntryReading": {
+      "path": "src/Analysis/Configuration/Document/NamedEntryReading.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",
@@ -1321,6 +1449,27 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\ScalarConstraints": {
+      "path": "src/Analysis/Configuration/Document/ScalarConstraints.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\ShorthandExpansion": {
+      "path": "src/Analysis/Configuration/Document/ShorthandExpansion.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Document\\ShorthandTarget": {
+      "path": "src/Analysis/Configuration/Document/ShorthandTarget.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Configuration\\Document\\WrittenForm": {
       "path": "src/Analysis/Configuration/Document/WrittenForm.php",
       "kind": "class",
@@ -1337,6 +1486,13 @@
     },
     "Qualimetrix\\Analysis\\Configuration\\Loader\\CommandLineLayer": {
       "path": "src/Analysis/Configuration/Loader/CommandLineLayer.php",
+      "kind": "class",
+      "owner": "Analysis.Configuration",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Loader\\CommandLineSyntax": {
+      "path": "src/Analysis/Configuration/Loader/CommandLineSyntax.php",
       "kind": "class",
       "owner": "Analysis.Configuration",
       "visibility": "internal",
@@ -9794,13 +9950,6 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShapeCompoundForms": {
-      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionShapeCompoundForms.php",
-      "kind": "trait",
-      "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionSurface.php",
       "kind": "class",
@@ -9932,8 +10081,29 @@
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionWordSet.php",
       "kind": "class",
       "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboOptions"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassCboOptions"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationOptions"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassOptions"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionsInterface": {
       "path": "src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php",
@@ -11007,6 +11177,48 @@
     },
     "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger": {
       "path": "src/Analysis/Finding/FindingExclusionLedger.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\CompoundOptionKind": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/CompoundOptionKind.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\CompoundRuleOptionForm": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/CompoundRuleOptionForm.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDeclarations": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDeclarations.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDefinition": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDefinition.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionKeyMetadata": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionKeyMetadata.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionSchemaProjection.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",

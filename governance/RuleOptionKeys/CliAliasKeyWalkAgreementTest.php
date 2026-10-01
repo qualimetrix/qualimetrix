@@ -66,15 +66,15 @@ final class CliAliasKeyWalkAgreementTest extends TestCase
             self::assertNotNull($address, \sprintf('--%s addresses an unrecognised key', $alias));
             self::assertFalse($address->level === null && $surface->levelNamed($address->key) !== null, \sprintf('--%s addresses a level slot instead of an option', $alias));
             $schema = $surface->schemaAt($address);
-            $form = $schema->scalarForms()[0] ?? $schema->element()->scalarForms()[0] ?? null;
+            $form = $schema->scalar->forms[0] ?? $schema->collection?->element->scalar->forms[0] ?? null;
             $text = match ($form) {
                 \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::Boolean => true,
                 \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::Integer,
-                \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::Number => (string) (max(1, $schema->minimum() ?? 0)),
-                \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::String => $schema->choices()[0] ?? 'fixture',
+                \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::Number => (string) (max(1, $schema->scalar->minimum ?? 0)),
+                \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::String => $schema->scalar->words?->words[0] ?? 'fixture',
                 default => throw new LogicException('This control needs an explicit value sample for an alias with no scalar or list scalar form.'),
             };
-            $text = $schema->scalarForms() === [] ? json_encode([$text], \JSON_THROW_ON_ERROR) : $text;
+            $text = $schema->scalar->forms === [] ? json_encode([$text], \JSON_THROW_ON_ERROR) : $text;
             $input = new \Symfony\Component\Console\Input\ArrayInput(['--' . $alias => $text], $command->getDefinition());
             $writes = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser($parser))->pathWrites($input);
             self::assertCount(1, $writes, \sprintf('--%s did not produce exactly one authored record', $alias));

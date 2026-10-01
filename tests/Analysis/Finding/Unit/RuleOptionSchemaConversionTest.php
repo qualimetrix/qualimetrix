@@ -29,8 +29,8 @@ final class RuleOptionSchemaConversionTest extends TestCase
         $target = $surface->schemaAt($address);
 
         self::assertSame(MergePolicy::LastWriterWins, $target->policy);
-        self::assertSame([ScalarForm::Integer], $target->scalarForms());
-        self::assertSame(0, $target->minimum());
+        self::assertSame([ScalarForm::Integer], $target->scalar->forms);
+        self::assertSame(0, $target->scalar->minimum);
         self::assertSame($target->describe(), $surface->schemaAt(new RuleOptionAddress('callable', 'warning'))->describe());
     }
 
@@ -41,9 +41,9 @@ final class RuleOptionSchemaConversionTest extends TestCase
         $block = $surface->schemaAt(new RuleOptionAddress(null, 'callable'));
 
         self::assertSame(MergePolicy::DeepMerge, $block->policy);
-        self::assertArrayHasKey('warning', $block->fields());
-        self::assertArrayHasKey('error', $block->fields());
-        self::assertSame(0, $block->fields()['warning']->minimum());
+        self::assertArrayHasKey('warning', $block->map->keys->fields());
+        self::assertArrayHasKey('error', $block->map->keys->fields());
+        self::assertSame(0, $block->map->keys->fields()['warning']->scalar->minimum);
     }
 
     #[Test]
@@ -53,13 +53,13 @@ final class RuleOptionSchemaConversionTest extends TestCase
         self::assertSame(FrameworkOptionKeys::all(), $framework->acceptedForDisplay());
         $paths = RuleOptionSurface::of(ComplexityOptions::class)->schemaAt(new RuleOptionAddress(null, FrameworkOptionKeys::PATHS));
         self::assertSame(MergePolicy::Replace, $paths->policy);
-        self::assertSame(MergePolicy::ByName, $paths->element()->policy);
+        self::assertSame(MergePolicy::ByName, $paths->collection?->element->policy);
 
         $distance = RuleOptionSurface::of(DistanceOptions::class);
         $address = $distance->locate('include-namespaces');
         self::assertNotNull($address);
         $target = $distance->schemaAt($address);
         self::assertSame(MergePolicy::Replace, $target->policy);
-        self::assertSame(MergePolicy::ByName, $target->element()->policy);
+        self::assertSame(MergePolicy::ByName, $target->collection?->element->policy);
     }
 }

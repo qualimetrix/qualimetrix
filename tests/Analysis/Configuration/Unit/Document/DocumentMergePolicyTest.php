@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\EmptyListOverrides;
 use Qualimetrix\Analysis\Configuration\Document\LayerMerge;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
@@ -24,6 +25,7 @@ use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
  * value is attributed to.
  */
 #[CoversClass(DocumentComposer::class)]
+#[CoversClass(EmptyListOverrides::class)]
 #[CoversClass(LayerMerge::class)]
 final class DocumentMergePolicyTest extends TestCase
 {

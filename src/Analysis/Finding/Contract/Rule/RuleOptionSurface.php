@@ -121,7 +121,7 @@ final readonly class RuleOptionSurface
      */
     public function writableAt(?string $level): array
     {
-        $keySet = $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
+        $keySet = $this->declarationAt($level);
 
         if ($keySet === null) {
             return [];
@@ -140,7 +140,7 @@ final readonly class RuleOptionSurface
     /** The declared document form at an accepted option address. */
     public function schemaAt(RuleOptionAddress $address): NodeSchema
     {
-        $set = $address->level === null ? $this->ownKeySet() : $this->keySetAtLevel($address->level);
+        $set = $this->declarationAt($address->level);
         $shape = $set?->shapeOf(ConfigKeySpelling::normalize($address->key));
 
         if ($shape === null && $address->level === null) {
@@ -151,12 +151,7 @@ final readonly class RuleOptionSurface
             throw new LogicException(\sprintf('Rule option "%s" has no declared document form.', $address->written()));
         }
 
-        $slot = $address->level === null ? $this->levelNamed($address->key) : null;
-        if ($slot === null) {
-            return $shape->asNodeSchema();
-        }
-
-        return $shape->asNodeSchema($this->schemaOf($this->keySetAtLevel($slot) ?? throw new LogicException('Missing level declaration.')));
+        return $address->level === null ? $this->rootField($address->key, $shape) : $shape->asNodeSchema();
     }
 
     /** @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass */
@@ -179,38 +174,71 @@ final readonly class RuleOptionSurface
     /** The complete producer entry; every shorthand is expanded by the document engine. */
     public function schema(): NodeSchema
     {
-        return $this->schemaOf($this->ownKeySet(), true)->bareFor('enabled');
+        return $this->rootSchema()->bareFor('enabled');
     }
 
-    private function schemaOf(RuleOptionKeySet $set, bool $root = false): NodeSchema
+    private function rootSchema(): NodeSchema
+    {
+        $set = $this->ownKeySet();
+        $fields = $this->fieldsFor($set, $this->rootField(...));
+        $framework = FrameworkOptionKeys::declared();
+        foreach ($framework->acceptedForDisplay() as $key) {
+            $fields[$key] = $framework->shapeOf(ConfigKeySpelling::normalize($key))?->asNodeSchema()
+                ?? throw new LogicException('Missing framework option form.');
+        }
+        return $this->schemaFrom($set, $fields);
+    }
+
+    /**
+     * @param callable(string, RuleOptionShape): NodeSchema $project
+     *
+     * @return array<string, NodeSchema>
+     */
+    private function fieldsFor(RuleOptionKeySet $set, callable $project): array
     {
         $fields = [];
-        $spreading = $set->spreading();
-        foreach ($set->bands() as $band) {
-            $spreading[$band->shorthand] = [$band->warning, $band->error];
-        }
+        $spreading = self::spreadingTargets($set);
         foreach ($set->acceptedForDisplay() as $key) {
             if (isset($spreading[$key])) {
                 continue;
             }
             $shape = $set->shapeOf(ConfigKeySpelling::normalize($key))
                 ?? throw new LogicException(\sprintf('Accepted rule option "%s" has no declared form.', $key));
-            $slot = $root ? $this->levelNamed($key) : null;
-            $fields[$key] = $slot === null ? $shape->asNodeSchema()
-                : $shape->asNodeSchema($this->schemaOf($this->keySetAtLevel($slot) ?? throw new LogicException('Missing level declaration.')));
+            $fields[$key] = $project($key, $shape);
         }
-        if ($root) {
-            $framework = FrameworkOptionKeys::declared();
-            foreach ($framework->acceptedForDisplay() as $key) {
-                $fields[$key] = $framework->shapeOf(ConfigKeySpelling::normalize($key))?->asNodeSchema()
-                    ?? throw new LogicException('Missing framework option form.');
-            }
+        return $fields;
+    }
+
+    private function rootField(string $key, RuleOptionShape $shape): NodeSchema
+    {
+        $slot = $this->levelNamed($key);
+        if ($slot === null) {
+            return $shape->asNodeSchema();
         }
+        $set = $this->keySetAtLevel($slot) ?? throw new LogicException('Missing level declaration.');
+        $fields = $this->fieldsFor($set, static fn(string $_key, RuleOptionShape $entry): NodeSchema => $entry->asNodeSchema());
+        return $shape->asNodeSchema($this->schemaFrom($set, $fields));
+    }
+
+    /** @param array<string, NodeSchema> $fields */
+    private function schemaFrom(RuleOptionKeySet $set, array $fields): NodeSchema
+    {
+        $spreading = self::spreadingTargets($set);
         $shorthands = [];
         foreach ($spreading as $key => $targets) {
             $shorthands[] = Shorthand::spreading($key, $targets);
         }
         return NodeSchema::map($fields, ...$shorthands)->retiring($set->retired() + \Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions::documentKeys());
+    }
+
+    /** @return array<string, non-empty-list<string>> */
+    private static function spreadingTargets(RuleOptionKeySet $set): array
+    {
+        $spreading = $set->spreading();
+        foreach ($set->bands() as $band) {
+            $spreading[$band->shorthand] = [$band->warning, $band->error];
+        }
+        return $spreading;
     }
 
     /**
@@ -239,12 +267,17 @@ final readonly class RuleOptionSurface
 
     private function addressIn(?string $level, string $key): ?RuleOptionAddress
     {
-        $keySet = $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
+        $keySet = $this->declarationAt($level);
         $spelling = $keySet?->spellingOf(ConfigKeySpelling::normalize($key));
         if ($spelling === null && $level === null) {
             $spelling = FrameworkOptionKeys::declared()->spellingOf(ConfigKeySpelling::normalize($key));
         }
 
         return $spelling === null ? null : new RuleOptionAddress($level, $spelling);
+    }
+
+    private function declarationAt(?string $level): ?RuleOptionKeySet
+    {
+        return $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
     }
 }

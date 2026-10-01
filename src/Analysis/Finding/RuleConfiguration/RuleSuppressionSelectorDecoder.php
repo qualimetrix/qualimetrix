@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use Closure;
 use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
@@ -19,7 +20,22 @@ use Throwable;
 final class RuleSuppressionSelectorDecoder
 {
     /** @param list<string> $path */
-    public function judgeSelector(ResolvedValueInterface $value, array $path, bool $namespace): void
+    public function judgePathSelector(ResolvedValueInterface $value, array $path): void
+    {
+        $this->judgeSelector($value, $path, static fn(SelectorDefinition $definition): PathPattern => new PathPattern($definition));
+    }
+
+    /** @param list<string> $path */
+    public function judgeNamespaceSelector(ResolvedValueInterface $value, array $path): void
+    {
+        $this->judgeSelector($value, $path, static fn(SelectorDefinition $definition): NamespacePattern => new NamespacePattern($definition));
+    }
+
+    /**
+     * @param list<string> $path
+     * @param Closure(SelectorDefinition): (PathPattern|NamespacePattern) $validate
+     */
+    private function judgeSelector(ResolvedValueInterface $value, array $path, Closure $validate): void
     {
         if (!$value instanceof ResolvedMapInterface || \count($path) < 4) {
             throw new LogicException('A selector judgement requires its declared mapping and exact document path.');
@@ -32,11 +48,7 @@ final class RuleSuppressionSelectorDecoder
         }
         try {
             $definition = $this->definition($ruleName, $option, $value->plain(), $index);
-            if ($namespace) {
-                new NamespacePattern($definition);
-            } else {
-                new PathPattern($definition);
-            }
+            $validate($definition);
         } catch (RuleOptionRefusal $error) {
             $value->refuse($error->getMessage());
         } catch (InvalidArgumentException $error) {

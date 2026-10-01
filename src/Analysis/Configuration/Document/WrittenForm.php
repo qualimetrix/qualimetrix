@@ -24,7 +24,7 @@ final class WrittenForm
             return null;
         }
 
-        $forms = $schema->scalarForms();
+        $forms = $schema->scalar->forms;
         $expected = $schema->describe();
 
         if ($node->shape !== AuthoredShape::Scalar || $node->scalar === null) {
@@ -33,7 +33,7 @@ final class WrittenForm
 
         foreach ($forms as $form) {
             if ($form->accepts($node->scalar)) {
-                self::judgeScalar($schema, $node->scalar, $at);
+                ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
 
                 return new ResolvedScalar($node->scalar, $at->provenance($node));
             }
@@ -43,31 +43,9 @@ final class WrittenForm
             throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)), $schema));
         }
 
-        self::judgeScalar($schema, $node->scalar, $at);
+        ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
 
         return new ResolvedScalar($node->scalar, $at->provenance($node));
-    }
-
-    private static function judgeScalar(NodeSchema $schema, int|float|string|bool $value, ReadingContext $at): void
-    {
-        $minimum = $schema->minimum();
-        if ($minimum !== null && (\is_int($value) || \is_float($value)) && $value < $minimum) {
-            throw $at->refusal(\sprintf('%s must be at least %s, got %s.', ucfirst($at->where()), $minimum, $value));
-        }
-
-        if ($schema->requiresNonEmpty() && \is_string($value) && trim($value) === '') {
-            throw $at->refusal(\sprintf('%s must be non-empty text.', ucfirst($at->where())));
-        }
-
-        $choices = $schema->choices();
-        if ($choices !== [] && \is_string($value)) {
-            $matches = static fn(string $choice): bool => $schema->foldsCase()
-                ? strcasecmp($value, $choice) === 0
-                : $value === $choice;
-            if (!array_any($choices, $matches)) {
-                throw $at->refusal(\sprintf('%s must be one of %s, got "%s".', ucfirst($at->where()), implode(', ', $choices), $value));
-            }
-        }
     }
 
     /**
@@ -108,7 +86,7 @@ final class WrittenForm
 
     private static function hinted(string $refusal, NodeSchema $schema): string
     {
-        $hint = $schema->hint();
+        $hint = $schema->wording->hint;
 
         return $hint === null ? $refusal : $refusal . ' ' . $hint;
     }

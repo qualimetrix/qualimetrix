@@ -133,10 +133,10 @@ final readonly class KeyDictionary
             if ($field->policy !== MergePolicy::DeepMerge) {
                 break;
             }
-            $fields = $field->fields();
+            $fields = $field->map->keys->fields();
             $shorthands = array_combine(
-                array_map(static fn(Shorthand $item): string => $item->key, $field->shorthands()),
-                $field->shorthands(),
+                array_map(static fn(Shorthand $item): string => $item->key, $field->map->keys->shorthands()),
+                $field->map->keys->shorthands(),
             );
         }
 

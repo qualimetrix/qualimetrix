@@ -21,6 +21,13 @@ Finding/
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # private RulesSection schema, suppression decoder and invocation stores
+│   └── OptionForms/      # private declaration and document projection
+│       ├── RuleOptionDefinition.php # scalar, word or compound declaration
+│       ├── CompoundRuleOptionForm.php # list/map/union matching and wording
+│       ├── CompoundOptionKind.php  # the three compound kinds
+│       ├── RuleOptionSchemaProjection.php # the document form of one declaration
+│       ├── RuleOptionDeclarations.php # disjoint recognition states
+│       └── RuleOptionKeyMetadata.php # bands, shorthands, axes and retirements
 ├── Selection/            # private retired-name advice
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
@@ -130,17 +137,17 @@ Each accepted key carries its form in the same entry, as a `RuleOptionShape`:
 an integer, a number, a boolean, a string, a non-empty string, a list or map of
 one of those, a nested block, a union of several, or a closed set of words
 (`RuleOptionWordSet`), each optionally accepting an explicit `null`. The closed
-set is deliberately narrow and its docblock says why: a set whose members exist
+set is deliberately narrow: a set whose members exist
 only at run time, and a value constrained by a pattern rather than by
 membership, stay with the readers that own them instead of being spelled as a
-shape. A closed set is declared case-sensitive (`RuleOptionShape::oneOf()`) or
-case-folding (`RuleOptionShape::oneOfIgnoringCase()`), matching whichever way
-the reader behind it compares — `RuleOptionWordSet::of()` and
-`::foldingCase()` carry that choice on the set itself rather than as a policy
-of the shape class, and a declaration on the wrong side of that split either
+shape. A closed set is declared with `RuleOptionShape::words(wordSet)`;
+`RuleOptionWordSet::of()` and `::foldingCase()` carry the sensitive/folding
+choice on the set itself, matching the reader's own comparison. The shape
+publishes its nullable `words` property for declaration/reader agreement.
+A declaration on the wrong side of that split either
 refuses a spelling its reader would honour or accepts one its reader then
 drops without a word. Three readers inside `rules:` fold case and declare
-`oneOfIgnoringCase()`: `annotation.directive`'s `unused-directive-severity`,
+`words(RuleOptionWordSet::foldingCase(...))`: `annotation.directive`'s `unused-directive-severity`,
 `architecture.unassigned-class`'s `mode`, and `architecture.layer-violation`'s
 `severity`. The form lives *inside* the key set rather than beside it,
 so a key cannot be admitted by one declaration and shaped by another; it is
@@ -159,6 +166,13 @@ one question, and a value out of range is refused with the value itself
 here: `RuleOptionKeySet::withLevelSlots()` takes them from
 `levelOptionsClasses()`, which stays the single source of a slot's existence
 and form.
+
+The private `OptionForms` collaborators own compound matching and schema
+projection. `RuleOptionShape` keeps the declaration DSL and its narrow
+`asNodeSchema()` operation; it does not import compound methods through a
+trait. `RuleOptionKeySet` combines the recognition declaration and its metadata
+without duplicating either. Root and level schema projection retain their
+distinct meaning without a mode flag.
 
 `RuleOptionsInterface::acceptedOptionKeys()` and each hierarchical
 `levelOptionsClasses()` are the owner declarations. `RuleOptionSurface` combines

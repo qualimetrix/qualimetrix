@@ -25,6 +25,13 @@ Configuration/
 │   ├── Document/                 # the resolved document: provenance, diagnostics and read-only
 │   │                             # Resolved{Map,List,Opaque,BareName}Interface forms
 │   │   └── Schema/               # the port an owner declares its section through
+│   │       ├── NodeSchema.php        # merge policy and typed scalar/map/collection facts
+│   │       ├── NodeScalarFacts.php   # scalar forms, floor, vocabulary and text requirement
+│   │       ├── NodeMapFacts.php      # fixed keys, bare fields and named-entry schemas
+│   │       ├── NodeCollectionFacts.php # list element and bare-element policy
+│   │       ├── SchemaWordSet.php     # sensitive/folding words, with WordComparison
+│   │       ├── TextRequirement.php  # unconstrained or non-blank text
+│   │       ├── BareElementPolicy.php # list-only or one bare element
 │   │       ├── IntegerJudgement.php # pure integer grammar
 │   │       └── SectionDeclaration.php # atomic canonical key and node schema
 │   ├── Pipeline/                 # resolution request and pipeline contracts
@@ -33,10 +40,16 @@ Configuration/
 │                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
 │                                  # let a throw site name its source without importing the vocabulary
 ├── Document/           # the engine composing written layers into the resolved document
+│   ├── ShorthandExpansion.php # canonical leaf expansion and overlap refusals
+│   ├── ShorthandTarget.php    # one typed expansion destination
+│   ├── NamedEntryReading.php  # named bodies and authored bare names
+│   ├── ScalarConstraints.php  # value judgement after scalar-form admission
+│   ├── EmptyListOverrides.php # live diagnostic for a standing empty replacement
 │   └── Resolved/       # internal concrete resolved forms, including ResolvedScalar
 ├── Loader/             # each source as a written layer for the engine (YAML file or preset →
 │                       # LoadedDocument; command line → CommandLineLayer), plus the narrow
 │                       # source-origin and positioned-node preservation
+│   └── CommandLineSyntax.php # scalar/flow-list grammar before declared judgement
 ├── Pipeline/           # ordered source stages and authored layer assembly
 │   └── Stage/          # defaults, Composer, preset, file, CLI stages
 ├── Preset/             # built-in and custom preset resolution
@@ -91,6 +104,17 @@ pipeline neither contains an Architecture or ComputedMetrics object nor
 transports feature-specific deferred warnings. Cache, Coupling, Console,
 Parallel, Run and Reporting likewise resolve only their declared values; this
 does not turn the document into a cross-owner runtime DTO.
+
+The immutable schema exposes its facts through `scalar`, `map`, `collection`,
+`wording` and `layerJudge`. A list's element belongs to
+`collection->element`; a fixed named map's body belongs to `map->entry`,
+while dynamic entries use `map->entryForName(name)`. Required missing element
+schemas refuse. Scalar vocabularies use `words(SchemaWordSet::of(...))` or
+`words(SchemaWordSet::foldingCase(...))`; non-empty vocabularies may include a
+blank word, preserving the former document declaration's domain. The separate
+`nonEmpty()` constraint decides whether authored blank text is accepted.
+The public migration is recorded in
+[ADR 0092](../../../docs/adr/0092-typed-document-declarations-and-option-judgement.md).
 
 ## Configuration-file discovery
 

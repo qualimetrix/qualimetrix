@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
@@ -90,7 +91,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'severity' => RuleOptionShape::oneOfIgnoringCase('info', 'warning', 'error')->orNull(),
+            'severity' => RuleOptionShape::words(RuleOptionWordSet::foldingCase('info', 'warning', 'error'))->orNull(),
         ])->retiring('empty-template-severity', self::retiredSeverity('empty_template_severity'))
             ->retiring('potential-shadow-severity', self::retiredSeverity('potential_shadow_severity'))
             ->retiring('unreachable-layer-severity', self::retiredSeverity('unreachable_layer_severity'));

@@ -84,6 +84,7 @@ docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md	Analysis.Conf
 docs/adr/0089-composer-manifest-facts-and-project-scope-reasons.md	Analysis.ProjectManifest	"Move or update atomically with the named subject owner."
 docs/adr/0090-exact-finding-gate-surface-deltas.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 docs/adr/0091-declared-rule-options-and-enablement.md	Analysis.Finding	"Move or update atomically with the named subject owner."
+docs/adr/0092-typed-document-declarations-and-option-judgement.md	Analysis.Configuration	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

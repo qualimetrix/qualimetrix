@@ -40,7 +40,7 @@ final readonly class CliOptionsParser
             $surface = $target === null ? null : $this->ruleOptionsParser->surfaceFor($target['rule']);
             $address = $surface?->locate($target['option'] ?? '');
             if ($address !== null) {
-                $aliasForms[$alias] = $surface->schemaAt($address)->scalarForms() !== [ScalarForm::Boolean];
+                $aliasForms[$alias] = $surface->schemaAt($address)->scalar->forms !== [ScalarForm::Boolean];
             }
         }
         $records ??= AuthoredRuleOptionWrites::fromInput($input, $aliasForms);

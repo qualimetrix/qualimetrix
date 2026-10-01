@@ -14,19 +14,24 @@ final readonly class FrameworkOptionKeys
     /** The forms of framework-owned keys at a producer's root depth. */
     public static function declared(): RuleOptionKeySet
     {
-        $selector = static fn(bool $namespace): RuleOptionShape => RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText())->judgedInEachLayer(
-            static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path) use ($namespace): void {
-                (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgeSelector($value, $path, $namespace);
+        $pathSelector = RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText())->judgedInEachLayer(
+            static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path): void {
+                (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgePathSelector($value, $path);
             },
         );
-        $paths = RuleOptionShape::listOf($selector(false))->orNull();
-        $namespaces = RuleOptionShape::listOf($selector(true))->orNull();
+        $namespaceSelector = RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText())->judgedInEachLayer(
+            static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path): void {
+                (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgeNamespaceSelector($value, $path);
+            },
+        );
+        $paths = RuleOptionShape::listOf($pathSelector)->orNull();
+        $namespaces = RuleOptionShape::listOf($namespaceSelector)->orNull();
 
         return RuleOptionKeySet::of([
             'enabled' => RuleOptionShape::boolean(),
             self::PATHS => $paths,
             self::NAMESPACES => $namespaces,
-            self::NAMESPACE_CHANNELS => RuleOptionShape::mapOf(RuleOptionShape::listOf($selector(true)))->orNull()->judgedInEachLayer(
+            self::NAMESPACE_CHANNELS => RuleOptionShape::mapOf(RuleOptionShape::listOf($namespaceSelector))->orNull()->judgedInEachLayer(
                 static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path): void {
                     (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgeChannels($value, $path);
                 },

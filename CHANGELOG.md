@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Typed document and option declarations.** Programmatic declaration consumers
+must replace NodeSchema scalar/map/list getters with its readonly typed facts.
+Replace stringList() with list(scalar(ScalarForm::String)), and oneOf(words, foldCase)
+with words(SchemaWordSet::of(...) or ::foldingCase(...)).
+RuleOptionShape::oneOf()/oneOfIgnoringCase() become
+words(RuleOptionWordSet::of(...)/::foldingCase(...)); wordsDeclared() becomes
+the readonly word set. Configuration grammar, numeric defaults and published
+diagnostics remain unchanged. See ADR 0092.
+
 **Declared rule options and one final enablement snapshot.**
 
 1. **Rule option validation moves before discovery.** Previously a bad option could survive until Collection. Every authored layer is now shaped and judged before Discovery, including writes later overridden. Correct the offending file, preset or command-line value; disabling its producer does not make malformed input lawful.

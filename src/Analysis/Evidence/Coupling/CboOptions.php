@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -51,7 +52,7 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
     {
         return RuleOptionKeySet::of([
             'error' => RuleOptionShape::integer()->orNull(),
-            'scope' => RuleOptionShape::oneOf('all', 'application')->orNull(),
+            'scope' => RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
         ])->withLevelSlots(self::levelOptionsClasses())->spreadingInto('threshold', ['class.threshold', 'namespace.threshold'])->spreadingInto('warning', ['class.warning', 'namespace.warning'])->spreadingInto('error', ['class.error', 'namespace.error'])->spreadingInto('scope', ['class.scope']);

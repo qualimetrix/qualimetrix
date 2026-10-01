@@ -361,9 +361,9 @@ final class DocumentPhaseTest extends TestCase
             {
                 return new SectionDeclaration('groups', NodeSchema::list(NodeSchema::map([
                     'members' => NodeSchema::map([
-                        'names' => NodeSchema::stringList(),
+                        'names' => NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                         'allow' => NodeSchema::namedMap(
-                            NodeSchema::stringList(),
+                            NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                             NameVocabulary::fromSibling('names', static fn(mixed $names): array => \is_array($names) ? array_values(array_filter($names, 'is_string')) : []),
                         ),
                     ]),
@@ -431,7 +431,7 @@ final class DocumentPhaseTest extends TestCase
             public function declaration(): SectionDeclaration
             {
                 return new SectionDeclaration('names', NodeSchema::namedMap(
-                    NodeSchema::stringList(),
+                    NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                     NameVocabulary::predicate(static fn(string $name): RefusedName => RefusedName::open('This name cannot be authored.')),
                 ));
             }

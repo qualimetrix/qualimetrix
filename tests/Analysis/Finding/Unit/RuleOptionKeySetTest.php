@@ -15,8 +15,12 @@ use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionKeyMetadata;
 
 #[CoversClass(RuleOptionKeySet::class)]
+#[CoversClass(RuleOptionKeyMetadata::class)]
+#[CoversClass(RuleOptionDeclarations::class)]
 final class RuleOptionKeySetTest extends TestCase
 {
     #[Test]

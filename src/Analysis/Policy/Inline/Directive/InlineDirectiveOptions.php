@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
@@ -44,7 +45,7 @@ final readonly class InlineDirectiveOptions implements RuleOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'unused-directive-severity' => RuleOptionShape::oneOfIgnoringCase('info', 'warning', 'error')->orNull(),
+            'unused-directive-severity' => RuleOptionShape::words(RuleOptionWordSet::foldingCase('info', 'warning', 'error'))->orNull(),
         ]);
     }
 

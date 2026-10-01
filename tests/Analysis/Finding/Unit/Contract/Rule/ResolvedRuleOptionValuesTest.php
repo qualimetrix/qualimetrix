@@ -76,7 +76,7 @@ final class ResolvedRuleOptionValuesTest extends TestCase
             'enabled' => NodeSchema::scalar(ScalarForm::Boolean),
             'count' => NodeSchema::scalar(ScalarForm::Integer),
             'text' => NodeSchema::scalar(ScalarForm::String),
-            'names' => NodeSchema::stringList(),
+            'names' => NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
             'map' => NodeSchema::map([]),
             'class' => NodeSchema::map([
                 'enabled' => NodeSchema::scalar(ScalarForm::Boolean),

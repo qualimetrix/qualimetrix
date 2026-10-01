@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
@@ -41,7 +42,7 @@ final readonly class UnassignedClassOptions implements ModeGatedOptionsInterface
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'mode' => RuleOptionShape::oneOfIgnoringCase('ignore', 'warn', 'error')->orNull(),
+            'mode' => RuleOptionShape::words(RuleOptionWordSet::foldingCase('ignore', 'warn', 'error'))->orNull(),
         ]);
     }
 

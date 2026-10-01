@@ -23,9 +23,13 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
+use Qualimetrix\Analysis\Configuration\Document\ShorthandExpansion;
+use Qualimetrix\Analysis\Configuration\Document\ShorthandTarget;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 
 #[CoversClass(LayerReading::class)]
+#[CoversClass(ShorthandTarget::class)]
+#[CoversClass(ShorthandExpansion::class)]
 #[CoversClass(NodeSchema::class)]
 final class ShorthandPathTest extends TestCase
 {

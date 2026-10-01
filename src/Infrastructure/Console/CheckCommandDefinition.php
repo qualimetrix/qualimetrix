@@ -374,7 +374,7 @@ final class CheckCommandDefinition
 
             foreach ($aliases as $alias => $optionName) {
                 $address = $surface->locate($optionName);
-                if ($address !== null && $surface->schemaAt($address)->scalarForms() === [ScalarForm::Boolean]) {
+                if ($address !== null && $surface->schemaAt($address)->scalar->forms === [ScalarForm::Boolean]) {
                     $booleanAliases[] = $alias;
                 }
             }

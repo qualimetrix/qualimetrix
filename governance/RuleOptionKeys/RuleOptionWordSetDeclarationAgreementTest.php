@@ -24,13 +24,13 @@ use RecursiveIteratorIterator;
 use Throwable;
 
 /**
- * Every `oneOfIgnoringCase` declaration in the tree, paired with the reader
+ * Every folding word declaration in the tree, paired with the reader
  * that actually consumes it, must agree — on the set of words itself, on
  * each word's own spelling, on that word with its case flipped, and on one
  * word outside the set.
  *
  * This is a two-witness check: one witness is the DECLARATION
- * (`acceptedOptionKeys()->shapeOf($key)->wordsDeclared()`); the other is not
+ * (`acceptedOptionKeys()->shapeOf($key)->words`); the other is not
  * a second hand-written word list but the backed enum each reader itself
  * builds its accepted set from (`Severity::cases()`,
  * `UnassignedClassMode::cases()`) together with the READER's own behaviour
@@ -39,7 +39,7 @@ use Throwable;
  * the declaration itself was found to.
  *
  * `coupling.cbo`'s `scope` is deliberately not one of the cases here: it
- * declares {@see RuleOptionShape::oneOf()} (case-sensitive) in front of a
+ * declares `RuleOptionShape::words(RuleOptionWordSet::of(...))` (case-sensitive) in front of a
  * reader that also compares strictly, so the two already agree by
  * construction and folding would be the wrong thing to test for it.
  *
@@ -168,7 +168,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
 
     /**
      * The provider is a hand list; this is the tree. Every
-     * `RuleOptionShape::oneOfIgnoringCase()` declaration in `src/` must own a
+     * `RuleOptionShape::words(RuleOptionWordSet::foldingCase(...))` declaration in `src/` must own a
      * row above, and every row must name a declaration that is still there.
      *
      * The scan reads source text rather than reflecting the options classes,
@@ -198,7 +198,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
             $source = (string) file_get_contents($entry->getPathname());
 
             if (preg_match_all(
-                "/'([^']+)'\\s*=>\\s*RuleOptionShape::oneOfIgnoringCase\\(/",
+                "/'([^']+)'\\s*=>\\s*RuleOptionShape::words\\(RuleOptionWordSet::foldingCase\\(/",
                 $source,
                 $matches,
             ) === 0) {
@@ -279,7 +279,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
     private static function wordsOf(RuleOptionShape|string $source): array
     {
         if ($source instanceof RuleOptionShape) {
-            $words = $source->wordsDeclared();
+            $words = $source->words;
             self::assertNotNull($words, 'shape under test is not a closed word set');
 
             return $words->words;
