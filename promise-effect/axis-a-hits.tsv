@@ -106,3 +106,11 @@ yaml|rules.code-smell.error-suppression.allowed-functions|list	[foo]	A list of t
 yaml|rules.cohesion.lcom.exclude-methods|list	[getName]	The method list names a fixture declaration.
 yaml|rules.coupling.distance.include-namespaces|list	[{subtree: Probe\Sub}]	The YAML selector is a sequence of explicit selectors.
 rule-opt|rules.coupling.distance.include-namespaces|string-nonnumber	subtree:Probe\Sub	The CLI selector is its native scalar spelling.
+rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|list	[is]	The CLI flow list contains text and changes the accepted prefix set.
+rule-opt|rules.code-smell.error-suppression.allowed-functions|list	[foo]	The CLI flow list contains text and changes the accepted function set.
+rule-opt|rules.cohesion.lcom.exclude-methods|list	[getName]	The CLI flow list names a fixture method.
+cli-alias|rules.cohesion.lcom.excludeMethods|list	[getName]	The valued alias carries a flow list naming a fixture method.
+yaml|rules.architecture.unassigned-class.enabled|bool	false	The explicit false switch changes the active rule with mode warn.
+yaml|rules.architecture.unassigned-class.enabled		The same active mode belongs to omission, value and comparand.	{"rules":{"architecture.unassigned-class":{"mode":"warn"}}}
+rule-opt|rules.architecture.unassigned-class.enabled|bool	false	The explicit false switch changes the active rule with mode warn.
+rule-opt|rules.architecture.unassigned-class.enabled		The same active mode belongs to omission, value and comparand.	{"rules":{"architecture.unassigned-class":{"mode":"warn"}}}
