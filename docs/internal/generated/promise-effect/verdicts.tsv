@@ -114,7 +114,7 @@ A	form|cli-alias|rules.cohesion.lcom.error|string-number	string-number	optionsOb
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.cohesion.lcom.excludeMethods|list	list	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|cli-alias|rules.cohesion.lcom.excludeMethods|list	list	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.cohesion.lcom.excludeMethods|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -719,7 +719,7 @@ A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|ma
 A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.layer-violation.unreachable-layer-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.architecture.unassigned-class.enabled|bool	bool	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.architecture.unassigned-class.enabled|bool	bool	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.enabled|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -738,7 +738,7 @@ A	form|rule-opt|rules.architecture.unassigned-class.mode|string-number	string-nu
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|list	list	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|list	list	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -818,7 +818,7 @@ A	form|rule-opt|rules.code-smell.empty-catch.enabled|string-number	string-number
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|list	list	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|list	list	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.error-suppression.allowed-functions|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
@@ -986,7 +986,7 @@ A	form|rule-opt|rules.cohesion.lcom.error|string-number	string-number	optionsObj
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.cohesion.lcom.exclude-methods|list	list	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|rule-opt|rules.cohesion.lcom.exclude-methods|list	list	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.cohesion.lcom.exclude-methods|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2463,12 +2463,12 @@ A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|map	ma
 A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|null	null	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.layer-violation.unreachable-layer-severity|string-number	string-number	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
-A	form|yaml|rules.architecture.unassigned-class.enabled|bool	bool	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
+A	form|yaml|rules.architecture.unassigned-class.enabled|bool	bool	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.architecture.unassigned-class.enabled|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
+A	form|yaml|rules.architecture.unassigned-class.enabled|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at mergedDocument
 A	form|yaml|rules.architecture.unassigned-class.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere

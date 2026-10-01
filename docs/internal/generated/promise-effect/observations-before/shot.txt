@@ -1,5 +1,5 @@
 product-commit	02a6ca66
-tree-commit	1e562066ecf44fca410b8971bcf7252bfb639b4a
+tree-commit	b4ec189ca5b7a450172550555066c5a128880ec0
 taken	2026-10-01
 axes	A,B,C,D,E
-reason	Retake native 02a6ca66 with lawful same-field band companions, declared typed selectors and formula contexts, real valueless CLI admission, literal cache scalar path spellings, fixed formula thresholds 10000/10000 and unrestricted native CLI list effects, and cache directory identity; no product or classifier substitution.
+reason	Retake native 02a6ca66 with lawful same-field band companions, typed selector native profiles, fixed formula thresholds 10000/10000, literal cache scalar path spellings, native string flow lists and mode warn held equally for omitted/value/equivalent/comparand enabled switches; same authored inputs as current, no product or classifier substitution.
