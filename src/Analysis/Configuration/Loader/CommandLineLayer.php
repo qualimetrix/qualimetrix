@@ -47,8 +47,8 @@ final class CommandLineLayer
                 $tree,
                 $write->path,
                 $write->selectorValue === null
-                    ? CommandLineValue::read($write->text, $write->target, $write->optionName)
-                    : CommandLineValue::selector($write->selectorValue, $write->target, $write->optionName),
+                    ? CommandLineValue::read($write->text, $write->target, $write->optionName, $write->path)
+                    : CommandLineValue::selector($write->selectorValue, $write->target, $write->optionName, $write->path),
             );
         }
 

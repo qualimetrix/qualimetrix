@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,10 +17,12 @@ use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ClassCountRule::class)]
 #[CoversClass(ClassCountOptions::class)]
@@ -61,7 +65,7 @@ final class ClassCountRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new ClassCountRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -280,7 +284,7 @@ final class ClassCountRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsDefaultsFromArray(): void
     {
-        $options = ClassCountOptions::fromArray(['enabled' => true]);
+        $options = ClassCountOptions::fromResolved(ResolvedOptionsFixture::values(ClassCountOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(15, $options->warning);
@@ -290,11 +294,11 @@ final class ClassCountRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsCustomValuesFromArray(): void
     {
-        $options = ClassCountOptions::fromArray([
+        $options = ClassCountOptions::fromResolved(ResolvedOptionsFixture::values(ClassCountOptions::class, [
             'enabled' => true,
             'warning' => 10,
             'error' => 20,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(10, $options->warning);
@@ -304,8 +308,8 @@ final class ClassCountRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new ClassCountOptions(), ClassCountOptions::fromArray([]));
-        self::assertFalse(ClassCountOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new ClassCountOptions(), ClassCountOptions::fromResolved(ResolvedOptionsFixture::values(ClassCountOptions::class, [])));
+        self::assertFalse(ClassCountOptions::fromResolved(ResolvedOptionsFixture::values(ClassCountOptions::class, ['enabled' => false]))->isEnabled());
     }
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {

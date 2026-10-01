@@ -77,9 +77,9 @@ final class SharedRuleOptionsContainerTest extends TestCase
 
         // This is the registry seam used by --rule-opt.
         $configuration = $configuration->withCliOverrides([XssRule::NAME => ['enabled' => false]]);
-        $configuration = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($configuration, [
-            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(XssRule::NAME, XssRule::getOptionsClass(), '', [], false),
-        ]);
+        $execution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $execution);
+        $configuration = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($configuration, $execution->allRules());
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $registry->replace($configuration->withResolvedOptions($builder->build($configuration)));

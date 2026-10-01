@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -43,23 +46,14 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
         public int $minAfferent = 1,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        // If config is empty, use defaults (all enabled)
-        if ($config === []) {
-            return new self();
-        }
-
-        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 0.8, 0.95, legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']]);
-
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 0.8, 0.95);
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            maxWarning: (float) $thresholds['warning'],
-            maxError: (float) $thresholds['error'],
-            minAfferent: (int) ($config['min_afferent'] ?? $config['minAfferent'] ?? 1),
+            enabled: $config->boolean('enabled', true),
+            maxWarning: $thresholds['warning'],
+            maxError: $thresholds['error'],
+            minAfferent: $config->integer('min-afferent', 1),
         );
     }
 
@@ -76,7 +70,7 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
             'max-warning' => RuleOptionShape::number()->orNull(),
             'min-afferent' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
-        ]);
+        ])->band('threshold', 'max-warning', 'max-error', BandDirection::Rising);
     }
 
     public function isEnabled(): bool

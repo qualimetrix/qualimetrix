@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
@@ -27,6 +28,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException as ConsoleRuntimeException;
 use Symfony\Component\Console\Input\ArgvInput;
@@ -71,13 +73,13 @@ final class CliOptionsParserTest extends TestCase
         ], $definition));
 
         self::assertSame([['regex' => 'App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*']], $result['coupling.distance']['include-namespaces']);
-        $selector = DistanceOptions::fromArray(['include_namespaces' => $result['coupling.distance']['include-namespaces']])->includeNamespaces[0] ?? null;
+        $selector = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, ['include_namespaces' => $result['coupling.distance']['include-namespaces']]))->includeNamespaces[0] ?? null;
         self::assertInstanceOf(NamespacePattern::class, $selector);
         self::assertSame('regex:App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*', $selector->definition->display());
 
-        $yaml = DistanceOptions::fromArray([
+        $yaml = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, [
             'include_namespaces' => [['regex' => 'App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*']],
-        ])->includeNamespaces;
+        ]))->includeNamespaces;
         self::assertNotNull($yaml);
         self::assertSame($yaml[0]->rendered(), $selector->rendered());
     }
@@ -115,6 +117,28 @@ final class CliOptionsParserTest extends TestCase
 
         self::assertSame([['regex' => '.*Generated\\.php']], $result['complexity.ccn']['suppress-paths']);
         self::assertSame([['subtree' => 'App\\Generated']], $result['complexity.ccn']['suppress-namespaces']);
+    }
+
+    #[Test]
+    public function itKeepsTheCanonicalIndexedSelectorPathAndOriginalCliOriginWhenTheSemanticValueIsInvalid(): void
+    {
+        $surface = \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(\Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class);
+        $write = new \Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite(
+            ['rules', 'complexity.ccn', 'suppress-namespaces'],
+            'unknown:App',
+            '--rule-opt',
+            $surface->schemaAt(new \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress(null, 'suppress-namespaces')),
+            [['unknown' => 'App']],
+        );
+        try {
+            CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: [$write]));
+            self::fail('The invalid CLI selector was accepted.');
+        } catch (ConfigurationRefusal $error) {
+            self::assertSame('Option "suppress_namespaces.0" for rule "complexity.ccn" Unknown selector kind "unknown"; expected exact, subtree, or regex.', $error->summary());
+            self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::CommandLine, $error->sources()[0]->source());
+            self::assertSame('--rule-opt', $error->sources()[0]->locator());
+            self::assertNull($error->position());
+        }
     }
 
     #[Test]
@@ -366,7 +390,7 @@ final class CliOptionsParserTest extends TestCase
      * rows) is `refuse`, not "fold to the default": the fix raises a
      * `ConfigurationRefusal` naming the alias, rule and option instead of a
      * silent `null`, so the defective `['']` still never reaches
-     * `LcomOptions::fromArray()`, and the door keeps its promise besides.
+     * `LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, ))`, and the door keeps its promise besides.
      */
     #[Test]
     public function itRefusesAnEmptyAliasValueInsteadOfFoldingItToAOneElementEmptyString(): void

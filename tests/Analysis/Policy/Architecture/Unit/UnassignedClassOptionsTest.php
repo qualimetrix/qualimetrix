@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
@@ -13,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 
 #[CoversClass(UnassignedClassOptions::class)]
@@ -22,8 +24,8 @@ final class UnassignedClassOptionsTest extends TestCase
     public function itLeavesTheGateOffByDefault(): void
     {
         self::assertSame(UnassignedClassMode::Ignore, (new UnassignedClassOptions())->mode);
-        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromArray([])->mode);
-        self::assertFalse(UnassignedClassOptions::fromArray([])->isEnabled());
+        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, []))->mode);
+        self::assertFalse(UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, []))->isEnabled());
     }
 
     #[Test]
@@ -32,7 +34,7 @@ final class UnassignedClassOptionsTest extends TestCase
     #[TestWith(['ignore', UnassignedClassMode::Ignore])]
     public function itParsesTheMode(string $raw, UnassignedClassMode $expected): void
     {
-        self::assertSame($expected, UnassignedClassOptions::fromArray(['mode' => $raw])->mode);
+        self::assertSame($expected, UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, ['mode' => $raw]))->mode);
     }
 
     /**
@@ -42,16 +44,16 @@ final class UnassignedClassOptionsTest extends TestCase
     #[Test]
     public function itLeavesTheDefaultWhenModeIsWrittenNull(): void
     {
-        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromArray(['mode' => null])->mode);
+        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, ['mode' => null]))->mode);
     }
 
     #[Test]
     public function itRejectsAnUnknownMode(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('architecture.unassigned-class');
+        $this->expectExceptionMessage('"rules.fixture.mode" in configuration file "/project/qmx.yaml" must be one of ignore, warn, error, got "fail".');
 
-        UnassignedClassOptions::fromArray(['mode' => 'fail']);
+        UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, ['mode' => 'fail']));
     }
 
     /**
@@ -60,7 +62,7 @@ final class UnassignedClassOptionsTest extends TestCase
      * by default would win over the one the author wrote.
      */
     #[Test]
-    public function itDerivesEnablementFromTheModeAndAcceptsNoOtherKey(): void
+    public function itOwnsOnlyTheModeWhileTheFrameworkOwnsEnablement(): void
     {
         self::assertFalse((new UnassignedClassOptions(UnassignedClassMode::Ignore))->isEnabled());
         self::assertTrue((new UnassignedClassOptions(UnassignedClassMode::Warn))->isEnabled());
@@ -78,7 +80,9 @@ final class UnassignedClassOptionsTest extends TestCase
         // the answered-by-the-class half, which is where the refusal below
         // lives and is deliberately not a list anyone may write from.
         self::assertSame(['mode'], UnassignedClassOptions::acceptedOptionKeys()->acceptedForDisplay());
-        self::assertTrue(UnassignedClassOptions::acceptedOptionKeys()->knows('enabled'));
+        self::assertFalse(UnassignedClassOptions::acceptedOptionKeys()->knows('enabled'));
+        self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(UnassignedClassOptions::class)->writableAt(null));
+        self::assertTrue(\Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::declared()->accepts('enabled'));
         self::assertFalse(UnassignedClassOptions::acceptedOptionKeys()->accepts('enabled'));
     }
 
@@ -90,27 +94,20 @@ final class UnassignedClassOptionsTest extends TestCase
     #[Test]
     public function itAcceptsAnEnabledFalseThatAgreesWithTheDefaultMode(): void
     {
-        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromArray(['enabled' => false])->mode);
-        self::assertFalse(UnassignedClassOptions::fromArray(['enabled' => false, 'mode' => 'ignore'])->isEnabled());
+        self::assertSame(UnassignedClassMode::Ignore, UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, ['enabled' => false]))->mode);
+        self::assertFalse(UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, ['enabled' => false, 'mode' => 'ignore']))->isEnabled());
     }
 
-    /**
-     * The two spellings that would lie: one promises to turn the rule on
-     * without doing so, the other contradicts the switch written beside it.
-     */
-    /**
-     * @param array<string, mixed> $config
-     */
+    /** @param array<string, mixed> $config */
     #[Test]
-    #[TestWith([['enabled' => true], 'promise to turn the rule on'])]
-    #[TestWith([['enabled' => false, 'mode' => 'error'], 'contradict "mode: error"'])]
-    #[TestWith([['enabled' => true, 'mode' => 'warn'], 'promise to turn the rule on'])]
-    public function itRefusesAnEnabledThatWouldLie(array $config, string $expected): void
+    #[TestWith([['enabled' => true], UnassignedClassMode::Ignore, null])]
+    #[TestWith([['enabled' => false, 'mode' => 'error'], UnassignedClassMode::Error, Severity::Error])]
+    #[TestWith([['enabled' => true, 'mode' => 'warn'], UnassignedClassMode::Warn, Severity::Warning])]
+    public function itReadsTheTypedModeBesideTheFrameworkEnablementKey(array $config, UnassignedClassMode $mode, ?Severity $severity): void
     {
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage($expected);
-
-        UnassignedClassOptions::fromArray($config);
+        $options = UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, $config));
+        self::assertSame($mode, $options->mode);
+        self::assertSame($severity, $options->getSeverity(1));
     }
 
     #[Test]

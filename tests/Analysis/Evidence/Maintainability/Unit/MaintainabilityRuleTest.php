@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit;
 
 use InvalidArgumentException;
+
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -25,6 +26,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(MaintainabilityRule::class)]
 #[CoversClass(MaintainabilityOptions::class)]
@@ -253,11 +255,11 @@ final class MaintainabilityRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = MaintainabilityOptions::fromArray([
+        $options = MaintainabilityOptions::fromResolved(ResolvedOptionsFixture::values(MaintainabilityOptions::class, [
             'enabled' => false,
             'warning' => 70.0,
             'error' => 55.0,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(70.0, $options->warning);
@@ -267,8 +269,8 @@ final class MaintainabilityRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new MaintainabilityOptions(), MaintainabilityOptions::fromArray([]));
-        self::assertFalse(MaintainabilityOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new MaintainabilityOptions(), MaintainabilityOptions::fromResolved(ResolvedOptionsFixture::values(MaintainabilityOptions::class, [])));
+        self::assertFalse(MaintainabilityOptions::fromResolved(ResolvedOptionsFixture::values(MaintainabilityOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
@@ -355,10 +357,10 @@ final class MaintainabilityRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithExcludeTests(): void
     {
-        $options = MaintainabilityOptions::fromArray([
+        $options = MaintainabilityOptions::fromResolved(ResolvedOptionsFixture::values(MaintainabilityOptions::class, [
             'exclude_tests' => false,
             'min_statements' => 20,
-        ]);
+        ]));
 
         self::assertFalse($options->excludeTests);
         self::assertSame(20, $options->minStatements);
@@ -367,10 +369,10 @@ final class MaintainabilityRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithCamelCase(): void
     {
-        $options = MaintainabilityOptions::fromArray([
+        $options = MaintainabilityOptions::fromResolved(ResolvedOptionsFixture::values(MaintainabilityOptions::class, [
             'excludeTests' => false,
             'minStatements' => 15,
-        ]);
+        ]));
 
         self::assertFalse($options->excludeTests);
         self::assertSame(15, $options->minStatements);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions;
@@ -18,6 +19,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(IdenticalSubExpressionRule::class)]
 #[CoversClass(IdenticalSubExpressionOptions::class)]
@@ -34,7 +36,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     public function itGetDescription(): void
     {
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
-        self::assertNotEmpty($rule->getDescription());
+        self::assertNotEmpty($rule::getDescription());
     }
 
     #[Test]
@@ -186,21 +188,21 @@ final class IdenticalSubExpressionRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayEnabled(): void
     {
-        $options = IdenticalSubExpressionOptions::fromArray(['enabled' => true]);
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, ['enabled' => true]));
         self::assertTrue($options->isEnabled());
     }
 
     #[Test]
     public function itOptionsFromArrayDisabled(): void
     {
-        $options = IdenticalSubExpressionOptions::fromArray(['enabled' => false]);
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
     }
 
     #[Test]
     public function itOptionsFromEmptyArray(): void
     {
-        $options = IdenticalSubExpressionOptions::fromArray([]);
+        $options = IdenticalSubExpressionOptions::fromResolved(ResolvedOptionsFixture::values(IdenticalSubExpressionOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

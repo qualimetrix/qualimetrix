@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(LcomRule::class)]
 #[CoversClass(LcomOptions::class)]
@@ -235,11 +237,11 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'enabled' => false,
             'warning' => 3,
             'error' => 5,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(3, $options->warning);
@@ -249,8 +251,8 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new LcomOptions(), LcomOptions::fromArray([]));
-        self::assertFalse(LcomOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new LcomOptions(), LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [])));
+        self::assertFalse(LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
@@ -332,9 +334,9 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeMethodsFromArray(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'exclude_methods' => ['getName', 'getDescription'],
-        ]);
+        ]));
 
         self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
     }
@@ -342,9 +344,9 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeMethodsFromArraySnakeCase(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'excludeMethods' => ['getName', 'getDescription'],
-        ]);
+        ]));
 
         self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
     }
@@ -352,9 +354,9 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeMethodsFromArrayAsString(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'exclude_methods' => 'getName',
-        ]);
+        ]));
 
         self::assertSame(['getName'], $options->excludeMethods);
     }
@@ -362,10 +364,10 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itSetsExcludeMethodsToNullWhenNotProvided(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'warning' => 3,
             'error' => 5,
-        ]);
+        ]));
 
         self::assertNull($options->excludeMethods);
     }
@@ -373,9 +375,9 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itPreservesExcludeMethodsOnOverride(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'exclude_methods' => ['getName', 'getDescription'],
-        ]);
+        ]));
 
         $overridden = $options->withOverride(warning: 4, error: 6);
 

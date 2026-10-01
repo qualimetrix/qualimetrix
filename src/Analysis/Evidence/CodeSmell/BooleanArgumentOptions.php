@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -35,26 +36,12 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface, Ent
         public bool $flagPromotedProperties = false,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $raw = $config['allowedPrefixes'] ?? $config['allowed_prefixes'] ?? null;
-
-        $prefixes = self::DEFAULT_PREFIXES;
-        if (\is_string($raw)) {
-            $prefixes = [$raw];
-        } elseif (\is_array($raw)) {
-            $prefixes = array_values(array_filter($raw, 'is_string'));
-        }
-
-        $flagPromotedProperties = $config['flagPromotedProperties'] ?? $config['flag_promoted_properties'] ?? false;
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            allowedPrefixes: $prefixes,
-            flagPromotedProperties: (bool) $flagPromotedProperties,
+            enabled: $config->boolean('enabled', true),
+            allowedPrefixes: $config->strings('allowed-prefixes', self::DEFAULT_PREFIXES),
+            flagPromotedProperties: $config->boolean('flag-promoted-properties', false),
         );
     }
 
@@ -119,7 +106,6 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface, Ent
     {
         return RuleOptionKeySet::of([
             'allowed-prefixes' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'flag-promoted-properties' => RuleOptionShape::boolean()->orNull(),
         ]);
     }

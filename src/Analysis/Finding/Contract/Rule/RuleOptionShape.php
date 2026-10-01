@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+use Closure;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
@@ -57,6 +59,9 @@ final readonly class RuleOptionShape
         private array $alternatives = [],
         private bool $nullable = false,
         private RuleOptionWordSet $words = new RuleOptionWordSet([]),
+        private int|float|null $minimum = null,
+        /** @var Closure(ResolvedValueInterface, list<string>): void|null */
+        private ?Closure $layerJudge = null,
     ) {}
 
     public static function boolean(): self
@@ -215,13 +220,25 @@ final readonly class RuleOptionShape
      */
     public function orNull(): self
     {
-        return new self($this->kind, $this->element, $this->alternatives, true, $this->words);
+        return new self($this->kind, $this->element, $this->alternatives, true, $this->words, $this->minimum, $this->layerJudge);
+    }
+
+    public function atLeast(int|float $minimum): self
+    {
+        if ($this->kind !== RuleOptionValueForm::WholeNumber && $this->kind !== RuleOptionValueForm::Number && $this->kind !== RuleOptionValueForm::SignedNumber) {
+            throw new LogicException('A numeric floor requires a numeric rule option form.');
+        }
+        return new self($this->kind, $this->element, $this->alternatives, $this->nullable, $this->words, $minimum, $this->layerJudge);
     }
 
     public function matches(mixed $value): bool
     {
         if ($value === null) {
             return $this->nullable;
+        }
+
+        if ($this->minimum !== null && (\is_int($value) || \is_float($value)) && $value < $this->minimum) {
+            return false;
         }
 
         return match ($this->kind) {
@@ -245,14 +262,26 @@ final readonly class RuleOptionShape
         return $this->kind === self::ONE_OF ? $this->words : null;
     }
 
+    /** @param Closure(ResolvedValueInterface, list<string>): void $judge */
+    public function judgedInEachLayer(Closure $judge): self
+    {
+        return new self($this->kind, $this->element, $this->alternatives, $this->nullable, $this->words, $this->minimum, $judge);
+    }
+
     /** The document form of this declaration; a block receives its declared child schema. */
     public function asNodeSchema(?NodeSchema $block = null): NodeSchema
+    {
+        $schema = $this->unjudgedNodeSchema($block);
+        return $this->layerJudge === null ? $schema : $schema->judgedInEachLayer($this->layerJudge);
+    }
+
+    private function unjudgedNodeSchema(?NodeSchema $block): NodeSchema
     {
         if ($this->kind instanceof RuleOptionValueForm) {
             return match ($this->kind) {
                 RuleOptionValueForm::Boolean => NodeSchema::scalar(ScalarForm::Boolean),
-                RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast(0),
-                RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast(0),
+                RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast($this->minimum ?? 0),
+                RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast($this->minimum ?? 0),
                 RuleOptionValueForm::SignedNumber => NodeSchema::scalar(ScalarForm::Number),
                 RuleOptionValueForm::Text => NodeSchema::scalar(ScalarForm::String),
                 RuleOptionValueForm::NonEmptyText => NodeSchema::scalar(ScalarForm::String)->nonEmpty(),
@@ -288,7 +317,18 @@ final readonly class RuleOptionShape
             }
         }
 
-        throw new LogicException('The declared union has no document form.');
+        $forms = [];
+        $minimum = null;
+        foreach ($this->alternatives as $alternative) {
+            $schema = $alternative->asNodeSchema();
+            if ($schema->scalarForms() === [] || $schema->choices() !== [] || $schema->requiresNonEmpty()) {
+                throw new LogicException('The declared union has no document form.');
+            }
+            $forms = [...$forms, ...$schema->scalarForms()];
+            $minimum ??= $schema->minimum();
+        }
+        $schema = NodeSchema::scalar(...$forms);
+        return $minimum === null ? $schema : $schema->atLeast($minimum);
     }
 
     /** The expected form, as the refusal names it. */

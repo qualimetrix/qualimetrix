@@ -446,11 +446,8 @@ final class ChannelUniverseCoverageTest extends TestCase
             return false;
         }
 
-        $options = $optionsClass::fromArray([]);
-        \assert($options instanceof HierarchicalRuleOptionsInterface);
-
-        foreach ($options->getSupportedLevels() as $level) {
-            if ($options->forLevel($level) instanceof ThresholdAwareOptionsInterface) {
+        foreach ($optionsClass::levelOptionsClasses() as $levelClass) {
+            if (is_a($levelClass, ThresholdAwareOptionsInterface::class, true)) {
                 return true;
             }
         }

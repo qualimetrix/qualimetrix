@@ -88,19 +88,13 @@ final readonly class RuleValidatorMapFactory
             return null;
         }
 
-        $rootOptions = $optionsClass::fromArray([]);
-        \assert($rootOptions instanceof HierarchicalRuleOptionsInterface);
-
         $selected = null;
         $selectedSource = null;
 
-        foreach ($rootOptions->getSupportedLevels() as $level) {
-            $levelOptions = $rootOptions->forLevel($level);
-            if (!$levelOptions instanceof ThresholdAwareOptionsInterface) {
+        foreach ($optionsClass::levelOptionsClasses() as $levelOptionsClass) {
+            if (!is_a($levelOptionsClass, ThresholdAwareOptionsInterface::class, true)) {
                 continue;
             }
-
-            $levelOptionsClass = $levelOptions::class;
             $levelValidator = $levelOptionsClass::getOverrideValidator();
 
             if ($selected === null) {

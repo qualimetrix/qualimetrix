@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -14,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -203,7 +205,7 @@ final class StampRule implements RuleInterface
 
 final readonly class StampOptions implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

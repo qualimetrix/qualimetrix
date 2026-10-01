@@ -7,8 +7,10 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 final class RuleOptionsDefaultsTest extends TestCase
 {
@@ -18,7 +20,9 @@ final class RuleOptionsDefaultsTest extends TestCase
         $container = (new ContainerFactory())->create();
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
-        $snapshot = $builder->build(FindingConfiguration::none());
+        $execution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $execution);
+        $snapshot = $builder->build(ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none(), $execution->allRules()));
         self::assertCount(54, $snapshot->all());
         $disabled = [];
         foreach ($snapshot->all() as $producer => $options) {
@@ -26,7 +30,7 @@ final class RuleOptionsDefaultsTest extends TestCase
             self::assertEquals(new $class(), $options, $producer);
             $disabled[$producer] = ['enabled' => false];
         }
-        $muted = $builder->build(FindingConfiguration::none()->withRuleOptions($disabled));
+        $muted = $builder->build(ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none()->withRuleOptions($disabled), $execution->allRules()));
         foreach ($muted->all() as $producer => $options) {
             self::assertFalse($options->isEnabled(), $producer);
         }

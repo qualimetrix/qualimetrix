@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -44,17 +46,6 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
 {
     use StandardOverrideValidatorTrait;
 
-    /**
-     * Duplicates the owning rule's name as a literal rather than referencing
-     * its class constant, so this level Options DTO does not gain a
-     * dependency edge onto the rule it configures — the same reason
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions} spells its own rule name out.
-     */
-    private const string RULE_NAME = 'coupling.cbo';
-
-    /** @var list<string> */
-    private const array KNOWN_SCOPES = ['all', 'application'];
-
     public function __construct(
         public bool $enabled = true,
         public int $warning = 14,
@@ -62,24 +53,17 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
         public string $scope = 'all',
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        // If config is empty, use defaults (all enabled)
-        if ($config === []) {
-            return new self();
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 14, 20);
+        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
         }
-
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 14, 20);
-        $scope = self::parseScope($config);
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
-            scope: $scope,
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
+            scope: $config->text('scope', 'all'),
         );
     }
 
@@ -96,7 +80,7 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
             'scope' => RuleOptionShape::oneOf('all', 'application')->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
 
     public function isEnabled(): bool
@@ -117,55 +101,6 @@ final readonly class ClassCboOptions implements LevelOptionsInterface, Threshold
         }
 
         return null;
-    }
-
-    /**
-     * The declaration above refuses an unknown word before `fromArray()` is
-     * ever reached, but only on the path that goes through the option-key
-     * seam (`RuleOptionsFactory`/`RuleOptionKeyRecognition`) — and this
-     * method is public and reachable directly, bypassing that seam. Silently
-     * measuring 'all' for a typo the seam never saw is the silent-acceptance
-     * defect the project's closed word sets exist to remove elsewhere; this
-     * class refuses it here for the same reason instead of keeping the
-     * fallback alive for a caller that skips the seam.
-     *
-     * @param array<string, mixed> $config
-     *
-     * @throws ConfigurationRefusal When `scope` is set to something other
-     *                              than a known scope word.
-     */
-    private static function parseScope(array $config): string
-    {
-        $scope = $config['scope'] ?? null;
-
-        if ($scope === null) {
-            return 'all';
-        }
-
-        if (!\is_string($scope) || !\in_array($scope, self::KNOWN_SCOPES, true)) {
-            $allowed = implode(', ', array_map(static fn(string $word): string => "'{$word}'", self::KNOWN_SCOPES));
-
-            throw self::refusal('scope', \sprintf(
-                'Option "scope" for rule "%s" has unknown value %s; expected one of %s.',
-                self::RULE_NAME,
-                \is_string($scope) ? "\"{$scope}\"" : get_debug_type($scope),
-                $allowed,
-            ));
-        }
-
-        return $scope;
-    }
-
-    /**
-     * This class answers about `scope` in its own words rather than letting
-     * the generic "unknown option" refusal speak for it.
-     */
-    private static function refusal(string $option, string $summary): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open([self::RULE_NAME, $option], $option),
-            $summary,
-        );
     }
 
     public function withOverride(int|float|null $warning, int|float|null $error): static

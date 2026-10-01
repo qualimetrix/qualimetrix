@@ -148,13 +148,9 @@ final class ThresholdValidatorWiringTest extends TestCase
             return null;
         }
 
-        $rootOptions = $optionsClass::fromArray([]);
-        \assert($rootOptions instanceof HierarchicalRuleOptionsInterface);
-
-        foreach ($rootOptions->getSupportedLevels() as $level) {
-            $levelOptions = $rootOptions->forLevel($level);
-            if ($levelOptions instanceof ThresholdAwareOptionsInterface) {
-                return $levelOptions::getOverrideValidator();
+        foreach ($optionsClass::levelOptionsClasses() as $levelOptionsClass) {
+            if (is_a($levelOptionsClass, ThresholdAwareOptionsInterface::class, true)) {
+                return $levelOptionsClass::getOverrideValidator();
             }
         }
 

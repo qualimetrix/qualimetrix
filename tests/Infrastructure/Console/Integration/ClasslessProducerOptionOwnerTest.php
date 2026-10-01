@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
@@ -337,7 +336,6 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         return new RuleInputValidator(
             $registry,
             new RuleSelector($universe),
-            new FindingConfigurationResolver(),
             $universe,
             new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );

@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -116,9 +115,10 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         $options = $container->get(RuleConfigurationInterface::class);
         \assert($options instanceof RuleConfigurationInterface);
         $configuration = FindingConfiguration::none();
-        $builder = $container->get(RuleOptionsBuild::class);
-        \assert($builder instanceof RuleOptionsBuild);
-        $options->replace($configuration->withResolvedOptions($builder->build($configuration)));
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $execution->allRules());
+        $options->replace($configuration->withResolvedOptions($snapshot));
 
         $map = (new BaselineConfiguredThresholds($rules, $options))->resolve();
         ksort($map);

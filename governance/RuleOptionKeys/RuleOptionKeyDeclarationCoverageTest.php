@@ -157,7 +157,7 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
     {
         foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
             $declared = array_keys($optionsClass::levelOptionsClasses());
-            $options = $optionsClass::fromArray([]);
+            $options = $optionsClass::fromResolved(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::values($optionsClass, []));
             self::assertInstanceOf(HierarchicalRuleOptionsInterface::class, $options);
 
             $supported = array_map(
@@ -190,7 +190,7 @@ final class RuleOptionKeyDeclarationCoverageTest extends TestCase
         $slots = 0;
 
         foreach (self::hierarchicalOptionsClasses() as $optionsClass) {
-            $options = $optionsClass::fromArray([]);
+            $options = $optionsClass::fromResolved(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::values($optionsClass, []));
             self::assertInstanceOf(HierarchicalRuleOptionsInterface::class, $options);
 
             foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeOptions;
@@ -14,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -22,6 +25,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(UnreachableCodeRule::class)]
 #[CoversClass(UnreachableCodeOptions::class)]
@@ -64,7 +68,7 @@ final class UnreachableCodeRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new UnreachableCodeRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -194,11 +198,11 @@ final class UnreachableCodeRuleTest extends TestCase
     #[Test]
     public function itCustomThresholds(): void
     {
-        $options = UnreachableCodeOptions::fromArray([
+        $options = UnreachableCodeOptions::fromResolved(ResolvedOptionsFixture::values(UnreachableCodeOptions::class, [
             'enabled' => true,
             'warning' => 2,
             'error' => 3,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(2, $options->warning);
@@ -215,8 +219,8 @@ final class UnreachableCodeRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new UnreachableCodeOptions(), UnreachableCodeOptions::fromArray([]));
-        self::assertFalse(UnreachableCodeOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new UnreachableCodeOptions(), UnreachableCodeOptions::fromResolved(ResolvedOptionsFixture::values(UnreachableCodeOptions::class, [])));
+        self::assertFalse(UnreachableCodeOptions::fromResolved(ResolvedOptionsFixture::values(UnreachableCodeOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]

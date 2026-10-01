@@ -15,9 +15,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionObject;
 use ReflectionProperty;
 use Throwable;
@@ -345,9 +346,9 @@ final class WarningBoundaryDeclarationTest extends TestCase
         $rules = $container->get(RuleRegistryInterface::class);
         \assert($rules instanceof RuleRegistryInterface);
 
-        $builder = $container->get(RuleOptionsBuild::class);
-        \assert($builder instanceof RuleOptionsBuild);
-        $snapshot = $builder->build(FindingConfiguration::none());
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        $snapshot = ResolvedOptionsFixture::build(FindingConfiguration::none(), $execution->allRules());
 
         foreach ($rules->getClasses() as $ruleClass) {
             if (ChannelDeclarationReader::read($ruleClass) === []) {

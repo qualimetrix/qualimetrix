@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(NpathComplexityRule::class)]
 #[CoversClass(NpathComplexityOptions::class)]
@@ -41,7 +43,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertSame(
             'Checks NPath complexity at method and class levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -314,11 +316,11 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itMethodOptionsFromArray(): void
     {
-        $options = MethodNpathComplexityOptions::fromArray([
+        $options = MethodNpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(MethodNpathComplexityOptions::class, [
             'enabled' => false,
             'warning' => 150,
             'error' => 300,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(150, $options->warning);
@@ -328,7 +330,7 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itMethodOptionsFromEmptyArray(): void
     {
-        $options = MethodNpathComplexityOptions::fromArray([]);
+        $options = MethodNpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(MethodNpathComplexityOptions::class, []));
 
         self::assertTrue($options->enabled); // Default is true for method level
         self::assertSame(200, $options->warning);
@@ -338,11 +340,11 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itClassOptionsFromArray(): void
     {
-        $options = ClassNpathComplexityOptions::fromArray([
+        $options = ClassNpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ClassNpathComplexityOptions::class, [
             'enabled' => true,
             'max_warning' => 400,
             'max_error' => 800,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(400, $options->maxWarning);
@@ -352,7 +354,7 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itClassOptionsFromEmptyArray(): void
     {
-        $options = ClassNpathComplexityOptions::fromArray([]);
+        $options = ClassNpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ClassNpathComplexityOptions::class, []));
 
         self::assertFalse($options->enabled); // Default is false for class level
         self::assertSame(500, $options->maxWarning);
@@ -362,7 +364,7 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itNpathComplexityOptionsFromHierarchicalArray(): void
     {
-        $options = NpathComplexityOptions::fromArray([
+        $options = NpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(NpathComplexityOptions::class, [
             'callable' => [
                 'warning' => 150,
                 'error' => 400,
@@ -372,7 +374,7 @@ final class NpathComplexityRuleTest extends TestCase
                 'max_warning' => 300,
                 'max_error' => 600,
             ],
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
@@ -384,10 +386,10 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itNpathComplexityOptionsFromFlatThresholdShorthand(): void
     {
-        $options = NpathComplexityOptions::fromArray([
+        $options = NpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(NpathComplexityOptions::class, [
             'enabled' => true,
             'threshold' => 180,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
@@ -476,11 +478,11 @@ final class NpathComplexityRuleTest extends TestCase
     #[Test]
     public function itClassOptionsFromArrayWithCamelCase(): void
     {
-        $options = ClassNpathComplexityOptions::fromArray([
+        $options = ClassNpathComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ClassNpathComplexityOptions::class, [
             'enabled' => true,
             'maxWarning' => 400,
             'maxError' => 800,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(400, $options->maxWarning);

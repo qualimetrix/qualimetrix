@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -44,22 +48,17 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface, Thres
         public int $minClassCount = 3,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        if ($config === []) {
-            return new self();
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 14, 20);
+        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
         }
-
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 14, 20);
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
-            minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
+            minClassCount: $config->integer('min-class-count', 3),
         );
     }
 
@@ -76,7 +75,7 @@ final readonly class NamespaceCboOptions implements LevelOptionsInterface, Thres
             'min-class-count' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
 
     public function isEnabled(): bool

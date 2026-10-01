@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -13,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
@@ -83,7 +85,7 @@ final readonly class SubjectControlOptions implements RuleOptionsInterface, Thre
 {
     public function __construct(private int $warning, private int $error) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(10, 20);
     }

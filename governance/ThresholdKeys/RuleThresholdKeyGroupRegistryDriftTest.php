@@ -10,76 +10,22 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry;
-use ReflectionClass;
-use ReflectionClassConstant;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use RuntimeException;
 
 /**
- * Drift guard for {@see RuleThresholdKeyGroupRegistry}.
+ * Compares declared band populations with real parser call counts, and tests
+ * every accepted key spelling through the document engine and options builder.
  *
- * The registry is a hand-maintained mirror of every `ThresholdParser::parse()`
- * call site's arguments (see its own docblock for why it can't be derived at
- * merge time). A hand-maintained mirror can silently rot: a new rule adds a
- * threshold group without a registry entry, an existing entry survives after
- * its rule/level is deleted, or a call site's key spelling changes without
- * the registry following. Each of those three drifts is undetectable by
- * reading the registry alone — they only show up by comparing it against the
- * real rule capability roots and the real `Options::fromArray()` behavior.
- *
- * This test derives its expectations entirely from the real code, the same
- * way {@see \Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest}'s
- * reflective drift test iterates `DependencyType::cases()` instead of a
- * hand-typed list: nothing here is a second handwritten catalog of rules or
- * keys.
- *
- * - **Discovery** (which (rule, path) pairs need an entry, and how many
- *   groups): scan the explicit layered and capability-owned rule roots (the
- *   same roots their configurators register), read each rule's `NAME` via
- *   {@see RuleNameReader} and its Options class via `getOptionsClass()`
- *   (both real, no hand list), then — for hierarchical Options classes —
- *   walk `getSupportedLevels()`/`forLevel()` to find each nested Options
- *   class. For every (rule, path), the file that actually declares the
- *   `ThresholdParser::parse()` call sites is located via
- *   `ReflectionClass::getFileName()` and its own source text is searched for
- *   the literal `ThresholdParser::parse(` call — occurrence COUNT included,
- *   so a path with N calls (e.g. `code-smell.long-parameter-list`'s two
- *   pairs) must
- *   have exactly N groups declared, not just "at least one".
- * - **Existence, both directions**: every discovered (rule, path) must have
- *   a registry entry ({@see itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry});
- *   every registry entry (read via {@see ReflectionClassConstant} against
- *   the private `GROUPS` constant — no need to make it public just for
- *   testing) must correspond to a real, still-existing (rule, path)
- *   ({@see itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite}).
- * - **Key-name accuracy**: every individual key string declared in every
- *   group (including legacy aliases) is exercised through the REAL
- *   {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild}, config-file
- *   channel, with a differential probe — a baseline run and a run with only
- *   that key set to a sentinel must produce different results
- *   ({@see itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance}). Going
- *   through the factory (not calling `Options::fromArray()` directly)
- *   matters: a top-level rule config key is snake/kebab-case-normalized to
- *   camelCase by `RuleOptionsBuild::normalizeKeys()` before it reaches
- *   `fromArray()` (so a registry entry may name either the call site's
- *   primary spelling or one of its camelCase legacy aliases — both are
- *   real, reachable spellings), while nested dict values are NOT
- *   normalized and must match a call site's spelling exactly. If a key's
- *   real spelling changed, the probe has no effect and this fails, naming
- *   the exact rule/path/key.
- *
- * > **Known scope limit:** the occurrence-count check catches an *added*
- * > group at an already-covered path (count goes from 1 to 2, registry still
- * > has 1 → mismatch), but two groups at the same path with an IDENTICAL key
- * > set could not be told apart by count alone — no such case exists in the
- * > current rule set.
+ * Counts and literal membership cannot distinguish two references to one
+ * band from references to two bands. Differential probes separately observe
+ * the real effect of each declared key instead of trusting metadata alone.
  */
-#[CoversClass(RuleThresholdKeyGroupRegistry::class)]
+#[CoversClass(RuleOptionSurface::class)]
 final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 {
     private const string MARKER = 'ThresholdParser::parse(';
@@ -105,15 +51,14 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     #[DataProvider('provideCodeDerivedRequirements')]
     public function itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry(string $ruleName, string $path, int $callCount): void
     {
-        $groups = RuleThresholdKeyGroupRegistry::groupsFor($ruleName, $path);
+        $groups = ThresholdRuleDiscovery::registeredGroups()[$ruleName][$path] ?? [];
 
         self::assertNotSame(
             [],
             $groups,
             \sprintf(
-                'Rule "%s" (path %s) calls ThresholdParser::parse() %d time(s) but RuleThresholdKeyGroupRegistry has no'
-                . ' entry for it — add one, or the merge resolver silently falls back to its unreliable suffix'
-                . ' heuristic for this rule.',
+                'Rule "%s" (path %s) calls ThresholdParser::parse() %d time(s) but RuleOptionSurface has no'
+                . ' entry for it — the read must use a band declared by its owning options class.',
                 $ruleName,
                 $path === '' ? '"(top level)"' : \sprintf('"%s"', $path),
                 $callCount,
@@ -161,7 +106,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
             $ruleName . '::' . $path,
             $requirements,
             \sprintf(
-                'RuleThresholdKeyGroupRegistry declares an entry for rule "%s" (path %s), but no real Options class at'
+                'RuleOptionSurface declares an entry for rule "%s" (path %s), but no real Options class at'
                 . ' that path calls ThresholdParser::parse() — the rule/level was removed or renamed and this entry'
                 . ' is now a stray duplicate. Remove it.',
                 $ruleName,
@@ -171,8 +116,8 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     }
 
     // ------------------------------------------------------------------
-    // Test 3: every declared key (including legacy aliases) in every group
-    // must still control the value Options::fromArray() actually produces.
+    // Test 3: every accepted spelling of every declared key in each band
+    // must still control the value Options::fromResolved() actually produces.
     // ------------------------------------------------------------------
 
     /**
@@ -217,14 +162,11 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         $baselineConfig = self::wrapAtPath($path, ['enabled' => true]);
         $probeConfig = self::wrapAtPath($path, ['enabled' => true, $key => self::SENTINEL]);
 
-        // Goes through the real RuleOptionsBuild (config-file channel), not
-        // Options::fromArray() directly — see this class's docblock for why
-        // that matters for top-level (non-normalized-elsewhere) keys.
+        // The document engine must expand shorthands before the real builder reads them.
         $execution = self::createStub(RuleExecutionInterface::class);
         $execution->method('allRules')->willReturn([new RuleMetadata($ruleName, $optionsClass, '', [], false)]);
-        $builder = new RuleOptionsBuild($execution);
-        $baseline = $builder->build(FindingConfiguration::none()->withRuleOptions([$ruleName => $baselineConfig]))->for($ruleName);
-        $probe = $builder->build(FindingConfiguration::none()->withRuleOptions([$ruleName => $probeConfig]))->for($ruleName);
+        $baseline = ResolvedOptionsFixture::build(FindingConfiguration::none()->withRuleOptions([$ruleName => $baselineConfig]), $execution->allRules())->for($ruleName);
+        $probe = ResolvedOptionsFixture::build(FindingConfiguration::none()->withRuleOptions([$ruleName => $probeConfig]), $execution->allRules())->for($ruleName);
 
         $baselineTargets = self::inspectionTargets($baseline, $path, $isHierarchical);
         $probeTargets = self::inspectionTargets($probe, $path, $isHierarchical);
@@ -240,8 +182,8 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         self::assertTrue(
             $differs,
             \sprintf(
-                'RuleThresholdKeyGroupRegistry declares key "%s" for rule "%s" (path %s), but setting it had NO'
-                . ' observable effect on %s::fromArray() — the real key name has drifted; update the registry to match.',
+                'RuleOptionSurface declares key "%s" for rule "%s" (path %s), but setting it had NO'
+                . ' observable effect on %s::fromResolved() — the real key name has drifted; update the registry to match.',
                 $key,
                 $ruleName,
                 $path === '' ? '"(top level)"' : \sprintf('"%s"', $path),

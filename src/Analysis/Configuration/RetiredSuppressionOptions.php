@@ -41,6 +41,18 @@ final class RetiredSuppressionOptions
         'excludePaths' => 'suppressPaths',
     ];
 
+    /** @return array<string, string> Canonical retired document keys and their replacement wording. */
+    public static function documentKeys(): array
+    {
+        $retired = [];
+        foreach (self::REPLACEMENTS as $old => $replacement) {
+            $canonical = ConfigKeySpelling::rewriteLike($old, 'a-b');
+            $new = ConfigKeySpelling::rewriteLike($replacement, 'a-b');
+            $retired[$canonical] = self::refusalText($canonical, $new);
+        }
+        return $retired;
+    }
+
     /**
      * Refuses a retired option written inside a `rules:` block.
      *

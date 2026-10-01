@@ -323,22 +323,24 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itNormalizesMixedCaseKeys(): void
+    public function itRefusesAMalformedMixedCaseKeyInItsOriginalSpelling(): void
     {
-        $this->writeConfigFile([
-            'test-rule' => [
-                'Warning_Threshold' => 12,
-                'error-threshold' => 24,
-            ],
-        ]);
+        $this->writeConfigFile(['test-rule' => ['Warning_Threshold' => 12, 'error-threshold' => 24]]);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Key "rules.test-rule.Warning_Threshold" in configuration file "/project/qmx.yaml" is not written in an accepted spelling; write "warning-threshold" (its snake_case, camelCase and kebab-case spellings are accepted).');
+        $this->factory->create('test-rule', TestRuleOptions::class);
+    }
 
-        /** @var TestRuleOptions $options */
-        $options = $this->factory->create('test-rule', TestRuleOptions::class);
-
-        self::assertSame(12, $options->warningThreshold);
-        self::assertSame(24, $options->errorThreshold);
-        // Note: count_NULL_safe would normalize to countNULLSafe (not countNullsafe)
-        // This is expected behavior - normalization preserves case after delimiters
+    #[Test]
+    public function itAcceptsCanonicalSnakeCamelAndKebabKeys(): void
+    {
+        foreach (['warning_threshold', 'warningThreshold', 'warning-threshold'] as $key) {
+            $this->writeConfigFile(['test-rule' => [$key => 12, 'error-threshold' => 24]]);
+            $options = $this->factory->create('test-rule', TestRuleOptions::class);
+            self::assertInstanceOf(TestRuleOptions::class, $options);
+            self::assertSame(12, $options->warningThreshold);
+            self::assertSame(24, $options->errorThreshold);
+        }
     }
 
     #[Test]
@@ -365,7 +367,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "enabled" of rule "test-rule" must be a boolean or null, got a string.');
+        self::expectExceptionMessage('"rules.test-rule.enabled" in configuration file "/project/qmx.yaml" must be boolean, got string.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -414,7 +416,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a number.');
+        self::expectExceptionMessage('"rules.test-rule.warning_threshold" in configuration file "/project/qmx.yaml" must be integer at least 0, got float.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -448,10 +450,15 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->writeCliOption('rule-a', 'errorThreshold', 10);
         $this->writeCliOption('rule-b', 'errorThreshold', 30);
 
-        /** @var TestRuleOptions $optionsA */
-        $optionsA = $this->factory->create('rule-a', TestRuleOptions::class);
+        $snapshot = ResolvedOptionsFixture::build(FindingConfiguration::none()->withRuleOptions($this->configFileRules)->withCliOverrides($this->cliRules), [
+            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('rule-a', TestRuleOptions::class, '', [], false),
+            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('rule-b', TestRuleOptions::class, '', [], false),
+        ]);
+        $optionsA = $snapshot->for('rule-a');
+        self::assertInstanceOf(TestRuleOptions::class, $optionsA);
         /** @var TestRuleOptions $optionsB */
-        $optionsB = $this->factory->create('rule-b', TestRuleOptions::class);
+        $optionsB = $snapshot->for('rule-b');
+        self::assertInstanceOf(TestRuleOptions::class, $optionsB);
 
         self::assertSame(5, $optionsA->warningThreshold);
         self::assertSame(10, $optionsA->errorThreshold);
@@ -886,15 +893,15 @@ final class RuleOptionsFactoryTest extends TestCase
             $this->factory->create('test-rule', TestRuleOptions::class);
             self::fail('The non-numeric value was accepted.');
         } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString(
-                'Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.',
+            self::assertSame(
+                '"rules.test-rule.warning_threshold" in configuration file "/project/qmx.yaml" must be integer at least 0, got string.',
                 $e->getMessage(),
             );
             self::assertCount(1, $e->sources());
-            self::assertSame(ConfigurationSource::Resolved, $e->sources()[0]->source());
-            self::assertNull($e->sources()[0]->locator());
+            self::assertSame(ConfigurationSource::ConfigFile, $e->sources()[0]->source());
+            self::assertSame('/project/qmx.yaml', $e->sources()[0]->locator());
             self::assertNotNull($e->position());
-            self::assertSame('warningThreshold', $e->position()->written);
+            self::assertSame('warning_threshold', $e->position()->written);
             self::assertFalse($e->position()->closed);
         }
     }
@@ -909,7 +916,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "errorThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.');
+        self::expectExceptionMessage('"rules.test-rule.error_threshold" in configuration file "/project/qmx.yaml" must be integer at least 0, got string.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -924,7 +931,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "warningThreshold" of rule "test-rule" must be a non-negative whole number or null, got a string.');
+        self::expectExceptionMessage('"rules.test-rule.warning_threshold" in configuration file "/project/qmx.yaml" must be integer at least 0, got string.');
 
         $this->factory->create('test-rule', TestRuleOptions::class);
     }
@@ -954,7 +961,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('rule "complexity.ccn"');
+        self::expectExceptionMessage('"rules.complexity.ccn.error_threshold" in configuration file "/project/qmx.yaml" must be integer at least 0, got string.');
 
         $this->factory->create('complexity.ccn', TestRuleOptions::class);
     }
@@ -1004,7 +1011,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('must be a list of explicit selector mappings');
+        self::expectExceptionMessage('"rules.test.rule.suppress_namespaces" in configuration file "/project/qmx.yaml" must be a list, got string.');
 
         $this->factory->create('test.rule', TestRuleOptions::class);
     }
@@ -1060,7 +1067,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('must name exact, subtree, or regex with a non-empty string value');
+        self::expectExceptionMessage('"rules.computed.health.suppress_namespace_channels.health.cohesion[0].exact" in configuration file "/project/qmx.yaml" must be non-empty text.');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }
@@ -1075,7 +1082,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('must be a non-empty list of explicit selector mappings');
+        self::expectExceptionMessage('"rules.computed.health.suppress_namespace_channels.health.cohesion" in configuration file "/project/qmx.yaml" must be a list, got string.');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }
@@ -1105,7 +1112,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('must be a list of explicit selector mappings');
+        self::expectExceptionMessage('"rules.computed.health.suppress_namespaces" in configuration file "/project/qmx.yaml" must be a list, got a map.');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }
@@ -1120,7 +1127,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('entries must be one-entry mappings');
+        self::expectExceptionMessage('"rules.computed.health.suppress_namespaces[1]" in configuration file "/project/qmx.yaml" must be a map, got int.');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }
@@ -1306,7 +1313,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/suppressNamespaces/');
+        self::expectExceptionMessage('Key "rules.code-smell.long-parameter-list.excludeNamespaces" in configuration file "/project/qmx.yaml" is retired. The "exclude-namespaces" option was retired. To suppress findings the analysis already produces, use "suppress-namespaces". To exclude files from analysis entirely (the finding is never produced), use the "exclude" option instead — it is a different mechanism, not a renamed one.');
 
         $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
     }
@@ -1407,7 +1414,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+        self::expectExceptionMessage('"rules.size.method-count" in configuration file "/project/qmx.yaml" writes both "threshold" and "warning" in one layer; "threshold" is shorthand for "warning" and "error" — write either the shorthand or the full keys in one layer.');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
     }
@@ -1489,7 +1496,7 @@ final class RuleOptionsFactoryTest extends TestCase
         /** @var CboOptions $options */
         $options = $this->factory->create('coupling.cbo', CboOptions::class);
 
-        // CboOptions::fromArray() has a top-level `threshold` flat-shorthand
+        // CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, )) has a top-level `threshold` flat-shorthand
         // branch that applies uniformly to BOTH the class and namespace
         // dimensions (their defaults already match: 14/20).
         self::assertSame(30, $options->class->warning);
@@ -1531,10 +1538,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Option "nonsense" is not an option of rule "size.method-count". Options here: enabled, error,'
-            . ' suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning.',
-        );
+        self::expectExceptionMessage('Unknown key "rules.size.method-count.nonsense" in configuration file "/project/qmx.yaml". Accepted keys: error, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
     }
@@ -1553,10 +1557,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Option "suppressPath" is not an option of rule "size.method-count". Options here: enabled, error,'
-            . ' suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, warning.',
-        );
+        self::expectExceptionMessage('Unknown key "rules.size.method-count.suppress_path" in configuration file "/project/qmx.yaml" (did you mean "suppress-paths"?). Accepted keys: error, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
     }
@@ -1569,10 +1570,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Option "maxWarning" is not an option of rule "coupling.cbo" at level "class". Options at that level:'
-            . ' enabled, error, scope, threshold, warning. Other levels of this rule take different options.',
-        );
+        self::expectExceptionMessage('Unknown key "rules.coupling.cbo.class.maxWarning" in configuration file "/project/qmx.yaml" (did you mean "warning"?). Accepted keys: enabled, error, scope, warning, threshold.');
 
         $this->factory->create('coupling.cbo', CboOptions::class);
     }
@@ -1602,7 +1600,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('at level "class"');
+        self::expectExceptionMessage('Unknown key "rules.coupling.instability.class.warning" in configuration file "/project/qmx.yaml". Accepted keys: enabled, max-error, max-warning, min-afferent, threshold.');
 
         $this->factory->create('coupling.instability', InstabilityOptions::class);
     }
@@ -1656,10 +1654,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Level "class" of rule "coupling.cbo" takes a map of options, got bool.'
-            . ' To switch one level off write "class: {enabled: false}".',
-        );
+        self::expectExceptionMessage('"rules.coupling.cbo.class" in configuration file "/project/qmx.yaml" must be a map, got bool.');
 
         $this->factory->create('coupling.cbo', CboOptions::class);
     }
@@ -1672,7 +1667,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Level "class" of rule "coupling.cbo" takes a map of options, got int.');
+        self::expectExceptionMessage('"rules.coupling.cbo.class" in configuration file "/project/qmx.yaml" must be a map, got int.');
 
         $this->factory->create('coupling.cbo', CboOptions::class);
     }
@@ -1697,7 +1692,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Option "maxWarnign" is not an option');
+        self::expectExceptionMessage('Unknown key "rules.coupling.instability.class.maxWarnign" in configuration file "/project/qmx.yaml" (did you mean "max-warning"?). Accepted keys: enabled, max-error, max-warning, min-afferent, threshold.');
 
         $this->factory->create('coupling.instability', InstabilityOptions::class);
     }
@@ -1708,16 +1703,16 @@ final class RuleOptionsFactoryTest extends TestCase
      * the specific one — the defect this walk removes.
      */
     #[Test]
-    public function itLetsAKeyTheClassAnswersForReachThatClassUnchallenged(): void
+    public function itLetsFrameworkEnablementCoexistWithTheOwningTypedMode(): void
     {
         $this->writeConfigFile([
             'architecture.unassigned-class' => ['enabled' => true],
         ]);
 
-        $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('architecture.unassigned-class');
-
-        $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
+        $options = $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
+        self::assertInstanceOf(UnassignedClassOptions::class, $options);
+        self::assertSame(\Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode::Ignore, $options->mode);
+        self::assertNull($options->getSeverity(1));
     }
 
     // --- `threshold` vs `warning`/`error` mode conflicts across the
@@ -1822,7 +1817,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->writeCliOptions('size.method-count', ['threshold' => 25, 'warning' => 10]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+        self::expectExceptionMessage('The command line writes both "threshold" and "--rule-opt" in one layer; "threshold" is shorthand for "warning" and "error" — write either the shorthand or the full keys in one layer.');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
     }
@@ -1906,7 +1901,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Cannot mix "threshold" with "max_distance_warning"/"max_distance_error"');
+        self::expectExceptionMessage('The command line writes both "threshold" and "--rule-opt" in one layer; "threshold" is shorthand for "max-distance-warning" and "max-distance-error" — write either the shorthand or the full keys in one layer.');
 
         $this->factory->create('coupling.distance', DistanceOptions::class);
     }
@@ -2031,7 +2026,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Option "threshold" of rule "size.method-count" must be a non-negative whole number');
+        self::expectExceptionMessage('"rules.size.method-count.threshold" in configuration file "/project/qmx.yaml" must be integer at least 0, got float.');
 
         $this->factory->create('size.method-count', MethodCountOptions::class);
     }
@@ -2050,7 +2045,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Option "enabled" of rule "complexity.ccn" must be a boolean or null, got a list.');
+        self::expectExceptionMessage('"rules.complexity.ccn.enabled" in configuration file "/project/qmx.yaml" must be boolean, got a list.');
 
         $this->factory->create('complexity.ccn', ComplexityOptions::class);
     }
@@ -2076,10 +2071,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Option "suppressPaths" of rule "complexity.ccn" must be a list of a map'
-            . ' of non-empty strings or null, got a whole number.',
-        );
+        self::expectExceptionMessage('"rules.complexity.ccn.suppress_paths" in configuration file "/project/qmx.yaml" must be a list, got int.');
 
         $this->factory->create('complexity.ccn', ComplexityOptions::class);
     }
@@ -2092,7 +2084,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('must be a list of a map of non-empty strings or null');
+        self::expectExceptionMessage('"rules.one.rule.suppress_paths" in configuration file "/project/qmx.yaml" must be a list, got string.');
 
         $this->factory->create('one.rule', TestRuleOptions::class);
     }
@@ -2105,7 +2097,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('must be a list of explicit selector mappings');
+        self::expectExceptionMessage('"rules.complexity.ccn.suppress_namespaces" in configuration file "/project/qmx.yaml" must be a list, got int.');
 
         $this->factory->create('complexity.ccn', ComplexityOptions::class);
     }
@@ -2118,10 +2110,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Option "severity" of rule "architecture.layer-violation" must be one of "info", "warning", "error" or'
-            . ' null, got a whole number.',
-        );
+        self::expectExceptionMessage('"rules.architecture.layer-violation.severity" in configuration file "/project/qmx.yaml" must be string (one of info, warning, error, case-insensitive), got int.');
 
         $this->factory->create('architecture.layer-violation', LayerViolationOptions::class);
     }
@@ -2147,9 +2136,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage(
-            'Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.',
-        );
+        self::expectExceptionMessage('"rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml" must be integer at least 0, got string.');
 
         $this->factory->create('complexity.ccn', ComplexityOptions::class);
     }

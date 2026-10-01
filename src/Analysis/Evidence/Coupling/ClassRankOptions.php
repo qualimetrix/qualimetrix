@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -33,28 +36,23 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
         public float $error = 0.05,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 0.02, 0.05);
-
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 0.02, 0.05);
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (float) $thresholds['warning'],
-            error: (float) $thresholds['error'],
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
         );
     }
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::number()->orNull(),
             'threshold' => RuleOptionShape::number()->orNull(),
             'warning' => RuleOptionShape::number()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
 
     public function isEnabled(): bool

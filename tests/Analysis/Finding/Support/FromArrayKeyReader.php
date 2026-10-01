@@ -12,6 +12,7 @@ use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
@@ -27,7 +28,10 @@ use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\ParserFactory;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use ReflectionClass;
 
@@ -78,7 +82,10 @@ final class FromArrayKeyReading
  */
 final class FromArrayKeyReader
 {
-    private const string CONFIG_METHOD = 'fromArray';
+    private const string CONFIG_METHOD = 'fromResolved';
+
+    /** @var class-string */
+    private string $optionsClass;
 
     /** @var array<string, ClassMethod> */
     private array $methods = [];
@@ -101,6 +108,7 @@ final class FromArrayKeyReader
      */
     public function read(string $optionsClass): FromArrayKeyReading
     {
+        $this->optionsClass = $optionsClass;
         $this->reading = new FromArrayKeyReading();
         $this->methods = [];
         $this->visited = [];
@@ -120,9 +128,9 @@ final class FromArrayKeyReader
 
         $this->markGuarded($classNode);
 
-        $entry = $this->methods[self::CONFIG_METHOD] ?? null;
+        $entry = $this->methods[self::CONFIG_METHOD] ?? $this->methods['fromArray'] ?? null;
         if ($entry === null) {
-            $this->reading->blind('opaque-sink', 'no-fromArray');
+            $this->reading->blind('opaque-sink', 'no-options-reader');
 
             return $this->reading;
         }
@@ -267,6 +275,26 @@ final class FromArrayKeyReader
 
     private function inspect(Node $node, string $configVariable, bool $guarded): void
     {
+        if ($node instanceof MethodCall && $this->isConfig($node->var, $configVariable)) {
+            $method = $node->name instanceof Identifier ? $node->name->toString() : null;
+            if ($method === 'atLevel') {
+                $this->reading->blind('nested-delegation', 'atLevel line ' . $node->getStartLine());
+                return;
+            }
+            if (!\in_array($method, ['boolean', 'integer', 'number', 'text', 'list', 'map', 'strings', 'node'], true)) {
+                $this->reading->blind('opaque-sink', 'carrier method line ' . $node->getStartLine());
+                return;
+            }
+            $argument = $node->args[0] ?? null;
+            $key = $argument instanceof Arg ? $this->literal($argument->value) : null;
+            if ($key === null) {
+                $this->reading->blind('dynamic-key', 'carrier read line ' . $node->getStartLine());
+            } else {
+                $this->reading->record(ConfigKeySpelling::normalize($key), $guarded);
+            }
+            return;
+        }
+
         if ($node instanceof ArrayDimFetch && $this->isConfig($node->var, $configVariable)) {
             $key = $node->dim === null ? null : $this->literal($node->dim);
             if ($key === null) {
@@ -333,7 +361,7 @@ final class FromArrayKeyReader
         // keys read there belong to that class, and Table A is where they are
         // enumerated. Counted, so the boundary of Table B is a number rather
         // than an assumption.
-        if ($method === 'fromArray' && $class !== 'self' && $class !== 'static') {
+        if (\in_array($method, ['fromArray', 'fromResolved'], true) && $class !== 'self' && $class !== 'static') {
             $this->reading->blind('nested-delegation', $class . ' line ' . $node->getStartLine());
 
             return;
@@ -370,6 +398,26 @@ final class FromArrayKeyReader
     private function inspectThresholdParse(StaticCall $node, string $configVariable, bool $guarded): void
     {
         if ($this->configArgumentPosition($node->args, $configVariable) === null) {
+            return;
+        }
+
+        $bandArgument = $node->args[1] ?? null;
+        $lookup = $bandArgument instanceof Arg ? $bandArgument->value : null;
+        if ($lookup instanceof StaticCall && $lookup->class instanceof Name && $lookup->class->toString() === RuleOptionSurface::class
+            && $lookup->name instanceof Identifier && $lookup->name->toString() === 'bandFor') {
+            $classArgument = $lookup->args[0] ?? null;
+            $class = $classArgument instanceof Arg ? $classArgument->value : null;
+            $nameArgument = $lookup->args[1] ?? null;
+            $short = $nameArgument instanceof Arg ? $this->literal($nameArgument->value) : null;
+            if (!$class instanceof ClassConstFetch || !$class->class instanceof Name || $class->class->toString() !== 'self'
+                || !$class->name instanceof Identifier || $class->name->toLowerString() !== 'class' || $short === null
+                || (!is_a($this->optionsClass, RuleOptionsInterface::class, true) && !is_a($this->optionsClass, LevelOptionsInterface::class, true))) {
+                $this->reading->blind('opaque-sink', 'unresolved bandFor line ' . $node->getStartLine());
+                return;
+            }
+            $band = RuleOptionSurface::bandFor($this->optionsClass, $short);
+            $this->reading->record(ConfigKeySpelling::normalize($band->warning), $guarded);
+            $this->reading->record(ConfigKeySpelling::normalize($band->error), $guarded);
             return;
         }
 

@@ -6,7 +6,23 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionBand;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 
 final class ThresholdParserTest extends TestCase
@@ -14,7 +30,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToDefaultsForAnEmptyConfig(): void
     {
-        $result = ThresholdParser::parse([], 'warning', 'error', 10, 20);
+        $result = self::parse([], 'warning', 'error', 10, 20);
 
         self::assertSame(10, $result['warning']);
         self::assertSame(20, $result['error']);
@@ -23,7 +39,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itUsesTheThresholdKeyForBothWarningAndError(): void
     {
-        $result = ThresholdParser::parse(['threshold' => 15], 'warning', 'error', 10, 20);
+        $result = self::parse(['threshold' => 15], 'warning', 'error', 10, 20);
 
         self::assertSame(15, $result['warning']);
         self::assertSame(15, $result['error']);
@@ -32,7 +48,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itKeepsAZeroThresholdInsteadOfFallingBackToDefaults(): void
     {
-        $result = ThresholdParser::parse(['threshold' => 0], 'warning', 'error', 10, 20);
+        $result = self::parse(['threshold' => 0], 'warning', 'error', 10, 20);
 
         self::assertSame(0, $result['warning']);
         self::assertSame(0, $result['error']);
@@ -41,7 +57,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToDefaultsWhenThresholdIsNull(): void
     {
-        $result = ThresholdParser::parse(['threshold' => null], 'warning', 'error', 10, 20);
+        $result = self::parse(['threshold' => null], 'warning', 'error', 10, 20);
 
         self::assertSame(10, $result['warning']);
         self::assertSame(20, $result['error']);
@@ -50,7 +66,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itUsesExplicitWarningAndErrorValues(): void
     {
-        $result = ThresholdParser::parse(['warning' => 5, 'error' => 15], 'warning', 'error', 10, 20);
+        $result = self::parse(['warning' => 5, 'error' => 15], 'warning', 'error', 10, 20);
 
         self::assertSame(5, $result['warning']);
         self::assertSame(15, $result['error']);
@@ -59,7 +75,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itUsesTheDefaultErrorWhenOnlyWarningIsConfigured(): void
     {
-        $result = ThresholdParser::parse(['warning' => 5], 'warning', 'error', 10, 20);
+        $result = self::parse(['warning' => 5], 'warning', 'error', 10, 20);
 
         self::assertSame(5, $result['warning']);
         self::assertSame(20, $result['error']);
@@ -69,9 +85,9 @@ final class ThresholdParserTest extends TestCase
     public function itRejectsThresholdMixedWithWarning(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+        self::expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "threshold" and "warning" in one layer; "threshold" is shorthand for "warning" and "error" — write either the shorthand or the full keys in one layer.');
 
-        ThresholdParser::parse(['threshold' => 15, 'warning' => 10], 'warning', 'error', 10, 20);
+        self::parse(['threshold' => 15, 'warning' => 10], 'warning', 'error', 10, 20);
     }
 
     #[Test]
@@ -79,7 +95,7 @@ final class ThresholdParserTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        ThresholdParser::parse(['threshold' => 15, 'error' => 20], 'warning', 'error', 10, 20);
+        self::parse(['threshold' => 15, 'error' => 20], 'warning', 'error', 10, 20);
     }
 
     #[Test]
@@ -87,7 +103,7 @@ final class ThresholdParserTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        ThresholdParser::parse(
+        self::parse(
             ['threshold' => 15, 'warningThreshold' => 10],
             'warning',
             'error',
@@ -102,7 +118,7 @@ final class ThresholdParserTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        ThresholdParser::parse(
+        self::parse(
             ['threshold' => 15, 'errorThreshold' => 20],
             'warning',
             'error',
@@ -115,7 +131,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToLegacyKeysWhenPrimaryKeysAreAbsent(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['warningThreshold' => 5, 'errorThreshold' => 15],
             'warning',
             'error',
@@ -129,25 +145,17 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function itPrefersPrimaryKeysOverLegacyKeys(): void
+    public function itRefusesPrimaryKeysOverlappingDeclaredSyntheticShorthands(): void
     {
-        $result = ThresholdParser::parse(
-            ['warning' => 7, 'error' => 17, 'warningThreshold' => 5, 'errorThreshold' => 15],
-            'warning',
-            'error',
-            10,
-            20,
-            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
-        );
-
-        self::assertSame(7, $result['warning']);
-        self::assertSame(17, $result['error']);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "warningThreshold" and "warning" in one layer; "warning-threshold" is shorthand for "warning" — write either the shorthand or the full keys in one layer.');
+        self::parse(['warning' => 7, 'error' => 17, 'warningThreshold' => 5, 'errorThreshold' => 15], 'warning', 'error', 10, 20, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']]);
     }
 
     #[Test]
     public function itParsesACustomThresholdKeyIntoBothWarningAndError(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['param_threshold' => 70],
             'param_warning',
             'param_error',
@@ -163,7 +171,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToALegacyKeyForACustomPrimaryKey(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['maxWarning' => 25],
             'max_warning',
             'max_error',
@@ -179,7 +187,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itParsesAFloatThresholdIntoBothWarningAndError(): void
     {
-        $result = ThresholdParser::parse(['threshold' => 0.5], 'warning', 'error', 0.3, 0.7);
+        $result = self::parse(['threshold' => 0.5], 'warning', 'error', 0.3, 0.7);
 
         self::assertSame(0.5, $result['warning']);
         self::assertSame(0.5, $result['error']);
@@ -188,10 +196,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itAcceptsACamelCaseLegacyKeyForACustomThresholdKey(): void
     {
-        // Simulates the key RuleOptionsFactory/RuleOptionsParser produce once
-        // they normalize a composite `$thresholdKey` (e.g. 'vo-threshold',
-        // 'param_threshold') to camelCase before fromArray() runs.
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['voThreshold' => 10],
             'vo-warning',
             'vo-error',
@@ -206,20 +211,11 @@ final class ThresholdParserTest extends TestCase
     }
 
     #[Test]
-    public function itGivesThePrimaryThresholdKeyPrecedenceOverTheLegacyThresholdKey(): void
+    public function itRefusesTwoAuthoredSpellingsOfTheThresholdInOneLayer(): void
     {
-        $result = ThresholdParser::parse(
-            ['vo-threshold' => 12, 'voThreshold' => 5],
-            'vo-warning',
-            'vo-error',
-            8,
-            12,
-            'vo-threshold',
-            legacyKeys: ['threshold' => ['voThreshold']],
-        );
-
-        self::assertSame(12, $result['warning']);
-        self::assertSame(12, $result['error']);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Keys "vo-threshold" and "voThreshold" in "rules.fixture" in configuration file "/project/qmx.yaml" are two spellings of one key, and a layer may set it only once. Keep one of them.');
+        self::parse(['vo-threshold' => 12, 'voThreshold' => 5], 'vo-warning', 'vo-error', 8, 12, 'vo-threshold', legacyKeys: ['threshold' => ['voThreshold']]);
     }
 
     #[Test]
@@ -227,7 +223,7 @@ final class ThresholdParserTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
 
-        ThresholdParser::parse(
+        self::parse(
             ['voThreshold' => 10, 'vo-warning' => 8],
             'vo-warning',
             'vo-error',
@@ -258,7 +254,7 @@ final class ThresholdParserTest extends TestCase
     {
         self::assertSame(
             ['warning' => 10, 'error' => 20],
-            ThresholdParser::parse([], 'warning', 'error', 10, 20),
+            self::parse([], 'warning', 'error', 10, 20),
         );
     }
 
@@ -267,7 +263,7 @@ final class ThresholdParserTest extends TestCase
     {
         // There is one value in this document, and it is `warning`'s. A
         // refusal here would name a mix of a written value with nothing.
-        $result = ThresholdParser::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
+        $result = self::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
 
         self::assertSame(['warning' => 5, 'error' => 20], $result);
     }
@@ -275,7 +271,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itSeesNoConflictWhenTheWarningKeyBesideThresholdIsWrittenNull(): void
     {
-        $result = ThresholdParser::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
+        $result = self::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
 
         self::assertSame(['warning' => 15, 'error' => 15], $result);
     }
@@ -283,7 +279,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itSeesNoConflictWhenALegacyErrorKeyBesideThresholdIsWrittenNull(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['threshold' => 15, 'errorThreshold' => null],
             'warning',
             'error',
@@ -300,11 +296,10 @@ final class ThresholdParserTest extends TestCase
     {
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage(
-            'Cannot mix "vo-threshold" with "vo-warning"/"vo-error". Use either "vo-threshold" alone'
-            . ' (simple mode) or "vo-warning"/"vo-error" (graduated mode).',
+            '"rules.fixture" in configuration file "/project/qmx.yaml" writes both "voThreshold" and "voWarning" in one layer; "vo-threshold" is shorthand for "vo-warning" and "vo-error" — write either the shorthand or the full keys in one layer.',
         );
 
-        ThresholdParser::parse(
+        self::parse(
             ['voThreshold' => 10, 'voWarning' => 8],
             'vo-warning',
             'vo-error',
@@ -318,7 +313,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToDefaultsWhenTheOnlyLegacyThresholdKeyIsNull(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['voThreshold' => null],
             'vo-warning',
             'vo-error',
@@ -337,7 +332,7 @@ final class ThresholdParserTest extends TestCase
         // Alias resolution stops at the first candidate WRITTEN WITH A VALUE,
         // so a `~` alias no longer shadows a populated one behind it — the
         // shape the threshold slot shares with the warning/error slots below.
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['firstLegacy' => null, 'secondLegacy' => 7],
             'warning',
             'error',
@@ -353,7 +348,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToTheLegacyThresholdKeyWhenThePrimaryThresholdIsWrittenNull(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['threshold' => null, 'legacyThreshold' => 7],
             'warning',
             'error',
@@ -369,7 +364,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToTheLegacyWarningKeyWhenThePrimaryWarningIsExplicitlyNull(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['warning' => null, 'warningThreshold' => 5],
             'warning',
             'error',
@@ -384,7 +379,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itSkipsNullLegacyWarningValuesAndUsesTheNextNonNullLegacyKey(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['firstLegacy' => null, 'secondLegacy' => 5],
             'warning',
             'error',
@@ -399,7 +394,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itFallsBackToDefaultsWhenEveryWarningAndErrorCandidateIsNull(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['warning' => null, 'error' => null, 'warningThreshold' => null, 'errorThreshold' => null],
             'warning',
             'error',
@@ -414,7 +409,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itKeepsAZeroWarningInsteadOfFallingBackToTheDefault(): void
     {
-        $result = ThresholdParser::parse(['warning' => 0], 'warning', 'error', 10, 20);
+        $result = self::parse(['warning' => 0], 'warning', 'error', 10, 20);
 
         self::assertSame(['warning' => 0, 'error' => 20], $result);
     }
@@ -422,7 +417,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itKeepsAZeroLegacyWarningInsteadOfFallingBackToTheDefault(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['warningThreshold' => 0],
             'warning',
             'error',
@@ -437,44 +432,31 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itUsesTheDefaultWarningWhenOnlyTheErrorKeyIsConfigured(): void
     {
-        $result = ThresholdParser::parse(['error' => 15], 'warning', 'error', 10, 20);
+        $result = self::parse(['error' => 15], 'warning', 'error', 10, 20);
 
         self::assertSame(['warning' => 10, 'error' => 15], $result);
     }
 
     #[Test]
-    public function itIgnoresConfigKeysThatAreNeitherPrimaryNorDeclaredAsLegacy(): void
+    public function itRefusesUnknownKeysOutsideTheDeclaredFixture(): void
     {
-        $result = ThresholdParser::parse(
-            ['warningThreshold' => 5, 'errorThreshold' => 15],
-            'warning',
-            'error',
-            10,
-            20,
-        );
-
-        self::assertSame(['warning' => 10, 'error' => 20], $result);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown key "rules.fixture.warningThreshold" in configuration file "/project/qmx.yaml". Accepted keys: warning, error, threshold.');
+        self::parse(['warningThreshold' => 5, 'errorThreshold' => 15], 'warning', 'error', 10, 20);
     }
 
     #[Test]
-    public function itIgnoresLegacyWarningKeysWhenTheThresholdKeyIsAbsentAndNoCandidateMatches(): void
+    public function itRefusesAnUnrelatedKeyBesideDeclaredSyntheticShorthands(): void
     {
-        $result = ThresholdParser::parse(
-            ['unrelated' => 1],
-            'warning',
-            'error',
-            10,
-            20,
-            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['thresholdAlias']],
-        );
-
-        self::assertSame(['warning' => 10, 'error' => 20], $result);
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Unknown key "rules.fixture.unrelated" in configuration file "/project/qmx.yaml". Accepted keys: warning, error, warning-threshold, error-threshold, threshold, threshold-alias.');
+        self::parse(['unrelated' => 1], 'warning', 'error', 10, 20, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['thresholdAlias']]);
     }
 
     #[Test]
     public function itAppliesTheLegacyErrorFallbackIndependentlyOfTheWarningResolution(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['warning' => 5, 'errorThreshold' => 15],
             'warning',
             'error',
@@ -491,7 +473,7 @@ final class ThresholdParserTest extends TestCase
     {
         // legacyKeys are scoped per primary key; a key listed under 'warning'
         // never satisfies the threshold lookup.
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['warningThreshold' => 5],
             'warning',
             'error',
@@ -506,7 +488,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itMixesIntegerAndFloatDefaultsWithoutCoercion(): void
     {
-        $result = ThresholdParser::parse(['warning' => 5], 'warning', 'error', 10.5, 20.5);
+        $result = self::parse(['warning' => 5], 'warning', 'error', 10.5, 20.5);
 
         self::assertSame(['warning' => 5, 'error' => 20.5], $result);
     }
@@ -514,7 +496,7 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itPropagatesTheLegacyThresholdValueToBothWarningAndError(): void
     {
-        $result = ThresholdParser::parse(
+        $result = self::parse(
             ['maxThreshold' => 0.25],
             'max_warning',
             'max_error',
@@ -525,5 +507,52 @@ final class ThresholdParserTest extends TestCase
         );
 
         self::assertSame(['warning' => 0.25, 'error' => 0.25], $result);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array<string, list<string>> $legacyKeys
+     *
+     * @return array{warning: int|float, error: int|float}
+     */
+    private static function parse(array $config, string $warningKey, string $errorKey, int|float $defaultWarning, int|float $defaultError, string $thresholdKey = 'threshold', array $legacyKeys = []): array
+    {
+        $number = NodeSchema::scalar(ScalarForm::Number);
+        $primary = ['warning' => $warningKey, 'error' => $errorKey, 'threshold' => $thresholdKey];
+        $shorthands = [];
+        $last = ['warning' => $warningKey, 'error' => $errorKey];
+        foreach (['warning', 'error'] as $role) {
+            foreach ($legacyKeys[$role] ?? [] as $key) {
+                if (ConfigKeySpelling::normalize($key) === ConfigKeySpelling::normalize($primary[$role])) {
+                    continue;
+                }
+                $canonical = strtolower(preg_replace('/[A-Z]/', '-$0', $key) ?? $key);
+                $shorthands[] = Shorthand::spreading($canonical, [$last[$role]]);
+                $last[$role] = $canonical;
+            }
+        }
+        $shorthands[] = Shorthand::spreading($thresholdKey, [$last['warning'], $last['error']]);
+        $lastThreshold = $thresholdKey;
+        foreach ($legacyKeys['threshold'] ?? [] as $key) {
+            if (ConfigKeySpelling::normalize($key) === ConfigKeySpelling::normalize($thresholdKey)) {
+                continue;
+            }
+            $canonical = strtolower(preg_replace('/[A-Z]/', '-$0', $key) ?? $key);
+            $shorthands[] = Shorthand::spreading($canonical, [$lastThreshold]);
+            $lastThreshold = $canonical;
+        }
+        $entry = NodeSchema::map([$warningKey => $number, $errorKey => $number], ...$shorthands);
+        $section = new class ($entry) implements DocumentSectionSchemaInterface {
+            public function __construct(private readonly NodeSchema $entry) {}
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('rules', NodeSchema::namedMap($this->entry));
+            }
+        };
+        $document = DocumentComposer::compose(new DocumentSchema([$section]), [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
+            AuthoredNode::fromPlain(['rules' => ['fixture' => $config]]),
+        )]);
+        return ThresholdParser::parse(new ResolvedRuleOptionValues($document, 'fixture'), new RuleOptionBand($thresholdKey, $warningKey, $errorKey, BandDirection::Rising), $defaultWarning, $defaultError);
     }
 }

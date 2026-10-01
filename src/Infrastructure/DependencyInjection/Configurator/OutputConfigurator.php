@@ -8,9 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -220,8 +218,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerRunInputs(ContainerBuilder $container): void
     {
-        $container->register(FindingConfigurationResolver::class);
-        $container->setAlias(FindingConfigurationResolverInterface::class, FindingConfigurationResolver::class);
         $container->register(ConfigurationInputAdapter::class)
             ->setAutowired(true);
         $container->register(ExitPolicySection::class)->setAutoconfigured(true);
@@ -451,7 +447,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(RuleListingPresenter::class),
                 new Reference(ConfigurationInputAdapter::class),
-                new Reference(FindingConfigurationResolverInterface::class),
                 new Reference(ComputedMetricConfiguratorInterface::class),
             ])
             ->setPublic(true);

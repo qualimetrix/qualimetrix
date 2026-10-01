@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -40,22 +44,16 @@ final readonly class ClassComplexityOptions implements LevelOptionsInterface, Th
         public int $maxError = 50,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        // If config is empty, use defaults (all enabled)
-        if ($config === []) {
-            return new self();
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 30, 50);
+        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
         }
-
-        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 30, 50, legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']]);
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            maxWarning: (int) $thresholds['warning'],
-            maxError: (int) $thresholds['error'],
+            enabled: $config->boolean('enabled', true),
+            maxWarning: $thresholds['warning'],
+            maxError: $thresholds['error'],
         );
     }
 
@@ -98,6 +96,6 @@ final readonly class ClassComplexityOptions implements LevelOptionsInterface, Th
             'max-error' => RuleOptionShape::integer()->orNull(),
             'max-warning' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'max-warning', 'max-error', BandDirection::Rising)->overriddenAs(['warning' => 'max-warning', 'error' => 'max-error']);
     }
 }

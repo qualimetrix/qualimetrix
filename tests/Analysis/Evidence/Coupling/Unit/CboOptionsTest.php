@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CboOptions::class)]
 final class CboOptionsTest extends TestCase
@@ -16,7 +18,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itDisablesBothLevelsWhenEnabledIsFalse(): void
     {
-        $options = CboOptions::fromArray(['enabled' => false]);
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['enabled' => false]));
 
         self::assertFalse($options->isEnabled());
         self::assertFalse($options->class->isEnabled());
@@ -26,7 +28,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itFallsBackToSubDefaultsWhenEnabledIsNotSetToFalse(): void
     {
-        $options = CboOptions::fromArray([]);
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, []));
 
         // Empty sub-configs: class defaults enabled, namespace defaults disabled
         self::assertTrue($options->class->isEnabled());
@@ -35,7 +37,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itAppliesTheFlatThresholdShorthandUniformlyToBothLevels(): void
     {
-        $options = CboOptions::fromArray(['threshold' => 30]);
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['threshold' => 30]));
 
         self::assertSame(30, $options->class->warning);
         self::assertSame(30, $options->class->error);
@@ -52,10 +54,10 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itStillSupportsTheNestedClassAndNamespaceForm(): void
     {
-        $options = CboOptions::fromArray([
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, [
             'class' => ['warning' => 10, 'error' => 15],
             'namespace' => ['warning' => 5, 'error' => 8],
-        ]);
+        ]));
 
         self::assertSame(10, $options->class->warning);
         self::assertSame(15, $options->class->error);
@@ -67,37 +69,34 @@ final class CboOptionsTest extends TestCase
     public function itThrowsWhenTheFlatThresholdIsMixedWithBareWarningInTheSameConfigArray(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+        $this->expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "warning" and "threshold" in one layer; "warning" is shorthand for "class.warning" and "namespace.warning" — write either the shorthand or the full keys in one layer.');
 
-        CboOptions::fromArray(['threshold' => 30, 'warning' => 10]);
+        CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['threshold' => 30, 'warning' => 10]));
     }
 
     #[Test]
-    public function itLetsTheFlatThresholdWinOverAPreExistingNestedClassAndNamespaceConfigInTheSameArray(): void
+    public function itRefusesTheFlatThresholdOverlappingNestedClassAndNamespaceBandsInOneLayer(): void
     {
-        // Deliberate precedence choice (mirrors ComplexityOptions/
-        // CognitiveComplexityOptions/NpathComplexityOptions's own top-level
-        // legacy-flat branch): when a single merged config array carries
-        // BOTH a bare top-level `threshold` and nested `class:`/`namespace:`
-        // sub-configs — regardless of which configuration layer contributed
-        // which key, information fromArray() cannot recover — the flat
-        // shorthand takes full precedence.
-        $options = CboOptions::fromArray([
-            'threshold' => 30,
-            'class' => ['warning' => 10, 'error' => 15],
-            'namespace' => ['warning' => 10, 'error' => 15],
-        ]);
-
-        self::assertSame(30, $options->class->warning);
-        self::assertSame(30, $options->class->error);
-        self::assertSame(30, $options->namespace->warning);
-        self::assertSame(30, $options->namespace->error);
+        foreach ([
+            ['threshold' => 30, 'class' => ['warning' => 10, 'error' => 15]],
+            ['threshold' => 30, 'namespace' => ['warning' => 10, 'error' => 15]],
+        ] as $index => $input) {
+            try {
+                CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, $input));
+                self::fail('A shorthand overlapped its authored leaf.');
+            } catch (ConfigurationRefusal $error) {
+                self::assertSame([
+                    '"rules.fixture" in configuration file "/project/qmx.yaml" writes both "threshold" and "class.warning" in one layer; "threshold" is shorthand for "class.threshold" and "namespace.threshold" — write either the shorthand or the full keys in one layer.',
+                    '"rules.fixture" in configuration file "/project/qmx.yaml" writes both "threshold" and "namespace.warning" in one layer; "threshold" is shorthand for "class.threshold" and "namespace.threshold" — write either the shorthand or the full keys in one layer.',
+                ][$index], $error->getMessage());
+            }
+        }
     }
 
     #[Test]
     public function itStillHonorsTheTopLevelScopeAlongsideTheFlatThreshold(): void
     {
-        $options = CboOptions::fromArray(['threshold' => 30, 'scope' => 'application']);
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['threshold' => 30, 'scope' => 'application']));
 
         self::assertSame('application', $options->class->scope);
     }
@@ -115,15 +114,15 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itLeavesTheLevelBlocksAloneWhenTheTopLevelThresholdKeyIsWrittenNull(): void
     {
-        $options = CboOptions::fromArray([
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, [
             'warning' => null,
             'class' => ['warning' => 0, 'error' => 0],
-        ]);
+        ]));
 
         self::assertSame(0, $options->class->warning);
         self::assertSame(0, $options->class->error);
         self::assertEquals(
-            CboOptions::fromArray(['class' => ['warning' => 0, 'error' => 0]]),
+            CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['class' => ['warning' => 0, 'error' => 0]])),
             $options,
             'the `~` beside the block is worth exactly what leaving it out is worth',
         );
@@ -132,7 +131,7 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itReadsTheLevelBlocksWhenNoThresholdKeyIsWrittenAtTheTopLevelAtAll(): void
     {
-        $options = CboOptions::fromArray(['class' => ['warning' => 0, 'error' => 0]]);
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['class' => ['warning' => 0, 'error' => 0]]));
 
         self::assertSame(0, $options->class->warning);
     }
@@ -145,18 +144,18 @@ final class CboOptionsTest extends TestCase
     #[Test]
     public function itDoesNotCallItAMixWhenTheThresholdKeyBesideWarningIsWrittenNull(): void
     {
-        $options = CboOptions::fromArray(['threshold' => null, 'warning' => 5]);
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['threshold' => null, 'warning' => 5]));
 
         self::assertSame(5, $options->class->warning);
-        self::assertEquals(CboOptions::fromArray(['warning' => 5]), $options);
+        self::assertEquals(CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['warning' => 5])), $options);
     }
 
     #[Test]
     public function itStillCallsItAMixWhenBothModesCarryAValue(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+        $this->expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "warning" and "threshold" in one layer; "warning" is shorthand for "class.warning" and "namespace.warning" — write either the shorthand or the full keys in one layer.');
 
-        CboOptions::fromArray(['threshold' => 30, 'warning' => 5]);
+        CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, ['threshold' => 30, 'warning' => 5]));
     }
 }

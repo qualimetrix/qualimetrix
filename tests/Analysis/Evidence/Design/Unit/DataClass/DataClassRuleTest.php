@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\DataClass;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(DataClassRule::class)]
 #[CoversClass(DataClassOptions::class)]
@@ -444,7 +446,7 @@ final class DataClassRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithCustomValues(): void
     {
-        $options = DataClassOptions::fromArray([
+        $options = DataClassOptions::fromResolved(ResolvedOptionsFixture::values(DataClassOptions::class, [
             'enabled' => true,
             'woc_threshold' => 70,
             'wmc_threshold' => 15,
@@ -452,7 +454,7 @@ final class DataClassRuleTest extends TestCase
             'exclude_readonly' => false,
             'exclude_promoted_only' => false,
             'exclude_exceptions' => false,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(70, $options->wocThreshold);
@@ -466,14 +468,14 @@ final class DataClassRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithDualKey(): void
     {
-        $options = DataClassOptions::fromArray([
+        $options = DataClassOptions::fromResolved(ResolvedOptionsFixture::values(DataClassOptions::class, [
             'wocThreshold' => 75,
             'wmcThreshold' => 12,
             'minMembers' => 4,
             'excludeReadonly' => false,
             'excludePromotedOnly' => false,
             'excludeExceptions' => false,
-        ]);
+        ]));
 
         self::assertSame(75, $options->wocThreshold);
         self::assertSame(12, $options->wmcThreshold);
@@ -486,8 +488,8 @@ final class DataClassRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new DataClassOptions(), DataClassOptions::fromArray([]));
-        self::assertFalse(DataClassOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new DataClassOptions(), DataClassOptions::fromResolved(ResolvedOptionsFixture::values(DataClassOptions::class, [])));
+        self::assertFalse(DataClassOptions::fromResolved(ResolvedOptionsFixture::values(DataClassOptions::class, ['enabled' => false]))->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void

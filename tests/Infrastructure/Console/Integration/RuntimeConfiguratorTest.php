@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,9 +19,8 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -152,7 +152,6 @@ final class RuntimeConfiguratorTest extends TestCase
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
             $ruleSelector,
-            new FindingConfigurationResolver(),
             $snapshotFactoryOverride ?? $staticChannels,
             new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );
@@ -231,7 +230,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->resetRunState();
         $this->configure(
-            LayeredDocument::of([], AbsolutePath::fromString($this->projectRoot)),
+            self::document([], AbsolutePath::fromString($this->projectRoot)),
             AbsolutePath::fromString($this->projectRoot),
             $this->input(),
             new BufferedOutput(),
@@ -250,7 +249,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         try {
             $this->configure(
-                LayeredDocument::of([
+                self::document([
                     ['source' => 'test', 'values' => [
                         'cache.enabled' => false,
                         'parallel.workers' => 0,
@@ -287,7 +286,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->resetRunState();
         $this->configure(
-            LayeredDocument::of([], $root),
+            self::document([], $root),
             $root,
             $this->input(),
             new BufferedOutput(),
@@ -341,7 +340,7 @@ final class RuntimeConfiguratorTest extends TestCase
 
         try {
             $this->configure(
-                LayeredDocument::of([
+                self::document([
                     ['source' => 'custom', 'values' => [
                         'cache.enabled' => false,
                         'parallel.workers' => 0,
@@ -375,7 +374,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function itReportsAnUnapplicableMemoryLimitAfterCommittingStoresAndBeforeLaterEffects(): void
     {
         $root = AbsolutePath::fromString($this->projectRoot);
-        $document = LayeredDocument::of([
+        $document = self::document([
             ['source' => 'custom', 'values' => [
                 'cache.enabled' => false,
                 'parallel.workers' => 0,
@@ -406,7 +405,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function itAppliesAnIntegerMemoryLimit(): void
     {
         $root = AbsolutePath::fromString($this->projectRoot);
-        $document = LayeredDocument::of([['source' => 'custom', 'values' => ['memory_limit' => 1]]], $root);
+        $document = self::document([['source' => 'custom', 'values' => ['memory_limit' => 1]]], $root);
         $this->configurator->resetRunState();
 
         $this->expectException(RuntimeException::class);
@@ -623,7 +622,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
 
     private function customDocument(): ConfigurationDocument
     {
-        return LayeredDocument::of([
+        return self::document([
             ['source' => 'qmx.yaml', 'values' => [
                 'cache.dir' => 'cache',
                 'cache.enabled' => false,
@@ -662,9 +661,24 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
 
     private function findingConfigurationFor(ConfigurationDocument $document): \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration
     {
-        $configuration = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides([]));
+        $configuration = FindingConfiguration::fromDocument($document);
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
         return $configuration->withResolvedOptions(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $metadata));
+    }
+
+    /** @param list<array{source: string, values: array<string, mixed>}> $sources */
+    private static function document(array $sources, AbsolutePath $root): ConfigurationDocument
+    {
+        return LayeredDocument::of($sources, $root, ...self::ruleSections());
+    }
+
+    /** @return list<\Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface> */
+    private static function ruleSections(): array
+    {
+        $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        return array_map(static fn(string $key): \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection => new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, $key), ['rules', 'only_rules', 'disabled_rules']);
     }
 
 }

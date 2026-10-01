@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -28,16 +32,18 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
         public int $error = 50,
     ) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 5, 50);
-
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 5, 50);
+        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
+        }
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            min_lines: (int) ($config['min_lines'] ?? $config['minLines'] ?? 5),
-            min_tokens: (int) ($config['min_tokens'] ?? $config['minTokens'] ?? 70),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
+            enabled: $config->boolean('enabled', true),
+            min_lines: $config->integer('min-lines', 5),
+            min_tokens: $config->integer('min-tokens', 70),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
         );
     }
 
@@ -78,12 +84,11 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
             'min-lines' => RuleOptionShape::integer()->orNull(),
-            'min-tokens' => RuleOptionShape::integer()->orNull(),
+            'min-tokens' => RuleOptionShape::integer()->atLeast(1)->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
 }

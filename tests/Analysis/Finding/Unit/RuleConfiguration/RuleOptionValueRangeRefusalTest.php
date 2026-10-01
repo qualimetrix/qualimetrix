@@ -21,7 +21,6 @@ use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
@@ -83,7 +82,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             "  size.method-count:\n    warning: -1\n",
             'size.method-count',
             MethodCountOptions::class,
-            'Option "warning" of rule "size.method-count" must be a non-negative whole number or null, got -1.',
+            '"rules.size.method-count.warning" in configuration file "/project/qmx.yaml" must be at least 0, got -1.',
         ];
 
         // The shorthand is unfolded into `warning`/`error` before the
@@ -93,28 +92,28 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             "  size.method-count:\n    threshold: -1\n",
             'size.method-count',
             MethodCountOptions::class,
-            'Option "threshold" of rule "size.method-count" must be a non-negative whole number or null, got -1.',
+            '"rules.size.method-count.threshold" in configuration file "/project/qmx.yaml" must be at least 0, got -1.',
         ];
 
         yield 'a boundary inside a level slot' => [
             "  complexity.ccn:\n    callable:\n      warning: -5\n",
             'complexity.ccn',
             ComplexityOptions::class,
-            'Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got -5.',
+            '"rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml" must be at least 0, got -5.',
         ];
 
         yield 'a fractional boundary' => [
             "  coupling.instability:\n    class:\n      max_warning: -0.5\n",
             'coupling.instability',
             InstabilityOptions::class,
-            'Option "maxWarning" of rule "coupling.instability" at level "class" must be a non-negative number or null, got -0.5.',
+            '"rules.coupling.instability.class.maxWarning" in configuration file "/project/qmx.yaml" must be at least 0, got -0.5.',
         ];
 
         yield 'a minimum count' => [
             "  cohesion.lcom:\n    min_methods: -3\n",
             'cohesion.lcom',
             LcomOptions::class,
-            'Option "minMethods" of rule "cohesion.lcom" must be a non-negative whole number or null, got -3.',
+            '"rules.cohesion.lcom.minMethods" in configuration file "/project/qmx.yaml" must be at least 0, got -3.',
         ];
     }
 
@@ -276,9 +275,15 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             self::assertSame($expectedPath, $writes[0]->path);
         }
         $pipeline = new ConfigurationPipeline();
+        $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        foreach (['rules', 'only_rules', 'disabled_rules'] as $root) {
+            $pipeline->addSection(new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, $root));
+        }
         $pipeline->addStage(new CliStage());
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
-        $configuration = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides());
+        $configuration = FindingConfiguration::fromDocument($document);
 
         return $this->create($configuration, $ruleName, $optionsClass);
     }

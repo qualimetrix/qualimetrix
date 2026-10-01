@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Security\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(HardcodedCredentialsRule::class)]
 #[CoversClass(HardcodedCredentialsOptions::class)]
@@ -30,7 +32,7 @@ final class HardcodedCredentialsRuleTest extends TestCase
         $rule = new HardcodedCredentialsRule(new HardcodedCredentialsOptions());
 
         self::assertSame('security.hardcoded-credentials', $rule->getName());
-        self::assertSame('Detects hardcoded credentials in code', $rule->getDescription());
+        self::assertSame('Detects hardcoded credentials in code', $rule::getDescription());
     }
 
     #[Test]
@@ -239,10 +241,10 @@ final class HardcodedCredentialsRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = HardcodedCredentialsOptions::fromArray(['enabled' => false]);
+        $options = HardcodedCredentialsOptions::fromResolved(ResolvedOptionsFixture::values(HardcodedCredentialsOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
 
-        $options = HardcodedCredentialsOptions::fromArray([]);
+        $options = HardcodedCredentialsOptions::fromResolved(ResolvedOptionsFixture::values(HardcodedCredentialsOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(NocRule::class)]
 #[CoversClass(NocOptions::class)]
@@ -244,11 +246,11 @@ final class NocRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = NocOptions::fromArray([
+        $options = NocOptions::fromResolved(ResolvedOptionsFixture::values(NocOptions::class, [
             'enabled' => false,
             'warning' => 10,
             'error' => 20,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(10, $options->warning);
@@ -258,8 +260,8 @@ final class NocRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new NocOptions(), NocOptions::fromArray([]));
-        self::assertFalse(NocOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new NocOptions(), NocOptions::fromResolved(ResolvedOptionsFixture::values(NocOptions::class, [])));
+        self::assertFalse(NocOptions::fromResolved(ResolvedOptionsFixture::values(NocOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]

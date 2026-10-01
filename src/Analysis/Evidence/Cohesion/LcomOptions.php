@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -39,32 +43,19 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         public ?array $excludeMethods = null,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 3, 5);
-
-        $excludeMethods = null;
-        $excludeKey = $config['exclude_methods'] ?? $config['excludeMethods'] ?? null;
-
-        if (\is_string($excludeKey)) {
-            // Support comma-separated values from CLI (e.g., --rule-opt='cohesion.lcom:exclude_methods=getName,getDescription')
-            $excludeMethods = str_contains($excludeKey, ',')
-                ? array_map('trim', explode(',', $excludeKey))
-                : [$excludeKey];
-        } elseif (\is_array($excludeKey)) {
-            $excludeMethods = array_values($excludeKey);
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 3, 5);
+        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
         }
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
-            excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
-            minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
-            excludeMethods: $excludeMethods,
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
+            excludeReadonly: $config->boolean('exclude-readonly', true),
+            minMethods: $config->integer('min-methods', 3),
+            excludeMethods: $config->list('exclude-methods') === null ? null : $config->strings('exclude-methods', []),
         );
     }
 
@@ -111,13 +102,12 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
             'exclude-methods' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
             'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
             'min-methods' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising);
     }
 }

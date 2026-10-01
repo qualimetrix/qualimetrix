@@ -22,6 +22,11 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -111,23 +116,25 @@ final class DocumentRootsIntegrationTest extends TestCase
     }
 
     /**
-     * The folded values still judge the `rules` block, but only after the
-     * engine accepted the written document: an error in a root the engine
-     * declares is answered in its words even when the fold would refuse too.
+     * Registered sections are judged in authored order, including their form
+     * and spelling, and every refusal identifies its source.
      */
     #[Test]
-    public function itAnswersInTheEnginesWordsBeforeTheFoldedValuesAreJudged(): void
+    public function itJudgesRegisteredSectionsInAuthoredOrder(): void
     {
         $refusal = $this->refusal("rules: 5
 Fail_On: error
 ");
 
-        self::assertStringContainsString('write "fail_on"', $refusal->summary());
+        self::assertSame('"rules" in configuration file "qmx.yaml" must be a map, got int.', $refusal->summary());
+        self::assertSame(['rules'], $refusal->position()?->segments);
+        self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+        self::assertStringContainsString('write "fail_on"', $this->refusal("rules: {}\nFail_On: error\n")->summary());
 
         $folded = $this->refusal("rules: 5
 fail_on: error
 ");
-        self::assertStringContainsString('"rules" must be an associative array', $folded->summary());
+        self::assertSame('"rules" in configuration file "qmx.yaml" must be a map, got int.', $folded->summary());
     }
 
     /** An integer is a byte count to PHP, and `-1` is the documented "no limit". */
@@ -142,11 +149,11 @@ fail_on: error
     /** @return iterable<string, array{string, string}> */
     public static function provideNonStringListElements(): iterable
     {
-        yield 'only_rules, an integer' => ["only_rules: [5]\n", '"only_rules[0]" in configuration file "%s" must be string, got int.'];
-        yield 'only_rules, a boolean' => ["only_rules: [true]\n", '"only_rules[0]" in configuration file "%s" must be string, got bool.'];
-        yield 'only_rules, a map' => ["only_rules: [{a: b}]\n", '"only_rules[0]" in configuration file "%s" must be string, got a map.'];
+        yield 'only_rules, an integer' => ["only_rules: [5]\n", '"only_rules[0]" in configuration file "%s" must be non-empty string, got int.'];
+        yield 'only_rules, a boolean' => ["only_rules: [true]\n", '"only_rules[0]" in configuration file "%s" must be non-empty string, got bool.'];
+        yield 'only_rules, a map' => ["only_rules: [{a: b}]\n", '"only_rules[0]" in configuration file "%s" must be non-empty string, got a map.'];
         yield 'only_rules, a null' => ["only_rules: [complexity.ccn, ~]\n", 'Item 1 of "only_rules" in configuration file "%s" is null (`~`)'];
-        yield 'disabled_rules, an integer' => ["disabled_rules: [5]\n", '"disabled_rules[0]" in configuration file "%s" must be string, got int.'];
+        yield 'disabled_rules, an integer' => ["disabled_rules: [5]\n", '"disabled_rules[0]" in configuration file "%s" must be non-empty string, got int.'];
         yield 'paths, an unquoted year' => ["paths: [2024]\n", '"paths[0]" in configuration file "%s" must be string, got int.'];
         yield 'paths, a null' => ["paths: [~]\n", 'Item 0 of "paths" in configuration file "%s" is null (`~`)'];
         yield 'exclude, a null' => ["exclude: [~]\n", 'Item 0 of "exclude" in configuration file "%s" is null (`~`)'];
@@ -257,7 +264,7 @@ fail_on: error
             presetNames: ['./focused.yaml'],
         ));
 
-        self::assertSame([], $document->resolved()->get(ConfigurationRoot::OnlyRules->value)?->plain());
+        self::assertSame([], $document->resolved()->get(ConfigSchema::ONLY_RULES)?->plain());
         self::assertCount(1, $document->diagnostics());
         self::assertSame(
             ['./focused.yaml', 'qmx.yaml'],
@@ -300,7 +307,14 @@ fail_on: error
     private function pipeline(): ConfigurationPipeline
     {
         $loader = new YamlConfigLoader();
-        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('allRules')->willReturn([new RuleMetadata(ComplexityRule::NAME, ComplexityOptions::class, '', [], false)]);
+        $pipeline = new ConfigurationPipeline([
+            ...LayeredDocument::standaloneSections(),
+            new RulesSection($execution, 'rules'),
+            new RulesSection($execution, 'only_rules'),
+            new RulesSection($execution, 'disabled_rules'),
+        ]);
         $pipeline->addStage(new DefaultsStage());
         $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
         $pipeline->addStage(new ConfigFileStage($loader));

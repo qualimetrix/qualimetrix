@@ -10,10 +10,8 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 /**
  * The option keys one options class — or one level slot of one — answers for.
  *
- * A rule's own `fromArray()` body is the authority on which keys it reads, and
- * reflection over constructor parameters cannot see into a method body. This
- * value is how that authority is stated instead of guessed, in the same shape
- * ADR 0038 gave the warning boundary: the class says, the reader asks.
+ * The owning class declares these forms before options are constructed.
+ * The document schema, readers and CLI surface consume the same declaration.
  *
  * A key is in exactly one of four states, and the four are disjoint and
  * exhaustive:
@@ -23,11 +21,8 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
  * - **accepted and validated by the class** — writable and printed like an
  *   accepted key; its coarse ingress form is declared while the options class
  *   validates its own detailed semantics;
- * - **answered by the class** — recognised only so that `fromArray()` may
- *   refuse it in its own words, or accept a spelling that means "leave things
- *   as they are". A reader must neither warn nor refuse on these: the class
- *   speaks for itself. `UnassignedClassOptions::assertNoContradictoryEnabled()`
- *   is the case that forces this state to exist;
+ * - **answered by the class** — a recognised key whose refusal wording is
+ *   declared by its owner rather than inferred from its value form;
  * - **unknown** — everything else.
  *
  * Keys are declared in the canonical kebab spelling users type
@@ -55,6 +50,14 @@ final readonly class RuleOptionKeySet
         private array $shapes,
         private array $acceptedAndValidatedByTheClass,
         private array $answeredByTheClass,
+        /** @var list<RuleOptionBand> */
+        private array $bands = [],
+        /** @var array<string, non-empty-list<string>> */
+        private array $spreading = [],
+        /** @var array<string, string> */
+        private array $overrideAxes = [],
+        /** @var array<string, string> */
+        private array $retired = [],
     ) {}
 
     /**
@@ -86,6 +89,10 @@ final readonly class RuleOptionKeySet
             $this->shapes,
             $this->acceptedAndValidatedByTheClass,
             $this->answeredByTheClass + self::index(array_values($keys), $taken),
+            $this->bands,
+            $this->spreading,
+            $this->overrideAxes,
+            $this->retired,
         );
     }
 
@@ -104,6 +111,10 @@ final readonly class RuleOptionKeySet
             $this->shapes + [ConfigKeySpelling::normalize($key) => $ingressShape],
             $this->acceptedAndValidatedByTheClass + $indexed,
             $this->answeredByTheClass,
+            $this->bands,
+            $this->spreading,
+            $this->overrideAxes,
+            $this->retired,
         );
     }
 
@@ -136,7 +147,103 @@ final readonly class RuleOptionKeySet
             $shapes,
             $this->acceptedAndValidatedByTheClass,
             $this->answeredByTheClass,
+            $this->bands,
+            $this->spreading,
+            $this->overrideAxes,
+            $this->retired,
         );
+    }
+
+    public function band(string $shorthand, string $warning, string $error, BandDirection $direction = BandDirection::Rising): self
+    {
+        foreach ([$shorthand, $warning, $error] as $key) {
+            if (!$this->accepts(ConfigKeySpelling::normalize($key))) {
+                throw new LogicException('A band must name declared option keys.');
+            }
+        }
+        return new self(
+            $this->accepted,
+            $this->shapes,
+            $this->acceptedAndValidatedByTheClass,
+            $this->answeredByTheClass,
+            [...$this->bands, new RuleOptionBand($shorthand, $warning, $error, $direction)],
+            $this->spreading,
+            $this->overrideAxes,
+            $this->retired,
+        );
+    }
+
+    /** @param non-empty-list<string> $paths */
+    public function spreadingInto(string $key, array $paths): self
+    {
+        if (!$this->accepts(ConfigKeySpelling::normalize($key))) {
+            throw new LogicException('A spreading key must be declared.');
+        }
+        return new self(
+            $this->accepted,
+            $this->shapes,
+            $this->acceptedAndValidatedByTheClass,
+            $this->answeredByTheClass,
+            $this->bands,
+            [...$this->spreading, $key => $paths],
+            $this->overrideAxes,
+            $this->retired,
+        );
+    }
+
+    /** @param array<string, string> $axes */
+    public function overriddenAs(array $axes): self
+    {
+        foreach ($axes as $key) {
+            if (!$this->accepts(ConfigKeySpelling::normalize($key))) {
+                throw new LogicException('An override axis must name a declared option.');
+            }
+        }
+        return new self(
+            $this->accepted,
+            $this->shapes,
+            $this->acceptedAndValidatedByTheClass,
+            $this->answeredByTheClass,
+            $this->bands,
+            $this->spreading,
+            $axes,
+            $this->retired,
+        );
+    }
+
+    public function retiring(string $key, string $summary): self
+    {
+        return new self(
+            $this->accepted,
+            $this->shapes,
+            $this->acceptedAndValidatedByTheClass,
+            $this->answeredByTheClass,
+            $this->bands,
+            $this->spreading,
+            $this->overrideAxes,
+            [...$this->retired, $key => $summary],
+        );
+    }
+
+    /** @return list<RuleOptionBand> */
+    public function bands(): array
+    {
+        return $this->bands;
+    }
+    /** @return array<string, non-empty-list<string>> */
+    public function spreading(): array
+    {
+        return $this->spreading;
+    }
+    /** @return array<string, string> */
+    public function overrideAxes(): array
+    {
+        return $this->overrideAxes;
+    }
+    /** @return array<string, string> */
+    public function retired(): array
+    {
+        return $this->retired;
     }
 
     /**

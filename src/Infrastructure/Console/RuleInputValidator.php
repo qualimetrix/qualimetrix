@@ -8,9 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
@@ -29,14 +27,13 @@ final readonly class RuleInputValidator
     public function __construct(
         private RuleRegistryInterface $ruleRegistry,
         private RuleSelector $ruleSelector,
-        private FindingConfigurationResolverInterface $findingConfigurationResolver,
         private RuleChannelSnapshotFactoryInterface $ruleChannelSnapshotFactory,
         private RuleOptionsBuild $optionsBuild,
     ) {}
 
     public function resolve(ConfigurationDocument $document, InputInterface $input): FindingConfiguration
     {
-        $configuration = $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides());
+        $configuration = FindingConfiguration::fromDocument($document);
         return $configuration->withResolvedOptions($this->optionsBuild->build($configuration));
     }
 

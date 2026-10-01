@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 final class RuleOptionsBuildTest extends TestCase
 {
@@ -76,7 +77,7 @@ final class RuleOptionsBuildTest extends TestCase
         self::assertSame([], $observed->rules);
         self::assertSame(0, $observed->validators);
         $builder = new RuleOptionsBuild($execution);
-        $first = FindingConfiguration::none();
+        $first = ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none(), $execution->allRules());
         $first = $first->withResolvedOptions($builder->build($first));
         self::assertSame([], $observed->rules);
         $registry->replace($first);
@@ -95,7 +96,7 @@ final class RuleOptionsBuildTest extends TestCase
         }
         self::assertCount(1, $execution->allRules());
         self::assertCount(1, $observed->rules);
-        $second = FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => false]]);
+        $second = ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => false]]), $execution->allRules());
         $second = $second->withResolvedOptions($builder->build($second));
         $registry->replace($second);
         self::assertFalse($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);

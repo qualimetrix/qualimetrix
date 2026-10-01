@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(InheritanceRule::class)]
 #[CoversClass(InheritanceOptions::class)]
@@ -195,11 +197,11 @@ final class InheritanceRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = InheritanceOptions::fromArray([
+        $options = InheritanceOptions::fromResolved(ResolvedOptionsFixture::values(InheritanceOptions::class, [
             'enabled' => false,
             'warning' => 4,
             'error' => 6,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(4, $options->warning);
@@ -209,8 +211,8 @@ final class InheritanceRuleTest extends TestCase
     #[Test]
     public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        self::assertEquals(new InheritanceOptions(), InheritanceOptions::fromArray([]));
-        self::assertFalse(InheritanceOptions::fromArray(['enabled' => false])->isEnabled());
+        self::assertEquals(new InheritanceOptions(), InheritanceOptions::fromResolved(ResolvedOptionsFixture::values(InheritanceOptions::class, [])));
+        self::assertFalse(InheritanceOptions::fromResolved(ResolvedOptionsFixture::values(InheritanceOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]

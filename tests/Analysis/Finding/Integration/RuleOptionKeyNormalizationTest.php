@@ -112,13 +112,13 @@ final class RuleOptionKeyNormalizationTest extends TestCase
             $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
             self::fail('An unknown rule option must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString(
-                'Option "notARealOption" is not an option of rule "code-smell.long-parameter-list"',
+            self::assertSame(
+                'Unknown key "rules.code-smell.long-parameter-list.not_a_real_option" in configuration file "/project/qmx.yaml". Accepted keys: error, vo-error, vo-warning, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold, vo-threshold.',
                 $refusal->getMessage(),
             );
             self::assertStringContainsString(
-                'Options here: enabled, error, suppress-namespace-channels, suppress-namespaces,'
-                . ' suppress-paths, threshold, vo-error, vo-threshold, vo-warning, warning.',
+                'Accepted keys: error, vo-error, vo-warning, warning, enabled, suppress-namespace-channels,'
+                . ' suppress-namespaces, suppress-paths, threshold, vo-threshold.',
                 $refusal->getMessage(),
                 'The printed set must name every key the user may write here, in the kebab spelling they type',
             );

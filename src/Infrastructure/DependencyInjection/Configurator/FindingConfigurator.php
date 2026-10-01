@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -45,6 +46,12 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
             ]);
         $container->setAlias(RuleExecutionInterface::class, RuleExecution::class)
             ->setPublic(true);
+
+        foreach (['rules', 'only_rules', 'disabled_rules'] as $root) {
+            $container->register(RulesSection::class . '.' . $root, RulesSection::class)
+                ->setArguments([new Reference(RuleExecutionInterface::class), $root])
+                ->addTag(ConfigurationConfigurator::SECTION_TAG);
+        }
 
         $this->registerUnboundSuppressionProducer($container);
     }

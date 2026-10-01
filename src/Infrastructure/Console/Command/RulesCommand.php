@@ -7,8 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
@@ -43,7 +42,6 @@ final class RulesCommand extends Command
         private readonly ChannelDeclarationRegistryInterface $declarations,
         private readonly RuleListingPresenter $presenter,
         private readonly ConfigurationInputAdapter $configurationInputAdapter,
-        private readonly FindingConfigurationResolverInterface $findingConfigurationResolver,
         private readonly ComputedMetricConfiguratorInterface $computedMetrics,
     ) {
         parent::__construct();
@@ -66,7 +64,7 @@ final class RulesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $document = $this->configurationInputAdapter->resolve($input);
-        $selection = $this->findingConfigurationResolver->resolve($document, new FindingCliOverrides())->selection;
+        $selection = FindingConfiguration::fromDocument($document)->selection;
         $definitions = $this->computedMetrics->resolve($document)->all();
         $groupFilter = CommandLineSpelling::option($input, 'group');
 

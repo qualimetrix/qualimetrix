@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -314,7 +313,7 @@ final class RuleInputValidatorTest extends TestCase
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $static = self::universe($rules);
         $selector = new RuleSelector($static);
-        $validator = new RuleInputValidator($rules, $selector, new FindingConfigurationResolver(), $static, new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)));
+        $validator = new RuleInputValidator($rules, $selector, $static, new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)));
         $disabled = ['health.complexity:class'];
 
         $snapshot = $validator->validate(
@@ -417,7 +416,6 @@ final class RuleInputValidatorTest extends TestCase
         return new RuleInputValidator(
             $rules,
             new RuleSelector($static),
-            new FindingConfigurationResolver(),
             $static,
             new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
         );

@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
+use LogicException;
+
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -27,15 +31,8 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * separate, higher thresholds since many parameters are valid design for typed
  * data containers.
  *
- * > **Note:** The canonical spelling for the `vo-*` options is kebab-case
- * > (`vo-warning`, `vo-error`, `vo-threshold`) — that's what users type in
- * > `qmx.yaml`, presets, and `--rule-opt`. `Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory`
- * > (config-file keys) and `Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser`
- * > (`--rule-opt` keys) normalize any kebab-case/snake_case key to camelCase
- * > before it reaches {@see fromArray()}, so `fromArray()` must also accept the
- * > camelCase forms (`voWarning`, `voError`, `voThreshold`) — that's the form
- * > actually arriving through those two channels. Both spellings are kept
- * > working via `ThresholdParser::parse()`'s `legacyKeys` argument below.
+ * The declared VO band is separate from the ordinary parameter band; a
+ * written `vo-threshold` spreads only to its own warning and error halves.
  */
 final readonly class LongParameterListOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {
@@ -49,28 +46,22 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
         public int $voError = 12,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 4, 6);
-        $voThresholds = ThresholdParser::parse(
-            $config,
-            'vo-warning',
-            'vo-error',
-            8,
-            12,
-            'vo-threshold',
-            legacyKeys: ['warning' => ['voWarning'], 'error' => ['voError'], 'threshold' => ['voThreshold']],
-        );
-
+        $thresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'threshold'), 4, 6);
+        if (!\is_int($thresholds['warning']) || !\is_int($thresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
+        }
+        $voThresholds = ThresholdParser::parse($config, RuleOptionSurface::bandFor(self::class, 'vo-threshold'), 8, 12);
+        if (!\is_int($voThresholds['warning']) || !\is_int($voThresholds['error'])) {
+            throw new LogicException('An integer band resolved a non-integer value.');
+        }
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            warning: (int) $thresholds['warning'],
-            error: (int) $thresholds['error'],
-            voWarning: (int) $voThresholds['warning'],
-            voError: (int) $voThresholds['error'],
+            enabled: $config->boolean('enabled', true),
+            warning: $thresholds['warning'],
+            error: $thresholds['error'],
+            voWarning: $voThresholds['warning'],
+            voError: $voThresholds['error'],
         );
     }
 
@@ -150,13 +141,12 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'error' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
             'vo-error' => RuleOptionShape::integer()->orNull(),
             'vo-threshold' => RuleOptionShape::integer()->orNull(),
             'vo-warning' => RuleOptionShape::integer()->orNull(),
             'warning' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->band('threshold', 'warning', 'error', BandDirection::Rising)->band('vo-threshold', 'vo-warning', 'vo-error', BandDirection::Rising);
     }
 }

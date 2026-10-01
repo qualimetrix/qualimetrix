@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 
 /**
  * Where a rule option key may be written, and which declaration answers there.
@@ -30,7 +31,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 final readonly class RuleOptionSurface
 {
     /**
-     * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
      * @param array<string, class-string<LevelOptionsInterface>> $levelOptionsClasses slot name => the class answering there
      */
     private function __construct(
@@ -39,7 +40,7 @@ final readonly class RuleOptionSurface
     ) {}
 
     /**
-     * @param class-string<RuleOptionsInterface> $optionsClass
+     * @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass
      */
     public static function of(string $optionsClass): self
     {
@@ -66,7 +67,7 @@ final readonly class RuleOptionSurface
     /** What the rule's own options class declares. */
     public function ownKeySet(): RuleOptionKeySet
     {
-        return $this->optionsClass::acceptedOptionKeys();
+        return self::declaredFor($this->optionsClass);
     }
 
     /**
@@ -80,7 +81,7 @@ final readonly class RuleOptionSurface
     {
         $slot = $this->levelNamed($level);
 
-        return $slot === null ? null : $this->levelOptionsClasses[$slot]::acceptedOptionKeys();
+        return $slot === null ? null : self::declaredFor($this->levelOptionsClasses[$slot]);
     }
 
     /**
@@ -111,7 +112,7 @@ final readonly class RuleOptionSurface
      *
      * At the rule's own depth that is what the class declared — the slot names
      * among them, since a slot is written exactly where an option is — plus the
-     * three keys {@see FrameworkOptionKeys} owns, which no options class
+     * framework keys {@see FrameworkOptionKeys} owns, which no options class
      * declares and which are legal only here. Inside a slot it is that level
      * class's accepted set and nothing else: a framework key written one level
      * down is not a framework key, it is a mistake.
@@ -130,6 +131,7 @@ final readonly class RuleOptionSurface
             ? [...$keySet->acceptedForDisplay(), ...FrameworkOptionKeys::all()]
             : $keySet->acceptedForDisplay();
 
+        $keys = array_values(array_unique($keys));
         sort($keys);
 
         return $keys;
@@ -154,12 +156,61 @@ final readonly class RuleOptionSurface
             return $shape->asNodeSchema();
         }
 
-        $children = [];
-        foreach ($this->keySetAtLevel($slot)?->acceptedForDisplay() ?? [] as $key) {
-            $children[$key] = $this->schemaAt(new RuleOptionAddress($slot, $key));
-        }
+        return $shape->asNodeSchema($this->schemaOf($this->keySetAtLevel($slot) ?? throw new LogicException('Missing level declaration.')));
+    }
 
-        return $shape->asNodeSchema(NodeSchema::map($children));
+    /** @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass */
+    public static function declaredFor(string $optionsClass): RuleOptionKeySet
+    {
+        return $optionsClass::acceptedOptionKeys();
+    }
+
+    /** @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass */
+    public static function bandFor(string $optionsClass, string $shorthand): RuleOptionBand
+    {
+        foreach (self::declaredFor($optionsClass)->bands() as $band) {
+            if ($band->shorthand === $shorthand) {
+                return $band;
+            }
+        }
+        throw new LogicException(\sprintf('Options class "%s" declares no band "%s".', $optionsClass, $shorthand));
+    }
+
+    /** The complete producer entry; every shorthand is expanded by the document engine. */
+    public function schema(): NodeSchema
+    {
+        return $this->schemaOf($this->ownKeySet(), true)->bareFor('enabled');
+    }
+
+    private function schemaOf(RuleOptionKeySet $set, bool $root = false): NodeSchema
+    {
+        $fields = [];
+        $spreading = $set->spreading();
+        foreach ($set->bands() as $band) {
+            $spreading[$band->shorthand] = [$band->warning, $band->error];
+        }
+        foreach ($set->acceptedForDisplay() as $key) {
+            if (isset($spreading[$key])) {
+                continue;
+            }
+            $shape = $set->shapeOf(ConfigKeySpelling::normalize($key))
+                ?? throw new LogicException(\sprintf('Accepted rule option "%s" has no declared form.', $key));
+            $slot = $root ? $this->levelNamed($key) : null;
+            $fields[$key] = $slot === null ? $shape->asNodeSchema()
+                : $shape->asNodeSchema($this->schemaOf($this->keySetAtLevel($slot) ?? throw new LogicException('Missing level declaration.')));
+        }
+        if ($root) {
+            $framework = FrameworkOptionKeys::declared();
+            foreach ($framework->acceptedForDisplay() as $key) {
+                $fields[$key] = $framework->shapeOf(ConfigKeySpelling::normalize($key))?->asNodeSchema()
+                    ?? throw new LogicException('Missing framework option form.');
+            }
+        }
+        $shorthands = [];
+        foreach ($spreading as $key => $targets) {
+            $shorthands[] = Shorthand::spreading($key, $targets);
+        }
+        return NodeSchema::map($fields, ...$shorthands)->retiring($set->retired() + \Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions::documentKeys());
     }
 
     /**
@@ -197,6 +248,9 @@ final readonly class RuleOptionSurface
     {
         $keySet = $level === null ? $this->ownKeySet() : $this->keySetAtLevel($level);
         $spelling = $keySet?->spellingOf(ConfigKeySpelling::normalize($key));
+        if ($spelling === null && $level === null) {
+            $spelling = FrameworkOptionKeys::declared()->spellingOf(ConfigKeySpelling::normalize($key));
+        }
 
         return $spelling === null ? null : new RuleOptionAddress($level, $spelling);
     }

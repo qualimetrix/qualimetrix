@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
+
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
@@ -16,12 +18,11 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -428,13 +429,18 @@ final class RulesCommandTest extends TestCase
             static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
         );
 
+        $selected = $selection ?? new RuleSelection();
+        $schema = new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, 'rules'),
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, 'only_rules'),
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, 'disabled_rules'),
+        ]);
+        $resolved = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose($schema, [new \Qualimetrix\Analysis\Configuration\Document\AuthoredLayer(
+            \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
+            \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain(['only_rules' => $selected->only, 'disabled_rules' => $selected->disabled]),
+        )]);
         $pipeline = self::createStub(ConfigurationPipelineInterface::class);
-        $pipeline->method('resolve')->willReturn(new ConfigurationDocument([], AbsolutePath::fromString('/project')));
-
-        $findingConfigurationResolver = self::createStub(FindingConfigurationResolverInterface::class);
-        $findingConfigurationResolver->method('resolve')->willReturn(
-            FindingConfiguration::none()->withSelection($selection ?? new RuleSelection()),
-        );
+        $pipeline->method('resolve')->willReturn(new ConfigurationDocument([], AbsolutePath::fromString('/project'), $resolved));
 
         $computedMetrics = self::createStub(ComputedMetricConfiguratorInterface::class);
         $computedMetrics->method('resolve')->willReturn(new ResolvedComputedMetricDefinitions($definitions));
@@ -445,7 +451,6 @@ final class RulesCommandTest extends TestCase
             $registry,
             new RuleListingPresenter(),
             new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution),
-            $findingConfigurationResolver,
             $computedMetrics,
         );
     }
@@ -463,7 +468,7 @@ final class RulesCommandTest extends TestCase
  */
 final readonly class StubRuleOptions implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

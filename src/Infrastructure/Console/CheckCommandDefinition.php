@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use ReflectionClass;
-use ReflectionNamedType;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -355,7 +355,7 @@ final class CheckCommandDefinition
     /**
      * Detects CLI aliases that map to boolean options.
      *
-     * Uses reflection on rule Options classes to find boolean constructor parameters.
+     * Uses the same declared scalar form as the document and CLI reader.
      *
      * @return list<string>
      */
@@ -370,33 +370,17 @@ final class CheckCommandDefinition
             }
 
             $optionsClass = $ruleClass::getOptionsClass();
-            $reflection = new ReflectionClass($optionsClass);
+            $surface = RuleOptionSurface::of($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                if (self::isBooleanOption($reflection, $optionName)) {
+                $address = $surface->locate($optionName);
+                if ($address !== null && $surface->schemaAt($address)->scalarForms() === [ScalarForm::Boolean]) {
                     $booleanAliases[] = $alias;
                 }
             }
         }
 
         return $booleanAliases;
-    }
-
-    /**
-     * @param ReflectionClass<covariant object> $options
-     */
-    private static function isBooleanOption(ReflectionClass $options, string $optionName): bool
-    {
-        // Option name may be nested (e.g., 'callable.warning'), use the leaf
-        $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
-
-        if (!$options->hasProperty($leafName)) {
-            return false;
-        }
-
-        $type = $options->getProperty($leafName)->getType();
-
-        return $type instanceof ReflectionNamedType && $type->getName() === 'bool';
     }
 
     private static function addHealthOptions(Command $command): void

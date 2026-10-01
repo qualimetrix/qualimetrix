@@ -34,7 +34,7 @@ use Throwable;
  * a second hand-written word list but the backed enum each reader itself
  * builds its accepted set from (`Severity::cases()`,
  * `UnassignedClassMode::cases()`) together with the READER's own behaviour
- * (`$optionsClass::fromArray()`, called directly so no seam sits in front of
+ * (`$optionsClass::fromResolved()`, called directly so no seam sits in front of
  * it). A word list copied out of the reader by hand would drift the same way
  * the declaration itself was found to.
  *
@@ -100,8 +100,8 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
         foreach (self::wordsOf($enumClass) as $word) {
             self::assertTrue($shape->matches($word), \sprintf('declaration should accept "%s"', $word));
             self::assertTrue(
-                self::readerAccepts($optionsClass, $buildConfig($word)),
-                \sprintf('%s::fromArray() should accept "%s"', $optionsClass, $word),
+                self::readerAccepts($optionsClass, $key, $buildConfig($word)),
+                \sprintf('%s::fromResolved() should accept "%s"', $optionsClass, $word),
             );
         }
     }
@@ -132,7 +132,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
 
             self::assertSame(
                 $shape->matches($flipped),
-                self::readerAccepts($optionsClass, $buildConfig($flipped)),
+                self::readerAccepts($optionsClass, $key, $buildConfig($flipped)),
                 \sprintf(
                     'declaration and reader disagree on "%s" (case-flipped "%s") for %s::$%s',
                     $flipped,
@@ -161,8 +161,8 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
 
         self::assertFalse($shape->matches('bogus-word'));
         self::assertFalse(
-            self::readerAccepts($optionsClass, $buildConfig('bogus-word')),
-            \sprintf('%s::fromArray() should refuse an undeclared word', $optionsClass),
+            self::readerAccepts($optionsClass, $key, $buildConfig('bogus-word')),
+            \sprintf('%s::fromResolved() should refuse an undeclared word', $optionsClass),
         );
     }
 
@@ -265,7 +265,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
      */
     private static function shapeOf(string $optionsClass, string $key): RuleOptionShape
     {
-        $shape = $optionsClass::acceptedOptionKeys()->shapeOf(ConfigKeySpelling::normalize($key));
+        $shape = \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::declaredFor($optionsClass)->shapeOf(ConfigKeySpelling::normalize($key));
         self::assertNotNull($shape, \sprintf('%s does not declare a shape for "%s"', $optionsClass, $key));
 
         return $shape;
@@ -292,10 +292,22 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
      * @param class-string<RuleOptionsInterface> $optionsClass
      * @param array<string, mixed> $config
      */
-    private static function readerAccepts(string $optionsClass, array $config): bool
+    private static function readerAccepts(string $optionsClass, string $key, array $config): bool
     {
         try {
-            $optionsClass::fromArray($config);
+            $section = new class ($key) implements \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface {
+                public function __construct(private readonly string $key) {}
+                public function declaration(): \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration
+                {
+                    $entry = \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema::map(['enabled' => \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema::scalar(\Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::Boolean), $this->key => \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema::scalar(\Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::String)]);
+                    return new \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration('rules', \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema::namedMap($entry));
+                }
+            };
+            $document = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose(new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([$section]), [new \Qualimetrix\Analysis\Configuration\Document\AuthoredLayer(
+                \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
+                \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain(['rules' => ['fixture' => $config]]),
+            )]);
+            $optionsClass::fromResolved(new \Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues($document, 'fixture'));
 
             return true;
         } catch (Throwable) {

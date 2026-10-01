@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -738,9 +740,8 @@ final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidat
 final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterface
 {
     /**
-     * @param array<string, mixed> $config
      */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

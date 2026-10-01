@@ -283,7 +283,12 @@ final class LayerReading
             $entries[$name] = $value ?? new ResolvedBareName([$childAt->provenance($child)]);
         }
 
-        return $entries === [] ? null : new ResolvedMap($entries, [$at->provenance($node)]);
+        if ($entries === []) {
+            self::judged($schema, $at, new ResolvedMap([], [$at->provenance($node)]));
+            return null;
+        }
+
+        return new ResolvedMap($entries, [$at->provenance($node)]);
     }
 
     private function readList(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedList

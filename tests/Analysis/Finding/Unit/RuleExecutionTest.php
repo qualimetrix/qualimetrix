@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
@@ -15,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -1155,7 +1157,7 @@ final class RuleExecutionTest extends TestCase
         $channelIdentity = self::createStub(ChannelIdentityInterface::class);
         $channelIdentity->method('producerOf')->willReturn($channel);
 
-        $executor = $this->createExecution([$rule], $registry, channelIdentity: $channelIdentity);
+        $executor = $this->createExecution([$rule], $registry, channelIdentity: $channelIdentity, classlessProducers: [new ProducerDeclaration(name: $channel, hostRuleName: 'computed.health', optionsClass: RuleExecutionFixtureOptions::class, description: 'Cohesion health, hosted by computed.health')]);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
@@ -1625,7 +1627,7 @@ final class RuleExecutionTest extends TestCase
 
 final readonly class RuleExecutionFixtureOptions implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }
