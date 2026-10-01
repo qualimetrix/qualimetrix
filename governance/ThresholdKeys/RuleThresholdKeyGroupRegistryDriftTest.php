@@ -8,7 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
@@ -159,8 +161,31 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
 
         $isHierarchical = is_a($optionsClass, HierarchicalRuleOptionsInterface::class, true);
 
-        $baselineConfig = self::wrapAtPath($path, ['enabled' => true]);
-        $probeConfig = self::wrapAtPath($path, ['enabled' => true, $key => self::SENTINEL]);
+        $surface = RuleOptionSurface::of($optionsClass);
+        $keySet = $path === '' ? $surface->ownKeySet() : $surface->keySetAtLevel($path);
+        self::assertNotNull($keySet, 'A discovered band must have an owning declaration.');
+        $normalized = ConfigKeySpelling::normalize($key);
+        $companion = [];
+        $found = false;
+        foreach ($keySet->bands() as $band) {
+            if ($normalized === ConfigKeySpelling::normalize($band->shorthand)) {
+                $found = true;
+                break;
+            }
+            if ($normalized === ConfigKeySpelling::normalize($band->warning)) {
+                $companion[$band->error] = $band->direction === BandDirection::Rising ? self::SENTINEL + 1 : 0;
+                $found = true;
+                break;
+            }
+            if ($normalized === ConfigKeySpelling::normalize($band->error)) {
+                $companion[$band->warning] = $band->direction === BandDirection::Rising ? 0 : self::SENTINEL + 1;
+                $found = true;
+                break;
+            }
+        }
+        self::assertTrue($found, 'A discovered spelling must address its declared band.');
+        $baselineConfig = self::wrapAtPath($path, ['enabled' => true, ...$companion]);
+        $probeConfig = self::wrapAtPath($path, ['enabled' => true, ...$companion, $key => self::SENTINEL]);
 
         // The document engine must expand shorthands before the real builder reads them.
         $execution = self::createStub(RuleExecutionInterface::class);

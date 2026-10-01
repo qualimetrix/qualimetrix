@@ -5,19 +5,42 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration;
 
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
+use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
@@ -113,4 +136,314 @@ final class RuleOptionsBuildTest extends TestCase
         self::expectExceptionMessage('Rule options are unavailable before analysis preflight.');
         (new RuleOptionsRegistry())->optionsFor(GotoRule::NAME, CodeSmellOptions::class);
     }
+    #[Test]
+    public function itRefusesAnInvertedRisingBandBeforeConstructingRules(): void
+    {
+        self::expectException(ConfigurationRefusal::class);
+        self::expectExceptionMessage('Warning threshold 30 must be less than or equal to error threshold 12. Warning: 30 from "rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml"; error: 12 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".');
+        self::buildLayers([self::file(['complexity.ccn' => ['callable' => ['warning' => 30, 'error' => 12]]])]);
+    }
+
+    #[Test]
+    public function itActivatesAWrittenBandOnANormallyMutedClass(): void
+    {
+        $options = self::buildLayers([self::file(['complexity.npath' => ['class' => ['threshold' => 22]]])])->for('complexity.npath');
+        self::assertInstanceOf(NpathComplexityOptions::class, $options);
+        self::assertTrue($options->class->enabled);
+        self::assertSame(22, $options->class->maxWarning);
+        self::assertSame(22, $options->class->maxError);
+    }
+
+    /** @return iterable<string, array{array<string, int>, string, list<string>}> */
+    public static function invalidRisingHalves(): iterable
+    {
+        yield 'warning above the owning error default' => [
+            ['warning' => 100],
+            'Warning threshold 100 must be less than or equal to error threshold 20. Warning: 100 from "rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml"; error: default 20.',
+            ['rules', 'complexity.ccn', 'callable', 'warning'],
+        ];
+        yield 'error below the owning warning default' => [
+            ['error' => 5],
+            'Warning threshold 10 must be less than or equal to error threshold 5. Warning: default 10; error: 5 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".',
+            ['rules', 'complexity.ccn', 'callable', 'error'],
+        ];
+    }
+
+    /**
+     * @param array<string, int> $half
+     * @param list<string> $position
+     */
+    #[Test]
+    #[DataProvider('invalidRisingHalves')]
+    public function itNamesAnUnwrittenBandHalfAsTheOwningDefault(array $half, string $summary, array $position): void
+    {
+        try {
+            self::buildLayers([self::file(['complexity.ccn' => ['callable' => $half]])]);
+            self::fail('The effective rising band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame(['/project/qmx.yaml'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
+            self::assertSame($position, $refusal->position()?->segments);
+        }
+    }
+
+    /** @return iterable<string, array{array<string, int>, string}> */
+    public static function invalidFallingHalves(): iterable
+    {
+        yield 'both authored halves' => [
+            ['warning' => 10, 'error' => 40],
+            'Warning threshold 10 must be greater than or equal to error threshold 40. Warning: 10 from "rules.maintainability.mi.warning" in configuration file "/project/qmx.yaml"; error: 40 from "rules.maintainability.mi.error" in configuration file "/project/qmx.yaml".',
+        ];
+        yield 'written warning below the owning error default' => [
+            ['warning' => 10],
+            'Warning threshold 10 must be greater than or equal to error threshold 20. Warning: 10 from "rules.maintainability.mi.warning" in configuration file "/project/qmx.yaml"; error: default 20.',
+        ];
+    }
+
+    /** @param array<string, int> $halves */
+    #[Test]
+    #[DataProvider('invalidFallingHalves')]
+    public function itRefusesAnInvertedFallingBandIncludingOneWrittenHalf(array $halves, string $summary): void
+    {
+        try {
+            self::buildLayers([self::file(['maintainability.mi' => $halves])]);
+            self::fail('The effective falling band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['rules', 'maintainability.mi', \array_key_exists('error', $halves) ? 'error' : 'warning'], $refusal->position()?->segments);
+        }
+    }
+
+    #[Test]
+    public function itKeepsFallingDefaultsEqualityAndSeverityBoundaries(): void
+    {
+        $defaults = self::buildLayers([])->for('maintainability.mi');
+        self::assertInstanceOf(MaintainabilityOptions::class, $defaults);
+        self::assertSame(40.0, $defaults->warning);
+        self::assertSame(20.0, $defaults->error);
+        self::assertNull($defaults->getSeverity(40));
+        self::assertSame(Severity::Warning, $defaults->getSeverity(20));
+        self::assertSame(Severity::Error, $defaults->getSeverity(19));
+        foreach ([['warning' => 50, 'error' => 40], ['warning' => 40, 'error' => 40], ['error' => 30], ['threshold' => 22]] as $input) {
+            $options = self::buildLayers([self::file(['maintainability.mi' => $input])])->for('maintainability.mi');
+            self::assertInstanceOf(MaintainabilityOptions::class, $options);
+            self::assertSame((float) ($input['threshold'] ?? $input['warning'] ?? 40), $options->warning);
+            self::assertSame((float) ($input['threshold'] ?? $input['error'] ?? 20), $options->error);
+        }
+    }
+
+    /** @return iterable<string, array{array<string, int>, array<string, int>, string, list<string>}> */
+    public static function splitBands(): iterable
+    {
+        yield 'preset error and file warning' => [
+            ['error' => 1], ['warning' => 100],
+            'Warning threshold 100 must be less than or equal to error threshold 1. Warning: 100 from "rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml"; error: 1 from "rules.complexity.ccn.callable.error" in preset "strict".',
+            ['rules', 'complexity.ccn', 'callable', 'warning'],
+        ];
+        yield 'preset warning and file error' => [
+            ['warning' => 100], ['error' => 1],
+            'Warning threshold 100 must be less than or equal to error threshold 1. Warning: 100 from "rules.complexity.ccn.callable.warning" in preset "strict"; error: 1 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".',
+            ['rules', 'complexity.ccn', 'callable', 'error'],
+        ];
+        yield 'expanded shorthand retains its authored path' => [
+            ['threshold' => 1], ['warning' => 100],
+            'Warning threshold 100 must be less than or equal to error threshold 1. Warning: 100 from "rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml"; error: 1 from "rules.complexity.ccn.callable.threshold" in preset "strict".',
+            ['rules', 'complexity.ccn', 'callable', 'warning'],
+        ];
+    }
+
+    /**
+     * @param array<string, int> $preset
+     * @param array<string, int> $file
+     * @param list<string> $position
+     */
+    #[Test]
+    #[DataProvider('splitBands')]
+    public function itNamesBothWinningLayersAndAddressesTheHigherWriter(array $preset, array $file, string $summary, array $position): void
+    {
+        $lower = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict'), AuthoredNode::fromPlain(['rules' => ['complexity.ccn' => ['callable' => $preset]]]));
+        try {
+            self::buildLayers([$lower, self::file(['complexity.ccn' => ['callable' => $file]])]);
+            self::fail('The effective cross-layer band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame(['strict', '/project/qmx.yaml'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
+            self::assertSame($position, $refusal->position()?->segments);
+        }
+    }
+
+    #[Test]
+    public function itPreservesTheActualCliLocatorWithoutInventingADocumentPosition(): void
+    {
+        $surface = RuleOptionSurface::of(ComplexityOptions::class);
+        $address = $surface->locate('callable.warning');
+        self::assertNotNull($address);
+        $cli = CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: [
+            new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '30', '--cyclomatic-warning', $surface->schemaAt($address)),
+        ]));
+        try {
+            self::buildLayers([self::file(['complexity.ccn' => ['callable' => ['error' => 12]]]), $cli]);
+            self::fail('The effective CLI/file band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 12. Warning: 30 from option --cyclomatic-warning; error: 12 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".', $refusal->summary());
+            self::assertSame(['/project/qmx.yaml', '--cyclomatic-warning'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
+            self::assertNull($refusal->position());
+        }
+        try {
+            self::buildLayers([$cli]);
+            self::fail('The CLI half above the owning default was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 20. Warning: 30 from option --cyclomatic-warning; error: default 20.', $refusal->summary());
+            self::assertSame(['--cyclomatic-warning'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
+            self::assertNull($refusal->position());
+        }
+    }
+
+    #[Test]
+    public function itNamesTheLineAndAuthoredSpellingOfBothBandHalves(): void
+    {
+        $layer = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/lined.yaml'), AuthoredNode::mapping([
+            'rules' => AuthoredNode::mapping(['complexity.ccn' => AuthoredNode::mapping(['class' => AuthoredNode::mapping([
+                'maxWarning' => AuthoredNode::scalar(100, line: 9),
+                'max_error' => AuthoredNode::scalar(1, line: 11),
+            ])])]),
+        ]));
+        try {
+            self::buildLayers([$layer]);
+            self::fail('The effective band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Warning threshold 100 must be less than or equal to error threshold 1. Warning: 100 from "rules.complexity.ccn.class.maxWarning" in configuration file "/lined.yaml" at line 9; error: 1 from "rules.complexity.ccn.class.max_error" in configuration file "/lined.yaml" at line 11.', $refusal->summary());
+            self::assertSame(['/lined.yaml'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
+            self::assertSame(['rules', 'complexity.ccn', 'class', 'max_error'], $refusal->position()?->segments);
+        }
+    }
+
+    #[Test]
+    public function itNamesOnlyTheWinningWriteOfAnOverriddenBandHalf(): void
+    {
+        $old = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/old.yaml'), AuthoredNode::fromPlain(['rules' => ['complexity.ccn' => ['callable' => ['warning' => 999]]]]));
+        try {
+            self::buildLayers([$old, self::file(['complexity.ccn' => ['callable' => ['warning' => 30, 'error' => 12]]])]);
+            self::fail('The effective band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 12. Warning: 30 from "rules.complexity.ccn.callable.warning" in configuration file "/project/qmx.yaml"; error: 12 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".', $refusal->summary());
+            self::assertSame(['/project/qmx.yaml'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
+        }
+    }
+
+    /** @return iterable<string, array{array<string, mixed>, array<string, mixed>, bool, int, int}> */
+    public static function mutedClassLayers(): iterable
+    {
+        yield 'untouched owning defaults' => [[], [], false, 500, 1000];
+        yield 'preset threshold' => [['threshold' => 22], [], true, 22, 22];
+        yield 'file threshold' => [[], ['threshold' => 22], true, 22, 22];
+        yield 'zero remains written' => [[], ['threshold' => 0], true, 0, 0];
+        yield 'written warning half' => [[], ['max-warning' => 600], true, 600, 1000];
+        yield 'written error half' => [['max-error' => 700], [], true, 500, 700];
+        yield 'explicit false survives a later band' => [['enabled' => false], ['threshold' => 22], false, 22, 22];
+        yield 'later explicit false suppresses an earlier band' => [['threshold' => 22], ['enabled' => false], false, 22, 22];
+        yield 'explicit true without a band' => [[], ['enabled' => true], true, 500, 1000];
+        yield 'null is unwritten' => [[], ['threshold' => null, 'enabled' => null], false, 500, 1000];
+    }
+
+    /**
+     * @param array<string, mixed> $preset
+     * @param array<string, mixed> $file
+     */
+    #[Test]
+    #[DataProvider('mutedClassLayers')]
+    public function itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement(array $preset, array $file, bool $enabled, int $warning, int $error): void
+    {
+        $lower = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, 'strict'), AuthoredNode::fromPlain(['rules' => ['complexity.npath' => ['class' => $preset]]]));
+        $options = self::buildLayers([$lower, self::file(['complexity.npath' => ['class' => $file]])])->for('complexity.npath');
+        self::assertInstanceOf(NpathComplexityOptions::class, $options);
+        self::assertSame($enabled, $options->class->enabled);
+        self::assertSame($warning, $options->class->maxWarning);
+        self::assertSame($error, $options->class->maxError);
+    }
+
+    /** @return iterable<string, array{string, string, string, string}> */
+    public static function nestedBands(): iterable
+    {
+        yield 'CCN callable' => ['complexity.ccn', 'callable', 'warning', 'error'];
+        yield 'CCN class' => ['complexity.ccn', 'class', 'max-warning', 'max-error'];
+        yield 'cognitive callable' => ['complexity.cognitive', 'callable', 'warning', 'error'];
+        yield 'cognitive class' => ['complexity.cognitive', 'class', 'max-warning', 'max-error'];
+        yield 'NPath callable' => ['complexity.npath', 'callable', 'warning', 'error'];
+        yield 'NPath class' => ['complexity.npath', 'class', 'max-warning', 'max-error'];
+        yield 'CBO class' => ['coupling.cbo', 'class', 'warning', 'error'];
+        yield 'CBO namespace' => ['coupling.cbo', 'namespace', 'warning', 'error'];
+        yield 'instability class' => ['coupling.instability', 'class', 'max-warning', 'max-error'];
+        yield 'instability namespace' => ['coupling.instability', 'namespace', 'max-warning', 'max-error'];
+    }
+
+    #[Test]
+    #[DataProvider('nestedBands')]
+    public function itPrefixesBothBandRecordsAtEveryHierarchicalLevel(string $producer, string $level, string $warning, string $error): void
+    {
+        try {
+            self::buildLayers([self::file([$producer => [$level => [$warning => 10000, $error => 1]]])]);
+            self::fail('The nested band was accepted.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(\sprintf('Warning threshold 10000 must be less than or equal to error threshold 1. Warning: 10000 from "rules.%s.%s.%s" in configuration file "/project/qmx.yaml"; error: 1 from "rules.%s.%s.%s" in configuration file "/project/qmx.yaml".', $producer, $level, $warning, $producer, $level, $error), $refusal->summary());
+            self::assertSame(['rules', $producer, $level, $error], $refusal->position()?->segments);
+        }
+    }
+
+    #[Test]
+    public function itPublishesCurrentClassActivityFromTheBuiltMutedLevelOptions(): void
+    {
+        $snapshot = self::buildLayers([self::file(['complexity.npath' => ['class' => ['threshold' => 22]]])]);
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(FindingConfiguration::none()->withResolvedOptions($snapshot));
+        $execution = new RuleExecution([[
+            'metadata' => new RuleMetadata('complexity.npath', NpathComplexityOptions::class, '', [], false),
+            'create' => static function () use ($registry): NpathComplexityRule {
+                $options = $registry->optionsFor('complexity.npath', NpathComplexityOptions::class);
+                if (!$options instanceof NpathComplexityOptions) {
+                    throw new LogicException('The NPath lookup received another producer.');
+                }
+                return new NpathComplexityRule($options);
+            },
+        ]], self::createStub(ProfilerInterface::class), $registry);
+        self::assertTrue($execution->levelActivity()->toMap()['complexity.npath']['class']);
+        $disabled = self::buildLayers([self::file(['complexity.npath' => ['class' => ['enabled' => false, 'threshold' => 22]]])]);
+        $registry->replace(FindingConfiguration::none()->withResolvedOptions($disabled));
+        self::assertFalse($execution->levelActivity()->toMap()['complexity.npath']['class']);
+    }
+
+    #[Test]
+    public function itKeepsTheRootOffSwitchAboveAuthoredMutedLevelBands(): void
+    {
+        $options = self::buildLayers([self::file(['complexity.npath' => ['enabled' => false, 'class' => ['threshold' => 22]]])])->for('complexity.npath');
+        self::assertInstanceOf(NpathComplexityOptions::class, $options);
+        self::assertFalse($options->class->enabled);
+        self::assertFalse($options->callable->enabled);
+        self::assertSame(22, $options->class->maxWarning);
+        self::assertSame(22, $options->class->maxError);
+    }
+
+    /** @param array<string, mixed> $rules */
+    private static function file(array $rules): AuthoredLayer
+    {
+        return new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/project/qmx.yaml'), AuthoredNode::fromPlain(['rules' => $rules]));
+    }
+
+    /** @param list<AuthoredLayer> $layers */
+    private static function buildLayers(array $layers): ResolvedRuleOptions
+    {
+        $execution = ResolvedOptionsFixture::execution([
+            new RuleMetadata('complexity.ccn', ComplexityOptions::class, '', [], false),
+            new RuleMetadata('complexity.cognitive', CognitiveComplexityOptions::class, '', [], false),
+            new RuleMetadata('coupling.cbo', CboOptions::class, '', [], false),
+            new RuleMetadata('coupling.instability', InstabilityOptions::class, '', [], false),
+            new RuleMetadata('complexity.npath', NpathComplexityOptions::class, '', [], false),
+            new RuleMetadata('maintainability.mi', MaintainabilityOptions::class, '', [], false),
+        ]);
+        $document = DocumentComposer::compose(new DocumentSchema([new RulesSection($execution, 'rules')]), $layers);
+        $empty = FindingConfiguration::none();
+        return (new RuleOptionsBuild($execution))->build(new FindingConfiguration($empty->ruleOptions, $empty->cliOverrides, $empty->selection, document: $document));
+    }
+
 }

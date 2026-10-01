@@ -513,22 +513,27 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
 
     /**
      * Pairs #17/#18/#20/#21, the negative half of the alias removals above:
-     * these four flat keys sit in their branch's *condition*, work alone, and
-     * are therefore declared — removing them for symmetry with the complexity
-     * wrappers would have broken a configuration that does something today.
+     * These declared flat keys reach their nested levels through spreading.
+     * An error below its owning warning default needs a valid warning companion;
+     * the original error value still determines severity at that value.
      *
      * @param class-string<RuleOptionsInterface> $optionsClass
      */
     #[Test]
-    #[DataProvider('provideFlatCouplingKeysThatWorkAlone')]
-    public function itAcceptsTheFlatCouplingKeysThatWorkAlone(
+    #[DataProvider('provideDeclaredFlatCouplingKeysInValidBands')]
+    public function itAcceptsDeclaredFlatCouplingKeysInValidBands(
         string $ruleName,
         string $optionsClass,
         string $key,
         int|float $value,
     ): void {
+        $companion = match ($key) {
+            'error' => "    warning: 3\n",
+            'max_error' => "    max_warning: 0.5\n",
+            default => '',
+        };
         $options = $this->optionsFrom(
-            \sprintf("  %s:\n    %s: %s\n", $ruleName, $key, $value),
+            \sprintf("  %s:\n    %s: %s\n%s", $ruleName, $key, $value, $companion),
             $ruleName,
             $optionsClass,
         );
@@ -540,7 +545,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     /**
      * @return iterable<string, array{string, class-string<RuleOptionsInterface>, string, int|float}>
      */
-    public static function provideFlatCouplingKeysThatWorkAlone(): iterable
+    public static function provideDeclaredFlatCouplingKeysInValidBands(): iterable
     {
         yield '#17 cbo warning' => ['coupling.cbo', CboOptions::class, 'warning', 3];
         yield '#18 cbo error' => ['coupling.cbo', CboOptions::class, 'error', 4];

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -28,8 +29,16 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $class = ClassInstabilityOptions::fromResolved($config->atLevel('class'));
-        $namespace = NamespaceInstabilityOptions::fromResolved($config->atLevel('namespace'));
+        try {
+            $class = ClassInstabilityOptions::fromResolved($config->atLevel('class'));
+        } catch (RuleOptionRefusal $refusal) {
+            throw $refusal->under('class');
+        }
+        try {
+            $namespace = NamespaceInstabilityOptions::fromResolved($config->atLevel('namespace'));
+        } catch (RuleOptionRefusal $refusal) {
+            throw $refusal->under('namespace');
+        }
         if (!$config->boolean('enabled', true)) {
             $class = new ClassInstabilityOptions(enabled: false, maxWarning: $class->maxWarning, maxError: $class->maxError, minAfferent: $class->minAfferent);
             $namespace = new NamespaceInstabilityOptions(enabled: false, maxWarning: $namespace->maxWarning, maxError: $namespace->maxError, minClassCount: $namespace->minClassCount, minAfferent: $namespace->minAfferent);

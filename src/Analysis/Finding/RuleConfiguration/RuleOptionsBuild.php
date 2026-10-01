@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use InvalidArgumentException;
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
@@ -45,11 +47,55 @@ final readonly class RuleOptionsBuild
                 );
                 $options[$ruleName] = $optionsClass::fromResolved($values);
             } catch (RuleOptionRefusal $refusal) {
+                if ($refusal->bandValues !== []) {
+                    self::refuseBand($configuration, $ruleName, $refusal);
+                }
                 $node = $configuration->document->get('rules', $ruleName, ...$refusal->optionPath)
                     ?? throw new LogicException('A rule option refusal must address a written document node.', previous: $refusal);
                 $node->refuse($refusal->getMessage());
             }
         }
         return new ResolvedRuleOptions($options, $suppressions);
+    }
+    private static function refuseBand(FindingConfiguration $configuration, string $producer, RuleOptionRefusal $refusal): never
+    {
+        $writers = [];
+        $descriptions = [];
+        foreach ($refusal->bandValues as $role => $half) {
+            if ($half['path'] === null) {
+                $descriptions[] = \sprintf('%s: default %s', $role, $half['value']);
+                continue;
+            }
+            $node = $configuration->document->get('rules', $producer, ...$half['path']);
+            if (!$node instanceof ResolvedWriteHistoryInterface) {
+                throw new LogicException('A refused threshold must expose its authored writes.', previous: $refusal);
+            }
+            $contributors = $node->contributors();
+            $winner = $contributors[\count($contributors) - 1];
+            $found = false;
+            foreach ($node->writes() as $write) {
+                if ($write['provenance']->layerIndex === $winner->layerIndex) {
+                    $winner = $write['provenance'];
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                throw new LogicException('The winning threshold must occur in its authored history.', previous: $refusal);
+            }
+            $writers[] = $winner;
+            $where = $winner->path === null
+                ? $winner->origin->describe()
+                : \sprintf('"%s" in %s', $winner->displayPath(), $winner->origin->describe());
+            if ($winner->line !== null) {
+                $where .= \sprintf(' at line %d', $winner->line);
+            }
+            $descriptions[] = \sprintf('%s: %s from %s', $role, $half['value'], $where);
+        }
+        if ($writers === []) {
+            throw new LogicException('An invalid threshold band must have an authored half.', previous: $refusal);
+        }
+        $details = implode('; ', $descriptions);
+        throw Provenance::refusalOf($writers, $refusal->getMessage() . ' ' . ucfirst($details) . '.');
     }
 }

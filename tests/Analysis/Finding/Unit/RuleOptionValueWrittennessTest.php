@@ -11,18 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 
-/**
- * `RuleOptionValueWrittenness::isWritten()` is the one predicate both merge
- * sites ({@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory},
- * {@see \Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver})
- * ask before letting an overlay's value erase a base value. `ThresholdParser`
- * is outside this round's file set and keeps asking the same question through
- * its own `isset()` — this test proves the two agree behaviourally rather than
- * asserting they share one line of code, for every value where the two
- * COULD have diverged: `~` (null), `false`, `0`, `''`, and a key written under
- * two different spellings (where only the writtenness question, not key
- * lookup, is shared).
- */
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
@@ -66,12 +54,6 @@ final class RuleOptionValueWrittennessTest extends TestCase
         yield 'empty string' => [''];
     }
 
-    /**
-     * Agreement with `ThresholdParser::parse()`'s own `isset()`-based
-     * writtenness, for a key present with each value: `parse()` selects the
-     * `threshold` (simple) mode exactly when `RuleOptionValueWrittenness`
-     * says the key is written.
-     */
     #[Test]
     #[DataProvider('provideValues')]
     public function itDefaultsAnUnwrittenThresholdAndJudgesEveryWrittenValue(mixed $value): void
@@ -94,17 +76,6 @@ final class RuleOptionValueWrittennessTest extends TestCase
         }
     }
 
-    /**
-     * The case where the two predicates could genuinely diverge: the SAME
-     * concept written under two different spellings. `ThresholdParser` asks
-     * "was THIS exact candidate key written" (its `firstWrittenKey()` walks
-     * a list of alternate spellings); the merge asks "was the value already
-     * sitting at THIS literal key written". Both still answer the plain
-     * value-level question — written or not — identically; only the KEY
-     * lookup differs, and that is deliberately not shared (see
-     * `RuleOptionThresholdShorthand`'s and `FindingConfigurationResolver`'s
-     * docblocks).
-     */
     #[Test]
     public function itAsksOnlyAboutTheValueNotAboutWhichSpellingCarriesIt(): void
     {

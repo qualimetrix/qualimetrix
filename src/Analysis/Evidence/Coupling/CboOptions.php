@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -28,8 +29,16 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        $class = ClassCboOptions::fromResolved($config->atLevel('class'));
-        $namespace = NamespaceCboOptions::fromResolved($config->atLevel('namespace'));
+        try {
+            $class = ClassCboOptions::fromResolved($config->atLevel('class'));
+        } catch (RuleOptionRefusal $refusal) {
+            throw $refusal->under('class');
+        }
+        try {
+            $namespace = NamespaceCboOptions::fromResolved($config->atLevel('namespace'));
+        } catch (RuleOptionRefusal $refusal) {
+            throw $refusal->under('namespace');
+        }
         if (!$config->boolean('enabled', true)) {
             $class = new ClassCboOptions(enabled: false, warning: $class->warning, error: $class->error, scope: $class->scope);
             $namespace = new NamespaceCboOptions(enabled: false, warning: $namespace->warning, error: $namespace->error, minClassCount: $namespace->minClassCount);

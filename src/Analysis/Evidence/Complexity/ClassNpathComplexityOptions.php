@@ -37,7 +37,7 @@ final readonly class ClassNpathComplexityOptions implements LevelOptionsInterfac
             throw new LogicException('An integer band resolved a non-integer value.');
         }
         return new self(
-            enabled: $config->boolean('enabled', false),
+            enabled: $config->boolean('enabled', ThresholdParser::wasWritten($config, RuleOptionSurface::bandFor(self::class, 'threshold'))),
             maxWarning: $thresholds['warning'],
             maxError: $thresholds['error'],
         );

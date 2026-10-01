@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
@@ -23,6 +24,7 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionBand;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 
 final class ThresholdParserTest extends TestCase
@@ -234,21 +236,6 @@ final class ThresholdParserTest extends TestCase
         );
     }
 
-    // ---------------------------------------------------------------------
-    // Characterization tests.
-    //
-    // These pin the exact edge-case semantics of parse() — what counts as a
-    // key having been written, first-match-wins ordering, null handling — so
-    // that any restructuring of the parser can be proven behavior-preserving.
-    //
-    // Every question the parser asks is asked of a key's VALUE: `~` is the
-    // author leaving that key's own value to the default, never a mode
-    // selection and never a mixing partner. The cases below that used to pin
-    // the opposite are kept, inverted, because both readings were live: a
-    // presence reading refused `threshold: ~` beside `warning: 5` as a mix
-    // with nothing, and let a `~` alias shadow a populated one behind it.
-    // ---------------------------------------------------------------------
-
     #[Test]
     public function itReturnsTheResultKeyedByWarningThenError(): void
     {
@@ -329,9 +316,6 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itSkipsANullFirstLegacyThresholdKeyAndUsesTheNextOneThatCarriesAValue(): void
     {
-        // Alias resolution stops at the first candidate WRITTEN WITH A VALUE,
-        // so a `~` alias no longer shadows a populated one behind it — the
-        // shape the threshold slot shares with the warning/error slots below.
         $result = self::parse(
             ['firstLegacy' => null, 'secondLegacy' => 7],
             'warning',
@@ -471,8 +455,6 @@ final class ThresholdParserTest extends TestCase
     #[Test]
     public function itDoesNotTreatALegacyWarningKeyAsAThresholdKey(): void
     {
-        // legacyKeys are scoped per primary key; a key listed under 'warning'
-        // never satisfies the threshold lookup.
         $result = self::parse(
             ['warningThreshold' => 5],
             'warning',
@@ -507,6 +489,45 @@ final class ThresholdParserTest extends TestCase
         );
 
         self::assertSame(['warning' => 0.25, 'error' => 0.25], $result);
+    }
+
+    /** @return iterable<string, array{BandDirection, int, int, bool}> */
+    public static function bandDirections(): iterable
+    {
+        yield 'rising increasing' => [BandDirection::Rising, 10, 20, true];
+        yield 'rising equality' => [BandDirection::Rising, 20, 20, true];
+        yield 'rising inverted' => [BandDirection::Rising, 30, 12, false];
+        yield 'falling decreasing' => [BandDirection::Falling, 50, 40, true];
+        yield 'falling equality' => [BandDirection::Falling, 40, 40, true];
+        yield 'falling inverted' => [BandDirection::Falling, 10, 40, false];
+    }
+
+    #[Test]
+    #[DataProvider('bandDirections')]
+    public function itJudgesTheEffectivePairByItsDeclaredDirection(BandDirection $direction, int $warning, int $error, bool $valid): void
+    {
+        $section = new class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                $number = NodeSchema::scalar(ScalarForm::Number);
+                return new SectionDeclaration('rules', NodeSchema::namedMap(NodeSchema::map(['warning' => $number, 'error' => $number])));
+            }
+        };
+        $document = DocumentComposer::compose(new DocumentSchema([$section]), [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/pair.yaml'), AuthoredNode::fromPlain(['rules' => ['fixture' => ['warning' => $warning, 'error' => $error]]]))]);
+        $values = new ResolvedRuleOptionValues($document, 'fixture');
+        $band = new RuleOptionBand('threshold', 'warning', 'error', $direction);
+        if ($valid) {
+            self::assertSame(['warning' => $warning, 'error' => $error], ThresholdParser::parse($values, $band, 10, 20));
+            return;
+        }
+        try {
+            ThresholdParser::parse($values, $band, 10, 20);
+            self::fail('An inverted declared band was accepted.');
+        } catch (RuleOptionRefusal $refusal) {
+            self::assertSame($direction === BandDirection::Rising ? 'Warning threshold 30 must be less than or equal to error threshold 12.' : 'Warning threshold 10 must be greater than or equal to error threshold 40.', $refusal->getMessage());
+            self::assertSame(['warning'], $refusal->optionPath);
+            self::assertSame(['warning' => ['path' => ['warning'], 'value' => $warning], 'error' => ['path' => ['error'], 'value' => $error]], $refusal->bandValues);
+        }
     }
 
     /**
