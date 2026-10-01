@@ -1502,20 +1502,10 @@ final class Stand
      * reproduce the defect S8 removes (an int written under a text/list/bool
      * key, read as a composition failure that was really a form mismatch).
      *
-     * A key the class recognises only to answer about ITSELF —
-     * `RuleOptionKeySet::alsoAnsweredByTheClass()`, `knows()` true and
-     * `shapeOf()` null — carries no general form to search: measured against
-     * every `same-source` pair in the ledger, this is exactly two rules.
-     * `UnassignedClassOptions` accepts `enabled: false` as "leave things as
-     * they are" and refuses `enabled: true` outright; `LayerViolationOptions`
-     * refuses its three removed severity keys for ANY value at all. `false`
-     * is therefore the write this stand asks for the whole bucket: it is the
-     * "leave things as they are" spelling the vocabulary itself documents for
-     * this state, not a guess read off the key's spelling — the two real
-     * occurrences (`architecture.unassigned-class.enabled`, and the three
-     * `architecture.layer-violation` removed-severity keys) are accepted and
-     * refused respectively either way, because their answer does not depend
-     * on the value at all.
+     * A declared retirement has no writable shape, but still owes the pair
+     * probe a refusal. It is written with false so the probe reaches that
+     * refusal without guessing a value form or mistaking the key for unknown.
+     * A recognised key without a shape keeps the same scalar probe.
      *
      * `$sideLiterals` is the ONE argument axis E must never pass. Both of its
      * call sites are in {@see self::neighbourWrite()} and leave it null, so
@@ -1548,6 +1538,12 @@ final class Stand
         }
 
         $framework = \count($segments) === 1 ? FrameworkOptionKeys::declared() : null;
+
+        foreach (array_keys($set->retired()) as $retired) {
+            if (ConfigKeySpelling::normalize($retired) === $normalized) {
+                return [false];
+            }
+        }
 
         if (!$set->knows($normalized) && !($framework?->knows($normalized) ?? false)) {
             throw new LedgerError(

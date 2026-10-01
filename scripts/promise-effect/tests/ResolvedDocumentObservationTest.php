@@ -151,4 +151,30 @@ final class ResolvedDocumentObservationTest extends TestCase
             (new Filesystem())->remove($scratch);
         }
     }
+
+    #[Test]
+    public function itSuppliesDeclaredRetiredKeysForRefusalProbes(): void
+    {
+        $root = \dirname(__DIR__, 3);
+        $scratch = sys_get_temp_dir() . '/qmx-retired-supply-' . bin2hex(random_bytes(6));
+
+        try {
+            $helper = new InProcess($scratch);
+            $stand = new Stand($root, Ledger::load($root), Declarations::load($root), $helper, new ProcessProbe($root, $scratch));
+            $supply = new ReflectionMethod(Stand::class, 'effectWritesFor');
+            foreach (['empty-template-severity', 'potential-shadow-severity', 'unreachable-layer-severity'] as $key) {
+                try {
+                    $writes = $supply->invoke($stand, 'architecture.layer-violation', $key);
+                } catch (LedgerError $error) {
+                    self::fail('A declared retirement was not supplied: ' . $error->getMessage());
+                }
+                self::assertSame([false], $writes);
+                $observations = $helper->take(['rules' => ['architecture.layer-violation' => [$key => $writes[0]]]], [], [], '');
+                self::assertSame(Observation::REFUSED_FRAMED, $observations['merged']->outcome, $observations['merged']->text);
+                self::assertStringContainsString('no longer exists', $observations['merged']->text);
+            }
+        } finally {
+            (new Filesystem())->remove($scratch);
+        }
+    }
 }
