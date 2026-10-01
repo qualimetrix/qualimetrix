@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffect;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -1494,7 +1495,9 @@ final class Stand
      * The key set that answers is found through exactly the same two-depth
      * walk {@see CrossCheck::resolveKey()} already asks of axis A: the rule's
      * own declaration, or — when the head segment names a level slot — that
-     * slot's own. A key nothing declares is not a guess this stand makes on
+     * slot's own. Framework declarations supply root keys independently of
+     * an options class; they are never consulted inside a level slot.
+     * A key nothing declares is not a guess this stand makes on
      * its behalf: it is a `LedgerError`, because a silent fallback here would
      * reproduce the defect S8 removes (an int written under a text/list/bool
      * key, read as a composition failure that was really a form mismatch).
@@ -1544,13 +1547,15 @@ final class Stand
             $normalized = ConfigKeySpelling::normalize($key);
         }
 
-        if (!$set->knows($normalized)) {
+        $framework = \count($segments) === 1 ? FrameworkOptionKeys::declared() : null;
+
+        if (!$set->knows($normalized) && !($framework?->knows($normalized) ?? false)) {
             throw new LedgerError(
                 'pair probe: "' . $rule . '.' . $key . '" — no declaration recognises the key normalized as "' . $normalized . '"',
             );
         }
 
-        $shape = $set->shapeOf($normalized);
+        $shape = $set->shapeOf($normalized) ?? $framework?->shapeOf($normalized);
 
         if ($shape === null) {
             return [false];

@@ -14,8 +14,8 @@ declare(strict_types=1);
  * commit.
  *
  * The population is a PRODUCT and not a list of interesting cases. One factor
- * is read off the product's own declarations — a key whose declared shape
- * accepts `null` is a key whose `~` the reader has to decide something about.
+ * is read off the product's writable document addresses: `~` leaves any
+ * recognised field unwritten, independently of its non-null value forms.
  * The other is `key-pairs.tsv`, stage 01's frozen enumeration of which keys of
  * a rule interact at all. Hand-picked cases can miss sibling spellings of the
  * same name, so the complete derived population and its size are printed.
@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 
 /** One cell of the coordinate: this rule's key, written `~`, beside this neighbour. */
 final readonly class NeighbourhoodRow
@@ -118,20 +119,17 @@ final class Neighbourhood
     }
 
     /**
-     * Whether the declared shape of this key accepts `null` — the `->orNull()`
-     * half of "`~` changes the branch this key is read through".
-     *
-     * Asked of the shape itself rather than of a list of key names: the
-     * question "does this key accept `~`" is one the product answers, and a
-     * hand-written answer to it is the very claim under review.
+     * A recognised document field may be left unwritten with `~`, even when
+     * its value declaration accepts only non-null forms.
      *
      * @param array<string, class-string<RuleOptionsInterface>> $optionsClasses
      */
     private static function acceptsNull(array $optionsClasses, string $rule, string $key): bool
     {
-        $shape = self::shapeOf($optionsClasses, $rule, $key);
+        $class = $optionsClasses[$rule] ?? null;
 
-        return $shape !== null && $shape->matches(null);
+        return $class !== null && is_a($class, RuleOptionsInterface::class, true)
+            && RuleOptionSurface::of($class)->locate($key) !== null;
     }
 
     /**

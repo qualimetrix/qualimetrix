@@ -218,16 +218,9 @@ final readonly class RuleOptionSurface
      * carries, which is written by hand in an attribute and is kebab, snake or
      * camel depending on who wrote it, dotted when it addresses a slot.
      *
-     * Null covers three cases on purpose, because a caller joining an alias to
-     * a declaration has no use for the difference between them. A key nothing
-     * here knows. A key the class recognises only in order to answer about it
-     * in its own words — the class's to speak for, not an alias's to reach. And
-     * a framework key, which {@see self::writableAt()} does report as writable
-     * at the rule's own depth: it is legal there, but no options class declares
-     * it and no alias targets one, because the factory takes all three out of
-     * the configuration before any rule is built. The asymmetry with
-     * `writableAt()` is the point rather than an oversight — one method answers
-     * "may a user write this here", the other "which declaration owns this".
+     * Null means no accepted address: an unknown key or one the class knows
+     * only to give a bespoke refusal. Framework keys are located at the root
+     * depth through their own declaration, never inside a level slot.
      */
     public function locate(string $target): ?RuleOptionAddress
     {
