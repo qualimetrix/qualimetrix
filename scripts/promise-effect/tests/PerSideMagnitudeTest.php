@@ -113,7 +113,7 @@ final class PerSideMagnitudeTest extends TestCase
 
         self::assertArrayNotHasKey('bool', $declarations->sideBLiterals);
         self::assertArrayNotHasKey('null', $declarations->sideBLiterals);
-        self::assertSame(['scope', 'unused-directive-severity', 'mode', 'severity'], array_keys($declarations->leafAlternates));
+        self::assertSame(['scope', 'unused-directive-severity', 'mode', 'severity', 'include-namespaces'], array_keys($declarations->leafAlternates));
     }
 
     /**

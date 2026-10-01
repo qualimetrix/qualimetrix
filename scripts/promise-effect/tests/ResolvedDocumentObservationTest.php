@@ -126,4 +126,29 @@ final class ResolvedDocumentObservationTest extends TestCase
             (new Filesystem())->remove($scratch);
         }
     }
+
+    #[Test]
+    public function itSuppliesDeclaredNamespaceSelectorMappings(): void
+    {
+        $root = \dirname(__DIR__, 3);
+        $scratch = sys_get_temp_dir() . '/qmx-selector-supply-' . bin2hex(random_bytes(6));
+
+        try {
+            $helper = new InProcess($scratch);
+            $stand = new Stand($root, Ledger::load($root), Declarations::load($root), $helper, new ProcessProbe($root, $scratch));
+            $supply = new ReflectionMethod(Stand::class, 'effectWritesFor');
+            try {
+                $writes = $supply->invoke($stand, 'coupling.distance', 'include-namespaces');
+            } catch (LedgerError $error) {
+                self::fail('A declared namespace selector was not supplied: ' . $error->getMessage());
+            }
+            self::assertSame([[['exact' => 'App']]], $writes);
+            $observations = $helper->take(['rules' => ['coupling.distance' => ['include-namespaces' => $writes[0]]]], [], [], '');
+            self::assertSame(Observation::ACCEPTED, $observations['merged']->outcome, $observations['merged']->text);
+            $values = json_decode($observations['merged']->text, true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame([['exact' => 'App']], $values['rules']['coupling.distance']['include-namespaces']);
+        } finally {
+            (new Filesystem())->remove($scratch);
+        }
+    }
 }
