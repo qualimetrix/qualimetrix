@@ -98,9 +98,9 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * An "emitting name" is a real rule's `NAME` constant, one of the five
      * `*_DIAGNOSTIC_NAME` constants {@see LayerDeclarationValidator} emits
      * under, {@see LayerViolationRule::UNMATCHED_EXCLUDE_NAME}, one of the
-     * three {@see UnboundSuppressionOptions} channel constants, or one of
-     * the four inline-directive diagnostic names — the layer policy, the
-     * suppression producer and the directive rule all emit under names other
+     * three {@see UnboundSuppressionOptions} channel constants, the LCOM
+     * method-exclusion diagnostic, or one of the four inline-directive
+     * diagnostic names — these producers all emit under names other
      * than their own `NAME`. A
      * declared name that is neither addresses a channel no producer can ever
      * emit, and the drift guard above cannot see it: that one only compares
@@ -290,6 +290,8 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;
         $names[] = UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER;
+
+        $names[] = 'cohesion.unmatched-exclude-method';
 
         $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
         $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;

@@ -12,13 +12,17 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -71,6 +75,44 @@ final class LcomRule extends AbstractRule
             if ($finding !== null) {
                 $findings[] = $finding;
             }
+        }
+
+        return [...$findings, ...$this->unmatchedExclusions($context, $this->options)];
+    }
+
+    /** @return list<Finding> */
+    private function unmatchedExclusions(AnalysisContext $context, LcomOptions $options): array
+    {
+        if (!$context->coversProjectScope || $options->excludeMethods === null || $options->excludeMethods === []) {
+            return [];
+        }
+
+        $methods = [];
+        foreach ($context->metrics->allCallables() as $callable) {
+            if ($callable->callableKind === CallableKind::Method && $callable->symbolPath->member !== null) {
+                $methods[strtolower($callable->symbolPath->member)] = true;
+            }
+        }
+
+        $findings = [];
+        $seen = [];
+        foreach ($options->excludeMethods as $authored) {
+            $normalized = strtolower($authored);
+            if (isset($methods[$normalized]) || isset($seen[$normalized])) {
+                continue;
+            }
+            $seen[$normalized] = true;
+            $findings[] = new Finding(
+                location: Location::none(),
+                subject: MetricSubject::aggregate(SymbolPath::forProject()),
+                symbolPath: SymbolPath::forProject(),
+                ruleName: 'cohesion.unmatched-exclude-method',
+                code: 'cohesion.unmatched-exclude-method',
+                message: \sprintf('The exclude_methods name "%s" matched no method declared in this project.', $authored),
+                severity: Severity::Warning,
+                metricValue: 1,
+                occurrenceKey: OccurrenceKey::semantic('unmatched-exclude-method', ['method' => $normalized]),
+            );
         }
 
         return $findings;
@@ -159,6 +201,8 @@ final class LcomRule extends AbstractRule
                 JudgedMetrics::of(MetricName::COHESION_LCOM),
                 SymbolLevel::Class_,
             ),
+            'cohesion.unmatched-exclude-method' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)
+                ->describedAs('Reports configured LCOM method exclusions that match no declared method in the whole project'),
         ];
     }
 

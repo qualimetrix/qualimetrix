@@ -165,10 +165,10 @@ final class LcomClassData
     public function calculateLcom(array $excludeMethods = []): int
     {
         // Exclude static methods and explicitly excluded methods from the graph
-        $excludeSet = $excludeMethods !== [] ? array_flip($excludeMethods) : [];
+        $excludeSet = array_fill_keys(array_map(strtolower(...), $excludeMethods), true);
         $methods = array_values(array_filter(
             $this->getMethods(),
-            fn(string $m): bool => !isset($this->staticMethods[$m]) && !isset($excludeSet[$m]),
+            fn(string $m): bool => !isset($this->staticMethods[$m]) && !isset($excludeSet[strtolower($m)]),
         ));
         $count = \count($methods);
 

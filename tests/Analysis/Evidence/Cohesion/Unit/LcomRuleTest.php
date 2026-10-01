@@ -410,6 +410,57 @@ final class LcomRuleTest extends TestCase
         ], $subjects);
     }
 
+    #[Test]
+    public function itReportsDistinctUnmatchedExclusionsOnlyForWholeProjectMethodFacts(): void
+    {
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([]);
+        $method = self::subjectInfo(SymbolPath::forMethod('App', 'Worker', 'bridge'), RelativePath::fromString('src/Worker.php'), 10);
+        $function = self::subjectInfo(SymbolPath::forGlobalFunction('App', 'helper'), RelativePath::fromString('src/functions.php'), 10);
+        $hookSubject = self::subjectInfo(SymbolPath::forMethod('App', 'Worker', 'hookOnly'), RelativePath::fromString('src/Worker.php'), 20);
+        $hook = new \Qualimetrix\Core\Symbol\SymbolInfo(
+            $hookSubject->subject ?? throw new InvalidArgumentException('The hook fixture requires an exact subject.'),
+            $hookSubject->file,
+            $hookSubject->line,
+            \Qualimetrix\Core\Symbol\CallableKind::PropertyHook,
+        );
+        $repository->method('allCallables')->willReturn([$method, $function, $hook]);
+        $rule = new LcomRule(new LcomOptions(excludeMethods: ['BRIDGE', 'brigde', 'BRIGDE', 'helper', 'hookOnly']));
+
+        $findings = $rule->analyze(new AnalysisContext($repository, coversProjectScope: true));
+        self::assertCount(3, $findings);
+        self::assertSame('cohesion.unmatched-exclude-method', $findings[0]->ruleName);
+        self::assertSame('cohesion.unmatched-exclude-method', $findings[0]->code);
+        self::assertSame('The exclude_methods name "brigde" matched no method declared in this project.', $findings[0]->message);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(1, $findings[0]->metricValue);
+        self::assertSame('project:', $findings[0]->subject->toCanonical());
+        self::assertSame(SymbolPath::forProject()->toCanonical(), $findings[0]->symbolPath->toCanonical());
+        self::assertTrue($findings[0]->location->isNone());
+        self::assertNotNull($findings[0]->occurrenceKey);
+        self::assertNotNull($findings[1]->occurrenceKey);
+        self::assertSame(
+            \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('unmatched-exclude-method', ['method' => 'brigde'])->value,
+            $findings[0]->occurrenceKey->value,
+        );
+        self::assertStringContainsString('"helper"', $findings[1]->message);
+        self::assertStringContainsString('"hookOnly"', $findings[2]->message);
+        self::assertNotSame($findings[0]->occurrenceKey->value, $findings[1]->occurrenceKey->value);
+        $uppercase = (new LcomRule(new LcomOptions(excludeMethods: ['BRIGDE'])))
+            ->analyze(new AnalysisContext($repository));
+        self::assertNotNull($uppercase[0]->occurrenceKey);
+        self::assertSame($findings[0]->occurrenceKey->value, $uppercase[0]->occurrenceKey->value);
+        self::assertStringContainsString('"BRIGDE"', $uppercase[0]->message);
+        self::assertSame([], $rule->analyze(new AnalysisContext($repository, coversProjectScope: false)));
+        self::assertSame([], (new LcomRule(new LcomOptions(enabled: false, excludeMethods: ['missing'])))
+            ->analyze(new AnalysisContext($repository)));
+
+        $declaration = LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method'];
+        self::assertSame([\Qualimetrix\Core\Symbol\SymbolLevel::Project], $declaration->levels);
+        self::assertSame(\Qualimetrix\Core\Observation\WorseDirection::Higher, $declaration->direction);
+        self::assertNull($declaration->judges);
+    }
+
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
     {
         $type = $symbolPath->getType();

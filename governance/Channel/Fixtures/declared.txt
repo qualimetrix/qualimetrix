@@ -20,12 +20,12 @@
 #                      Only a magnitude channel may carry the token.
 #     acceptability := config-error     (omitted = acceptable as debt)
 #
-# Twenty-two of the fifty-eight channels here carry a judges: token. The
-# thirty-six that do not split into thirty-two occurrence channels, four
+# Twenty-two of the sixty channels here carry a judges: token. The
+# thirty-eight that do not split into thirty-three occurrence channels, five
 # magnitudes that
 # publish a number of their own making (architecture.circular-dependency,
 # architecture.unassigned-class, duplication.clone,
-# design.god-class), and -- inside the thirty-two -- coupling.class-rank,
+# design.god-class, cohesion.unmatched-exclude-method), and -- inside the thirty-three -- coupling.class-rank,
 # which does read a catalog metric and stays occurrence anyway by ADR 0017
 # point 5.
 #
@@ -106,6 +106,7 @@ code-smell.superglobals - callable
 code-smell.unreachable-code higher callable judges:code-smell.unreachable-code
 code-smell.unused-private higher class judges:code-smell.unused-private.total
 cohesion.lcom higher class judges:cohesion.lcom
+cohesion.unmatched-exclude-method higher project
 complexity.ccn higher callable,class judges:complexity.ccn,complexity.ccn.max
 complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
 complexity.npath higher callable,class judges:complexity.npath,complexity.npath.max
