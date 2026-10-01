@@ -25,13 +25,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class UnassignedClassOptions implements ModeGatedOptionsInterface
 {
-    /**
-     * Duplicates {@see UnassignedClassRule::NAME} as a literal rather than
-     * referencing the class constant, so this Options DTO does not gain a
-     * dependency edge onto the rule it configures — the same reason
-     * {@see LayerViolationOptions} spells its own rule name out.
-     */
-
     public function __construct(
         public UnassignedClassMode $mode = UnassignedClassMode::Ignore,
         public bool $enabled = true,

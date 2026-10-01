@@ -386,10 +386,14 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $enablement = $this->ruleConfiguration->enablement()
             ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
         $levels = self::levelsOf($bindings);
+        $declaredLevels = array_values(array_filter(
+            $levels,
+            static fn(SymbolLevel $level): bool => $activity->declares($override->rulePattern, $level),
+        ));
         $enabled = false;
         foreach ($enablement->decisions() as $decision) {
             if ($decision->producer === $override->rulePattern && $decision->live() && $decision->direct
-                && ($levels === [] || \in_array($decision->level, $levels, true))) {
+                && ($declaredLevels === [] || \in_array($decision->level, $declaredLevels, true))) {
                 $enabled = $activity->ranAtAnyOf($override->rulePattern, $levels);
                 if ($enabled) {
                     break;

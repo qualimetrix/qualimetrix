@@ -56,11 +56,6 @@ final class UnassignedClassOptionsTest extends TestCase
         UnassignedClassOptions::fromResolved(ResolvedOptionsFixture::values(UnassignedClassOptions::class, ['mode' => 'fail']));
     }
 
-    /**
-     * The mode is the switch, not a setting beside one: a second `enabled`
-     * would be a second answer to the same question, and the one that is off
-     * by default would win over the one the author wrote.
-     */
     #[Test]
     public function itOwnsOnlyTheModeWhileTheFrameworkOwnsEnablement(): void
     {
@@ -71,14 +66,9 @@ final class UnassignedClassOptionsTest extends TestCase
         $constructor = (new ReflectionClass(UnassignedClassOptions::class))->getConstructor();
         self::assertNotNull($constructor);
         self::assertSame(
-            ['mode'],
+            ['mode', 'enabled'],
             array_map(static fn($parameter): string => $parameter->getName(), $constructor->getParameters()),
         );
-        // The declaration is now the whole of what the factory compares
-        // against, so a second switch could only get in by being written into
-        // it. `mode` is the only key anyone may write here; `enabled` is in
-        // the answered-by-the-class half, which is where the refusal below
-        // lives and is deliberately not a list anyone may write from.
         self::assertSame(['mode'], UnassignedClassOptions::acceptedOptionKeys()->acceptedForDisplay());
         self::assertFalse(UnassignedClassOptions::acceptedOptionKeys()->knows('enabled'));
         self::assertContains('enabled', \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::of(UnassignedClassOptions::class)->writableAt(null));

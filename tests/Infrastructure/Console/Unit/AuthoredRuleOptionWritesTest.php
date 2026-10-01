@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Infrastructure\Console\AuthoredRuleOptionWrites;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -64,6 +65,34 @@ final class AuthoredRuleOptionWritesTest extends TestCase
             ['optionName' => '--rule-opt', 'text' => 'complexity.ccn:error=30', 'ordinal' => 1],
             ['optionName' => '--rule-opt', 'text' => 'complexity.ccn:class.warning=40', 'ordinal' => 2],
         ], AuthoredRuleOptionWrites::fromInput($input, ['warning' => true]));
+
+        $integer = new ArrayInput(['--warning' => 20], $this->definition());
+        self::assertSame(
+            [['optionName' => '--warning', 'text' => '20', 'ordinal' => 0]],
+            AuthoredRuleOptionWrites::fromInput($integer, ['warning' => true]),
+        );
+        foreach (['warning', 'rule-opt'] as $option) {
+            foreach ([true, false] as $value) {
+                $valued = new ArrayInput(['--' . $option => $option === 'rule-opt' ? [$value] : $value], $this->definition());
+                try {
+                    AuthoredRuleOptionWrites::fromInput($valued, ['warning' => true]);
+                    self::fail('A valued --' . $option . ' must refuse a boolean before spelling it.');
+                } catch (ConfigurationRefusal $refusal) {
+                    self::assertSame(
+                        'Invalid --' . $option . ' value of type bool: expected it as written on a command line.',
+                        $refusal->summary(),
+                    );
+                    self::assertSame('option --' . $option, $refusal->sources()[0]->describe());
+                }
+            }
+        }
+        $flags = new InputDefinition([new InputOption('no-progress', null, InputOption::VALUE_NONE)]);
+        self::assertSame(
+            [['optionName' => '--no-progress', 'text' => 'true', 'ordinal' => 0]],
+            AuthoredRuleOptionWrites::fromInput(new ArrayInput(['--no-progress' => true], $flags), ['no-progress' => false]),
+        );
+        self::assertSame([], AuthoredRuleOptionWrites::fromInput(new ArrayInput(['--no-progress' => false], $flags), ['no-progress' => false]));
+        self::assertSame([], AuthoredRuleOptionWrites::fromInput(new ArrayInput([], $this->definition()), ['warning' => true]));
     }
 
     #[Test]

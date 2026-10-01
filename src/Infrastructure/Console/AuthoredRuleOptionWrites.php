@@ -31,11 +31,11 @@ final class AuthoredRuleOptionWrites
             $records = [];
             foreach ($available as $name => $acceptsValue) {
                 $value = $input->getOption($name);
-                if ($value === null || $value === false || $value === []) {
+                if ($value === null || ($value === false && !$acceptsValue) || $value === []) {
                     continue;
                 }
                 foreach (\is_array($value) ? $value : [$value] as $text) {
-                    $records[] = ['optionName' => '--' . $name, 'text' => $acceptsValue ? (string) $text : 'true', 'ordinal' => \count($records)];
+                    $records[] = ['optionName' => '--' . $name, 'text' => $acceptsValue ? CommandLineSpelling::of($text, '--' . $name) : 'true', 'ordinal' => \count($records)];
                 }
             }
 
