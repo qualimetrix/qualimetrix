@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Configuration\Document;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -14,7 +13,7 @@ use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedList;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque;
-use SplObjectStorage;
+use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 
 /**
  * Phase 2: folds one layer's read value over everything below it, by the
@@ -25,19 +24,11 @@ use SplObjectStorage;
  */
 final class LayerMerge
 {
-    /**
-     * An empty list that replaced a non-empty one, with the layer that wrote
-     * the non-empty one. Kept only while the empty list stands: a higher
-     * layer that replaces it again decides the node, so what was said about
-     * the lower fold would describe a value the run does not use.
-     *
-     * @var SplObjectStorage<ResolvedList, array{Provenance, Provenance, string}>
-     */
-    private SplObjectStorage $emptyOverrides;
+    private EmptyListOverrides $emptyOverrides;
 
     public function __construct()
     {
-        $this->emptyOverrides = new SplObjectStorage();
+        $this->emptyOverrides = new EmptyListOverrides();
     }
 
     public function merge(NodeSchema $schema, ?ResolvedValueInterface $lower, ?ResolvedValueInterface $upper): ?ResolvedValueInterface
@@ -61,34 +52,28 @@ final class LayerMerge
      */
     public function diagnostics(): array
     {
-        $diagnostics = [];
-        foreach ($this->emptyOverrides as $list) {
-            [$upperWriter, $lowerWriter, $notice] = $this->emptyOverrides[$list];
-            $diagnostics[] = new ConfigurationDiagnostic(
-                \sprintf(
-                    '%s is written empty in %s and replaces the list %s wrote. %s',
-                    self::named($upperWriter),
-                    $upperWriter->origin->describe(),
-                    $lowerWriter->origin->describe(),
-                    $notice,
-                ),
-                [$lowerWriter, $upperWriter],
-            );
-        }
-
-        return $diagnostics;
+        return $this->emptyOverrides->diagnostics();
     }
 
     /** Two written bodies, folded by the node's policy. */
     private function mergeBodies(NodeSchema $schema, ResolvedValueInterface $lower, ResolvedValueInterface $upper): ResolvedValueInterface
     {
         return match ($schema->policy) {
-            MergePolicy::LastWriterWins => $upper,
+            MergePolicy::LastWriterWins => self::lastWriterWins($lower, $upper),
             MergePolicy::DeepMerge, MergePolicy::ByName => $this->mergeMaps($schema, self::map($lower), self::map($upper)),
             MergePolicy::Replace => $this->replace($schema, self::list($lower), self::list($upper)),
             MergePolicy::Accumulate => self::accumulate(self::list($lower), self::list($upper)),
             MergePolicy::PerLayer => new ResolvedOpaque([...self::opaque($lower)->contributions(), ...self::opaque($upper)->contributions()]),
         };
+    }
+
+    private static function lastWriterWins(ResolvedValueInterface $lower, ResolvedValueInterface $upper): ResolvedScalar
+    {
+        if (!$lower instanceof ResolvedScalar || !$upper instanceof ResolvedScalar) {
+            throw self::mismatch($upper);
+        }
+
+        return new ResolvedScalar($upper->value, $upper->provenance, [...$lower->writes(), ...$upper->writes()]);
     }
 
     /** A body on either side stands; a name written bare by both keeps every writer. */
@@ -106,37 +91,28 @@ final class LayerMerge
         $entries = $lower->entries();
 
         foreach ($upper->entries() as $key => $value) {
-            $entrySchema = $schema->policy === MergePolicy::ByName
-                ? $schema->element()
-                : $schema->fields()[$key] ?? NodeSchema::opaque();
-
-            $entries[$key] = $this->merge($entrySchema, $entries[$key] ?? null, $value) ?? $value;
+            $entrySchema = self::childSchema($schema, $key);
+            if ($entrySchema === null && (!$value instanceof ResolvedBareName || (isset($entries[$key]) && !$entries[$key] instanceof ResolvedBareName))) {
+                throw new LogicException(\sprintf('No schema is declared for named entry "%s".', $key));
+            }
+            $entries[$key] = $this->merge($entrySchema ?? $schema, $entries[$key] ?? null, $value) ?? $value;
         }
 
         return new ResolvedMap($entries, [...$lower->contributors(), ...$upper->contributors()]);
     }
 
+    private static function childSchema(NodeSchema $schema, string $key): ?NodeSchema
+    {
+        return $schema->policy === MergePolicy::ByName
+            ? $schema->map->entryForName($key)
+            : ($schema->map->keys->fields()[$key] ?? NodeSchema::opaque());
+    }
+
     private function replace(NodeSchema $schema, ResolvedList $lower, ResolvedList $upper): ResolvedList
     {
-        $notice = $schema->emptyOverrideNotice();
-        $replaced = isset($this->emptyOverrides[$lower]) ? $this->emptyOverrides[$lower] : null;
-        unset($this->emptyOverrides[$lower]);
-
-        if ($notice === null || $upper->items() !== []) {
-            return $upper;
-        }
-
-        // An empty list over an empty one that already lifted a filter keeps
-        // naming the layer whose filter was lifted.
-        $lowerWriter = $lower->items() !== []
-            ? $lower->contributors()[\count($lower->contributors()) - 1]
-            : $replaced[1] ?? null;
-
-        if ($lowerWriter !== null) {
-            $this->emptyOverrides[$upper] = [$upper->contributors()[0], $lowerWriter, $notice];
-        }
-
-        return $upper;
+        $result = new ResolvedList($upper->items(), $upper->contributors(), [...$lower->writes(), ...$upper->writes()]);
+        $this->emptyOverrides->considerReplacement($lower, $upper, $result, $schema->wording->emptyOverrideNotice);
+        return $result;
     }
 
     private static function accumulate(ResolvedList $lower, ResolvedList $upper): ResolvedList
@@ -155,12 +131,7 @@ final class LayerMerge
             }
         }
 
-        return new ResolvedList($items, [...$lower->contributors(), ...$upper->contributors()]);
-    }
-
-    private static function named(Provenance $writer): string
-    {
-        return $writer->path === null ? 'The list' : \sprintf('"%s"', $writer->displayPath());
+        return new ResolvedList($items, [...$lower->contributors(), ...$upper->contributors()], [...$lower->writes(), ...$upper->writes()]);
     }
 
     private static function map(ResolvedValueInterface $value): ResolvedMap

@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -53,6 +52,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string RULE_SELECTOR_PRODUCER_GATE_CLASS = 'Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate';
     private const string RULE_PRODUCER_PREPARATION = 'qmx.analysis.run.rule_producer_preparation';
     private const string RULE_PRODUCER_PREPARATION_CLASS = 'Qualimetrix\\Analysis\\Run\\RuleProducerPreparation';
+    private const string INLINE_DIRECTIVE_RUN = 'qmx.analysis.run.inline_directive_run';
+    private const string INLINE_DIRECTIVE_RUN_CLASS = 'Qualimetrix\\Analysis\\Run\\InlineDirectiveRun';
     private const string FILE_DISCOVERY = 'qmx.run.file_discovery';
     private const string FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery';
     private const string ANALYSIS_FILE_DISCOVERY = 'qmx.analysis.run.file_discovery';
@@ -134,7 +135,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
 
         $container->register(self::RULE_SELECTOR_PRODUCER_GATE, self::RULE_SELECTOR_PRODUCER_GATE_CLASS)
-            ->setArgument('$ruleSelector', new Reference(RuleSelector::class));
+            ->setArgument('$ruleConfiguration', new Reference(RuleConfigurationInterface::class));
         $container->register(self::FILE_SET_INSPECTION_COMPOSITE, self::FILE_SET_INSPECTION_COMPOSITE_CLASS)
             ->setArguments([
                 '$participants' => [],
@@ -144,6 +145,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
 
         $this->registerUnmatchedExcludeProducer($container);
         $this->registerInlineDirectivePolicy($container);
+        $this->registerInlineDirectiveRun($container);
         $this->registerRuleProducerPreparation($container);
         $this->registerAnalysisPipeline($container);
     }
@@ -159,7 +161,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::INLINE_DIRECTIVE_USAGE_CLASS, self::INLINE_DIRECTIVE_USAGE_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
-                new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
             ]);
@@ -170,7 +171,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::INLINE_THRESHOLD_AUDIT_CLASS, self::INLINE_THRESHOLD_AUDIT_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
-                new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
             ]);
         $container->setAlias(ThresholdDirectiveAuditInterface::class, self::INLINE_THRESHOLD_AUDIT_CLASS);
@@ -189,16 +189,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // this family's published order has the three directive diagnostics
         // ahead of `annotation.unused-directive`. See
         // ChannelDeclarationCompilerPass.
-        //
-        // The validator answers to the rule's own Options service — the one
-        // `--rule-opt=annotation.directive:enabled=false` configures — rather
-        // than to a copy of it. The id is derived from the rule the same way
-        // RuleOptionsCompilerPass derives it when it registers that service
-        // later in the build; a reference to it resolves at the end of
-        // compilation.
         $container->register(self::INLINE_DIRECTIVE_VALIDATOR_CLASS, self::INLINE_DIRECTIVE_VALIDATOR_CLASS)
             ->setArguments([
-                new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::INLINE_DIRECTIVE_RULE_CLASS)),
                 new Reference(self::INLINE_DIRECTIVE_POLICY_CLASS),
                 new Reference(ChannelIdentityInterface::class),
             ])
@@ -253,11 +245,17 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(LayerPolicyPreparationInterface::class),
                 new Reference(CircularDependencyPreparationInterface::class),
-                new Reference(InlineDirectivePolicyInterface::class),
-                new Reference(ThresholdDirectiveAuditInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
                 new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
-                new Reference(RuleConfigurationInterface::class),
+            ]);
+    }
+
+    private function registerInlineDirectiveRun(ContainerBuilder $container): void
+    {
+        $container->register(self::INLINE_DIRECTIVE_RUN, self::INLINE_DIRECTIVE_RUN_CLASS)
+            ->setArguments([
+                new Reference(InlineDirectivePolicyInterface::class),
+                new Reference(ThresholdDirectiveAuditInterface::class),
             ]);
     }
 
@@ -280,6 +278,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(RuleExecutionInterface::class),
                 new Reference(self::RULE_PRODUCER_PREPARATION),
+                new Reference(self::INLINE_DIRECTIVE_RUN),
                 new Reference(MeasurementAggregationInterface::class),
                 new Reference($computedMetricEvaluation),
                 new Reference(DependencyGraphBuilderInterface::class),

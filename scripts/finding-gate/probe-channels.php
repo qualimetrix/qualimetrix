@@ -24,6 +24,7 @@ use QmxFindingGate\CommandLine;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
@@ -70,7 +71,19 @@ if ($mode === 'case') {
     CheckCommandDefinition::addOptions($command, $rules);
     $command->mergeApplicationDefinition(false);
     $input = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-    $document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline, new ErrorStream()))->adapt($input, $caseDirectory));
+    $constructor = new ReflectionMethod(ConfigurationInputAdapter::class, '__construct');
+    $dependencies = [$pipeline, new ErrorStream()];
+    if ($constructor->getNumberOfRequiredParameters() === 3
+        && ($constructor->getParameters()[2]->getType() instanceof ReflectionNamedType)
+        && $constructor->getParameters()[2]->getType()->getName() === RuleExecutionInterface::class) {
+        $execution = $container->get(RuleExecutionInterface::class);
+        assert($execution instanceof RuleExecutionInterface);
+        $dependencies[] = $execution;
+    } elseif ($constructor->getNumberOfRequiredParameters() !== 2) {
+        throw new RuntimeException('The probe does not support this configuration adapter constructor.');
+    }
+    $adapter = (new ReflectionClass(ConfigurationInputAdapter::class))->newInstanceArgs($dependencies);
+    $document = $pipeline->resolve($adapter->adapt($input, $caseDirectory));
 }
 
 $values = static fn(array $levels): array => array_values(array_map(

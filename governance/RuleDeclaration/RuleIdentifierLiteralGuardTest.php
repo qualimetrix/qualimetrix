@@ -77,26 +77,12 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' cured — a definition cannot reference itself.';
 
     /**
-     * Why {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry}'s
-     * hand-kept key spellings are exempt: its own docblock argues why it
-     * cannot be derived at configuration-merge time.
-     */
-    private const string RULE_THRESHOLD_KEY_GROUP_REASON =
-        'Declared, audited hand-kept copy of a rule\'s ThresholdParser::parse() key'
-        . ' spelling. Its own docblock argues why it cannot be derived at'
-        . ' configuration-merge time: RuleOptionThresholdShorthand runs before'
-        . ' any rule\'s Options::fromArray() is invoked, and Options classes live'
-        . ' with their owning rule capability, which Configuration may not depend'
-        . ' on. Every entry is exercised end-to-end by RuleOptionsFactoryTest /'
-        . ' RuleThresholdKeyGroupRegistryCompletenessTest.';
-
-    /**
-     * Why `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` spells four names by
+     * Why `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` spells five names by
      * hand: the report names them as not judged on a narrowed run, and their
      * owners declare them on internal classes Run may not import.
      */
     private const string WHOLE_PROJECT_CHANNELS_REASON =
-        'The list a narrowed run\'s report names as not judged. The coupling and'
+        'The list a narrowed run\'s report names as not judged. The cohesion, coupling and'
         . ' suppression owners declare these names on internal classes Run may not'
         . ' import; the Architecture names in the same list come from their'
         . ' contract\'s constants and Discovery\'s is Run\'s own. ProjectScopeReadersTest compares'
@@ -180,29 +166,13 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'code-smell.unreachable-code' => self::METRIC_NAME_DECLARATION_REASON,
             'maintainability.mi' => self::METRIC_NAME_DECLARATION_REASON,
         ],
-        'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' => [
-            'design.type-coverage.param' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.type-coverage.return' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.type-coverage.property' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.ccn' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.cognitive' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.npath' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.cbo' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.instability' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.distance' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.class-rank' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'code-smell.long-parameter-list' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'code-smell.constructor-overinjection' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'code-smell.unreachable-code' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'maintainability.mi' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'size.method-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'size.class-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'size.property-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.dit' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.noc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'cohesion.lcom' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.wmc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'duplication.clone' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+        'src/Analysis/Finding/Contract/Selection/RuleNameJudge.php' => [
+            'computed' => 'The exact producer named by migration advice for computed.*. Its owner already'
+                . ' depends on Finding contracts, so importing it here would invert that dependency.',
+        ],
+        'src/Analysis/Finding/Selection/RetiredRuleNames.php' => [
+            'cohesion.lcom' => 'The historical replacement for design.lcom, not a live declaration or'
+                . ' an option dictionary. Name similarity cannot recover this consumer migration fact.',
         ],
         'src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php' => [
             'duplication.clone' => 'The ban must name the second channel no directive may silence,'
@@ -212,6 +182,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 . ' Inline to borrow a constant from.',
         ],
         'src/Analysis/Run/Configuration/ProjectScopeCoverage.php' => [
+            'cohesion.unmatched-exclude-method' => self::WHOLE_PROJECT_CHANNELS_REASON,
             'coupling.unmatched-framework-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
             'suppression.unmatched-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
             'suppression.unmatched-path' => self::WHOLE_PROJECT_CHANNELS_REASON,

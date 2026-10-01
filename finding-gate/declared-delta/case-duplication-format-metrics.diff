@@ -1,6 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -933,2 +933,1 @@
--        "unjudgedValues": [],
--        "reasons": []
-+        "unjudgedValues": []

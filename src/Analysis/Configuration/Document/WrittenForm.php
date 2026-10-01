@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 
@@ -25,8 +24,8 @@ final class WrittenForm
             return null;
         }
 
-        $forms = $schema->scalarForms();
-        $expected = $forms === [] ? 'a scalar' : implode(' or ', array_map(static fn(ScalarForm $form): string => $form->value, $forms));
+        $forms = $schema->scalar->forms;
+        $expected = $schema->describe();
 
         if ($node->shape !== AuthoredShape::Scalar || $node->scalar === null) {
             throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, self::shapeName($node)), $schema));
@@ -34,6 +33,8 @@ final class WrittenForm
 
         foreach ($forms as $form) {
             if ($form->accepts($node->scalar)) {
+                ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
+
                 return new ResolvedScalar($node->scalar, $at->provenance($node));
             }
         }
@@ -41,6 +42,8 @@ final class WrittenForm
         if ($forms !== []) {
             throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)), $schema));
         }
+
+        ScalarConstraints::judge($schema->scalar, $node->scalar, $at);
 
         return new ResolvedScalar($node->scalar, $at->provenance($node));
     }
@@ -83,7 +86,7 @@ final class WrittenForm
 
     private static function hinted(string $refusal, NodeSchema $schema): string
     {
-        $hint = $schema->hint();
+        $hint = $schema->wording->hint;
 
         return $hint === null ? $refusal : $refusal . ' ' . $hint;
     }

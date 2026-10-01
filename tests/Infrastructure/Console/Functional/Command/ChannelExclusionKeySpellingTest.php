@@ -99,35 +99,50 @@ final class ChannelExclusionKeySpellingTest extends TestCase
         self::assertNotContains('size.class-count', $this->channelsOf($tester));
     }
 
-    /**
-     * A key naming a channel that never reports at namespace level is accepted
-     * and excludes nothing: the validator judges production, not applicability
-     * (ADR 0060). Without this, the fix would refuse exactly the keys it is
-     * written for — `code-smell.boolean-argument` declares `callable` only.
-     */
     #[Test]
-    public function itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel(): void
+    public function itRefusesAKeyForAChannelThatNeverReportsAtNamespaceLevel(): void
     {
         $tester = $this->runCheck($this->config(
             "      code-smell.boolean-argument:\n        - subtree: Fx\\Deep",
             owner: 'code-smell.boolean-argument',
         ));
 
-        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
-        self::assertContains('code-smell.boolean-argument', $this->channelsOf($tester));
+        $this->assertNamespaceRefusal($tester, 'code-smell.boolean-argument');
+        $lawful = $this->runCheck($this->config("      size.class-count:\n        - subtree: Fx\\Deep"));
+        self::assertSame(0, $lawful->getStatusCode(), $lawful->getErrorOutput());
+        self::assertNotContains('size.class-count', $this->channelsOf($lawful));
+        self::assertContains('code-smell.boolean-argument', $this->channelsOf($lawful));
     }
 
-    /** The group form carries the same hyphen, and the same acceptance. */
     #[Test]
-    public function itAcceptsAHyphenatedGroupKey(): void
+    public function itRefusesAHyphenatedGroupWithoutAnApplicableChannel(): void
     {
         $tester = $this->runCheck($this->config(
             "      code-smell.*:\n        - subtree: Fx\\Deep",
             owner: 'code-smell.boolean-argument',
         ));
 
-        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
-        self::assertContains('code-smell.boolean-argument', $this->channelsOf($tester));
+        $this->assertNamespaceRefusal($tester, 'code-smell.*');
+        $lawful = $this->runCheck($this->config("      size.*:\n        - subtree: Fx\\Deep"));
+        self::assertSame(0, $lawful->getStatusCode(), $lawful->getErrorOutput());
+        self::assertNotContains('size.class-count', $this->channelsOf($lawful));
+        self::assertContains('code-smell.boolean-argument', $this->channelsOf($lawful));
+    }
+
+    private function assertNamespaceRefusal(CommandTester $tester, string $key): void
+    {
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertSame([
+            'error' => 'Configuration error: Option "suppress_namespace_channels" for rule "code-smell.boolean-argument", keyed by "' . $key . '", addresses "code-smell.boolean-argument", and it does not report at level "namespace" — the levels available are "callable". The pair can never match anything.',
+            'exit_code' => 3,
+            'position' => [
+                'path' => ['rules', 'code-smell.boolean-argument', 'suppress_namespace_channels', $key],
+                'written' => $key,
+                'accepted' => [],
+                'closed' => false,
+            ],
+            'source' => [['kind' => 'file', 'name' => $this->tempDir . '/qmx.yaml', 'imported_by' => null]],
+        ], json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -173,8 +188,8 @@ final class ChannelExclusionKeySpellingTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         /** @var array{error: string, exit_code: int} $envelope */
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertStringContainsString(
-            'keyed by "size.class-count#size.class-count", which is not a channel selector',
+        self::assertSame(
+            'Configuration error: Option "suppress_namespace_channels" for rule "size.class-count", keyed by "size.class-count#size.class-count", is not a channel selector. The "ruleName#code" spelling of a channel is gone: a channel is named by its code alone. Write "size.class-count".',
             $envelope['error'],
         );
     }

@@ -1474,7 +1474,8 @@ function classifyCompositionBindingOperations(string $root, array $manifest, arr
                 continue;
             }
             if ($method === 'register' && isContainerBuilderCall($call, $containerVariables)) {
-                $target = expressionFqcn($call->args[0]->value ?? null);
+                $argument = $call->args[count($call->args) > 1 ? 1 : 0] ?? null;
+                $target = $argument instanceof Node\Arg ? expressionFqcn($argument->value) : null;
                 if ($target !== null && isset($targets[$target])) {
                     $operations[$source . "\0" . $target]['service_registration'] = true;
                 }
@@ -2421,6 +2422,8 @@ function documentationDisposition(string $path): array
         'docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md' => 'Analysis.Configuration',
         'docs/adr/0089-composer-manifest-facts-and-project-scope-reasons.md' => 'Analysis.ProjectManifest',
         'docs/adr/0090-exact-finding-gate-surface-deltas.md' => 'Architecture.Governance',
+        'docs/adr/0091-declared-rule-options-and-enablement.md' => 'Analysis.Finding',
+        'docs/adr/0092-typed-document-declarations-and-option-judgement.md' => 'Analysis.Configuration',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

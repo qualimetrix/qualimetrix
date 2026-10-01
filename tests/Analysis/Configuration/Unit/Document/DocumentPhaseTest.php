@@ -30,7 +30,6 @@ use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 use Qualimetrix\Analysis\Configuration\Document\WrittenNames;
-use Qualimetrix\Analysis\Configuration\UndeclaredRoot;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\Document\SampleDocument;
 
 /**
@@ -321,11 +320,16 @@ final class DocumentPhaseTest extends TestCase
     }
 
     #[Test]
-    public function itCarriesAKnownRootNoOwnerDeclaredYetAndRefusesAnyOtherRoot(): void
+    public function itCarriesAnExplicitOpaqueRootAndRefusesAnyOtherRoot(): void
     {
         $layer = SampleDocument::file(['legacy_root' => ['x' => 1]]);
 
-        $carried = DocumentComposer::compose(new DocumentSchema([new UndeclaredRoot('legacy_root')]), [$layer]);
+        $carried = DocumentComposer::compose(new DocumentSchema([new readonly class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('legacy_root', NodeSchema::opaque());
+            }
+        }]), [$layer]);
         self::assertInstanceOf(ResolvedOpaqueInterface::class, $carried->get('legacy_root'));
         self::assertSame([['x' => 1]], $carried->get('legacy_root')->plain());
 
@@ -334,10 +338,15 @@ final class DocumentPhaseTest extends TestCase
     }
 
     #[Test]
-    public function itAppliesTheSpellingRuleToARootNoOwnerDeclaredYet(): void
+    public function itAppliesTheSpellingRuleToAnExplicitOpaqueRoot(): void
     {
         $refusal = self::refusal(static fn() => DocumentComposer::compose(
-            new DocumentSchema([new UndeclaredRoot('legacy_root')]),
+            new DocumentSchema([new readonly class implements DocumentSectionSchemaInterface {
+                public function declaration(): SectionDeclaration
+                {
+                    return new SectionDeclaration('legacy_root', NodeSchema::opaque());
+                }
+            }]),
             [SampleDocument::file(['Legacy_Root' => ['x' => 1]])],
         ));
 
@@ -352,9 +361,9 @@ final class DocumentPhaseTest extends TestCase
             {
                 return new SectionDeclaration('groups', NodeSchema::list(NodeSchema::map([
                     'members' => NodeSchema::map([
-                        'names' => NodeSchema::stringList(),
+                        'names' => NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                         'allow' => NodeSchema::namedMap(
-                            NodeSchema::stringList(),
+                            NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                             NameVocabulary::fromSibling('names', static fn(mixed $names): array => \is_array($names) ? array_values(array_filter($names, 'is_string')) : []),
                         ),
                     ]),
@@ -422,7 +431,7 @@ final class DocumentPhaseTest extends TestCase
             public function declaration(): SectionDeclaration
             {
                 return new SectionDeclaration('names', NodeSchema::namedMap(
-                    NodeSchema::stringList(),
+                    NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                     NameVocabulary::predicate(static fn(string $name): RefusedName => RefusedName::open('This name cannot be authored.')),
                 ));
             }

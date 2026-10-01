@@ -73,6 +73,7 @@ final class CommandLineSpellingDoorTest extends TestCase
         foreach (['suppress-path', 'suppress-namespace', 'rule-opt', 'preset', 'exclude', 'disable-rule', 'only-rule', 'exclude-health', 'format-opt'] as $option) {
             yield 'check --' . $option => [[...$check, '--' . $option => [true]], '--' . $option];
         }
+        yield 'check --rule-opt false' => [[...$check, '--rule-opt' => [false]], '--rule-opt'];
         yield 'check --workers' => [['command' => 'check', 'paths' => ['src'], '--no-cache' => true, '--workers' => true], '--workers'];
         yield 'check paths' => [['command' => 'check', 'paths' => [true], '--no-cache' => true, '--workers' => '0'], 'paths'];
 

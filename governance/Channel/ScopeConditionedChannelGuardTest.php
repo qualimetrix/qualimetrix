@@ -15,7 +15,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * Every channel that says a configured value bound to nothing must ask first
  * whether this run could tell — and this is the test that will not let the
- * seventh such channel be added without one.
+ * next such channel be added without one.
  *
  * A per-channel unit test cannot prove every scope-conditioned channel asks
  * the question: each one can pass on its own fixture while a new channel lacks
@@ -28,9 +28,10 @@ use Symfony\Component\Console\Tester\CommandTester;
  * and the list below drift apart in either direction — a new channel not
  * listed, or a listed channel gone.
  *
- * **What the silent half does not cover.** Two of the six place no subject of
+ * **What the silent half does not cover.** Three of the seven place no subject of
  * their own — `coupling.unmatched-framework-namespace` names code outside the
- * project, and a rule cannot see the run's paths — so they answer the
+ * project, `cohesion.unmatched-exclude-method` names a configured method
+ * rather than a located subject, and a rule cannot see the run's paths — so they answer the
  * project-wide question alone. They are gated here, and
  * {@see itJudgesOnlyTheValuesWhoseSubjectTheRunAnalysed} deliberately covers
  * only the four that can place a subject.
@@ -38,11 +39,11 @@ use Symfony\Component\Console\Tester\CommandTester;
  * **The pair is the proof.** One fixture, several `composer.json` files. On a
  * run whose paths cover everything the manifest declares production — through
  * `psr-4`, `classmap` or `files` alike — the product can judge and every one
- * of the six channels speaks, and so does every one but the namespace-valued
+ * of the seven channels speaks, and so does every one but the namespace-valued
  * suppression channel under a manifest declaring no production autoload at
  * all, when the caller selects the whole root (ADR 0089);
  * on the same tree and the same configuration under a manifest declaring a
- * production target the run never looked at, every one of the six must be
+ * production target the run never looked at, every one of the seven must be
  * silent. Without the speaking half, silence would not distinguish a
  * working gate from a fixture that cannot produce the channel at all; without
  * the silent half, a channel with no gate passes.
@@ -55,11 +56,12 @@ final class ScopeConditionedChannelGuardTest extends TestCase
 {
     /**
      * The channels under test, spelled out so the assertion has two sides.
-     * Their producers live in five different owners, which is why the list
+     * Their producers live in different owners, which is why the list
      * cannot be read off one class.
      */
     private const array SCOPE_CONDITIONED = [
         'architecture.unmatched-exclude',
+        'cohesion.unmatched-exclude-method',
         'coupling.unmatched-framework-namespace',
         'discovery.unmatched-exclude',
         'suppression.unmatched-namespace',
@@ -132,7 +134,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
             }
             PHP);
 
-        // Every one of the six channels is armed by a value that binds to
+        // Every one of the seven channels is armed by a value that binds to
         // nothing anywhere in this tree — the shape each channel exists to
         // report, so silence below can only come from the gate.
         file_put_contents($this->fixture . '/qmx.yaml', <<<'YAML'
@@ -155,6 +157,8 @@ final class ScopeConditionedChannelGuardTest extends TestCase
                   exclude:
                     suffix: ['NothingLikeThis']
             rules:
+              cohesion.lcom:
+                exclude-methods: [brigde]
               complexity.ccn:
                 suppress_paths:
                   - subtree: src/AlsoGone
@@ -168,7 +172,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
 
     /**
      * The denominator: what the product declares against what this file
-     * guards. A seventh channel named `*.unmatched-*` fails here until it is
+     * guards. A new channel named `*.unmatched-*` fails here until it is
      * listed — and listing it puts it into the two runs below, which is where
      * its gate is actually measured.
      */
@@ -192,7 +196,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
     }
 
     /**
-     * The speaking half: on a run that can judge, every one of the six fires —
+     * The speaking half: on a run that can judge, every one of the seven fires —
      * whichever autoload mechanism the manifest used to declare what the run
      * covered.
      *

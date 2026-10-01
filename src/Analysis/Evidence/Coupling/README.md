@@ -407,6 +407,17 @@ class GodClass  // Ca = 20, Ce = 0 — everything depends on it
 ```
 
 
+## Declared options and effective bands
+
+CBO and instability declare their class/namespace forms and bands. A top-level
+band shorthand spreads to both levels in its own layer before winners are chosen;
+explicit writes to the same expanded leaves conflict in that layer. Independent
+level settings such as enabled are preserved. Different layers merge leaf
+writes. `fromResolved` constructs typed options and judges each effective
+band including default halves. Direction, formulas, default numbers and the
+framework-namespace evidence model are unchanged. DoD includes lower-layer
+malformed refusal, distinct-level writes and coherent effective bands.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

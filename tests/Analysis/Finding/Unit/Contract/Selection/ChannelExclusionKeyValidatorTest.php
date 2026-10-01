@@ -1,0 +1,139 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
+use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+
+/**
+ * The `suppress_namespace_channels` key: what it must address, and at what
+ * level.
+ *
+ * The universe here holds two channels of two different producers, one
+ * reporting at two levels and one at a single level. That is the shape a
+ * single-witness question is needed for: with one channel, "some channel
+ * reports at this level" and "this rule's channel reports at this level" cannot
+ * be told apart.
+ */
+#[CoversClass(RuleNameJudge::class)]
+final class ChannelExclusionKeyValidatorTest extends TestCase
+{
+    /**
+     * The level witness is `coupling.cbo`, the production witness is
+     * `coupling.class-rank`, and neither satisfies the other's condition: the
+     * key was accepted while excluding nothing it could ever reach.
+     */
+    #[Test]
+    public function itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'keyed by "coupling.*:namespace", addresses "coupling.class-rank",'
+            . ' and it does not report at level "namespace"',
+        );
+
+        self::assertAddressesAProducedChannel('coupling.class-rank', 'coupling.*:namespace');
+    }
+
+    /** The same wildcard key under the rule that does report at that level stays accepted. */
+    #[Test]
+    public function itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel(): void
+    {
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.*:namespace');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    /**
+     * The option is offered namespace aggregates only, so `:class` describes a
+     * filter that can never fire — however truthfully the channel reports at
+     * that level.
+     */
+    #[Test]
+    public function itRefusesALevelTheOptionNeverAsksAbout(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage(
+            'names level "class", and this option removes namespace aggregates only: the one level it can name'
+            . ' is "namespace". Drop the level, or write "coupling.cbo:namespace".',
+        );
+
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo:class');
+    }
+
+    #[Test]
+    public function itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling(): void
+    {
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo:namespace');
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    /**
+     * A key carrying both a retired `#` pair and a level is answered about the
+     * pair: the `#` half is not a name, so the level question could only call
+     * it unparseable.
+     */
+    #[Test]
+    public function itRefusesTheRetiredPairBeforeTheLevel(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('spelling of a channel is gone');
+
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo#coupling.cbo:class');
+    }
+
+    /** A level-free key naming another rule's channel keeps naming this rule's channels back. */
+    #[Test]
+    public function itRefusesALevelFreeKeyNamingAnotherRulesChannel(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('addresses none of the channels of "coupling.class-rank"');
+
+        self::assertAddressesAProducedChannel('coupling.class-rank', 'coupling.cbo');
+    }
+
+    private static function assertAddressesAProducedChannel(string $producer, string $key): void
+    {
+        $channels = self::universe();
+        $problem = (new RuleNameJudge($channels->ruleNames()))->namespaceChannel($producer, $key, $channels);
+        if ($problem !== null) {
+            throw ConfigurationRefusal::aboutResolvedInput($problem->summary);
+        }
+    }
+
+    private static function universe(): ChannelUniverseInterface
+    {
+        return new ChannelUniverse(
+            [
+                'coupling.cbo' => ChannelDeclaration::magnitude(
+                    WorseDirection::Higher,
+                    SymbolLevel::Class_,
+                    SymbolLevel::Namespace_,
+                ),
+                'coupling.class-rank' => ChannelDeclaration::magnitude(
+                    WorseDirection::Higher,
+                    SymbolLevel::Class_,
+                ),
+            ],
+            [
+                'coupling.cbo' => ['coupling.cbo'],
+                'coupling.class-rank' => ['coupling.class-rank'],
+            ],
+            ['coupling.cbo' => true, 'coupling.class-rank' => true],
+            new ResolvedComputedMetricDefinitions([]),
+        );
+    }
+}

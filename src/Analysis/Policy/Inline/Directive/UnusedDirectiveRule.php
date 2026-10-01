@@ -51,7 +51,7 @@ final class UnusedDirectiveRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.';
     }

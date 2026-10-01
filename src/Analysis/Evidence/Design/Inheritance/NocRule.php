@@ -45,7 +45,7 @@ final class NocRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Number of Children (many direct subclasses indicate wide impact)';
     }

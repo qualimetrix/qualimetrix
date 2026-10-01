@@ -32,6 +32,7 @@ code-smell.superglobals
 code-smell.unreachable-code
 code-smell.unused-private
 cohesion.lcom
+cohesion.unmatched-exclude-method
 complexity.cognitive
 complexity.ccn
 complexity.npath

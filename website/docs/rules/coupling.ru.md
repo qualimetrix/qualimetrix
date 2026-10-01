@@ -753,3 +753,7 @@ rules:
 bin/qmx check src/ --rule-opt="coupling.class-rank:warning=0.03"
 bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
 ```
+
+## Независимые пары слоёв
+
+CBO и instability раскрывают верхнюю пару в class и namespace в написавшем слое. Явные записи в те же раскрытые листья этого слоя конфликтуют; независимые настройки уровня, например enabled, сохраняются. Настрой разные пары уровней явно или помести перекрывающий override в другой слой. Effective-band validation учитывает написанные и default halves. Направления метрик, формулы и numeric defaults не меняются. Написанный enabled:true намеренно снимает нижний disable. См. [конфигурацию](../getting-started/configuration.ru.md).

@@ -97,7 +97,7 @@ final class UnboundSuppressionRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Reports a suppress_paths, suppress_namespaces or suppress_namespace_channels value that names nothing the run contains';
     }

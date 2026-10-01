@@ -318,3 +318,12 @@ function complexButNecessary(): void
 ```
 
 Полный синтаксис селекторов — в [Baseline](../usage/baseline.ru.md#каналы-а-не-имена-правил).
+
+## Activation без смены defaults
+
+Числа таблиц не меняются. Написанная class-пара NPath действует без лишнего
+enabled:true, class.enabled:false выключает её. Верхнее complexity shorthand
+больше не выключает class, effective bands проверяются с default halves.
+cohesion.unmatched-exclude-method — secondary project warning с magnitude 1,
+не новый LCOM threshold и не channel с configured warning boundary.
+См. [конфигурацию](../getting-started/configuration.ru.md).

@@ -14,10 +14,9 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\DefaultMetricRepositoryFactory;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
@@ -36,11 +35,13 @@ use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Fluent builder for {@see AnalysisPipeline} instances in tests.
@@ -99,8 +100,6 @@ final class TestPipelineBuilder
     private ?LoggerInterface $logger = null;
 
     private ?ProfilerInterface $profiler = null;
-
-    private ?RuleSelector $ruleSelector = null;
 
     private function __construct() {}
 
@@ -234,23 +233,6 @@ final class TestPipelineBuilder
         return $this;
     }
 
-    public function withRuleSelector(RuleSelector $ruleSelector): self
-    {
-        $this->ruleSelector = $ruleSelector;
-
-        return $this;
-    }
-
-    /**
-     * One selector for this builder, memoized: two `new RuleSelector(...)`
-     * defaults would put a different mutable object behind each half of the
-     * pipeline, which is the divergence the comment in `build()` is about.
-     */
-    private function ruleSelector(): RuleSelector
-    {
-        return $this->ruleSelector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
-    }
-
     public function withInlineDirectivePolicy(InlineDirectivePolicyInterface $policy): self
     {
         $this->inlineDirectivePolicy = $policy;
@@ -264,20 +246,28 @@ final class TestPipelineBuilder
      * them somewhere, and a real policy over an empty channel universe
      * reports nothing rather than pretending.
      */
-    private function resolveInlineDirectivePolicy(): InlineDirectivePolicyInterface
+    private function resolveInlineDirectivePolicy(RuleConfigurationInterface $configuration): InlineDirectivePolicyInterface
     {
         $universe = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
 
         return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(new DirectiveUsage(
             $universe,
-            $this->ruleSelector(),
-            $this->ruleConfiguration ?? new RuleOptionsRegistry(),
+            $configuration,
             $universe,
         ));
     }
 
     public function build(): AnalysisPipeline
     {
+        $execution = $this->ruleExecutor ?? throw new LogicException(
+            'TestPipelineBuilder: ruleExecutor is required (call withRuleExecution())',
+        );
+        $configuration = $this->ruleConfiguration;
+        if ($configuration === null) {
+            $configuration = new RuleOptionsRegistry();
+            $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules()));
+        }
+
         return new AnalysisPipeline(
             analysisFileDiscovery: new AnalysisFileDiscovery(
                 $this->defaultDiscovery ?? throw new LogicException(
@@ -289,32 +279,21 @@ final class TestPipelineBuilder
             collectionOrchestrator: $this->collectionOrchestrator ?? throw new LogicException(
                 'TestPipelineBuilder: collectionOrchestrator is required (call withCollectionOrchestrator())',
             ),
-            ruleExecutor: $this->ruleExecutor ?? throw new LogicException(
-                'TestPipelineBuilder: ruleExecutor is required (call withRuleExecution())',
-            ),
+            ruleExecutor: $execution,
             ruleProducerPreparation: new RuleProducerPreparation(
                 $this->resolveLayerPolicyPreparation(),
                 $this->circularDependencyPreparation ?? throw new LogicException(
                     'TestPipelineBuilder: circularDependencyPreparation is required '
                     . '(call withCircularDependencyPreparation())',
                 ),
-                $this->resolveInlineDirectivePolicy(),
-                $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
                 $this->fileSetInspection ?? throw new LogicException(
                     'TestPipelineBuilder: fileSetInspection is required (call withFileSetInspection())',
                 ),
-                // The gate carries no state, but its answer is the selector's,
-                // and `RuleSelector` is mutable — `replaceChannels()`,
-                // `useDeclaredLevels()`. So what makes these two agree is one
-                // selector instance behind both, not the gate being stateless.
-                // Production satisfies that by wiring one gate service to the
-                // composite and to the preparation; here the composite is
-                // supplied assembled, so a caller whose composite reads a
-                // different selector hands that gate to
-                // `withFileSetInspection()` and this falls back only for the
-                // callers whose composite reads no selector of their own.
-                $this->producerGate ?? new RuleSelectorProducerGate($this->ruleSelector()),
-                $this->ruleConfiguration ?? new RuleOptionsRegistry(),
+                $this->producerGate ?? new RuleSelectorProducerGate($configuration),
+            ),
+            inlineDirectiveRun: new InlineDirectiveRun(
+                $this->resolveInlineDirectivePolicy($configuration),
+                $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
             ),
             measurementAggregation: $this->measurementAggregation ?? throw new LogicException(
                 'TestPipelineBuilder: measurementAggregation is required (call withMeasurementAggregation())',

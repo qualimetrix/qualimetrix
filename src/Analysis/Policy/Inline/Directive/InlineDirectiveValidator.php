@@ -7,12 +7,12 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
@@ -67,13 +67,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
      */
     private readonly DirectiveAddressability $addressability;
 
-    /**
-     * The options are the producer rule's own, the same configuration
-     * `--rule-opt=annotation.directive:enabled=false` writes. A validator has
-     * no thresholds of its own, but it is switched off with its producer.
-     */
     public function __construct(
-        private readonly RuleOptionsInterface $options,
         private readonly InlineDirectivePolicy $policy,
         ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
     ) {
@@ -108,8 +102,10 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
             self::UNRESOLVED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
                 ->describedAs('Reports an inline directive that addresses nothing it may address, or that is malformed before any channel is read.'),
             self::UNSUPPORTED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->selectedAs(ChannelSelectionRole::FollowsAddressedRule)
                 ->describedAs('Reports a threshold directive that targets a rule with no threshold-override support.'),
             self::INVALID_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->selectedAs(ChannelSelectionRole::FollowsAddressedRule)
                 ->describedAs('Reports a threshold directive whose payload does not fit the targeted rule\'s options.'),
         ];
     }
@@ -119,10 +115,6 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
      */
     public function validate(AnalysisContext $context): array
     {
-        if (!$this->options->isEnabled()) {
-            return [];
-        }
-
         return [
             ...$this->suppressionFindings(),
             ...$this->thresholdFindings(),
@@ -188,6 +180,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
             code: self::UNSUPPORTED_CHANNEL,
             message: $rejection->message,
             severity: Severity::Error,
+            addressedProducer: $this->addressability->addressedProducerOf($override->rulePattern),
         );
     }
 
@@ -219,6 +212,7 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
                     message: $this->addressability->describeDiagnostic($diagnostic),
                     severity: Severity::Error,
                     recommendation: $diagnostic->hint,
+                    addressedProducer: $this->addressability->addressedProducerOf($diagnostic->rulePattern),
                 );
             }
         }

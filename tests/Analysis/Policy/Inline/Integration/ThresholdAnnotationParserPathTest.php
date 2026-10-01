@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 
 use PhpParser\Comment\Doc;
+
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,6 +30,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * End-to-end coverage for the `@qmx-threshold` annotation path that
@@ -164,8 +166,8 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     #[Test]
     public function itExpandsAWarningOnlyShorthandToEqualWarningAndError(): void
     {
-        // GodClass: shorthand `@qmx-threshold X N` parses as W=N, E=N with
-        // errorWasExplicit=false. WarningOnly must accept this so the
+        // GodClass: shorthand `@qmx-threshold X N` carries equal values without
+        // authored axes. WarningOnly must accept this so the
         // shorthand path keeps working — the user did not write `error=N`.
         $result = $this->extract(
             ruleName: GodClassRule::NAME,
@@ -218,7 +220,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         // are Standard ThresholdAware. The factory now walks levels so the
         // parser actually receives a validator for complexity.ccn
         // instead of silently skipping it.
-        $rootOptions = ComplexityOptions::fromArray([]);
+        $rootOptions = ComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ComplexityOptions::class, []));
         $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Symbol\SymbolLevel::Callable);
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface::class, $levelOptions);
         $validator = $levelOptions::getOverrideValidator();

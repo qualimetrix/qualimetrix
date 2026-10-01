@@ -1275,7 +1275,7 @@ final class DirectivesCommandTest extends TestCase
 
         self::assertCount(1, $report['directives']);
         self::assertSame('symbol', $report['directives'][0]['form']);
-        self::assertSame(['annotation.directive'], $report['selection']['disabled']);
+        self::assertSame(['disabled_rules[0]: annotation.directive'], $report['selection']['disabled']);
     }
 
     /**

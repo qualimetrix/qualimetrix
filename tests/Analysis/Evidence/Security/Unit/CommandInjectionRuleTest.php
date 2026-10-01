@@ -30,7 +30,7 @@ final class CommandInjectionRuleTest extends TestCase
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
         self::assertSame('security.command-injection', $rule->getName());
-        self::assertSame('Detects potential command injection vulnerabilities', $rule->getDescription());
+        self::assertSame('Detects potential command injection vulnerabilities', $rule::getDescription());
     }
 
     #[Test]

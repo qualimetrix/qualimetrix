@@ -62,7 +62,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks CBO (Coupling Between Objects) at class and namespace levels';
     }

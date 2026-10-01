@@ -6,14 +6,15 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -30,44 +31,35 @@ final class ConfigurationInputAdapter
     public function __construct(
         private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly ErrorStream $errorStream,
+        private readonly RuleExecutionInterface $ruleExecution,
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
-    public function resolve(InputInterface $input, ?AnalysisPreflightProfile $profile = null): ConfigurationDocument
+    /** @param ?list<array{optionName: string, text: string, ordinal: int}> $authoredRuleRecords */
+    public function resolve(InputInterface $input, ?AnalysisPreflightProfile $profile = null, ?array $authoredRuleRecords = null): ConfigurationDocument
     {
         return $this->configurationPipeline->resolve(
-            $this->adapt($input, self::currentWorkingDirectory()->value(), $profile ?? AnalysisPreflightProfile::analysis()),
+            $this->adapt($input, self::currentWorkingDirectory()->value(), $profile ?? AnalysisPreflightProfile::analysis(), $authoredRuleRecords),
         );
     }
 
-    /** The document's warnings about accepted configuration, one `Warning:` line each on the error stream. */
-    public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output): void
+    /** @param list<ConfigurationDiagnostic> $additional */
+    public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output, array $additional = []): void
     {
-        foreach ($document->diagnostics() as $diagnostic) {
-            $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', OutputFormatter::escape($diagnostic->message)));
-        }
+        (new ConfigurationDiagnosticsPublisher($this->errorStream))->write($document, $output, $additional);
     }
 
     /**
      * The same warnings as a structured report publishes them, each with every
      * layer it is about.
      *
+     * @param list<ConfigurationDiagnostic> $additional
+     *
      * @return list<array{message: string, source: list<array<string, mixed>>}>
      */
-    public function publishedDiagnostics(ConfigurationDocument $document): array
+    public function publishedDiagnostics(ConfigurationDocument $document, array $additional = []): array
     {
-        $published = [];
-        foreach ($document->diagnostics() as $diagnostic) {
-            $published[] = [
-                'message' => $diagnostic->message,
-                'source' => array_map(
-                    static fn(Provenance $provenance): array => RefusalPresenter::sourceDocument($provenance->origin),
-                    $diagnostic->sources,
-                ),
-            ];
-        }
-
-        return $published;
+        return (new ConfigurationDiagnosticsPublisher($this->errorStream))->report($document, $additional);
     }
 
     /**
@@ -87,11 +79,18 @@ final class ConfigurationInputAdapter
         return ExitPolicy::fromResolvedValue($document->resolved()->get(ConfigSchema::FAIL_ON));
     }
 
-    public function adapt(InputInterface $input, string $workingDirectory, ?AnalysisPreflightProfile $profile = null): ConfigurationResolutionRequest
+    /** @param ?list<array{optionName: string, text: string, ordinal: int}> $authoredRuleRecords */
+    public function adapt(InputInterface $input, string $workingDirectory, ?AnalysisPreflightProfile $profile = null, ?array $authoredRuleRecords = null): ConfigurationResolutionRequest
     {
         $this->refuseEmptyValues($input);
 
-        [$values, $optionNames] = $this->overrides($input, $profile ?? AnalysisPreflightProfile::analysis());
+        $profile ??= AnalysisPreflightProfile::analysis();
+        [$values, $optionNames] = $this->overrides($input, $profile);
+        $writes = [];
+        if ($profile->requiresFindingConfiguration) {
+            $parser = (new RuleOptionsParserFactory())->createFromMetadata($this->ruleExecution->allRules());
+            $writes = (new CliOptionsParser($parser, $this->selectorDecoder))->pathWrites($input, $authoredRuleRecords);
+        }
 
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
@@ -99,6 +98,7 @@ final class ConfigurationInputAdapter
             CommandLineSpelling::options($input, 'preset'),
             $values,
             $optionNames,
+            $writes,
         );
     }
 

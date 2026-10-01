@@ -88,7 +88,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Reports a coupling.frameworkNamespaces selector that classified nothing';
     }

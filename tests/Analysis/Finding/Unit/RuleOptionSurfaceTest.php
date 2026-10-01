@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
@@ -102,22 +104,25 @@ final class RuleOptionSurfaceTest extends TestCase
      * promise an answer this object does not give.
      */
     #[Test]
-    public function itLeavesAKeyTheClassAnswersAboutItselfOutOfBothAnswers(): void
+    public function itPublishesFrameworkEnablementWithoutInventingAnOwningOption(): void
     {
         $surface = RuleOptionSurface::of(FlatOptionsStub::class);
 
-        self::assertNotContains('enabled', $surface->writableAt(null));
-        self::assertNull($surface->locate('enabled'));
+        self::assertContains('enabled', $surface->writableAt(null));
+        self::assertSame('enabled', $surface->locate('enabled')?->key);
+        self::assertFalse($surface->ownKeySet()->accepts('enabled'));
+        self::assertTrue(FrameworkOptionKeys::declared()->accepts('enabled'));
     }
 
     #[Test]
-    public function itPublishesAClassValidatedWritableKeyWithoutInventingAGenericShape(): void
+    public function itPublishesTheDeclaredIngressFormOfAClassValidatedWritableKey(): void
     {
         $surface = RuleOptionSurface::of(FlatOptionsStub::class);
 
         self::assertContains('selector', $surface->writableAt(null));
         self::assertSame('selector', $surface->locate('selector')?->key);
-        self::assertNull($surface->ownKeySet()->shapeOf('selector'));
+        self::assertTrue($surface->ownKeySet()->shapeOf('selector')?->matches(['subtree' => 'App']));
+        self::assertFalse($surface->ownKeySet()->shapeOf('selector')->matches('App'));
     }
 
     #[Test]
@@ -197,7 +202,7 @@ final class RuleOptionSurfaceTest extends TestCase
 
 final class FlatOptionsStub implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }
@@ -218,14 +223,14 @@ final class FlatOptionsStub implements RuleOptionsInterface
             'min-lines' => RuleOptionShape::text()->orNull(),
             'threshold' => RuleOptionShape::text()->orNull(),
         ])
-            ->alsoAcceptedAndValidatedByTheClass('selector')
+            ->alsoAcceptedAndValidatedByTheClass('selector', RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText()))
             ->alsoAnsweredByTheClass('enabled');
     }
 }
 
 final class HierarchicalOptionsStub implements HierarchicalRuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }
@@ -269,7 +274,7 @@ final class HierarchicalOptionsStub implements HierarchicalRuleOptionsInterface
 
 final class CallableLevelOptionsStub implements LevelOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }
@@ -295,7 +300,7 @@ final class CallableLevelOptionsStub implements LevelOptionsInterface
 
 final class ClassLevelOptionsStub implements LevelOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

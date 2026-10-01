@@ -71,7 +71,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * literal. This file is where it is derived: against the tracked fixture
      * and against the rule classes read directly.
      */
-    public const int DECLARED_CHANNEL_COUNT = 59;
+    public const int DECLARED_CHANNEL_COUNT = 60;
 
     /**
      * Nine subclasses of `AbstractCodeSmellRule`, three of
@@ -446,11 +446,8 @@ final class ChannelUniverseCoverageTest extends TestCase
             return false;
         }
 
-        $options = $optionsClass::fromArray([]);
-        \assert($options instanceof HierarchicalRuleOptionsInterface);
-
-        foreach ($options->getSupportedLevels() as $level) {
-            if ($options->forLevel($level) instanceof ThresholdAwareOptionsInterface) {
+        foreach ($optionsClass::levelOptionsClasses() as $levelClass) {
+            if (is_a($levelClass, ThresholdAwareOptionsInterface::class, true)) {
                 return true;
             }
         }

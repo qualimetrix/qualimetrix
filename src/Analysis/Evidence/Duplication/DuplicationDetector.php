@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -43,9 +44,6 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
     private HashIndexBuilder $hashIndexBuilder;
     private TokenNormalizer $normalizer;
     private DuplicateBlockFinder $blockFinder;
-
-    private int $minTokens;
-    private int $minLines;
 
     public function __construct(
         private readonly RuleConfigurationInterface $ruleConfiguration,
@@ -88,9 +86,12 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
     /** @param list<SplFileInfo> $files */
     private function detect(array $files, AbsolutePath $projectRoot): void
     {
-        $this->loadOptions();
+        $options = $this->ruleConfiguration->resolvedOptions()->for('duplication.clone');
+        if (!$options instanceof CodeDuplicationOptions) {
+            throw new LogicException('The duplication producer requires CodeDuplicationOptions.');
+        }
 
-        $indexResult = $this->hashIndexBuilder->build($files, $projectRoot, $this->minTokens);
+        $indexResult = $this->hashIndexBuilder->build($files, $projectRoot, $options->min_tokens);
         if ($indexResult->isEmpty()) {
             $this->resultProvider->replace([]);
 
@@ -103,21 +104,13 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
             hashIndex: $indexResult->hashIndex,
             retokenized: $retokenized,
             filePaths: $indexResult->filePaths,
-            minTokens: $this->minTokens,
-            minLines: $this->minLines,
+            minTokens: $options->min_tokens,
+            minLines: $options->min_lines,
         ));
 
         unset($indexResult, $retokenized);
 
         $this->resultProvider->replace($blocks);
-    }
-
-    private function loadOptions(): void
-    {
-        $ruleOptions = $this->ruleConfiguration->all();
-        $dupOptions = $ruleOptions['duplication.clone'] ?? [];
-        $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
-        $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
     }
 
     /**

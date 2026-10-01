@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
@@ -23,6 +26,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ConstructorOverinjectionRule::class)]
 #[CoversClass(ConstructorOverinjectionOptions::class)]
@@ -41,7 +45,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions());
 
-        self::assertSame('Checks number of constructor parameters (dependencies)', $rule->getDescription());
+        self::assertSame('Checks number of constructor parameters (dependencies)', $rule::getDescription());
     }
 
     #[Test]
@@ -65,7 +69,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new ConstructorOverinjectionRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -315,7 +319,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayDefaults(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray(['enabled' => true]);
+        $options = ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(8, $options->warning);
@@ -325,11 +329,11 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     #[Test]
     public function itOptionsFromArrayCustomValues(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray([
+        $options = ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, [
             'enabled' => true,
             'warning' => 6,
             'error' => 10,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(6, $options->warning);
@@ -337,11 +341,10 @@ final class ConstructorOverinjectionRuleTest extends TestCase
     }
 
     #[Test]
-    public function itOptionsFromEmptyArrayDisabled(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = ConstructorOverinjectionOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new ConstructorOverinjectionOptions(), ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, [])));
+        self::assertFalse(ConstructorOverinjectionOptions::fromResolved(ResolvedOptionsFixture::values(ConstructorOverinjectionOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo

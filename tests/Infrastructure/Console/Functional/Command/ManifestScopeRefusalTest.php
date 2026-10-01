@@ -54,7 +54,17 @@ final class ManifestScopeRefusalTest extends TestCase
                         self::assertSame('composer.json', $reason['source']);
                     }
                 }
-                self::assertCount($state === 'unmeasured' ? 8 : 0, $report['projectScope']['unjudgedChannels']);
+                self::assertSame($state === 'unmeasured' ? [
+                    'architecture.empty-template',
+                    'architecture.unmatched-exclude',
+                    'architecture.unreachable-layer',
+                    'cohesion.unmatched-exclude-method',
+                    'coupling.unmatched-framework-namespace',
+                    'discovery.unmatched-exclude',
+                    'suppression.unmatched-namespace',
+                    'suppression.unmatched-path',
+                    'suppression.unmatched-rule-ledger',
+                ] : [], $report['projectScope']['unjudgedChannels']);
             }
         } finally {
             unlink($root . '/src/A.php');

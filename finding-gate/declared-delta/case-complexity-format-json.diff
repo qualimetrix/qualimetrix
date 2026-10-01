@@ -1,6 +1,24 @@
 --- candidate
 +++ reference (mapped)
-@@ -33,2 +33,1 @@
--        "unjudgedValues": [],
--        "reasons": []
-+        "unjudgedValues": []
+@@ -13,6 +13,6 @@
+-        "violationCount": 18,
+-        "errorCount": 13,
+-        "warningCount": 5,
+-        "infoCount": 0,
+-        "techDebtMinutes": 745,
+-        "debtPer1kLoc": 4656.3
++        "violationCount": 17,
++        "errorCount": 13,
++        "warningCount": 4,
++        "infoCount": 0,
++        "techDebtMinutes": 700,
++        "debtPer1kLoc": 4375
+@@ -80,1 +80,0 @@
+-        
+@@ -368,2 +367,2 @@
+-        "total": 18,
+-        "shown": 18,
++        "total": 17,
++        "shown": 17,
+@@ -378,1 +377,0 @@
+-            "cohesion.unmatched-exclude-method": 1,

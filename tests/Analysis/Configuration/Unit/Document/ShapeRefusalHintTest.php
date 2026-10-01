@@ -9,8 +9,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -20,11 +22,13 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
+use Qualimetrix\Analysis\Configuration\Document\ScalarConstraints;
 use Qualimetrix\Analysis\Configuration\Document\WrittenForm;
 
 /** A node's hint follows the engine's refusal of the form written at that node, and only there. */
 #[CoversClass(LayerReading::class)]
 #[CoversClass(WrittenForm::class)]
+#[CoversClass(ScalarConstraints::class)]
 final class ShapeRefusalHintTest extends TestCase
 {
     /** @return iterable<string, array{array<string, mixed>, non-empty-string}> */
@@ -57,6 +61,99 @@ final class ShapeRefusalHintTest extends TestCase
 
         self::assertStringEndsWith('remove it or write a value.', $summary);
         self::assertStringNotContainsString('hint', $summary);
+    }
+
+    #[Test]
+    public function itReadsABareBooleanAsTheDeclaredFieldWithoutTreatingNullAsFalse(): void
+    {
+        $schema = new DocumentSchema([self::section('rules', NodeSchema::namedMap(
+            NodeSchema::map(['enabled' => NodeSchema::scalar(ScalarForm::Boolean)])->bareFor('enabled'),
+            NameVocabulary::fixed(['X']),
+        ))]);
+        $document = DocumentComposer::compose($schema, [
+            new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, 'first'), AuthoredNode::fromPlain(['rules' => ['X' => true]])),
+            new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'), AuthoredNode::fromPlain(['rules' => ['X' => false]])),
+        ]);
+
+        self::assertSame(['enabled' => false], $document->get('rules', 'X')?->plain());
+        self::assertSame(['rules', 'X'], $document->get('rules', 'X', 'enabled')?->contributors()[0]->path);
+
+        $null = DocumentComposer::compose($schema, [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+            AuthoredNode::fromPlain(['rules' => ['X' => null]]),
+        )]);
+        self::assertNull($null->get('rules', 'X')?->plain());
+    }
+
+    #[Test]
+    public function itAcceptsOneBareElementOnlyWhereTheListDeclaresIt(): void
+    {
+        $schema = new DocumentSchema([
+            self::section('selected', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->admittingBareElement()),
+            self::section('strict', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))),
+        ]);
+        $document = DocumentComposer::compose($schema, [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+            AuthoredNode::fromPlain(['selected' => 'is']),
+        )]);
+        self::assertSame(['is'], $document->get('selected')?->plain());
+        self::assertSame(['selected'], $document->get('selected', '0')?->contributors()[0]->path);
+
+        try {
+            DocumentComposer::compose($schema, [new AuthoredLayer(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+                AuthoredNode::fromPlain(['strict' => 'is']),
+            )]);
+            self::fail('The other list has no bare-element declaration.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(['strict'], $refusal->position()?->segments);
+        }
+    }
+
+    #[Test]
+    public function itJudgesRetiredKeysEvenWhenWrittenAsNull(): void
+    {
+        $schema = new DocumentSchema([self::section('settings', NodeSchema::map([
+            'active' => NodeSchema::scalar(ScalarForm::Boolean),
+        ])->retiring(['old_value' => 'Use "active" instead.']))]);
+
+        try {
+            DocumentComposer::compose($schema, [new AuthoredLayer(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+                AuthoredNode::fromPlain(['settings' => ['oldValue' => null]]),
+            )]);
+            self::fail('A retired name is judged before a null value is discarded.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(['settings', 'oldValue'], $refusal->position()?->segments);
+            self::assertStringContainsString('Use "active" instead.', $refusal->summary());
+        }
+    }
+
+    #[Test]
+    public function itJudgesClosedWordsNumericFloorsAndNonEmptyTextInEachLayer(): void
+    {
+        $schema = new DocumentSchema([
+            self::section('mode', NodeSchema::scalar(ScalarForm::String)->words(SchemaWordSet::foldingCase('warn', 'error'))),
+            self::section('count', NodeSchema::scalar(ScalarForm::Integer)->atLeast(1)),
+            self::section('name', NodeSchema::scalar(ScalarForm::String)->nonEmpty()),
+        ]);
+        $good = DocumentComposer::compose($schema, [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'),
+            AuthoredNode::fromPlain(['mode' => 'WARN', 'count' => 1, 'name' => 'known']),
+        )]);
+        self::assertSame('WARN', $good->get('mode')?->plain());
+
+        foreach ([['count' => 0], ['mode' => 'unknown'], ['name' => '  ']] as $bad) {
+            try {
+                DocumentComposer::compose($schema, [
+                    new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, 'bad'), AuthoredNode::fromPlain($bad)),
+                    new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/p/qmx.yaml'), AuthoredNode::fromPlain(['count' => 2, 'mode' => 'warn', 'name' => 'good'])),
+                ]);
+                self::fail('A malformed lower layer must be refused.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertSame('bad', $refusal->sources()[0]->locator());
+            }
+        }
     }
 
     /** @param array<string, mixed> $document */

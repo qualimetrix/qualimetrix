@@ -11,18 +11,12 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Executable proof for the fail-closed modular-topology contract.
@@ -144,40 +138,37 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
     /**
      * @param array<string, string> $patternsByLayer
      * @param array<string, list<string>> $allow
+     *
+     * @return array<string, mixed>
      */
-    private function architecture(array $patternsByLayer, array $allow): ArchitectureConfiguration
+    private function architecture(array $patternsByLayer, array $allow): array
     {
         $layers = [];
         foreach ($patternsByLayer as $name => $pattern) {
-            $layers[] = new LayerDefinition($name, new MembershipSpec([$pattern]));
+            $layers[] = ['name' => $name, 'patterns' => [$pattern]];
         }
 
-        return new ArchitectureConfiguration(
-            new LayerRegistry($layers),
-            AllowListBuilder::policyFromExactMap($allow),
-            CoverageMode::Error,
-        );
+        return ['layers' => $layers, 'allow' => $allow, 'coverage-gap' => 'error'];
     }
 
-    private function analyze(string $path, ArchitectureConfiguration $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
+    /** @param array<string, mixed> $architecture */
+    private function analyze(string $path, array $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        $container = (new ContainerFactory())->create();
+        $root = AbsolutePath::fromString($path);
+        $workingDirectory = AbsolutePath::fromString(is_dir($path) ? $path : \dirname($path));
+        $fixture = PreparedAnalysis::start($workingDirectory, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        $container = $fixture->container();
         $processor = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $processor);
-        $processor->bind($architecture);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $root = AbsolutePath::fromString($path);
-        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
+        try {
+            return $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
     }
 
     /** @param list<Finding> $findings */

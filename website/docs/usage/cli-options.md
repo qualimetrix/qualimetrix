@@ -539,7 +539,7 @@ is separate from `suppress_paths`; each is broken down by rule name. Unlike `@qm
 the default output indicates it happened.
 
 `--show-suppressed` renders part of this as prose on the text surface.
-`--format=suppressed` reports the full composition — all seven suppression
+`--format=suppressed` reports the full composition — all eight suppression
 mechanisms, not only these two — as machine-readable JSON; see
 [Output Formats](output-formats.md#suppressed). Either `--show-suppressed` or
 selecting `--format=suppressed` (including `format: suppressed` in
@@ -547,17 +547,11 @@ selecting `--format=suppressed` (including `format: suppressed` in
 both. The two surfaces are not otherwise equivalent — see
 [suppressed](output-formats.md#suppressed) for what each one shows.
 
-Suppression is a closed set of seven mechanisms. Several neighboring decisions
-also make a finding invisible but are not suppression, and neither surface
-covers them: a rule that never ran (`--disable-rule`, `--only-rule`,
-`enabled: false`) produced nothing to suppress; a disabled channel for a
-classless producer (visible in `qmx rules`) is removed the same way, before
-the ledger runs; a threshold that keeps a finding from being produced at all
-(`@qmx-threshold`) is audited separately rather than through this surface;
-formatter truncation (`--detail`, `violations=N`) keeps the finding in the
-payload and only flags it `truncated`; and `--namespace`/`--class` drill-down
-narrows presentation per invocation without removing anything from the
-underlying result.
+Suppression composition includes eight mechanisms, including produced-finding
+`selection` removals. A producer that never ran produced nothing to remove and
+is reported separately under `notRun`, not byMechanism. Threshold-audit effects,
+formatter truncation and namespace/class drill-down retain their separate roles;
+truncation/drill-down change presentation, not underlying finding identity.
 
 ### `--no-suppression-annotations`
 
@@ -839,25 +833,19 @@ Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exac
 producer rule, not a group or channel — a group or channel there is an error. The same rule
 governs the `rules:` YAML section keys.
 
-!!! note "Every channel obeys selection, including the one assembled last"
-    `annotation.unused-directive` — the "this suppression silenced nothing" verdict — can only be
-    reached once every other rule has produced its findings, so a run assembles it after rule
-    execution. It is selected like any other channel all the same:
-    `--disable-rule=annotation.unused-directive` (or `annotation.unused-directive:file`) silences
-    it, and an `--only-rule` that names other channels of `annotation.directive` without naming
-    this one does not report it.
-
-    The producer's exclusion options are a separate matter and do not reach this channel:
-    `rules.annotation.directive.suppress_paths` gates its early channels only, and
-    `suppress_namespaces` reaches none of them, since these findings are reported against the file
-    the annotation was written in.
+!!! note "Selection roles are declared per channel"
+    `annotation.unused-directive` is directly selectable even though assembled
+    after execution. Other directive diagnostics may be filter-exempt or follow
+    the addressed producer. Explicitly disabling annotation.directive stops its
+    producer. Root path exclusions and namespace exclusions retain their own
+    subject-level applicability; they are not a second selection resolver.
 
 ### `--rule-opt`
 
 Override rule options from the command line. Format: `rule-name:option=value`, where
 `rule-name` must be an exact producer rule — never a group, never a channel, and never a
-wildcard. This is the same constraint that governs the owner before `:` in
-`--only-rule`/`--disable-rule` and the `rules:` YAML section keys. Can be repeated:
+wildcard. The same exact-producer constraint governs the `rules:` YAML section keys;
+level-qualified selection instead addresses a declared channel code. Can be repeated:
 
 ```bash
 bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
@@ -871,7 +859,7 @@ not accept. The refusal for the last one lists the options the rule does
 accept.
 
 `suppress_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
-requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
+requires a non-empty list of namespace patterns, while channel-keyed dictionaries are not CLI dotted addresses. Its
 keys are channel selectors and follow the same exact-or-`X.*` rule as `@qmx-ignore` — a bare
 prefix like `health` is now an error, not a shorthand for `health.*`. A key may add `:namespace`
 and no other level: the option is offered namespace aggregates only, so any other level would
@@ -940,7 +928,7 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 | `--lcom-error=N`                     | cohesion.lcom                 | error               |
 | `--lcom-min-methods=N`               | cohesion.lcom                 | minMethods          |
 | `--lcom-exclude-readonly`            | cohesion.lcom                 | excludeReadonly     |
-| `--lcom-exclude-methods=NAME`        | cohesion.lcom                 | excludeMethods      |
+| `--lcom-exclude-methods='[NAME]'`    | cohesion.lcom                 | excludeMethods      |
 | `--noc-warning=N`                    | design.noc                    | warning             |
 | `--noc-error=N`                      | design.noc                    | error               |
 | `--param-type-coverage-warning=N`    | design.type-coverage.param    | warning             |
@@ -1258,10 +1246,51 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 Rules are grouped by category. `options:` names what the rule accepts in its
 own block, and an `options at <level>:` line names what a level slot accepts —
 these are the complete set, whether or not an option also has a CLI alias. The
-three keys in the footer are legal under every rule. `enabled` is listed per
-rule rather than in the footer because one rule, `architecture.unassigned-class`,
-does not take it — its switch is `mode`.
+three keys in the footer are legal under every rule. `enabled` is listed with
+each rule, including `architecture.unassigned-class`: false disables it even in a reportable mode;
+explicit true with `mode: ignore` refuses because the producer would remain inactive.
 
 Each CLI alias is listed with the long `--rule-opt` form it expands to. Default
 threshold values are not part of this output — see
 [Default thresholds](../reference/default-thresholds.md).
+
+## Typed rule values and final selection
+
+Both `--rule-opt` and dedicated aliases parse the same declared YAML value form.
+For example `--lcom-exclude-methods='[getName, getDescription]'` writes a sequence;
+CSV or a scalar is not that sequence. Null does not become text. Writing the same
+canonical option twice through aliases or `--rule-opt` in one invocation refuses.
+A dotted option address traverses only a declared level slot, never arbitrary
+channel-keyed dictionaries. Put `suppress_namespace_channels` maps in YAML.
+
+A bare name selects an exact producer or channel; `X.*` selects strict descendants.
+A pair `channel-name:level` requires that declared channel code to report at the
+specified level. When producer and channel have the same name, it works as a
+channel name; there is no differently named producer:level alias. The same witness
+must also belong to the supplied producer/set for namespace-channel exclusions.
+
+Higher-layer decisions win before specificity; at the same layer an exact producer
+enable beats a group disable. A later exact enable can cancel a lower disable.
+An exact enable and disable of the same producer in one layer refuses even if
+later overridden. `only_rules` selects a filter; it does not enable an inactive
+producer. Empty effective selection, a dead exact selector, an enable outside its
+own/lower effective filter and an explicit enable with muted option activity refuse.
+A higher disable may intentionally narrow an earlier filter. Empty only_rules
+removes a lower filter, while empty maps never reset options.
+
+Most channels are directly selectable. Declared diagnostic roles admit filter-exempt
+channels or diagnostics that follow a selected addressed producer. These are not
+extra producer enable statements: explicitly disabling their producer still stops
+it. `annotation.unused-directive` remains directly selectable; unresolved directive
+errors are filter-exempt, and unsupported/invalid threshold errors follow the
+addressed producer. Fix the source input rather than hiding a configuration error
+with an unrelated only filter.
+
+`bin/qmx rules` prints accepted root/level options independently of CLI aliases,
+then the effective only filter and all tied decisive disabled texts. It also prints
+`Selection source: ... (...; layer N)` from the actual origin and layer index.
+One writer repeated across cells prints once; equal text from distinct layers does
+not merge. Listing judges the document and stated selection, not effective-band
+build/conclude or runtime state. Directive text/JSON preserve all decisive disabling
+texts and omit ones canceled by later enable; JSON selection.disabled stays a string
+list. For values and layer forms see [Configuration](../getting-started/configuration.md).

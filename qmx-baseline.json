@@ -127,7 +127,7 @@
       {"channel":"complexity.ccn","magnitudes":[10]}
     ],
     "declaration:callable:Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline::__construct@src/Analysis/Run/Pipeline/AnalysisPipeline.php": [
-      {"channel":"code-smell.constructor-overinjection","magnitudes":[10]}
+      {"channel":"code-smell.constructor-overinjection","magnitudes":[11]}
     ],
     "declaration:callable:Qualimetrix\\Core\\Path\\AbsolutePath::normalize@src/Core/Path/AbsolutePath.php": [
       {"channel":"complexity.ccn","magnitudes":[10]}
@@ -337,10 +337,10 @@
       {"channel":"coupling.cbo","magnitudes":[20]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"coupling.instability","magnitudes":[0.952381]}
+      {"channel":"coupling.instability","magnitudes":[0.953846]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
-      {"channel":"coupling.instability","magnitudes":[0.938776]}
+      {"channel":"coupling.instability","magnitudes":[0.941176]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Duplication": [
       {"channel":"size.class-count","magnitudes":[18]}
@@ -373,6 +373,8 @@
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
     "project:": [
+      {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]},
+      {"channel":"architecture.circular-dependency","occurrence":"63813cd71327da6f","magnitudes":[4]},
       {"channel":"duplication.clone","occurrence":"031824eba3cbd977","magnitudes":[17]},
       {"channel":"duplication.clone","occurrence":"1937eefedb68de6f","magnitudes":[43]},
       {"channel":"duplication.clone","occurrence":"22f9b02a385ac3d1","magnitudes":[24]},

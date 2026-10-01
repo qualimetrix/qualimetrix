@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -68,7 +70,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             array_keys($declarations),
         );
         self::assertEquals(
-            ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
             $declarations['code-smell.goto'],
         );
         self::assertEquals(
@@ -521,7 +523,7 @@ final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule with no channelDeclarations() method, for the compiler pass "declares nothing" case.';
     }
@@ -580,7 +582,7 @@ final class FixtureRuleWithShapeMismatch implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule whose declared shape disagrees with its channel.';
     }
@@ -650,7 +652,7 @@ final class FixtureRuleForShapeAgreement implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule half of a mismatched producer pair.';
     }
@@ -738,9 +740,8 @@ final class FixtureValidatorWithDisagreeingShape implements ConfigurationValidat
 final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterface
 {
     /**
-     * @param array<string, mixed> $config
      */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }
@@ -782,7 +783,7 @@ final class FixtureRuleWithoutAFamily implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule whose name has no non-empty first segment.';
     }
@@ -839,7 +840,7 @@ final class FixtureRuleJudgingAnUnknownMetric implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -907,7 +908,7 @@ final class FixtureRuleJudgingAnAggregate implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -975,7 +976,7 @@ final class FixtureOccurrenceRuleJudgingAMetric implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule for the judged-metric half of registry assembly.';
     }
@@ -1044,7 +1045,7 @@ final class FixtureRuleWithUndescribedSecondaryChannel implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule with an undescribed secondary channel.';
     }
@@ -1100,7 +1101,7 @@ final class FixtureRuleDescribingItsOwnChannel implements RuleInterface
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Fixture rule describing its own channel twice.';
     }

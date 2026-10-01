@@ -35,12 +35,12 @@ interface RuleInterface extends RuleDefinitionInterface
     /**
      * Returns human-readable description.
      */
-    public function getDescription(): string;
+    public static function getDescription(): string;
 
     /**
      * Analyzes metrics and generates findings.
      *
-     * One instance serves the whole process and is asked more than once per
+     * One instance serves one configured invocation and is asked more than once per
      * run — once for the run itself, and once per authored threshold-override
      * group inside the directive audit — so it must carry nothing from one
      * call to the next: every property readonly and written only in the
@@ -58,22 +58,4 @@ interface RuleInterface extends RuleDefinitionInterface
      */
     public function analyze(AnalysisContext $context): array;
 
-    /**
-     * Which of this rule's producer/level pairs this configuration lets run.
-     *
-     * The rule is the only honest answer here: a hierarchical rule decides per
-     * level inside {@see \Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface::analyzeLevel()},
-     * and the computed-metric host decides per producer against its own
-     * per-producer options. Anything outside the rule can only re-derive that
-     * from configuration, and a re-derivation is a second copy of the
-     * semantics that drifts — the defect this answer exists to remove.
-     *
-     * A pair is present when the producer **declares** that level, and its
-     * value says whether the level ran. An absent pair is not a disabled one:
-     * "this producer does not report at that level" is a different fact, and
-     * the audit must not read it as a disablement.
-     *
-     * @return array<string, array<string, bool>> producer name => level value => ran
-     */
-    public function levelActivity(): array;
 }

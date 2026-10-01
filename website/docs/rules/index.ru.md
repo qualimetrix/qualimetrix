@@ -258,3 +258,7 @@ rules:
 
 Отключение правила: `--disable-rule=complexity.npath`. Отключение группы: `--disable-rule=code-smell.*` (по wildcard; захватывает только потомков, не сам `code-smell`).
 -->
+
+## Producers и channels
+
+Rule metadata именует producers; producer может публиковать несколько channels. Имена computed/health и их уровни берутся из invocation snapshot, не фиксированного числа. Bare producer selector адресует producer; channel-name:level использует declared channel code с одним реальным level witness. Diagnostic roles могут допускать дополнительную публикацию под only filters. См. [selection](../usage/cli-options.ru.md#опции-правил).

@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -19,1 +19,1 @@
+-            "--disable-rule=duplication.clone:project"
++            "duplication.clone:project"

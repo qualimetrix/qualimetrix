@@ -50,7 +50,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks NPath complexity at method and class levels';
     }

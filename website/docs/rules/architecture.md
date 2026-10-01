@@ -781,8 +781,8 @@ prints is dominated by code the project does not own. This gate counts only
 the run itself measured. A declaration for which no collector recorded any
 class-level metric is not in the set and counts as assigned.
 
-It is a rule of its own, off by default, with one option — the mode is the
-switch:
+It is a rule of its own, inactive by default because its mode is `ignore`.
+The owner declares `mode`; framework `enabled` controls producer admission:
 
 ```yaml
 rules:
@@ -792,8 +792,9 @@ rules:
 
 It reads the same single walk over classes and dependency edges that
 `architecture.layer-violation` does, so turning it on costs no extra traversal.
-There is no separate `enabled` key: `mode: ignore` is how the rule is declined,
-and a second switch would be a second answer to one question.
+Framework `enabled` and owner `mode` answer different questions: selection and
+reportability. A muted mode stays inactive; explicit enable with mode:ignore
+refuses. enabled:false with mode:warn is lawful and off.
 
 | Mode               | Behaviour                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------- |
@@ -1125,7 +1126,7 @@ rules:
       - src/Legacy
 ```
 
-This works because the framework (`RuleOptionsFactory`) extracts `suppress_namespaces` / `suppress_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `suppress_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
+This works because the framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `suppress_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
 
 <!-- llms:skip-end -->
 
@@ -1166,3 +1167,7 @@ For users migrating from a dedicated architecture-testing tool:
 For the design rationale behind the current layer policy — including why templates expand by observed binding tuples, why capture-binding is mandatory, and why `relations:` is whitelist-only — see [ADR 0059: Declared-Layer Policy and Architecture Governance](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0059-declared-layer-policy-and-architecture-governance.md).
 
 <!-- llms:skip-end -->
+
+## Enablement and reportable mode
+
+Unassigned-class accepts the framework enabled switch in addition to mode. enabled:false with mode:warn is lawful and off; an explicit enabled:true with mode:ignore refuses. Use warn/error to report, or remove the exact enable. Shared layer evidence preparation runs when either lawful producer needs it; disabling a sibling does not disable this producer. Layer-violation keeps its own default-enabled/no-layers short circuit. [Configuration forms](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution) apply before discovery.

@@ -786,8 +786,8 @@ class-like объявления**: классы, интерфейсы, трей�
 действительно измерил. Объявление, для которого ни один коллектор не записал
 метрик уровня класса, в множество не входит и считается отнесённым.
 
-Это отдельное правило, по умолчанию выключенное, с единственной опцией —
-режим и есть выключатель:
+Это отдельное правило, по умолчанию неактивное из-за `mode: ignore`.
+Владелец объявляет `mode`, а общий `enabled` управляет допуском producer:
 
 ```yaml
 rules:
@@ -797,8 +797,9 @@ rules:
 
 Оно читает тот же единственный обход классов и рёбер зависимостей, что и
 `architecture.layer-violation`, поэтому включение не добавляет прогону обхода.
-Отдельного ключа `enabled` нет: `mode: ignore` — это и есть отказ от правила, а
-второй выключатель был бы вторым ответом на один вопрос.
+Общий `enabled` и собственный `mode` отвечают за допуск producer и возможность
+публикации. `enabled: false` с `mode: warn` законно и выключает producer;
+явный `enabled: true` с `mode: ignore` отказывает как включение неактивного producer.
 
 | Режим                   | Поведение                                                                                  |
 | ----------------------- | ------------------------------------------------------------------------------------------ |
@@ -1136,7 +1137,7 @@ rules:
       - src/Legacy
 ```
 
-Это работает, потому что фреймворк (`RuleOptionsFactory`) извлекает `suppress_namespaces` /
+Это работает, потому что фреймворк (`RuleOptionsBuild`) извлекает `suppress_namespaces` /
 `suppress_paths` для любого имени правила безусловно, ещё до того, как конфигурацию увидит класс
 Options самого правила. Явное указание `architecture.layer-violation` — однозначный, проверяемый
 выбор: в отличие от общей записи `suppress_namespaces`, его нельзя прочитать как «просто исключить
@@ -1184,3 +1185,7 @@ Options самого правила. Явное указание `architecture.l
 Для обоснования текущей политики слоёв — почему шаблоны разворачиваются по наблюдаемым binding tuples, почему capture-binding обязателен, почему `relations:` whitelist-only — см. [ADR 0059: Declared-Layer Policy and Architecture Governance](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0059-declared-layer-policy-and-architecture-governance.md).
 
 <!-- llms:skip-end -->
+
+## Включение и reportable mode
+
+Unassigned-class принимает общий enabled наряду с mode. enabled:false с mode:warn законно и выключено; explicit enabled:true с mode:ignore отказывает. Для отчёта задай warn/error или убери exact enable. Shared layer evidence подготавливается, когда нужен любому законно активному producer; disable соседа этот producer не выключает. Layer-violation сохраняет собственный default-enabled/no-layers short circuit. [Формы конфигурации](../getting-started/configuration.ru.md) проверяются до discovery.

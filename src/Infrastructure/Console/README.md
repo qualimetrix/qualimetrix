@@ -17,6 +17,12 @@ Console/
 ├── Application.php
 ├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
+├── AuthoredRuleOptionWrites.php    # preserves authored occurrences across input adapters
+├── RuleOptionArgv.php              # repeated argv tokens and their original ordinal
+├── CliRuleOptionAddressing.php     # alias admission and the declared option address
+├── ConfigurationInputAdapter.php   # shared document and CLI ingress
+├── ConfigurationDiagnosticsPublisher.php # warnings and source diagnostics on the error stream
+├── RuleListingPresenter.php        # producer rows, computed footer and selection sources
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
@@ -94,7 +100,7 @@ currently preserves analysis paths; `reportScope` limits finding publication.
 unchanged; the captured `ProjectScopeUniverse` retains identity.
 Coverage is derived from that measurement rather than supplied independently
 as a boolean. `Covered` and `Unknown` permit whole-project judgement;
-`Narrowed` and `Unmeasured` withhold the eight registered whole-project channels.
+`Narrowed` and `Unmeasured` withhold the registered whole-project channels.
 
 `FindingFilterOrchestrator` creates Finding's per-value suppression judgement
 from this same evidence. Accepted PSR-4 facts place namespaces independently
@@ -265,8 +271,8 @@ format. No Finding selection or analysis-format consumer runs on this path.
 With no path argument, graph export uses resolved document or Composer defaults.
 `rules` reads and judges the document without requesting a Run configuration or
 refusing an empty analysis tree. It includes named computed metrics and marks
-the current final `only_rules`/`disabled_rules` selection. Raw `rules` enable
-switches remain owned by Finding's rule resolution, not a second Console parser.
+the current stated `only_rules`/`disabled_rules` selection. Finding owns the
+shared resolver; Console has no second raw rule parser.
 `debug:layer-assignment` accepts `--preset`; all four measuring baseline commands
 share `--no-cache`, `--workers` and `--memory-limit`.
 
@@ -337,7 +343,7 @@ not against the working directory `--working-dir` has since changed.
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                                                                                        |
 | `--show-resolved`              | Show count of resolved findings                                                                                                                                                                                                                                                                                                                                                                          |
-| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all seven suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
+| `--show-suppressed`            | Show suppressed findings — `@qmx-ignore` tags and per-rule `suppress_namespaces` / `suppress_namespace_channels` / `suppress_paths` exclusions, each listed in its own block. `--format=suppressed` (or `format: suppressed` in `qmx.yaml`) reports the same composition, across all eight suppression mechanisms, as machine-readable JSON — either route arms the same capture (`RuntimeConfigurator`) |
 | `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--suppress-path`, `--suppress-namespace`), never widen it                                                           |
 
 ### `check`'s baseline reporting
@@ -472,6 +478,30 @@ bin/qmx hook:uninstall
 - Unit tests for commands
 - End-to-end integration tests
 
+
+## Prepared rule handoff and listing
+
+The configuration input adapter resolves the complete declared document and
+builds the actual invocation channel snapshot. Measurement commands perform
+RuleEnablementResolver decide → RuleOptionsBuild build → conclude before runtime
+publication. Aliases and rule-opt contribute to one authored CLI layer with the
+same YAML value grammar, duplicate-write refusal and actual option locator.
+`RuleOptionArgv` preserves repeated tokens before Symfony folds scalar options;
+`AuthoredRuleOptionWrites` retains the bound-input fallback.
+`CliRuleOptionAddressing` judges aliases and addresses through the single
+`RuleOptionSurface` declaration. `ConfigurationInputAdapter` owns ingress
+and delegates diagnostic publication to `ConfigurationDiagnosticsPublisher`.
+The shared document/run doors and mandatory scope remain unchanged.
+
+`rules` reads declared forms and resolves stated selection without build,
+conclude or store commit. It lists accepted root and level options separately
+from aliases and shared framework footer. It retains the effective only filter
+and all tied decisive disabling writers. `Selection source` names actual
+origin.describe() and zero-based layerIndex; repeated cells of a writer collapse,
+while identical displayed text from distinct writers remains distinct.
+`RuleListingPresenter` renders the selected rows, computed-metric footer and
+selection sources together. DoD distinguishes a valid listing from successful
+effective-band preflight.
 
 ## Locality
 

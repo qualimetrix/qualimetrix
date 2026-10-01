@@ -35,6 +35,7 @@ final readonly class ProjectScopeCoverage
         LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
         LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+        'cohesion.unmatched-exclude-method',
         'coupling.unmatched-framework-namespace',
         'discovery.unmatched-exclude',
         'suppression.unmatched-namespace',

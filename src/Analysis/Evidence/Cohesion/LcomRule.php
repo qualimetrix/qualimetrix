@@ -50,7 +50,7 @@ final class LcomRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Lack of Cohesion of Methods (high values indicate class should be split)';
     }
@@ -73,7 +73,7 @@ final class LcomRule extends AbstractRule
             }
         }
 
-        return $findings;
+        return [...$findings, ...LcomExcludedMethods::findings($context, $this->options)];
     }
 
     private function findingForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options): ?Finding
@@ -159,6 +159,9 @@ final class LcomRule extends AbstractRule
                 JudgedMetrics::of(MetricName::COHESION_LCOM),
                 SymbolLevel::Class_,
             ),
+            'cohesion.unmatched-exclude-method' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)
+                ->withoutConfiguredWarningBoundary()
+                ->describedAs('Reports configured LCOM method exclusions that match no declared method in the whole project'),
         ];
     }
 

@@ -35,6 +35,18 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
  */
 final readonly class DirectiveAddressability
 {
+    public function addressedProducerOf(string $rulePattern): ?string
+    {
+        if ($this->identity->hasRule($rulePattern)) {
+            return $rulePattern;
+        }
+        if ($this->identity->hasChannel($rulePattern)) {
+            return $this->identity->producerOf($rulePattern);
+        }
+
+        return null;
+    }
+
     private DirectiveNameHints $hints;
 
     /**

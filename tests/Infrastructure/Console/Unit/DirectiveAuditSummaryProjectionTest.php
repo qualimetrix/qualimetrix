@@ -6,13 +6,19 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Both projections tally every verdict the vocabulary defines.
@@ -25,6 +31,30 @@ use Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter;
  */
 final class DirectiveAuditSummaryProjectionTest extends TestCase
 {
+    #[Test]
+    public function itPublishesBothEqualRankDisableWritersInTheTextAndJsonSelection(): void
+    {
+        $metadata = [new RuleMetadata('complexity.alpha.beta', CodeSmellOptions::class, 'Nested complexity', [], false)];
+        $document = ResolvedOptionsFixture::document([
+            ['source' => 'config', 'values' => ['disabled_rules' => ['complexity.*', 'complexity.alpha.*']]],
+        ], AbsolutePath::fromString('/project'), $metadata);
+        $selection = ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata)->enablement;
+        self::assertNotNull($selection);
+        $presenter = new DirectiveAuditPresenter(
+            new DirectiveAuditReport([], new AnalysisCoverage([], [], []), 0),
+            $selection,
+        );
+
+        self::assertStringContainsString(
+            'Disabled     disabled_rules[0]: complexity.*, disabled_rules[1]: complexity.alpha.*',
+            $presenter->text(),
+        );
+        self::assertSame(
+            ['disabled_rules[0]: complexity.*', 'disabled_rules[1]: complexity.alpha.*'],
+            json_decode($presenter->json(0), true, 512, \JSON_THROW_ON_ERROR)['selection']['disabled'],
+        );
+    }
+
     #[Test]
     public function itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines(): void
     {
@@ -87,8 +117,7 @@ final class DirectiveAuditSummaryProjectionTest extends TestCase
 
         return new DirectiveAuditPresenter(
             new DirectiveAuditReport($verdicts, new AnalysisCoverage([], [], []), 0),
-            [],
-            [],
+            new RuleEnablement([], null),
         );
     }
 

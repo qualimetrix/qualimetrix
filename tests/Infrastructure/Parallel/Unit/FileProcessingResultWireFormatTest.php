@@ -129,7 +129,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             binding: new DeclarationBinding($subject, ControlScope::Class_),
         );
         $override = new ThresholdOverride('complexity.ccn', 10, 20, 13, $subject, ControlScope::Class_);
-        $diagnostic = new ThresholdDiagnostic(14, $subject, 'invalid threshold');
+        $diagnostic = new ThresholdDiagnostic(14, $subject, 'complexity.ccn', 'invalid threshold');
 
         $result = FileProcessingResult::success(
             filePath: $path,

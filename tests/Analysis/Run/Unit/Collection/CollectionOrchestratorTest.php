@@ -466,8 +466,8 @@ final class CollectionOrchestratorTest extends TestCase
         $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
         $override = new ThresholdOverride('complexity.ccn', 12, 20, 8, $subject, ControlScope::Class_);
         $secondOverride = new ThresholdOverride('design.type-coverage.param', 95, 80, 18, $subject, ControlScope::Class_);
-        $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
-        $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');
+        $diagnostic = new ThresholdDiagnostic(9, $subject, 'complexity.ccn', 'invalid fixture threshold');
+        $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'coupling.cbo', 'second invalid fixture threshold');
         $dependencies = [
             $this->dependency('App\\Service', 'App\\Port', DependencyType::Implements, 'tmp/good.php', 10),
             $this->dependency('App\\Service', 'App\\Helper', DependencyType::New_, 'tmp/good.php', 11),

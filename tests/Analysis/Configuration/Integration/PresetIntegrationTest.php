@@ -27,7 +27,7 @@ final class PresetIntegrationTest extends TestCase
         );
 
         self::assertSame(['preset:strict,ci'], $document->appliedSources());
-        self::assertCount(1, $document->ruleContributions());
+        self::assertCount(1, $document->resolved()->get('rules')?->contributors() ?? []);
         self::assertSame('error', $document->resolved()->get('fail_on')?->plain());
     }
 
@@ -42,6 +42,6 @@ final class PresetIntegrationTest extends TestCase
         );
 
         self::assertSame(['preset:legacy'], $document->appliedSources());
-        self::assertCount(1, $document->disabledRuleContributions());
+        self::assertCount(1, $document->resolved()->get('disabled_rules')?->contributors() ?? []);
     }
 }

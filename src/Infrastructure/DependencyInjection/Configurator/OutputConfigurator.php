@@ -8,12 +8,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
@@ -82,6 +80,7 @@ use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
 use Qualimetrix\Reporting\Configuration\OutputFormatSection;
@@ -220,8 +219,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerRunInputs(ContainerBuilder $container): void
     {
-        $container->register(FindingConfigurationResolver::class);
-        $container->setAlias(FindingConfigurationResolverInterface::class, FindingConfigurationResolver::class);
         $container->register(ConfigurationInputAdapter::class)
             ->setAutowired(true);
         $container->register(ExitPolicySection::class)->setAutoconfigured(true);
@@ -447,11 +444,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(RulesCommand::class)
             ->setArguments([
                 new Reference(RuleExecutionInterface::class),
-                new Reference(RuleChannelRegistryInterface::class),
-                new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(RuleChannelSnapshotFactoryInterface::class),
+                new Reference(RuleEnablementResolver::class),
                 new Reference(RuleListingPresenter::class),
                 new Reference(ConfigurationInputAdapter::class),
-                new Reference(FindingConfigurationResolverInterface::class),
                 new Reference(ComputedMetricConfiguratorInterface::class),
             ])
             ->setPublic(true);
@@ -503,7 +499,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(BaselineConfiguredThresholds::class)
             ->setArguments([
                 new Reference(RuleRegistryInterface::class),
-                new Reference(RuleOptionsFactory::class),
+                new Reference(RuleConfigurationInterface::class),
             ]);
 
         // Every one of the five gets RefusalPresenter through a method call

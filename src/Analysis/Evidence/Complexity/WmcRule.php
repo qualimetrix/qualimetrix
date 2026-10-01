@@ -47,7 +47,7 @@ final class WmcRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks Weighted Methods per Class (sum of method complexities)';
     }

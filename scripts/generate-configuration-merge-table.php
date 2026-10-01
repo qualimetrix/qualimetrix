@@ -10,10 +10,9 @@ declare(strict_types=1);
  * and Russian, between the two markers below.
  *
  * The table is read from the declarations the document engine itself composes
- * against: the sections the product container registers, completed with the
- * roots Configuration declares and a stand-in for every root nobody declares
- * yet. A section added to the product therefore appears here without an edit to
- * this script, and a root still carried unread appears as exactly that.
+ * against: the sections the product container registers and the roots
+ * Configuration declares. A section added to the product therefore appears
+ * here without an edit to this script.
  *
  * Every sentence exists in both languages as an exhaustive `match`: a new merge
  * policy or scalar form stops the generator instead of leaving a cell empty.
@@ -30,6 +29,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\ConfigurationMergeTable;
 
+use LogicException;
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
@@ -37,7 +38,8 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
-use Qualimetrix\Analysis\Configuration\DocumentRoots;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -77,10 +79,9 @@ function fail(string $message): never
 
 /**
  * Every root of the document the pipeline composes against, sorted by key: the
- * owner sections the container tags, completed exactly as the pipeline
- * completes them.
+ * owner sections the container tags and Configuration-owned roots.
  *
- * @return list<SectionDeclaration>
+ * @return array{declarations: list<SectionDeclaration>, ruleNames: list<string>}
  */
 function sections(): array
 {
@@ -112,11 +113,18 @@ function sections(): array
 
     $sections = array_map(
         static fn(DocumentSectionSchemaInterface $section): SectionDeclaration => $section->declaration(),
-        DocumentRoots::completing($owners),
+        [...ConfigurationRoot::cases(), ...$owners],
     );
     usort($sections, static fn(SectionDeclaration $a, SectionDeclaration $b): int => strcmp($a->key, $b->key));
 
-    return $sections;
+    $execution = $container->get(RuleExecutionInterface::class);
+    if (!$execution instanceof RuleExecutionInterface) {
+        fail('the container has no rule metadata registry');
+    }
+    $ruleNames = array_map(static fn(RuleMetadata $rule): string => $rule->name, $execution->allRules());
+    sort($ruleNames, \SORT_STRING);
+
+    return ['declarations' => $sections, 'ruleNames' => $ruleNames];
 }
 
 /**
@@ -126,14 +134,53 @@ function sections(): array
  * wrote it — so their rows say what `~` and an empty value mean inside the item.
  *
  * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
+ * @param list<string> $ruleNames
  *
  * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}>
  */
-function walk(NodeSchema $node, string $path, string $kind, string $parent, array $rows, bool $inItem = false): array
+function walk(NodeSchema $node, string $path, string $kind, string $parent, array $rows, array $ruleNames, bool $inItem = false): array
 {
     $rows[] = ['path' => $path, 'node' => $node, 'kind' => $kind, 'shorthand' => null, 'parent' => $parent, 'inItem' => $inItem];
 
-    return below($node, $path, $rows, $inItem);
+    return below($node, $path, $rows, $ruleNames, $inItem);
+}
+
+/**
+ * The form of a shorthand's first declared target, following dotted paths and
+ * terminal shorthand chains through the same schema the document reads.
+ *
+ * @param array<string, true> $visiting map identity and shorthand key
+ */
+function shorthandTargetSchema(NodeSchema $map, string $target, array $visiting = []): NodeSchema
+{
+    $node = $map;
+    $segments = explode('.', $target);
+    foreach ($segments as $index => $segment) {
+        if ($node->policy !== MergePolicy::DeepMerge) {
+            fail(\sprintf('shorthand target "%s" descends through a non-map node', $target));
+        }
+
+        if ($index === \count($segments) - 1) {
+            $shorthand = $node->map->keys->shorthand($segment);
+            if ($shorthand !== null) {
+                $address = spl_object_id($node) . ':' . $segment;
+                if (isset($visiting[$address])) {
+                    fail(\sprintf('shorthand target "%s" contains a cycle', $target));
+                }
+                $visiting[$address] = true;
+
+                return shorthandTargetSchema($node, $shorthand->targets[0], $visiting);
+            }
+        }
+
+        $field = $node->map->keys->fields()[$segment] ?? null;
+        if ($field === null) {
+            fail(\sprintf('shorthand target "%s" is not declared', $target));
+        }
+        $node = $field;
+    }
+
+    return $node;
 }
 
 /**
@@ -141,22 +188,23 @@ function walk(NodeSchema $node, string $path, string $kind, string $parent, arra
  * of its list items.
  *
  * @param list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}> $rows
+ * @param list<string> $ruleNames
  *
  * @return list<array{path: string, node: NodeSchema, kind: string, shorthand: ?Shorthand, parent: string, inItem: bool}>
  */
-function below(NodeSchema $node, string $path, array $rows, bool $inItem): array
+function below(NodeSchema $node, string $path, array $rows, array $ruleNames, bool $inItem): array
 {
     if ($node->policy === MergePolicy::DeepMerge) {
-        $fields = $node->fields();
+        $fields = $node->map->keys->fields();
 
         foreach ($fields as $key => $child) {
-            $rows = walk($child, $path . '.' . $key, KEY, $path, $rows, $inItem);
+            $rows = walk($child, $path . '.' . $key, KEY, $path, $rows, $ruleNames, $inItem);
         }
 
-        foreach ($node->shorthands() as $shorthand) {
+        foreach ($node->map->keys->shorthands() as $shorthand) {
             $rows[] = [
                 'path' => $path . '.' . $shorthand->key,
-                'node' => $fields[$shorthand->targets[0]],
+                'node' => shorthandTargetSchema($node, $shorthand->targets[0]),
                 'kind' => SHORTHAND,
                 'shorthand' => $shorthand,
                 'parent' => $path,
@@ -166,12 +214,22 @@ function below(NodeSchema $node, string $path, array $rows, bool $inItem): array
     }
 
     if ($node->policy === MergePolicy::ByName) {
-        $rows = walk($node->element(), $path . '.<name>', ENTRY, $path, $rows, $inItem);
+        if ($path === 'rules') {
+            foreach ($ruleNames as $name) {
+                $entry = $node->map->entryForName($name);
+                if ($entry === null) {
+                    fail(\sprintf('rule "%s" has no declared document schema', $name));
+                }
+                $rows = walk($entry, $path . '.' . $name, ENTRY, $path, $rows, $ruleNames, $inItem);
+            }
+        } else {
+            $rows = walk($node->map->entry ?? throw new LogicException('A named map needs an entry schema.'), $path . '.<name>', ENTRY, $path, $rows, $ruleNames, $inItem);
+        }
     }
 
     $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
-    if ($isList && $node->element()->policy === MergePolicy::DeepMerge) {
-        $rows = below($node->element(), $path . '[]', $rows, true);
+    if ($isList && ($node->collection ?? throw new LogicException('A list needs an element schema.'))->element->policy === MergePolicy::DeepMerge) {
+        $rows = below(($node->collection ?? throw new LogicException('A list needs an element schema.'))->element, $path . '[]', $rows, $ruleNames, true);
     }
 
     return $rows;
@@ -197,7 +255,7 @@ function scalarForm(ScalarForm $form, string $language): string
 
 function scalar(NodeSchema $node, string $language): string
 {
-    $forms = array_map(static fn(ScalarForm $form): string => scalarForm($form, $language), $node->scalarForms());
+    $forms = array_map(static fn(ScalarForm $form): string => scalarForm($form, $language), $node->scalar->forms);
 
     if ($forms === []) {
         return $language === 'ru' ? 'скаляр' : 'scalar';
@@ -254,8 +312,8 @@ function valueCell(array $row, string $language): string
     return match ($node->policy) {
         MergePolicy::LastWriterWins => scalar($node, $language),
         MergePolicy::DeepMerge => $ru ? 'карта' : 'map',
-        MergePolicy::Replace, MergePolicy::Accumulate => \sprintf($ru ? 'список (элемент: %s)' : 'list (item: %s)', item($node->element(), $language)),
-        MergePolicy::ByName => \sprintf($ru ? 'карта по имени: %s' : 'map by name: %s', vocabulary($node->names(), dotParent($row['path']), $language)),
+        MergePolicy::Replace, MergePolicy::Accumulate => \sprintf($ru ? 'список (элемент: %s)' : 'list (item: %s)', item(($node->collection ?? throw new LogicException('A list needs an element schema.'))->element, $language)),
+        MergePolicy::ByName => \sprintf($ru ? 'карта по имени: %s' : 'map by name: %s', vocabulary($node->map->names, dotParent($row['path']), $language)),
         MergePolicy::PerLayer => $ru ? 'читает владелец' : 'read by its owner',
     };
 }
@@ -319,7 +377,7 @@ function tildeCell(array $row, string $language): string
     $node = $row['node'];
     $isList = $node->policy === MergePolicy::Replace || $node->policy === MergePolicy::Accumulate;
 
-    if ($isList && $node->element()->policy !== MergePolicy::PerLayer) {
+    if ($isList && ($node->collection ?? throw new LogicException('A list needs an element schema.'))->element->policy !== MergePolicy::PerLayer) {
         $cell .= $ru ? ' Элемент `~` — отказ.' : ' An item written `~` is refused.';
     }
 
@@ -345,7 +403,7 @@ function emptyCell(array $row, string $language): string
         MergePolicy::LastWriterWins => $ru ? 'Отказ: ожидается скаляр.' : 'Refused: a scalar is expected.',
         MergePolicy::DeepMerge, MergePolicy::ByName => $ru ? 'Ничего не меняет.' : 'Changes nothing.',
         MergePolicy::Replace => ($ru ? 'Заменяет нижний список пустым.' : 'Replaces the list below with an empty one.')
-            . ($node->emptyOverrideNotice() === null
+            . ($node->wording->emptyOverrideNotice === null
                 ? ''
                 : ($ru ? ' Если нижний список не пуст, выводится предупреждение.' : ' A warning says so when the list below was not empty.')),
         MergePolicy::Accumulate => $ru ? 'Ничего не добавляет.' : 'Adds nothing.',
@@ -442,8 +500,9 @@ function main(array $arguments): int
     }
 
     $rows = [];
-    foreach (sections() as $declaration) {
-        $rows = walk($declaration->schema, $declaration->key, KEY, '', $rows);
+    $source = sections();
+    foreach ($source['declarations'] as $declaration) {
+        $rows = walk($declaration->schema, $declaration->key, KEY, '', $rows, $source['ruleNames']);
     }
 
     // Every page is read and embedded before any is written, so a page that

@@ -15,8 +15,6 @@ use Qualimetrix\Core\Pattern\SelectorKind;
 enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
 {
     case Exclude = 'exclude';
-    case DisabledRules = 'disabled_rules';
-    case OnlyRules = 'only_rules';
     case SuppressPaths = 'suppress_paths';
     case SuppressNamespaces = 'suppress_namespaces';
     case IncludeGenerated = 'include_generated';
@@ -31,16 +29,11 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
     /** @return array<string, NodeSchema> root key => schema */
     private static function schemas(): array
     {
-        $string = NodeSchema::scalar(ScalarForm::String);
         $boolean = NodeSchema::scalar(ScalarForm::Boolean);
         $selectors = self::selectorSet();
 
         return [
             self::Exclude->value => $selectors,
-            self::DisabledRules->value => NodeSchema::set($string),
-            self::OnlyRules->value => NodeSchema::stringList()->announcingEmptyOverride(
-                'An empty only_rules applies no rule filter: every enabled rule runs.',
-            ),
             self::SuppressPaths->value => $selectors,
             self::SuppressNamespaces->value => $selectors,
             self::IncludeGenerated->value => $boolean,

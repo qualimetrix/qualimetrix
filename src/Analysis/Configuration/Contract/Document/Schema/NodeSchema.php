@@ -25,164 +25,143 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
  */
 final readonly class NodeSchema
 {
-    /**
-     * @param list<ScalarForm> $scalarForms
-     * @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement|null $layerJudge
-     */
+    /** @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement|null $layerJudge */
     private function __construct(
         public MergePolicy $policy,
-        private array $scalarForms = [],
-        private ?KeyDictionary $keys = null,
-        private ?self $element = null,
-        private ?NameVocabulary $names = null,
-        private NodeWording $wording = new NodeWording(),
-        private Closure|IntegerJudgement|null $layerJudge = null,
+        public NodeScalarFacts $scalar,
+        public NodeMapFacts $map,
+        public ?NodeCollectionFacts $collection,
+        public NodeWording $wording,
+        public Closure|IntegerJudgement|null $layerJudge,
     ) {}
 
-    /** A scalar leaf written as one of `$forms`; no form accepts any scalar. */
     public static function scalar(ScalarForm ...$forms): self
     {
-        return new self(MergePolicy::LastWriterWins, scalarForms: array_values($forms));
+        return new self(MergePolicy::LastWriterWins, new NodeScalarFacts(array_values($forms)), new NodeMapFacts(KeyDictionary::none()), null, new NodeWording(), null);
     }
 
-    /**
-     * A map with a fixed dictionary of keys, merged key by key.
-     *
-     * @param array<string, self> $fields canonical key => schema
-     */
+    /** @param array<string, self> $fields canonical key => schema */
     public static function map(array $fields, Shorthand ...$shorthands): self
     {
-        return new self(MergePolicy::DeepMerge, keys: KeyDictionary::of($fields, array_values($shorthands)));
+        return new self(MergePolicy::DeepMerge, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::of($fields, array_values($shorthands))), null, new NodeWording(), null);
     }
 
-    /** A list whose last writer replaces it whole. */
     public static function list(self $element): self
     {
-        return new self(MergePolicy::Replace, element: $element);
+        return new self(MergePolicy::Replace, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none()), new NodeCollectionFacts($element), new NodeWording(), null);
     }
 
-    /** A replaced list of strings; any other element is refused with its index. */
-    public static function stringList(): self
-    {
-        return self::list(self::scalar(ScalarForm::String));
-    }
-
-    /** A list every layer adds to; equal elements collapse into the first. */
     public static function set(self $element): self
     {
-        return new self(MergePolicy::Accumulate, element: $element);
+        return new self(MergePolicy::Accumulate, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none()), new NodeCollectionFacts($element), new NodeWording(), null);
     }
 
-    /**
-     * A map keyed by names rather than schema keys, merged entry by entry.
-     *
-     * @param ?NameVocabulary $names null accepts any name
-     */
     public static function namedMap(self $entry, ?NameVocabulary $names = null): self
     {
-        return new self(MergePolicy::ByName, element: $entry, names: $names);
+        return new self(MergePolicy::ByName, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none(), names: $names, entry: $entry), null, new NodeWording(), null);
     }
 
-    /** A subtree the engine carries per layer without reading it. */
+    /** @param Closure(string): ?self $entryForName */
+    public static function namedMapOf(Closure $entryForName, NameVocabulary $names): self
+    {
+        return new self(MergePolicy::ByName, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none(), names: $names, namedEntrySchema: $entryForName), null, new NodeWording(), null);
+    }
+
     public static function opaque(): self
     {
-        return new self(MergePolicy::PerLayer);
+        return new self(MergePolicy::PerLayer, new NodeScalarFacts(), new NodeMapFacts(KeyDictionary::none()), null, new NodeWording(), null);
     }
 
-    /**
-     * On a replaced list: a diagnostic when a written empty list replaces a
-     * non-empty one from a lower layer — `only_rules: []` lifting a preset's
-     * filter is legal and still worth saying.
-     */
     public function announcingEmptyOverride(string $notice): self
     {
         if ($this->policy !== MergePolicy::Replace) {
             throw new LogicException('Only a replaced list can announce an empty override.');
         }
-
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording->with(emptyOverrideNotice: $notice), $this->layerJudge);
+        return $this->recompose(wording: $this->wording->with(emptyOverrideNotice: $notice));
     }
 
-    /**
-     * A sentence the engine adds when it refuses the form of a value written
-     * here — what the author most likely meant, where the form alone does not
-     * say it: an unquoted `2024` read as a number where a path is due.
-     */
     public function withHint(string $hint): self
     {
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording->with(hint: $hint), $this->layerJudge);
+        return $this->recompose(wording: $this->wording->with(hint: $hint));
     }
 
-    /**
-     * A form the owner judges on every layer's written value of this node, in
-     * phase 1 before any merge — for what the engine carries unread below it —
-     * so a lower layer's mistake is refused even where a higher layer replaces
-     * the value. The judge receives the value as that one layer wrote it and
-     * the node's canonical path, and refuses by throwing.
-     *
-     * @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge
-     */
+    /** @param Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement $judge */
     public function judgedInEachLayer(Closure|IntegerJudgement $judge): self
     {
-        if ($judge instanceof IntegerJudgement && ($this->policy !== MergePolicy::LastWriterWins || $this->scalarForms !== [ScalarForm::Integer])) {
+        if ($judge instanceof IntegerJudgement && ($this->policy !== MergePolicy::LastWriterWins || $this->scalar->forms !== [ScalarForm::Integer])) {
             throw new LogicException('An integer judgement requires a last-writer-wins integer scalar.');
         }
-
-        return new self($this->policy, $this->scalarForms, $this->keys, $this->element, $this->names, $this->wording, $judge);
+        return $this->recompose(layerJudge: $judge);
     }
 
-    /**
-     * The owner's judgement of each layer's value; null when the node declares none.
-     *
-     * @return Closure(ResolvedValueInterface, list<string>): void|IntegerJudgement|null
-     */
-    public function layerJudge(): Closure|IntegerJudgement|null
+    public function bareFor(string $field): self
     {
-        return $this->layerJudge;
+        if ($this->policy !== MergePolicy::DeepMerge) {
+            throw new LogicException('A bare map value requires a declared boolean field.');
+        }
+        return $this->recompose(map: $this->map->withBareField($field));
     }
 
-    /** @return list<ScalarForm> */
-    public function scalarForms(): array
+    public function admittingBareElement(): self
     {
-        return $this->scalarForms;
+        if ($this->policy !== MergePolicy::Replace && $this->policy !== MergePolicy::Accumulate) {
+            throw new LogicException('Only a list can admit a bare element.');
+        }
+        $collection = $this->collection ?? throw new LogicException('A list needs an element schema.');
+        return $this->recompose(collection: new NodeCollectionFacts($collection->element, BareElementPolicy::SingleAllowed));
     }
 
-    /** The keys of a map; none for any other node. */
-    public function keys(): KeyDictionary
+    /** @param array<string, string> $sentenceByRetiredKey */
+    public function retiring(array $sentenceByRetiredKey): self
     {
-        return $this->keys ?? KeyDictionary::none();
+        if ($this->policy !== MergePolicy::DeepMerge) {
+            throw new LogicException('Only a map can retire keys.');
+        }
+        return $this->recompose(map: $this->map->withRetiredKeys($sentenceByRetiredKey));
     }
 
-    /** @return array<string, self> */
-    public function fields(): array
+    public function atLeast(int|float $minimum): self
     {
-        return $this->keys()->fields();
+        if ($this->policy !== MergePolicy::LastWriterWins) {
+            throw new LogicException('A numeric floor requires a numeric scalar.');
+        }
+        return $this->recompose(scalar: $this->scalar->atLeast($minimum));
     }
 
-    /** @return list<Shorthand> */
-    public function shorthands(): array
+    public function words(SchemaWordSet $words): self
     {
-        return $this->keys()->shorthands();
+        if ($this->policy !== MergePolicy::LastWriterWins) {
+            throw new LogicException('A word vocabulary requires a string scalar and at least one word.');
+        }
+        return $this->recompose(scalar: $this->scalar->words($words));
     }
 
-    /** The element of a list or set, the entry of a named map. */
-    public function element(): self
+    public function nonEmpty(): self
     {
-        return $this->element ?? throw new LogicException(\sprintf('A %s node has no element schema.', $this->policy->value));
+        if ($this->policy !== MergePolicy::LastWriterWins) {
+            throw new LogicException('Non-empty text requires a string scalar.');
+        }
+        return $this->recompose(scalar: $this->scalar->nonEmpty());
     }
 
-    public function names(): ?NameVocabulary
+    public function describe(): string
     {
-        return $this->names;
+        return match ($this->policy) {
+            MergePolicy::LastWriterWins => $this->scalar->describe(),
+            MergePolicy::DeepMerge => $this->map->describe(),
+            MergePolicy::Replace, MergePolicy::Accumulate => $this->collection?->describe() ?? 'a list',
+            MergePolicy::ByName => 'a map of named entries',
+            MergePolicy::PerLayer => 'a value carried per layer',
+        };
     }
 
-    public function emptyOverrideNotice(): ?string
-    {
-        return $this->wording->emptyOverrideNotice;
-    }
-
-    public function hint(): ?string
-    {
-        return $this->wording->hint;
+    private function recompose(
+        ?NodeScalarFacts $scalar = null,
+        ?NodeMapFacts $map = null,
+        ?NodeCollectionFacts $collection = null,
+        ?NodeWording $wording = null,
+        Closure|IntegerJudgement|null $layerJudge = null,
+    ): self {
+        return new self($this->policy, $scalar ?? $this->scalar, $map ?? $this->map, $collection ?? $this->collection, $wording ?? $this->wording, $layerJudge ?? $this->layerJudge);
     }
 }

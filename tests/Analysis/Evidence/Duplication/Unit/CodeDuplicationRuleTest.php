@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CodeDuplicationRule::class)]
 #[CoversClass(CodeDuplicationOptions::class)]
@@ -41,7 +43,7 @@ final class CodeDuplicationRuleTest extends TestCase
         $rule = $this->createRule();
 
         self::assertSame('duplication.clone', $rule->getName());
-        self::assertSame('Detects duplicated code blocks', $rule->getDescription());
+        self::assertSame('Detects duplicated code blocks', $rule::getDescription());
     }
 
     #[Test]
@@ -464,13 +466,13 @@ final class CodeDuplicationRuleTest extends TestCase
     #[Test]
     public function itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray(): void
     {
-        $options = CodeDuplicationOptions::fromArray([
+        $options = CodeDuplicationOptions::fromResolved(ResolvedOptionsFixture::values(CodeDuplicationOptions::class, [
             'enabled' => false,
             'min_lines' => 10,
             'min_tokens' => 100,
             'warning' => 8,
             'error' => 40,
-        ]);
+        ]));
         self::assertFalse($options->isEnabled());
         self::assertSame(10, $options->min_lines);
         self::assertSame(100, $options->min_tokens);
@@ -478,10 +480,10 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertSame(40, $options->error);
 
         // camelCase support
-        $options = CodeDuplicationOptions::fromArray([
+        $options = CodeDuplicationOptions::fromResolved(ResolvedOptionsFixture::values(CodeDuplicationOptions::class, [
             'minLines' => 15,
             'minTokens' => 120,
-        ]);
+        ]));
         self::assertSame(15, $options->min_lines);
         self::assertSame(120, $options->min_tokens);
     }

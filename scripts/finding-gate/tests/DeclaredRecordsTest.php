@@ -217,15 +217,19 @@ final class DeclaredRecordsTest extends TestCase
             $records[] = ['subject' => 'file:probe-' . $index . '.php', 'channel' => $channel, 'occurrence' => null, 'edge' => null, 'metricValue' => $magnitude];
         }
         $records[4]['subject'] = $records[3]['subject'];
-        $actual = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], $records);
-        self::assertSame([false, false, true, false], array_values($actual));
-        Fs::write($this->root . '/qmx.yaml', "computed_metrics:\n  computed.probe:\n    formula: '1'\n    levels: [class]\n");
-        Fs::write($this->root . '/src/.keep', '');
-        $computed = ['subject' => 'class:Probe', 'channel' => 'computed.probe', 'occurrence' => null, 'edge' => null, 'metricValue' => 1];
-        $configured = \QmxFindingGate\BaselineEligibility::capture($root, $this->root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], [$computed]);
-        self::assertSame([true], array_values($configured));
-        $unconfigured = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], [$computed]);
-        self::assertSame([false], array_values($unconfigured));
+        try {
+            $actual = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], $records);
+            self::assertSame([false, false, true, false], array_values($actual));
+            Fs::write($this->root . '/qmx.yaml', "computed_metrics:\n  computed.probe:\n    formula: '1'\n    levels: [class]\n");
+            Fs::write($this->root . '/src/.keep', '');
+            $computed = ['subject' => 'class:Probe', 'channel' => 'computed.probe', 'occurrence' => null, 'edge' => null, 'metricValue' => 1];
+            $configured = \QmxFindingGate\BaselineEligibility::capture($root, $this->root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], [$computed]);
+            self::assertSame([true], array_values($configured));
+            $unconfigured = \QmxFindingGate\BaselineEligibility::capture($root, $root, ['check', 'src', '--no-ansi', '-c', 'qmx.yaml', '-f', 'json'], [$computed]);
+            self::assertSame([false], array_values($unconfigured));
+        } catch (\QmxFindingGate\GateError $error) {
+            self::fail('A valid product eligibility probe did not execute: ' . $error->getMessage());
+        }
     }
 
     private function intent(string $report, string $selector, string $change = 'withdrawn'): void

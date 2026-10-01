@@ -13,6 +13,7 @@ final readonly class ConfigurationResolutionRequest
      * @param list<string> $presetNames
      * @param array<string, mixed> $cliValues flat configuration key => the value an option wrote
      * @param array<string, string> $cliOptionNames flat configuration key => the option or argument that wrote it
+     * @param list<CommandLinePathWrite> $cliPathWrites ordered authored CLI rule option occurrences
      */
     public function __construct(
         public AbsolutePath $workingDirectory,
@@ -20,5 +21,6 @@ final readonly class ConfigurationResolutionRequest
         public array $presetNames = [],
         public array $cliValues = [],
         public array $cliOptionNames = [],
+        public array $cliPathWrites = [],
     ) {}
 }

@@ -40,7 +40,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of constructor parameters (dependencies)';
     }

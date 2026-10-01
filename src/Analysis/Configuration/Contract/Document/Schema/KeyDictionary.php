@@ -38,15 +38,21 @@ final readonly class KeyDictionary
         }
 
         $byKey = [];
-        $spreadTo = [];
         foreach ($shorthands as $shorthand) {
             self::assertCanonical($shorthand->key);
             if (isset($fields[$shorthand->key])) {
                 throw new LogicException(\sprintf('Shorthand "%s" is also declared as a key of the same map.', $shorthand->key));
             }
 
-            $spreadTo = self::claimTargets($spreadTo, $shorthand, $fields);
             $byKey[$shorthand->key] = $shorthand;
+        }
+
+        $spreadTo = [];
+        foreach ($shorthands as $shorthand) {
+            $spreadTo = self::claimTargets($spreadTo, $shorthand, $fields, $byKey);
+        }
+        foreach ($byKey as $key => $_shorthand) {
+            self::assertAcyclic($key, $byKey, []);
         }
 
         return new self($fields, $byKey);
@@ -82,15 +88,14 @@ final readonly class KeyDictionary
     /**
      * @param array<string, string> $spreadTo target => the shorthand that spreads to it
      * @param array<string, NodeSchema> $fields
+     * @param array<string, Shorthand> $shorthands
      *
      * @return array<string, string>
      */
-    private static function claimTargets(array $spreadTo, Shorthand $shorthand, array $fields): array
+    private static function claimTargets(array $spreadTo, Shorthand $shorthand, array $fields, array $shorthands): array
     {
         foreach ($shorthand->targets as $target) {
-            if (!isset($fields[$target])) {
-                throw new LogicException(\sprintf('Shorthand "%s" spreads to "%s", which the map does not declare.', $shorthand->key, $target));
-            }
+            self::assertTargetPath($shorthand->key, $target, $fields, $shorthands);
 
             if (isset($spreadTo[$target])) {
                 throw new LogicException(\sprintf('Shorthands "%s" and "%s" both spread to "%s".', $spreadTo[$target], $shorthand->key, $target));
@@ -102,7 +107,60 @@ final readonly class KeyDictionary
         return $spreadTo;
     }
 
-    private static function assertCanonical(string $key): void
+    /**
+     * @param array<string, NodeSchema> $fields
+     * @param array<string, Shorthand> $shorthands
+     */
+    private static function assertTargetPath(string $source, string $target, array $fields, array $shorthands): void
+    {
+        $segments = explode('.', $target);
+        foreach ($segments as $index => $segment) {
+            self::assertCanonical($segment);
+            $last = $index === \count($segments) - 1;
+            if (isset($shorthands[$segment])) {
+                if ($last) {
+                    return;
+                }
+                break;
+            }
+            $field = $fields[$segment] ?? null;
+            if ($field === null) {
+                break;
+            }
+            if ($last) {
+                return;
+            }
+            if ($field->policy !== MergePolicy::DeepMerge) {
+                break;
+            }
+            $fields = $field->map->keys->fields();
+            $shorthands = array_combine(
+                array_map(static fn(Shorthand $item): string => $item->key, $field->map->keys->shorthands()),
+                $field->map->keys->shorthands(),
+            );
+        }
+
+        throw new LogicException(\sprintf('Shorthand "%s" spreads to "%s", which the map does not declare.', $source, $target));
+    }
+
+    /**
+     * @param array<string, Shorthand> $shorthands
+     * @param array<string, true> $visiting
+     */
+    private static function assertAcyclic(string $key, array $shorthands, array $visiting): void
+    {
+        if (isset($visiting[$key])) {
+            throw new LogicException(\sprintf('Shorthand cycle includes "%s".', $key));
+        }
+        $visiting[$key] = true;
+        foreach ($shorthands[$key]->targets as $target) {
+            if (isset($shorthands[$target])) {
+                self::assertAcyclic($target, $shorthands, $visiting);
+            }
+        }
+    }
+
+    public static function assertCanonical(string $key): void
     {
         if (!\in_array($key, ConfigKeySpelling::acceptedSpellings($key), true) || strtolower($key) !== $key) {
             throw new LogicException(\sprintf('Schema key "%s" is not canonical: lowercase words joined by "_" or "-".', $key));

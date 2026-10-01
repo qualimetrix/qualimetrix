@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -16,10 +18,10 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -252,7 +254,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     /**
      * Reproduces the computed-metric family, where one rule instance
      * publishes findings under a `$ruleName` distinct from the producer whose
-     * `suppress_namespaces` actually excluded them ({@see \Qualimetrix\Analysis\Finding\RuleExecution::producerOf()}).
+     * `suppress_namespaces` actually excluded them according to the final channel universe.
      * The composition must publish the ledger's recorded producer, not the
      * finding's own `ruleName` — the bug this guards against dropped the
      * finding from the composition entirely wherever the two names diverged.
@@ -417,34 +419,35 @@ final class SuppressionCompositionBuilderTest extends TestCase
     private function ruleConfiguration(array $rulesConfig): RuleConfigurationInterface
     {
         return new class ($rulesConfig) implements RuleConfigurationInterface {
+            public function resolvedOptions(): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions
+            {
+                $options = [];
+                $suppressions = [];
+                foreach ($this->rulesConfig as $producer => $config) {
+                    $options[$producer] = new \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions();
+                    $suppressions[$producer] = new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(
+                        paths: $config['suppress_paths'] ?? [],
+                        namespaces: $config['suppress_namespaces'] ?? [],
+                        namespaceChannels: $config['suppress_namespace_channels'] ?? [],
+                    );
+                }
+                return new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, $suppressions);
+            }
+
+            public function enablement(): ?RuleEnablement
+            {
+                throw new LogicException('The projection must read the execution selection trace.');
+            }
+
+            public function channelUniverse(): ChannelUniverseInterface
+            {
+                throw new LogicException('The projection must not rebuild channel selection.');
+            }
+
             /** @param array<string, array<string, mixed>> $rulesConfig */
             public function __construct(private array $rulesConfig) {}
 
             public function replace(FindingConfiguration $configuration): void {}
-
-            public function configureCli(string $ruleName, array $options): void {}
-
-            public function configFileOptions(): array
-            {
-                return $this->rulesConfig;
-            }
-
-            public function cliOptions(): array
-            {
-                return [];
-            }
-
-            public function all(): array
-            {
-                return $this->rulesConfig;
-            }
-
-            public function configureSelection(RuleSelection $selection): void {}
-
-            public function selection(): RuleSelection
-            {
-                return new RuleSelection();
-            }
 
             public function captureExcludedFindings(): void {}
 
@@ -461,17 +464,17 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
             public function namespaceExclusions(string $ruleName): array
             {
-                return $this->rulesConfig[$ruleName]['suppress_namespaces'] ?? [];
+                throw new LogicException('The projection must read typed suppression.');
             }
 
             public function namespaceChannelExclusions(string $ruleName): array
             {
-                return $this->rulesConfig[$ruleName]['suppress_namespace_channels'] ?? [];
+                throw new LogicException('The projection must read typed suppression.');
             }
 
             public function pathExclusions(string $ruleName): array
             {
-                return $this->rulesConfig[$ruleName]['suppress_paths'] ?? [];
+                throw new LogicException('The projection must read typed suppression.');
             }
 
             public function isNamespaceExcluded(string $ruleName, string $namespace): bool

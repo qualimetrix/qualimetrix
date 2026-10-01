@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Integration;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +44,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
@@ -89,12 +91,10 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -138,6 +138,7 @@ use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 use ReflectionProperty;
 use SplFileInfo;
@@ -199,9 +200,10 @@ final class ContainerFactoryTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
         $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        $producerGate = (new ReflectionProperty($producerPreparation, 'producerGate'))->getValue($producerPreparation);
         self::assertSame(
             $ruleConfiguration,
-            (new ReflectionProperty($producerPreparation, 'ruleConfiguration'))->getValue($producerPreparation),
+            (new ReflectionProperty($producerGate, 'ruleConfiguration'))->getValue($producerGate),
         );
         self::assertFalse((new ReflectionClass(AnalysisPipeline::class))->hasProperty('ruleConfiguration'));
         $collectionOrchestrator = (new ReflectionProperty(AnalysisPipeline::class, 'collectionOrchestrator'))->getValue($pipeline);
@@ -219,8 +221,8 @@ final class ContainerFactoryTest extends TestCase
         $pipelineLogger = (new ReflectionProperty(AnalysisPipeline::class, 'logger'))->getValue($pipeline);
         self::assertInstanceOf(DelegatingLogger::class, $evaluatorLogger);
         self::assertSame($pipelineLogger, $evaluatorLogger);
-        $ruleOptionsFactory = $container->get(RuleOptionsFactory::class);
-        self::assertInstanceOf(RuleOptionsFactory::class, $ruleOptionsFactory);
+        $ruleOptionsFactory = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $ruleOptionsFactory);
 
         $annotationSuppression = $container->get(AnnotationSuppressionInterface::class);
         $gitScopeQuery = $container->get(GitScopeQueryInterface::class);
@@ -367,11 +369,19 @@ final class ContainerFactoryTest extends TestCase
 
         $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
         self::assertInstanceOf(RuleConfigurationInterface::class, $ruleConfiguration);
-        $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
-        $ruleConfiguration->configureCli(CodeDuplicationRule::NAME, [
-            'min_lines' => 2,
-            'min_tokens' => 10,
-        ]);
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), only: [CodeDuplicationRule::NAME], cliOptions: [CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
+        $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($container->get(CheckCommand::class));
+        $channelFactory = (new ReflectionProperty(RuleInputValidator::class, 'ruleChannelSnapshotFactory'))->getValue($validator);
+        self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $channelFactory);
+        $channels = $channelFactory->snapshot(new ResolvedComputedMetricDefinitions([]));
+        $resolver = (new ReflectionProperty(RuleInputValidator::class, 'enablementResolver'))->getValue($validator);
+        self::assertInstanceOf(RuleEnablementResolver::class, $resolver);
+        $builder = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $builder);
+        $stated = $resolver->decide($finding->document, $channels);
+        $options = $builder->build($finding, $stated);
+        $ruleConfiguration->replace($finding->withChannelUniverse($channels)->withResolvedOptions($options)
+            ->withEnablement($resolver->conclude($stated, $options)));
 
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
         $source = <<<'PHP'
@@ -395,37 +405,33 @@ PHP;
 
         $duplicateFiles = [new SplFileInfo($firstPath), new SplFileInfo($secondPath)];
 
-        $selection = $ruleConfiguration->selection();
         $fileSetInspection->inspect(
             $duplicateFiles,
             AbsolutePath::fromString($this->tempDir),
-            $selection->only,
-            $selection->disabled,
-            $ruleConfiguration->all(),
         );
         $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
 
-        $ruleConfiguration->configureSelection(new RuleSelection(disabled: [CodeDuplicationRule::NAME]));
-        $selection = $ruleConfiguration->selection();
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), disabled: [CodeDuplicationRule::NAME], cliOptions: [CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
+        $stated = $resolver->decide($finding->document, $channels);
+        $options = $builder->build($finding, $stated);
+        $ruleConfiguration->replace($finding->withChannelUniverse($channels)->withResolvedOptions($options)
+            ->withEnablement($resolver->conclude($stated, $options)));
         $fileSetInspection->inspect(
             $duplicateFiles,
             AbsolutePath::fromString($this->tempDir),
-            $selection->only,
-            $selection->disabled,
-            $ruleConfiguration->all(),
         );
 
         self::assertSame([], $resultProvider->all());
 
-        $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
-        $selection = $ruleConfiguration->selection();
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), only: [CodeDuplicationRule::NAME], cliOptions: [CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
+        $stated = $resolver->decide($finding->document, $channels);
+        $options = $builder->build($finding, $stated);
+        $ruleConfiguration->replace($finding->withChannelUniverse($channels)->withResolvedOptions($options)
+            ->withEnablement($resolver->conclude($stated, $options)));
         $fileSetInspection->inspect(
             $duplicateFiles,
             AbsolutePath::fromString($this->tempDir),
-            $selection->only,
-            $selection->disabled,
-            $ruleConfiguration->all(),
         );
 
         self::assertNotEmpty($resultProvider->all());
@@ -433,9 +439,6 @@ PHP;
         $fileSetInspection->inspect(
             [new SplFileInfo($firstPath)],
             AbsolutePath::fromString($this->tempDir),
-            $selection->only,
-            $selection->disabled,
-            $ruleConfiguration->all(),
         );
 
         self::assertSame([], $resultProvider->all());
@@ -488,7 +491,7 @@ PHP;
         self::assertCount(3, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
-        self::assertCount(10, $pipelineConstructor->getParameters());
+        self::assertCount(11, $pipelineConstructor->getParameters());
 
         $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
         self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
@@ -583,8 +586,8 @@ PHP;
         $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
         self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
         self::assertInstanceOf(
-            FindingConfigurationResolverInterface::class,
-            (new ReflectionProperty(RuleInputValidator::class, 'findingConfigurationResolver'))->getValue($ruleInputValidator),
+            RuleEnablementResolver::class,
+            (new ReflectionProperty(RuleInputValidator::class, 'enablementResolver'))->getValue($ruleInputValidator),
         );
         self::assertInstanceOf(
             RuleChannelSnapshotFactoryInterface::class,
@@ -613,11 +616,16 @@ PHP;
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecution::class, $execution);
 
+        $materialization = (new ReflectionProperty($execution, 'materialization'))->getValue($execution);
         /** @var list<object> $rules */
-        $rules = (new ReflectionProperty(RuleExecution::class, 'allRules'))->getValue($execution);
+        $rules = (new ReflectionProperty($materialization, 'rules'))->getValue($materialization);
 
         self::assertNotSame([], $rules, 'RuleCompilerPass injected no rules at all.');
-        self::assertContainsOnlyInstancesOf(RuleInterface::class, $rules);
+        foreach ($rules as $lookup) {
+            self::assertIsArray($lookup);
+            self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleMetadata::class, $lookup['metadata']);
+            self::assertInstanceOf(Closure::class, $lookup['create']);
+        }
     }
 
     /**
@@ -635,16 +643,20 @@ PHP;
         self::assertInstanceOf(ConfigurationPipelineInterface::class, $pipeline);
 
         $classless = $this->tempDir . '/classless-producer.yaml';
-        file_put_contents($classless, "rules:\n  health.cohesion:\n    warning: 50\n");
+        file_put_contents($classless, "rules:\n  health.cohesion:\n    enabled: false\n");
 
-        $document = $pipeline->resolve(new ConfigurationResolutionRequest(
-            AbsolutePath::fromString($this->tempDir),
-            $classless,
-        ));
+        try {
+            $document = $pipeline->resolve(new ConfigurationResolutionRequest(
+                AbsolutePath::fromString($this->tempDir),
+                $classless,
+            ));
+        } catch (ConfigurationRefusal $refusal) {
+            self::fail('Lawful health.cohesion configuration was refused: ' . $refusal->summary());
+        }
 
         self::assertArrayHasKey(
             'health.cohesion',
-            array_merge(...array_values($document->ruleContributions())),
+            $document->resolved()->get('rules')?->plain() ?? [],
         );
 
         $invented = $this->tempDir . '/invented-producer.yaml';
@@ -682,10 +694,19 @@ PHP;
             (new ReflectionProperty($ruleExecution, 'ruleOptionsRegistry'))->getValue($ruleExecution),
         );
 
-        $ruleOptionsRegistry->configureCli('cyclomatic-complexity', [
-            'warningThreshold' => 20,
-            'errorThreshold' => 40,
-        ]);
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), cliOptions: ['complexity.ccn' => ['callable.warning' => 20, 'callable.error' => 40]]);
+        $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($container->get(CheckCommand::class));
+        $channelFactory = (new ReflectionProperty(RuleInputValidator::class, 'ruleChannelSnapshotFactory'))->getValue($validator);
+        self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $channelFactory);
+        $channels = $channelFactory->snapshot(new ResolvedComputedMetricDefinitions([]));
+        $resolver = (new ReflectionProperty(RuleInputValidator::class, 'enablementResolver'))->getValue($validator);
+        self::assertInstanceOf(RuleEnablementResolver::class, $resolver);
+        $builder = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $builder);
+        $stated = $resolver->decide($finding->document, $channels);
+        $options = $builder->build($finding, $stated);
+        $ruleOptionsRegistry->replace($finding->withChannelUniverse($channels)->withResolvedOptions($options)
+            ->withEnablement($resolver->conclude($stated, $options)));
 
         // Container should still work after configuration
         self::assertTrue($container->isCompiled());

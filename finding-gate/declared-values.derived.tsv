@@ -1,2 +1,2 @@
 kind	key	subject	from	to
-exit	rules	case:computed-cross-level|rules	0	3
+exit	rules	case:selector-after-split|rules	0	3

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,6 +27,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 #[CoversClass(DistanceRule::class)]
@@ -47,7 +49,7 @@ final class DistanceRuleTest extends TestCase
 
         self::assertSame(
             'Checks distance from main sequence at namespace level',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -259,11 +261,11 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itParsesOptionsFromArray(): void
     {
-        $options = DistanceOptions::fromArray([
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, [
             'enabled' => false,
             'max_distance_warning' => 0.25,
             'max_distance_error' => 0.4,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.25, $options->maxDistanceWarning);
@@ -273,10 +275,10 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itParsesOptionsFromArrayWithLegacyKeys(): void
     {
-        $options = DistanceOptions::fromArray([
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, [
             'maxDistanceWarning' => 0.25,
             'maxDistanceError' => 0.4,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(0.25, $options->maxDistanceWarning);
@@ -286,7 +288,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itUsesOptionDefaults(): void
     {
-        $options = DistanceOptions::fromArray([]);
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, []));
 
         self::assertTrue($options->enabled);
         self::assertSame(0.3, $options->maxDistanceWarning);
@@ -537,9 +539,9 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itParsesMinClassCountFromArray(): void
     {
-        $options = DistanceOptions::fromArray([
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, [
             'min_class_count' => 5,
-        ]);
+        ]));
 
         self::assertSame(5, $options->minClassCount);
     }
@@ -547,9 +549,9 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itParsesMinClassCountCamelCaseAlias(): void
     {
-        $options = DistanceOptions::fromArray([
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, [
             'minClassCount' => 7,
-        ]);
+        ]));
 
         self::assertSame(7, $options->minClassCount);
     }
@@ -557,7 +559,7 @@ final class DistanceRuleTest extends TestCase
     #[Test]
     public function itDefaultsMinClassCountToThree(): void
     {
-        $options = DistanceOptions::fromArray([]);
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, []));
 
         self::assertSame(3, $options->minClassCount);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
@@ -32,18 +33,12 @@ use Qualimetrix\Core\ProductIdentity;
 final readonly class DirectiveAuditPresenter
 {
     /**
-     * Built per report rather than injected as a service. The three values are
-     * one measurement and its context; threading them through every call was
-     * three chances to render one report's verdicts beside another run's
-     * selection.
-     *
-     * @param list<string> $only
-     * @param list<string> $disabled
+     * Built per report rather than injected as a service. The verdicts and
+     * final selection belong to the same invocation.
      */
     public function __construct(
         private DirectiveAuditReport $report,
-        private array $only,
-        private array $disabled,
+        private RuleEnablement $selection,
     ) {}
 
     public function text(): string
@@ -108,6 +103,7 @@ final readonly class DirectiveAuditPresenter
     public function json(int $exitCode): string
     {
         $report = $this->report;
+        $filter = $this->selection->filter();
 
         return self::encode([
             'meta' => ProductIdentity::meta(gmdate('c')),
@@ -118,7 +114,7 @@ final readonly class DirectiveAuditPresenter
                 'complete' => $report->coverage->isComplete(),
                 'produced_findings' => $report->producedFindings,
             ],
-            'selection' => ['only' => $this->only, 'disabled' => $this->disabled],
+            'selection' => ['only' => $filter === null ? [] : $filter->selectors, 'disabled' => $this->disabledStatements()],
             'sweep' => $report->sweep->value,
             'directives' => array_map(self::verdictToArray(...), $report->verdicts),
             'summary' => DirectiveVerdictTally::of($report->verdicts)->summary(),
@@ -147,14 +143,36 @@ final readonly class DirectiveAuditPresenter
     {
         $lines = [];
 
-        if ($this->only !== []) {
-            $lines[] = '  Only         ' . implode(', ', $this->only);
+        $filter = $this->selection->filter();
+        $only = $filter === null ? [] : $filter->selectors;
+        if ($only !== []) {
+            $lines[] = '  Only         ' . implode(', ', $only);
         }
-        if ($this->disabled !== []) {
-            $lines[] = '  Disabled     ' . implode(', ', $this->disabled);
+        $disabled = $this->disabledStatements();
+        if ($disabled !== []) {
+            $lines[] = '  Disabled     ' . implode(', ', $disabled);
         }
 
         return $lines;
+    }
+
+    /** @return list<string> */
+    private function disabledStatements(): array
+    {
+        $statements = [];
+        foreach ($this->selection->decisions() as $decision) {
+            if ($decision->on) {
+                continue;
+            }
+            if ($decision->decisiveStatements === [] && $decision->statement !== null) {
+                $statements[$decision->statement] = true;
+            }
+            foreach ($decision->decisiveStatements as $statement) {
+                $statements[$statement['text']] = true;
+            }
+        }
+
+        return array_keys($statements);
     }
 
     /**

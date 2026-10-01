@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Fixtures;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -13,7 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  */
 final readonly class TestRuleOptionsNoConstructor implements RuleOptionsInterface
 {
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self();
     }

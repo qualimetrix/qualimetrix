@@ -109,6 +109,33 @@ final class ChannelLevelAddressingTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itRequiresOneProducedChannelToWitnessAnImplicitNamespaceLevel(): void
+    {
+        $addressing = $this->addressing();
+        self::assertNull($addressing->problemWithAtLevelAmong(
+            'coupling.*',
+            SymbolLevel::Namespace_,
+            [new FindingChannel('coupling.cbo')],
+            "this rule's channels",
+        ));
+        self::assertSame(
+            'Channel selector "coupling.*" addresses "coupling.class-rank", and it does not report at level "namespace" — the levels available are "class". The pair can never match anything.',
+            $addressing->problemWithAtLevelAmong(
+                'coupling.*',
+                SymbolLevel::Namespace_,
+                [new FindingChannel('coupling.class-rank')],
+                "this rule's channels",
+            ),
+        );
+        self::assertNotNull($addressing->problemWithAtLevelAmong(
+            'computed.debt',
+            SymbolLevel::Namespace_,
+            [new FindingChannel('computed.debt')],
+            "this rule's channels",
+        ));
+    }
+
     /**
      * Two answers stay with the caller, which has a did-you-mean hint this
      * seam cannot build: text that is no selector, and a selector addressing

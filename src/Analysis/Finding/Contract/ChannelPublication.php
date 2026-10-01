@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
@@ -21,20 +20,11 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 final readonly class ChannelPublication
 {
     public function __construct(
-        private RuleSelector $selector,
-        private RuleSelection $selection,
-        private LevelActivity $activity,
+        private RuleEnablement $enablement,
     ) {}
 
-    public function publishes(string $producer, FindingChannel $channel, SymbolLevel $level): bool
+    public function publishes(string $producer, FindingChannel $channel, SymbolLevel $level, ?string $addressedProducer = null): bool
     {
-        return $this->selector->isChannelEnabled(
-            $producer,
-            $channel,
-            $level,
-            $this->selection->only,
-            $this->selection->disabled,
-        )
-            && $this->activity->ranAtAnyOf($producer, [$level]);
+        return $this->enablement->publishes($channel, $level, $addressedProducer);
     }
 }

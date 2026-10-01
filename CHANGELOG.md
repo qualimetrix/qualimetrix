@@ -9,6 +9,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Authored threshold override requests.** Replace validate(warning, error,
+errorWasExplicit) with validate(ThresholdOverrideRequest). An absent override
+skips validation; equal non-null shorthand and explicit corresponding axes
+are the two supported requests. Empty or inconsistent requests refuse at
+construction. See ADR 0092 for migration steps.
+
+**Linked enablement decisions.** Replace independent EnablementDecision constructor
+arguments with SelectionCellAddress, AuthoredCellDecision and OptionActivity.
+Use CellSwitch and CellAdmission for the choice and pass the complete decisive
+writer list; its first writer supplies statement and provenance. The existing
+readonly observations remain available. See ADR 0092.
+
+**Typed document and option declarations.** Programmatic declaration consumers
+must replace NodeSchema scalar/map/list getters with its readonly typed facts.
+Replace stringList() with list(scalar(ScalarForm::String)), and oneOf(words, foldCase)
+with words(SchemaWordSet::of(...) or ::foldingCase(...)).
+RuleOptionShape::oneOf()/oneOfIgnoringCase() become
+words(RuleOptionWordSet::of(...)/::foldingCase(...)); wordsDeclared() becomes
+the readonly word set. Configuration grammar, numeric defaults and published
+diagnostics remain unchanged. See ADR 0092.
+
+**Declared rule options and one final enablement snapshot.**
+
+1. **Rule option validation moves before discovery.** Previously a bad option could survive until Collection. Every authored layer is now shaped and judged before Discovery, including writes later overridden. Correct the offending file, preset or command-line value; disabling its producer does not make malformed input lawful.
+
+2. **Hierarchical shorthand no longer discards sibling level settings.** A top-level shorthand and an explicit write to the same expanded leaf in one layer now refuse. Independent leaves, such as callable.enabled beside a threshold shorthand, are preserved. Put overlapping writes in distinct layers or use explicit level bands only; later layers merge the expanded leaves.
+
+3. **Complexity shorthand preserves the class band.** A top-level threshold for complexity.ccn, complexity.cognitive or complexity.npath changes the callable band and no longer disables the class band. To retain the former no-class result, write class.enabled: false explicitly.
+
+4. **Empty rule and level maps do not reset.** A rule or level {} contributes no options instead of restoring defaults. To restore a compiled default over a lower layer, write the required value explicitly.
+
+5. **Rule true preserves lower options.** The boolean rule form true writes enabled: true only; it no longer replaces a lower option map. Existing thresholds and exclusions survive. Write all desired defaults if replacement was intended.
+
+6. **Reset without enumerating defaults is not available.** There is no reset token or constructor compatibility mode. Empty and null bodies do not erase lower options. A future reset contract would need an explicit owner-declared default representation; consumers must currently write the values.
+
+7. **Coupling shorthand spreads per writing layer.** Top-level CBO and instability bands expand into class and namespace leaves in that layer before merging. Explicit writes to the same expanded leaves conflict in one layer; independent level settings remain lawful. Configure distinct level bands explicitly when their values differ.
+
+8. **Later exact enable can cancel an earlier disable.** Disable is no longer permanently dominant. A higher-layer exact rules.PRODUCER.enabled: true can reverse a lower disable. Remove the later enable when the producer must remain off.
+
+9. **Same-layer exact enable beats a group disable.** A specific producer enable wins over a less specific group disable in the same layer. Remove that exact enable to keep the entire group disabled.
+
+10. **An empty effective only selection refuses.** An only filter that admits no live cell now refuses with its decisive statements instead of succeeding with an empty report. Correct the filter or the disable/activity statements.
+
+11. **Dead exact only selectors refuse.** A selector disabled at or below its filter cannot silently select nothing. A later disable can legitimately narrow the earlier filter. Remove a dead selector or place the intentional narrowing in a higher layer.
+
+12. **Exact enable outside the effective only filter refuses.** An explicit enable outside its own or a lower effective filter must have direct or declared role admission. Widen the filter or remove the enable; enabling is not an implicit filter bypass.
+
+13. **Contradictory exact enable and disable refuse in every layer.** Writing both for one producer in one layer is refused even if a later layer overrides it. Keep one authored decision.
+
+14. **The both-disable-and-only warning is removed.** The resolver now applies the explicit cell rules and refuses unlawful combinations. Consumers must not depend on the former warning text.
+
+15. **Selection changes typed option enablement and preparation.** Selectors now affect the built options isEnabled answer and the final preparation gate. Off producers perform no preparation or inspection. Read the committed RuleEnablement rather than applying another name filter.
+
+16. **Unassigned-class uses framework enabled and its own mode.** The producer accepts enabled like other rules. enabled: false with mode: warn is lawful and off; enabled: true with mode: ignore refuses as an explicitly enabled inactive producer. Choose warn/error to enable reporting, or remove the explicit enable.
+
+17. **Effective threshold bands are validated.** Warning/error ordering is judged on the effective band, including values from distinct layers and compiled defaults. Write a coherent band; an overridden lower malformed value is still refused independently.
+
+18. **Written NPath class bands activate.** A written class band is effective without a separate enabled: true. To keep class reporting off, write class.enabled: false.
+
+19. **CLI aliases and rule-opt share authored YAML value grammar.** Both doors parse the declared YAML form, preserve provenance and refuse duplicate writes to the same canonical option in one CLI layer. Keep only one alias or rule-opt write for that option.
+
+20. **LCOM method exclusions require a sequence.** A bare CSV string is no longer split. Use --lcom-exclude-methods='[getName, getDescription]' or a YAML sequence; scalar and map substitutes refuse.
+
+21. **CLI null is not a string fallback.** A YAML null written to a non-null CLI option is refused rather than converted into text. Omit the write to retain the lower value.
+
+22. **CLI refusals name their real option.** Configuration diagnostics retain command-line source and the authored flag or option locator, with no document position for that source. Update envelope consumers instead of inventing a file path.
+
+23. **CLI dotted addresses name declared levels only.** An option path after the producer may traverse a declared level and its own keys, not an arbitrary nested dictionary. Put channel-keyed namespace suppression maps in YAML.
+
+24. **Integer threshold annotations reject fractions.** A fractional numeric override is no longer truncated for an integer boundary; it produces annotation.invalid-threshold. Write an integer. Floating-point owner boundaries retain their own numeric contract.
+
+25. **Duplication min_tokens must be at least one.** Zero and negative min_tokens now refuse configuration instead of creating an invalid detection window. Disable duplication.clone explicitly to skip detection.
+
+26. **LCOM exclusions use PHP method case folding and report unmatched names.** Method names match case-insensitively, retaining the first authored spelling. On a covered whole-project run, unmatched names publish cohesion.unmatched-exclude-method once per normalized name. Correct the name; partial runs do not claim that it is absent from the project.
+
+27. **Producer name diagnostics use one judge.** Unknown owners and selectors share the registered producer/channel universe and actionable hints across YAML, presets and CLI. Bare group names require X.*; no compatibility producer aliases are added.
+
+28. **Namespace-channel exclusions require a real namespace witness.** A selector must address a channel published by its owner at namespace level. A global level witness from another producer no longer makes the exclusion legal. Remove an impossible key or choose the owner channel that actually reports at namespace level.
+
+29. **Rule option refusals retain authored full paths and writers.** Diagnostics now retain rules.PRODUCER and the precise key, origin and position when available. Effective-band refusals name their contributing writers and default halves. Consumers must retain all contributing sources rather than relabel every failure resolved.
+
+30. **Only declared snake, camel and kebab spellings are accepted.** Other letter-case variants are refused with the canonical hint. Two accepted spellings of one key in the same map still constitute a duplicate write. Use documented snake_case in YAML and kebab-case in CLI addresses.
+
+31. **Suppressed output includes selection and notRun.** Produced findings removed by selection join the suppression multiset as mechanism selection. Producers that never ran are separate notRun metadata, not invented findings and not counted in byMechanism.
+
+32. **Directive selection lists only decisive disabling statements.** Text and JSON retain every tied decisive disabling text in resolver order and deduplicate repetitions across cells. A statement canceled by a later enable is absent. JSON selection.disabled remains a list of strings.
+
+33. **Directive diagnostics follow declared selection roles.** Some directive errors remain admitted for a selected addressed producer; unresolved errors can be filter-exempt. The unused-directive channel remains directly selectable. Disable annotation.directive explicitly to silence its producer rather than relying on a filter to hide a configuration mistake.
+
+34. **Retired option diagnostics name one replacement through the declared vocabulary.** Document advice uses canonical declared names; CLI advice keeps the authored spelling. Each refusal retains its own source and written position, so full diagnostic sentences are source-specific. Follow the named replacement; no deprecated aliases or second raw-name walk remain.
+
+35. **Rules listing publishes forms and actual selection writers.** qmx rules lists accepted root/level options separately from dedicated aliases, retains all tied disabling texts and the effective only filter, and emits Selection source with actual origin and layer index. It judges the document and selection but does not build effective rule options or commit runtime state.
+
+36. **InlineDirectiveValidator drops its unused options constructor argument.** Replace new InlineDirectiveValidator(options, policy, identity) with new InlineDirectiveValidator(policy, identity). RuleExecution owns the producer activity gate; no no-op options parameter or compatibility constructor remains.
+
+Programmatic consumers must replace Options::fromArray with Options::fromResolved(ResolvedRuleOptionValues). Compose authored layers through the registered RulesSection, then use one invocation channel snapshot for RuleEnablementResolver::decide, RuleOptionsBuild::build and RuleEnablementResolver::conclude. Publish the completed FindingConfiguration only after preflight succeeds. Raw RuleSelection/RuleSelector filtering, FindingConfigurationResolver, RuleOptionsFactory and the three temporary ConfigurationDocument rule contribution getters are retired; do not recreate their merge or name algorithms in consumers. Default threshold numbers and metric formulas are unchanged.
+
+Finding public API imports move under its Contract namespace. Update these exact FQCNs; there are no aliases:
+
+| Old FQCN                                                          | New FQCN                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild` | `Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild`   |
+| `Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver`   | `Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver` |
+| `Qualimetrix\Analysis\Finding\Selection\RuleNameJudge`            | `Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge`          |
+| `Qualimetrix\Analysis\Finding\Selection\StatedEnablement`         | `Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement`       |
+
+RuleOptionsBuild now accepts RuleExecutionInterface as its only constructor argument. Remove a supplied RuleSuppressionSelectorDecoder argument: suppression decoding remains owner-private and keeps its existing semantics. FindingConfiguration requires a ResolvedDocument, with typed withResolvedOptions, withChannelUniverse, withEnablement and withDiagnostics copies. Replace raw RuleOptionsDocument/FindingCliOverrides staging with authored document composition; there is no optional raw carrier. ConfigLoaderInterface::read returns LoadedDocument containing AuthoredNode; ConfigurationLayer carries authored layers and diagnostics, while ConfigurationDocument retains the two non-authored Composer discovery facts.
+
 **Composer metadata is one invocation snapshot.** Replace
 `Analysis\Configuration\Discovery\ComposerReader` and
 `ComposerAutoloadPathReaderInterface` with
@@ -82,9 +190,8 @@ Debug accepts `--preset`; all four measuring baseline commands share
 could succeed beside an invalid document. It now refuses invalid declared
 document values with exit 3, lists configured computed metric names and marks
 selection through the final `disabled_rules`/`only_rules`.
-It does not require analysis paths. Raw per-rule enable switches remain on
-the existing rule-option boundary until the shared selection resolver replaces
-that boundary. Programmatic command composition must provide the document
+It does not require analysis paths. Rule enable switches and selection use
+the declared document and the shared selection resolver. Programmatic command composition must provide the document
 adapter and the named resolvers. See ADR 0089.
 
 **Automatic configuration names are exact.** Previously filesystem lookup

@@ -13,6 +13,7 @@
     ],
     "channels": [
         "code-smell.superglobals@callable",
+        "code-smell.superglobals@file",
         "security.command-injection@callable",
         "security.hardcoded-credentials@class",
         "security.sensitive-parameter@callable",

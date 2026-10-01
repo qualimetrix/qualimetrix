@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
@@ -478,7 +477,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             {
                 throw $this->refusal;
             }
-        }, new ErrorStream());
+        }, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class));
     }
 
     private function realRuntimeConfigurator(): RuntimeConfigurator
@@ -529,9 +528,10 @@ final class ConfigurationRefusalRoutingTest extends TestCase
 
         return new RuleInputValidator(
             $ruleRegistry,
-            $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleSelector'),
-            $this->inert(FindingConfigurationResolverInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'),
+            new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
+            $this->inert('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface'),
+            new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
         );
     }
 

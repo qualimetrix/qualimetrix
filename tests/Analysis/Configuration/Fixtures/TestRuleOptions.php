@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Fixtures;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -21,13 +23,13 @@ final readonly class TestRuleOptions implements RuleOptionsInterface
         public bool $countNullsafe = true,
     ) {}
 
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
-            warningThreshold: (int) ($config['warningThreshold'] ?? 10),
-            errorThreshold: (int) ($config['errorThreshold'] ?? 20),
-            countNullsafe: (bool) ($config['countNullsafe'] ?? true),
+            enabled: $config->boolean('enabled', true),
+            warningThreshold: $config->integer('warning-threshold', 10),
+            errorThreshold: $config->integer('error-threshold', 20),
+            countNullsafe: $config->boolean('count-nullsafe', true),
         );
     }
 

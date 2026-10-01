@@ -48,7 +48,7 @@ final class LongParameterListRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of parameters per method';
     }

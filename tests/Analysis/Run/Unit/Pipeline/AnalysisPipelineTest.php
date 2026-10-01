@@ -18,12 +18,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -40,6 +39,7 @@ use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -49,9 +49,11 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]
+#[CoversClass(InlineDirectiveRun::class)]
 final class AnalysisPipelineTest extends TestCase
 {
     #[Test]
@@ -210,8 +212,8 @@ final class AnalysisPipelineTest extends TestCase
     ): AnalysisPipeline {
         $profiler = self::createStub(ProfilerInterface::class);
         $ruleConfiguration = new RuleOptionsRegistry();
-        $selector = new RuleSelector(new InMemoryRuleChannelRegistry());
-        $producerGate = new RuleSelectorProducerGate($selector);
+        $ruleConfiguration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
+        $producerGate = new RuleSelectorProducerGate($ruleConfiguration);
         $fileSetInspection = new FileSetInspectionComposite(
             [],
             $producerGate,
@@ -222,11 +224,12 @@ final class AnalysisPipelineTest extends TestCase
         $preparation = new RuleProducerPreparation(
             $layerPolicy,
             $circular,
-            self::createStub(InlineDirectivePolicyInterface::class),
-            self::createStub(ThresholdDirectiveAuditInterface::class),
             $fileSetInspection,
             $producerGate,
-            $ruleConfiguration,
+        );
+        $inlineDirectives = new InlineDirectiveRun(
+            self::createStub(InlineDirectivePolicyInterface::class),
+            self::createStub(ThresholdDirectiveAuditInterface::class),
         );
 
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
@@ -252,6 +255,7 @@ final class AnalysisPipelineTest extends TestCase
             $collection,
             $rules,
             $preparation,
+            $inlineDirectives,
             $aggregation,
             $computed,
             $graphBuilder,

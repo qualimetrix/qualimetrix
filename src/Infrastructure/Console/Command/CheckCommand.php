@@ -217,11 +217,7 @@ final class CheckCommand extends Command
             $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
         }
 
-        $selectionWarning = $this->ruleInputValidator->conflictingSelectionWarning($findingConfiguration);
-        if ($selectionWarning !== null) {
-            $this->writeWarning($output, $selectionWarning);
-        }
-        $this->configurationInputAdapter->writeDiagnostics($document, $output);
+        $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics);
         if ($output->isVerbose() && $document->appliedSources() !== []) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<info>Configuration loaded from: %s</info>',
@@ -286,7 +282,7 @@ final class CheckCommand extends Command
             projectionOptions: $projectionOptions,
             namespacePattern: $namespacePattern,
             projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
-            configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document),
+            configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
         );
 
         return $this->presentProfile($input, $output, $exitCode);

@@ -106,7 +106,7 @@ final class RuleSelectorHelpGrammarTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         $error = self::envelopeError($tester);
         self::assertStringNotContainsString('group, or channel', $error);
-        self::assertStringContainsString(\sprintf('write "%s.*"', $group), $error);
+        self::assertSame(\sprintf('Configuration error: Rule selector "%s" does not match any registered producer or channel. Write "%s.*" to select its descendants.', $group, $group), $error);
 
         $starred = $this->checkTester();
         $starred->execute(

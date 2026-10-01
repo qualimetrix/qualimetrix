@@ -446,21 +446,6 @@ if (isset($arguments['freeze-before'])) {
         exit(3);
     }
 
-    // A `pending` row is honest only while the frozen half predates its cure.
-    // The moment this run retakes the snapshot, every `pending` row becomes a
-    // lie of the opposite kind — so converting them to a plain `cure` is the
-    // retaking round's own first step, not something this run can do for it.
-    $pendingRows = Floor::load($root)->pendingRows();
-
-    if ($pendingRows !== []) {
-        fwrite(\STDERR, "promise-effect: --freeze-before refuses while a `pending` cure stands — converting it to a commit is this retake's first step:\n");
-
-        foreach ($pendingRows as $pendingRow) {
-            fwrite(\STDERR, '  ' . $pendingRow->row . ': ' . $pendingRow->cureText() . "\n");
-        }
-
-        exit(3);
-    }
 }
 
 if (isset($arguments['before'])) {
@@ -628,9 +613,6 @@ if (isset($arguments['check'])) {
 
         exit(1);
     }
-} else {
-    file_put_contents($target, $rendered);
-    file_put_contents($snapshotDirectory . '/' . basename(Stamp::PATH), (new Stamp($root))->render());
 }
 
 // The cheap check reconstructs which cells the ledger owes; this is where that
@@ -699,10 +681,6 @@ if (isset($arguments['freeze-before'])) {
         exit(3);
     }
 
-    if (!is_dir($snapshotDirectory . '/observations-before')) {
-        mkdir($snapshotDirectory . '/observations-before', 0o775, true);
-    }
-
     // 02 §10: the shot is retaken only with a reason, and editing the
     // classifier is not one. The reason is written into the file rather than
     // left in a commit message, because the file is what the next reader of
@@ -715,6 +693,36 @@ if (isset($arguments['freeze-before'])) {
         exit(3);
     }
 
+    if ($spanProblems !== 0) {
+        fwrite(\STDERR, "promise-effect: the full population does not match the declared span\n");
+
+        exit(3);
+    }
+
+    if ($stand->failures() !== []) {
+        foreach ($stand->failures() as $failure) {
+            fwrite(\STDERR, 'PROBE FAILED: ' . $failure . "\n");
+        }
+
+        exit(3);
+    }
+
+    [$frozenMisses] = Floor::load($root)->cureMisses($cells, frozenHalf: true);
+
+    if ($frozenMisses !== []) {
+        foreach ($frozenMisses as $miss) {
+            fwrite(\STDERR, 'FLOOR: ' . $miss . "\n");
+        }
+
+        exit(1);
+    }
+
+    if (!is_dir($snapshotDirectory . '/observations-before')) {
+        mkdir($snapshotDirectory . '/observations-before', 0o775, true);
+    }
+
+    file_put_contents($target, $rendered);
+    file_put_contents($snapshotDirectory . '/' . basename(Stamp::PATH), (new Stamp($root))->render());
     file_put_contents($snapshotDirectory . '/observations-before/raw.tsv', renderRaw($stand->rawObservations()));
     file_put_contents(
         $snapshotDirectory . '/observations-before/shot.txt',
@@ -728,6 +736,11 @@ if (isset($arguments['freeze-before'])) {
         . "axes\t" . implode(',', $axes) . "\n"
         . "reason\t" . str_replace(["\t", "\n"], ' ', $reason) . "\n",
     );
+}
+
+if (!isset($arguments['freeze-before']) && !isset($arguments['check'])) {
+    file_put_contents($target, $rendered);
+    file_put_contents($snapshotDirectory . '/' . basename(Stamp::PATH), (new Stamp($root))->render());
 }
 
 $defects = 0;
@@ -946,6 +959,7 @@ printf("  %-22s %d\n", 'defects (all axes)', $defects);
 // and a green line printed over a partial grid is the shape of false
 // evidence this round exists to remove.
 $whole = \count($axes) === \count($canonicalAxes);
+// The frozen half uses its pending-defect policy; the live grid uses its cure policy.
 // On the LIVE grid the floor is not the floor. Every row this round repaired
 // is no longer a defect, so the pre-cure list applied here turned a successful
 // cure into a red run. What the live grid is held to instead is the round's
@@ -954,7 +968,7 @@ $whole = \count($axes) === \count($canonicalAxes);
 // included, which must read clean HERE and still defective on the frozen
 // half. See `Floor`.
 [$misses, $standing, $cured, , $pending] = $whole
-    ? Floor::load($root)->cureMisses($cells, frozenHalf: false)
+    ? Floor::load($root)->cureMisses($cells, frozenHalf: isset($arguments['freeze-before']))
     : [[], [], [], [], []];
 
 printf(

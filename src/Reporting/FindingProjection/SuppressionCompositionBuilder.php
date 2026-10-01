@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -67,7 +68,20 @@ final readonly class SuppressionCompositionBuilder
 
         [$ledgerFindings, $ledgerInert] = $this->ledgerAttributor->attribute($ruleExecution, $ruleConfiguration);
 
-        return new SuppressionComposition([...$all, ...$ledgerFindings], [...$inert, ...$ledgerInert]);
+        $selection = array_map(
+            static fn(array $entry): SuppressedFinding => new SuppressedFinding(
+                $entry['finding'],
+                SuppressionMechanism::Selection,
+                $entry['suppressor'],
+            ),
+            $ruleExecution->selection->removed,
+        );
+
+        return new SuppressionComposition(
+            [...$all, ...$ledgerFindings, ...$selection],
+            [...$inert, ...$ledgerInert],
+            $ruleExecution->selection->notRun,
+        );
     }
 
     /**
@@ -106,6 +120,7 @@ final readonly class SuppressionCompositionBuilder
             SuppressionMechanism::Baseline => $this->baselineSuppressor($finding),
             SuppressionMechanism::GitScope => $this->gitScopeSuppressor($options),
             SuppressionMechanism::RuleNamespaceSuppression, SuppressionMechanism::RulePathSuppression => $finding->ruleName,
+            SuppressionMechanism::Selection => throw new LogicException('Selection suppressors are recorded by execution.'),
         };
     }
 

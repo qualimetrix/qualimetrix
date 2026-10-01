@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
@@ -13,7 +14,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineIn
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
@@ -21,7 +21,6 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
-use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -118,7 +117,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     #[Test]
     public function itKeepsEveryOwnerStoreAtDefaultsAfterLateArchitectureFailureInTheCompiledContainer(): void
     {
-        [$runtimeConfigurator, $command, $ruleInputValidator] = $this->runtimeServices();
+        [$runtimeConfigurator, $command, $ruleInputValidator, $execution] = $this->runtimeServices();
         $runtimeConfigurator->resetRunState();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
         // Well-formed for the engine, so the document composes and the refusal
@@ -145,7 +144,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $defaultInput = new ArrayInput([], $command->getDefinition());
         $runtimeConfigurator->configure($defaultDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($defaultDocument), $this->cacheConfiguration($defaultDocument, $projectRoot), $this->parallelConfiguration($defaultDocument)), $ruleInputValidator->resolve($defaultDocument, $defaultInput), $defaultInput, new BufferedOutput());
 
-        $this->assertDefaultOwnerState($runtimeConfigurator);
+        $this->assertDefaultOwnerState($runtimeConfigurator, $execution);
     }
 
     /**
@@ -209,14 +208,19 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         try {
             $runtimeConfigurator->configure($invalid, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($invalid), $this->cacheConfiguration($invalid, $projectRoot), $this->parallelConfiguration($invalid)), $ruleInputValidator->resolve($invalid, $invalidInput), $invalidInput, new BufferedOutput());
         } finally {
-            self::assertContains('computed.second', $this->computedChannels($runtimeConfigurator));
-            self::assertNotContains('computed.invalid', $this->computedChannels($runtimeConfigurator));
-            self::assertNotContains('computed.first', $this->computedChannels($runtimeConfigurator));
+            $configuration = $this->ruleConfiguration($runtimeConfigurator);
+            self::assertNull($configuration->enablement());
+            try {
+                $configuration->channelUniverse();
+                self::fail('A failed preflight must leave no channel universe installed.');
+            } catch (LogicException $error) {
+                self::assertSame('Rule channels are unavailable before analysis preflight.', $error->getMessage());
+            }
             $this->assertDefaultOwnerState($runtimeConfigurator);
         }
     }
 
-    /** @return array{RuntimeConfigurator, CheckCommand, RuleInputValidator} */
+    /** @return array{RuntimeConfigurator, CheckCommand, RuleInputValidator, \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface} */
     private function runtimeServices(): array
     {
         $container = (new ContainerFactory())->create();
@@ -231,7 +235,9 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         self::assertInstanceOf(ConfigurationPipelineInterface::class, $pipeline);
         $this->sections = LayeredDocument::sectionsOf($pipeline);
 
-        return [$runtimeConfigurator, $command, $ruleInputValidator];
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        return [$runtimeConfigurator, $command, $ruleInputValidator, $execution];
     }
 
     /** @param array<string, mixed> $values */
@@ -275,11 +281,20 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         return (new ParallelConfigurationResolver())->resolve($document);
     }
 
-    private function assertDefaultOwnerState(RuntimeConfigurator $runtimeConfigurator): void
+    private function assertDefaultOwnerState(RuntimeConfigurator $runtimeConfigurator, ?\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface $readyExecution = null): void
     {
         self::assertTrue($this->cacheStore($runtimeConfigurator)->current()->enabled);
         self::assertNull($this->parallelStore($runtimeConfigurator)->current()->workers);
-        self::assertSame([], $this->ruleConfiguration($runtimeConfigurator)->all());
+        if ($readyExecution === null) {
+            self::assertSnapshotUnavailable($this->ruleConfiguration($runtimeConfigurator));
+        } else {
+            $snapshot = $this->ruleConfiguration($runtimeConfigurator)->resolvedOptions();
+            self::assertEqualsCanonicalizing(array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\RuleMetadata $producer): string => $producer->name, $readyExecution->allRules()), array_keys($snapshot->all()));
+            $lcom = $snapshot->for('cohesion.lcom');
+            self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions::class, $lcom);
+            self::assertTrue($lcom->enabled);
+            self::assertNull($lcom->excludeMethods);
+        }
         self::assertFalse($this->ruleConfiguration($runtimeConfigurator)->capturesExcludedFindings());
         self::assertSame([], $this->lcomConfigurationStore($runtimeConfigurator)->current()->excludedMethods);
         self::assertFalse($this->profileReport($runtimeConfigurator)->isEnabled());
@@ -314,15 +329,7 @@ final class RuntimeConfigurationIsolationTest extends TestCase
     /** @return list<string> */
     private function computedChannels(RuntimeConfigurator $runtimeConfigurator): array
     {
-        $analysisRuntime = (new ReflectionProperty(RuntimeConfigurator::class, 'analysisRuntimeConfigurator'))
-            ->getValue($runtimeConfigurator);
-        self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
-        $validator = (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'ruleInputValidator'))
-            ->getValue($analysisRuntime);
-        self::assertInstanceOf(RuleInputValidator::class, $validator);
-        $selector = (new ReflectionProperty(RuleInputValidator::class, 'ruleSelector'))->getValue($validator);
-        self::assertInstanceOf(RuleSelector::class, $selector);
-        $channels = (new ReflectionProperty(RuleSelector::class, 'channels'))->getValue($selector);
+        $channels = $this->ruleConfiguration($runtimeConfigurator)->channelUniverse();
 
         return array_values(array_map(
             static fn($channel): string => $channel->code,
@@ -343,4 +350,13 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         );
     }
 
+    private static function assertSnapshotUnavailable(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface $registry): void
+    {
+        try {
+            $registry->resolvedOptions();
+            self::fail('The invocation must have no ready rule options.');
+        } catch (LogicException $refusal) {
+            self::assertSame('Rule options are unavailable before analysis preflight.', $refusal->getMessage());
+        }
+    }
 }

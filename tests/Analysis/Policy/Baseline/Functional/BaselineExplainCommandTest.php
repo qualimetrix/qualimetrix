@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
@@ -48,6 +47,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -509,7 +509,10 @@ final class BaselineExplainCommandTest extends TestCase
         $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         $registry = new RuleOptionsRegistry();
-        $registry->setConfigFileOptions($ruleOptions);
+        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => $ruleOptions]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project')));
+        $classes = $ruleClasses ?? ($registerRules ? [ComplexityRule::class] : []);
+        $metadata = array_map(static fn(string $class): \Qualimetrix\Analysis\Finding\Contract\RuleMetadata => new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader::read($class), $class::getOptionsClass(), '', [], false), $classes);
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata));
 
         $command = new BaselineExplainCommand(
             new StubBaselineRun(
@@ -523,7 +526,7 @@ final class BaselineExplainCommandTest extends TestCase
             new BoundaryExplanationService(self::producerEdge(), $coverage ?? StubRuleCoverage::everyRuleRan()),
             new BaselineConfiguredThresholds(
                 self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
-                new RuleOptionsFactory($registry),
+                $registry,
             ),
             $declarations,
         );
@@ -557,7 +560,7 @@ final class BaselineExplainCommandTest extends TestCase
             new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
-            new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsFactory(new RuleOptionsRegistry())),
+            new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsRegistry()),
             $declarations,
         );
         $command->setRefusalPresenter(self::refusalPresenter());

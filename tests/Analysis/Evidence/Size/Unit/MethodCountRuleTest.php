@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,10 +17,12 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(MethodCountRule::class)]
 #[CoversClass(MethodCountOptions::class)]
@@ -37,7 +41,7 @@ final class MethodCountRuleTest extends TestCase
     {
         $rule = new MethodCountRule(new MethodCountOptions());
 
-        self::assertSame('Checks number of methods per class', $rule->getDescription());
+        self::assertSame('Checks number of methods per class', $rule::getDescription());
     }
 
     #[Test]
@@ -61,7 +65,7 @@ final class MethodCountRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new MethodCountRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }
@@ -215,7 +219,7 @@ final class MethodCountRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsDefaultsFromArray(): void
     {
-        $options = MethodCountOptions::fromArray(['enabled' => true]);
+        $options = MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(20, $options->warning);
@@ -225,11 +229,11 @@ final class MethodCountRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsCustomValuesFromArray(): void
     {
-        $options = MethodCountOptions::fromArray([
+        $options = MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, [
             'enabled' => true,
             'warning' => 10,
             'error' => 20,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(10, $options->warning);
@@ -237,11 +241,10 @@ final class MethodCountRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = MethodCountOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new MethodCountOptions(), MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, [])));
+        self::assertFalse(MethodCountOptions::fromResolved(ResolvedOptionsFixture::values(MethodCountOptions::class, ['enabled' => false]))->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void

@@ -8,19 +8,10 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\AllowListBuilder;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * End-to-end integration test for the Phase 2 direction-1 membership criteria
@@ -49,52 +40,23 @@ final class LayerCriteriaIntegrationTest extends TestCase
         // kind falls into its dedicated layer. Attribute, implements and
         // extends data comes from the dependency graph, so these layers are
         // answerable only once the registry has been bound to one.
-        $registry = new LayerRegistry([
-            new LayerDefinition(
-                'contracts-impls',
-                new MembershipSpec(implements: [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface']),
-            ),
-            new LayerDefinition(
-                'aggregates',
-                new MembershipSpec(extends: [self::FIXTURE_NAMESPACE . '\\Marker\\AggregateRoot']),
-            ),
-            new LayerDefinition(
-                'tagged-services',
-                new MembershipSpec(attributes: [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']),
-            ),
-            new LayerDefinition(
-                'suffix-repos',
-                new MembershipSpec(suffix: ['Repository']),
-            ),
-            new LayerDefinition(
-                'markers',
-                new MembershipSpec(patterns: [self::FIXTURE_NAMESPACE . '\\Marker\\**']),
-            ),
+        $result = $this->analyze([
+            'layers' => [
+                ['name' => 'contracts-impls', 'implements' => [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface']],
+                ['name' => 'aggregates', 'extends' => [self::FIXTURE_NAMESPACE . '\\Marker\\AggregateRoot']],
+                ['name' => 'tagged-services', 'attributes' => [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']],
+                ['name' => 'suffix-repos', 'suffix' => ['Repository']],
+                ['name' => 'markers', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Marker\\**']],
+            ],
+            'allow' => [
+                'contracts-impls' => ['markers'],
+                'aggregates' => ['markers'],
+                'tagged-services' => ['markers'],
+                'suffix-repos' => ['markers'],
+                'markers' => [],
+            ],
+            'coverage-gap' => 'warn',
         ]);
-
-        // Self-allow only — every cross-layer edge becomes a finding, which
-        // is what we use as evidence of correct classification.
-        $policy = AllowListBuilder::policyFromExactMap([
-            'contracts-impls' => ['markers'],
-            'aggregates' => ['markers'],
-            'tagged-services' => ['markers'],
-            'suffix-repos' => ['markers'],
-            'markers' => [],
-        ]);
-
-        $pipeline = $this->createPipelineWith(
-            new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn),
-        );
-
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
 
         $layerOf = $this->buildPerSourceLayerMap($result->findings);
 
@@ -135,34 +97,13 @@ final class LayerCriteriaIntegrationTest extends TestCase
         // name is not `Repository`; only OrderRepository has the suffix but
         // implements no interface. With `match: all`, NEITHER class is a
         // member.
-        $registry = new LayerRegistry([
-            new LayerDefinition(
-                'strict-repository',
-                new MembershipSpec(
-                    suffix: ['Repository'],
-                    implements: [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface'],
-                    mode: MatchMode::All,
-                ),
-            ),
+        $result = $this->analyze([
+            'layers' => [
+                ['name' => 'strict-repository', 'suffix' => ['Repository'], 'implements' => [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface'], 'match' => 'all'],
+            ],
+            'allow' => ['strict-repository' => []],
+            'coverage-gap' => 'ignore',
         ]);
-
-        $policy = AllowListBuilder::policyFromExactMap([
-            'strict-repository' => [],
-        ]);
-
-        $pipeline = $this->createPipelineWith(
-            new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
-        );
-
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
 
         $layerSources = $this->collectSourceFqns(
             $this->filterByRule($result->findings, LayerViolationRule::NAME),
@@ -194,42 +135,14 @@ final class LayerCriteriaIntegrationTest extends TestCase
         // actually fires: layer-violations only emerge between two
         // classified layers. Without `tagged`, the Notifier dependency on
         // CustomerRepository would be out-of-layer and produce no signal.
-        $registry = new LayerRegistry([
-            new LayerDefinition(
-                'strict-repository',
-                new MembershipSpec(
-                    suffix: ['Repository'],
-                    implements: [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface'],
-                    mode: MatchMode::All,
-                ),
-            ),
-            new LayerDefinition(
-                'tagged',
-                new MembershipSpec(attributes: [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']),
-            ),
+        $result = $this->analyze([
+            'layers' => [
+                ['name' => 'strict-repository', 'suffix' => ['Repository'], 'implements' => [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface'], 'match' => 'all'],
+                ['name' => 'tagged', 'attributes' => [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']],
+            ],
+            'allow' => ['strict-repository' => [], 'tagged' => []],
+            'coverage-gap' => 'ignore',
         ]);
-
-        // Self-allow only — every cross-layer edge becomes a finding. The
-        // Notifier edge on CustomerRepository is the load-bearing one: a
-        // finding under that source FQN proves the class was classified.
-        $policy = AllowListBuilder::policyFromExactMap([
-            'strict-repository' => [],
-            'tagged' => [],
-        ]);
-
-        $pipeline = $this->createPipelineWith(
-            new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
-        );
-
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
 
         $layerSources = $this->collectSourceFqns(
             $this->filterByRule($result->findings, LayerViolationRule::NAME),
@@ -261,50 +174,23 @@ final class LayerCriteriaIntegrationTest extends TestCase
         // non-pattern criterion (suffix, attribute, implements, extends). The
         // finding message for each source class must surface the matched
         // criterion descriptor.
-        $registry = new LayerRegistry([
-            new LayerDefinition(
-                'contracts-impls',
-                new MembershipSpec(implements: [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface']),
-            ),
-            new LayerDefinition(
-                'aggregates',
-                new MembershipSpec(extends: [self::FIXTURE_NAMESPACE . '\\Marker\\AggregateRoot']),
-            ),
-            new LayerDefinition(
-                'tagged-services',
-                new MembershipSpec(attributes: [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']),
-            ),
-            new LayerDefinition(
-                'suffix-repos',
-                new MembershipSpec(suffix: ['Repository']),
-            ),
-            new LayerDefinition(
-                'markers',
-                new MembershipSpec(patterns: [self::FIXTURE_NAMESPACE . '\\Marker\\**']),
-            ),
+        $result = $this->analyze([
+            'layers' => [
+                ['name' => 'contracts-impls', 'implements' => [self::FIXTURE_NAMESPACE . '\\Marker\\RepositoryInterface']],
+                ['name' => 'aggregates', 'extends' => [self::FIXTURE_NAMESPACE . '\\Marker\\AggregateRoot']],
+                ['name' => 'tagged-services', 'attributes' => [self::FIXTURE_NAMESPACE . '\\Marker\\ServiceTag']],
+                ['name' => 'suffix-repos', 'suffix' => ['Repository']],
+                ['name' => 'markers', 'patterns' => [self::FIXTURE_NAMESPACE . '\\Marker\\**']],
+            ],
+            'allow' => [
+                'contracts-impls' => [],
+                'aggregates' => [],
+                'tagged-services' => [],
+                'suffix-repos' => [],
+                'markers' => [],
+            ],
+            'coverage-gap' => 'ignore',
         ]);
-
-        $policy = AllowListBuilder::policyFromExactMap([
-            'contracts-impls' => [],
-            'aggregates' => [],
-            'tagged-services' => [],
-            'suffix-repos' => [],
-            'markers' => [],
-        ]);
-
-        $pipeline = $this->createPipelineWith(
-            new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
-        );
-
-        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
         $findings = $this->filterByRule($result->findings, LayerViolationRule::NAME);
 
         $expectedTrailers = [
@@ -335,18 +221,18 @@ final class LayerCriteriaIntegrationTest extends TestCase
         }
     }
 
-    private function createPipelineWith(ArchitectureConfiguration $architecture): AnalysisPipelineInterface
+    /** @param array<string, mixed> $architecture */
+    private function analyze(array $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        $container = (new ContainerFactory())->create();
-
-        $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        \assert($holder instanceof ArchitecturePolicy);
-        $holder->bind($architecture);
-
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        \assert($pipeline instanceof AnalysisPipelineInterface);
-
-        return $pipeline;
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        try {
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            \assert($pipeline instanceof AnalysisPipelineInterface);
+            return $pipeline->analyze($fixture->prepared()->runConfiguration);
+        } finally {
+            $fixture->close();
+        }
     }
 
     /**

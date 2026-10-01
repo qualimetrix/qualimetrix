@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentOptions;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(BooleanArgumentOptions::class)]
 final class BooleanArgumentOptionsTest extends TestCase
@@ -25,7 +27,7 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayEmpty(): void
     {
-        $options = BooleanArgumentOptions::fromArray([]);
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, []));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(['is', 'has', 'can', 'should', 'will', 'did', 'was'], $options->allowedPrefixes);
@@ -34,9 +36,9 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayWithCustomPrefixes(): void
     {
-        $options = BooleanArgumentOptions::fromArray([
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, [
             'allowed_prefixes' => ['is', 'has'],
-        ]);
+        ]));
 
         self::assertSame(['is', 'has'], $options->allowedPrefixes);
     }
@@ -44,9 +46,9 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayWithCamelCaseKey(): void
     {
-        $options = BooleanArgumentOptions::fromArray([
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, [
             'allowedPrefixes' => ['can'],
-        ]);
+        ]));
 
         self::assertSame(['can'], $options->allowedPrefixes);
     }
@@ -54,9 +56,9 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayDisabledWithEmptyPrefixes(): void
     {
-        $options = BooleanArgumentOptions::fromArray([
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, [
             'allowed_prefixes' => [],
-        ]);
+        ]));
 
         self::assertSame([], $options->allowedPrefixes);
     }
@@ -133,9 +135,9 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayWithSnakeCaseFlagPromotedProperties(): void
     {
-        $options = BooleanArgumentOptions::fromArray([
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, [
             'flag_promoted_properties' => true,
-        ]);
+        ]));
 
         self::assertTrue($options->flagPromotedProperties);
     }
@@ -143,9 +145,9 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayWithCamelCaseFlagPromotedProperties(): void
     {
-        $options = BooleanArgumentOptions::fromArray([
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, [
             'flagPromotedProperties' => true,
-        ]);
+        ]));
 
         self::assertTrue($options->flagPromotedProperties);
     }
@@ -153,7 +155,7 @@ final class BooleanArgumentOptionsTest extends TestCase
     #[Test]
     public function itFromArrayEmptyDefaultsFlagPromotedPropertiesToFalse(): void
     {
-        $options = BooleanArgumentOptions::fromArray([]);
+        $options = BooleanArgumentOptions::fromResolved(ResolvedOptionsFixture::values(BooleanArgumentOptions::class, []));
 
         self::assertFalse($options->flagPromotedProperties);
     }

@@ -50,7 +50,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks cyclomatic complexity at method and class levels';
     }

@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement;
 use Qualimetrix\Core\ProductIdentity;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -29,7 +34,19 @@ final readonly class RuleListingPresenter
     /**
      * @param list<RuleRow> $rules
      */
-    public function present(OutputInterface $output, array $rules): void
+    public function present(
+        OutputInterface $output,
+        array $rules,
+        ResolvedComputedMetricDefinitions $definitions,
+        StatedEnablement $selection,
+    ): void {
+        $this->writeRules($output, $rules);
+        $this->writeComputedMetrics($output, $definitions);
+        $this->writeSelection($output, $selection);
+    }
+
+    /** @param list<RuleRow> $rules */
+    private function writeRules(OutputInterface $output, array $rules): void
     {
         if ($rules === []) {
             $output->writeln('<comment>No rules found</comment>');
@@ -61,6 +78,90 @@ final readonly class RuleListingPresenter
         $output->writeln('        bin/qmx check --rule-opt=<name>:<option>=<value>');
         $output->writeln('');
         $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+    }
+
+    private function writeComputedMetrics(OutputInterface $output, ResolvedComputedMetricDefinitions $definitions): void
+    {
+        $resolved = $definitions->all();
+        if ($resolved === []) {
+            return;
+        }
+
+        $output->writeln('');
+        $output->writeln('<info>Computed metrics:</info> ' . implode(', ', array_map(
+            static fn($definition): string => $definition->name,
+            $resolved,
+        )));
+    }
+
+    private function writeSelection(OutputInterface $output, StatedEnablement $selection): void
+    {
+        $filter = $selection->filter();
+        $only = $filter === null ? [] : $filter->selectors;
+        if ($only !== []) {
+            $output->writeln('<comment>Only selected by configuration:</comment> ' . implode(', ', $only));
+        }
+
+        $disabled = self::disabledStatements($selection);
+        if ($disabled !== []) {
+            $output->writeln('<comment>Disabled by configuration:</comment> ' . implode(', ', $disabled));
+        }
+        foreach (self::selectionSources($selection) as $source) {
+            $output->writeln(OutputFormatter::escape($source));
+        }
+    }
+
+    /** @return list<string> */
+    private static function disabledStatements(StatedEnablement $selection): array
+    {
+        $disabled = [];
+        foreach ($selection->decisions() as $decision) {
+            if (!$decision->on) {
+                foreach (self::authoredCauses($decision) as $cause) {
+                    $disabled[$cause['text']] = true;
+                }
+            }
+        }
+        return array_keys($disabled);
+    }
+
+    /** @return list<string> */
+    private static function selectionSources(StatedEnablement $selection): array
+    {
+        $sources = [];
+        $filter = $selection->filter();
+        if ($filter !== null) {
+            $statement = ($filter->provenance->path === null ? ($filter->provenance->origin->locator() ?? '--only-rule') : $filter->provenance->displayPath()) . ': [' . implode(', ', $filter->selectors) . ']';
+            $sources[serialize([$statement, $filter->provenance])] = self::selectionSource($statement, $filter->provenance);
+        }
+        foreach ($selection->decisions() as $decision) {
+            if ($decision->on) {
+                continue;
+            }
+            foreach (self::authoredCauses($decision) as $cause) {
+                if ($cause['provenance'] !== null) {
+                    $sources[serialize([$cause['text'], $cause['provenance']])] = self::selectionSource($cause['text'], $cause['provenance']);
+                }
+            }
+        }
+
+        return array_values($sources);
+    }
+
+    /** @return list<array{text: string, provenance: ?Provenance}> */
+    private static function authoredCauses(EnablementDecision $decision): array
+    {
+        if ($decision->decisiveStatements !== []) {
+            return $decision->decisiveStatements;
+        }
+        return $decision->statement === null
+            ? []
+            : [['text' => $decision->statement, 'provenance' => $decision->provenance]];
+    }
+
+    private static function selectionSource(string $statement, Provenance $writer): string
+    {
+        return \sprintf('Selection source: %s (%s; layer %d)', $statement, $writer->origin->describe(), $writer->layerIndex);
     }
 
     /**

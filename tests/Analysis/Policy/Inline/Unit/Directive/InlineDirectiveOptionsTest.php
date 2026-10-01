@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * The one configurable severity in this family, and the reason it is strict.
@@ -27,7 +29,7 @@ final class InlineDirectiveOptionsTest extends TestCase
     #[Test]
     public function itDefaultsToInfoWhenNoSeverityIsGiven(): void
     {
-        self::assertSame(Severity::Info, InlineDirectiveOptions::fromArray([])->unusedDirectiveSeverity);
+        self::assertSame(Severity::Info, InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, []))->unusedDirectiveSeverity);
     }
 
     /**
@@ -39,7 +41,7 @@ final class InlineDirectiveOptionsTest extends TestCase
     {
         self::assertSame(
             Severity::Info,
-            InlineDirectiveOptions::fromArray(['unused_directive_severity' => null])->unusedDirectiveSeverity,
+            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => null]))->unusedDirectiveSeverity,
         );
     }
 
@@ -48,7 +50,7 @@ final class InlineDirectiveOptionsTest extends TestCase
     {
         self::assertSame(
             Severity::Warning,
-            InlineDirectiveOptions::fromArray(['unused_directive_severity' => 'warning'])->unusedDirectiveSeverity,
+            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => 'warning']))->unusedDirectiveSeverity,
         );
     }
 
@@ -61,7 +63,7 @@ final class InlineDirectiveOptionsTest extends TestCase
     {
         self::assertSame(
             Severity::Warning,
-            InlineDirectiveOptions::fromArray(['unused_directive_severity' => 'Warning'])->unusedDirectiveSeverity,
+            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => 'Warning']))->unusedDirectiveSeverity,
         );
     }
 
@@ -69,30 +71,26 @@ final class InlineDirectiveOptionsTest extends TestCase
     public function itRefusesAValueItCannotHonour(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('unknown value "warnin"');
+        $this->expectExceptionMessage('"rules.fixture.unused_directive_severity" in configuration file "/project/qmx.yaml" must be one of info, warning, error, got "warnin".');
 
-        InlineDirectiveOptions::fromArray(['unused_directive_severity' => 'warnin']);
+        InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => 'warnin']));
     }
 
     #[Test]
     public function itRefusesANonStringValue(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('must be a string');
+        $this->expectExceptionMessage('"rules.fixture.unused_directive_severity" in configuration file "/project/qmx.yaml" must be string (one of info, warning, error, case-insensitive), got int.');
 
-        InlineDirectiveOptions::fromArray(['unused_directive_severity' => 2]);
+        InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => 2]));
     }
 
-    /**
-     * The factory seeds constructor defaults when the user configured
-     * nothing, so the already-resolved enum has to survive the same path.
-     */
     #[Test]
-    public function itAcceptsAnAlreadyResolvedSeverity(): void
+    public function itResolvesAnAuthoredWordIntoTheTypedSeverity(): void
     {
         self::assertSame(
             Severity::Error,
-            InlineDirectiveOptions::fromArray(['unusedDirectiveSeverity' => Severity::Error])->unusedDirectiveSeverity,
+            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unusedDirectiveSeverity' => 'error']))->unusedDirectiveSeverity,
         );
     }
 }

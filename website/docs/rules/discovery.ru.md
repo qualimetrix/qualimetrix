@@ -85,3 +85,7 @@ rules:
 ```bash
 bin/qmx check src/ --disable-rule=discovery.unmatched-exclude
 ```
+
+## Selection не создаёт coverage
+
+Discovery audit исполняется только при активном producer в итоговом selection. enabled:true — точное авторское включение, не reset; оно может снять нижний disable. Существующий mandatory projectScope measurement определяет, можно ли судить whole-project absence. Only filter не превращает partial paths в полное coverage. См. [конфигурацию](../getting-started/configuration.ru.md).

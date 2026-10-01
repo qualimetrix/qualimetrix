@@ -4,40 +4,46 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
-/**
- * The option keys Finding consumes itself, under every producer's `rules:`
- * section, before any options class is asked about anything.
- *
- * No options class declares them and none ever will: {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory}
- * takes them out of the user's config on the way to `fromArray()`. They are
- * nevertheless legal where a user writes them, so every side that answers
- * *about* the keys a rule takes — the refusal that lists what is allowed, the
- * listing that advertises it — has to name these three alongside whatever the
- * class declared.
- *
- * **This is the one enumeration, and it used to be four.** The count is not a
- * guess: `RuleOptionKeyRecognition` held them as a kebab constant,
- * `RuleOptionsFactory` spelled each as a camel/snake literal pair, and
- * {@see \Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression} declared
- * them a third time under a docblock calling itself the enumeration every
- * consumer shares. That file's promise — "a fourth option is added here, and
- * the applying, judging and reporting sides gain it in the same edit" — is the
- * promise this class now keeps for it, from a namespace the answering sides
- * can also reach. `ConfiguredSuppression` stays the only *reader* of a
- * producer's raw options; that guard is about reading values and is untouched.
- *
- * Declared in the canonical kebab spelling users type. A door hands its keys
- * over in whatever spelling it produces, so a consumer comparing against these
- * folds both sides through `ConfigKeySpelling::normalize()` — and one that
- * must address a value under an authored spelling rewrites it with
- * `ConfigKeySpelling::rewriteLike()` rather than writing the variant out
- * a second time.
- */
+/** The framework-owned forms shared by every producer's root declaration. */
 final readonly class FrameworkOptionKeys
 {
     public const string PATHS = 'suppress-paths';
     public const string NAMESPACES = 'suppress-namespaces';
     public const string NAMESPACE_CHANNELS = 'suppress-namespace-channels';
+
+    /** The forms of framework-owned keys at a producer's root depth. */
+    public static function declared(): RuleOptionKeySet
+    {
+        $pathSelector = RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText())->judgedInEachLayer(
+            static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path): void {
+                (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgePathSelector($value, $path);
+            },
+        );
+        $namespaceSelector = RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText())->judgedInEachLayer(
+            static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path): void {
+                (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgeNamespaceSelector($value, $path);
+            },
+        );
+        $paths = RuleOptionShape::listOf($pathSelector)->orNull();
+        $namespaces = RuleOptionShape::listOf($namespaceSelector)->orNull();
+
+        return RuleOptionKeySet::of([
+            'enabled' => RuleOptionShape::boolean(),
+            self::PATHS => $paths,
+            self::NAMESPACES => $namespaces,
+            self::NAMESPACE_CHANNELS => RuleOptionShape::mapOf(RuleOptionShape::listOf($namespaceSelector))->orNull()->judgedInEachLayer(
+                static function (\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value, array $path): void {
+                    (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder())->judgeChannels($value, $path);
+                },
+            ),
+        ]);
+    }
+
+    /** @return list<string> Suppression keys consumed by Finding, without the independent enablement switch. */
+    public static function suppressionKeys(): array
+    {
+        return array_values(array_filter(self::all(), static fn(string $key): bool => $key !== 'enabled'));
+    }
 
     /**
      * Canonical kebab spellings, sorted — the order the "allowed here" sentence
@@ -47,9 +53,6 @@ final readonly class FrameworkOptionKeys
      */
     public static function all(): array
     {
-        $keys = [self::NAMESPACE_CHANNELS, self::NAMESPACES, self::PATHS];
-        sort($keys);
-
-        return $keys;
+        return self::declared()->acceptedForDisplay();
     }
 }

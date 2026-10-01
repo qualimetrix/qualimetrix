@@ -57,6 +57,18 @@ final class ErrorStreamContainerIdentityTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $rules = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class, $rules);
+        $rules->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none(),
+            $execution->allRules(),
+            channels: $channels,
+        ));
+
         $owner = $container->get(ErrorStream::class);
         self::assertInstanceOf(ErrorStream::class, $owner);
 

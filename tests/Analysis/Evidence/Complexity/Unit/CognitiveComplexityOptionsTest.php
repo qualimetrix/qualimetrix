@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CognitiveComplexityOptions::class)]
 final class CognitiveComplexityOptionsTest extends TestCase
@@ -15,7 +17,7 @@ final class CognitiveComplexityOptionsTest extends TestCase
     #[Test]
     public function itDisablesAllLevelsWhenTheTopLevelEnabledFlagIsFalse(): void
     {
-        $options = CognitiveComplexityOptions::fromArray(['enabled' => false]);
+        $options = CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, ['enabled' => false]));
 
         self::assertFalse($options->isEnabled());
         self::assertFalse($options->callable->isEnabled());
@@ -25,7 +27,7 @@ final class CognitiveComplexityOptionsTest extends TestCase
     #[Test]
     public function itKeepsTheDefaultEnabledStateWhenNoEnabledKeyIsGiven(): void
     {
-        $options = CognitiveComplexityOptions::fromArray([]);
+        $options = CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, []));
 
         self::assertTrue($options->isEnabled());
     }
@@ -40,26 +42,28 @@ final class CognitiveComplexityOptionsTest extends TestCase
     {
         $block = ['class' => ['max_warning' => 2, 'max_error' => 3]];
 
-        $options = CognitiveComplexityOptions::fromArray(['threshold' => null] + $block);
+        $options = CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, ['threshold' => null] + $block));
 
         self::assertTrue($options->class->isEnabled());
         self::assertSame(2, $options->class->maxWarning);
         self::assertEquals(
-            CognitiveComplexityOptions::fromArray($block),
+            CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, $block)),
             $options,
             'the `~` beside the block is worth exactly what leaving it out is worth',
         );
     }
 
     #[Test]
-    public function itStillLetsABareThresholdWithAValueDiscardTheClassBlock(): void
+    public function itSpreadsTheBareThresholdOnlyIntoTheCallableBandAndKeepsTheClassBlock(): void
     {
-        $options = CognitiveComplexityOptions::fromArray([
+        $options = CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, [
             'threshold' => 5,
             'class' => ['max_warning' => 2, 'max_error' => 3],
-        ]);
+        ]));
 
-        self::assertFalse($options->class->isEnabled());
+        self::assertTrue($options->class->isEnabled());
+        self::assertSame(2, $options->class->maxWarning);
+        self::assertSame(3, $options->class->maxError);
         self::assertSame(5, $options->callable->warning);
     }
 }

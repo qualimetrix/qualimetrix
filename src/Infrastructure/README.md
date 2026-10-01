@@ -280,10 +280,9 @@ Console and Finding receive that universe through their own narrow contracts.
 
 ### Lazy Services
 
-Rules and their Options are made lazy via `->setLazy(true)`:
-- Rules are not created during container compilation
-- Rules are created on first use in Finding's `RuleExecution`
-- By that time RuleOptionsFactory is already configured with CLI options
+Executable rules are lazy services and are created on first use in
+Finding's `RuleExecution`. Options are immutable values built during preflight
+for every producer, not lazy services or raw CLI readers.
 
 ### CompilerPass
 
@@ -473,6 +472,18 @@ Factory with runtime configuration awareness.
 - Exit codes are correct
 - No ServiceLocator (all dependencies via constructor)
 
+
+## Atomic typed rule configuration
+
+Infrastructure supplies one immutable channel universe over the candidate
+computed-metric definitions, shared by document/selection/option preparation.
+Every producer's options are built, even when inactive, before collection. The
+completed `FindingConfiguration` carries document, options, enablement, universe
+and diagnostics; runtime stores receive it only after all preflight succeeds.
+A failed invocation cannot leave part of a candidate configuration committed.
+Rules remain lazy executable services. Their Options are already immutable
+prepared values, not lazy raw readers. No generic contribution adapter or second
+constructor-reflected option catalogue participates in runtime execution.
 
 ## Locality
 

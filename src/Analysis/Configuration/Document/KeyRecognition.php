@@ -17,13 +17,20 @@ final class KeyRecognition
 {
     /**
      * @param list<string> $dictionary canonical keys
+     * @param array<string, string> $retired canonical retired key => replacement wording
      *
      * @throws ConfigurationRefusal
      *
      * @return string the canonical key
      */
-    public static function recognise(string $written, array $dictionary, ReadingContext $at): string
+    public static function recognise(string $written, array $dictionary, ReadingContext $at, array $retired = []): string
     {
+        foreach ($retired as $key => $sentence) {
+            if (\in_array($written, ConfigKeySpelling::acceptedSpellings($key), true)) {
+                throw $at->refusal(\sprintf('Key %s is retired. %s', $at->where(), $sentence), $written, array_keys($retired));
+            }
+        }
+
         $canonical = self::recogniseIfDeclared($written, $dictionary, $at);
         if ($canonical !== null) {
             return $canonical;

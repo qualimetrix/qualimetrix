@@ -64,43 +64,7 @@ abstract class AbstractRule implements RuleInterface
 
     abstract public function getName(): string;
 
-    abstract public function getDescription(): string;
-
-    /**
-     * The default answer, and the only one 44 of the 45 registered rule
-     * classes need: this rule publishes under its own name, so every level its
-     * channels declare belongs to that one producer. A hierarchical rule is
-     * asked per level, because that is where it decides
-     * ({@see HierarchicalRuleInterface::analyzeLevel()}); a flat rule gives
-     * the same answer at every level it declares, because it has only one
-     * switch.
-     *
-     * The declared levels come from the rule's own channel declarations rather
-     * than from its options, so that a producer which reports at a level its
-     * options cannot express is visible as a disagreement instead of silently
-     * reading as "disabled". That agreement is asserted for every producer by
-     * {@see \Qualimetrix\Governance\Channel\LevelActivityCoversEveryDeclaredLevelTest}.
-     *
-     * {@see \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule}
-     * overrides this: one instance hosts producers that have no class of their
-     * own, and each is switched independently.
-     *
-     * @return array<string, array<string, bool>>
-     */
-    public function levelActivity(): array
-    {
-        $activity = [];
-
-        foreach (ChannelDeclarationReader::read(static::class) as $declaration) {
-            foreach ($declaration->levels as $level) {
-                $activity[$this->getName()][$level->value] = $this->options instanceof HierarchicalRuleOptionsInterface
-                    ? $this->options->isLevelEnabled($level)
-                    : $this->options->isEnabled();
-            }
-        }
-
-        return $activity;
-    }
+    abstract public static function getDescription(): string;
 
     /**
      * Returns options with `@qmx-threshold` overrides applied for a specific symbol.

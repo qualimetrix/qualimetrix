@@ -59,7 +59,7 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v13 root baseline, whose
-163 groups across 118 subjects are checked against the file itself by
+165 groups across 118 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
@@ -77,9 +77,10 @@ diagnostics, and Composer's two non-authored discovery target lists; it is not
 a generic configuration interface or invocation context. Architecture,
 ComputedMetrics, Coupling, Cache, Console, Parallel, Run, Reporting and
 FindingProjection read their owner-declared values from the resolved document.
-Only Finding's three named temporary reads for `rules`, `only_rules` and
-`disabled_rules` retain ordered raw contributions until Finding declares that
-subtree. Mutable state remains only inside the owner that needs a
+Finding also reads its declared `rules`, `only_rules` and `disabled_rules`
+sections. Authored values and history are judged before the one immutable
+options/enablement snapshot is published; no temporary raw contribution reads
+remain. Mutable state remains only inside the owner that needs a
 per-container store.
 
 `Analysis\ProjectManifest` owns the analysed Composer source facts and their

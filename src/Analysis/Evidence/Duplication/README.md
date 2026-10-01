@@ -162,6 +162,16 @@ FileSet participant port implemented by `DuplicationDetector`. Disabling
 analysis run begins with an empty provider.
 
 
+## Typed per-inspection configuration
+
+`DuplicationDetector` consumes the prepared immutable `CodeDuplicationOptions`
+from the invocation snapshot. It does not reread raw configuration or substitute
+defaults when the snapshot is absent. `min_tokens` has integer form and must be
+at least 1; disabling `duplication.clone` is the way to skip detection, not setting
+zero. Existing minimum-line logic, Rabin–Karp normalization, result reset and
+copy/occurrence attribution are unchanged. DoD preserves real snapshot handoff,
+no inspection when off, and the existing complete copy identity regressions.
+
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

@@ -4,91 +4,66 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
-#[CoversClass(RuleSelector::class)]
+#[CoversClass(RuleEnablementResolver::class)]
 final class RuleSelectorTest extends TestCase
 {
-    private RuleSelector $selector;
+    private ChannelUniverse $channels;
 
     protected function setUp(): void
     {
-        $registry = new class implements RuleChannelRegistryInterface {
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return match ($producerRuleName) {
-                    'computed.health' => [
-                        new FindingChannel('health.complexity'),
-                        new FindingChannel('health.cohesion'),
-                    ],
-                    'architecture.layer-violation' => [
-                        new FindingChannel('architecture.layer-violation'),
-                        new FindingChannel('architecture.coverage-gap'),
-                    ],
-                    default => [],
-                };
-            }
-        };
-
-        $this->selector = new RuleSelector($registry);
+        $this->channels = self::selectorWithLevels(
+            [
+                'computed.health' => ['health.complexity', 'health.cohesion'],
+                'architecture.layer-violation' => ['architecture.layer-violation', 'architecture.coverage-gap'],
+            ],
+            [
+                'health.complexity' => [SymbolLevel::Class_, SymbolLevel::Namespace_, SymbolLevel::Callable],
+                'health.cohesion' => [SymbolLevel::Class_],
+                'architecture.layer-violation' => [SymbolLevel::Class_],
+                'architecture.coverage-gap' => [SymbolLevel::Class_],
+            ],
+        );
     }
 
     #[Test]
     public function itSelectsEveryChannelThroughTheProducerName(): void
     {
-        self::assertTrue($this->selector->isProducerEnabled('computed.health', ['computed.health'], []));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Class_,
-            ['computed.health'],
-            [],
-        ));
+        self::assertTrue(self::enablement($this->channels, ['computed.health'], [])->runs('computed.health'));
+        self::assertTrue(self::enablement($this->channels, ['computed.health'], [])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Class_));
     }
 
     #[Test]
     public function itSelectsTheProducerAndOnlyTheAddressedCode(): void
     {
-        self::assertTrue($this->selector->isProducerEnabled('computed.health', ['health.complexity'], []));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Class_,
-            ['health.complexity'],
-            [],
-        ));
-        self::assertFalse($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.cohesion'),
-            SymbolLevel::Class_,
-            ['health.complexity'],
-            [],
-        ));
+        self::assertTrue(self::enablement($this->channels, ['health.complexity'], [])->runs('computed.health'));
+        self::assertTrue(self::enablement($this->channels, ['health.complexity'], [])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Class_));
+        self::assertFalse(self::enablement($this->channels, ['health.complexity'], [])->publishes(new FindingChannel('health.cohesion'), SymbolLevel::Class_));
     }
 
     #[Test]
     public function itSelectsAChannelWhoseRuleNameDiffersFromItsProducer(): void
     {
-        self::assertTrue($this->selector->isProducerEnabled(
-            'architecture.layer-violation',
-            ['architecture.coverage-gap'],
-            [],
-        ));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'architecture.layer-violation',
-            new FindingChannel('architecture.coverage-gap'),
-            SymbolLevel::Class_,
-            ['architecture.coverage-gap'],
-            [],
-        ));
+        self::assertTrue(self::enablement($this->channels, ['architecture.coverage-gap'], [])->runs('architecture.layer-violation'));
+        self::assertTrue(self::enablement($this->channels, ['architecture.coverage-gap'], [])->publishes(new FindingChannel('architecture.coverage-gap'), SymbolLevel::Class_));
     }
 
     #[Test]
@@ -96,21 +71,9 @@ final class RuleSelectorTest extends TestCase
     {
         $fullSelector = 'health.complexity';
 
-        self::assertTrue($this->selector->isProducerEnabled('computed.health', [$fullSelector], []));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Class_,
-            [$fullSelector],
-            [],
-        ));
-        self::assertFalse($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.cohesion'),
-            SymbolLevel::Class_,
-            [$fullSelector],
-            [],
-        ));
+        self::assertTrue(self::enablement($this->channels, [$fullSelector], [])->runs('computed.health'));
+        self::assertTrue(self::enablement($this->channels, [$fullSelector], [])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Class_));
+        self::assertFalse(self::enablement($this->channels, [$fullSelector], [])->publishes(new FindingChannel('health.cohesion'), SymbolLevel::Class_));
     }
 
     /**
@@ -124,28 +87,10 @@ final class RuleSelectorTest extends TestCase
     {
         $pair = 'health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value;
 
-        self::assertTrue($this->selector->isProducerEnabled('computed.health', [], [$pair]));
-        self::assertFalse($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Class_,
-            [],
-            [$pair],
-        ));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Namespace_,
-            [],
-            [$pair],
-        ));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.cohesion'),
-            SymbolLevel::Class_,
-            [],
-            [$pair],
-        ));
+        self::assertTrue(self::enablement($this->channels, [], [$pair])->runs('computed.health'));
+        self::assertFalse(self::enablement($this->channels, [], [$pair])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Class_));
+        self::assertTrue(self::enablement($this->channels, [], [$pair])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Namespace_));
+        self::assertTrue(self::enablement($this->channels, [], [$pair])->publishes(new FindingChannel('health.cohesion'), SymbolLevel::Class_));
     }
 
     /**
@@ -157,21 +102,9 @@ final class RuleSelectorTest extends TestCase
     {
         $pair = 'health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value;
 
-        self::assertTrue($this->selector->isProducerEnabled('computed.health', [$pair], []));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Class_,
-            [$pair],
-            [],
-        ));
-        self::assertFalse($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Callable,
-            [$pair],
-            [],
-        ));
+        self::assertTrue(self::enablement($this->channels, [$pair], [])->runs('computed.health'));
+        self::assertTrue(self::enablement($this->channels, [$pair], [])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Class_));
+        self::assertFalse(self::enablement($this->channels, [$pair], [])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Callable));
     }
 
     /**
@@ -188,11 +121,7 @@ final class RuleSelectorTest extends TestCase
             ['duplication.clone' => [SymbolLevel::Project]],
         );
 
-        self::assertFalse($selector->isProducerEnabled(
-            'duplication.clone',
-            [],
-            ['duplication.clone' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Project->value],
-        ));
+        self::assertFalse(self::enablement($selector, [], ['duplication.clone' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Project->value])->runs('duplication.clone'));
     }
 
     /**
@@ -210,8 +139,8 @@ final class RuleSelectorTest extends TestCase
         $class = 'coupling.cbo' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value;
         $namespace = 'coupling.cbo' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Namespace_->value;
 
-        self::assertTrue($selector->isProducerEnabled('coupling.cbo', [], [$class]));
-        self::assertFalse($selector->isProducerEnabled('coupling.cbo', [], [$class, $namespace]));
+        self::assertTrue(self::enablement($selector, [], [$class])->runs('coupling.cbo'));
+        self::assertFalse(self::enablement($selector, [], [$class, $namespace])->runs('coupling.cbo'));
     }
 
     /**
@@ -226,99 +155,79 @@ final class RuleSelectorTest extends TestCase
             ['health.complexity' => [SymbolLevel::Class_], 'health.cohesion' => [SymbolLevel::Class_]],
         );
 
-        self::assertTrue($selector->isProducerEnabled(
-            'computed.health',
-            [],
-            ['health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value],
-        ));
+        self::assertTrue(self::enablement($selector, [], ['health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value])->runs('computed.health'));
     }
 
     /**
-     * A channel whose levels come from configuration rather than from its
-     * declaration declares none here, and an empty level set must not make
-     * "every level is covered" trivially true.
+     * A pair must address a level in the resolved snapshot: absence is not
+     * evidence that disabling that pair can silence the channel.
      */
     #[Test]
-    public function itNeverStopsAProducerWhoseChannelDeclaresNoLevel(): void
+    public function itRefusesALevelSelectorForAChannelThatDeclaresNoLevel(): void
     {
         $selector = self::selectorWithLevels(
             ['computed.health' => ['health.complexity']],
             ['health.complexity' => []],
         );
 
-        self::assertTrue($selector->isProducerEnabled(
-            'computed.health',
-            [],
-            ['health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value],
-        ));
+        try {
+            self::enablement($selector, [], ['health.complexity' . ChannelLevelSelector::LEVEL_SEPARATOR . SymbolLevel::Class_->value]);
+            self::fail('A level pair with no declared level must be refused.');
+        } catch (ConfigurationRefusal $exception) {
+            self::assertSame('Rule selector "health.complexity:class" addresses "health.complexity", and it does not report at level "class" — it declares no level at all. The pair can never match anything.', $exception->getMessage());
+        }
     }
 
     #[Test]
-    public function itLetsDisabledSelectorsOverrideOnlySelectors(): void
+    public function itRefusesAnOnlyFilterWhoseOnlyProducerIsDisabled(): void
     {
-        self::assertFalse($this->selector->isProducerEnabled(
-            'computed.health',
-            ['computed.health'],
-            ['computed.health'],
-        ));
+        try {
+            self::enablement($this->channels, ['computed.health'], ['computed.health']);
+            self::fail('An only filter cannot enable its disabled producer.');
+        } catch (ConfigurationRefusal $exception) {
+            self::assertSame('Rule selection is empty: "computed.health": disabled_rules[0]: computed.health (configuration file "/project/qmx.yaml"); only_rules / --only-rule narrows and does not enable.', $exception->getMessage());
+        }
     }
 
     #[Test]
     public function itKeepsAProducerActiveWhenOnlyOneOfItsChannelsIsDisabled(): void
     {
-        self::assertTrue($this->selector->isProducerEnabled(
-            'computed.health',
-            [],
-            ['health.complexity'],
-        ));
-        self::assertFalse($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.complexity'),
-            SymbolLevel::Class_,
-            [],
-            ['health.complexity'],
-        ));
-        self::assertTrue($this->selector->isChannelEnabled(
-            'computed.health',
-            new FindingChannel('health.cohesion'),
-            SymbolLevel::Class_,
-            [],
-            ['health.complexity'],
-        ));
+        self::assertTrue(self::enablement($this->channels, [], ['health.complexity'])->runs('computed.health'));
+        self::assertFalse(self::enablement($this->channels, [], ['health.complexity'])->publishes(new FindingChannel('health.complexity'), SymbolLevel::Class_));
+        self::assertTrue(self::enablement($this->channels, [], ['health.complexity'])->publishes(new FindingChannel('health.cohesion'), SymbolLevel::Class_));
     }
 
     #[Test]
     public function itRecognizesRegisteredChannelSelectorsWithoutTreatingThemAsRuleOptionNames(): void
     {
-        $producers = ['computed.health', 'architecture.layer-violation'];
-
-        self::assertTrue($this->selector->matchesKnown('health.complexity', $producers));
-        self::assertTrue($this->selector->matchesKnown('architecture.coverage-gap', $producers));
-        self::assertTrue($this->selector->matchesKnown('health.complexity', $producers));
-        self::assertFalse($this->selector->matchesKnownProducer('health.complexity', $producers));
+        self::assertTrue($this->channels->hasChannel('health.complexity'));
+        self::assertTrue($this->channels->hasChannel('architecture.coverage-gap'));
+        self::assertTrue($this->channels->hasChannel('health.complexity'));
+        self::assertFalse($this->channels->hasRule('health.complexity'));
     }
 
     #[Test]
-    public function itValidatesAgainstAnExplicitSnapshotAndResetsRunChannels(): void
+    public function itValidatesAgainstExplicitSnapshotsAndClearsTheCommittedRun(): void
     {
-        $static = self::registry([]);
         $snapshotA = self::registry(['health.complexity']);
         $snapshotB = self::registry(['health.cohesion']);
-        $selector = new RuleSelector($static);
-        $producers = ['computed.health'];
+        self::assertTrue($snapshotA->hasRule('computed.health'));
+        self::assertTrue($snapshotA->hasChannel('health.complexity'));
+        self::assertTrue($snapshotA->hasChannel('health.complexity'));
+        self::assertFalse($snapshotA->hasChannel('health.unknown'));
 
-        self::assertTrue($selector->matchesKnownIn('computed.health', $producers, $snapshotA));
-        self::assertTrue($selector->matchesKnownIn('health.complexity', $producers, $snapshotA));
-        self::assertTrue($selector->matchesKnownIn('health.complexity', $producers, $snapshotA));
-        self::assertFalse($selector->matchesKnownIn('health.unknown', $producers, $snapshotA));
-
-        $selector->replaceChannels($snapshotA);
-        self::assertTrue($selector->matchesKnown('health.complexity', $producers));
-        $selector->replaceChannels($snapshotB);
-        self::assertFalse($selector->matchesKnown('health.complexity', $producers));
-        self::assertTrue($selector->matchesKnown('health.cohesion', $producers));
-        $selector->resetChannels();
-        self::assertFalse($selector->matchesKnown('health.cohesion', $producers));
+        $metadata = [new RuleMetadata('computed.health', CodeDuplicationOptions::class, '', [], false)];
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata, channels: $snapshotA));
+        self::assertTrue($registry->channelUniverse()->hasChannel('health.complexity'));
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata, channels: $snapshotB));
+        self::assertFalse($registry->channelUniverse()->hasChannel('health.complexity'));
+        self::assertTrue($registry->channelUniverse()->hasChannel('health.cohesion'));
+        $registry->resetRuntimeState();
+        self::assertNull($registry->enablement());
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Rule channels are unavailable before analysis preflight.');
+        $registry->channelUniverse();
     }
 
     /**
@@ -327,41 +236,30 @@ final class RuleSelectorTest extends TestCase
      *                                                          channel declares; a channel absent from the map
      *                                                          declares none
      */
-    private static function selectorWithLevels(array $channelsByProducer, array $levelsByChannel): RuleSelector
+    private static function selectorWithLevels(array $channelsByProducer, array $levelsByChannel): ChannelUniverse
     {
-        $selector = new RuleSelector(new class ($channelsByProducer) implements RuleChannelRegistryInterface {
-            /** @param array<string, list<string>> $channelsByProducer */
-            public function __construct(private readonly array $channelsByProducer) {}
-
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return array_map(
-                    static fn(string $code): FindingChannel => new FindingChannel($code),
-                    $this->channelsByProducer[$producerRuleName] ?? [],
-                );
+        $declarations = [];
+        foreach ($levelsByChannel as $channel => $levels) {
+            if ($levels !== []) {
+                $declarations[$channel] = ChannelDeclaration::occurrence(...$levels);
             }
-        });
-
-        $identity = self::createStub(ChannelIdentityInterface::class);
-        $identity->method('levelsOf')->willReturnCallback(
-            static fn(string $code): array => $levelsByChannel[$code] ?? [],
-        );
-        $selector->useDeclaredLevels($identity);
-
-        return $selector;
+        }
+        return new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]));
     }
 
     /** @param list<string> $channelKeys */
-    private static function registry(array $channelKeys): RuleChannelRegistryInterface
+    private static function registry(array $channelKeys): ChannelUniverse
     {
-        return new class ($channelKeys) implements RuleChannelRegistryInterface {
-            /** @param list<string> $channelKeys */
-            public function __construct(private readonly array $channelKeys) {}
+        return self::selectorWithLevels(['computed.health' => $channelKeys], array_fill_keys($channelKeys, [SymbolLevel::Class_]));
+    }
 
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return array_map(static fn(string $code): FindingChannel => new FindingChannel($code), $this->channelKeys);
-            }
-        };
+    /** @param list<string> $only
+     * @param list<string> $disabled
+     */
+    private static function enablement(ChannelUniverse $channels, array $only = [], array $disabled = []): RuleEnablement
+    {
+        $metadata = array_map(static fn(string $producer): RuleMetadata => new RuleMetadata($producer, CodeDuplicationOptions::class, '', [], false), $channels->ruleNames());
+        return ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata, channels: $channels, only: $only, disabled: $disabled)->enablement
+            ?? throw new LogicException('The fixture must carry final enablement.');
     }
 }

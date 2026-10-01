@@ -43,7 +43,7 @@ final class SensitiveParameterRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects sensitive parameters missing #[\\SensitiveParameter] attribute';
     }

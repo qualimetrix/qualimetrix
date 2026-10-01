@@ -58,18 +58,26 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedOpaqueInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\KeyDictionary'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeCollectionFacts'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeMapFacts'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeScalarFacts'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeWording'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SchemaWordSet'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration'
         - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand'
-        - 'Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema\WordComparison'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin'
@@ -82,11 +90,13 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredShape'
         - 'Qualimetrix\Analysis\Configuration\Document\DocumentComposer'
         - 'Qualimetrix\Analysis\Configuration\Document\DocumentSchema'
+        - 'Qualimetrix\Analysis\Configuration\Document\EmptyListOverrides'
         - 'Qualimetrix\Analysis\Configuration\Document\KeyClaims'
         - 'Qualimetrix\Analysis\Configuration\Document\KeyRecognition'
         - 'Qualimetrix\Analysis\Configuration\Document\LayerMerge'
         - 'Qualimetrix\Analysis\Configuration\Document\LayerReading'
         - 'Qualimetrix\Analysis\Configuration\Document\NameRecognition'
+        - 'Qualimetrix\Analysis\Configuration\Document\NamedEntryReading'
         - 'Qualimetrix\Analysis\Configuration\Document\PendingName'
         - 'Qualimetrix\Analysis\Configuration\Document\ReadingContext'
         - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedBareName'
@@ -94,20 +104,23 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedMap'
         - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedOpaque'
         - 'Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar'
+        - 'Qualimetrix\Analysis\Configuration\Document\ScalarConstraints'
+        - 'Qualimetrix\Analysis\Configuration\Document\ShorthandExpansion'
+        - 'Qualimetrix\Analysis\Configuration\Document\ShorthandTarget'
         - 'Qualimetrix\Analysis\Configuration\Document\WrittenForm'
         - 'Qualimetrix\Analysis\Configuration\Document\WrittenNames'
         - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer'
+        - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineSyntax'
+        - 'Qualimetrix\Analysis\Configuration\Loader\CommandLineValue'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Loader\DocumentKeyNormalizer'
         - 'Qualimetrix\Analysis\Configuration\Loader\LoadedDocument'
         - 'Qualimetrix\Analysis\Configuration\Loader\RootContainerShapes'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
         - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
-        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface'
-        - 'Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage'
@@ -116,7 +129,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Preset\PresetResolver'
         - 'Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions'
         - 'Qualimetrix\Analysis\Configuration\SelectorYamlDecoder'
-        - 'Qualimetrix\Analysis\Configuration\UndeclaredRoot'
     - name: analysis-evidence-circulardependency
       patterns:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis'
@@ -185,6 +197,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomGraphCalculator'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomRule'
@@ -507,8 +520,6 @@ architecture:
     - name: analysis-finding
       patterns:
         - 'Qualimetrix\Analysis\Finding\ChannelPresentationView'
-        - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
-        - 'Qualimetrix\Analysis\Finding\ConfiguredLevelActivity'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
@@ -516,13 +527,14 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentation'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelPublication'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface'
-        - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration'
-        - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild'
         - 'Qualimetrix\Analysis\Finding\Contract\Control\ControlScope'
+        - 'Qualimetrix\Analysis\Finding\Contract\EnablementDecision'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage'
@@ -537,18 +549,22 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\LevelActivity'
         - 'Qualimetrix\Analysis\Finding\Contract\Location'
         - 'Qualimetrix\Analysis\Finding\Contract\OccurrenceKey'
+        - 'Qualimetrix\Analysis\Finding\Contract\OptionActivity'
         - 'Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration'
+        - 'Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\RuleEnablement'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleMetadata'
-        - 'Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument'
-        - 'Qualimetrix\Analysis\Finding\Contract\RuleSelection'
+        - 'Qualimetrix\Analysis\Finding\Contract\RuleOptionForms'
+        - 'Qualimetrix\Analysis\Finding\Contract\RuleSuppression'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelRefusalWording'
@@ -558,56 +574,86 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleFamily'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionBand'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape'
-        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShapeCompoundForms'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOwnConstantReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader'
-        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser'
+        - 'Qualimetrix\Analysis\Finding\Contract\SelectionFilter'
+        - 'Qualimetrix\Analysis\Finding\Contract\SelectionRecord'
+        - 'Qualimetrix\Analysis\Finding\Contract\SelectionTrace'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress'
+        - 'Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
         - 'Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionThresholdShorthand'
+        - 'Qualimetrix\Analysis\Finding\FindingPublication'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionActivityResolution'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDefinition'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionKeyMetadata'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\ProducerOptionsBuild'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionValueWrittenness'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleSuppressionSelectorDecoder'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\ThresholdBandRefusal'
         - 'Qualimetrix\Analysis\Finding\RuleExecution'
+        - 'Qualimetrix\Analysis\Finding\RuleMaterialization'
         - 'Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry'
+        - 'Qualimetrix\Analysis\Finding\Rule\Override\NonNegativeOverrideThresholds'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Rule\RuleInterface'
+        - 'Qualimetrix\Analysis\Finding\Selection\AuthoredSelection'
+        - 'Qualimetrix\Analysis\Finding\Selection\EnablementIndex'
+        - 'Qualimetrix\Analysis\Finding\Selection\RetiredRuleNames'
+        - 'Qualimetrix\Analysis\Finding\Selection\SelectionCauses'
+        - 'Qualimetrix\Analysis\Finding\Selection\SelectionRefusals'
+        - 'Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions'
         - 'Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule'
@@ -782,6 +828,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\MaskingOutcome'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveEligibility'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels'
@@ -796,6 +843,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
         - 'Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Threshold\DeclaredOverrideForms'
+        - 'Qualimetrix\Analysis\Policy\Inline\Threshold\ThresholdOverrideValueParser'
     - name: analysis-projectmanifest
       patterns:
         - 'Qualimetrix\Analysis\ProjectManifest\Contract\ComposerAutoloadSection'
@@ -869,6 +918,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
+        - 'Qualimetrix\Analysis\Run\InlineDirectiveRun'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
         - 'Qualimetrix\Analysis\Run\Pipeline\PreparedRun'
@@ -955,13 +1005,13 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
         - 'Qualimetrix\Infrastructure\Console\ArtifactFile'
-        - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
-        - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator'
+        - 'Qualimetrix\Infrastructure\Console\AuthoredRuleOptionWrites'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers'
         - 'Qualimetrix\Infrastructure\Console\CheckResolvedConfiguration'
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
+        - 'Qualimetrix\Infrastructure\Console\CliRuleOptionAddressing'
         - 'Qualimetrix\Infrastructure\Console\CliSelectorDecoder'
         - 'Qualimetrix\Infrastructure\Console\CommandLineSpelling'
         - 'Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand'
@@ -988,6 +1038,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\LoadedBaselineRun'
         - 'Qualimetrix\Infrastructure\Console\Command\RulesCommand'
+        - 'Qualimetrix\Infrastructure\Console\ConfigurationDiagnosticsPublisher'
         - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveAuditPresenter'
         - 'Qualimetrix\Infrastructure\Console\DirectiveVerdictTally'
@@ -1023,6 +1074,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
         - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
+        - 'Qualimetrix\Infrastructure\Console\RuleOptionArgv'
         - 'Qualimetrix\Infrastructure\Console\RunConfigurationPreparation'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocator'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface'
@@ -1136,7 +1188,6 @@ architecture:
         - 'Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry'
         - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
-        - 'Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistryInterface'
     - name: infrastructure-serializer
@@ -1504,7 +1555,6 @@ architecture:
       - core-profiler
       - external
     infrastructure-rule:
-      - analysis-configuration
       - analysis-evidence-computedmetrics
       - analysis-finding
       - core-neutral
@@ -1594,6 +1644,8 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # The document schema is a shared authored-value vocabulary: 19 inbound namespaces, 35 classes.
+        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
         # Shared authored-value contracts have intentional inbound reach from
         # named section owners; namespace CBO is 16 at the inclusive bound 16.
         - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
@@ -1792,6 +1844,10 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Concrete readonly resolved values implement sibling-owned public ports; local A=0, I=0.5.
+      - exact: 'Qualimetrix\Analysis\Configuration\Document\Resolved'
+      # Three internal concrete override types implement a sibling-owned validator port; local A=0, I=1/3.
+      - exact: 'Qualimetrix\Analysis\Finding\Rule\Override'
       - subtree: Qualimetrix\Core
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Layer
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
@@ -1907,12 +1963,19 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
-      # Note: visitors and DI configurators are NOT listed here. They are indeed
-      # inherently unstable, but `min_afferent: 2` below already filters them out
-      # (they have Ca=1), so path entries for them were pure no-ops — measured, then
-      # removed. `ClassVisitorStackTrait` is the quiet member of the trait pair the
-      # complexity rules exclude by the same reasoning; the rest each suppress a
-      # real violation.
+      # These exact vocabulary, document, specificity and DI declarations have Ca=2.
+      # Instability's small-population verdict is structural; other quality signals remain active.
+      - exact: src/Analysis/Configuration/Document/LayerReading.php
+      - exact: src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php
+      - exact: src/Analysis/Evidence/Complexity/ClassComplexityOptions.php
+      - exact: src/Analysis/Evidence/Coupling/ClassCboOptions.php
+      - exact: src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php
+      - exact: src/Analysis/Evidence/Coupling/NamespaceCboOptions.php
+      - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+      - exact: src/Analysis/Finding/Selection/SelectionSpecificity.php
+      - exact: src/Infrastructure/DependencyInjection/Configurator/ConfigurationConfigurator.php
+      # Most visitors and DI configurators stay below the afferent floor. The
+      # exact low-Ca declarations above are the measured exceptions, not a role blanket.
       - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
       # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
@@ -2133,6 +2196,8 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # The readonly snapshot has independent live and provenance observations over coherent facts.
+      - exact: src/Analysis/Finding/Contract/EnablementDecision.php
       # A console command shares no fields by construction: `configure()` touches
       # none of them and the helpers are static, so shared-field cohesion
       # mis-models the design rather than reporting debt. The four classes

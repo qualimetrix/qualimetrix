@@ -1070,3 +1070,7 @@ bin/qmx check src/ --disable-rule=code-smell.exit
 # Отключить все правила запахов кода сразу (wildcard-сопоставление; захватывает только потомков, не сам "code-smell")
 bin/qmx check src/ --disable-rule=code-smell.*
 ```
+
+## Авторское включение и формы
+
+Написанный enabled:true может снять disable нижнего пресета; сохрани его, если это намеренно. Пустые maps сохраняют нижние options, а true правила пишет только enabled и не сбрасывает severity/options. Malformed lower writes отказывают до discovery. Code-smell algorithms и fixed severities не меняются. См. [конфигурацию](../getting-started/configuration.ru.md).

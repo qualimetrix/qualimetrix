@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Complexity;
 
 use InvalidArgumentException;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -26,51 +27,23 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
         public ClassComplexityOptions $class = new ClassComplexityOptions(),
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        // Explicit top-level enabled: false disables all levels
-        if (\array_key_exists(RuleOptionKey::ENABLED, $config) && $config[RuleOptionKey::ENABLED] === false) {
-            return new self(
-                callable: new MethodComplexityOptions(enabled: false),
-                class: new ClassComplexityOptions(enabled: false),
-            );
+        try {
+            $callable = MethodComplexityOptions::fromResolved($config->atLevel('callable'));
+        } catch (RuleOptionRefusal $refusal) {
+            throw $refusal->under('callable');
         }
-
-        // Flat shorthand at the top level: one `threshold` VALUE applied to
-        // the callable dimension, which also switches the class level off.
-        // `threshold: ~` is not that value — it leaves the key's own value to
-        // the default and takes no branch, so a `class:` block beside it is
-        // still read.
-        if (isset($config['threshold'])) {
-            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 10, 20);
-
-            return new self(
-                callable: new MethodComplexityOptions(
-                    enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-                    warning: (int) $thresholds['warning'],
-                    error: (int) $thresholds['error'],
-                ),
-                class: new ClassComplexityOptions(enabled: false),
-            );
+        try {
+            $class = ClassComplexityOptions::fromResolved($config->atLevel('class'));
+        } catch (RuleOptionRefusal $refusal) {
+            throw $refusal->under('class');
         }
-
-        // Handle hierarchical format: {callable: {...}, class: {...}}
-        $callableKey = SymbolLevel::Callable->value;
-        $classKey = SymbolLevel::Class_->value;
-        $callableConfig = isset($config[$callableKey]) && \is_array($config[$callableKey])
-            ? $config[$callableKey]
-            : [];
-        $classConfig = isset($config[$classKey]) && \is_array($config[$classKey])
-            ? $config[$classKey]
-            : [];
-
-        return new self(
-            callable: MethodComplexityOptions::fromArray($callableConfig),
-            class: ClassComplexityOptions::fromArray($classConfig),
-        );
+        if (!$config->boolean('enabled', true)) {
+            $callable = new MethodComplexityOptions(enabled: false, warning: $callable->warning, error: $callable->error);
+            $class = new ClassComplexityOptions(enabled: false, maxWarning: $class->maxWarning, maxError: $class->maxError);
+        }
+        return new self(callable: $callable, class: $class);
     }
 
     public function isEnabled(): bool
@@ -115,9 +88,8 @@ final readonly class ComplexityOptions implements HierarchicalRuleOptionsInterfa
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),
-        ])->withLevelSlots(self::levelOptionsClasses());
+        ])->withLevelSlots(self::levelOptionsClasses())->spreadingInto('threshold', ['callable.threshold']);
     }
 
     /**

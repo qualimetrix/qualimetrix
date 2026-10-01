@@ -1,2 +1,2 @@
 kind	key	level	reason
-exit	rules	*	Rules now judges the complete configuration document before listing.
+exit	rules	*	Rules now judges the authored selector against the invocation channel universe before listing; selector-after-split retains the invalid bare complexity selector and changes rules from listing exit 0 to configuration refusal exit 3.

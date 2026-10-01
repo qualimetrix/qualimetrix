@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\Document\LayerMerge;
 use Qualimetrix\Analysis\Configuration\Document\LayerReading;
+use Qualimetrix\Analysis\Configuration\Document\NamedEntryReading;
 use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
 
 /**
@@ -35,6 +36,7 @@ use Qualimetrix\Analysis\Configuration\Document\NameRecognition;
  * which any body a layer wrote stands over.
  */
 #[CoversClass(LayerReading::class)]
+#[CoversClass(NamedEntryReading::class)]
 #[CoversClass(LayerMerge::class)]
 #[CoversClass(NameRecognition::class)]
 #[CoversClass(ResolvedBareNameInterface::class)]
@@ -186,9 +188,9 @@ final class NamedEntryTest extends TestCase
     private static function compose(AuthoredLayer ...$layers): ResolvedDocument
     {
         return DocumentComposer::compose(new DocumentSchema([
-            self::section('layers', NodeSchema::stringList()),
+            self::section('layers', NodeSchema::list(NodeSchema::scalar(ScalarForm::String))),
             self::section('allow', NodeSchema::namedMap(
-                NodeSchema::stringList(),
+                NodeSchema::list(NodeSchema::scalar(ScalarForm::String)),
                 NameVocabulary::fromSibling(
                     'layers',
                     static fn(mixed $layers): array => \is_array($layers) ? array_values(array_filter($layers, 'is_string')) : [],

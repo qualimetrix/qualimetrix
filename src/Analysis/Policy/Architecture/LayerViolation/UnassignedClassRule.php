@@ -62,7 +62,7 @@ final class UnassignedClassRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Counts analysed class-like declarations that no declared layer claims.';
     }

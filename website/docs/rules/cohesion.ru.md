@@ -33,9 +33,9 @@ rules:
     exclude_methods: [getName, getDescription]
 ```
 
-`exclude_methods` принимает и одну строку — она означает список из одного
-элемента: `exclude_methods: getName` — это ровно `exclude_methods: [getName]`.
-Строка из цифр — такое же имя метода, как любое другое.
+`exclude_methods` требует YAML sequence строк. Пиши
+`exclude_methods: [getName]`; scalar string или CSV отказывают. Элементы сохраняют
+авторское написание и сопоставляются с method names без учёта регистра.
 
 Простой порог вместо раздельных уровней warning/error
 (`threshold` нельзя сочетать с `warning` или `error` — смешение считается
@@ -276,3 +276,7 @@ bin/qmx check src/ --format=metrics
 ```
 
 Для использования TCC/LCC в качестве контрольных показателей можно обрабатывать вывод metrics JSON программно (например, в скрипте CI-пайплайна).
+
+## Ненайденные configured method names
+
+exclude_methods — sequence с PHP case-insensitive method matching и сохранением первого авторского написания. На covered whole-project run LCOM producer также публикует cohesion.unmatched-exclude-method один раз на unmatched normalized name. Functions и property hooks не являются Method-kind свидетельством; partial run не доказывает отсутствие во всём проекте. Secondary warning несёт project magnitude 1 и semantic occurrence нормализованного имени, без configured warning boundary. Primary LCOM band 3/5 и формула графа не меняются. CLI: --lcom-exclude-methods='[getName, getDescription]'.

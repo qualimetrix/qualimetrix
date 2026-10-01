@@ -43,7 +43,9 @@ final class RulesCommandWiringTest extends TestCase
             self::assertSame(0, $tester->execute([]));
             self::assertStringContainsString('computed.delivery-risk', $tester->getDisplay());
             self::assertStringContainsString('Only selected by configuration: complexity.ccn', $tester->getDisplay());
-            self::assertStringContainsString('Disabled by configuration: size.class-count', $tester->getDisplay());
+            self::assertStringContainsString('Disabled by configuration: disabled_rules[0]: size.class-count', $tester->getDisplay());
+            self::assertStringContainsString('Selection source: only_rules: [complexity.ccn] (configuration file "qmx.yaml"; layer 1)', $tester->getDisplay());
+            self::assertStringContainsString('Selection source: disabled_rules[0]: size.class-count (configuration file "qmx.yaml"; layer 1)', $tester->getDisplay());
         } finally {
             chdir($previous);
             unlink($directory . '/composer.json');

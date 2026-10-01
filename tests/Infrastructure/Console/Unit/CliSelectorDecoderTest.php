@@ -17,6 +17,14 @@ use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
 final class CliSelectorDecoderTest extends TestCase
 {
     #[Test]
+    public function itProvidesPlainAuthoredSelectorPayloadAfterTheExistingValidation(): void
+    {
+        $decoder = new CliSelectorDecoder();
+        self::assertSame([['regex' => 'src/.+\\.php']], $decoder->pathPayload('regex:src/.+\\.php', '--rule-opt'));
+        self::assertSame([['subtree' => 'App\\Entity']], $decoder->namespacePayload('subtree:App\\Entity', '--rule-opt'));
+    }
+
+    #[Test]
     public function itBuildsAPathPatternAndSplitsOnlyAtTheFirstColon(): void
     {
         $pattern = (new CliSelectorDecoder())->decodePath('regex:src/(?:Api:V2|Web)/.+\\.php', '--suppress-path');

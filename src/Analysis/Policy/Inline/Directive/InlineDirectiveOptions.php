@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 
 /**
  * Options for {@see UnusedDirectiveRule}.
@@ -35,68 +34,19 @@ final readonly class InlineDirectiveOptions implements RuleOptionsInterface
         public Severity $unusedDirectiveSeverity = Severity::Info,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            unusedDirectiveSeverity: self::resolveSeverity(
-                $config['unused_directive_severity'] ?? $config['unusedDirectiveSeverity'] ?? null,
-            ),
+            enabled: $config->boolean('enabled', true),
+            unusedDirectiveSeverity: Severity::from(strtolower($config->text('unused-directive-severity', Severity::Info->value))),
         );
     }
 
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
-            'unused-directive-severity' => RuleOptionShape::oneOfIgnoringCase('info', 'warning', 'error')->orNull(),
+            'unused-directive-severity' => RuleOptionShape::words(RuleOptionWordSet::foldingCase('info', 'warning', 'error'))->orNull(),
         ]);
-    }
-
-    /**
-     * Refuses a value it cannot honour instead of quietly substituting the
-     * default.
-     *
-     * `Severity::tryFrom()` is case-sensitive, so the previous
-     * `tryFrom($raw) ?? Info` turned both `Warning` and the typo `warnin`
-     * into `info` — a config file saying one thing while the tool did
-     * another, which is the same lie this rule exists to report about
-     * annotations. Case is normalised because the enum's own spelling is an
-     * implementation detail; an unknown word is a mistake and is named as
-     * one.
-     */
-    private static function resolveSeverity(mixed $raw): Severity
-    {
-        if ($raw === null) {
-            return Severity::Info;
-        }
-
-        if ($raw instanceof Severity) {
-            return $raw;
-        }
-
-        if (!\is_string($raw)) {
-            throw self::refusal('unused_directive_severity', \sprintf(
-                'Option "unused_directive_severity" for rule "%s" must be a string, got %s.',
-                InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
-                get_debug_type($raw),
-            ));
-        }
-
-        $severity = Severity::tryFrom(strtolower($raw));
-        if ($severity !== null) {
-            return $severity;
-        }
-
-        throw self::refusal('unused_directive_severity', \sprintf(
-            'Option "unused_directive_severity" for rule "%s" has unknown value "%s"; expected one of %s.',
-            InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
-            $raw,
-            implode(', ', array_map(static fn(Severity $c): string => "'{$c->value}'", Severity::cases())),
-        ));
     }
 
     public function isEnabled(): bool
@@ -116,16 +66,4 @@ final readonly class InlineDirectiveOptions implements RuleOptionsInterface
         return Severity::Error;
     }
 
-    /**
-     * This class answers about these keys in its own words rather than letting
-     * a general form check speak for it, so the answer has to carry the
-     * configuration frame itself.
-     */
-    private static function refusal(string $option, string $summary): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open([InlineDirectivePolicyInterface::PRODUCER_RULE_NAME, $option], $option),
-            $summary,
-        );
-    }
 }

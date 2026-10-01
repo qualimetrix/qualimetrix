@@ -35,6 +35,22 @@ final class CliSelectorDecoder
         }
     }
 
+    /** @return list<array<string, string>> */
+    public function pathPayload(string $value, string $option): array
+    {
+        $definition = $this->decodePath($value, $option)->definition;
+
+        return [[$definition->kind->value => $definition->value]];
+    }
+
+    /** @return list<array<string, string>> */
+    public function namespacePayload(string $value, string $option): array
+    {
+        $definition = $this->decodeNamespace($value, $option)->definition;
+
+        return [[$definition->kind->value => $definition->value]];
+    }
+
     private function definition(string $value, string $option): SelectorDefinition
     {
         $separator = strpos($value, ':');

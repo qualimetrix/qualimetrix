@@ -5,32 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Governance\ThresholdKeys;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry;
 use ReflectionClass;
-use ReflectionClassConstant;
 use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
-/**
- * How the two {@see RuleThresholdKeyGroupRegistry} controls in this group find
- * what they are judging.
- *
- * {@see RuleThresholdKeyGroupRegistryCompletenessTest} and
- * {@see RuleThresholdKeyGroupRegistryDriftTest} ask different questions of the
- * registry, and each carried its own copy of the same discovery: scan `src/`
- * for `*Rule.php`, map each rule name to its Options class, locate the source
- * file behind every level of a hierarchical Options class, and read the
- * private `GROUPS` constant. Two copies meant the scan ran twice per process
- * and had two places to keep true.
- *
- * The scans are cached per process, which is the point: the second control now
- * reads what the first already measured.
- */
+/** Discovers real options readers and their declared threshold bands for the two independent controls. */
 final class ThresholdRuleDiscovery
 {
     /**
@@ -106,12 +93,8 @@ final class ThresholdRuleDiscovery
             return $paths;
         }
 
-        /** @var HierarchicalRuleOptionsInterface $instance */
-        $instance = new $optionsClass();
-
-        foreach ($instance->getSupportedLevels() as $level) {
-            $levelObject = $instance->forLevel($level);
-            $paths[$level->value] = self::fileNameOf($levelObject::class);
+        foreach ($optionsClass::levelOptionsClasses() as $slot => $levelClass) {
+            $paths[$slot] = self::fileNameOf($levelClass);
         }
 
         return $paths;
@@ -132,23 +115,45 @@ final class ThresholdRuleDiscovery
     }
 
     /**
-     * Read through {@see ReflectionClassConstant} rather than by making the
-     * constant public just for a control to see it.
+     * Derives bands through the declaration authority without constructing options.
      *
      * @return array<string, array<string, list<array{warning: list<string>, error: list<string>, threshold: list<string>, form: RuleOptionValueForm}>>>
      */
     public static function registeredGroups(): array
     {
         static $cache = null;
-
         if ($cache !== null) {
             return $cache;
         }
-
-        /** @var array<string, array<string, list<array{warning: list<string>, error: list<string>, threshold: list<string>, form: RuleOptionValueForm}>>> $value */
-        $value = new ReflectionClassConstant(RuleThresholdKeyGroupRegistry::class, 'GROUPS')->getValue();
-
-        return $cache = $value;
+        $groups = [];
+        foreach (self::ruleNameToOptionsClass() as $producer => $rootClass) {
+            if (!is_a($rootClass, RuleOptionsInterface::class, true)) {
+                throw new RuntimeException('A registered producer has no rule options contract.');
+            }
+            $classes = ['' => $rootClass];
+            if (is_a($rootClass, HierarchicalRuleOptionsInterface::class, true)) {
+                $classes += $rootClass::levelOptionsClasses();
+            }
+            foreach ($classes as $path => $class) {
+                if (!is_a($class, RuleOptionsInterface::class, true) && !is_a($class, LevelOptionsInterface::class, true)) {
+                    throw new RuntimeException('A declared level has no options contract.');
+                }
+                $set = RuleOptionSurface::declaredFor($class);
+                foreach ($set->bands() as $band) {
+                    $shape = $set->shapeOf(\Qualimetrix\Analysis\Configuration\ConfigKeySpelling::normalize($band->shorthand));
+                    if ($shape === null) {
+                        throw new RuntimeException('A band shorthand has no numeric form.');
+                    }
+                    $groups[$producer][$path][] = [
+                        'warning' => \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::acceptedSpellings($band->warning),
+                        'error' => \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::acceptedSpellings($band->error),
+                        'threshold' => \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::acceptedSpellings($band->shorthand),
+                        'form' => $shape->matches(1.5) ? RuleOptionValueForm::Number : RuleOptionValueForm::WholeNumber,
+                    ];
+                }
+            }
+        }
+        return $cache = $groups;
     }
 
     /**

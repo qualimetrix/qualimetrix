@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Throwable;
@@ -33,12 +33,9 @@ use Throwable;
  * `ChannelLevelRefusalTopologyTest` holds that boundary, and pins this class as
  * a reader that refuses nothing.
  *
- * **Why it lives here and not in `Baseline`.** `qmx.yaml`'s own architecture
- * section allows the `Baseline` layer to depend on `Core` and nothing else,
- * while resolving a rule's configured options means going through
- * {@see RuleOptionsFactory}, which is `Configuration`. The command is already
- * on the far side of that boundary, so it resolves the numbers and hands
- * {@see \Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService} data.
+ * The delivery adapter reads Finding's ready options snapshot and hands
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService} the
+ * configured boundaries without making Baseline depend on rule construction.
  *
  * **The warning boundary, not the error one.** It is the number at which a
  * channel starts reporting, which is the boundary a user compares a baseline
@@ -59,8 +56,8 @@ use Throwable;
  * `coupling.distance`, whose `maxDistanceWarning` was not on the list.
  *
  * **The value is what the object holds, and this class asks an object no
- * override has touched.** {@see RuleOptionsFactory} builds options from
- * configuration alone, so "configured" is a property of who is asking rather
+ * override has touched.** {@see RuleConfigurationInterface} exposes options built
+ * from configuration alone, so "configured" is a property of who is asking rather
  * than of the method; on a copy from `withOverride()` the same call reports the
  * overridden number.
  *
@@ -90,7 +87,7 @@ final readonly class BaselineConfiguredThresholds
 {
     public function __construct(
         private RuleRegistryInterface $rules,
-        private RuleOptionsFactory $optionsFactory,
+        private RuleConfigurationInterface $configuration,
     ) {}
 
     /**
@@ -101,25 +98,9 @@ final readonly class BaselineConfiguredThresholds
         $thresholds = [];
 
         foreach ($this->rules->getClasses() as $ruleClass) {
-            $declarations = ChannelDeclarationReader::read($ruleClass);
-
-            if ($declarations === []) {
-                continue;
-            }
-
-            $options = $this->optionsFor($ruleClass);
-
-            if ($options === null) {
-                continue;
-            }
-
-            foreach ($declarations as $channelKey => $declaration) {
-                foreach ($declaration->levels as $level) {
-                    $threshold = self::thresholdFor($options, $level);
-
-                    if ($threshold !== null) {
-                        $thresholds[$channelKey][$level->value] = $threshold;
-                    }
+            foreach ($this->producerThresholds($ruleClass) as $channelKey => $levels) {
+                foreach ($levels as $level => $threshold) {
+                    $thresholds[$channelKey][$level] = $threshold;
                 }
             }
         }
@@ -129,29 +110,47 @@ final readonly class BaselineConfiguredThresholds
 
     /**
      * @param class-string<RuleDefinitionInterface> $ruleClass
+     *
+     * @return array<string, array<string, int|float>>
      */
-    private function optionsFor(string $ruleClass): ?RuleOptionsInterface
+    private function producerThresholds(string $ruleClass): array
     {
-        try {
-            return $this->optionsFactory->create(RuleNameReader::read($ruleClass), $ruleClass::getOptionsClass());
-        } catch (Throwable) {
-            // A rule whose options cannot be built under the current
-            // configuration has no configured boundary to report. That is a
-            // gap in one line of `explain`'s output, not a reason to refuse
-            // to explain anything.
-            return null;
+        $declarations = ChannelDeclarationReader::read($ruleClass);
+        if ($declarations === []) {
+            return [];
         }
+
+        $options = $this->optionsFor($ruleClass);
+        $rows = [];
+        foreach ($declarations as $channelKey => $declaration) {
+            if (!$declaration->usesProducerWarningBoundary) {
+                continue;
+            }
+            foreach ($declaration->levels as $level) {
+                $threshold = self::thresholdFor($options, $level);
+                if ($threshold !== null) {
+                    $rows[$channelKey][$level->value] = $threshold;
+                }
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param class-string<RuleDefinitionInterface> $ruleClass
+     */
+    private function optionsFor(string $ruleClass): RuleOptionsInterface
+    {
+        return $this->configuration->resolvedOptions()->for(RuleNameReader::read($ruleClass));
     }
 
     /**
      * The boundary one channel is judged against **at one level**.
      *
-     * Resolved per level rather than per channel because a channel reports at
-     * more than one now, and a hierarchical rule's two levels have separate
-     * boundaries: one number keyed by the channel alone would have to pick a
-     * level and print the choice as a fact. The channel itself is not passed:
-     * three options classes serve more than one channel and none of them holds
-     * two different boundaries, so the object answers for itself.
+     * Resolved per level after the channel declares it uses the producer's
+     * boundary. A hierarchical rule's levels hold separate numbers, so the
+     * object at the declared level answers for itself.
      */
     private static function thresholdFor(RuleOptionsInterface $options, SymbolLevel $level): int|float|null
     {

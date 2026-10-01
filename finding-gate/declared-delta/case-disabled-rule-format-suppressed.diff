@@ -1,6 +1,30 @@
 --- candidate
 +++ reference (mapped)
-@@ -22,2 +22,1 @@
--        "unjudgedValues": [],
--        "reasons": []
-+        "unjudgedValues": []
+@@ -32,2 +32,1 @@
+-        "rule-path-suppression",
+-        "selection"
++        "rule-path-suppression"
+@@ -42,19 +41,4 @@
+-        "rule-path-suppression": 0,
+-        "selection": 0
+-    },
+-    "suppressed": [],
+-    "neverMatched": [],
+-    "notRun": [
+-        {
+-            "producer": "code-smell.eval",
+-            "reason": "disabled",
+-            "statement": "--disable-rule=code-smell.eval",
+-            "layer": "option --disable-rule"
+-        },
+-        {
+-            "producer": "architecture.unassigned-class",
+-            "reason": "disabled",
+-            "statement": "inactive by default",
+-            "layer": "default"
+-        }
+-    ]
++        "rule-path-suppression": 0
++    },
++    "suppressed": [],
++    "neverMatched": []

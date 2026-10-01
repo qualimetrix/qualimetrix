@@ -42,7 +42,7 @@ final class UnreachableCodeRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects unreachable code after terminal statements';
     }

@@ -9,10 +9,26 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDefinition;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection;
 
 #[CoversClass(RuleOptionShape::class)]
+#[CoversClass(RuleOptionSchemaProjection::class)]
+#[CoversClass(RuleOptionDefinition::class)]
+#[CoversClass(CompoundRuleOptionForm::class)]
+#[CoversClass(CompoundOptionKind::class)]
 #[CoversClass(RuleOptionValueForm::class)]
 final class RuleOptionShapeTest extends TestCase
 {
@@ -146,9 +162,28 @@ final class RuleOptionShapeTest extends TestCase
     }
 
     #[Test]
+    public function itAdmitsBareTextOnlyForTheDirectTextAndListPair(): void
+    {
+        $text = RuleOptionShape::text();
+        $list = RuleOptionShape::listOf($text);
+        $schema = RuleOptionShape::either($text, $list)->asNodeSchema();
+        self::assertSame('a list or one element', $schema->describe());
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/scope.yaml');
+        $reader = new LayerReading();
+        foreach (['App\\', ['App\\']] as $written) {
+            $layer = new AuthoredLayer($origin, AuthoredNode::fromPlain(['scope' => $written]));
+            self::assertSame(['App\\'], $reader->readRoot(NodeSchema::map(['scope' => $schema]), $layer, 0)?->plain()['scope']);
+        }
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('The declared union has no document form.');
+        RuleOptionShape::either($text, RuleOptionShape::either($text, $list))->asNodeSchema();
+    }
+
+    #[Test]
     public function itAcceptsOnlyTheWordsAClosedSetNames(): void
     {
-        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
         self::assertTrue($shape->matches('warning'));
         self::assertFalse($shape->matches('warnin'));
@@ -164,7 +199,7 @@ final class RuleOptionShapeTest extends TestCase
         // the reader it stands for: `scope: APPLICATION` passed the shape and
         // then fell back to the reader's default in silence -- the very defect
         // declaring a closed set exists to close.
-        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
         self::assertFalse($shape->matches('WARNING'));
         self::assertFalse($shape->matches('Error'));
@@ -176,18 +211,18 @@ final class RuleOptionShapeTest extends TestCase
     {
         self::assertSame(
             'one of "info", "warning", "error"',
-            RuleOptionShape::oneOf('info', 'warning', 'error')->describe(),
+            RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'))->describe(),
         );
         self::assertSame(
             'one of "all", "application" or null',
-            RuleOptionShape::oneOf('all', 'application')->orNull()->describe(),
+            RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull()->describe(),
         );
     }
 
     #[Test]
     public function itKeepsTheWordsWhenTheClosedSetIsMadeNullable(): void
     {
-        $shape = RuleOptionShape::oneOf('all', 'application')->orNull();
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull();
 
         self::assertTrue($shape->matches(null));
         self::assertTrue($shape->matches('application'));
@@ -197,7 +232,7 @@ final class RuleOptionShapeTest extends TestCase
     #[Test]
     public function itNamesTheWordThatWasWrittenWhenAClosedSetRefuses(): void
     {
-        $shape = RuleOptionShape::oneOf('info', 'warning', 'error');
+        $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
         self::assertSame('"warnin"', $shape->describeWritten('warnin'));
         self::assertSame('a whole number', $shape->describeWritten(7331));
@@ -228,6 +263,20 @@ final class RuleOptionShapeTest extends TestCase
         self::assertFalse(RuleOptionShape::listOf(RuleOptionShape::integer())->matches([1, -1]));
         self::assertFalse(RuleOptionValueForm::WholeNumber->accepts(-1));
         self::assertTrue(RuleOptionValueForm::WholeNumber->accepts(0));
+
+        foreach ([[RuleOptionShape::number(), -0.5], [RuleOptionShape::integer(), -1]] as [$shape, $invalid]) {
+            $schema = NodeSchema::map(['boundary' => $shape->atLeast(-1)->asNodeSchema()]);
+            $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/floor.yaml');
+            $reader = new LayerReading();
+            self::assertSame(0, $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => 0])), 0)?->plain()['boundary']);
+            try {
+                $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => $invalid])), 0);
+                self::fail('An explicit minimum weakened the native non-negative form.');
+            } catch (ConfigurationRefusal $error) {
+                self::assertSame(\sprintf('"boundary" in configuration file "/floor.yaml" must be at least 0, got %s.', $invalid), $error->summary());
+                self::assertSame(['boundary'], $error->position()?->segments);
+            }
+        }
     }
 
     /**
@@ -244,6 +293,25 @@ final class RuleOptionShapeTest extends TestCase
         self::assertTrue($shape->matches(7));
         self::assertFalse($shape->matches('-2'));
         self::assertSame('a number or null', $shape->describe());
+    }
+
+    #[Test]
+    public function itAppliesAnExplicitSignedFloorToAuthoredDocumentValues(): void
+    {
+        $schema = NodeSchema::map(['boundary' => RuleOptionShape::signedNumber()->atLeast(-1)->asNodeSchema()]);
+        $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/floor.yaml');
+        $reader = new LayerReading();
+        $valid = new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => -1]));
+        self::assertSame(-1, $reader->readRoot($schema, $valid, 0)?->plain()['boundary']);
+
+        try {
+            $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => -2])), 0);
+            self::fail('The authored value below its explicit signed floor was accepted.');
+        } catch (ConfigurationRefusal $error) {
+            self::assertSame('"boundary" in configuration file "/floor.yaml" must be at least -1, got -2.', $error->summary());
+            self::assertSame(['/floor.yaml'], array_map(static fn(ConfigurationOrigin $source): ?string => $source->locator(), $error->sources()));
+            self::assertSame(['boundary'], $error->position()?->segments);
+        }
     }
 
     /**
@@ -271,7 +339,7 @@ final class RuleOptionShapeTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('at least one word');
 
-        RuleOptionShape::oneOf();
+        RuleOptionShape::words(RuleOptionWordSet::of());
     }
 
     #[Test]
@@ -280,6 +348,6 @@ final class RuleOptionShapeTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('blank word');
 
-        RuleOptionShape::oneOf('info', '  ');
+        RuleOptionShape::words(RuleOptionWordSet::of('info', '  '));
     }
 }

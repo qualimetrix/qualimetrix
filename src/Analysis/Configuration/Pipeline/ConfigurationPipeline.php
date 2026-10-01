@@ -4,27 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
+use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Analysis\Configuration\DocumentRoots;
 
-/**
- * Configuration resolution pipeline.
- *
- * Collects configuration from multiple stages (defaults, composer, config file, cli)
- * and merges them according to priority order.
- *
- * Capability-specific configuration is composed from the layers a stage hands
- * over as written, except Finding's temporary ordered raw rule inputs and
- * Composer discovery facts, which remain outside the authored document.
- * The engine composes authored layers against the roots Configuration declares
- * and the sections owners register; a known root nobody declares yet is carried unread
- * ({@see DocumentRoots::completing()}).
- */
+/** Composes authored layers in stage order against explicit owner declarations. */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface
 {
     /** @var list<ConfigurationStageInterface> */
@@ -45,7 +33,6 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
     {
         $documents = [];
         $authored = [];
-        $deferred = [];
         $diagnostics = [];
         foreach ($this->stages() as $stage) {
             $layer = $stage->apply($request);
@@ -54,23 +41,14 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
             }
 
             $authored = [...$authored, ...$layer->authored];
-            $deferred = [...$deferred, ...$layer->deferredRefusals];
             $diagnostics = [...$diagnostics, ...$layer->diagnostics];
 
-            if ($layer->documents === []) {
+            foreach ($layer->authored === [] ? [null] : $layer->authored as $_) {
                 $documents[] = ['source' => $layer->source, 'values' => $layer->values];
-                continue;
-            }
-            foreach ($layer->documents as $values) {
-                $documents[] = ['source' => $layer->source, 'values' => $values];
             }
         }
 
-        $resolved = DocumentComposer::compose(new DocumentSchema(DocumentRoots::completing($this->sections)), $authored);
-
-        if ($deferred !== []) {
-            throw $deferred[0];
-        }
+        $resolved = DocumentComposer::compose(new DocumentSchema([...ConfigurationRoot::cases(), ...$this->sections]), $authored);
 
         return new ConfigurationDocument($documents, $request->workingDirectory, $resolved, $diagnostics);
     }

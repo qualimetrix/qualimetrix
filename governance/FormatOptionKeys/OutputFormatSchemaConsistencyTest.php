@@ -961,9 +961,13 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
                 ...$coverageTable,
             ],
             'suppressed' => [
+                'notRun[]' => [
+                    [self::PAGE_EN, 'Selection', '/`notRun` is\s+always\s+an\s+array\.\s+Each\s+entry\s+has(?<keys>.*?)\./su', true],
+                    [self::PAGE_RU, 'Selection', '/`notRun` всегда\s+массив\.\s+У\s+записи\s+есть(?<keys>.*?)\./su', true],
+                ],
                 '(root)' => [
-                    [self::PAGE_EN, 'suppressed', '/\*\*Top-level keys:\*\*(?<keys>.*?`neverMatched`)\./su', true],
-                    [self::PAGE_RU, 'suppressed', '/\*\*Ключи верхнего уровня:\*\*(?<keys>.*?`neverMatched`)\./su', true],
+                    [self::PAGE_EN, 'suppressed', '/\*\*Top-level keys:\*\*(?<keys>.*?`notRun`\s+\(.*?\))\./su', true],
+                    [self::PAGE_RU, 'suppressed', '/\*\*Ключи верхнего уровня:\*\*(?<keys>.*?`notRun`\s+\(.*?\))\./su', true],
                 ],
             ],
         ];

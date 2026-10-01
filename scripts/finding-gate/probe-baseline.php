@@ -7,6 +7,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Core\Path\RelativePath;
@@ -54,7 +55,19 @@ $command->setApplication(new Application());
 CheckCommandDefinition::addOptions($command, $rules);
 $command->mergeApplicationDefinition(false);
 $arguments = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-$document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline, new ErrorStream()))->adapt($arguments, $directory));
+$constructor = new ReflectionMethod(ConfigurationInputAdapter::class, '__construct');
+$dependencies = [$pipeline, new ErrorStream()];
+if ($constructor->getNumberOfRequiredParameters() === 3
+    && ($constructor->getParameters()[2]->getType() instanceof ReflectionNamedType)
+    && $constructor->getParameters()[2]->getType()->getName() === RuleExecutionInterface::class) {
+    $execution = $container->get(RuleExecutionInterface::class);
+    assert($execution instanceof RuleExecutionInterface);
+    $dependencies[] = $execution;
+} elseif ($constructor->getNumberOfRequiredParameters() !== 2) {
+    throw new RuntimeException('The probe does not support this configuration adapter constructor.');
+}
+$adapter = (new ReflectionClass(ConfigurationInputAdapter::class))->newInstanceArgs($dependencies);
+$document = $pipeline->resolve($adapter->adapt($arguments, $directory));
 $generator = new BaselineGenerator($snapshot->snapshot($computed->resolve($document)), new SystemClock());
 
 $findings = [];

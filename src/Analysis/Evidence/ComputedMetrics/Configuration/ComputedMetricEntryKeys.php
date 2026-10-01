@@ -61,7 +61,7 @@ final class ComputedMetricEntryKeys
                 self::FORMULA => NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(ComputedMetricValueForm::ofFormula(...)),
                 self::FORMULAS => NodeSchema::map($formulas),
                 self::INVERTED => NodeSchema::scalar(ScalarForm::Boolean),
-                self::LEVELS => NodeSchema::stringList()->judgedInEachLayer(self::ofLevels(...)),
+                self::LEVELS => NodeSchema::list(NodeSchema::scalar(ScalarForm::String))->judgedInEachLayer(self::ofLevels(...)),
                 self::WARNING => NodeSchema::scalar(ScalarForm::Number),
             ],
             Shorthand::spreading(self::THRESHOLD, [self::WARNING, self::ERROR]),

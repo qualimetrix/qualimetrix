@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Closure;
+use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\BareElementPolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\IntegerJudgement;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -42,7 +44,7 @@ final class LayerReading
     {
         $at = ReadingContext::of($layer, $layerIndex);
 
-        return $this->readMap($root, $layer->root, $at, KeyClaims::of($root->keys()->keys(), $at));
+        return $this->readMap($root, $layer->root, $at, KeyClaims::of($root->map->keys->keys(), $at));
     }
 
     /** @return list<PendingName> */
@@ -55,7 +57,7 @@ final class LayerReading
     {
         return self::judged($schema, $at, match ($schema->policy) {
             MergePolicy::LastWriterWins => WrittenForm::scalar($schema, $node, $at),
-            MergePolicy::DeepMerge => $this->readMap($schema, $node, $at, KeyClaims::of($schema->keys()->keys(), $at)),
+            MergePolicy::DeepMerge => $this->readMap($schema, $node, $at, KeyClaims::of($schema->map->keys->keys(), $at, $schema->map->retiredKeys)),
             MergePolicy::Replace, MergePolicy::Accumulate => $this->readList($schema, $node, $at),
             MergePolicy::ByName => $this->readNamedMap($schema, $node, $at),
             MergePolicy::PerLayer => $node->isUnwritten() ? null : self::opaque($node, $at),
@@ -65,7 +67,7 @@ final class LayerReading
     /** The value as this layer wrote it, once its owner's judgement of it passes. */
     private static function judged(NodeSchema $schema, ReadingContext $at, ?ResolvedValueInterface $value): ?ResolvedValueInterface
     {
-        $judge = $schema->layerJudge();
+        $judge = $schema->layerJudge;
         if ($value !== null && $judge instanceof IntegerJudgement) {
             $integer = $value->plain();
             \assert(\is_int($integer));
@@ -82,12 +84,19 @@ final class LayerReading
 
     private function readMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, KeyClaims $keys): ?ResolvedMap
     {
+        if ($schema->map->bareField !== null && $node->shape === AuthoredShape::Scalar && !$node->isUnwritten()) {
+            $field = $schema->map->bareField;
+            $value = $this->read($schema->map->keys->fields()[$field], $node, $at->atCanonicalPath([...$at->canonicalPath, $field]));
+
+            return $value === null ? null : new ResolvedMap([$field => $value], [$at->provenance($node)]);
+        }
+
         if (!WrittenForm::isMap($schema, $node, $at)) {
             return null;
         }
 
         [$entries, $shorthandNodes] = $this->readFields($schema, $node, $at, $keys);
-        $entries = $this->spreadShorthands($schema, $at, $keys, $entries, $shorthandNodes);
+        $entries = (new ShorthandExpansion($this->read(...)))->spread($schema, $at, $entries, $shorthandNodes);
 
         return $entries === [] ? null : new ResolvedMap($entries, [$at->provenance($node)]);
     }
@@ -100,7 +109,7 @@ final class LayerReading
      */
     private function readFields(NodeSchema $schema, AuthoredNode $node, ReadingContext $at, KeyClaims $keys): array
     {
-        $dictionary = $schema->keys();
+        $dictionary = $schema->map->keys;
         $entries = [];
         $shorthandNodes = [];
 
@@ -122,71 +131,38 @@ final class LayerReading
         return [$entries, $shorthandNodes];
     }
 
-    /**
-     * @param array<string, ResolvedValueInterface> $entries
-     * @param array<string, array{string, AuthoredNode}> $shorthandNodes canonical shorthand => [written key, node]
-     *
-     * @return array<string, ResolvedValueInterface>
-     */
-    private function spreadShorthands(NodeSchema $schema, ReadingContext $at, KeyClaims $keys, array $entries, array $shorthandNodes): array
-    {
-        $dictionary = $schema->keys();
-
-        foreach ($shorthandNodes as $key => [$written, $child]) {
-            $targets = $dictionary->shorthand($key)->targets ?? [];
-
-            foreach ($targets as $target) {
-                if (\array_key_exists($target, $entries)) {
-                    throw $at->child($written, $key, $child)->refusal(\sprintf(
-                        '%s writes both "%s" and "%s"; "%s" is shorthand for %s — write either the shorthand or the full keys in one layer.',
-                        ucfirst($at->where()),
-                        $written,
-                        $keys->spellingOf($target),
-                        $key,
-                        '"' . implode('" and "', $targets) . '"',
-                    ));
-                }
-            }
-
-            foreach ($targets as $target) {
-                $entries = self::with($entries, $target, $this->read($dictionary->fields()[$target], $child, $at->child($written, $target, $child)));
-            }
-        }
-
-        return $entries;
-    }
-
     private function readNamedMap(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedMap
     {
         if (!WrittenForm::isMap($schema, $node, $at)) {
             return null;
         }
 
-        $vocabulary = WrittenNames::vocabulary($schema, $at);
-        $fixed = $vocabulary?->isFixed() === true ? KeyClaims::of($vocabulary->fixedNames(), $at) : null;
-        $entries = [];
+        $entries = NamedEntryReading::entries($schema, $node, $at, $this->names, $this->read(...));
 
-        foreach ($node->children as $writtenKey => $child) {
-            $written = (string) $writtenKey;
-            $childAt = $at->child($written, $written, $child);
-            $name = $this->names->nameOf($written, $child, $at, $vocabulary, $fixed);
-
-            $value = $child->isUnwritten() ? null : $this->read($schema->element(), $child, $at->child($written, $name, $child));
-            $entries[$name] = $value ?? new ResolvedBareName([$childAt->provenance($child)]);
+        if ($entries === []) {
+            self::judged($schema, $at, new ResolvedMap([], [$at->provenance($node)]));
+            return null;
         }
 
-        return $entries === [] ? null : new ResolvedMap($entries, [$at->provenance($node)]);
+        return new ResolvedMap($entries, [$at->provenance($node)]);
     }
 
     private function readList(NodeSchema $schema, AuthoredNode $node, ReadingContext $at): ?ResolvedList
     {
+        if ($schema->collection?->bareElement === BareElementPolicy::SingleAllowed && $node->shape === AuthoredShape::Scalar && !$node->isUnwritten()) {
+            $item = $this->read($schema->collection->element, $node, $at)
+                ?? throw $at->refusal(\sprintf('%s writes no list element.', ucfirst($at->where())));
+
+            return new ResolvedList([$item], [$at->provenance($node)]);
+        }
+
         if (!WrittenForm::isList($schema, $node, $at)) {
             return null;
         }
 
         $items = [];
         foreach ($node->children as $index => $child) {
-            $items[] = $this->readItem($schema->element(), (int) $index, $child, $at);
+            $items[] = $this->readItem(($schema->collection ?? throw new LogicException(\sprintf('A %s node has no element schema.', $schema->policy->value)))->element, (int) $index, $child, $at);
         }
 
         return new ResolvedList($items, [$at->provenance($node)]);

@@ -20,9 +20,10 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
@@ -55,6 +56,7 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -176,12 +178,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $runtimeReflection = new ReflectionClass($runtime);
         $analysisRuntime = $runtimeReflection->getProperty('analysisRuntimeConfigurator')->getValue($runtime);
         self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
-        $validator = (new ReflectionClass($analysisRuntime))->getProperty('ruleInputValidator')->getValue($analysisRuntime);
-        self::assertInstanceOf(RuleInputValidator::class, $validator);
-        $selector = (new ReflectionClass($validator))->getProperty('ruleSelector')->getValue($validator);
-        self::assertInstanceOf(RuleSelector::class, $selector);
-        $staticChannels = (new ReflectionClass($selector))->getProperty('defaultChannels')->getValue($selector);
-        $selector->replaceChannels(self::createStub(RuleChannelRegistryInterface::class));
+        $ruleOptions = (new ReflectionClass($analysisRuntime))->getProperty('ruleOptionsRegistry')->getValue($analysisRuntime);
+        self::assertInstanceOf(RuleOptionsRegistry::class, $ruleOptions);
+        $ruleOptions->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
+        self::assertNotNull($ruleOptions->enablement());
 
         $cacheFactory = $runtimeReflection->getProperty('cacheFactory')->getValue($runtime);
         self::assertInstanceOf(CacheFactory::class, $cacheFactory);
@@ -206,10 +206,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());
             self::fail('Configuration loading must fail.');
         } catch (ConfigurationRefusal) {
-            self::assertSame(
-                $staticChannels,
-                (new ReflectionClass($selector))->getProperty('channels')->getValue($selector),
-            );
+            self::assertNull($ruleOptions->enablement());
             self::assertTrue($cacheStore->current()->enabled);
             self::assertNull($parallelStore->current()->workers);
             self::assertFalse($profile->isEnabled());
@@ -265,12 +262,12 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
-        $ruleSelector = new RuleSelector($staticChannels);
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
-            $ruleSelector,
-            new FindingConfigurationResolver(),
             $staticChannels,
+            new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
+            self::createStub(ComputedMetricConfiguratorInterface::class),
+            new RuleEnablementResolver(),
         );
 
         $errorStream = new ErrorStream();
@@ -305,9 +302,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
         return new RuleInputValidator(
             $rules,
-            new RuleSelector($staticChannels),
-            new FindingConfigurationResolver(),
             $staticChannels,
+            new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
+            self::createStub(ComputedMetricConfiguratorInterface::class),
+            new RuleEnablementResolver(),
         );
     }
 
@@ -317,6 +315,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         return new ConfigurationInputAdapter(
             $pipeline,
             new ErrorStream(),
+            self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class),
         );
     }
 

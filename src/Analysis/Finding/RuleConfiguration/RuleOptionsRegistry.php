@@ -4,24 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
 
-/**
- * Mutable storage for rule options from config files and CLI.
- *
- * Holds per-rule options from two sources (config file and CLI) and manages
- * the namespace exclusion provider. This is the runtime state that gets
- * configured during the configuration pipeline and reset between runs.
- */
+/** Per-invocation resolved options, enablement and exclusions. */
 final class RuleOptionsRegistry implements RuleConfigurationInterface
 {
-    /** Rule options from the config file and the CLI, and the rule selection. */
     private FindingConfiguration $configuration;
 
     private bool $capturesExcludedFindings = false;
@@ -33,91 +30,49 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->configuration = FindingConfiguration::none();
     }
 
-    /**
-     * Sets rule options from config file.
-     *
-     * Values may be arrays (normal config), or scalars (e.g. `false` to disable a rule).
-     * Scalar values are normalized to arrays in RuleOptionsFactory::create().
-     *
-     * @param array<string, mixed> $options
-     */
-    public function setConfigFileOptions(array $options): void
-    {
-        $this->replace($this->configuration->withRuleOptions($options));
-    }
-
-    /**
-     * The one door the product configures a run through. Every narrower
-     * setter below is written in terms of it, so a field it learns to set is
-     * set by all of them rather than left behind by the ones only tests call.
-     */
     public function replace(FindingConfiguration $configuration): void
     {
+        $snapshot = $configuration->resolvedOptions
+            ?? throw new LogicException('Rule options must be built before runtime configuration is committed.');
+        if ($configuration->enablement === null || $configuration->channels === null) {
+            throw new LogicException('Rule enablement and its channel universe must be resolved before runtime configuration is committed.');
+        }
+        $this->exclusionProvider->reset();
+        $this->pathExclusionProvider->reset();
+        foreach ($snapshot->all() as $producer => $options) {
+            $suppression = $snapshot->suppressionFor($producer);
+            $this->configureNamespaceExclusions($producer, $suppression->namespaces);
+            $this->configureNamespaceChannelExclusions($producer, $suppression->namespaceChannels);
+            $this->configurePathExclusions($producer, $suppression->paths);
+        }
         $this->configuration = $configuration;
     }
 
-    /**
-     * Gets rule options from config file.
-     *
-     * @return array<string, mixed>
-     */
-    public function configFileOptions(): array
+    public function resolvedOptions(): ResolvedRuleOptions
     {
-        return $this->configuration->ruleOptions->rules;
+        return $this->configuration->resolvedOptions
+            ?? throw new LogicException('Rule options are unavailable before analysis preflight.');
     }
 
-    /**
-     * Adds a CLI option for a specific rule.
-     */
-    public function addCliOption(string $ruleName, string $option, mixed $value): void
+    public function enablement(): ?RuleEnablement
     {
-        $cliOptions = $this->cliOptions();
-        $cliOptions[$ruleName][$option] = $value;
-
-        $this->replace($this->configuration->withCliOverrides($cliOptions));
+        return $this->configuration->enablement;
     }
 
-    /**
-     * Sets multiple CLI options for a rule.
-     *
-     * @param array<string, mixed> $options
-     */
-    public function setCliOptions(string $ruleName, array $options): void
+    public function channelUniverse(): ChannelUniverseInterface
     {
-        $this->configureCli($ruleName, $options);
+        return $this->configuration->channels
+            ?? throw new LogicException('Rule channels are unavailable before analysis preflight.');
     }
 
-    public function configureCli(string $ruleName, array $options): void
+    /** @param class-string<RuleOptionsInterface> $optionsClass */
+    public function optionsFor(string $producer, string $optionsClass): RuleOptionsInterface
     {
-        $cliOptions = $this->cliOptions();
-        $cliOptions[$ruleName] = $options;
-
-        $this->replace($this->configuration->withCliOverrides($cliOptions));
-    }
-
-    /**
-     * Gets all CLI options.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    public function cliOptions(): array
-    {
-        return $this->configuration->cliOverrides->options;
-    }
-
-    public function all(): array
-    {
-        return array_replace_recursive($this->configFileOptions(), $this->cliOptions());
-    }
-
-    public function configureSelection(RuleSelection $selection): void
-    {
-        $this->replace($this->configuration->withSelection($selection));
-    }
-
-    public function selection(): RuleSelection
-    {
-        return $this->configuration->selection;
+        $options = $this->resolvedOptions()->for($producer);
+        if (!$options instanceof $optionsClass) {
+            throw new LogicException(\sprintf('Resolved options for "%s" must be %s.', $producer, $optionsClass));
+        }
+        return $options;
     }
 
     public function captureExcludedFindings(): void

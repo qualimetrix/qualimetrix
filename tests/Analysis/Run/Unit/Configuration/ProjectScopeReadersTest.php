@@ -47,6 +47,7 @@ final class ProjectScopeReadersTest extends TestCase
                 LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
             ],
             'src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
+            'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' => ['cohesion.unmatched-exclude-method'],
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' => [UnmatchedExcludeOptions::CHANNEL],
             'src/Infrastructure/Console/FindingFilterOrchestrator.php' => [
                 UnboundSuppressionOptions::UNMATCHED_PATH,

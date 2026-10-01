@@ -30,10 +30,11 @@ final class CliStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        if ($request->cliValues === []) {
+        if ($request->cliValues === [] && $request->cliPathWrites === []) {
             return null;
         }
 
-        return new ConfigurationLayer('cli', $request->cliValues, authored: [CommandLineLayer::of($request)]);
+        $layer = CommandLineLayer::of($request);
+        return new ConfigurationLayer('cli', $request->cliValues, authored: [$layer]);
     }
 }

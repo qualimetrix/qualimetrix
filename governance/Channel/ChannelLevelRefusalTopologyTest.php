@@ -99,18 +99,14 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Infrastructure/Console/Command/BaselineConfiguredThresholds.php' =>
             'enumerates the configured warning boundary of each channel at each level it declares, for'
             . ' baseline:explain; it judges no authored text and refuses nothing',
-        'src/Analysis/Finding/Contract/Rule/AbstractRule.php' =>
-            'a rule reading its own declarations to say which of its levels this configuration let run'
-            . ' (levelActivity()); the levels come from the rule itself, no authored text is involved,'
-            . ' and nothing here refuses anything',
+        'src/Analysis/Finding/Selection/SelectionSpecificity.php' =>
+            'enumerates declared channel levels to build invocation cell addresses and rank membership;'
+            . ' authored channel:level judgement belongs to RuleNameJudge through ChannelLevelAddressing',
         'src/Infrastructure/Console/Command/RulesCommand.php' =>
             'trips both halves of the detector on two unrelated subjects: it asks declarationFor() for one'
             . ' property that is not a level — which metrics a channel judges — and its ->levels() call is'
             . ' RuleOptionSurface\'s, whose levels are a rule\'s option slots (callable, class, namespace) and'
             . ' not a channel\'s declared levels. It advertises a grammar and judges no authored text at all',
-        'src/Analysis/Finding/ConfiguredLevelActivity.php' =>
-            'completes that same snapshot for channels a producer owns but does not declare itself —'
-            . ' its configuration validator\'s — by reading the registry, not any authored pair',
     ];
 
     /**
@@ -123,12 +119,6 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
     private const array LEVEL_WORDING_AUTHORS = [
         'src/Analysis/Finding/Contract/Rule/ChannelLevelRefusalWording.php' =>
             'the seam itself: every sentence a refusal of an authored pair is made of',
-        'src/Infrastructure/Console/ChannelExclusionKeyValidator.php' =>
-            'the level `suppress_namespace_channels` applies at is a property of that option\'s own runtime, not a'
-            . ' question about the channel universe; the seam has already judged the pair by then',
-        'src/Infrastructure/Console/RuleInputValidator.php' =>
-            '" at that level" is appended to a "matches nothing registered" refusal, after the seam accepted the'
-            . ' pair: it says where the miss was, not that the pair is impossible',
         'src/Analysis/Finding/Contract/FindingChannel.php' =>
             'the channel name authority refusing a code with a level inside it: a statement about one malformed'
             . ' code, not about a pair addressed at the universe',

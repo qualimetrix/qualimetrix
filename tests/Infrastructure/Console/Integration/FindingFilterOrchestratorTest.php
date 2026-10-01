@@ -90,7 +90,18 @@ final class FindingFilterOrchestratorTest extends TestCase
             $scope = new GitScopeResolution($measurement->paths, self::createStub(FileDiscoveryInterface::class), null, null, AbsolutePath::fromString($root));
             $report = $this->createOrchestrator($reader, $anchor)->projectScope(new ResolvedCheckScope($scope, [], $measurement, ReportProjectScope::narrowed(['src/A.php'], \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS)), $this->createAnalysisResult(), new FindingProjectionOptions());
             self::assertSame('narrowed', $report->state);
-            self::assertCount(8, $report->unjudgedChannels);
+            self::assertCount(9, $report->unjudgedChannels);
+            self::assertSame([
+                'architecture.empty-template',
+                'architecture.unmatched-exclude',
+                'architecture.unreachable-layer',
+                'cohesion.unmatched-exclude-method',
+                'coupling.unmatched-framework-namespace',
+                'discovery.unmatched-exclude',
+                'suppression.unmatched-namespace',
+                'suppression.unmatched-path',
+                'suppression.unmatched-rule-ledger',
+            ], $report->unjudgedChannels);
             $reasons = array_map(static fn($reason): array => $reason->toArray(), $report->reasons);
             self::assertCount(2, $reasons);
             self::assertSame('manifest-issue', $reasons[0]['kind']);
@@ -450,11 +461,13 @@ final class FindingFilterOrchestratorTest extends TestCase
      */
     private static function silentSuppressionAudit(): UnboundSuppressionAudit
     {
-        return new UnboundSuppressionAudit(
-            new UnboundSuppressionOptions(enabled: false),
-            self::createStub(RuleExecutionInterface::class),
-            self::createStub(RuleConfigurationInterface::class),
+        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => ['enabled' => false]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))),
+            [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
         );
+        $configuration->method('resolvedOptions')->willReturn($snapshot);
+        return new UnboundSuppressionAudit(self::createStub(RuleExecutionInterface::class), $configuration);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput

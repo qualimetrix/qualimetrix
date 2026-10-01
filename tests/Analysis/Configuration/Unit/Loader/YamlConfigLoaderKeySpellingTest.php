@@ -53,9 +53,16 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
         file_put_contents($this->path, $yaml);
 
         try {
-            WrittenFile::foldedValues($this->path);
+            array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($this->path)->roots());
             self::fail('Two spellings of one key must be refused.');
         } catch (ConfigurationRefusal $refusal) {
+            if ($second === 'Dir') {
+                self::assertSame(\sprintf('Key "cache.Dir" in configuration file "%s" is not written in an accepted spelling; write "dir" (its snake_case, camelCase and kebab-case spellings are accepted).', $this->path), $refusal->summary());
+                self::assertSame($this->path, $refusal->sources()[0]->locator());
+                self::assertSame(['cache', 'Dir'], $refusal->position()?->segments);
+                self::assertSame('Dir', $refusal->position()->written);
+                return;
+            }
             self::assertStringContainsString(\sprintf('"%s"', $first), $refusal->summary());
             self::assertStringContainsString(\sprintf('"%s"', $second), $refusal->summary());
         }
@@ -63,16 +70,29 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
 
     /** The lawful neighbours: one spelling, and the same spelling in two sibling blocks. */
     #[Test]
-    public function itAcceptsOneSpellingAndRepeatsAcrossSiblings(): void
+    public function itKeepsSiblingSpellingsAndRefusesAKeyOutsideItsDeclaredSlot(): void
     {
         file_put_contents(
             $this->path,
             "suppressPaths: []\nrules:\n  complexity.ccn:\n    class: {max_warning: 1}\n    callable: {max_warning: 2}\n",
         );
 
-        $config = WrittenFile::foldedValues($this->path);
-
-        self::assertSame([], $config['suppressPaths']);
+        $loaded = (new YamlConfigLoader())->read($this->path, $this->path);
+        self::assertSame(['suppressPaths' => [], 'rules' => ['complexity.ccn' => ['class' => ['max_warning' => 1], 'callable' => ['max_warning' => 2]]]], $loaded->authored->plain());
+        try {
+            WrittenFile::compose($this->path);
+            self::fail('The callable slot must refuse a class-only key.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(\sprintf('Unknown key "rules.complexity.ccn.callable.max_warning" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', $this->path), $refusal->summary());
+            self::assertSame($this->path, $refusal->sources()[0]->locator());
+            self::assertSame(['rules', 'complexity.ccn', 'callable', 'max_warning'], $refusal->position()?->segments);
+            self::assertSame('max_warning', $refusal->position()->written);
+        }
+        file_put_contents($this->path, "suppressPaths: []\nrules:\n  complexity.ccn:\n    class: {max_warning: 1}\n    callable: {warning: 2}\n");
+        $document = WrittenFile::compose($this->path);
+        self::assertSame([], $document->get('suppress_paths')?->plain());
+        self::assertSame(1, $document->get('rules', 'complexity.ccn', 'class', 'max-warning')?->plain());
+        self::assertSame(2, $document->get('rules', 'complexity.ccn', 'callable', 'warning')?->plain());
     }
 
     /** @return iterable<string, array{string}> */
@@ -109,15 +129,18 @@ final class YamlConfigLoaderKeySpellingTest extends TestCase
 
     #[Test]
     #[DataProvider('provideSectionKeyStyles')]
-    public function itListsSectionKeysInTheAuthorsSpelling(string $written, string $expected): void
+    public function itListsCanonicalSectionKeysBesideTheAuthorsSpelling(string $written, string $expected): void
     {
         file_put_contents($this->path, \sprintf("coupling:\n  %s: []\n", $written));
 
         try {
-            WrittenFile::foldedValues($this->path);
+            array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($this->path)->roots());
             self::fail('An unknown section key must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString($expected, $refusal->summary());
+            self::assertSame(\sprintf('Unknown key "coupling.%s" in configuration file "%s" (did you mean "framework_namespaces"?). Accepted keys: framework_namespaces.', $written, $this->path), $refusal->summary());
+            self::assertSame($this->path, $refusal->sources()[0]->locator());
+            self::assertSame(['coupling', $written], $refusal->position()?->segments);
+            self::assertSame($written, $refusal->position()->written);
         }
     }
 }

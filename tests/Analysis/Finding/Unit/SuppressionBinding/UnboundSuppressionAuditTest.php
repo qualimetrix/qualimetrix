@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -323,6 +324,60 @@ final class UnboundSuppressionAuditTest extends TestCase
         self::assertStringNotContainsString('glob character', implode(' ', $recommendations));
     }
 
+    #[Test]
+    public function itReadsEachInvocationSnapshotFromTheSameAuditInstance(): void
+    {
+        $registry = new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry();
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('publishable')->willReturnArgument(0);
+        $audit = new UnboundSuppressionAudit($execution, $registry);
+        $producer = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME;
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer, UnboundSuppressionOptions::class, '', [], false)];
+        foreach ([true, false, true] as $enabled) {
+            $registry->resetRuntimeState();
+            $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [$producer => ['enabled' => $enabled]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project')));
+            $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $metadata));
+            $findings = $audit->findings(
+                [$this->path(SelectorKind::Subtree, 'src/Gone')],
+                [],
+                [RelativePath::fromString('src/Service.php')],
+                null,
+                $this->scope(),
+            );
+            self::assertCount($enabled ? 1 : 0, $findings);
+        }
+    }
+
+    #[Test]
+    public function itReplacesTheTypedSuppressionUniverseBetweenInvocations(): void
+    {
+        $producer = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME;
+        $options = [$producer => new UnboundSuppressionOptions(), 'computed.health' => new UnboundSuppressionOptions()];
+        $snapshot = new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, [
+            $producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(),
+            'computed.health' => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(paths: [$this->path(SelectorKind::Subtree, 'src/Gone')]),
+        ]);
+        $configuration = self::createStub(RawDoorAuditConfiguration::class);
+        $configuration->method('resolvedOptions')->willReturnCallback(static function () use (&$snapshot): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions {
+            return $snapshot;
+        });
+        foreach (['all', 'pathExclusions', 'namespaceExclusions', 'namespaceChannelExclusions'] as $rawDoor) {
+            $configuration->method($rawDoor)->willThrowException(new LogicException('The audit must read typed suppression.'));
+        }
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('publishable')->willReturnArgument(0);
+        $audit = new UnboundSuppressionAudit($execution, $configuration);
+        $findings = $audit->findings([], [], [], null, $this->scope());
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('rule "computed.health"', $findings[0]->message);
+
+        $snapshot = new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions(
+            [$producer => $options[$producer]],
+            [$producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression()],
+        );
+        self::assertSame([], $audit->findings([], [], [], null, $this->scope()));
+    }
+
     /**
      * @param list<Finding> $findings
      *
@@ -349,25 +404,28 @@ final class UnboundSuppressionAuditTest extends TestCase
         // the subject, so `publishable()` passes everything through.
         $execution->method('publishable')->willReturnArgument(0);
 
-        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $configuration = self::createStub(RawDoorAuditConfiguration::class);
         $rules = array_values(array_unique([
             ...array_keys($pathLedger),
             ...array_keys($namespaceLedger),
             ...array_keys($channelLedger),
         ]));
-        $configuration->method('all')->willReturn(array_fill_keys($rules, []));
-        $configuration->method('pathExclusions')->willReturnCallback(
-            static fn(string $ruleName): array => $pathLedger[$ruleName] ?? [],
-        );
-        $configuration->method('namespaceExclusions')->willReturnCallback(
-            static fn(string $ruleName): array => $namespaceLedger[$ruleName] ?? [],
-        );
-        $configuration->method('namespaceChannelExclusions')->willReturnCallback(
-            static fn(string $ruleName): array => $channelLedger[$ruleName] ?? [],
-        );
-
+        foreach (['all', 'pathExclusions', 'namespaceExclusions', 'namespaceChannelExclusions'] as $rawDoor) {
+            $configuration->method($rawDoor)->willThrowException(new LogicException('The audit must read typed suppression.'));
+        }
+        $options = [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => new UnboundSuppressionOptions(enabled: $enabled)];
+        $suppressions = [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression()];
+        foreach ($rules as $producer) {
+            $options[$producer] ??= new UnboundSuppressionOptions();
+            $suppressions[$producer] = new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(
+                paths: $pathLedger[$producer] ?? [],
+                namespaces: $namespaceLedger[$producer] ?? [],
+                namespaceChannels: $channelLedger[$producer] ?? [],
+            );
+        }
+        $snapshot = new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, $suppressions);
+        $configuration->method('resolvedOptions')->willReturn($snapshot);
         return new UnboundSuppressionAudit(
-            new UnboundSuppressionOptions($enabled),
             $execution,
             $configuration,
         );
@@ -420,4 +478,11 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
+}
+
+/** Raw entry points remain tripwires after their removal from the production interface. */
+interface RawDoorAuditConfiguration extends RuleConfigurationInterface
+{
+    /** @return array<string, mixed> */
+    public function all(): array;
 }

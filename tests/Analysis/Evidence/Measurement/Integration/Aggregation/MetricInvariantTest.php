@@ -7,18 +7,15 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Integration test that verifies mathematical invariants hold for ALL
@@ -40,34 +37,20 @@ final class MetricInvariantTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
-
-        /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
-        $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
-        \assert($configurationPipeline instanceof ConfigurationPipelineInterface);
-        $document = LayeredDocument::of([], $fixtureRoot, ...LayeredDocument::sectionsOf($configurationPipeline));
-        $architecturePolicy->replace($architecturePolicy->resolve($document));
-
-        /** @var AnalysisPipelineInterface $pipeline */
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-
         $root = AbsolutePath::fromString((string) getcwd());
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration(
-            pathExcludes: [],
-            projectRoot: $root,
-            generatedFilePolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$fixtureRoot], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-            authoredPathExcludes: [],
-            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-        ));
-
-        self::$repository = $result->metrics;
-        self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');
-        self::$namespaceTree = $result->namespaceTree;
+        $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
+        try {
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            \assert($pipeline instanceof AnalysisPipelineInterface);
+            $result = $pipeline->analyze($fixture->prepared()->runConfiguration);
+            self::$repository = $result->metrics;
+            self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');
+            self::$namespaceTree = $result->namespaceTree;
+        } finally {
+            $fixture->close();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────

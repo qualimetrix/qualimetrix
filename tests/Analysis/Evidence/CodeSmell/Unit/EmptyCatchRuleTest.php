@@ -28,7 +28,7 @@ final class EmptyCatchRuleTest extends TestCase
         $rule = new EmptyCatchRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.empty-catch', $rule->getName());
-        self::assertSame('Detects empty catch blocks', $rule->getDescription());
+        self::assertSame('Detects empty catch blocks', $rule::getDescription());
     }
 
     #[Test]

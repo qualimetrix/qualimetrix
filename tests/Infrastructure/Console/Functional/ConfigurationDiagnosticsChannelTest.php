@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -19,6 +20,7 @@ use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\ConfigurationDiagnosticsPublisher;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
@@ -34,6 +36,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * rules, the file writes `only_rules: []` and lifts that filter.
  */
 #[CoversClass(ConfigurationInputAdapter::class)]
+#[CoversClass(ConfigurationDiagnosticsPublisher::class)]
 #[CoversClass(AnalysisPreflight::class)]
 #[CoversClass(BaselineRun::class)]
 #[CoversClass(CheckCommand::class)]
@@ -108,6 +111,63 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnUnknownSelectorBeforeDiscoveryAndThroughTheRealCli(): void
+    {
+        file_put_contents($this->directory . '/qmx.yaml', "paths: [src]\nonly_rules: [nosuch.channel]\ncache: {enabled: false}\nparallel: {workers: 0}\n");
+        $discovery = self::createMock(FileDiscoveryFactoryInterface::class);
+        $discovery->expects(self::never())->method('create');
+        $container = (new ContainerFactory())->configure();
+        $container->removeAlias(FileDiscoveryFactoryInterface::class);
+        $container->register(FileDiscoveryFactoryInterface::class)->setSynthetic(true)->setPublic(true);
+        $container->compile();
+        $container->set(FileDiscoveryFactoryInterface::class, $discovery);
+        $command = $container->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $command);
+        $tester = new CommandTester($command);
+        $previous = getcwd();
+        chdir($this->directory);
+        try {
+            self::assertSame(3, $tester->execute(['--config' => 'qmx.yaml'], ['capture_stderr_separately' => true]));
+        } finally {
+            chdir($previous === false ? '/' : $previous);
+        }
+        self::assertStringContainsString('Rule selector "nosuch.channel" does not match any registered producer or channel.', $tester->getErrorOutput());
+
+        require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+        $result = \Qualimetrix\Subprocess\ChildProcess::run([
+            \PHP_BINARY, '-d', 'xdebug.mode=off', \dirname(__DIR__, 4) . '/bin/qmx', 'check',
+            '--config=' . $this->directory . '/qmx.yaml', '--working-dir=' . $this->directory,
+        ], workingDirectory: $this->directory);
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
+        self::assertSame(3, $result['exitCode'], (string) $stdout . (string) $stderr);
+        self::assertStringContainsString('Rule selector "nosuch.channel" does not match any registered producer or channel.', (string) $stderr);
+    }
+
+    #[Test]
+    public function itPublishesTheNarrowedGroupDiagnosticFromTheFinalFindingCarrier(): void
+    {
+        $message = 'The group "code-smell.*" no longer includes "design.god-class" or "design.data-class". Name those producers explicitly if they should remain selected.';
+        foreach ([
+            [CheckCommand::class, ['paths' => ['src'], '--format' => 'json']],
+            [DirectivesCommand::class, ['paths' => ['src']]],
+            [BaselineGenerateCommand::class, ['baseline' => 'baseline.json', 'paths' => ['src']]],
+            [RulesCommand::class, []],
+        ] as [$class, $arguments]) {
+            $tester = $this->execute($class, $arguments, ['code-smell.*']);
+            self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
+            self::assertSame(1, substr_count($tester->getErrorOutput(), 'Warning: ' . $message), $tester->getErrorOutput());
+            if ($class === CheckCommand::class) {
+                $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+                self::assertSame($message, $report['configurationDiagnostics'][0]['message']);
+                self::assertSame([['kind' => 'file', 'name' => 'qmx.yaml', 'imported_by' => null]], $report['configurationDiagnostics'][0]['source']);
+            } else {
+                self::assertStringNotContainsString($message, $tester->getDisplay());
+            }
+        }
+    }
+
+    #[Test]
     public function itWritesAnIgnoredNearConfigFilenameWarningToTheErrorStream(): void
     {
         unlink($this->directory . '/qmx.yaml');
@@ -131,8 +191,9 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
     /**
      * @param class-string<Command> $commandClass
      * @param array<string, mixed> $arguments
+     * @param list<string> $only
      */
-    private function execute(string $commandClass, array $arguments): CommandTester
+    private function execute(string $commandClass, array $arguments, array $only = []): CommandTester
     {
         $command = (new ContainerFactory())->create()->get($commandClass);
         self::assertInstanceOf(Command::class, $command);
@@ -140,7 +201,7 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
         $previous = getcwd();
         chdir($this->directory);
         try {
-            file_put_contents($this->directory . '/qmx.yaml', "paths: [src]\nonly_rules: []\ncache: {enabled: false}\nparallel: {workers: 0}\n");
+            file_put_contents($this->directory . '/qmx.yaml', "paths: [src]\nonly_rules: [" . implode(", ", $only) . "]\ncache: {enabled: false}\nparallel: {workers: 0}\n");
             if ($commandClass === BaselineUpdateCommand::class || $commandClass === BaselineCleanupCommand::class) {
                 $generate = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
                 self::assertInstanceOf(BaselineGenerateCommand::class, $generate);

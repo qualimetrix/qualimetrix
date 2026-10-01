@@ -421,6 +421,18 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
         $computedMetrics->replace($computedMetrics->resolve($document));
 
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $rules = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class, $rules);
+        $rules->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument($document),
+            $execution->allRules(),
+            channels: $channels,
+        ));
+
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 

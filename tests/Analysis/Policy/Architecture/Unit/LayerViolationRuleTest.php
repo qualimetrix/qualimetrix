@@ -92,7 +92,7 @@ final class LayerViolationRuleTest extends TestCase
             ['architecture.layer-violation', 'architecture.unmatched-exclude', 'architecture.doubted-assignment'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
-        self::assertStringContainsString('layer', strtolower($rule->getDescription()));
+        self::assertStringContainsString('layer', strtolower($rule::getDescription()));
     }
 
     #[Test]

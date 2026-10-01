@@ -1,0 +1,6 @@
+--- candidate
++++ reference (mapped)
+@@ -1,3 +1,0 @@
+-Configuration error: Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
+-Source: configuration file "qmx.yaml".
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt

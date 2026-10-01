@@ -121,6 +121,10 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0088 — Atomic Section Declarations and a Shared Format Vocabulary](0088-atomic-section-declarations-and-format-vocabulary.md) — one key/schema declaration per provider, one registered format dictionary for both validation boundaries, and one project-scope measurement for callers.
 
+- [0091 — Declared Rule Options and Enablement](0091-declared-rule-options-and-enablement.md) — typed authored forms and one immutable execution/publication snapshot.
+
+- [0092 — Typed Document Declarations and Option Judgement](0092-typed-document-declarations-and-option-judgement.md) — typed document facts and rule option form projection.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.
