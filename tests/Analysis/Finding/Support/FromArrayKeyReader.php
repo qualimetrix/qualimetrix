@@ -351,7 +351,7 @@ final class FromArrayKeyReader
         $class = $node->class instanceof Name ? $node->class->toString() : '?';
         $method = $node->name instanceof Identifier ? $node->name->toString() : '?';
 
-        if ($class === ThresholdParser::class && $method === 'parse') {
+        if ($class === ThresholdParser::class && \in_array($method, ['parse', 'wasWritten'], true)) {
             $this->inspectThresholdParse($node, $configVariable, $guarded);
 
             return;

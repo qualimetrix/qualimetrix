@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleSuppression;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver::class)]
 final class LcomCollectionConfigurationResolverTest extends TestCase
 {
     #[Test]

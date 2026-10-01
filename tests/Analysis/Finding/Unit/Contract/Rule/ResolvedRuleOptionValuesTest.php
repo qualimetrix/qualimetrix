@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues::class)]
 final class ResolvedRuleOptionValuesTest extends TestCase
 {
     #[Test]

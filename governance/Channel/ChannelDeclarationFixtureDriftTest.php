@@ -335,15 +335,27 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
             $parts = preg_split('/\s+/', $line);
             self::assertNotFalse($parts, \sprintf('Malformed fixture line: "%s".', $line));
-            self::assertContains(\count($parts), [3, 4, 5], \sprintf('Malformed fixture line: "%s".', $line));
+            self::assertContains(\count($parts), [3, 4, 5, 6, 7], \sprintf('Malformed fixture line: "%s".', $line));
 
             $channelKey = $parts[0];
             $directionSpec = $parts[1];
             $optional = \array_slice($parts, 3);
             $judgedSpec = null;
             $acceptabilitySpec = null;
+            $noWarningBoundary = false;
+            $followsAddressedRule = false;
 
             foreach ($optional as $token) {
+                if ($token === 'no-warning-boundary') {
+                    self::assertFalse($noWarningBoundary, 'Duplicate no-warning-boundary token for ' . $channelKey);
+                    $noWarningBoundary = true;
+                    continue;
+                }
+                if ($token === 'follows-addressed-rule') {
+                    self::assertFalse($followsAddressedRule, 'Duplicate follows-addressed-rule token for ' . $channelKey);
+                    $followsAddressedRule = true;
+                    continue;
+                }
                 if (str_starts_with($token, 'judges:')) {
                     $judgedSpec = $token;
 
@@ -353,13 +365,20 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $acceptabilitySpec = $token;
             }
 
-            $declarations[$channelKey] = self::parseDirectionSpec(
+            $declaration = self::parseDirectionSpec(
                 $directionSpec,
                 $channelKey,
                 self::parseAcceptabilitySpec($acceptabilitySpec, $channelKey),
                 self::parseLevelsSpec($parts[2], $channelKey),
                 self::parseJudgedSpec($judgedSpec, $channelKey),
             );
+            if ($noWarningBoundary) {
+                $declaration = $declaration->withoutConfiguredWarningBoundary();
+            }
+            if ($followsAddressedRule) {
+                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::FollowsAddressedRule);
+            }
+            $declarations[$channelKey] = $declaration;
         }
 
         return $declarations;

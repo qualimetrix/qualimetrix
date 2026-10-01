@@ -115,7 +115,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
                 }
 
                 /**
-                 * @qmx-threshold annotation.directive warning=1 error=2 -- retunes a rule with no threshold
+                 * @qmx-threshold code-smell.goto warning=1 error=2 -- retunes a rule with no threshold
                  */
                 public function unsupported(): void
                 {

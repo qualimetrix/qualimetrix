@@ -131,17 +131,14 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
         }
         self::assertStringContainsString('Rule selector "nosuch.channel" does not match any registered producer or channel.', $tester->getErrorOutput());
 
-        $process = proc_open([
+        require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+        $result = \Qualimetrix\Subprocess\ChildProcess::run([
             \PHP_BINARY, '-d', 'xdebug.mode=off', \dirname(__DIR__, 4) . '/bin/qmx', 'check',
             '--config=' . $this->directory . '/qmx.yaml', '--working-dir=' . $this->directory,
-        ], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->directory);
-        self::assertIsResource($process);
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        self::assertSame(3, proc_close($process), (string) $stdout . (string) $stderr);
+        ], workingDirectory: $this->directory);
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
+        self::assertSame(3, $result['exitCode'], (string) $stdout . (string) $stderr);
         self::assertStringContainsString('Rule selector "nosuch.channel" does not match any registered producer or channel.', (string) $stderr);
     }
 

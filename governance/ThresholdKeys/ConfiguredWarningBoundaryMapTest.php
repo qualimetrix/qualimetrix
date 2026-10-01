@@ -117,8 +117,9 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         $configuration = FindingConfiguration::none();
         $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
-        $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $execution->allRules());
-        $options->replace($configuration->withResolvedOptions($snapshot));
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $options->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $execution->allRules(), channels: $channels));
 
         $map = (new BaselineConfiguredThresholds($rules, $options))->resolve();
         ksort($map);

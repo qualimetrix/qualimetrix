@@ -13,6 +13,7 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Infrastructure\Console\AnalysisPreflight::class)]
 final class RuleOptionsPreflightWiringTest extends TestCase
 {
     /** @return iterable<string, array{list<string>, string, string}> */
@@ -30,18 +31,15 @@ final class RuleOptionsPreflightWiringTest extends TestCase
     public function itRefusesEveryDuplicateCliWriteBeforeAnalysis(array $options, string $first, string $second): void
     {
         $root = \dirname(__DIR__, 4);
-        $process = proc_open([
+        require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+        $result = \Qualimetrix\Subprocess\ChildProcess::run([
             \PHP_BINARY, '-d', 'xdebug.mode=off', $root . '/bin/qmx', 'check', __DIR__,
             '--no-cache', '--workers=1', ...$options,
-        ], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
-        self::assertIsResource($process);
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
+        ], workingDirectory: $root);
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
 
-        self::assertSame(3, proc_close($process), (string) $stdout . (string) $stderr);
+        self::assertSame(3, $result['exitCode'], (string) $stdout . (string) $stderr);
         self::assertStringContainsString($first, (string) $stderr);
         self::assertStringContainsString($second, (string) $stderr);
         self::assertStringContainsString('overlapping rule option paths', (string) $stderr);
@@ -76,18 +74,15 @@ final class RuleOptionsPreflightWiringTest extends TestCase
     public function itReportsTheDisabledProducerRefusalAsExitThreeThroughTheRealCli(): void
     {
         $root = \dirname(__DIR__, 4);
-        $process = proc_open([
+        require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
+        $result = \Qualimetrix\Subprocess\ChildProcess::run([
             \PHP_BINARY, '-d', 'xdebug.mode=off', $root . '/bin/qmx', 'check', __DIR__,
             '--no-cache', '--workers=1', '--rule-opt=code-smell.goto:enabled=false',
             '--rule-opt=code-smell.goto:misspelled=1',
-        ], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $root);
-        self::assertIsResource($process);
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        self::assertSame(3, proc_close($process), (string) $stdout . (string) $stderr);
+        ], workingDirectory: $root);
+        $stdout = $result['stdout'];
+        $stderr = $result['stderr'];
+        self::assertSame(3, $result['exitCode'], (string) $stdout . (string) $stderr);
         self::assertStringContainsString('Option "misspelled" is not an option of rule "code-smell.goto".', (string) $stderr);
     }
 }

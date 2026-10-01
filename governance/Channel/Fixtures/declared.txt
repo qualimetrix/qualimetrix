@@ -2,7 +2,7 @@
 # emission point against the channel declaration registry.
 #
 # Format (one channel per line, sorted, blank lines and '#' comments ignored):
-#   <channel> <direction> <levels> [judges:<keys>] [<acceptability>]
+#   <channel> <direction> <levels> [judges:<keys>] [<acceptability>] [no-warning-boundary] [follows-addressed-rule]
 #     direction     := higher | lower | -   ('-' means the channel carries
 #                      none, i.e. its producer's declared ChannelShape is
 #                      `occurrence`; see ADR 0031 -- shape itself is a
@@ -19,6 +19,8 @@
 #                      complexity channel by the level it is reporting at).
 #                      Only a magnitude channel may carry the token.
 #     acceptability := config-error     (omitted = acceptable as debt)
+#     no-warning-boundary declines the producer options' warning boundary.
+#     follows-addressed-rule publishes the diagnostic with its addressed producer.
 #
 # Twenty-two of the sixty channels here carry a judges: token. The
 # thirty-eight that do not split into thirty-three occurrence channels, five
@@ -77,9 +79,9 @@
 # Do not add a line here without reading that channel's own emission point
 # first — never by analogy with a neighbouring line.
 
-annotation.invalid-threshold - file config-error
+annotation.invalid-threshold - file config-error follows-addressed-rule
 annotation.unresolved-directive - file config-error
-annotation.unsupported-threshold - file config-error
+annotation.unsupported-threshold - file config-error follows-addressed-rule
 annotation.unused-directive - file
 architecture.circular-dependency higher project
 architecture.coverage-gap - project config-error
@@ -93,20 +95,20 @@ architecture.unmatched-exclude - project
 architecture.unreachable-layer - project config-error
 code-smell.boolean-argument - callable
 code-smell.constructor-overinjection higher callable judges:code-smell.parameter-count
-code-smell.count-in-loop - callable
-code-smell.debug-code - callable
-code-smell.empty-catch - callable
-code-smell.error-suppression - callable
-code-smell.eval - callable
-code-smell.exit - callable
-code-smell.goto - callable
-code-smell.identical-subexpression - callable
+code-smell.count-in-loop - callable,file
+code-smell.debug-code - callable,file
+code-smell.empty-catch - callable,file
+code-smell.error-suppression - callable,file
+code-smell.eval - callable,file
+code-smell.exit - callable,file
+code-smell.goto - callable,file
+code-smell.identical-subexpression - callable,file
 code-smell.long-parameter-list higher callable judges:code-smell.parameter-count
-code-smell.superglobals - callable
+code-smell.superglobals - callable,file
 code-smell.unreachable-code higher callable judges:code-smell.unreachable-code
 code-smell.unused-private higher class judges:code-smell.unused-private.total
 cohesion.lcom higher class judges:cohesion.lcom
-cohesion.unmatched-exclude-method higher project
+cohesion.unmatched-exclude-method higher project no-warning-boundary
 complexity.ccn higher callable,class judges:complexity.ccn,complexity.ccn.max
 complexity.cognitive higher callable,class judges:complexity.cognitive,complexity.cognitive.max
 complexity.npath higher callable,class judges:complexity.npath,complexity.npath.max

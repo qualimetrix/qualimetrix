@@ -644,10 +644,14 @@ PHP;
         $classless = $this->tempDir . '/classless-producer.yaml';
         file_put_contents($classless, "rules:\n  health.cohesion:\n    enabled: false\n");
 
-        $document = $pipeline->resolve(new ConfigurationResolutionRequest(
-            AbsolutePath::fromString($this->tempDir),
-            $classless,
-        ));
+        try {
+            $document = $pipeline->resolve(new ConfigurationResolutionRequest(
+                AbsolutePath::fromString($this->tempDir),
+                $classless,
+            ));
+        } catch (ConfigurationRefusal $refusal) {
+            self::fail('Lawful health.cohesion configuration was refused: ' . $refusal->summary());
+        }
 
         self::assertArrayHasKey(
             'health.cohesion',

@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild::class)]
 final class RuleOptionsDefaultsTest extends TestCase
 {
     #[Test]

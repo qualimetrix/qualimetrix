@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection::class)]
 final class RulesSectionTest extends TestCase
 {
     #[Test]

@@ -94,7 +94,7 @@ currently preserves analysis paths; `reportScope` limits finding publication.
 unchanged; the captured `ProjectScopeUniverse` retains identity.
 Coverage is derived from that measurement rather than supplied independently
 as a boolean. `Covered` and `Unknown` permit whole-project judgement;
-`Narrowed` and `Unmeasured` withhold the eight registered whole-project channels.
+`Narrowed` and `Unmeasured` withhold the registered whole-project channels.
 
 `FindingFilterOrchestrator` creates Finding's per-value suppression judgement
 from this same evidence. Accepted PSR-4 facts place namespaces independently

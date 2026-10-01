@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

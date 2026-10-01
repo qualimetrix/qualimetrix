@@ -33,7 +33,7 @@ final class SuppressionOptionKeyReaderCensusTest extends TestCase
      * validating it (the CLI validators) names the key without subscripting an
      * array with it, and is a different act this guard leaves alone.
      */
-    private const string RAW_READ = '/\\$[A-Za-z_][A-Za-z0-9_]*(?:->[A-Za-z0-9_]+)*\\[\\s*(?:[\'"]suppress|ConfigSchema::SUPPRESS_)/';
+    private const string RAW_READ = '/\\$[A-Za-z_][A-Za-z0-9_]*(?:->[A-Za-z0-9_]+)*\\[\\s*(?:[\'"]suppress(?:[_-][A-Za-z_-]+|[A-Z][A-Za-z]*)?(?=[\'"])|ConfigSchema::SUPPRESS_)/';
 
     /**
      * A file holding two or more suppression spellings side by side in a list.

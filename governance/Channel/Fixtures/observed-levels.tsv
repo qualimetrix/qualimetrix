@@ -15,16 +15,16 @@ architecture.unmatched-exclude#architecture.unmatched-exclude	project
 architecture.unreachable-layer#architecture.unreachable-layer	project
 code-smell.boolean-argument#code-smell.boolean-argument	callable
 code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable
-code-smell.count-in-loop#code-smell.count-in-loop	callable
-code-smell.debug-code#code-smell.debug-code	callable
-code-smell.empty-catch#code-smell.empty-catch	callable
-code-smell.error-suppression#code-smell.error-suppression	callable
-code-smell.eval#code-smell.eval	callable
-code-smell.exit#code-smell.exit	callable
-code-smell.goto#code-smell.goto	callable
-code-smell.identical-subexpression#code-smell.identical-subexpression	callable
+code-smell.count-in-loop#code-smell.count-in-loop	callable file
+code-smell.debug-code#code-smell.debug-code	callable file
+code-smell.empty-catch#code-smell.empty-catch	callable file
+code-smell.error-suppression#code-smell.error-suppression	callable file
+code-smell.eval#code-smell.eval	callable file
+code-smell.exit#code-smell.exit	callable file
+code-smell.goto#code-smell.goto	callable file
+code-smell.identical-subexpression#code-smell.identical-subexpression	callable file
 code-smell.long-parameter-list#code-smell.long-parameter-list	callable
-code-smell.superglobals#code-smell.superglobals	callable
+code-smell.superglobals#code-smell.superglobals	callable file
 code-smell.unreachable-code#code-smell.unreachable-code	callable
 code-smell.unused-private#code-smell.unused-private	class
 cohesion.lcom#cohesion.lcom	class

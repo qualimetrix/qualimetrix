@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -47,6 +47,7 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
+#[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild::class)]
 final class RuleOptionsBuildTest extends TestCase
 {
     #[Test]

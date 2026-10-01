@@ -74,6 +74,7 @@ final class CliAliasKeyWalkAgreementTest extends TestCase
                 \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::String => $schema->choices()[0] ?? 'fixture',
                 default => throw new LogicException('This control needs an explicit value sample for an alias with no scalar or list scalar form.'),
             };
+            $text = $schema->scalarForms() === [] ? json_encode([$text], \JSON_THROW_ON_ERROR) : $text;
             $input = new \Symfony\Component\Console\Input\ArrayInput(['--' . $alias => $text], $command->getDefinition());
             $writes = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser($parser))->pathWrites($input);
             self::assertCount(1, $writes, \sprintf('--%s did not produce exactly one authored record', $alias));

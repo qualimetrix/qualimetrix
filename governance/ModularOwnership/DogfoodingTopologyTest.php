@@ -8,23 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
-use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureSection;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 #[CoversClass(ArchitectureConfigurationFactory::class)]
 #[CoversClass(ConfigurationPipeline::class)]
@@ -182,13 +173,9 @@ final class DogfoodingTopologyTest extends TestCase
     private function loadProjectArchitecture(): ArchitectureConfiguration
     {
         $repoRoot = ModularArchitectureManifest::repositoryRoot();
-        $loader = new YamlConfigLoader();
-        $pipeline = new ConfigurationPipeline([new ArchitectureSection()]);
-        $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerManifestReader()));
-        $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
-        $pipeline->addStage(new ConfigFileStage($loader));
-        $pipeline->addStage(new CliStage());
+        $pipeline = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()
+            ->get(\Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface::class, $pipeline);
 
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($repoRoot)));
 
