@@ -23,7 +23,7 @@ final class LcomCollectionConfigurationResolverTest extends TestCase
         $raw = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration(
             ['rules' => ['cohesion.lcom' => ['exclude_methods' => ['raw-file']]]],
             [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('cohesion.lcom', LcomOptions::class, '', [], false)],
-            cliOptions: ['cohesion.lcom' => ['excludeMethods' => 'raw-cli']],
+            cliOptions: ['cohesion.lcom' => ['excludeMethods' => ['raw-cli']]],
         );
         self::assertSame(['raw-cli'], $raw->document->get('rules', 'cohesion.lcom', 'exclude-methods')?->plain());
         foreach ([new LcomOptions(excludeMethods: ['BRIDGE', 'bridge']), new LcomOptions()] as $options) {

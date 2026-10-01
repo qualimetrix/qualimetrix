@@ -340,7 +340,7 @@ final class RuleInputValidatorTest extends TestCase
     {
         $rules = self::createStub(RuleRegistryInterface::class);
         $rules->method('getClasses')->willReturn([LcomRule::class]);
-        $input = self::ruleOptionInput('cohesion.lcom:exclude_methods=getName');
+        $input = self::ruleOptionInput('cohesion.lcom:exclude_methods=[getName]');
 
         $this->validate(
             $this->validator($rules),
@@ -349,7 +349,7 @@ final class RuleInputValidatorTest extends TestCase
             new ResolvedComputedMetricDefinitions([]),
         );
 
-        self::assertSame(['cohesion.lcom:exclude_methods=getName'], $input->getOption('rule-opt'));
+        self::assertSame(['cohesion.lcom:exclude_methods=[getName]'], $input->getOption('rule-opt'));
     }
 
     private static function ruleOptionInput(string $pair): ArrayInput

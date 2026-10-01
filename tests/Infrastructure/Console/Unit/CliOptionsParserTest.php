@@ -465,7 +465,7 @@ final class CliOptionsParserTest extends TestCase
         ]);
 
         $input = new ArrayInput([
-            '--lcom-exclude-methods' => 'getName',
+            '--lcom-exclude-methods' => '[getName]',
         ], $definition);
 
         $result = $this->resolvedRuleOptions($cliParser, $input);

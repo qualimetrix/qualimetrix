@@ -103,7 +103,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
     {
         return RuleOptionKeySet::of([
             'error' => RuleOptionShape::integer()->orNull(),
-            'exclude-methods' => RuleOptionShape::either(RuleOptionShape::text(), RuleOptionShape::listOf(RuleOptionShape::text()))->orNull(),
+            'exclude-methods' => RuleOptionShape::listOf(RuleOptionShape::text())->orNull(),
             'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
             'min-methods' => RuleOptionShape::integer()->orNull(),
             'threshold' => RuleOptionShape::integer()->orNull(),

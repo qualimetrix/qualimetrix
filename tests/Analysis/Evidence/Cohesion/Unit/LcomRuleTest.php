@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -352,13 +353,19 @@ final class LcomRuleTest extends TestCase
     }
 
     #[Test]
-    public function itLoadsExcludeMethodsFromArrayAsString(): void
+    public function itRefusesScalarExcludeMethods(): void
     {
-        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
-            'exclude_methods' => 'getName',
-        ]));
-
-        self::assertSame(['getName'], $options->excludeMethods);
+        try {
+            LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
+                'exclude_methods' => 'getName',
+            ]));
+            self::fail('A scalar method exclusion must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(
+                '"rules.fixture.exclude_methods" in configuration file "/project/qmx.yaml" must be a list, got string.',
+                $refusal->getMessage(),
+            );
+        }
     }
 
     #[Test]
