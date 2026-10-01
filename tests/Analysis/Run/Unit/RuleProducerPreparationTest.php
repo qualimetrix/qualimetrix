@@ -38,6 +38,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -45,6 +46,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleProducerPreparation::class)]
+#[CoversClass(InlineDirectiveRun::class)]
 final class RuleProducerPreparationTest extends TestCase
 {
     #[Test]
@@ -291,7 +293,7 @@ final class RuleProducerPreparationTest extends TestCase
     }
 
     /**
-     * `auditThresholdDirectives()` is the last hop of a value that also lands,
+     * `InlineDirectiveRun::verdicts()` is the last hop of a value that also lands,
      * independently, in `DirectiveAuditReport::$sweep`
      * ({@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::auditDirectives()}).
      * A mutation that hardcodes the scope passed into the audit — while
@@ -321,8 +323,8 @@ final class RuleProducerPreparationTest extends TestCase
         $executor = self::createStub(RuleExecutionInterface::class);
         $baseline = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty());
 
-        $this->preparation(thresholdAudit: $spy)
-            ->auditThresholdDirectives($context, $executor, $baseline, $sweep);
+        (new InlineDirectiveRun(self::createStub(InlineDirectivePolicyInterface::class), $spy))
+            ->verdicts([], LevelActivity::empty(), $context, $executor, $baseline, $sweep);
 
         self::assertSame($sweep, $spy->received?->sweep);
     }
@@ -341,7 +343,6 @@ final class RuleProducerPreparationTest extends TestCase
         array $only = [],
         array $disabled = [],
         array $participants = [],
-        ?ThresholdDirectiveAuditInterface $thresholdAudit = null,
         array $ruleOptions = [],
     ): RuleProducerPreparation {
         $metadata = [
@@ -381,8 +382,6 @@ final class RuleProducerPreparationTest extends TestCase
         return new RuleProducerPreparation(
             $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
             $circular ?? self::createStub(CircularDependencyPreparationInterface::class),
-            self::createStub(InlineDirectivePolicyInterface::class),
-            $thresholdAudit ?? self::createStub(ThresholdDirectiveAuditInterface::class),
             new FileSetInspectionComposite(
                 $participants,
                 $producerGate,

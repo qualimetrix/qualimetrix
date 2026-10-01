@@ -37,6 +37,7 @@ Run/
 ├── FileSetInspection/          # rule-selected composite
 ├── Pipeline/                   # ordered analysis pipeline, plus the prepared
 │                               # run both of its entry points share
+├── InlineDirectiveRun.php     # authored Inline preparation, usage and ordered verdicts
 └── RuleProducerPreparation.php # capability-specific producer gating and reset
 ```
 
@@ -227,11 +228,12 @@ duration negative.
   contracts, not a generic lifecycle or graph-participant registry.
 - `RuleProducerPreparation` coordinates their final producer enablement, reset and
   profiling with file-set inspection while `AnalysisPipeline` retains the
-  complete phase order. It stores no capability result. It is also where Run
-  asks the inline-directive capability its two post-execution questions —
-  which suppressions silenced nothing, and what each `@qmx-threshold` did —
-  through `InlineDirectivePolicyInterface` and
-  `ThresholdDirectiveAuditInterface`.
+  complete phase order. It stores no capability result.
+- `InlineDirectiveRun` prepares authored Inline state and asks its two
+  post-execution questions through `InlineDirectivePolicyInterface` and
+  `ThresholdDirectiveAuditInterface`. It retains the same policy and audit
+  instances and sorts their combined verdicts by file, line, form and target.
+  The pipeline calls it directly, without a generic phase port.
 
 ## `discovery.unmatched-exclude`
 

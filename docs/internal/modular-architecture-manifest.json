@@ -2211,6 +2211,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods": {
+      "path": "src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Cohesion",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomGraphCalculator": {
       "path": "src/Analysis/Evidence/Cohesion/LcomGraphCalculator.php",
       "kind": "class",
@@ -6563,6 +6570,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
         }
       ]
     },
@@ -6611,6 +6622,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
         }
       ]
     },
@@ -6998,6 +7013,12 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleEnablement"
         }
       ]
     },
@@ -7410,6 +7431,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },
@@ -7581,15 +7606,15 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy"
         },
         {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
+        },
+        {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -7774,6 +7799,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },
@@ -7794,10 +7823,6 @@
         {
           "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\IdenticalSubExpressionRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
         },
         {
           "owner": "Analysis.Evidence.Coupling",
@@ -7834,6 +7859,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },
@@ -7945,6 +7974,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
         }
       ]
     },
@@ -7958,12 +7991,6 @@
           "owner": "Analysis.Policy.Inline",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleConfigurationInterface"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleConfigurationInterface"
         },
         {
@@ -7981,6 +8008,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
         }
       ]
     },
@@ -8027,10 +8058,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
         },
@@ -8053,6 +8080,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -8075,16 +8106,16 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
-        },
-        {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\RuleExclusionLedgerAttributor"
         },
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -8461,8 +8492,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\PreparedRun"
         },
         {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -11341,6 +11376,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },
@@ -11407,6 +11446,13 @@
     },
     "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger": {
       "path": "src/Analysis/Finding/FindingExclusionLedger.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\FindingPublication": {
+      "path": "src/Analysis/Finding/FindingPublication.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
@@ -11599,6 +11645,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleMaterialization": {
+      "path": "src/Analysis/Finding/RuleMaterialization.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Finding\\Rule\\InMemoryRuleChannelRegistry": {
       "path": "src/Analysis/Finding/Rule/InMemoryRuleChannelRegistry.php",
@@ -13015,6 +13068,12 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveVerdict"
         }
       ]
     },
@@ -13037,16 +13096,16 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
         },
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -13069,16 +13128,16 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveVerdictTally"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -13089,12 +13148,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -13106,7 +13165,7 @@
       "consumers": [
         {
           "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -13117,12 +13176,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Run",
-          "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
         }
       ]
     },
@@ -13280,6 +13339,13 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit": {
       "path": "src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility": {
+      "path": "src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveEligibility.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
@@ -14877,6 +14943,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun": {
+      "path": "src/Analysis/Run/InlineDirectiveRun.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline": {
       "path": "src/Analysis/Run/Pipeline/AnalysisPipeline.php",
       "kind": "class",
@@ -16278,10 +16351,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\CallableToClassAggregator"
         },
@@ -16312,6 +16381,10 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorMethodContext"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },
@@ -16517,10 +16590,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule"
         },
         {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
-        },
-        {
           "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
         },
@@ -16711,6 +16780,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeFinding"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },
@@ -17374,10 +17447,6 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
         },
         {
@@ -17415,6 +17484,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\MetricsJsonFormatter"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
         }
       ]
     },
@@ -17442,11 +17515,11 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveLevels"
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveLevels"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
         }
       ]
     },
@@ -17483,10 +17556,6 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector"
-        },
-        {
-          "owner": "Analysis.Evidence.Cohesion",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
         },
         {
           "owner": "Analysis.Evidence.Cohesion",
@@ -17767,6 +17836,10 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
         }
       ]
     },

@@ -41,6 +41,7 @@ Inline/
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
+│   │   ├── ThresholdDirectiveEligibility.php # addressability and executed producer eligibility
 │   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveChannelBan.php     # the channels no directive may address or silence
@@ -86,14 +87,18 @@ Inline/
 - `InlineDirectivePolicyInterface` promises the four `annotation.*` channel
   names and the moments Run needs: `prepare()` before rule execution,
   `auditDirectiveUsage()` and `directiveVerdicts()` after it. Only
-  `Analysis\Run\RuleProducerPreparation` calls them, under the same
-  producer-enablement rule as every other capability preparation. The last of
-  the three is not gated on the owning rule having run: a channel is a rule's
-  output, a verdict is what a caller asked for.
+  `Analysis\Run\InlineDirectiveRun` calls them using the same invocation
+  policy instance. Authored state is prepared independently of whether its
+  reporting rule runs; a channel is a rule's output, a verdict is what a
+  caller asked for.
 - `ThresholdDirectiveAuditInterface` promises the other half of the same
   question to the same consumer, and `ThresholdDirectiveAuditInput` is the
   prepared run it needs to answer: the context the rules already ran against,
   the executor that ran them, and what they produced.
+
+ThresholdDirectiveEligibility judges addressability before checking a directly
+live producer and its executed declared levels. Counterfactual audits reuse
+the prepared context without recollecting files.
 
 ThresholdOverrideValueParser constructs the Finding-owned typed request, and
 DeclaredOverrideForms checks each declared level and its admitted numeric axes.

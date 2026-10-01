@@ -254,7 +254,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     /**
      * Reproduces the computed-metric family, where one rule instance
      * publishes findings under a `$ruleName` distinct from the producer whose
-     * `suppress_namespaces` actually excluded them ({@see \Qualimetrix\Analysis\Finding\RuleExecution::producerOf()}).
+     * `suppress_namespaces` actually excluded them according to the final channel universe.
      * The composition must publish the ledger's recorded producer, not the
      * finding's own `ruleName` — the bug this guards against dropped the
      * finding from the composition entirely wherever the two names diverged.

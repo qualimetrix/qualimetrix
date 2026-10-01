@@ -21,6 +21,7 @@ final readonly class ResolvedRuleOptionValues
         private ?bool $decidedEnabled = null,
     ) {}
 
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean is copied into an immutable resolved value snapshot. */
     public function withEnabled(bool $enabled): self
     {
         return new self($this->document, $this->producer, $this->prefix, $enabled);
@@ -36,6 +37,7 @@ final readonly class ResolvedRuleOptionValues
         return $this->document->get('rules', $this->producer, ...[...$this->prefix, $key]);
     }
 
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean is a fallback value for an absent authored value. */
     public function boolean(string $key, bool $default): bool
     {
         $node = $this->node($key);

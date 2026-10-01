@@ -49,8 +49,14 @@ Finding/
 │   └── EnablementIndex.php # immutable producer/channel cell lookup
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
+├── RuleMaterialization.php # Ordered deferred rules and validators for one snapshot identity
+├── FindingPublication.php # Exclusion accounting and channel-selection projection
 └── ChannelPresentationView.php # Joins a channel to its description and its producer's docs page
 ```
+
+`RuleMaterialization` owns lazy instance caches and ordered producer metadata;
+`FindingPublication` owns the one execution exclusion ledger. Late publication
+uses the same channel selection without mutating the completed ledger.
 
 `RuleExecutionInterface::execute()` returns `RuleExecutionResult` (in `Contract/`)
 rather than a bare finding list: `$produced` (everything rules and their

@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableR
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit;
+use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveEligibility;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -45,6 +46,7 @@ use Qualimetrix\Tests\Analysis\Policy\Inline\Support\ScriptedThresholdRuleExecut
  * executions and a canned executor cannot produce one.
  */
 #[CoversClass(ThresholdDirectiveAudit::class)]
+#[CoversClass(ThresholdDirectiveEligibility::class)]
 final class ThresholdDirectiveAuditTest extends TestCase
 {
     private const string FILE = 'src/Sample.php';

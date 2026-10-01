@@ -52,6 +52,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string RULE_SELECTOR_PRODUCER_GATE_CLASS = 'Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate';
     private const string RULE_PRODUCER_PREPARATION = 'qmx.analysis.run.rule_producer_preparation';
     private const string RULE_PRODUCER_PREPARATION_CLASS = 'Qualimetrix\\Analysis\\Run\\RuleProducerPreparation';
+    private const string INLINE_DIRECTIVE_RUN = 'qmx.analysis.run.inline_directive_run';
+    private const string INLINE_DIRECTIVE_RUN_CLASS = 'Qualimetrix\\Analysis\\Run\\InlineDirectiveRun';
     private const string FILE_DISCOVERY = 'qmx.run.file_discovery';
     private const string FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery';
     private const string ANALYSIS_FILE_DISCOVERY = 'qmx.analysis.run.file_discovery';
@@ -143,6 +145,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
 
         $this->registerUnmatchedExcludeProducer($container);
         $this->registerInlineDirectivePolicy($container);
+        $this->registerInlineDirectiveRun($container);
         $this->registerRuleProducerPreparation($container);
         $this->registerAnalysisPipeline($container);
     }
@@ -242,10 +245,17 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(LayerPolicyPreparationInterface::class),
                 new Reference(CircularDependencyPreparationInterface::class),
-                new Reference(InlineDirectivePolicyInterface::class),
-                new Reference(ThresholdDirectiveAuditInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
                 new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
+            ]);
+    }
+
+    private function registerInlineDirectiveRun(ContainerBuilder $container): void
+    {
+        $container->register(self::INLINE_DIRECTIVE_RUN, self::INLINE_DIRECTIVE_RUN_CLASS)
+            ->setArguments([
+                new Reference(InlineDirectivePolicyInterface::class),
+                new Reference(ThresholdDirectiveAuditInterface::class),
             ]);
     }
 
@@ -268,6 +278,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(RuleExecutionInterface::class),
                 new Reference(self::RULE_PRODUCER_PREPARATION),
+                new Reference(self::INLINE_DIRECTIVE_RUN),
                 new Reference(MeasurementAggregationInterface::class),
                 new Reference($computedMetricEvaluation),
                 new Reference(DependencyGraphBuilderInterface::class),

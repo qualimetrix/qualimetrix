@@ -197,6 +197,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomGraphCalculator'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomRule'
@@ -624,6 +625,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
+        - 'Qualimetrix\Analysis\Finding\FindingPublication'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionActivityResolution'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm'
@@ -640,6 +642,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\ThresholdBandRefusal'
         - 'Qualimetrix\Analysis\Finding\RuleExecution'
+        - 'Qualimetrix\Analysis\Finding\RuleMaterialization'
         - 'Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\NonNegativeOverrideThresholds'
         - 'Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure'
@@ -825,6 +828,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\MaskingOutcome'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveEligibility'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels'
@@ -914,6 +918,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
+        - 'Qualimetrix\Analysis\Run\InlineDirectiveRun'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
         - 'Qualimetrix\Analysis\Run\Pipeline\PreparedRun'
@@ -1639,6 +1644,8 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # The document schema is a shared authored-value vocabulary: 19 inbound namespaces, 35 classes.
+        - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document\Schema'
         # Shared authored-value contracts have intentional inbound reach from
         # named section owners; namespace CBO is 16 at the inclusive bound 16.
         - exact: 'Qualimetrix\Analysis\Configuration\Contract\Document'
@@ -1837,6 +1844,10 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Concrete readonly resolved values implement sibling-owned public ports; local A=0, I=0.5.
+      - exact: 'Qualimetrix\Analysis\Configuration\Document\Resolved'
+      # Three internal concrete override types implement a sibling-owned validator port; local A=0, I=1/3.
+      - exact: 'Qualimetrix\Analysis\Finding\Rule\Override'
       - subtree: Qualimetrix\Core
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Layer
       - subtree: Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow
@@ -1952,12 +1963,19 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
-      # Note: visitors and DI configurators are NOT listed here. They are indeed
-      # inherently unstable, but `min_afferent: 2` below already filters them out
-      # (they have Ca=1), so path entries for them were pure no-ops — measured, then
-      # removed. `ClassVisitorStackTrait` is the quiet member of the trait pair the
-      # complexity rules exclude by the same reasoning; the rest each suppress a
-      # real violation.
+      # These exact vocabulary, document, specificity and DI declarations have Ca=2.
+      # Instability's small-population verdict is structural; other quality signals remain active.
+      - exact: src/Analysis/Configuration/Document/LayerReading.php
+      - exact: src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php
+      - exact: src/Analysis/Evidence/Complexity/ClassComplexityOptions.php
+      - exact: src/Analysis/Evidence/Coupling/ClassCboOptions.php
+      - exact: src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php
+      - exact: src/Analysis/Evidence/Coupling/NamespaceCboOptions.php
+      - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
+      - exact: src/Analysis/Finding/Selection/SelectionSpecificity.php
+      - exact: src/Infrastructure/DependencyInjection/Configurator/ConfigurationConfigurator.php
+      # Most visitors and DI configurators stay below the afferent floor. The
+      # exact low-Ca declarations above are the measured exceptions, not a role blanket.
       - exact: src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php
       - exact: src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php
       # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
@@ -2178,6 +2196,8 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # The readonly snapshot has independent live and provenance observations over coherent facts.
+      - exact: src/Analysis/Finding/Contract/EnablementDecision.php
       # A console command shares no fields by construction: `configure()` touches
       # none of them and the helpers are static, so shared-field cohesion
       # mis-models the design rather than reporting debt. The four classes

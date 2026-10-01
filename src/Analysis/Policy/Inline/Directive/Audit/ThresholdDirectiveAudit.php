@@ -8,7 +8,6 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -18,9 +17,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableR
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability;
-use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
 /**
  * The threshold half of the inline-directive subject, answered by difference
@@ -70,10 +66,10 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * `@qmx-threshold`'s own rule name ({@see narrowedTo()}), and a classless
  * producer of the computed-metric family can never own one —
  * `ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE` is `false` for
- * all seven, refused earlier by {@see unmeasurableReason()} before a name ever
- * reaches `execute()`. {@see \Qualimetrix\Analysis\Finding\RuleExecution::published()}'s
- * own half of the narrowed result — the per-channel filter — is likewise
- * never read here: {@see without()} reads only `->produced`. A second caller
+ * all seven, refused earlier by {@see ThresholdDirectiveEligibility::reason()}
+ * before a name ever reaches `execute()`. The execution publication
+ * projection's own half of the narrowed result — the per-channel filter — is
+ * likewise never read here: {@see without()} reads only `->produced`. A second caller
  * narrowing for a different reason would need to revisit both assumptions.
  *
  * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: an audit that answers what a directive did must
@@ -85,20 +81,13 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  */
 final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditInterface
 {
-    /**
-     * Built rather than injected, exactly as {@see DirectiveUsage} builds its
-     * level addressing: a pure function of the same universe, with no
-     * lifecycle of its own. Asking it — rather than repeating its rules —
-     * is what keeps this half and the `annotation.*` channels from disagreeing
-     * about which directives were already refused.
-     */
-    private DirectiveAddressability $addressability;
+    private ThresholdDirectiveEligibility $eligibility;
 
     public function __construct(
         ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
-        private RuleConfigurationInterface $ruleConfiguration,
+        RuleConfigurationInterface $ruleConfiguration,
     ) {
-        $this->addressability = new DirectiveAddressability($identity);
+        $this->eligibility = new ThresholdDirectiveEligibility($identity, $ruleConfiguration);
     }
 
     public function verdicts(ThresholdDirectiveAuditInput $input): array
@@ -109,7 +98,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $measurable = [];
 
         foreach ($groups as $group) {
-            $reason = $this->unmeasurableReason(
+            $reason = $this->eligibility->reason(
                 $group->bindings,
                 $input->baselineResult->levelActivity,
             );
@@ -345,84 +334,6 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
             $pass,
             implode(', ', $baseline->disagreementWith($repeat)),
         ));
-    }
-
-    /**
-     * Why this directive cannot be judged, or null when it can.
-     *
-     * Two reasons reach a threshold, not the four a suppression can meet. A
-     * threshold names one rule by its exact name and takes no level and no
-     * group form (ADR 0024 §2), so it can neither address every channel nor
-     * expand to several: the "names nothing addressable" family collapses into
-     * the one answer {@see DirectiveAddressability} already publishes on
-     * `annotation.unresolved-directive` and `annotation.unsupported-threshold`,
-     * and repeating it here would judge one mistake twice.
-     *
-     * Enablement by configuration is **read**, not re-derived: the run records
-     * which producer/level pairs it let run ({@see LevelActivity}), and asking
-     * the merged configuration again here is what once reported a rule
-     * disabled at every level as enabled, leaving a live directive `Inert` on
-     * exit code 2.
-     *
-     * The levels come from the whole authored group rather than its first
-     * binding: one authored site expands to a binding per applicable
-     * declaration, and those need not share a level. A level the producer does
-     * not declare is not counted — absence is not disablement, so
-     * `@qmx-threshold coupling.cbo` on a method stays whatever it was instead
-     * of becoming `ProducerDisabled`.
-     *
-     * @param list<ThresholdOverride> $bindings
-     */
-    private function unmeasurableReason(
-        array $bindings,
-        LevelActivity $activity,
-    ): ?DirectiveUnmeasurableReason {
-        $override = $bindings[0];
-
-        if ($this->addressability->problemWithThreshold($override) !== null) {
-            return DirectiveUnmeasurableReason::AlreadyRefused;
-        }
-
-        $enablement = $this->ruleConfiguration->enablement()
-            ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
-        $levels = self::levelsOf($bindings);
-        $declaredLevels = array_values(array_filter(
-            $levels,
-            static fn(SymbolLevel $level): bool => $activity->declares($override->rulePattern, $level),
-        ));
-        $enabled = false;
-        foreach ($enablement->decisions() as $decision) {
-            if ($decision->producer === $override->rulePattern && $decision->live() && $decision->direct
-                && ($declaredLevels === [] || \in_array($decision->level, $declaredLevels, true))) {
-                $enabled = $activity->ranAtAnyOf($override->rulePattern, $levels);
-                if ($enabled) {
-                    break;
-                }
-            }
-        }
-
-        return $enabled ? null : DirectiveUnmeasurableReason::ProducerDisabled;
-    }
-
-    /**
-     * The levels an authored group landed on, read off its bindings' subjects
-     * with the same projection {@see \Qualimetrix\Analysis\Finding\Contract\Finding::level()}
-     * uses, so the two cannot disagree about what level a subject is.
-     *
-     * @param list<ThresholdOverride> $bindings
-     *
-     * @return list<SymbolLevel>
-     */
-    private static function levelsOf(array $bindings): array
-    {
-        $levels = [];
-
-        foreach ($bindings as $binding) {
-            $level = SymbolLevelProjection::ofDeclaration($binding->subject->toSymbolPath()->getType());
-            $levels[$level->value] = $level;
-        }
-
-        return array_values($levels);
     }
 
     /**

@@ -35,6 +35,7 @@ use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -285,12 +286,14 @@ final class TestPipelineBuilder
                     'TestPipelineBuilder: circularDependencyPreparation is required '
                     . '(call withCircularDependencyPreparation())',
                 ),
-                $this->resolveInlineDirectivePolicy($configuration),
-                $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
                 $this->fileSetInspection ?? throw new LogicException(
                     'TestPipelineBuilder: fileSetInspection is required (call withFileSetInspection())',
                 ),
                 $this->producerGate ?? new RuleSelectorProducerGate($configuration),
+            ),
+            inlineDirectiveRun: new InlineDirectiveRun(
+                $this->resolveInlineDirectivePolicy($configuration),
+                $this->thresholdDirectiveAudit ?? self::inertThresholdAudit(),
             ),
             measurementAggregation: $this->measurementAggregation ?? throw new LogicException(
                 'TestPipelineBuilder: measurementAggregation is required (call withMeasurementAggregation())',

@@ -102,6 +102,7 @@ final class AuthoredSelection
         return $selectors === [] ? null : new SelectionFilter($selectors, $last['provenance']);
     }
 
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean is an authored value rendered as true or false. */
     private static function authored(Provenance $provenance, bool $value): string
     {
         return self::written($provenance, '--rule-opt', $provenance->displayPath(), $value ? 'true' : 'false');

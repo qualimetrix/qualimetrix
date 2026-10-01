@@ -491,7 +491,7 @@ PHP;
         self::assertCount(3, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
-        self::assertCount(10, $pipelineConstructor->getParameters());
+        self::assertCount(11, $pipelineConstructor->getParameters());
 
         $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
         self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
@@ -616,8 +616,9 @@ PHP;
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecution::class, $execution);
 
+        $materialization = (new ReflectionProperty($execution, 'materialization'))->getValue($execution);
         /** @var list<object> $rules */
-        $rules = (new ReflectionProperty(RuleExecution::class, 'allRules'))->getValue($execution);
+        $rules = (new ReflectionProperty($materialization, 'rules'))->getValue($materialization);
 
         self::assertNotSame([], $rules, 'RuleCompilerPass injected no rules at all.');
         foreach ($rules as $lookup) {

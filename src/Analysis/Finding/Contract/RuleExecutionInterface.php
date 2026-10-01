@@ -51,7 +51,6 @@ interface RuleExecutionInterface
      * tests, never by a running audit. And the `published` half of the
      * returned result is read by nothing downstream of that caller — it asks
      * only for `->produced` — so a narrowed execution's channel filtering
-     * ({@see \Qualimetrix\Analysis\Finding\RuleExecution::published()})
      * currently has no reader either. Both stay defined and tested because
      * the contract narrows **execution**, not visibility, and either fact
      * changes the moment a second caller narrows for a different reason.
@@ -69,8 +68,7 @@ interface RuleExecutionInterface
      * reported, and an `only_rules` that never named it reported it anyway.
      * Both halves leaked, and both leaked silently.
      *
-     * The predicate is the same object and the same call
-     * {@see \Qualimetrix\Analysis\Finding\RuleExecution::published()} makes,
+     * The predicate is the same selection projection used by execution,
      * not a second reading of the selection: the union-quantified half of the
      * grammar (a producer stopped because its disable selectors together cover
      * every declared level of every channel it emits) lives in

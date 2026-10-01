@@ -28,6 +28,7 @@ Cohesion/
 ├── LcomCollector.php
 ├── LcomGraphCalculator.php
 ├── LcomOptions.php
+├── LcomExcludedMethods.php   # unmatched authored method exclusions
 ├── LcomRule.php
 ├── LcomVisitor.php
 ├── Configuration/           # projection of the prepared typed LCOM options
@@ -38,6 +39,11 @@ Cohesion/
 ```
 
 ## Behaviour and runtime configuration
+
+`LcomExcludedMethods` reports unmatched authored method names only for a
+whole-project method universe, matching and deduplicating case-insensitively
+while retaining the first authored spelling. It does not change the LCOM
+graph or its academic calculation.
 
 `LcomCollector` provides `cohesion.lcom`; `TccLccCollector` provides `cohesion.tcc` and `cohesion.lcc`.
 They retain their collector names, metric keys, class-level aggregation

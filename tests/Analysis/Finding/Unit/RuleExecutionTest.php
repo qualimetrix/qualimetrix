@@ -29,9 +29,11 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
+use Qualimetrix\Analysis\Finding\FindingPublication;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\RuleMaterialization;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -47,6 +49,8 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleExecution::class)]
+#[CoversClass(RuleMaterialization::class)]
+#[CoversClass(FindingPublication::class)]
 final class RuleExecutionTest extends TestCase
 {
     private bool $captureExcludedFindings = true;
@@ -396,14 +400,14 @@ final class RuleExecutionTest extends TestCase
      * Modelled with two declared classless producers hosted by the same
      * instance — the computed-metric family's actual shape — rather than
      * through a `RuleChannelRegistryInterface` that maps the instance's own
-     * name to those channels: {@see RuleExecution::isEnabled()} narrows by
+     * name to those channels: {@see RuleMaterialization::activeRules()} narrows by
      * exact producer-name equality, so an instance runs under narrowing only
-     * through its own name or {@see RuleExecution::hostsAnEnabledProducer()}.
+     * through its own name or {@see RuleMaterialization::hostsAnEnabledProducer()}.
      *
      * A `$channelIdentity` is wired for the same reason `FindingConfigurator`
-     * wires one in production: {@see RuleExecution::published()} narrows by
+     * wires one in production: {@see FindingPublication::published()} narrows by
      * comparing `$producer` — resolved through
-     * {@see RuleExecution::producerOf()} — against the restricted name, and
+     * {@see FindingPublication::producerOf()} — against the restricted name, and
      * without an identity view `producerOf()` falls back to the *instance's*
      * name (`computed.health`), which would never equal either classless
      * producer and silently empty `published` regardless of which one was
@@ -444,11 +448,11 @@ final class RuleExecutionTest extends TestCase
     }
 
     /**
-     * The `published()` half of the same guarantee {@see RuleExecution::isEnabled()}
+     * The `published()` half of the same guarantee {@see RuleMaterialization::activeRules()}
      * gives {@see itDoesNotExecuteAProducerWhoseChannelCodeCollidesWithTheNarrowedName()}:
      * a configuration validator can legitimately publish a finding whose true
      * producer differs from the rule instance it ran inside
-     * ({@see RuleExecution::published()}'s own docblock), so `$producer` here
+     * ({@see FindingPublication::published()}'s own docblock), so `$producer` here
      * is not always `$ruleName`. Narrowing to `ruleA` must not keep a finding
      * whose real producer is `ruleB`, even when `ruleB`'s channel happens to
      * be coded `ruleA`.
@@ -946,7 +950,7 @@ final class RuleExecutionTest extends TestCase
      * `published()` drops. This preserves the finding observed before the
      * exclusion ledger runs, even though it is not returned as published.
      *
-     * Killed by collecting `produced` from {@see RuleExecution::published()}'s
+     * Killed by collecting `produced` from {@see FindingPublication::published()}'s
      * `$kept` accumulator instead of from the pre-ledger `$ruleFindings`: the
      * excluded finding then vanishes from `produced()` too and this assertion
      * goes red.
@@ -1166,7 +1170,7 @@ final class RuleExecutionTest extends TestCase
     #[Test]
     public function itAttributesALedgerExclusionToTheChannelIdentityProducerNotTheFindingsRuleName(): void
     {
-        // Mirrors the computed-metric family {@see RuleExecution::producerOf()}
+        // Mirrors the computed-metric family {@see FindingPublication::producerOf()}
         // describes: one rule instance publishes under $ruleName
         // 'computed.health', but the channel below has its own exclusion
         // configuration. A consumer that re-derives "who excluded this" from

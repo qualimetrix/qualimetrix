@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -33,6 +32,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -65,6 +65,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly RuleExecutionInterface $ruleExecutor,
         private readonly RuleProducerPreparation $ruleProducerPreparation,
+        private readonly InlineDirectiveRun $inlineDirectiveRun,
         private readonly MeasurementAggregationInterface $measurementAggregation,
         private readonly ComputedMetricEvaluator $computedMetricEvaluation,
         DependencyGraphBuilderInterface $graphBuilder,
@@ -125,24 +126,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // channel no verdict was judged against.
         $produced = $prepared->ruleExecution->produced;
 
-        $verdicts = [
-            ...$this->ruleProducerPreparation->directiveVerdicts($produced, $prepared->ruleExecution->levelActivity),
-            ...$this->ruleProducerPreparation->auditThresholdDirectives(
-                $prepared->context,
-                $this->ruleExecutor,
-                $prepared->ruleExecution,
-                $sweep,
-            ),
-        ];
-
-        // One list in the order an author reads a tree, not two halves
-        // concatenated: which of the two tags a directive is belongs on the
-        // verdict, not in the position it happens to occupy.
-        usort(
-            $verdicts,
-            static fn(DirectiveVerdict $left, DirectiveVerdict $right): int
-                => [$left->site->file->value(), $left->site->line, $left->site->form, $left->site->target]
-                <=> [$right->site->file->value(), $right->site->line, $right->site->form, $right->site->target],
+        $verdicts = $this->inlineDirectiveRun->verdicts(
+            $produced,
+            $prepared->ruleExecution->levelActivity,
+            $prepared->context,
+            $this->ruleExecutor,
+            $prepared->ruleExecution,
+            $sweep,
         );
 
         return new DirectiveAuditReport(
@@ -248,7 +238,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // Phase 6.5: hand this run's inline directives to their owning
         // capability, so the rule that reports on them reads prepared state
         // rather than receiving it through the shared analysis context.
-        $this->ruleProducerPreparation->prepareInlineDirectives(
+        $this->inlineDirectiveRun->prepare(
             $collectionResult->suppressions,
             $collectionResult->thresholdOverrides,
             $collectionResult->thresholdDiagnostics,
@@ -349,7 +339,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $ruleExecution = $prepared->ruleExecution;
 
         $late = $this->ruleExecutor->publishable([
-            ...$this->ruleProducerPreparation->auditInlineDirectives(
+            ...$this->inlineDirectiveRun->usageFindings(
                 $ruleExecution->produced,
                 $ruleExecution->levelActivity,
             ),

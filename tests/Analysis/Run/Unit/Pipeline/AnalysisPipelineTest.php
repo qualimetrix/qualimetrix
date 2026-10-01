@@ -39,6 +39,7 @@ use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
+use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -52,6 +53,7 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]
+#[CoversClass(InlineDirectiveRun::class)]
 final class AnalysisPipelineTest extends TestCase
 {
     #[Test]
@@ -222,10 +224,12 @@ final class AnalysisPipelineTest extends TestCase
         $preparation = new RuleProducerPreparation(
             $layerPolicy,
             $circular,
-            self::createStub(InlineDirectivePolicyInterface::class),
-            self::createStub(ThresholdDirectiveAuditInterface::class),
             $fileSetInspection,
             $producerGate,
+        );
+        $inlineDirectives = new InlineDirectiveRun(
+            self::createStub(InlineDirectivePolicyInterface::class),
+            self::createStub(ThresholdDirectiveAuditInterface::class),
         );
 
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
@@ -251,6 +255,7 @@ final class AnalysisPipelineTest extends TestCase
             $collection,
             $rules,
             $preparation,
+            $inlineDirectives,
             $aggregation,
             $computed,
             $graphBuilder,

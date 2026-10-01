@@ -29,19 +29,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * The `scope` option controls which metric is checked:
  * - 'all' (default): uses CBO (original Chidamber & Kemerer, includes all dependencies)
  * - 'application': uses CBO_APP (excludes dependencies on configured framework namespaces)
- *
- * @qmx-threshold coupling.instability warning=0.84 -- The docblock this annotation replaced
- * already predicted this exact move: "0.81 silences today's 0.800 and still reports the next
- * efferent edge, which takes Ce to 9 and instability to 0.818." Two edges arrived instead of one --
- * `ConfigurationRefusal`/`RefusedPosition` -- because a review round decided the silent scope
- * fallback in `parseScope()` was the same silent-acceptance defect the project's closed word sets
- * exist to remove, and refusing it needed the same refusal framing
- * `LayerViolationOptions`/`UnassignedClassOptions` already use for their own `resolveSeverity()`/
- * `resolveMode()`. Ca=2, Ce=10 puts this at 0.833. The reasoning that made 0.800 and 0.81
- * mis-modelling rather than a defect is unchanged by which edge pushed the ratio: a rule options
- * class is efferent by construction, and the sibling classes carrying this shape with a single
- * afferent edge are not judged at all only because `min_afferent: 2` filters them out. 0.84
- * silences today's 0.833 and still reports the next efferent edge.
  */
 final readonly class ClassCboOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {

@@ -1,9 +1,9 @@
 old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate	frozen_kind	frozen_pin	leaf_const	leaf_pin
 annotation.invalid-threshold	channel	?		4	10	0	0	0	21	0	2	0	0	0	0
-annotation.unresolved-directive	channel	?		13	25	0	0	0	51	0	3	0	0	0	0
-annotation.unsupported-threshold	channel	?		6	7	0	0	0	19	0	2	0	0	0	0
+annotation.unresolved-directive	channel	?		12	25	0	0	0	51	0	3	0	0	0	0
+annotation.unsupported-threshold	channel	?		5	7	0	0	0	19	0	2	0	0	0	0
 annotation.unused-directive	channel	?		24	28	0	0	0	44	0	55	0	0	0	0
-architecture.circular-dependency	channel	?		13	52	0	2	0	39	0	205	1	1	0	0
+architecture.circular-dependency	channel	?		13	52	0	2	2	39	0	205	1	1	0	0
 architecture.coverage-gap	channel	?		28	79	0	0	0	49	0	1	0	0	0	0
 architecture.doubted-assignment	channel	?		22	12	0	0	0	26	0	4	0	0	0	0
 architecture.empty-template	channel	?		9	17	0	0	0	32	0	16	0	0	0	0
@@ -13,7 +13,7 @@ architecture.potential-shadow	channel	?		21	18	0	0	0	45	0	3	0	0	0	0
 architecture.unassigned-class	channel	?		28	52	0	0	0	24	0	53	0	0	0	0
 architecture.unmatched-exclude	channel	?		13	12	0	0	0	20	0	17	0	0	0	0
 architecture.unreachable-layer	channel	?		28	38	0	0	0	61	0	16	0	0	0	0
-code-smell.boolean-argument	channel	?		5	43	1	2	25	37	0	68	0	0	1	1
+code-smell.boolean-argument	channel	?		12	43	1	2	25	37	0	68	0	0	1	1
 code-smell.constructor-overinjection	channel	?		12	10	2	2	5	32	0	268	0	0	0	0
 code-smell.count-in-loop	channel	?		1	8	0	0	0	12	0	79	0	0	1	1
 code-smell.debug-code	channel	?		1	45	0	0	0	14	0	79	0	0	1	1
@@ -33,10 +33,10 @@ complexity.ccn	channel	?		70	1395	2	3	31	219	0	326	0	0	0	0
 complexity.cognitive	channel	?		20	105	2	2	14	55	0	106	0	0	0	0
 complexity.npath	channel	?		17	123	2	2	4	51	0	100	0	0	0	0
 complexity.wmc	channel	?		19	86	2	2	3	38	0	44	0	0	0	0
-coupling.cbo	channel	?		66	366	2	5	5	136	0	229	0	0	0	0
+coupling.cbo	channel	?		64	366	2	5	5	136	0	229	0	0	0	0
 coupling.class-rank	channel	?		20	132	0	2	2	42	0	64	0	0	0	0
 coupling.distance	channel	?		31	115	2	2	1	49	0	66	0	0	0	0
-coupling.instability	channel	?		47	135	2	3	9	60	0	46	0	0	0	0
+coupling.instability	channel	?		41	135	2	3	9	60	0	46	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		4	11	0	0	0	18	0	29	0	0	0	0
 design.data-class	channel	?		17	23	1	1	6	37	0	201	0	0	0	0
 design.dit	channel	?		13	184	2	2	0	39	0	217	0	0	0	0
@@ -79,7 +79,7 @@ coupling.abstractness	metric-key	?		17	47	0	0	0	4	0	7	0	0	0	0
 coupling.abstractness-own	metric-key	?		4	9	0	0	0	5	0	4	0	0	0	0
 coupling.ca	metric-key	?		19	101	0	1	0	14	0	14	0	0	0	0
 coupling.ca-own	metric-key	?		4	11	0	0	0	8	0	4	0	0	0	0
-coupling.cbo	metric-key	?		66	366	2	5	5	136	0	229	0	0	0	0
+coupling.cbo	metric-key	?		64	366	2	5	5	136	0	229	0	0	0	0
 coupling.cbo-app	metric-key	?		17	21	0	0	0	19	0	73	0	0	0	0
 coupling.cbo-own	metric-key	?		7	20	0	4	0	12	0	67	0	0	0	0
 coupling.ce	metric-key	?		29	106	0	1	0	16	0	18	0	0	0	0
@@ -89,7 +89,7 @@ coupling.ce-packages	metric-key	?		11	10	0	0	0	5	0	10	0	0	0	0
 coupling.class-rank	metric-key	?		20	132	0	2	2	42	0	64	0	0	0	0
 coupling.distance	metric-key	?		31	115	2	2	1	49	0	66	0	0	0	0
 coupling.distance-own	metric-key	?		7	18	0	0	0	9	0	4	0	0	0	0
-coupling.instability	metric-key	?		47	135	2	3	9	60	0	46	0	0	0	0
+coupling.instability	metric-key	?		41	135	2	3	9	60	0	46	0	0	0	0
 coupling.instability-own	metric-key	?		4	9	0	0	0	5	0	6	0	0	0	0
 coupling.rfc	metric-key	?		6	33	0	0	0	0	0	10	0	0	0	0
 coupling.rfc-external	metric-key	?		1	4	0	0	0	0	0	8	0	0	0	0
@@ -149,10 +149,10 @@ size.symbol-declaring-namespace-count	metric-key	?		4	9	0	0	0	3	0	2	0	0	0	0
 size.symbol-method-count	metric-key	?		12	11	0	0	0	2	0	12	0	0	0	0
 size.trait-count	metric-key	?		11	15	0	0	0	0	0	2	0	0	0	0
 annotation.directive	producer	?		6	6	0	0	0	33	0	108	0	0	0	0
-architecture.circular-dependency	producer	?		13	52	0	2	0	39	0	205	0	0	0	0
+architecture.circular-dependency	producer	?		13	52	0	2	2	39	0	205	0	0	0	0
 architecture.layer-violation	producer	?		30	135	0	3	0	83	0	136	0	0	0	0
 architecture.unassigned-class	producer	?		28	52	0	0	0	24	0	53	0	0	0	0
-code-smell.boolean-argument	producer	?		5	43	1	2	25	37	0	68	0	0	0	0
+code-smell.boolean-argument	producer	?		12	43	1	2	25	37	0	68	0	0	0	0
 code-smell.constructor-overinjection	producer	?		12	10	2	2	5	32	0	268	0	0	0	0
 code-smell.count-in-loop	producer	?		1	8	0	0	0	12	0	79	0	0	0	0
 code-smell.debug-code	producer	?		1	45	0	0	0	14	0	79	0	0	0	0
@@ -171,11 +171,11 @@ complexity.ccn	producer	?		70	1395	2	3	31	219	0	326	0	0	0	0
 complexity.cognitive	producer	?		20	105	2	2	14	55	0	106	0	0	0	0
 complexity.npath	producer	?		17	123	2	2	4	51	0	100	0	0	0	0
 complexity.wmc	producer	?		19	86	2	2	3	38	0	44	0	0	0	0
-computed	producer	?		130	140	0	1	0	65	0	22	0	0	0	0
-coupling.cbo	producer	?		66	366	2	5	5	136	0	229	0	0	0	0
+computed	producer	?		131	140	0	1	0	65	0	22	0	0	0	0
+coupling.cbo	producer	?		64	366	2	5	5	136	0	229	0	0	0	0
 coupling.class-rank	producer	?		20	132	0	2	2	42	0	64	0	0	0	0
 coupling.distance	producer	?		31	115	2	2	1	49	0	66	0	0	0	0
-coupling.instability	producer	?		47	135	2	3	9	60	0	46	0	0	0	0
+coupling.instability	producer	?		41	135	2	3	9	60	0	46	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		4	11	0	0	0	18	0	29	0	0	0	0
 design.data-class	producer	?		17	23	1	1	6	37	0	201	0	0	0	0
 design.dit	producer	?		13	184	2	2	0	39	0	217	0	0	0	0
@@ -186,12 +186,12 @@ design.type-coverage.property	producer	?		7	26	2	1	1	29	0	29	0	0	0	0
 design.type-coverage.return	producer	?		7	35	2	1	0	29	0	33	0	0	0	0
 discovery.unmatched-exclude	producer	?		7	11	0	0	0	29	0	80	0	0	0	0
 duplication.clone	producer	?		18	94	0	2	28	56	0	138	0	0	0	0
-health.cohesion	producer	?		40	151	0	3	13	43	0	108	0	0	0	0
+health.cohesion	producer	?		39	151	0	3	13	43	0	108	0	0	0	0
 health.complexity	producer	?		55	252	0	1	0	28	0	108	0	0	0	0
-health.coupling	producer	?		49	63	0	0	0	21	0	108	0	0	0	0
+health.coupling	producer	?		48	63	0	0	0	21	0	108	0	0	0	0
 health.maintainability	producer	?		17	45	0	0	5	21	0	108	0	0	0	0
 health.overall	producer	?		115	201	0	0	0	33	0	108	0	0	0	0
-health.typing	producer	?		26	114	0	1	0	26	0	108	0	0	0	0
+health.typing	producer	?		25	114	0	1	0	26	0	108	0	0	0	0
 maintainability.mi	producer	?		17	192	2	2	0	35	0	220	0	0	0	0
 security.command-injection	producer	?		3	7	0	0	0	15	0	16	0	0	0	0
 security.hardcoded-credentials	producer	?		7	38	0	0	0	16	0	80	0	0	0	0
