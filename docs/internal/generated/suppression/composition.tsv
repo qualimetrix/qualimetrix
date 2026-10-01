@@ -171,6 +171,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Comma
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/GraphExportCommand.php	Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/RulesCommand.php	Qualimetrix\Infrastructure\Console\Command\RulesCommand	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/CommandLineSpelling.php	Qualimetrix\Infrastructure\Console\CommandLineSpelling	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/ConfigurationInputAdapter.php	Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/FindingFilterOrchestrator.php	Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Refusal/RefusalPresenter.php	Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	warning	1

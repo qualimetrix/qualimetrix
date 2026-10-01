@@ -1738,9 +1738,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Integration\FullPipelineIntegrationTest::itLetsEachOwnerFoldTheSameOrderedDocumentWithItsOwnSemantics
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itComposesTheDocumentAgainstEveryAutoconfiguredSection
  - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerConfigurationStagesTest::itRegistersAllStagesWithTheCorrectPriorities
- - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerRuleNameValidationTest::itAcceptsARegisteredRuleName
- - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInAPreset
- - Qualimetrix\Tests\Analysis\Configuration\Integration\Pipeline\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInTheConfigurationFile
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itDeduplicatesPresetNamesBeforeLoading
  - Qualimetrix\Tests\Analysis\Configuration\Integration\PresetIntegrationTest::itRetainsBuiltInPresetDocumentsInRequestedOrder
  - Qualimetrix\Tests\Analysis\Configuration\Unit\AnalysisConfigurationTest::itDoesNotExposeAMergedGenericConfigurationBag
@@ -1811,6 +1808,32 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\DocumentRootsTest::itRequiresTheActualOwnerForEveryKnownRoot
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\AuthoredNodeTest::itGivesTheLocatorToTheNodeItWasReadFor
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\AuthoredNodeTest::itReadsAParsedTreeKeepingTheAuthoredKeysAndTilde
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itKeepsExcludeHealthKeyAsCamelCase
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itKeepsFormatAsIs
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itKeepsPathsAsIs
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itKeepsRulesUnchanged
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#0
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#1
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#2
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#3
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullEntryKeyAsAnUnwrittenKey
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullKeyAsUnwrittenAtEveryDepth
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsANullKeyInsideACopiedSubtreeAsAnUnwrittenKeyWithoutTouchingItsSiblings
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsTheDeclaredCacheFieldsWithoutTransportCopies
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReadsTheDeclaredParallelWorkersWithoutATransportCopy
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesANullListElementAndKeepsItsLawfulSibling
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesAScalarExclusionAndReadsItsDeclaredSelector
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesAnEmptyDirectoryAndKeepsOtherFalsyValues
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesAnEmptySelectorAndKeepsItsLawfulSibling
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesAnInvalidIdentifierEvenWhenNullAndReadsTheLawfulSibling
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesAnUndeclaredSlotEvenWhenNullAndKeepsAnUnwrittenRule
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesAnUnknownRootWithItsOriginalSpelling
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRefusesScalarNamespaceSelectorsAndReadsTheDeclaredList
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRenamesDisabledRulesToSnakeCase
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRenamesFailOnToSnakeCase
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRenamesIncludeGeneratedToSnakeCase
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itRenamesMemoryLimitToSnakeCase
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\ConfigDataNormalizerTest::itReturnsAnEmptyArrayForEmptyInput
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAccumulatesASetAcrossLayersAndKeepsEachItemsWriter
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAddsNothingToASetForAWrittenEmptyList
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Document\DocumentMergePolicyTest::itAnnouncesAnEmptyListThatLiftsALowerLayersFilter
@@ -2026,32 +2049,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot#3
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot#4
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itUsesOneCanonicalNameForEverySpellingOfAnOwnerRoot#5
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsExcludeHealthKeyAsCamelCase
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsFormatAsIs
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsPathsAsIs
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itKeepsRulesUnchanged
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#0
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#1
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#2
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullDocumentRootAsAnUnwrittenKey#3
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullEntryKeyAsAnUnwrittenKey
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullKeyAsUnwrittenAtEveryDepth
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsANullKeyInsideACopiedSubtreeAsAnUnwrittenKeyWithoutTouchingItsSiblings
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsTheDeclaredCacheFieldsWithoutTransportCopies
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReadsTheDeclaredParallelWorkersWithoutATransportCopy
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesANullListElementAndKeepsItsLawfulSibling
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesAScalarExclusionAndReadsItsDeclaredSelector
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesAnEmptyDirectoryAndKeepsOtherFalsyValues
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesAnEmptySelectorAndKeepsItsLawfulSibling
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesAnInvalidIdentifierEvenWhenNullAndReadsTheLawfulSibling
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesAnUndeclaredSlotEvenWhenNullAndKeepsAnUnwrittenRule
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesAnUnknownRootWithItsOriginalSpelling
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRefusesScalarNamespaceSelectorsAndReadsTheDeclaredList
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesDisabledRulesToSnakeCase
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesFailOnToSnakeCase
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesIncludeGeneratedToSnakeCase
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itRenamesMemoryLimitToSnakeCase
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigDataNormalizerTest::itReturnsAnEmptyArrayForEmptyInput
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itComposesTheAuthoredLayers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itExpandsMultiDocumentLayersWithoutCollapsingThem
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itJudgesEachAuthoredLayerWithoutAParallelRefusalTransport
@@ -2061,19 +2058,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itReturnsAnEmptyDocumentWithTheInvocationDirectoryWhenThereAreNoStages
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itSkipsStagesThatDoNotContribute
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itSortsStagesByPriority
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itAcceptsARuleNameThatExactlyMatchesAKnownRule
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itAcceptsAnEmptyRulesSection
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itAcceptsConfigWithoutARulesSection
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itNamesTheSourceFileInTheExceptionForAnUnknownRule
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itOmitsASuggestionWhenNoKnownRuleIsClose
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRefusesTheFirstUnknownOwnerBeforeInspectingTheNext
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAGroupKeyThatNamesNoRule
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAKeyRefiningARuleNameWithAChannelSuffix
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAWildcardKey
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAnUnknownRuleName
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itReportsEachUnknownRuleNameSeparately
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itSuggestsACloseMatchForAMisspelledRuleName
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itContributesOneAuthoredRulesTreeOnlyWhenRuleFlagsWereWritten
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itHandsTheEngineAnUnpositionedLayerNamedByOption
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\CliStageTest::itHasTheHighestSourcePriority
@@ -2847,13 +2831,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itReturnsNoFindingsWhenNoPrivateMemberIsUnused
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itSkipsDeclarationLookupAndReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itSkipsTypedNonClassDeclarationsBeforeReadingMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itProjectsOnlyTheReadyTypedOptionsPreservingAuthoredMethodSpelling
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesAnOptionsObjectFromAnotherProducer
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\Configuration\LcomCollectionConfigurationResolverTest::itRefusesToGuessFromRawOptionsWhenTheSnapshotIsMissing
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingAllMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWhenExcludingNonexistentMethod
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itCalculatesLcomWithExcludedMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomClassDataTest::itMatchesConfiguredMethodExclusionsWithoutCase
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationResolverTest::itProjectsOnlyTheReadyTypedOptionsPreservingAuthoredMethodSpelling
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationResolverTest::itRefusesAnOptionsObjectFromAnotherProducer
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationResolverTest::itRefusesToGuessFromRawOptionsWhenTheSnapshotIsMissing
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itDefaultsToNoExcludedMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectionConfigurationTest::itRejectsAListContainingNonStrings
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomCollectorTest::itCalculatesHighLcomForGodClass
@@ -6037,6 +6021,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itFailsTheBuildWhenAChannelIsDeclaredByBothProducerKinds
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itFailsTheBuildWhenAValidatorNamesAProducerThatIsNotARule
  - Qualimetrix\Tests\Analysis\Finding\Integration\ConfigurationErrorClassificationTopologyTest::itStampsTheAssemblyWithExactlyWhatAValidatorDeclares
+ - Qualimetrix\Tests\Analysis\Finding\Integration\Contract\Selection\ContainerRuleNameValidationTest::itAcceptsARegisteredRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Integration\Contract\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInAPreset
+ - Qualimetrix\Tests\Analysis\Finding\Integration\Contract\Selection\ContainerRuleNameValidationTest::itRefusesAnUnknownRuleNameInTheConfigurationFile
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.ccn"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.cognitive"
  - Qualimetrix\Tests\Analysis\Finding\Integration\HierarchicalLevelActivityTest::itRecordsEveryLevelAsNotRunWhenAllOfThemAreSwitchedOff"complexity.npath"
@@ -6166,6 +6153,161 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itPrefersTheChannelsOwnDeclaredDescriptionOverItsProducers
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullForACodeNoChannelCarries
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelPresentationViewTest::itReturnsNullWhenTheResolvedDescriptionIsEmpty
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itKeepsAcceptingAFractionalZeroAndAnExplicitNull
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itKeepsAcceptingZeroAtTheFloor
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itKeepsUnfoldingAZeroThresholdShorthand
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a boundary inside a level slot"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a fractional boundary"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a graduated boundary at the rule depth"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a minimum count"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"the threshold shorthand, named as written"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"a boundary inside a level slot"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"a fractional boundary"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"a minimum count"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"the threshold shorthand"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itActivatesAWrittenBandOnANormallyMutedClass
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itDefersConstructionAndReplacesEveryMaterializedObjectWithTheInvocationSnapshot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsFallingDefaultsEqualityAndSeverityBoundaries
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsTheRootOffSwitchAboveAuthoredMutedLevelBands
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesAnUnwrittenBandHalfAsTheOwningDefault"error below the owning warning default"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesAnUnwrittenBandHalfAsTheOwningDefault"warning above the owning error default"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"expanded shorthand retains its authored path"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"preset error and file warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"preset warning and file error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesOnlyTheWinningWriteOfAnOverriddenBandHalf
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesTheLineAndAuthoredSpellingOfBothBandHalves
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CBO class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CBO namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CCN callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CCN class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"NPath callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"NPath class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"cognitive callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"cognitive class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"instability class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"instability namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPreservesTheActualCliLocatorWithoutInventingADocumentPosition
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itPublishesCurrentClassActivityFromTheBuiltMutedLevelOptions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itRefusesAnInvertedFallingBandIncludingOneWrittenHalf"both authored halves"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itRefusesAnInvertedFallingBandIncludingOneWrittenHalf"written warning below the owning error default"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itRefusesAnInvertedRisingBandBeforeConstructingRules
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itRefusesOptionsLookupBeforePreflight
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itRetainsTheAuthoredModeWriterWhenTheFinalModeIsActive
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"explicit false survives a later band"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"explicit true without a band"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"file threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"later explicit false suppresses an earlier band"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"null is unwritten"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"preset threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"untouched owning defaults"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"written error half"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"written warning half"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"zero remains written"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsAFrameworkKeyAtTheTopLevelOfARule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsATopLevelWarningWhereItWorksAloneAndRefusesItWhereItDoesNot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsAnEmptyLevelSlotInSilence
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#17 cbo warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#18 cbo error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#20 instability max-warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#21 instability max-error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"camel"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"kebab"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"snake"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAnswersEachLevelSlotAgainstItsOwnVocabulary
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#27 cognitive callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#28 cognitive class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#29 ccn callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#30 ccn class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#31 npath callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#32 npath class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#33 cbo class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#34 cbo namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#35 instability class"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#36 instability namespace"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itLeavesACorrectlyWrittenConfigurationUntouchedAtBothDepths
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#24 unreachable-layer-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#25 potential-shadow-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#26 empty-template-severity"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itLeavesTheUniversalOffSwitchWorkingForEveryRegisteredRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesABareFalseLevelAndAcceptsItsDeclaredOffSwitch
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAFrameworkKeyWrittenInsideALevelSlot
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesALevelSlotHoldingSomethingOtherThanAMap
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E48 a retired suppression key inside a slot"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E53 a typo in a key the slot does take"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E55 a truncation of one"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E56 upper case, which the fold does not repair"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E57 the sibling slot vocabulary in callable"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E58 the callable vocabulary in the class slot"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#12 npath warning-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#13 npath error-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#2 ccn warning-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#22 distance project-namespaces"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#3 ccn error-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#7 cognitive warning-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#8 cognitive error-threshold"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesExplicitEnablementWithIgnoreModeAndAcceptsTheOffSwitch
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesRetiredSuppressionKeysAtBothDepthsAndAcceptsTheRootReplacement
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTheFirstUnrecognisedKeyInDocumentOrder
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#10 cognitive error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#14 npath warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#15 npath error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#4 ccn warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#5 ccn error"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#9 cognitive warning"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ResolvedRuleOptionsTest::itRefusesAnUnknownProducerInsteadOfInventingDefaults
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ResolvedRuleOptionsTest::itRefusesSuppressionForAnUnknownProducer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ResolvedRuleOptionsTest::itReturnsTheOwnedOptionsAndTypedSuppressionObjectsByIdentity
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\ResolvedRuleOptionValuesTest::itAppliesTheDecidedRootEnablementWithoutRewritingAuthoredValues
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\ResolvedRuleOptionValuesTest::itDefaultsOnlyUnwrittenValuesAndKeepsFalseZeroAndEmptyCollections
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\ResolvedRuleOptionValuesTest::itNarrowsActualNodeTypesInsteadOfCoercingMixedValues
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Rule\ResolvedRuleOptionValuesTest::itRefusesAnUndeclaredResolvedRead
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesALevelTheOptionNeverAsksAbout
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itNamesBothEqualRankDisableWritersBehindAnEmptyFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itNamesTheDefaultMutedModeWhenItMakesTheOnlyFilterEmpty
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itNamesTheUpperExplicitEnableAndLowerFilterWriters
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesADeadFilterSelectorBesideALiveSelector
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesALowerLayerContradictionEvenWhenAnUpperLayerOverridesIt
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesAnExplicitEnableExcludedByItsLayerFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesAnOnlyFilterWithNoLiveSelectableCell
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesContradictoryStrongestStatementsWithinAnAuthoredLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRefusalTest::itRefusesExplicitEnableOfAnAuthoredIgnoreModeWithBothWriters
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itAttributesFinalModeActivityToTheUpperWrittenLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itCarriesTheNarrowedGroupDiagnosticWithEveryIndexedWriter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itClearsTheOnlyFilterWhenAHighLayerWritesAnEmptyList
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"cli-disabled"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"cli-only"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"disabled"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"only"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itJudgesNamespaceChannelKeysBeforeBuildingOptions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itLetsAnUpperDisableNarrowAnEarlierFilterWhileAnotherCellLives
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itLetsTheHigherLayerOutrankAProblemFromTheMoreSpecificLowerLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itNamesTheWinningOnlyFilterForANotRunProducer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementResolverTest::itUsesTheMoreSpecificStatementInsideOneLayer
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRoleTest::itAdmitsAnExplicitlyEnabledAddressedDiagnosticOutsideTheDirectFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRoleTest::itCountsADirectlyFilteredDiagnosticCellAsANonemptySelection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleEnablementRoleTest::itKeepsASyntheticFilterExemptCellLiveOutsideTheDirectFilter
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameJudgeTest::itDistinguishesTheComputedProducerFromItsDeclaredDescendants
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameJudgeTest::itRefusesBareGroupsAndDifferentlyNamedProducerLevelAliases
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameJudgeTest::itRequiresANamespaceWitnessInTheInvocationDefinitions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itAcceptsARuleNameThatExactlyMatchesAKnownRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itAcceptsAnEmptyRulesSection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itAcceptsConfigWithoutARulesSection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itNamesTheSourceFileInTheExceptionForAnUnknownRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itOmitsASuggestionWhenNoKnownRuleIsClose
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRefusesTheFirstUnknownOwnerBeforeInspectingTheNext
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAGroupKeyThatNamesNoRule
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAKeyRefiningARuleNameWithAChannelSuffix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAWildcardKey
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itRejectsAnUnknownRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itReportsEachUnknownRuleNameSeparately
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itSuggestsACloseMatchForAMisspelledRuleName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection\RuleNameValidatorTest::itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsNothingRatherThanThrowingOnAMalformedValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itReadsTheRawChannelMapNeededByInputValidation
  - Qualimetrix\Tests\Analysis\Finding\Unit\Exclusion\ConfiguredSuppressionTest::itRefusesToTakeAKeyThatIsNotASuppressionOption
@@ -6294,63 +6436,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\LevelActivityReadsBothDisablingSpellingsTest::itReportsEveryDeclaredLevelAsNotRun"the explicit key"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\LevelActivityReadsBothDisablingSpellingsTest::itReportsEveryDeclaredLevelAsNotRun"the scalar shorthand"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\LevelActivityReadsBothDisablingSpellingsTest::itReportsTheLevelAsRunWhenNothingSwitchedItOff
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionValuesTest::itAppliesTheDecidedRootEnablementWithoutRewritingAuthoredValues
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionValuesTest::itDefaultsOnlyUnwrittenValuesAndKeepsFalseZeroAndEmptyCollections
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionValuesTest::itNarrowsActualNodeTypesInsteadOfCoercingMixedValues
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionValuesTest::itRefusesAnUndeclaredResolvedRead
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionsTest::itRefusesAnUnknownProducerInsteadOfInventingDefaults
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionsTest::itRefusesSuppressionForAnUnknownProducer
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\ResolvedRuleOptionsTest::itReturnsTheOwnedOptionsAndTypedSuppressionObjectsByIdentity
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itKeepsAcceptingAFractionalZeroAndAnExplicitNull
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itKeepsAcceptingZeroAtTheFloor
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itKeepsUnfoldingAZeroThresholdShorthand
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a boundary inside a level slot"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a fractional boundary"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a graduated boundary at the rule depth"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"a minimum count"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenInTheConfigurationFile"the threshold shorthand, named as written"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"a boundary inside a level slot"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"a fractional boundary"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"a minimum count"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionValueRangeRefusalTest::itRefusesANegativeValueWrittenOnTheCommandLine"the threshold shorthand"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itActivatesAWrittenBandOnANormallyMutedClass
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itDefersConstructionAndReplacesEveryMaterializedObjectWithTheInvocationSnapshot
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itKeepsFallingDefaultsEqualityAndSeverityBoundaries
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itKeepsTheRootOffSwitchAboveAuthoredMutedLevelBands
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesAnUnwrittenBandHalfAsTheOwningDefault"error below the owning warning default"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesAnUnwrittenBandHalfAsTheOwningDefault"warning above the owning error default"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"expanded shorthand retains its authored path"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"preset error and file warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"preset warning and file error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesOnlyTheWinningWriteOfAnOverriddenBandHalf
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itNamesTheLineAndAuthoredSpellingOfBothBandHalves
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CBO class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CBO namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CCN callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"CCN class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"NPath callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"NPath class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"cognitive callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"cognitive class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"instability class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPrefixesBothBandRecordsAtEveryHierarchicalLevel"instability namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPreservesTheActualCliLocatorWithoutInventingADocumentPosition
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itPublishesCurrentClassActivityFromTheBuiltMutedLevelOptions
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itRefusesAnInvertedFallingBandIncludingOneWrittenHalf"both authored halves"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itRefusesAnInvertedFallingBandIncludingOneWrittenHalf"written warning below the owning error default"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itRefusesAnInvertedRisingBandBeforeConstructingRules
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itRefusesOptionsLookupBeforePreflight
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itRetainsTheAuthoredModeWriterWhenTheFinalModeIsActive
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"explicit false survives a later band"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"explicit true without a band"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"file threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"later explicit false suppresses an earlier band"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"null is unwritten"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"preset threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"untouched owning defaults"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"written error half"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"written warning half"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RuleOptionsBuildTest::itUsesAuthoredBandWritesWithoutOverridingExplicitLevelEnablement"zero remains written"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itExpandsNestedShorthandsBeforeMergingOnlyTheWrittenHalf
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itJudgesAMalformedLowerLayerBeforeAValidOverlay
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itPreservesBareSwitchAndIndependentSelectionMergePolicies
@@ -6364,58 +6449,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesAnUnsupportedSectionRoot
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesFrameworkSuppressionInsideALevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\RulesSectionTest::itRefusesOverlappingAuthoredSpreadingPathsInTheSameLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsAFrameworkKeyAtTheTopLevelOfARule
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsATopLevelWarningWhereItWorksAloneAndRefusesItWhereItDoesNot
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsAnEmptyLevelSlotInSilence
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#17 cbo warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#18 cbo error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#20 instability max-warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsDeclaredFlatCouplingKeysInValidBands"#21 instability max-error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"camel"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"kebab"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAcceptsEveryCanonicalSpellingOfALevelKey"snake"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAnswersEachLevelSlotAgainstItsOwnVocabulary
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#27 cognitive callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#28 cognitive class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#29 ccn callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#30 ccn class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#31 npath callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#32 npath class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#33 cbo class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#34 cbo namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#35 instability class"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itAppliesTheThresholdShorthandInsideEveryLevelSlot"#36 instability namespace"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itLeavesACorrectlyWrittenConfigurationUntouchedAtBothDepths
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#24 unreachable-layer-severity"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#25 potential-shadow-severity"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itLeavesAKeyTheClassAnswersForToTheClassItself"#26 empty-template-severity"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itLeavesTheUniversalOffSwitchWorkingForEveryRegisteredRule
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesABareFalseLevelAndAcceptsItsDeclaredOffSwitch
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAFrameworkKeyWrittenInsideALevelSlot
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesALevelSlotHoldingSomethingOtherThanAMap
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAMistypedFrameworkKeyAndPrintsTheSpellingThatWorks
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E48 a retired suppression key inside a slot"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E53 a typo in a key the slot does take"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E55 a truncation of one"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E56 upper case, which the fold does not repair"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E57 the sibling slot vocabulary in callable"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesAnUnrecognisedKeyInsideALevelSlot"E58 the callable vocabulary in the class slot"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#12 npath warning-threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#13 npath error-threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#2 ccn warning-threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#22 distance project-namespaces"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#3 ccn error-threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#7 cognitive warning-threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesEveryRemovedAliasAndKeepsTheKeyItAliased"#8 cognitive error-threshold"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesExplicitEnablementWithIgnoreModeAndAcceptsTheOffSwitch
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesRetiredSuppressionKeysAtBothDepthsAndAcceptsTheRootReplacement
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTheFirstUnrecognisedKeyInDocumentOrder
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#10 cognitive error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#14 npath warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#15 npath error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#4 ccn warning"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#5 ccn error"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration\UnknownRuleOptionKeyRefusalTest::itRefusesTopLevelWarningAndErrorOnAHierarchicalComplexityRule"#9 cognitive warning"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itReadsTheDocsPageConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleDocsPageReaderTest::itRejectsADocsPageConstantOnlyInheritedFromAnAbstractAncestor
@@ -6783,33 +6816,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itStopsAProducerWhoseEveryDeclaredLevelIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itSupportsAnExplicitFullChannelSelector
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleSelectorTest::itValidatesAgainstExplicitSnapshotsAndClearsTheCommittedRun
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itNamesBothEqualRankDisableWritersBehindAnEmptyFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itNamesTheDefaultMutedModeWhenItMakesTheOnlyFilterEmpty
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itNamesTheUpperExplicitEnableAndLowerFilterWriters
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itRefusesADeadFilterSelectorBesideALiveSelector
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itRefusesALowerLayerContradictionEvenWhenAnUpperLayerOverridesIt
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itRefusesAnExplicitEnableExcludedByItsLayerFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itRefusesAnOnlyFilterWithNoLiveSelectableCell
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itRefusesContradictoryStrongestStatementsWithinAnAuthoredLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRefusalTest::itRefusesExplicitEnableOfAnAuthoredIgnoreModeWithBothWriters
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itAttributesFinalModeActivityToTheUpperWrittenLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itCarriesTheNarrowedGroupDiagnosticWithEveryIndexedWriter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itClearsTheOnlyFilterWhenAHighLayerWritesAnEmptyList
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"cli-disabled"
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"cli-only"
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"disabled"
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itJudgesEveryLowerSelectorWriteWithItsOriginalPosition"only"
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itJudgesNamespaceChannelKeysBeforeBuildingOptions
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itLetsAnUpperDisableNarrowAnEarlierFilterWhileAnotherCellLives
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itLetsTheHigherLayerOutrankAProblemFromTheMoreSpecificLowerLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itNamesTheWinningOnlyFilterForANotRunProducer
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementResolverTest::itUsesTheMoreSpecificStatementInsideOneLayer
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRoleTest::itAdmitsAnExplicitlyEnabledAddressedDiagnosticOutsideTheDirectFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRoleTest::itCountsADirectlyFilteredDiagnosticCellAsANonemptySelection
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleEnablementRoleTest::itKeepsASyntheticFilterExemptCellLiveOutsideTheDirectFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleNameJudgeTest::itDistinguishesTheComputedProducerFromItsDeclaredDescendants
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleNameJudgeTest::itRefusesBareGroupsAndDifferentlyNamedProducerLevelAliases
- - Qualimetrix\Tests\Analysis\Finding\Unit\Selection\RuleNameJudgeTest::itRequiresANamespaceWitnessInTheInvocationDefinitions
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itAcceptsOnlyExactProducerNamesAsOptionOwners
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"bare prefix without a star is refused"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"exact descendant does not swallow its own descendant"
@@ -9507,6 +9513,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --preset"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --profile-format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --report"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --rule-opt false"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --rule-opt"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --suppress-namespace"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\CommandLineSpellingDoorTest::itRefusesAValueNoCommandLineCanSpell"check --suppress-path"
@@ -9531,12 +9538,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\BaselineGenerateProjectScopeFlagsTest::itConsumesSharedRuntimeFlagsAtEveryMeasuringBaselineCommand"generate"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\BaselineGenerateProjectScopeFlagsTest::itConsumesSharedRuntimeFlagsAtEveryMeasuringBaselineCommand"update"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\BaselineGenerateProjectScopeFlagsTest::itLeavesTestCodeOutOfACaptureTakenWithoutTheFlag
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAHyphenatedGroupKey
- - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itAcceptsAKeyForAChannelThatNeverReportsAtNamespaceLevel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesAComputedMetricNamedInKebab
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesTheNamespaceAggregateOfAHyphenatedChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itExcludesUnderTheHyphenatedChannelLevelPair
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itPublishesTheNamespaceAggregateWithoutTheKey
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itRefusesAHyphenatedGroupWithoutAnApplicableChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itRefusesAKeyForAChannelThatNeverReportsAtNamespaceLevel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\ChannelExclusionKeySpellingTest::itRefusesTheRetiredPairSpellingUnderTheWrittenKey
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itDoesNotWidenPathsTheAuthorNamed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandAutoloadDevScopeTest::itLeavesTestCodeOutOfBothHalvesByDefault
@@ -10156,12 +10163,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AuthoredRuleOptionWritesTest::itReadsBoundProgrammaticInputWithoutInventingAliasHistory
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AuthoredRuleOptionWritesTest::itStopsAtTerminatorAndSkipsValuesOfOtherOptions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AuthoredRuleOptionWritesTest::itUsesTheSameRawOccurrencePathForStringInput
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelFreeKeyNamingAnotherRulesChannel
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesALevelTheOptionNeverAsksAbout
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesAWildcardKeyWhoseLevelAndProductionWitnessesAreDifferentChannels
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ChannelExclusionKeyValidatorTest::itRefusesTheRetiredPairBeforeTheLevel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itDescribesTheOutputWriteAsInPlaceRatherThanAtomic
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itRegistersABooleanAliasAsValueNone
  - Qualimetrix\Tests\Infrastructure\Console\Unit\CheckCommandDefinitionTest::itRegistersANumericAliasAsValueRequired

@@ -2451,6 +2451,7 @@ Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Arch
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/ExplainedSubject.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php	ast-name
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule	Analysis.Policy.Inline	src/Analysis/Policy/Inline/Directive/UnusedDirectiveRule.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeRule	Analysis.Run	src/Analysis/Run/ExcludeBinding/UnmatchedExcludeRule.php	ast-name

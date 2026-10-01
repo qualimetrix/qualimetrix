@@ -70,7 +70,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             array_keys($declarations),
         );
         self::assertEquals(
-            ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
             $declarations['code-smell.goto'],
         );
         self::assertEquals(

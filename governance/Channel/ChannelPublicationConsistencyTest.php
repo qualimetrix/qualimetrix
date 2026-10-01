@@ -420,13 +420,15 @@ final class ChannelPublicationConsistencyTest extends TestCase
         foreach (explode("\n", $this->readFile('governance/Channel/Fixtures/declared.txt')) as $line) {
             $line = trim($line);
 
-            if ($line === '' || str_starts_with($line, '#') || !str_ends_with($line, ' config-error')) {
+            if ($line === '' || str_starts_with($line, '#')) {
                 continue;
             }
 
             $fields = preg_split('/\s+/', $line);
             self::assertNotFalse($fields, \sprintf('Malformed fixture line: "%s".', $line));
-            $configErrors[] = $fields[0];
+            if (\in_array('config-error', $fields, true)) {
+                $configErrors[] = $fields[0];
+            }
         }
 
         $layerPolicy = [];
