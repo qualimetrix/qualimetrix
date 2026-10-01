@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
@@ -69,7 +70,12 @@ abstract class AbstractHookCommand extends Command
      */
     final protected function hookPath(): string
     {
-        $hooksDir = $this->gitRepositoryLocator->findHooksDir();
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false) {
+            throw $this->refusal('Cannot determine the current working directory. Point --working-dir at a git repository.');
+        }
+
+        $hooksDir = $this->gitRepositoryLocator->findHooksDir(AbsolutePath::fromString($workingDirectory));
 
         if ($hooksDir === null) {
             throw $this->refusal(

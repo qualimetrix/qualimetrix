@@ -115,7 +115,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             return $this->fileProcessor->process($file);
         } catch (Throwable $exception) {
             return FileProcessingResult::failure(
-                PathFactory::bestEffortRelative($file->getPathname(), $projectRoot),
+                PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot),
                 $exception->getMessage(),
                 FileProcessingFailureKind::Processing,
             );

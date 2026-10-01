@@ -266,8 +266,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         ]);
 
         $eligiblePaths = array_map(
-            static fn(SplFileInfo $file): RelativePath => PathFactory::bestEffortRelative(
-                $file->getPathname(),
+            static fn(SplFileInfo $file): RelativePath => PathFactory::published(
+                PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot),
                 $configuration->projectRoot,
             ),
             $files,

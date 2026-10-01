@@ -59,7 +59,10 @@ final class FileProcessor implements FileProcessorInterface
             throw new LogicException('projectRoot must be set via setProjectRoot() before process()');
         }
 
-        $relativePath = PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot);
+        $relativePath = PathFactory::published(
+            PathFactory::fromCliArgument($file->getPathname(), $this->projectRoot),
+            $this->projectRoot,
+        );
 
         try {
             $payload = $this->measure($file, $relativePath);

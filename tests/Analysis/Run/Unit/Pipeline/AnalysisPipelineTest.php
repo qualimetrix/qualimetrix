@@ -61,7 +61,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
         $file = new SplFileInfo(__FILE__);
-        $relative = PathFactory::bestEffortRelative(__FILE__, $root);
+        $relative = PathFactory::published(AbsolutePath::fromString(__FILE__), $root);
 
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn([$file]);

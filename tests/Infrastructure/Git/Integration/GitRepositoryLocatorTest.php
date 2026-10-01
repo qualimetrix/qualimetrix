@@ -47,7 +47,7 @@ final class GitRepositoryLocatorTest extends TestCase
     #[Test]
     public function itFindsTheGitDirInTheCurrentRepository(): void
     {
-        $result = $this->locator->findGitDir();
+        $result = $this->locator->findGitDir(AbsolutePath::fromString(\dirname(__DIR__, 4)));
 
         self::assertNotNull($result, 'Expected to find .git directory (tests run inside a git repo)');
     }
@@ -55,7 +55,7 @@ final class GitRepositoryLocatorTest extends TestCase
     #[Test]
     public function itReturnsAnAbsolutePath(): void
     {
-        $result = $this->locator->findGitDir();
+        $result = $this->locator->findGitDir(AbsolutePath::fromString(\dirname(__DIR__, 4)));
 
         self::assertNotNull($result);
         self::assertStringStartsWith('/', $result->value(), 'Path should be absolute');
@@ -64,7 +64,7 @@ final class GitRepositoryLocatorTest extends TestCase
     #[Test]
     public function itReturnsAPathContainingAGitReference(): void
     {
-        $result = $this->locator->findGitDir();
+        $result = $this->locator->findGitDir(AbsolutePath::fromString(\dirname(__DIR__, 4)));
 
         self::assertNotNull($result);
         // Regular repos end with .git; worktrees may have .git in the path

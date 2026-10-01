@@ -26,15 +26,33 @@ use SplFileInfo;
 #[CoversClass(GeneratedFilePolicy::class)]
 final class AnalysisFileDiscoveryTest extends TestCase
 {
+    private string $root;
+
+    protected function setUp(): void
+    {
+        $this->root = sys_get_temp_dir() . '/qmx-discovery-' . bin2hex(random_bytes(6));
+        mkdir($this->root . '/src', 0777, true);
+    }
+
+    protected function tearDown(): void
+    {
+        $files = glob($this->root . '/src/*');
+        foreach ($files === false ? [] : $files as $file) {
+            unlink($file);
+        }
+        rmdir($this->root . '/src');
+        rmdir($this->root);
+    }
+
     #[Test]
     public function itUsesTheDefaultDiscoveryWhenNoOverrideIsProvided(): void
     {
-        $file = new SplFileInfo('/project/src/A.php');
+        $file = new SplFileInfo($this->root . '/src/A.php');
         $default = $this->createMock(FileDiscoveryInterface::class);
         $default->expects(self::once())->method('discover')->willReturn(new ArrayIterator([$file]));
 
         $result = $this->discovery($default)->discover(
-            self::configuration(['/project/src'], GeneratedFilePolicy::Include),
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
         );
 
         self::assertSame([$file], $result->eligibleFiles);
@@ -50,7 +68,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
         $override->expects(self::once())->method('discover')->willReturn(new ArrayIterator([]));
 
         $this->discovery($default)->discover(
-            self::configuration(['/project/src'], GeneratedFilePolicy::Include),
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
             $override,
         );
     }
@@ -58,13 +76,13 @@ final class AnalysisFileDiscoveryTest extends TestCase
     #[Test]
     public function itDeduplicatesOverlappingRootsByProjectRelativePath(): void
     {
-        $first = new SplFileInfo('/project/src/A.php');
-        $duplicate = new SplFileInfo('/project/src/../src/A.php');
+        $first = new SplFileInfo($this->root . '/src/A.php');
+        $duplicate = new SplFileInfo($this->root . '/src/../src/A.php');
         $default = self::createStub(FileDiscoveryInterface::class);
         $default->method('discover')->willReturn(new ArrayIterator([$first, $duplicate]));
 
         $result = $this->discovery($default)->discover(
-            self::configuration(['/project', '/project/src'], GeneratedFilePolicy::Include),
+            $this->configuration([$this->root, $this->root . '/src'], GeneratedFilePolicy::Include),
         );
 
         self::assertSame([$first], $result->eligibleFiles);
@@ -72,17 +90,108 @@ final class AnalysisFileDiscoveryTest extends TestCase
     }
 
     #[Test]
+    public function itPrefersTheSelectedRegularTargetToNamedLinksAndKeepsAHardlink(): void
+    {
+        $target = $this->root . '/src/Target.php';
+        file_put_contents($target, '<?php');
+        symlink($target, $this->root . '/src/First.php');
+        symlink($target, $this->root . '/src/Second.php');
+        link($target, $this->root . '/src/Hard.php');
+
+        $files = array_map(static fn(string $name): SplFileInfo => new SplFileInfo($name), [
+            $target,
+            $this->root . '/src/First.php',
+            $this->root . '/src/Second.php',
+            $this->root . '/src/Hard.php',
+        ]);
+        $default = self::createStub(FileDiscoveryInterface::class);
+        $default->method('discover')->willReturn(new ArrayIterator($files));
+
+        $result = $this->discovery($default)->discover(
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
+        );
+
+        self::assertSame([$files[0], $files[3]], $result->eligibleFiles);
+        self::assertSame(2, $result->discoveredCount);
+    }
+
+    #[Test]
+    public function itPrefersTheRegularTargetEvenWhenANameLinkIsDiscoveredFirst(): void
+    {
+        $target = $this->root . '/src/Target.php';
+        file_put_contents($target, '<?php');
+        symlink($target, $this->root . '/src/First.php');
+        symlink($target, $this->root . '/src/Second.php');
+        link($target, $this->root . '/src/Hard.php');
+
+        $first = new SplFileInfo($this->root . '/src/First.php');
+        $hard = new SplFileInfo($this->root . '/src/Hard.php');
+        $regular = new SplFileInfo($target);
+        $second = new SplFileInfo($this->root . '/src/Second.php');
+        $default = self::createStub(FileDiscoveryInterface::class);
+        $default->method('discover')->willReturn(new ArrayIterator([$first, $hard, $regular, $second]));
+
+        $result = $this->discovery($default)->discover(
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
+        );
+
+        self::assertSame([$hard, $regular], $result->eligibleFiles);
+        self::assertSame(2, $result->discoveredCount);
+    }
+
+    #[Test]
+    public function itKeepsTheFirstNamedLinkWhenTheRegularTargetIsNotSelected(): void
+    {
+        $target = $this->root . '/src/Target.php';
+        file_put_contents($target, '<?php');
+        symlink($target, $this->root . '/src/First.php');
+        symlink($target, $this->root . '/src/Second.php');
+        link($target, $this->root . '/src/Hard.php');
+
+        $first = new SplFileInfo($this->root . '/src/First.php');
+        $second = new SplFileInfo($this->root . '/src/Second.php');
+        $hard = new SplFileInfo($this->root . '/src/Hard.php');
+        $default = self::createStub(FileDiscoveryInterface::class);
+        $default->method('discover')->willReturn(new ArrayIterator([$second, $first, $hard]));
+
+        $result = $this->discovery($default)->discover(
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
+        );
+
+        self::assertSame([$second, $hard], $result->eligibleFiles);
+        self::assertSame(2, $result->discoveredCount);
+    }
+
+    #[Test]
+    public function itDoesNotHideUnresolvedNamedLinks(): void
+    {
+        symlink($this->root . '/src/Missing.php', $this->root . '/src/First.php');
+        symlink($this->root . '/src/Missing.php', $this->root . '/src/Second.php');
+        $first = new SplFileInfo($this->root . '/src/First.php');
+        $second = new SplFileInfo($this->root . '/src/Second.php');
+        $default = self::createStub(FileDiscoveryInterface::class);
+        $default->method('discover')->willReturn(new ArrayIterator([$first, $second]));
+
+        $result = $this->discovery($default)->discover(
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
+        );
+
+        self::assertSame([$first, $second], $result->eligibleFiles);
+        self::assertSame(2, $result->discoveredCount);
+    }
+
+    #[Test]
     public function itKeepsGeneratedFilesAsExplicitExcludedTerminalStates(): void
     {
-        $eligible = new SplFileInfo('/project/src/A.php');
-        $generated = new SplFileInfo('/project/src/Generated.php');
+        $eligible = new SplFileInfo($this->root . '/src/A.php');
+        $generated = new SplFileInfo($this->root . '/src/Generated.php');
         $default = self::createStub(FileDiscoveryInterface::class);
         $default->method('discover')->willReturn(new ArrayIterator([$eligible, $generated]));
         $filter = self::createStub(GeneratedFileFilterInterface::class);
         $filter->method('filter')->willReturn([$eligible]);
 
         $result = (new AnalysisFileDiscovery($default, $filter, self::audit()))->discover(
-            self::configuration(['/project/src'], GeneratedFilePolicy::Exclude),
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Exclude),
         );
 
         self::assertSame([$eligible], $result->eligibleFiles);
@@ -93,14 +202,14 @@ final class AnalysisFileDiscoveryTest extends TestCase
     #[Test]
     public function itIncludesGeneratedFilesWithoutAllocatingExcludedStates(): void
     {
-        $file = new SplFileInfo('/project/src/Generated.php');
+        $file = new SplFileInfo($this->root . '/src/Generated.php');
         $default = self::createStub(FileDiscoveryInterface::class);
         $default->method('discover')->willReturn(new ArrayIterator([$file]));
         $filter = $this->createMock(GeneratedFileFilterInterface::class);
         $filter->expects(self::never())->method('filter');
 
         $result = (new AnalysisFileDiscovery($default, $filter, self::audit()))->discover(
-            self::configuration(['/project/src'], GeneratedFilePolicy::Include),
+            $this->configuration([$this->root . '/src'], GeneratedFilePolicy::Include),
         );
 
         self::assertSame([$file], $result->eligibleFiles);
@@ -110,7 +219,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
     #[Test]
     public function itSelectsEligibleFilesWithoutReadingFindingOptions(): void
     {
-        $file = new SplFileInfo('/project/src/A.php');
+        $file = new SplFileInfo($this->root . '/src/A.php');
         $default = self::createStub(FileDiscoveryInterface::class);
         $default->method('discover')->willReturn(new ArrayIterator([$file]));
         $filter = self::createStub(GeneratedFileFilterInterface::class);
@@ -122,7 +231,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
             $default,
             $filter,
             new UnmatchedExcludeAudit($options, new ExcludeBindingProbe()),
-        ))->discoverEligible(self::configuration(['/project/src'], GeneratedFilePolicy::Exclude));
+        ))->discoverEligible($this->configuration([$this->root . '/src'], GeneratedFilePolicy::Exclude));
 
         self::assertSame([$file], $result->eligibleFiles);
         self::assertSame(1, $result->discoveredCount);
@@ -138,13 +247,13 @@ final class AnalysisFileDiscoveryTest extends TestCase
     }
 
     /** @param list<string> $paths */
-    private static function configuration(array $paths, GeneratedFilePolicy $policy): RunConfiguration
+    private function configuration(array $paths, GeneratedFilePolicy $policy): RunConfiguration
     {
         return new RunConfiguration(
             pathExcludes: [],
-            projectRoot: AbsolutePath::fromString('/project'),
+            projectRoot: AbsolutePath::fromString($this->root),
             generatedFilePolicy: $policy,
-            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString('/project'), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: array_map(AbsolutePath::fromString(...), $paths), scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: AbsolutePath::fromString($this->root), pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: array_map(AbsolutePath::fromString(...), $paths), scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );

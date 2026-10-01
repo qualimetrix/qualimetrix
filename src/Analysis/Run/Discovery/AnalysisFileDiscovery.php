@@ -70,15 +70,37 @@ final readonly class AnalysisFileDiscovery
         // preserve_keys=false: discover() may yield AbsolutePath object keys.
         $discoveredFiles = iterator_to_array($discovery->discover($configuration->paths), false);
 
+        $regularTargets = [];
+        foreach ($discoveredFiles as $file) {
+            if (!$file->isLink() && $file->isFile()) {
+                $target = realpath($file->getPathname());
+                if ($target !== false) {
+                    $regularTargets[$target] = true;
+                }
+            }
+        }
+
         /** @var array<string, SplFileInfo> $filesByPath */
         $filesByPath = [];
+        /** @var array<string, true> $linkTargets */
+        $linkTargets = [];
         /** @var array<string, SkippedEntry> $skipsByPath */
         $skipsByPath = [];
         foreach ($discoveredFiles as $file) {
             $skip = self::skipFor($file);
 
             if ($skip === null) {
-                $filesByPath[PathFactory::bestEffortRelative($file->getPathname(), $projectRoot)->value()] ??= $file;
+                if ($file->isLink()) {
+                    $target = realpath($file->getPathname());
+                    if ($target !== false) {
+                        if (isset($regularTargets[$target]) || isset($linkTargets[$target])) {
+                            continue;
+                        }
+                        $linkTargets[$target] = true;
+                    }
+                }
+
+                $filesByPath[PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot)->value()] ??= $file;
 
                 continue;
             }
@@ -158,7 +180,7 @@ final readonly class AnalysisFileDiscovery
 
         $eligibleByPath = [];
         foreach ($this->generatedFileFilter->filter(array_values($filesByPath)) as $file) {
-            $eligibleByPath[PathFactory::bestEffortRelative($file->getPathname(), $projectRoot)->value()] = true;
+            $eligibleByPath[PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot)->value()] = true;
         }
 
         $eligible = [];

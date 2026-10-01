@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Path;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -136,6 +137,124 @@ final class PathFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesTheNamedFileWithoutResolvingTheFinalSymlink(): void
+    {
+        $root = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0777, true);
+        mkdir($root . '/target');
+        file_put_contents($root . '/target/Actual.php', '<?php');
+        symlink('../target/Actual.php', $root . '/src/Named.php');
+
+        try {
+            self::assertSame(
+                'src/Named.php',
+                PathFactory::published(AbsolutePath::fromString($root . '/src/Named.php'), AbsolutePath::fromString($root))->value(),
+            );
+        } finally {
+            unlink($root . '/src/Named.php');
+            unlink($root . '/target/Actual.php');
+            rmdir($root . '/src');
+            rmdir($root . '/target');
+            rmdir($root);
+        }
+    }
+
+    #[Test]
+    public function itPublishesALiteralBackslashInTheFinalFilename(): void
+    {
+        $root = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0777, true);
+        file_put_contents($root . '/src/a\\b.php', '<?php');
+
+        try {
+            self::assertSame(
+                'src/a\\b.php',
+                PathFactory::published(AbsolutePath::fromString($root . '/src/a\\b.php'), AbsolutePath::fromString($root))->value(),
+            );
+        } finally {
+            unlink($root . '/src/a\\b.php');
+            rmdir($root . '/src');
+            rmdir($root);
+        }
+    }
+
+    #[Test]
+    public function itPublishesAFileLinkWhoseTargetLiesOutsideTheRoot(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($base . '/root/src', 0777, true);
+        mkdir($base . '/outside');
+        file_put_contents($base . '/outside/Actual.php', '<?php');
+        symlink('../../outside/Actual.php', $base . '/root/src/Named.php');
+
+        try {
+            self::assertSame(
+                'src/Named.php',
+                PathFactory::published(
+                    AbsolutePath::fromString($base . '/root/src/Named.php'),
+                    AbsolutePath::fromString($base . '/root'),
+                )->value(),
+            );
+        } finally {
+            unlink($base . '/root/src/Named.php');
+            unlink($base . '/outside/Actual.php');
+            rmdir($base . '/root/src');
+            rmdir($base . '/root');
+            rmdir($base . '/outside');
+            rmdir($base);
+        }
+    }
+
+    #[Test]
+    public function itRefusesToPublishAFileWhoseParentResolvesOutsideTheRoot(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($base . '/root', 0777, true);
+        mkdir($base . '/outside');
+        symlink($base . '/outside', $base . '/root/escape');
+
+        try {
+            $this->expectException(LogicException::class);
+            PathFactory::published(
+                AbsolutePath::fromString($base . '/root/escape/Named.php'),
+                AbsolutePath::fromString($base . '/root'),
+            );
+        } finally {
+            unlink($base . '/root/escape');
+            rmdir($base . '/root');
+            rmdir($base . '/outside');
+            rmdir($base);
+        }
+    }
+
+    #[Test]
+    public function itRechecksADirectoryLinkAfterItChangesTarget(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($base . '/root/inside', 0777, true);
+        mkdir($base . '/outside');
+        symlink($base . '/root/inside', $base . '/root/alias');
+        $file = AbsolutePath::fromString($base . '/root/alias/Named.php');
+        $root = AbsolutePath::fromString($base . '/root');
+
+        try {
+            self::assertSame('inside/Named.php', PathFactory::published($file, $root)->value());
+            unlink($base . '/root/alias');
+            symlink($base . '/outside', $base . '/root/alias');
+            clearstatcache(true);
+
+            $this->expectException(LogicException::class);
+            PathFactory::published($file, $root);
+        } finally {
+            unlink($base . '/root/alias');
+            rmdir($base . '/root/inside');
+            rmdir($base . '/root');
+            rmdir($base . '/outside');
+            rmdir($base);
+        }
+    }
+
+    #[Test]
     public function itTryProjectRelativeReturnsNullForRelativeWithLeadingDotDot(): void
     {
         // Phase 6 review MEDIUM: tryProjectRelative was asymmetric — returned null for
@@ -147,76 +266,109 @@ final class PathFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itBestEffortRelativeResolvesInsideProjectRoot(): void
+    public function itPublishesFileInsideProjectRoot(): void
     {
-        $root = AbsolutePath::fromString('/project');
+        $root = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0777, true);
 
-        self::assertSame(
-            'src/Foo.php',
-            PathFactory::bestEffortRelative('/project/src/Foo.php', $root)->value(),
-        );
+        try {
+            self::assertSame(
+                'src/Foo.php',
+                PathFactory::published(AbsolutePath::fromString($root . '/src/Foo.php'), AbsolutePath::fromString($root))->value(),
+            );
+        } finally {
+            rmdir($root . '/src');
+            rmdir($root);
+        }
     }
 
     #[Test]
-    public function itBestEffortRelativePreservesStructureForOutOfRootFiles(): void
+    public function itRefusesDistinctFilesOutsideTheRoot(): void
     {
-        // Phase 6 review HIGH: distinct files outside projectRoot must not collide
-        // to the same key. Old basename() fallback would have collapsed both to
-        // 'Foo.php'; structure-preserving fallback keeps them disambiguated.
-        $root = AbsolutePath::fromString('/project');
+        $base = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($base . '/root', 0777, true);
+        mkdir($base . '/outside/lib', 0777, true);
+        mkdir($base . '/outside/api');
+        $root = AbsolutePath::fromString($base . '/root');
 
-        $a = PathFactory::bestEffortRelative('/elsewhere/lib/Foo.php', $root)->value();
-        $b = PathFactory::bestEffortRelative('/elsewhere/api/Foo.php', $root)->value();
-
-        self::assertSame('elsewhere/lib/Foo.php', $a);
-        self::assertSame('elsewhere/api/Foo.php', $b);
+        try {
+            foreach (['lib', 'api'] as $directory) {
+                try {
+                    PathFactory::published(AbsolutePath::fromString($base . '/outside/' . $directory . '/Foo.php'), $root);
+                    self::fail('Outside files must be refused.');
+                } catch (LogicException $e) {
+                    self::assertStringContainsString('outside project root', $e->getMessage());
+                }
+            }
+        } finally {
+            rmdir($base . '/outside/lib');
+            rmdir($base . '/outside/api');
+            rmdir($base . '/outside');
+            rmdir($base . '/root');
+            rmdir($base);
+        }
     }
 
     #[Test]
-    public function itBestEffortRelativeCollapsesEscapeSegments(): void
+    public function itRefusesAnOutsideFileAfterLexicalParentCollapse(): void
     {
-        // ".." segments are resolved lexically and any unresolvable leading
-        // ".." drops away so RelativePath::fromString never throws. Out-of-root
-        // structure is preserved, with the in-line ".." collapsing one level.
-        $root = AbsolutePath::fromString('/project');
+        $base = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($base . '/root', 0777, true);
+        mkdir($base . '/outside/lib/sub', 0777, true);
 
-        self::assertSame(
-            'elsewhere/lib/Foo.php',
-            PathFactory::bestEffortRelative('/elsewhere/lib/sub/../Foo.php', $root)->value(),
-        );
+        try {
+            $this->expectException(LogicException::class);
+            PathFactory::published(
+                AbsolutePath::fromString($base . '/outside/lib/sub/../Foo.php'),
+                AbsolutePath::fromString($base . '/root'),
+            );
+        } finally {
+            rmdir($base . '/outside/lib/sub');
+            rmdir($base . '/outside/lib');
+            rmdir($base . '/outside');
+            rmdir($base . '/root');
+            rmdir($base);
+        }
     }
 
     #[Test]
-    public function itBestEffortRelativeDropsLeadingEscapesAfterStrip(): void
+    public function itRefusesAFileThatEscapesTheRootLexically(): void
     {
-        // A path that resolves to leading ".." after strip can't be a valid
-        // RelativePath; the helper drops the unresolvable head and keeps the
-        // structural remainder.
-        $root = AbsolutePath::fromString('/project');
+        $base = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($base . '/root', 0777, true);
 
-        self::assertSame(
-            'Foo.php',
-            PathFactory::bestEffortRelative('/../Foo.php', $root)->value(),
-        );
+        try {
+            $this->expectException(LogicException::class);
+            PathFactory::published(
+                AbsolutePath::fromString($base . '/root/../Foo.php'),
+                AbsolutePath::fromString($base . '/root'),
+            );
+        } finally {
+            rmdir($base . '/root');
+            rmdir($base);
+        }
     }
 
     #[Test]
-    public function itBestEffortRelativeUsesPlaceholderForFullyCollapsedPath(): void
+    public function itRefusesAFileWithAnUnresolvableParent(): void
     {
-        // Edge case the helper has to handle for the "never throws" contract:
-        // path that collapses to empty after segment resolution.
-        $root = AbsolutePath::fromString('/project');
+        $root = realpath(sys_get_temp_dir()) . '/qmx-published-' . bin2hex(random_bytes(6));
+        mkdir($root);
 
-        self::assertSame('unknown', PathFactory::bestEffortRelative('/', $root)->value());
+        try {
+            $this->expectException(LogicException::class);
+            PathFactory::published(
+                AbsolutePath::fromString($root . '/missing/Foo.php'),
+                AbsolutePath::fromString($root),
+            );
+        } finally {
+            rmdir($root);
+        }
     }
 
     #[Test]
-    public function itBestEffortRelativeCanonicalizesSymlinkedInput(): void
+    public function itPublishesThroughASymlinkedDirectory(): void
     {
-        // Phase 6 review HIGH (symlink asymmetry): StrategySelector canonicalizes
-        // $projectRoot via realpath() for cache stability, so a symlinked source
-        // file must also canonicalize before relativizing — otherwise it falls
-        // into the out-of-root fallback and loses its in-project identity.
         $tmpBase = realpath(sys_get_temp_dir());
         self::assertIsString($tmpBase);
 
@@ -235,7 +387,7 @@ final class PathFactoryTest extends TestCase
 
             self::assertSame(
                 'src/Foo.php',
-                PathFactory::bestEffortRelative($linkedFile, $root)->value(),
+                PathFactory::published(AbsolutePath::fromString($linkedFile), $root)->value(),
             );
         } finally {
             unlink($realFile);

@@ -121,9 +121,8 @@ final readonly class LayerAssignmentResolver
     private function discoverFiles(array $paths, array $pathExcludes, AbsolutePath $projectRoot): array
     {
         $fileDiscovery = $this->fileDiscoveryFactory->create($projectRoot, $pathExcludes);
-        $cwd = AbsolutePath::fromString((string) getcwd());
         $absolutePaths = array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
+            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $projectRoot),
             $paths,
         );
 

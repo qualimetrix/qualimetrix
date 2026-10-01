@@ -59,6 +59,7 @@ final class CheckCommandPathInputTest extends TestCase
     #[Test]
     public function itAcceptsAbsolutePath(): void
     {
+        chdir($this->tempDir);
         $tester = $this->createCommandTester();
         $tester->execute([
             'paths' => [$this->tempDir . '/src'],
@@ -125,6 +126,7 @@ final class CheckCommandPathInputTest extends TestCase
     #[Test]
     public function itAcceptsSymlinkedPath(): void
     {
+        chdir($this->tempDir);
         $link = $this->tempDir . '/link-to-src';
         symlink($this->tempDir . '/src', $link);
 
@@ -143,6 +145,7 @@ final class CheckCommandPathInputTest extends TestCase
     #[Test]
     public function itRejectsNonExistentPath(): void
     {
+        chdir($this->tempDir);
         $tester = $this->createCommandTester();
         $tester->execute([
             'paths' => [$this->tempDir . '/no-such-directory'],
@@ -154,6 +157,98 @@ final class CheckCommandPathInputTest extends TestCase
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame('', $tester->getDisplay());
         self::assertStringContainsString('does not exist', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itAcceptsEverySpellingOfTheProjectRoot(): void
+    {
+        chdir($this->tempDir);
+
+        foreach (['.', './', $this->tempDir] as $path) {
+            $tester = $this->createCommandTester();
+            $tester->execute([
+                'paths' => [$path],
+                '--format' => 'text',
+                '--no-progress' => true,
+                '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+            ]);
+
+            self::assertSame(0, $tester->getStatusCode(), $path);
+            self::assertStringContainsString('1 file', $tester->getDisplay());
+        }
+
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [.]\n");
+        $fromConfig = $this->createCommandTester();
+        $fromConfig->execute([
+            '--format' => 'text',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+        ]);
+        self::assertSame(0, $fromConfig->getStatusCode());
+        self::assertStringContainsString('1 file', $fromConfig->getDisplay());
+
+        unlink($this->tempDir . '/qmx.yaml');
+        $fallback = $this->createCommandTester();
+        $fallback->execute([
+            '--format' => 'text',
+            '--no-progress' => true,
+            '--disable-rule' => ['computed', 'health.*', 'architecture.layer-violation', 'coupling.class-rank'],
+        ]);
+        self::assertSame(0, $fallback->getStatusCode());
+        self::assertStringContainsString('1 file', $fallback->getDisplay());
+    }
+
+    #[Test]
+    public function itRefusesAnExistingCliPathOutsideTheProjectRoot(): void
+    {
+        $outside = $this->tempDir . '-outside';
+        mkdir($outside);
+        file_put_contents($outside . '/Other.php', '<?php class Other {}');
+        chdir($this->tempDir);
+
+        try {
+            $tester = $this->createCommandTester();
+            $tester->execute([
+                'paths' => ['../' . basename($outside)],
+                '--format' => 'json',
+                '--no-progress' => true,
+            ], ['capture_stderr_separately' => true]);
+
+            self::assertSame(3, $tester->getStatusCode());
+            $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertIsArray($envelope);
+            self::assertSame('cli', $envelope['source'][0]['kind']);
+            self::assertStringContainsString($this->tempDir, $envelope['error']);
+            self::assertStringContainsString('--working-dir', $envelope['error']);
+        } finally {
+            unlink($outside . '/Other.php');
+            rmdir($outside);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnExistingConfiguredPathOutsideTheProjectRoot(): void
+    {
+        $outside = $this->tempDir . '-outside';
+        mkdir($outside);
+        file_put_contents($outside . '/Other.php', '<?php class Other {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', 'paths: ["../' . basename($outside) . '"]' . "\n");
+        chdir($this->tempDir);
+
+        try {
+            $tester = $this->createCommandTester();
+            $tester->execute(['--format' => 'json', '--no-progress' => true], ['capture_stderr_separately' => true]);
+
+            self::assertSame(3, $tester->getStatusCode());
+            $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertIsArray($envelope);
+            self::assertSame('file', $envelope['source'][0]['kind']);
+            self::assertStringContainsString($this->tempDir, $envelope['error']);
+            self::assertStringContainsString('--working-dir', $envelope['error']);
+        } finally {
+            unlink($outside . '/Other.php');
+            rmdir($outside);
+        }
     }
 
     /**

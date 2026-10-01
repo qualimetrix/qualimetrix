@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Configuration;
 
+use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
@@ -11,7 +12,9 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -46,10 +49,9 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             ? AutoloadDevPolicy::Include
             : AutoloadDevPolicy::Exclude;
         $writtenPaths = self::list($resolved->get(ConfigSchema::PATHS));
-        $pathList = PathsNormalizer::normalize(
-            $root,
-            $writtenPaths === null ? self::defaultPaths($this->discoveredPaths($document, $autoloadDev)) : PathsSection::read($writtenPaths),
-        );
+        $pathList = $writtenPaths === null
+            ? $this->defaultPathList($document, $autoloadDev)
+            : self::writtenPathList($root, $writtenPaths);
 
         $excludes = self::list($resolved->get(ConfigurationRoot::Exclude->value));
         $authoredExcludes = $excludes === null ? [] : $this->pathPatterns($excludes);
@@ -151,6 +153,37 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
     private static function defaultPaths(array $discovered): array
     {
         return $discovered !== [] ? $discovered : ['.'];
+    }
+
+    /** @return list<AbsolutePath> */
+    private function defaultPathList(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
+    {
+        $root = $document->workingDirectory();
+        try {
+            return PathsNormalizer::normalize($root, self::defaultPaths($this->discoveredPaths($document, $autoloadDev)));
+        } catch (InvalidArgumentException $error) {
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::ComposerJson, $root->value() . '/composer.json'),
+                $error->getMessage(),
+                $error,
+            );
+        }
+    }
+
+    /** @return list<AbsolutePath> */
+    private static function writtenPathList(AbsolutePath $root, ResolvedListInterface $writtenPaths): array
+    {
+        PathsSection::read($writtenPaths);
+        $paths = [];
+        foreach ($writtenPaths->items() as $item) {
+            try {
+                $paths[] = PathsNormalizer::normalize($root, [$item->plain()])[0];
+            } catch (InvalidArgumentException $error) {
+                $item->refuse($error->getMessage());
+            }
+        }
+
+        return $paths;
     }
 
     /**

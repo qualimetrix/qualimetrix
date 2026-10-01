@@ -57,7 +57,7 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         $logicalClassUniverse = [];
 
         foreach ($files as $file) {
-            $path = PathFactory::bestEffortRelative($file->getPathname(), $projectRoot);
+            $path = PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot);
 
             try {
                 $ast = $this->fileParser->parse($file);

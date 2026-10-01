@@ -173,7 +173,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Assert: the rule should have received a non-null dependency graph
         self::assertNotNull($capturedContext, 'Rule should have been executed');
@@ -254,7 +254,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Assert: should find circular dependency findings
         $circularFindings = array_filter(
@@ -465,7 +465,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Verify class-level CBO was computed (sanity check)
         $orderServiceBag = $result->metrics->get(
@@ -782,7 +782,7 @@ PHP);
     ): AnalysisPipeline {
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo('/tmp/dummy.php'),
+            new SplFileInfo(sys_get_temp_dir() . '/dummy.php'),
         ]));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
@@ -797,10 +797,7 @@ PHP);
                 }
 
                 return new CollectionPhaseOutput([
-                    PathFactory::bestEffortRelative(
-                        $files[0]->getPathname(),
-                        AbsolutePath::fromString('/tmp/src'),
-                    ),
+                    RelativePath::fromString('dummy.php'),
                 ], [], dependencies: $dependencies);
             },
         );
@@ -840,7 +837,7 @@ PHP);
     ): AnalysisPipeline {
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo('/tmp/dummy.php'),
+            new SplFileInfo(sys_get_temp_dir() . '/dummy.php'),
         ]));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
@@ -855,10 +852,7 @@ PHP);
                 }
 
                 return new CollectionPhaseOutput([
-                    PathFactory::bestEffortRelative(
-                        $files[0]->getPathname(),
-                        AbsolutePath::fromString('/tmp/src'),
-                    ),
+                    RelativePath::fromString('dummy.php'),
                 ], [], dependencies: $dependencies);
             },
         );

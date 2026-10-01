@@ -89,7 +89,7 @@ final class TraversalPathAgreementTest extends TestCase
         $collector = new CompositeCollector([], new DeclarationRegistrarFactory(), [], new DependencyVisitor());
 
         return self::canonicalSources(
-            $collector->collect($file, $ast, PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot()))->dependencies,
+            $collector->collect($file, $ast, PathFactory::published(AbsolutePath::fromString($file->getPathname()), $this->projectRoot()))->dependencies,
         );
     }
 

@@ -104,7 +104,7 @@ final class DirectiveAuditUniverseTest extends TestCase
     private static function runWith(array $produced, array $published): array
     {
         $root = AbsolutePath::fromString(\dirname(__DIR__, 4));
-        $relative = PathFactory::bestEffortRelative(__FILE__, $root);
+        $relative = PathFactory::published(AbsolutePath::fromString(__FILE__), $root);
 
         $universe = self::productionUniverse();
         $container = (new ContainerFactory())->create();

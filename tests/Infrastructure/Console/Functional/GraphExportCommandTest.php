@@ -29,17 +29,24 @@ final class GraphExportCommandTest extends TestCase
     private ?GraphExportCommand $containerCommand = null;
     private string $originalMemoryLimit;
 
+    private string $originalCwd;
+
     protected function setUp(): void
     {
         // Create temporary directory for test files
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
         $this->originalMemoryLimit = (string) \ini_get('memory_limit');
+        $cwd = getcwd();
+        self::assertNotFalse($cwd);
+        $this->originalCwd = $cwd;
+        chdir($this->tempDir);
     }
 
     protected function tearDown(): void
     {
         ini_set('memory_limit', $this->originalMemoryLimit);
+        chdir($this->originalCwd);
         // Clean up temporary directory
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);

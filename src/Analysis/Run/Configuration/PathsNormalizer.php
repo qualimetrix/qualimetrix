@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Configuration;
 
+use InvalidArgumentException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 
@@ -16,9 +17,44 @@ final class PathsNormalizer
      */
     public static function normalize(AbsolutePath $root, array $paths): array
     {
-        return array_map(
-            static fn(string $path): AbsolutePath => PathFactory::fromCliArgument($path, $root),
-            $paths,
-        );
+        $canonicalRoot = realpath($root->value());
+        $canonicalRootPath = $canonicalRoot === false ? $root : AbsolutePath::fromString($canonicalRoot);
+        $normalized = [];
+
+        foreach ($paths as $path) {
+            $absolute = PathFactory::fromCliArgument($path, $root);
+            if ($absolute->equals($root) || $absolute->equals($canonicalRootPath)) {
+                $normalized[] = $absolute;
+
+                continue;
+            }
+
+            $directory = $absolute->isDirectory();
+            $resolved = realpath($directory ? $absolute->value() : \dirname($absolute->value()));
+            $insideWrittenRoot = $absolute->tryRelativizeTo($root) !== null;
+            $insideCanonicalRoot = $absolute->tryRelativizeTo($canonicalRootPath) !== null;
+            if (!$insideWrittenRoot && !$insideCanonicalRoot && $resolved === false) {
+                self::refuseOutside($path, $root);
+            }
+            if ($resolved !== false) {
+                $resolvedPath = AbsolutePath::fromString($resolved);
+                if (!$resolvedPath->equals($canonicalRootPath) && $resolvedPath->tryRelativizeTo($canonicalRootPath) === null) {
+                    self::refuseOutside($path, $root);
+                }
+            }
+
+            $normalized[] = $absolute;
+        }
+
+        return $normalized;
+    }
+
+    private static function refuseOutside(string $path, AbsolutePath $root): never
+    {
+        throw new InvalidArgumentException(\sprintf(
+            'Analysis path "%s" is outside project root "%s". Choose a path inside the project or change --working-dir.',
+            $path,
+            $root->value(),
+        ));
     }
 }

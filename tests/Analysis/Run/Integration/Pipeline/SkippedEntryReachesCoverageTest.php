@@ -127,7 +127,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
             static fn(array $files): CollectionPhaseOutput => new CollectionPhaseOutput(
-                [PathFactory::bestEffortRelative($files[0]->getPathname(), $root)],
+                [PathFactory::published(AbsolutePath::fromString($files[0]->getPathname()), $root)],
                 [],
             ),
         );
