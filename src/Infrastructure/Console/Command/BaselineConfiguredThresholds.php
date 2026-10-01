@@ -107,6 +107,9 @@ final readonly class BaselineConfiguredThresholds
             $options = $this->optionsFor($ruleClass);
 
             foreach ($declarations as $channelKey => $declaration) {
+                if (!$declaration->usesProducerWarningBoundary) {
+                    continue;
+                }
                 foreach ($declaration->levels as $level) {
                     $threshold = self::thresholdFor($options, $level);
 
@@ -131,12 +134,9 @@ final readonly class BaselineConfiguredThresholds
     /**
      * The boundary one channel is judged against **at one level**.
      *
-     * Resolved per level rather than per channel because a channel reports at
-     * more than one now, and a hierarchical rule's two levels have separate
-     * boundaries: one number keyed by the channel alone would have to pick a
-     * level and print the choice as a fact. The channel itself is not passed:
-     * three options classes serve more than one channel and none of them holds
-     * two different boundaries, so the object answers for itself.
+     * Resolved per level after the channel declares it uses the producer's
+     * boundary. A hierarchical rule's levels hold separate numbers, so the
+     * object at the declared level answers for itself.
      */
     private static function thresholdFor(RuleOptionsInterface $options, SymbolLevel $level): int|float|null
     {

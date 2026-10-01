@@ -42,8 +42,11 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * that does not — and refuses the channel named after its producer that
  * states a second description beside the producer's own.
  *
- * Nothing else belongs here: no axis name, no threshold binding, no
- * epsilon. A channel that declares no {@see ChannelDeclaration} at all is
+ * A secondary diagnostic may decline the producer options' warning boundary
+ * through {@see withoutConfiguredWarningBoundary()}: sharing a producer does
+ * not mean sharing its numerical decision. This declares eligibility only;
+ * the options still own the number or reason no boundary exists. No axis
+ * name or epsilon belongs here. A channel declaring no declaration at all is
  * not an error state — it is simply not baselineable (see
  * {@see ChannelDeclarationRegistryInterface}).
  *
@@ -88,6 +91,7 @@ final readonly class ChannelDeclaration
         public ?JudgedMetrics $judges,
         array $levels,
         public ?string $description = null,
+        public bool $usesProducerWarningBoundary = true,
     ) {
         $this->levels = self::canonicalLevels($levels);
     }
@@ -177,7 +181,7 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->direction, true, $this->judges, $this->levels, $this->description);
+        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary);
     }
 
     /**
@@ -197,7 +201,12 @@ final readonly class ChannelDeclaration
             throw new InvalidArgumentException('A channel description must not be blank.');
         }
 
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary);
+    }
+
+    public function withoutConfiguredWarningBoundary(): self
+    {
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false);
     }
 
     /**

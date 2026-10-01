@@ -202,6 +202,7 @@ final class LcomRule extends AbstractRule
                 SymbolLevel::Class_,
             ),
             'cohesion.unmatched-exclude-method' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)
+                ->withoutConfiguredWarningBoundary()
                 ->describedAs('Reports configured LCOM method exclusions that match no declared method in the whole project'),
         ];
     }

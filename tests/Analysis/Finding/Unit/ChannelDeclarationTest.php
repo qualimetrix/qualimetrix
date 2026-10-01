@@ -244,6 +244,30 @@ final class ChannelDeclarationTest extends TestCase
     }
 
     #[Test]
+    public function itDeclinesTheProducerBoundaryWithoutLosingOtherChannelFacts(): void
+    {
+        $plain = ChannelDeclaration::judging(
+            WorseDirection::Lower,
+            JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+            SymbolLevel::Callable,
+        )->describedAs('Reports a fixture.')->asConfigurationError();
+        self::assertTrue($plain->usesProducerWarningBoundary);
+
+        $declined = $plain->withoutConfiguredWarningBoundary();
+        foreach ([$declined, $declined->describedAs('Reports another fixture.'), $declined->asConfigurationError()] as $copy) {
+            self::assertFalse($copy->usesProducerWarningBoundary);
+            self::assertSame(WorseDirection::Lower, $copy->direction);
+            self::assertSame([SymbolLevel::Callable], $copy->levels);
+            self::assertNotNull($copy->judges);
+            self::assertSame([MetricName::MAINTAINABILITY_MI], $copy->judges->keys);
+            self::assertTrue($copy->isConfigurationError());
+        }
+        self::assertSame('Reports a fixture.', $declined->description);
+        self::assertSame('Reports another fixture.', $declined->describedAs('Reports another fixture.')->description);
+        self::assertTrue($plain->usesProducerWarningBoundary);
+    }
+
+    #[Test]
     public function itRefusesABlankDescription(): void
     {
         self::expectException(InvalidArgumentException::class);

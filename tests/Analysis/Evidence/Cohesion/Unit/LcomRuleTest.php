@@ -459,6 +459,8 @@ final class LcomRuleTest extends TestCase
         self::assertSame([\Qualimetrix\Core\Symbol\SymbolLevel::Project], $declaration->levels);
         self::assertSame(\Qualimetrix\Core\Observation\WorseDirection::Higher, $declaration->direction);
         self::assertNull($declaration->judges);
+        self::assertFalse($declaration->usesProducerWarningBoundary);
+        self::assertTrue(LcomRule::channelDeclarations()[LcomRule::NAME]->usesProducerWarningBoundary);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
