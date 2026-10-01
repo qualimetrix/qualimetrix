@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation;
@@ -32,7 +31,6 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     {
         $this->registerRuleRegistry($container);
         $this->registerChannelUniverse($container);
-        $this->registerRuleChannelSelection($container);
         $this->registerChannelPresentation($container);
     }
 
@@ -86,14 +84,6 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(ChannelIdentityInterface::class, ChannelUniverse::class)->setPublic(true);
         $container->setAlias(RuleChannelRegistryInterface::class, ChannelUniverse::class);
         $container->setAlias(RuleChannelSnapshotFactoryInterface::class, ChannelUniverse::class);
-    }
-
-    private function registerRuleChannelSelection(ContainerBuilder $container): void
-    {
-        $container->register(RuleSelector::class)
-            ->setArguments([
-                new Reference(RuleChannelRegistryInterface::class),
-            ]);
     }
 
     /**

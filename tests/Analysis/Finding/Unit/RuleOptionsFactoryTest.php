@@ -22,7 +22,6 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
@@ -1697,22 +1696,33 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->factory->create('coupling.instability', InstabilityOptions::class);
     }
 
-    /**
-     * The three states are not two: a class that answers for a key in its own
-     * words must be let through, or the generic sentence prints one line above
-     * the specific one — the defect this walk removes.
-     */
     #[Test]
-    public function itLetsFrameworkEnablementCoexistWithTheOwningTypedMode(): void
+    public function itLetsFrameworkDisablementCoexistWithTheOwningTypedMode(): void
     {
         $this->writeConfigFile([
-            'architecture.unassigned-class' => ['enabled' => true],
+            'architecture.unassigned-class' => ['enabled' => false, 'mode' => 'ignore'],
         ]);
 
         $options = $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
         self::assertInstanceOf(UnassignedClassOptions::class, $options);
         self::assertSame(\Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode::Ignore, $options->mode);
         self::assertNull($options->getSeverity(1));
+    }
+
+    #[Test]
+    public function itRefusesExplicitEnablementOfTheDefaultMutedModeWithItsAuthoredWriter(): void
+    {
+        $this->writeConfigFile([
+            'architecture.unassigned-class' => ['enabled' => true],
+        ]);
+
+        try {
+            $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
+            self::fail('An explicit enable must not silently run an ignored mode.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('"architecture.unassigned-class" is enabled by rules.architecture.unassigned-class.enabled: true (configuration file "/project/qmx.yaml") but its mode is ignore: mode of "architecture.unassigned-class" is ignore by default.', $refusal->getMessage());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+        }
     }
 
     // --- `threshold` vs `warning`/`error` mode conflicts across the
@@ -2222,7 +2232,6 @@ final class RuleOptionsFactoryTest extends TestCase
         return new FindingConfiguration(
             new RuleOptionsDocument($configFileRules),
             new FindingCliOverrides($cliRules),
-            new RuleSelection(),
         );
     }
 }

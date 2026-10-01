@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
@@ -485,6 +486,9 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
         $producerRuleName = RuleNameReader::read($class);
 
         foreach (ChannelDeclarationReader::read($class) as $key => $declaration) {
+            if ($declaration->selectionRole !== ChannelSelectionRole::Selectable) {
+                throw new LogicException(\sprintf('Rule class %s cannot declare non-selectable channel "%s".', $class, $key));
+            }
             if (isset($declarations[$key])) {
                 throw new LogicException(\sprintf(
                     'Duplicate channel declaration for "%s" — declared by more than one rule class (last seen: %s).',

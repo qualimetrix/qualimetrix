@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
+use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
@@ -81,7 +82,6 @@ final class DirectiveUsage
      */
     public function __construct(
         private readonly ChannelIdentityInterface $identity,
-        private readonly RuleSelector $ruleSelector,
         private readonly RuleConfigurationInterface $ruleConfiguration,
         private readonly ChannelDeclarationRegistryInterface $declarations,
     ) {
@@ -189,14 +189,13 @@ final class DirectiveUsage
      */
     private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity): array
     {
-        $selection = $this->ruleConfiguration->selection();
         $findings = $this->suppressible($findings);
         $evaluated = [];
 
         foreach ($suppressionsByFile as $file => $fileSuppressions) {
             foreach (self::groupByAuthoredSite($fileSuppressions) as $group) {
                 $directive = $group[0];
-                $reason = $this->unmeasurableReason($group, $activity, $selection->only, $selection->disabled);
+                $reason = $this->unmeasurableReason($group, $activity);
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
@@ -313,14 +312,10 @@ final class DirectiveUsage
      * mirror image of the defect this reading exists to remove.
      *
      * @param non-empty-list<Suppression> $group
-     * @param list<string> $only
-     * @param list<string> $disabled
      */
     private function unmeasurableReason(
         array $group,
         LevelActivity $activity,
-        array $only,
-        array $disabled,
     ): ?DirectiveUnmeasurableReason {
         $suppression = $group[0];
         if ($suppression->refusal !== null) {
@@ -354,11 +349,14 @@ final class DirectiveUsage
                 continue;
             }
 
-            if (
-                $this->ruleSelector->isProducerEnabled($producer, $only, $disabled)
-                && $activity->ranAtAnyOf($producer, DirectiveLevels::ofGroup($group))
-            ) {
-                return null;
+            $enablement = $this->ruleConfiguration->enablement()
+                ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
+            $levels = DirectiveLevels::ofGroup($group);
+            foreach ($levels === [] ? [null] : $levels as $level) {
+                if ($enablement->publishes(new FindingChannel($code), $level)
+                    && $activity->ranAtAnyOf($producer, $level === null ? [] : [$level])) {
+                    return null;
+                }
             }
 
             $sawDisabledProducer = true;

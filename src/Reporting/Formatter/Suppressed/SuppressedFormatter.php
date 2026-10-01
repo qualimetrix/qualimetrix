@@ -67,6 +67,12 @@ final class SuppressedFormatter implements FormatterInterface
             'byMechanism' => $byMechanism,
             'suppressed' => $suppressed,
             'neverMatched' => $neverMatched,
+            'notRun' => array_map(static fn(\Qualimetrix\Analysis\Finding\Contract\SelectionRecord $record): array => [
+                'producer' => $record->producer,
+                'reason' => $record->reason,
+                'statement' => $record->statement,
+                'layer' => $record->layer,
+            ], $composition->notRun),
         ];
 
         return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);

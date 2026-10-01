@@ -9,7 +9,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -49,7 +48,6 @@ final readonly class RuleProducerPreparation
         private ThresholdDirectiveAuditInterface $thresholdDirectiveAudit,
         private FileSetInspectionComposite $fileSetInspection,
         private RuleSelectorProducerGate $producerGate,
-        private RuleConfigurationInterface $ruleConfiguration,
     ) {}
 
     /**
@@ -60,8 +58,6 @@ final readonly class RuleProducerPreparation
         iterable $classUniverse,
         ProfilerInterface $profiler,
     ): void {
-        $selection = $this->ruleConfiguration->selection();
-        $ruleOptions = $this->ruleConfiguration->all();
         $enabled = false;
 
         // Every producer that reads the prepared policy, not just the first
@@ -71,7 +67,7 @@ final readonly class RuleProducerPreparation
         // two left `--only-rule=architecture.unassigned-class` reaching an
         // unprepared policy. The list is the capability's, not the run's.
         foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
-            if ($this->producerGate->isEnabled($producerRuleName, $selection->only, $selection->disabled, $ruleOptions)) {
+            if ($this->producerGate->isEnabled($producerRuleName)) {
                 $enabled = true;
 
                 break;
@@ -93,13 +89,7 @@ final readonly class RuleProducerPreparation
         DependencyGraphInterface $graph,
         ProfilerInterface $profiler,
     ): void {
-        $selection = $this->ruleConfiguration->selection();
-        if (!$this->producerGate->isEnabled(
-            CircularDependencyPreparationInterface::PRODUCER_RULE_NAME,
-            $selection->only,
-            $selection->disabled,
-            $this->ruleConfiguration->all(),
-        )) {
+        if (!$this->producerGate->isEnabled(CircularDependencyPreparationInterface::PRODUCER_RULE_NAME)) {
             $this->circularDependencyPreparation->reset();
 
             return;
@@ -192,13 +182,9 @@ final readonly class RuleProducerPreparation
      */
     public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void
     {
-        $selection = $this->ruleConfiguration->selection();
         $this->fileSetInspection->inspect(
             $eligibleFiles,
             $projectRoot,
-            $selection->only,
-            $selection->disabled,
-            $this->ruleConfiguration->all(),
         );
     }
 }

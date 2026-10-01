@@ -12,14 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
-/**
- * `FindingConfigurationResolver::mergeRuleOptions()` is one of the two merge
- * sites `RuleOptionThresholdShorthand::unfold()` runs at — the other is
- * `RuleOptionsFactory::deepMerge()` (config file/preset document ↔ CLI),
- * covered by `RuleOptionsFactoryTest`. This file covers the earlier merge:
- * multiple `rules:` document contributions (preset, `qmx.yaml`, ...) folding
- * into one before the factory ever runs.
- */
+/** Authored rule forms expand before composition; selector roots retain their own merge policies. */
 final class FindingConfigurationResolverTest extends TestCase
 {
     #[Test]
@@ -44,8 +37,8 @@ final class FindingConfigurationResolverTest extends TestCase
         // pair BEFORE merging, so both survive as `warning`/`error` — not as
         // a bare `threshold` (that was eviction's shape, now gone).
         self::assertSame(['warning' => 15, 'error' => 15], $configuration->ruleOptions->rules['size.method-count']);
-        self::assertSame(['design'], $configuration->selection->only);
-        self::assertSame(['size', 'security'], $configuration->selection->disabled);
+        self::assertSame(['design'], $configuration->document->get('only_rules')?->plain());
+        self::assertSame(['size', 'security'], $configuration->document->get('disabled_rules')?->plain());
     }
 
     /**

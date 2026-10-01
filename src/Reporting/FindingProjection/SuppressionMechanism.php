@@ -55,6 +55,9 @@ enum SuppressionMechanism: string
     /** Per-rule `suppress_paths`. */
     case RulePathSuppression = 'rule-path-suppression';
 
+    /** A finding produced but not published by the invocation's selection. */
+    case Selection = 'selection';
+
     public static function fromStage(FindingFilterStage $stage): self
     {
         return match ($stage) {

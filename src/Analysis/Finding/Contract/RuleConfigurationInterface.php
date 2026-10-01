@@ -14,6 +14,10 @@ interface RuleConfigurationInterface
 {
     public function resolvedOptions(): ResolvedRuleOptions;
 
+    public function enablement(): ?RuleEnablement;
+
+    public function channelUniverse(): ChannelUniverseInterface;
+
     public function replace(FindingConfiguration $configuration): void;
 
     /** @return array<string, mixed> */
@@ -24,8 +28,6 @@ interface RuleConfigurationInterface
 
     /** @return array<string, mixed> */
     public function all(): array;
-
-    public function selection(): RuleSelection;
 
     public function captureExcludedFindings(): void;
 

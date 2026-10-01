@@ -80,7 +80,6 @@ final readonly class AnalysisRuntimeConfigurator
         $this->couplingConfigurator->replace($configuration->frameworkNamespaces);
         $this->ruleOptionsRegistry->replace($configuration->findingConfiguration);
         $this->lcomConfigurationStore->replace($configuration->lcomConfiguration);
-        $this->ruleInputValidator->replaceChannels($configuration->channels);
     }
 
     /**
@@ -101,6 +100,5 @@ final readonly class AnalysisRuntimeConfigurator
     {
         $this->ruleOptionsRegistry->resetRuntimeState();
         $this->lcomConfigurationStore->reset();
-        $this->ruleInputValidator->resetChannels();
     }
 }

@@ -8,7 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityOptions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -17,17 +21,14 @@ use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -42,6 +43,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleExecution::class)]
@@ -255,7 +257,7 @@ final class RuleExecutionTest extends TestCase
         $rule1 = $this->createRule('rule1', [$finding1]);
         $rule2 = $this->createRule('rule2', [$finding2]);
 
-        $config = new RuleSelection(disabled: ['rule1']);
+        $config = ['disabled' => ['rule1']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
@@ -277,7 +279,7 @@ final class RuleExecutionTest extends TestCase
         $rule2 = $this->createRule('rule2', [$finding2]);
         $rule3 = $this->createRule('rule3', [$finding3]);
 
-        $config = new RuleSelection(only: ['rule1', 'rule3']);
+        $config = ['only' => ['rule1', 'rule3']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
@@ -295,7 +297,7 @@ final class RuleExecutionTest extends TestCase
         $rule1 = $this->createRule('enabled-rule', []);
         $rule2 = $this->createRule('disabled-rule', []);
 
-        $config = new RuleSelection(disabled: ['disabled-rule']);
+        $config = ['disabled' => ['disabled-rule']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
@@ -311,7 +313,7 @@ final class RuleExecutionTest extends TestCase
         $rule1 = $this->createRule('rule1', []);
         $rule2 = $this->createRule('rule2', []);
 
-        $config = new RuleSelection(disabled: ['rule1']);
+        $config = ['disabled' => ['rule1']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2], $provider);
 
@@ -340,23 +342,25 @@ final class RuleExecutionTest extends TestCase
     }
 
     #[Test]
-    public function itDisabledRulesTakePrecedenceOverOnlyRules(): void
+    public function itRefusesAnOnlyFilterWhoseOnlyProducerWasDisabled(): void
     {
         $finding = $this->createFinding('rule1');
         $rule = $this->createRule('rule1', [$finding]);
 
-        $config = new RuleSelection(
-            disabled: ['rule1'],
-            only: ['rule1'],
-        );
+        $config = ['disabled' => ['rule1'], 'only' => ['rule1']];
         $provider = $this->createConfiguredProvider($config);
-        $executor = $this->createExecution([$rule], $provider);
-
-        $context = $this->createMinimalContext();
-        $findings = $executor->execute($context)->published;
-
-        self::assertSame([], $findings);
-        self::assertSame([], self::activeRules($executor));
+        try {
+            $this->createExecution([$rule], $provider);
+            self::fail('An only filter with no live cell must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(
+                'Rule selection is empty: "rule1": disabled_rules[0]: rule1 (configuration file "/project/qmx.yaml"); only_rules / --only-rule narrows and does not enable.',
+                $refusal->summary(),
+            );
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['only_rules'], $refusal->position()?->segments);
+        }
     }
 
     // --- Narrowed execution tests ($restrictToProducer) ---
@@ -374,7 +378,7 @@ final class RuleExecutionTest extends TestCase
         $finding = $this->createFinding('rule1');
         $rule = $this->createRule('rule1', [$finding]);
 
-        $provider = $this->createConfiguredProvider(new RuleSelection(disabled: ['rule1']));
+        $provider = $this->createConfiguredProvider(['disabled' => ['rule1']]);
         $executor = $this->createExecution([$rule], $provider);
 
         $result = $executor->execute($this->createMinimalContext(), 'rule1');
@@ -412,12 +416,6 @@ final class RuleExecutionTest extends TestCase
         $cohesion = $this->createFinding('computed.health', code: 'health.cohesion');
         $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
 
-        // A classless producer's channel code is its own name, so resolving
-        // "the producer of this code" is the identity function here — exactly
-        // as the container's real ChannelIdentity resolves it for this family.
-        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
-        $channelIdentity->method('producerOf')->willReturnArgument(0);
-
         $executor = $this->createExecution(
             [$rule],
             $this->createConfiguredProvider(),
@@ -435,7 +433,6 @@ final class RuleExecutionTest extends TestCase
                     description: 'Cohesion health, hosted by computed.health',
                 ),
             ],
-            channelIdentity: $channelIdentity,
         );
 
         $result = $executor->execute($this->createMinimalContext(), 'health.complexity');
@@ -462,13 +459,16 @@ final class RuleExecutionTest extends TestCase
         $finding = $this->createFinding('ruleB', code: 'ruleA');
         $rule = $this->createRule('ruleA', [$finding]);
 
-        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
-        $channelIdentity->method('producerOf')->willReturn('ruleB');
-
         $executor = $this->createExecution(
             [$rule],
             $this->createConfiguredProvider(),
-            channelIdentity: $channelIdentity,
+            classlessProducers: [new ProducerDeclaration(
+                name: 'ruleB',
+                hostRuleName: 'ruleA',
+                optionsClass: RuleExecutionFixtureOptions::class,
+                description: 'Channel owner',
+            )],
+            producerByChannel: ['ruleA' => 'ruleB'],
         );
 
         $result = $executor->execute($this->createMinimalContext(), 'ruleA');
@@ -530,14 +530,7 @@ final class RuleExecutionTest extends TestCase
         $findingB = $this->createFinding('ruleB', code: 'ruleA');
         $ruleB = $this->createRule('ruleB', [$findingB]);
 
-        $selector = new RuleSelector(new class implements RuleChannelRegistryInterface {
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return $producerRuleName === 'ruleB' ? [new FindingChannel('ruleA')] : [];
-            }
-        });
-
-        $executor = $this->createExecution([$ruleA, $ruleB], $this->createConfiguredProvider(), $selector);
+        $executor = $this->createExecution([$ruleA, $ruleB], $this->createConfiguredProvider());
 
         $result = $executor->execute($this->createMinimalContext(), 'ruleA');
 
@@ -562,7 +555,7 @@ final class RuleExecutionTest extends TestCase
         $rule3 = $this->createRule('size.method-count', [$v3]);
 
         // Disable the whole complexity group — the group form is explicit now
-        $config = new RuleSelection(disabled: ['complexity.*']);
+        $config = ['disabled' => ['complexity.*']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
@@ -589,7 +582,7 @@ final class RuleExecutionTest extends TestCase
         );
 
         // Disable only class-level findings
-        $config = new RuleSelection(disabled: ['complexity.cyclomatic.class']);
+        $config = ['disabled' => ['complexity.cyclomatic.class']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule], $provider);
 
@@ -607,7 +600,7 @@ final class RuleExecutionTest extends TestCase
         $rule2 = $this->createRule('complexity.cognitive', []);
         $rule3 = $this->createRule('size.method-count', []);
 
-        $config = new RuleSelection(only: ['complexity.*']);
+        $config = ['only' => ['complexity.*']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
@@ -617,15 +610,18 @@ final class RuleExecutionTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotTreatABarePrefixAsAGroup(): void
+    public function itRefusesABarePrefixInsteadOfTreatingItAsAGroup(): void
     {
         $rule1 = $this->createRule('complexity.ccn', []);
         $rule2 = $this->createRule('complexity.cognitive', []);
 
-        $provider = $this->createConfiguredProvider(new RuleSelection(only: ['complexity']));
-        $executor = $this->createExecution([$rule1, $rule2], $provider);
-
-        self::assertSame([], self::activeRules($executor));
+        $provider = $this->createConfiguredProvider(['only' => ['complexity']]);
+        try {
+            $this->createExecution([$rule1, $rule2], $provider);
+            self::fail('A bare prefix is not a group selector.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Rule selector "complexity" does not match any registered producer or channel.', $refusal->summary());
+        }
     }
 
     #[Test]
@@ -635,8 +631,7 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('computed.health', [$finding]);
         $executor = $this->createExecution(
             [$rule],
-            $this->createConfiguredProvider(new RuleSelection(only: ['computed.health'])),
-            ruleSelector: $this->computedRuleSelector(),
+            $this->createConfiguredProvider(['only' => ['computed.health']]),
         );
 
         self::assertSame([$finding], $executor->execute($this->createMinimalContext())->published);
@@ -648,11 +643,10 @@ final class RuleExecutionTest extends TestCase
         $complexity = $this->createFinding('computed.health', code: 'health.complexity');
         $cohesion = $this->createFinding('computed.health', code: 'health.cohesion');
         $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
-        $provider = $this->createConfiguredProvider(new RuleSelection(only: ['health.complexity']));
+        $provider = $this->createConfiguredProvider(['only' => ['health.complexity']]);
         $executor = $this->createExecution(
             [$rule],
             $provider,
-            ruleSelector: $this->computedRuleSelector(),
         );
 
         self::assertSame([$complexity], $executor->execute($this->createMinimalContext())->published);
@@ -706,7 +700,7 @@ final class RuleExecutionTest extends TestCase
         );
 
         // Disable class-level findings via code filtering
-        $config = new RuleSelection(disabled: ['complexity.class']);
+        $config = ['disabled' => ['complexity.class']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule], $provider);
 
@@ -741,7 +735,7 @@ final class RuleExecutionTest extends TestCase
             ],
         );
 
-        $result = $this->createExecution([$rule], $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity.class'])))
+        $result = $this->createExecution([$rule], $this->createConfiguredProvider(['disabled' => ['complexity.class']]))
             ->execute($this->createMinimalContext());
 
         self::assertContains($classFinding, $result->produced);
@@ -749,6 +743,10 @@ final class RuleExecutionTest extends TestCase
         self::assertTrue($result->exclusions->isEmpty());
         self::assertSame([], $result->exclusions->excludedFindings);
         self::assertSame([], $result->exclusions->attributions);
+        self::assertSame([[
+            'finding' => $classFinding,
+            'suppressor' => 'disabled_rules[0]: complexity.class (configuration file "/project/qmx.yaml")',
+        ]], $result->selection->removed);
     }
 
     #[Test]
@@ -764,7 +762,7 @@ final class RuleExecutionTest extends TestCase
         );
 
         // Disable entire rule
-        $config = new RuleSelection(disabled: ['complexity']);
+        $config = ['disabled' => ['complexity']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule], $provider);
 
@@ -793,24 +791,23 @@ final class RuleExecutionTest extends TestCase
         // channel. A channel selector reaches its producer through the channel
         // registry — never by the producer name happening to be a prefix of
         // the selector, which is the reverse match this substrate removes.
-        $config = new RuleSelection(only: ['complexity.callable']);
+        $config = ['only' => ['complexity.callable']];
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution(
             [$rule],
             $provider,
-            new RuleSelector(new InMemoryRuleChannelRegistry([
-                'complexity' => [
-                    new FindingChannel('complexity.callable'),
-                    new FindingChannel('complexity.class'),
-                ],
-            ])),
         );
 
         $context = $this->createMinimalContext();
-        $findings = $executor->execute($context)->published;
+        $result = $executor->execute($context);
+        $findings = $result->published;
 
         self::assertCount(1, $findings);
         self::assertSame($methodFinding, $findings[0]);
+        self::assertSame([[
+            'finding' => $classFinding,
+            'suppressor' => 'only_rules: [complexity.callable] (configuration file "/project/qmx.yaml")',
+        ]], $result->selection->removed);
     }
 
     // --- Publication of one channel at one level ---
@@ -826,7 +823,7 @@ final class RuleExecutionTest extends TestCase
         $channel = new FindingChannel('complexity');
         $executor = $this->createExecution(
             [$this->createRule('complexity', [], ['complexity' => ['callable' => true, 'class' => true]])],
-            $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity:class'])),
+            $this->createConfiguredProvider(['disabled' => ['complexity:class']]),
         );
 
         self::assertFalse($executor->publication()->publishes('complexity', $channel, SymbolLevel::Class_));
@@ -840,14 +837,43 @@ final class RuleExecutionTest extends TestCase
     #[Test]
     public function itDoesNotPublishTheLevelConfigurationSwitchedOff(): void
     {
-        $channel = new FindingChannel('complexity');
+        $channel = new FindingChannel('complexity.cognitive');
+        $rule = new class implements RuleInterface {
+            public function getName(): string
+            {
+                return 'complexity.cognitive';
+            }
+            public static function getDescription(): string
+            {
+                return 'Fixture rule';
+            }
+            public static function shape(): ChannelShape
+            {
+                return ChannelShape::Occurrence;
+            }
+            public static function getOptionsClass(): string
+            {
+                return CognitiveComplexityOptions::class;
+            }
+            public function analyze(AnalysisContext $context): array
+            {
+                return [];
+            }
+            /** @return array<string, array<string, bool>> */
+            public function levelActivity(): array
+            {
+                return [];
+            }
+        };
+        $registry = new RuleOptionsRegistry();
+        ResolvedOptionsFixture::file($registry, ['complexity.cognitive' => ['class' => ['enabled' => false]]]);
         $executor = $this->createExecution(
-            [$this->createRule('complexity', [], ['complexity' => ['callable' => true, 'class' => false]])],
-            $this->createConfiguredProvider(),
+            [$rule],
+            $registry,
         );
 
-        self::assertFalse($executor->publication()->publishes('complexity', $channel, SymbolLevel::Class_));
-        self::assertTrue($executor->publication()->publishes('complexity', $channel, SymbolLevel::Callable));
+        self::assertFalse($executor->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Class_));
+        self::assertTrue($executor->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Callable));
     }
 
     #[Test]
@@ -857,11 +883,15 @@ final class RuleExecutionTest extends TestCase
         $rules = [$this->createRule('complexity', [], ['complexity' => ['callable' => true]])];
 
         self::assertFalse(
-            $this->createExecution($rules, $this->createConfiguredProvider(new RuleSelection(disabled: ['complexity'])))
+            $this->createExecution($rules, $this->createConfiguredProvider(['disabled' => ['complexity']]))
                 ->publication()->publishes('complexity', $channel, SymbolLevel::Callable),
         );
         self::assertFalse(
-            $this->createExecution($rules, $this->createConfiguredProvider(new RuleSelection(only: ['other'])))
+            $this->createExecution(
+                $rules,
+                $this->createConfiguredProvider(['only' => ['other']]),
+                classlessProducers: [new ProducerDeclaration('other', 'complexity', RuleExecutionFixtureOptions::class, 'Other producer')],
+            )
                 ->publication()->publishes('complexity', $channel, SymbolLevel::Callable),
         );
     }
@@ -1045,7 +1075,6 @@ final class RuleExecutionTest extends TestCase
         $executor = $this->createExecution(
             [$rule],
             $registry,
-            $this->computedRuleSelector(),
         );
 
         $result = $executor->execute($this->createMinimalContext());
@@ -1087,7 +1116,6 @@ final class RuleExecutionTest extends TestCase
         $executor = $this->createExecution(
             [$rule],
             $registry,
-            $this->computedRuleSelector(),
         );
 
         self::assertSame([$classCohesion], $executor->execute($this->createMinimalContext())->published);
@@ -1123,7 +1151,6 @@ final class RuleExecutionTest extends TestCase
         $executor = $this->createExecution(
             [$rule],
             $registry,
-            $this->computedRuleSelector(),
         );
 
         $result = $executor->execute($this->createMinimalContext());
@@ -1154,10 +1181,7 @@ final class RuleExecutionTest extends TestCase
         ]]);
         $registry->configureNamespaceExclusions($channel, [$this->namespaceSubtree('App\\Metrics')]);
 
-        $channelIdentity = self::createStub(ChannelIdentityInterface::class);
-        $channelIdentity->method('producerOf')->willReturn($channel);
-
-        $executor = $this->createExecution([$rule], $registry, channelIdentity: $channelIdentity, classlessProducers: [new ProducerDeclaration(name: $channel, hostRuleName: 'computed.health', optionsClass: RuleExecutionFixtureOptions::class, description: 'Cohesion health, hosted by computed.health')]);
+        $executor = $this->createExecution([$rule], $registry, classlessProducers: [new ProducerDeclaration(name: $channel, hostRuleName: 'computed.health', optionsClass: RuleExecutionFixtureOptions::class, description: 'Cohesion health, hosted by computed.health')]);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
@@ -1189,7 +1213,7 @@ final class RuleExecutionTest extends TestCase
             'suppress_namespace_channels' => [$channel => [['subtree' => 'App\\Metrics']]],
         ]]);
 
-        $executor = $this->createExecution([$rule], $registry, $this->computedRuleSelector());
+        $executor = $this->createExecution([$rule], $registry);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
@@ -1309,32 +1333,42 @@ final class RuleExecutionTest extends TestCase
         self::assertSame([$excludedFinding], $stats->excludedFindings);
     }
 
-    private function createConfiguredProvider(?RuleSelection $selection = null): RuleOptionsRegistry
+    /**
+     * @param array{only?: list<string>, disabled?: list<string>} $selection
+     *
+     * @return array{registry: RuleOptionsRegistry, only: list<string>, disabled: list<string>}
+     */
+    private function createConfiguredProvider(array $selection = []): array
     {
-        $selection ??= new RuleSelection();
-        $provider = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($provider, $selection);
-
-        return $provider;
+        return ['registry' => new RuleOptionsRegistry(), 'only' => $selection['only'] ?? [], 'disabled' => $selection['disabled'] ?? []];
     }
 
     /**
      * @param iterable<RuleInterface> $rules
      * @param iterable<ProducerDeclaration> $classlessProducers
+     * @param array<string, string> $producerByChannel
+     * @param RuleOptionsRegistry|array{registry: RuleOptionsRegistry, only: list<string>, disabled: list<string>}|null $registry
      */
     private function createExecution(
         iterable $rules,
-        ?RuleOptionsRegistry $registry = null,
-        ?RuleSelector $ruleSelector = null,
-        ?ChannelIdentityInterface $channelIdentity = null,
+        RuleOptionsRegistry|array|null $registry = null,
         iterable $classlessProducers = [],
+        array $producerByChannel = [],
     ): RuleExecution {
+        $only = [];
+        $disabled = [];
+        if (\is_array($registry)) {
+            $only = $registry['only'];
+            $disabled = $registry['disabled'];
+            $registry = $registry['registry'];
+        }
         $registry ??= new RuleOptionsRegistry();
         if ($this->captureExcludedFindings) {
             $registry->captureExcludedFindings();
         }
 
-        $lookups = array_map(ResolvedOptionsFixture::lookup(...), \is_array($rules) ? $rules : iterator_to_array($rules, false));
+        $rules = \is_array($rules) ? $rules : iterator_to_array($rules, false);
+        $lookups = array_map(ResolvedOptionsFixture::lookup(...), $rules);
         $metadata = array_column($lookups, 'metadata');
         foreach ($classlessProducers as $producer) {
             $metadata[] = new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer->name, $producer->optionsClass, $producer->description, $producer->aliases, false);
@@ -1344,14 +1378,39 @@ final class RuleExecutionTest extends TestCase
             $manual[$producerName] = [$registry->namespaceExclusions($producerName), $registry->namespaceChannelExclusions($producerName), $registry->pathExclusions($producerName)];
         }
         $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
-            ->withRuleOptions($registry->configFileOptions())->withCliOverrides($registry->cliOptions())->withSelection($registry->selection());
-        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, $metadata)));
-        foreach ($manual as $producer => [$namespaces, $channels, $paths]) {
+            ->withRuleOptions($registry->configFileOptions())->withCliOverrides($registry->cliOptions());
+        $declarations = [];
+        $produced = [];
+        $supports = [];
+        $levelsByProducer = [];
+        foreach ($metadata as $producer) {
+            $levels = array_values(array_filter(array_map(
+                static fn(string $slot): ?SymbolLevel => SymbolLevel::tryFrom($slot),
+                RuleOptionSurface::of($producer->optionsClass)->levels(),
+            )));
+            $levelsByProducer[$producer->name] = $levels === [] ? SymbolLevel::cases() : $levels;
+            $declarations[$producer->name] = ChannelDeclaration::occurrence(...$levelsByProducer[$producer->name]);
+            $produced[$producer->name] = [$producer->name];
+            $supports[$producer->name] = false;
+        }
+        foreach ($rules as $rule) {
+            foreach ($rule->analyze($this->createMinimalContext()) as $finding) {
+                $code = $finding->channel()->code;
+                $producer = $producerByChannel[$code] ?? $rule->getName();
+                $declarations[$code] ??= ChannelDeclaration::occurrence(...$levelsByProducer[$producer]);
+                if (!\in_array($code, $produced[$producer], true)) {
+                    $produced[$producer][] = $code;
+                }
+            }
+        }
+        $channels = new ChannelUniverse($declarations, $produced, $supports, new ResolvedComputedMetricDefinitions([]));
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata, channels: $channels, only: $only, disabled: $disabled));
+        foreach ($manual as $producer => [$namespaces, $channelExclusions, $paths]) {
             if ($namespaces !== []) {
                 $registry->configureNamespaceExclusions($producer, $namespaces);
             }
-            if ($channels !== []) {
-                $registry->configureNamespaceChannelExclusions($producer, $channels);
+            if ($channelExclusions !== []) {
+                $registry->configureNamespaceChannelExclusions($producer, $channelExclusions);
             }
             if ($paths !== []) {
                 $registry->configurePathExclusions($producer, $paths);
@@ -1361,9 +1420,7 @@ final class RuleExecutionTest extends TestCase
             $lookups,
             self::createStub(ProfilerInterface::class),
             $registry,
-            $ruleSelector,
             classlessProducers: $classlessProducers,
-            channelIdentity: $channelIdentity,
         );
     }
 
@@ -1586,23 +1643,6 @@ final class RuleExecutionTest extends TestCase
     private function pathSubtree(string $path): PathPattern
     {
         return new PathPattern(new SelectorDefinition(SelectorKind::Subtree, $path));
-    }
-
-    private function computedRuleSelector(): RuleSelector
-    {
-        return new RuleSelector(new class implements RuleChannelRegistryInterface {
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                if ($producerRuleName !== 'computed.health') {
-                    return [];
-                }
-
-                return [
-                    new FindingChannel('health.complexity'),
-                    new FindingChannel('health.cohesion'),
-                ];
-            }
-        });
     }
 
     /**

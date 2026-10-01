@@ -14,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -141,14 +140,12 @@ final class HierarchicalLevelActivityTest extends TestCase
         $input = new FindingConfiguration(
             new RuleOptionsDocument($options),
             new FindingCliOverrides([]),
-            new RuleSelection(),
         );
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
-        $input = ResolvedOptionsFixture::authoredConfiguration($input, $execution->allRules());
-        $configuration->replace($input->withResolvedOptions($builder->build($input)));
+        $configuration->replace(ResolvedOptionsFixture::ready($input, $execution->allRules()));
 
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);

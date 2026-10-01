@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
 use InvalidArgumentException;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,9 +22,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -75,6 +75,8 @@ final class RuntimeConfiguratorTest extends TestCase
     private ProfileSession $profile;
     private SwitchableProgressReporter $progress;
     private RuntimeConfigurator $configurator;
+    private RuleChannelSnapshotFactoryInterface $snapshotFactory;
+    private ResolvedComputedMetricDefinitions $snapshotDefinitions;
 
     /**
      * A real directory, not `/project`: resolving an enabled cache now refuses
@@ -94,6 +96,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->profile = new ProfileSession();
         $this->progress = new SwitchableProgressReporter();
 
+        $this->snapshotDefinitions = new ResolvedComputedMetricDefinitions([]);
         $this->configurator = $this->createConfigurator();
     }
 
@@ -106,7 +109,6 @@ final class RuntimeConfiguratorTest extends TestCase
         ?string $failingOwner = null,
         ?ComputedMetricConfiguratorInterface $computedMetricsOverride = null,
         ?RuleChannelSnapshotFactoryInterface $snapshotFactoryOverride = null,
-        ?RuleSelector $selectorOverride = null,
     ): RuntimeConfigurator {
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $architectureToken = new class implements ResolvedArchitecturePolicyInterface {
@@ -143,17 +145,19 @@ final class RuntimeConfiguratorTest extends TestCase
         // The universe carries the addressable names, which is what the
         // validator reads; a registry stub alone no longer says which they are.
         $staticChannels = new ChannelUniverse(
-            [],
-            [],
+            LcomRule::channelDeclarations(),
+            [LcomRule::NAME => array_keys(LcomRule::channelDeclarations())],
             [LcomRule::NAME => false],
             new ResolvedComputedMetricDefinitions([]),
         );
-        $ruleSelector = $selectorOverride ?? new RuleSelector($staticChannels);
+        $this->snapshotFactory = $snapshotFactoryOverride ?? $staticChannels;
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
-            $ruleSelector,
-            $snapshotFactoryOverride ?? $staticChannels,
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
+            $this->snapshotFactory,
+            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),
+            $computedMetrics,
+            new RuleEnablementResolver(),
         );
         $analysis = new AnalysisRuntimeConfigurator(
             $this->rules,
@@ -224,9 +228,8 @@ final class RuntimeConfiguratorTest extends TestCase
                 return $this->snapshot;
             }
         };
-        $static = self::createStub(RuleChannelRegistryInterface::class);
-        $selector = new RuleSelector($static);
-        $this->configurator = $this->createConfigurator(null, $computedMetrics, $factory, $selector);
+        $this->snapshotDefinitions = $definitions;
+        $this->configurator = $this->createConfigurator(null, $computedMetrics, $factory);
 
         $this->configurator->resetRunState();
         $this->configure(
@@ -237,12 +240,11 @@ final class RuntimeConfiguratorTest extends TestCase
         );
 
         self::assertSame($definitions, $factory->received);
-        $property = (new ReflectionClass($selector))->getProperty('channels');
-        self::assertSame($snapshot, $property->getValue($selector));
+        self::assertSame($snapshot, $this->rules->channelUniverse());
     }
 
     #[Test]
-    public function itLeavesStaticChannelsAndAllStoresAtDefaultsWhenSelectorValidationFails(): void
+    public function itLeavesAllStoresAtDefaultsWhenSelectorValidationFails(): void
     {
         $root = AbsolutePath::fromString($this->projectRoot);
         $this->configurator->resetRunState();
@@ -298,36 +300,39 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
         self::assertSame([], $this->rules->all());
-        self::assertSame([], $this->rules->selection()->only);
-        self::assertSame([], $this->rules->selection()->disabled);
+        $enablement = $this->rules->enablement();
+        self::assertNotNull($enablement);
+        self::assertNull($enablement->filter());
+        self::assertNotEmpty($enablement->decisions());
+        self::assertSame([], array_filter($enablement->decisions(), static fn($decision): bool => $decision->statement !== null));
         self::assertFalse($this->rules->capturesExcludedFindings());
         self::assertSame([], $this->lcomStore->current()->excludedMethods);
         self::assertFalse($this->profile->isEnabled());
     }
 
     #[Test]
-    public function itRestoresStaticOnlyChannelsBeforeAnyConfigurationResolution(): void
+    public function itClearsTheCommittedRunBeforeAnyConfigurationResolution(): void
     {
         $analysis = (new ReflectionClass($this->configurator))->getProperty('analysisRuntimeConfigurator')->getValue($this->configurator);
         self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysis);
         $validator = (new ReflectionClass($analysis))->getProperty('ruleInputValidator')->getValue($analysis);
         self::assertInstanceOf(RuleInputValidator::class, $validator);
-        $selector = (new ReflectionClass($validator))->getProperty('ruleSelector')->getValue($validator);
-        self::assertInstanceOf(RuleSelector::class, $selector);
-        $staticChannels = (new ReflectionClass($selector))->getProperty('defaultChannels')->getValue($selector);
-        $selector->replaceChannels(self::createStub(RuleChannelRegistryInterface::class));
+        self::assertSame($this->snapshotFactory, (new ReflectionClass($validator))->getProperty('ruleChannelSnapshotFactory')->getValue($validator));
+        $root = AbsolutePath::fromString($this->projectRoot);
+        $this->configure($this->customDocument(), $root, $this->input(['--show-suppressed' => true, '--profile' => null]), new BufferedOutput());
+        self::assertNotNull($this->rules->enablement());
 
         $this->configurator->resetRunState();
 
-        self::assertSame(
-            $staticChannels,
-            (new ReflectionClass($selector))->getProperty('channels')->getValue($selector),
-        );
+        self::assertNull($this->rules->enablement());
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
         self::assertSame([], $this->rules->all());
         self::assertSame([], $this->lcomStore->current()->excludedMethods);
         self::assertFalse($this->profile->isEnabled());
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Rule channels are unavailable before analysis preflight.');
+        $this->rules->channelUniverse();
     }
 
     #[Test]
@@ -663,7 +668,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
     {
         $configuration = FindingConfiguration::fromDocument($document);
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
-        return $configuration->withResolvedOptions(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $metadata));
+        return \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $metadata, channels: $this->snapshotFactory->snapshot($this->snapshotDefinitions));
     }
 
     /** @param list<array{source: string, values: array<string, mixed>}> $sources */

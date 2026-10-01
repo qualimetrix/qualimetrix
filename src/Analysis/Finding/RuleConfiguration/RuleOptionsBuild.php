@@ -9,13 +9,17 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\OptionActivity;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSuppression;
+use Qualimetrix\Analysis\Finding\Selection\StatedEnablement;
 
 /** Builds every producer's immutable options from the judged document. */
 final readonly class RuleOptionsBuild
@@ -25,10 +29,11 @@ final readonly class RuleOptionsBuild
         private RuleSuppressionSelectorDecoder $suppressionSelectors = new RuleSuppressionSelectorDecoder(),
     ) {}
 
-    public function build(FindingConfiguration $configuration): ResolvedRuleOptions
+    public function build(FindingConfiguration $configuration, StatedEnablement $stated): ResolvedRuleOptions
     {
         $options = [];
         $suppressions = [];
+        $activity = [];
         foreach ($this->execution->allRules() as $producer) {
             $ruleName = $producer->name;
             $optionsClass = $producer->optionsClass;
@@ -38,7 +43,8 @@ final readonly class RuleOptionsBuild
             if (!is_a($optionsClass, RuleOptionsInterface::class, true)) {
                 throw new InvalidArgumentException(\sprintf('Options class %s must implement %s', $optionsClass, RuleOptionsInterface::class));
             }
-            $values = new ResolvedRuleOptionValues($configuration->document, $ruleName);
+            $values = (new ResolvedRuleOptionValues($configuration->document, $ruleName))
+                ->withEnabled($stated->isEnabled($ruleName));
             try {
                 $suppressions[$ruleName] = new RuleSuppression(
                     paths: $this->suppressionSelectors->optionalPaths($ruleName, 'suppress_paths', $values->list(FrameworkOptionKeys::PATHS)),
@@ -55,8 +61,40 @@ final readonly class RuleOptionsBuild
                 $node->refuse($refusal->getMessage());
             }
         }
-        return new ResolvedRuleOptions($options, $suppressions);
+        foreach ($stated->decisions() as $decision) {
+            $ruleName = $decision->producer;
+            $level = $decision->level;
+            $option = $options[$ruleName] ?? throw new LogicException('Every decided producer requires resolved options.');
+            $active = $option instanceof HierarchicalRuleOptionsInterface && $level !== null
+                ? $option->isLevelEnabled($level)
+                : !($option instanceof ModeGatedOptionsInterface && $option->isMuted());
+            $path = $option instanceof ModeGatedOptionsInterface
+                ? ['rules', $ruleName, 'mode']
+                : ($option instanceof HierarchicalRuleOptionsInterface && $level !== null
+                    ? ['rules', $ruleName, $level->value, 'enabled'] : []);
+            $node = $path === [] ? null : $configuration->document->get(...$path);
+            $writes = $node instanceof ResolvedWriteHistoryInterface ? $node->writes() : [];
+            $last = $writes === [] ? null : $writes[\count($writes) - 1];
+            $activity[$ruleName][$level === null ? '' : $level->value] = new OptionActivity(
+                $active,
+                $last === null ? null : self::authoredSwitch($last['provenance'], $last['value']),
+                $last['provenance'] ?? null,
+            );
+        }
+        return new ResolvedRuleOptions($options, $suppressions, $activity);
     }
+
+    private static function authoredSwitch(Provenance $writer, mixed $value): string
+    {
+        if (!\is_bool($value) && !\is_string($value)) {
+            throw new LogicException('A decided rule option switch must be a scalar boolean or mode.');
+        }
+        $text = \is_bool($value) ? ($value ? 'true' : 'false') : $value;
+        return $writer->path === null
+            ? ($writer->origin->locator() ?? '--rule-opt') . '=' . $text
+            : $writer->displayPath() . ': ' . $text;
+    }
+
     private static function refuseBand(FindingConfiguration $configuration, string $producer, RuleOptionRefusal $refusal): never
     {
         $writers = [];

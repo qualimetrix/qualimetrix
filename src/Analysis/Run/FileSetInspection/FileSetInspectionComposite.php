@@ -22,25 +22,17 @@ final readonly class FileSetInspectionComposite
 
     /**
      * @param list<SplFileInfo> $eligibleFiles
-     * @param list<string> $onlyRules
-     * @param list<string> $disabledRules
-     * @param array<string, mixed> $ruleOptions per-producer options, so that a participant switched
-     *                                          off by its own `enabled: false` is skipped rather
-     *                                          than run for findings nothing will publish
      */
     public function inspect(
         array $eligibleFiles,
         AbsolutePath $projectRoot,
-        array $onlyRules,
-        array $disabledRules,
-        array $ruleOptions,
     ): void {
         foreach ($this->participants as $participant) {
             $participant->resetForRun();
         }
 
         foreach ($this->participants as $participant) {
-            if (!$this->producerGate->isEnabled($participant::producerRuleName(), $onlyRules, $disabledRules, $ruleOptions)) {
+            if (!$this->producerGate->isEnabled($participant::producerRuleName())) {
                 continue;
             }
 

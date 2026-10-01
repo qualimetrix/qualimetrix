@@ -12,15 +12,17 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -32,6 +34,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -39,6 +42,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * The loud half of the inline-directive report, against the real channel
@@ -690,13 +694,14 @@ final class UnusedDirectiveRuleTest extends TestCase
     private static function policy(?ChannelUniverseInterface $identity = null): InlineDirectivePolicy
     {
         $universe = $identity ?? self::productionUniverse();
-
-        return new InlineDirectivePolicy(new DirectiveUsage(
-            $universe,
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            new RuleOptionsRegistry(),
-            self::productionUniverse(),
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(
+            FindingConfiguration::none(),
+            self::$metadata,
+            channels: $universe,
         ));
+
+        return new InlineDirectivePolicy(new DirectiveUsage($universe, $registry, $universe));
     }
 
     private static function context(): AnalysisContext
@@ -708,6 +713,9 @@ final class UnusedDirectiveRuleTest extends TestCase
     {
         return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString(self::FILE)));
     }
+
+    /** @var list<RuleMetadata> */
+    private static array $metadata = [];
 
     private static ?RuleChannelSnapshotFactoryInterface $emptyUniverse = null;
 
@@ -728,7 +736,11 @@ final class UnusedDirectiveRuleTest extends TestCase
             return self::$emptyUniverse;
         }
 
-        $universe = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+        $container = (new ContainerFactory())->create();
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        self::$metadata = $execution->allRules();
+        $universe = $container->get(ChannelUniverseInterface::class);
         \assert($universe instanceof RuleChannelSnapshotFactoryInterface);
 
         return self::$emptyUniverse = $universe;
@@ -746,9 +758,28 @@ final class UnusedDirectiveRuleTest extends TestCase
         InlineDirectivePolicy $policy,
         ChannelUniverseInterface $identity,
     ): array {
-        return [
-            ...(new UnusedDirectiveRule($options, $policy))->analyze(self::context()),
-            ...(new InlineDirectiveValidator($options, $policy, $identity))->validate(self::context()),
-        ];
+        self::productionUniverse();
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(
+            FindingConfiguration::none()->withRuleOptions([
+                InlineDirectivePolicyInterface::PRODUCER_RULE_NAME => [
+                    'enabled' => $options->enabled,
+                    'unused-directive-severity' => $options->unusedDirectiveSeverity->value,
+                ],
+            ]),
+            self::$metadata,
+            channels: $identity,
+        ));
+        $execution = new RuleExecution(
+            [ResolvedOptionsFixture::lookup(new UnusedDirectiveRule($options, $policy))],
+            self::createStub(ProfilerInterface::class),
+            $registry,
+            configurationValidators: [[
+                'producer' => InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
+                'create' => static fn(): InlineDirectiveValidator => new InlineDirectiveValidator($policy, $identity),
+            ]],
+        );
+
+        return $execution->execute(self::context())->produced;
     }
 }

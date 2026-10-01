@@ -22,7 +22,8 @@ final class RuleOptionsDefaultsTest extends TestCase
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
-        $snapshot = $builder->build(ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none(), $execution->allRules()));
+        $snapshot = ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules())->resolvedOptions;
+        self::assertNotNull($snapshot);
         self::assertCount(54, $snapshot->all());
         $disabled = [];
         foreach ($snapshot->all() as $producer => $options) {
@@ -30,7 +31,8 @@ final class RuleOptionsDefaultsTest extends TestCase
             self::assertEquals(new $class(), $options, $producer);
             $disabled[$producer] = ['enabled' => false];
         }
-        $muted = $builder->build(ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none()->withRuleOptions($disabled), $execution->allRules()));
+        $muted = ResolvedOptionsFixture::ready(FindingConfiguration::none()->withRuleOptions($disabled), $execution->allRules())->resolvedOptions;
+        self::assertNotNull($muted);
         foreach ($muted->all() as $producer => $options) {
             self::assertFalse($options->isEnabled(), $producer);
         }

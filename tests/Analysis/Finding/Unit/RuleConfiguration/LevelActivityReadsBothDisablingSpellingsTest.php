@@ -14,11 +14,7 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 /**
  * Configuration says "off" in two spellings, and the rule must read both.
  *
- * This used to be asserted against the audit, which re-derived enablement from
- * the merged configuration itself. It moved here with the answer: a rule
- * reports what its own options decided, so the two spellings are a fact about
- * reading options and belong beside that reading rather than beside a consumer
- * that once duplicated it.
+ * Both spellings must reach the final configured activity snapshot.
  */
 final class LevelActivityReadsBothDisablingSpellingsTest extends TestCase
 {
@@ -61,8 +57,8 @@ final class LevelActivityReadsBothDisablingSpellingsTest extends TestCase
         $registry = new RuleOptionsRegistry();
         ResolvedOptionsFixture::file($registry, $configured === [] ? [] : [GotoRule::NAME => $configured]);
 
-        $options = (new ResolvedOptionsFixture($registry))->create(GotoRule::NAME, GotoRule::getOptionsClass());
+        (new ResolvedOptionsFixture($registry))->create(GotoRule::NAME, GotoRule::getOptionsClass());
 
-        return (new GotoRule($options))->levelActivity()[GotoRule::NAME] ?? [];
+        return $registry->enablement()?->levelActivity()->toMap()[GotoRule::NAME] ?? [];
     }
 }

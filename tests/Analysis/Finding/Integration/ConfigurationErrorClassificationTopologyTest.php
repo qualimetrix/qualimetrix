@@ -115,12 +115,11 @@ final class ConfigurationErrorClassificationTopologyTest extends TestCase
         $lookup = ResolvedOptionsFixture::lookup($rule);
         $registry = new RuleOptionsRegistry();
         $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none();
-        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, [$lookup['metadata']])));
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
         $execution = new RuleExecution(
             [$lookup],
             self::createStub(ProfilerInterface::class),
             $registry,
-            null,
             [['producer' => TrespassingValidator::producerRuleName(), 'create' => static fn(): TrespassingValidator => new TrespassingValidator()]],
         );
 
@@ -172,17 +171,6 @@ final class StampRule implements RuleInterface
     public static function shape(): ChannelShape
     {
         return ChannelShape::Occurrence;
-    }
-
-    /**
-     * A double with no producers of its own: an empty activity declares
-     * nothing, and absence is not disablement.
-     *
-     * @return array<string, array<string, bool>>
-     */
-    public function levelActivity(): array
-    {
-        return [];
     }
 
     public function analyze(AnalysisContext $context): array

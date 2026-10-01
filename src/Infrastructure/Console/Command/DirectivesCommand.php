@@ -236,8 +236,9 @@ final class DirectivesCommand extends Command
 
         $exitCode = self::exitCodeFor($report);
         $selection = ($prepared->findingConfiguration
-            ?? throw new LogicException('Directive auditing requires a finding configuration.'))->selection;
-        $presenter = new DirectiveAuditPresenter($report, $selection->only, $selection->disabled);
+            ?? throw new LogicException('Directive auditing requires a finding configuration.'))->enablement
+            ?? throw new LogicException('Directive auditing requires final rule enablement.');
+        $presenter = new DirectiveAuditPresenter($report, $selection);
 
         if ($format === 'json') {
             OutputHelper::write($output, $presenter->json($exitCode));

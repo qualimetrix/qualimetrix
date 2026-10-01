@@ -40,12 +40,43 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 final class RuleOptionsBuildTest extends TestCase
 {
+    #[Test]
+    public function itRetainsTheAuthoredModeWriterWhenTheFinalModeIsActive(): void
+    {
+        $metadata = [new RuleMetadata('architecture.unassigned-class', UnassignedClassOptions::class, '', [], false)];
+        $document = ResolvedOptionsFixture::document([
+            ['source' => 'config', 'values' => ['rules' => ['architecture.unassigned-class' => ['mode' => 'warn']]]],
+        ], AbsolutePath::fromString('/project'), $metadata);
+
+        $ready = ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata);
+        $activity = $ready->resolvedOptions?->activityOf('architecture.unassigned-class', SymbolLevel::Project);
+        self::assertNotNull($activity);
+        self::assertTrue($activity->active);
+        self::assertSame('rules.architecture.unassigned-class.mode: warn', $activity->written);
+        self::assertSame(0, $activity->rank());
+        $writer = $activity->decidedBy;
+        self::assertNotNull($writer);
+        self::assertSame('rules.architecture.unassigned-class.mode', $writer->displayPath());
+        self::assertSame(ConfigurationSource::ConfigFile, $writer->origin->source());
+
+        $default = ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata)
+            ->resolvedOptions?->activityOf('architecture.unassigned-class', SymbolLevel::Project);
+        self::assertNotNull($default);
+        self::assertFalse($default->active);
+        self::assertNull($default->written);
+        self::assertNull($default->decidedBy);
+        self::assertSame(-1, $default->rank());
+    }
+
     #[Test]
     public function itDefersConstructionAndReplacesEveryMaterializedObjectWithTheInvocationSnapshot(): void
     {
@@ -100,8 +131,17 @@ final class RuleOptionsBuildTest extends TestCase
         self::assertSame([], $observed->rules);
         self::assertSame(0, $observed->validators);
         $builder = new RuleOptionsBuild($execution);
-        $first = ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none(), $execution->allRules());
-        $first = $first->withResolvedOptions($builder->build($first));
+        $prepare = static function (FindingConfiguration $input) use ($execution, $builder): FindingConfiguration {
+            $metadata = $execution->allRules();
+            $configuration = ResolvedOptionsFixture::authoredConfiguration($input, $metadata);
+            $channels = ResolvedOptionsFixture::universe($metadata, [GotoRule::NAME => [\Qualimetrix\Core\Symbol\SymbolLevel::Callable]]);
+            $resolver = new RuleEnablementResolver();
+            $stated = $resolver->decide($configuration->document, $channels);
+            $options = $builder->build($configuration, $stated);
+            return $configuration->withChannelUniverse($channels)->withResolvedOptions($options)
+                ->withEnablement($resolver->conclude($stated, $options));
+        };
+        $first = $prepare(FindingConfiguration::none());
         self::assertSame([], $observed->rules);
         $registry->replace($first);
         $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
@@ -119,14 +159,30 @@ final class RuleOptionsBuildTest extends TestCase
         }
         self::assertCount(1, $execution->allRules());
         self::assertCount(1, $observed->rules);
-        $second = ResolvedOptionsFixture::authoredConfiguration(FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => false]]), $execution->allRules());
-        $second = $second->withResolvedOptions($builder->build($second));
+        $second = $prepare(FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => false]]));
         $registry->replace($second);
         self::assertFalse($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);
+        self::assertCount(1, $observed->rules);
+        self::assertSame(1, $observed->validators);
+        $execution->execute($context);
+        self::assertCount(1, $observed->rules);
+        self::assertSame(1, $observed->validators);
+        $firstOptions = $first->resolvedOptions;
+        $secondOptions = $second->resolvedOptions;
+        self::assertNotNull($secondOptions);
+        self::assertNotSame($firstOptions->for(GotoRule::NAME), $secondOptions->for(GotoRule::NAME));
+
+        $third = $prepare(FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => true]]));
+        $registry->replace($third);
+        self::assertTrue($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);
+        self::assertCount(1, $observed->rules);
+        self::assertSame(1, $observed->validators);
+        $execution->execute($context);
         self::assertCount(2, $observed->rules);
+        self::assertSame(2, $observed->validators);
         self::assertNotSame($observed->rules[0], $observed->rules[1]);
         self::assertNotSame($observed->options[0], $observed->options[1]);
-        self::assertSame($second->resolvedOptions?->for(GotoRule::NAME), $observed->options[1]);
+        self::assertSame($third->resolvedOptions?->for(GotoRule::NAME), $observed->options[1]);
     }
 
     #[Test]
@@ -394,9 +450,9 @@ final class RuleOptionsBuildTest extends TestCase
     #[Test]
     public function itPublishesCurrentClassActivityFromTheBuiltMutedLevelOptions(): void
     {
-        $snapshot = self::buildLayers([self::file(['complexity.npath' => ['class' => ['threshold' => 22]]])]);
+        $prepared = self::prepareLayers([self::file(['complexity.npath' => ['class' => ['threshold' => 22]]])]);
         $registry = new RuleOptionsRegistry();
-        $registry->replace(FindingConfiguration::none()->withResolvedOptions($snapshot));
+        $registry->replace($prepared);
         $execution = new RuleExecution([[
             'metadata' => new RuleMetadata('complexity.npath', NpathComplexityOptions::class, '', [], false),
             'create' => static function () use ($registry): NpathComplexityRule {
@@ -408,8 +464,8 @@ final class RuleOptionsBuildTest extends TestCase
             },
         ]], self::createStub(ProfilerInterface::class), $registry);
         self::assertTrue($execution->levelActivity()->toMap()['complexity.npath']['class']);
-        $disabled = self::buildLayers([self::file(['complexity.npath' => ['class' => ['enabled' => false, 'threshold' => 22]]])]);
-        $registry->replace(FindingConfiguration::none()->withResolvedOptions($disabled));
+        $disabled = self::prepareLayers([self::file(['complexity.npath' => ['class' => ['enabled' => false, 'threshold' => 22]]])]);
+        $registry->replace($disabled);
         self::assertFalse($execution->levelActivity()->toMap()['complexity.npath']['class']);
     }
 
@@ -433,17 +489,35 @@ final class RuleOptionsBuildTest extends TestCase
     /** @param list<AuthoredLayer> $layers */
     private static function buildLayers(array $layers): ResolvedRuleOptions
     {
-        $execution = ResolvedOptionsFixture::execution([
+        return self::prepareLayers($layers)->resolvedOptions
+            ?? throw new LogicException('The prepared fixture must contain resolved options.');
+    }
+
+    /** @param list<AuthoredLayer> $layers */
+    private static function prepareLayers(array $layers): FindingConfiguration
+    {
+        $metadata = [
             new RuleMetadata('complexity.ccn', ComplexityOptions::class, '', [], false),
             new RuleMetadata('complexity.cognitive', CognitiveComplexityOptions::class, '', [], false),
             new RuleMetadata('coupling.cbo', CboOptions::class, '', [], false),
             new RuleMetadata('coupling.instability', InstabilityOptions::class, '', [], false),
             new RuleMetadata('complexity.npath', NpathComplexityOptions::class, '', [], false),
             new RuleMetadata('maintainability.mi', MaintainabilityOptions::class, '', [], false),
-        ]);
-        $document = DocumentComposer::compose(new DocumentSchema([new RulesSection($execution, 'rules')]), $layers);
+        ];
+        $execution = ResolvedOptionsFixture::execution($metadata);
+        $document = DocumentComposer::compose(new DocumentSchema([
+            new RulesSection($execution, 'rules'),
+            new RulesSection($execution, 'only_rules'),
+            new RulesSection($execution, 'disabled_rules'),
+        ]), $layers);
         $empty = FindingConfiguration::none();
-        return (new RuleOptionsBuild($execution))->build(new FindingConfiguration($empty->ruleOptions, $empty->cliOverrides, $empty->selection, document: $document));
+        $resolver = new RuleEnablementResolver();
+        $channels = ResolvedOptionsFixture::universe($metadata);
+        $stated = $resolver->decide($document, $channels);
+        $configuration = new FindingConfiguration($empty->ruleOptions, $empty->cliOverrides, document: $document);
+        $options = (new RuleOptionsBuild($execution))->build($configuration, $stated);
+        return $configuration->withChannelUniverse($channels)->withResolvedOptions($options)
+            ->withEnablement($resolver->conclude($stated, $options));
     }
 
 }

@@ -17,16 +17,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -50,6 +49,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 
@@ -106,12 +106,13 @@ final class DirectiveAuditUniverseTest extends TestCase
         $root = AbsolutePath::fromString(\dirname(__DIR__, 4));
         $relative = PathFactory::bestEffortRelative(__FILE__, $root);
 
-        $policy = new InlineDirectivePolicy(new DirectiveUsage(
-            self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            new RuleOptionsRegistry(),
-            self::productionUniverse(),
-        ));
+        $universe = self::productionUniverse();
+        $container = (new ContainerFactory())->create();
+        $metadata = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $metadata);
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata->allRules(), channels: $universe));
+        $policy = new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe));
 
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn([new SplFileInfo(__FILE__)]);
@@ -157,11 +158,12 @@ final class DirectiveAuditUniverseTest extends TestCase
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($collection)
             ->withRuleExecution($rules)
+            ->withRuleConfiguration($configuration)
             ->withInlineDirectivePolicy($policy)
             ->withCircularDependencyPreparation(self::createStub(CircularDependencyPreparationInterface::class))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],
-                new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+                new RuleSelectorProducerGate($configuration),
                 $profiler,
             ))
             ->withMeasurementAggregation($aggregation)

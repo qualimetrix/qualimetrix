@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
@@ -45,6 +46,9 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     {
         $snapshot = $configuration->resolvedOptions
             ?? throw new LogicException('Rule options must be built before runtime configuration is committed.');
+        if ($configuration->enablement === null || $configuration->channels === null) {
+            throw new LogicException('Rule enablement and its channel universe must be resolved before runtime configuration is committed.');
+        }
         $this->exclusionProvider->reset();
         $this->pathExclusionProvider->reset();
         foreach ($snapshot->all() as $producer => $options) {
@@ -60,6 +64,17 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     {
         return $this->configuration->resolvedOptions
             ?? throw new LogicException('Rule options are unavailable before analysis preflight.');
+    }
+
+    public function enablement(): ?RuleEnablement
+    {
+        return $this->configuration->enablement;
+    }
+
+    public function channelUniverse(): ChannelUniverseInterface
+    {
+        return $this->configuration->channels
+            ?? throw new LogicException('Rule channels are unavailable before analysis preflight.');
     }
 
     /** @param class-string<RuleOptionsInterface> $optionsClass */
@@ -95,11 +110,6 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     public function all(): array
     {
         return array_replace_recursive($this->configFileOptions(), $this->cliOptions());
-    }
-
-    public function selection(): RuleSelection
-    {
-        return $this->configuration->selection;
     }
 
     public function captureExcludedFindings(): void

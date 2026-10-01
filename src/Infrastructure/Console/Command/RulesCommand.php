@@ -6,16 +6,16 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,10 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Lists all available rules with their options and CLI aliases.
  *
- * Rules arrive as container-built instances (injected by
- * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass}),
- * never as hand-constructed objects: a rule may declare constructor
- * dependencies beyond its Options object that only the container can resolve.
+ * Rule metadata and one immutable channel universe drive the listing.
  */
 #[AsCommand(
     name: 'rules',
@@ -38,8 +35,8 @@ final class RulesCommand extends Command
 {
     public function __construct(
         private readonly RuleExecutionInterface $ruleExecution,
-        private readonly RuleChannelRegistryInterface $channels,
-        private readonly ChannelDeclarationRegistryInterface $declarations,
+        private readonly RuleChannelSnapshotFactoryInterface $channelSnapshots,
+        private readonly RuleEnablementResolver $enablementResolver,
         private readonly RuleListingPresenter $presenter,
         private readonly ConfigurationInputAdapter $configurationInputAdapter,
         private readonly ComputedMetricConfiguratorInterface $computedMetrics,
@@ -64,8 +61,10 @@ final class RulesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $document = $this->configurationInputAdapter->resolve($input);
-        $selection = FindingConfiguration::fromDocument($document)->selection;
-        $definitions = $this->computedMetrics->resolve($document)->all();
+        $resolvedDefinitions = $this->computedMetrics->resolve($document);
+        $channels = $this->channelSnapshots->snapshot($resolvedDefinitions);
+        $selection = $this->enablementResolver->decide($document->resolved(), $channels);
+        $definitions = $resolvedDefinitions->all();
         $groupFilter = CommandLineSpelling::option($input, 'group');
 
         if ($groupFilter !== null && !\in_array($groupFilter, $this->families(), true)) {
@@ -84,7 +83,7 @@ final class RulesCommand extends Command
         }
 
         $this->configurationInputAdapter->writeDiagnostics($document, $output);
-        $this->presenter->present($output, $this->rulesIn($groupFilter));
+        $this->presenter->present($output, $this->rulesIn($groupFilter, $channels));
         if ($definitions !== []) {
             $output->writeln('');
             $output->writeln('<info>Computed metrics:</info> ' . implode(', ', array_map(
@@ -92,11 +91,25 @@ final class RulesCommand extends Command
                 $definitions,
             )));
         }
-        if ($selection->only !== []) {
-            $output->writeln('<comment>Only selected by configuration:</comment> ' . implode(', ', $selection->only));
+        $filter = $selection->filter();
+        $only = $filter === null ? [] : $filter->selectors;
+        if ($only !== []) {
+            $output->writeln('<comment>Only selected by configuration:</comment> ' . implode(', ', $only));
         }
-        if ($selection->disabled !== []) {
-            $output->writeln('<comment>Disabled by configuration:</comment> ' . implode(', ', $selection->disabled));
+        $disabled = [];
+        foreach ($selection->decisions() as $decision) {
+            if ($decision->on) {
+                continue;
+            }
+            if ($decision->decisiveStatements === [] && $decision->statement !== null) {
+                $disabled[$decision->statement] = true;
+            }
+            foreach ($decision->decisiveStatements as $statement) {
+                $disabled[$statement['text']] = true;
+            }
+        }
+        if ($disabled !== []) {
+            $output->writeln('<comment>Disabled by configuration:</comment> ' . implode(', ', array_keys($disabled)));
         }
 
         return self::SUCCESS;
@@ -125,7 +138,7 @@ final class RulesCommand extends Command
     /**
      * @return list<array{name: string, group: string, description: string, options: list<string>, optionsAtLevel: array<string, list<string>>, aliases: array<string, string>, judged: array<string, non-empty-list<string>>}>
      */
-    private function rulesIn(?string $groupFilter): array
+    private function rulesIn(?string $groupFilter, ChannelUniverseInterface $channels): array
     {
         $rules = [];
 
@@ -142,8 +155,8 @@ final class RulesCommand extends Command
             // declared order, which is the order the producing rule's own body
             // considers them in.
             $judged = [];
-            foreach ($this->channels->channelsProducedBy($rule->name) as $channel) {
-                $judges = $this->declarations->declarationFor($channel)?->judges;
+            foreach ($channels->channelsProducedBy($rule->name) as $channel) {
+                $judges = $channels->declarationFor($channel)?->judges;
 
                 if ($judges !== null) {
                     $judged[$channel->code] = $judges->keys;

@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,6 +27,8 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(RuleConfigurationInterface::class, RuleOptionsRegistry::class)
             ->setPublic(true);
 
+        $container->register(RuleEnablementResolver::class);
+
         $container->register(RuleOptionsBuild::class)
             ->setArguments([
                 new Reference(RuleExecutionInterface::class),
@@ -39,10 +40,8 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
                 '$rules' => [],
                 '$profiler' => new Reference(ProfilerInterface::class),
                 '$ruleOptionsRegistry' => new Reference(RuleOptionsRegistry::class),
-                '$ruleSelector' => new Reference(RuleSelector::class),
                 '$configurationValidators' => [],
                 '$classlessProducers' => [],
-                '$channelIdentity' => new Reference(ChannelIdentityInterface::class),
             ]);
         $container->setAlias(RuleExecutionInterface::class, RuleExecution::class)
             ->setPublic(true);

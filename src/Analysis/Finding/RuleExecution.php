@@ -6,21 +6,20 @@ namespace Qualimetrix\Analysis\Finding;
 
 use Closure;
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\ProducerDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Contract\SelectionTrace;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Traversable;
@@ -28,8 +27,8 @@ use Traversable;
 /**
  * Default implementation of RuleExecutionInterface.
  *
- * Filters rules at runtime based on configuration (disabled_rules, only_rules)
- * and executes only active rules. Filters individual findings by code.
+ * Executes the producers admitted by the resolved invocation snapshot and
+ * publishes their findings through the same channel decisions.
  *
  * @qmx-threshold coupling.cbo warning=22 -- Ce is 18, one of them the publication
  * snapshot this executor answers with, as it answers with its level activity. The three
@@ -56,8 +55,6 @@ final class RuleExecution implements RuleExecutionInterface
     /** @var array<string, list<Closure(): ConfigurationValidatorInterface>> */
     private readonly array $validatorsByProducer;
 
-    private readonly RuleSelector $ruleSelector;
-
     private readonly FindingExclusionLedger $exclusions;
 
     /** @var list<ProducerDeclaration> */
@@ -76,10 +73,8 @@ final class RuleExecution implements RuleExecutionInterface
         iterable $rules,
         private readonly ProfilerInterface $profiler,
         private readonly RuleConfigurationInterface $ruleOptionsRegistry,
-        ?RuleSelector $ruleSelector = null,
         iterable $configurationValidators = [],
         iterable $classlessProducers = [],
-        private readonly ?ChannelIdentityInterface $channelIdentity = null,
     ) {
         $this->classlessProducers = $classlessProducers instanceof Traversable
             ? iterator_to_array($classlessProducers, false)
@@ -88,7 +83,6 @@ final class RuleExecution implements RuleExecutionInterface
             ? iterator_to_array($rules, false)
             : array_values($rules);
         $this->validatorsByProducer = self::groupByProducer($configurationValidators);
-        $this->ruleSelector = $ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry());
         $this->exclusions = new FindingExclusionLedger($ruleOptionsRegistry);
     }
 
@@ -101,8 +95,9 @@ final class RuleExecution implements RuleExecutionInterface
 
         $this->exclusions->begin();
 
-        $selection = $this->ruleOptionsRegistry->selection();
-        foreach ($this->activeRuleInstances($selection, $restrictToProducer) as $rule) {
+        $enablement = $this->readyEnablement();
+        $removed = [];
+        foreach ($this->activeRuleInstances($enablement, $restrictToProducer) as $rule) {
             $ruleName = $rule->getName();
 
             // One span, and the validators run inside it: a configuration
@@ -119,10 +114,16 @@ final class RuleExecution implements RuleExecutionInterface
             $profiler->stop($spanName);
 
             $produced = [...$produced, ...$ruleFindings];
-            $published = [...$published, ...$this->published($ruleName, $ruleFindings, $selection, $restrictToProducer)];
+            $published = [...$published, ...$this->published($ruleName, $ruleFindings, $enablement, $restrictToProducer, $removed)];
         }
 
-        return new RuleExecutionResult($produced, $published, $this->exclusions->stats(), $this->levelActivity());
+        return new RuleExecutionResult(
+            $produced,
+            $published,
+            $this->exclusions->stats(),
+            $this->levelActivity(),
+            new SelectionTrace($removed, $enablement->notRun()),
+        );
     }
 
     /**
@@ -135,9 +136,9 @@ final class RuleExecution implements RuleExecutionInterface
      * returns. Anything excluded here would therefore be removed from the
      * report while every account of the removal — the per-producer counters,
      * `--show-suppressed`'s retained findings and their attributions — stayed
-     * at the value taken before this method ran. A finding dropped by nobody,
-     * according to the run's own books. Channel selection has no such account
-     * and is idempotent, so it can be asked twice; the ledger cannot.
+     * at the value taken before this method ran. Channel selection is
+     * idempotent, so it can be asked twice; the ledger cannot. The execution
+     * result records selection removals made during {@see execute()}.
      *
      * @param list<Finding> $findings
      *
@@ -145,19 +146,14 @@ final class RuleExecution implements RuleExecutionInterface
      */
     public function publishable(array $findings): array
     {
-        $selection = $this->ruleOptionsRegistry->selection();
+        $enablement = $this->readyEnablement();
         $kept = [];
 
         foreach ($findings as $finding) {
             $producer = $this->producerOf($finding, $finding->ruleName);
 
-            if ($this->ruleSelector->isChannelEnabled(
-                $producer,
-                $finding->channel(),
-                $finding->level(),
-                $selection->only,
-                $selection->disabled,
-            )) {
+            $this->assertAddressedProducer($finding);
+            if ($enablement->publishes($finding->channel(), $finding->level(), $finding->addressedProducer)) {
                 $kept[] = $finding;
             }
         }
@@ -167,17 +163,13 @@ final class RuleExecution implements RuleExecutionInterface
 
     public function publication(): ChannelPublication
     {
-        return new ChannelPublication($this->ruleSelector, $this->ruleOptionsRegistry->selection(), $this->levelActivity());
+        return new ChannelPublication($this->readyEnablement());
     }
 
     public function levelActivity(): LevelActivity
     {
         $this->readySnapshot();
-        $rules = [];
-        foreach (array_keys($this->allRules) as $index) {
-            $rules[] = $this->ruleAt($index);
-        }
-        return new ConfiguredLevelActivity($rules, $this->channelIdentity)->activity();
+        return $this->readyEnablement()->levelActivity();
     }
 
     /**
@@ -192,9 +184,8 @@ final class RuleExecution implements RuleExecutionInterface
      * all seven. The granularity of {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}
      * follows, which is a declared consequence rather than a side effect.
      *
-     * The narrowing half is exact producer-name equality against `$producer`
-     * — not {@see RuleSelector::isChannelEnabled()}'s selector grammar, which
-     * also matches by channel code. `$producer` here is already the finding's
+     * The narrowing half is exact producer-name equality against `$producer`.
+     * `$producer` here is already the finding's
      * true owning producer ({@see producerOf()}), so a channel-code match
      * would only ever fire on a name collision with a *different* producer's
      * channel — a configuration validator running inside this rule's slot can
@@ -202,53 +193,64 @@ final class RuleExecution implements RuleExecutionInterface
      * class docblock this method's own docblock continues), and that other
      * producer's channel code coinciding with `$restrictToProducer` must not
      * leak its finding into a run narrowed to someone else. This mirrors
-     * {@see isEnabled()}'s own narrowing, and for the same reason: one
-     * contract, one comparison, not two vocabularies that can disagree.
+     * the exact producer restriction used for execution.
      *
      * @param list<Finding> $findings
+     * @param list<array{finding: Finding, suppressor: string}> $removed
      *
      * @return list<Finding>
      */
     private function published(
         string $ruleName,
         array $findings,
-        RuleSelection $selection,
+        RuleEnablement $enablement,
         ?string $restrictToProducer,
+        array &$removed,
     ): array {
         $kept = [];
 
         foreach ($findings as $finding) {
             $producer = $this->producerOf($finding, $ruleName);
+            $this->assertAddressedProducer($finding);
 
             if (!$this->exclusions->keeps($producer, $finding)) {
                 continue;
             }
 
-            $enabled = $this->ruleSelector->isChannelEnabled(
-                $producer,
-                $finding->channel(),
-                $finding->level(),
-                $selection->only,
-                $selection->disabled,
-            ) && ($restrictToProducer === null || $producer === $restrictToProducer);
+            $enabled = $enablement->publishes($finding->channel(), $finding->level(), $finding->addressedProducer)
+                && ($restrictToProducer === null || $producer === $restrictToProducer);
 
             if ($enabled) {
                 $kept[] = $finding;
+            } else {
+                $removed[] = [
+                    'finding' => $finding,
+                    'suppressor' => $restrictToProducer !== null && $producer !== $restrictToProducer
+                        ? \sprintf('restricted to producer "%s"', $restrictToProducer)
+                        : $enablement->selectionSuppressor($finding->channel(), $finding->level(), $finding->addressedProducer),
+                ];
             }
         }
 
         return $kept;
     }
 
-    /**
-     * Falls back to the name of the instance that produced the finding when no
-     * identity view is installed — the behaviour of every caller that builds
-     * this executor directly, and the behaviour of the whole system before one
-     * class began publishing under more than one producer name.
-     */
+    /** The final universe identifies hosted channels; undeclared codes retain the instance name. */
     private function producerOf(Finding $finding, string $ruleName): string
     {
-        return $this->channelIdentity?->producerOf($finding->channel()->code) ?? $ruleName;
+        return $this->ruleOptionsRegistry->channelUniverse()->producerOf($finding->channel()->code) ?? $ruleName;
+    }
+
+    private function assertAddressedProducer(Finding $finding): void
+    {
+        $channels = $this->ruleOptionsRegistry->channelUniverse();
+        $role = $channels->declarationFor($finding->channel())?->selectionRole;
+        if ($finding->addressedProducer === null) {
+            return;
+        }
+        if ($role !== ChannelSelectionRole::FollowsAddressedRule || !$channels->hasRule($finding->addressedProducer)) {
+            throw new LogicException(\sprintf('Channel "%s" cannot address producer "%s".', $finding->channel()->code, $finding->addressedProducer));
+        }
     }
 
     /**
@@ -306,16 +308,16 @@ final class RuleExecution implements RuleExecutionInterface
 
     public function allRules(): array
     {
-        return $this->allProducers($this->ruleOptionsRegistry->selection());
+        return $this->allProducers($this->ruleOptionsRegistry->enablement());
     }
 
     /**
      * Every producer this container knows, static rule metadata and classless
-     * declarations alike, each carrying whether `$selection` leaves it enabled.
+     * declarations alike, each carrying the final invocation decision.
      *
      * @return list<RuleMetadata>
      */
-    private function allProducers(RuleSelection $selection): array
+    private function allProducers(?RuleEnablement $enablement): array
     {
         $producers = [];
 
@@ -326,7 +328,7 @@ final class RuleExecution implements RuleExecutionInterface
                 optionsClass: $metadata->optionsClass,
                 description: $metadata->description,
                 aliases: $metadata->aliases,
-                active: $this->isEnabled($metadata->name, $selection),
+                active: $enablement?->runs($metadata->name) ?? true,
             );
         }
 
@@ -336,42 +338,11 @@ final class RuleExecution implements RuleExecutionInterface
                 optionsClass: $producer->optionsClass,
                 description: $producer->description,
                 aliases: $producer->aliases,
-                active: $this->isEnabled($producer->name, $selection),
+                active: $enablement?->runs($producer->name) ?? true,
             );
         }
 
         return $producers;
-    }
-
-    /**
-     * Whether the run's selection leaves this producer enabled, and — when the
-     * caller narrowed the execution — whether the narrowing leaves it enabled
-     * too.
-     *
-     * The two are asked in series rather than merged into one selection
-     * because they are different claims: the first is what the run was
-     * configured to do, the second is what this one execution was asked about.
-     * Merging them would let a narrowing to `X` re-enable an `X` the
-     * configuration had disabled, which is exactly what the narrowing must not
-     * do.
-     *
-     * The narrowing checks exact producer-name equality, not
-     * {@see RuleSelector::isProducerEnabled()}: that selector grammar also
-     * matches a producer by any channel it publishes, which would enable a
-     * second producer whose channel code happens to equal
-     * `$restrictToProducer`. The contract this narrows to is one exact name,
-     * not the broader "selector" vocabulary `--only-rule` accepts.
-     */
-    private function isEnabled(
-        string $producerRuleName,
-        RuleSelection $selection,
-        ?string $restrictToProducer = null,
-    ): bool {
-        if (!$this->ruleSelector->isProducerEnabled($producerRuleName, $selection->only, $selection->disabled)) {
-            return false;
-        }
-
-        return $restrictToProducer === null || $producerRuleName === $restrictToProducer;
     }
 
     /**
@@ -385,15 +356,14 @@ final class RuleExecution implements RuleExecutionInterface
      *
      * @return list<RuleInterface>
      */
-    private function activeRuleInstances(RuleSelection $selection, ?string $restrictToProducer): array
+    private function activeRuleInstances(RuleEnablement $enablement, ?string $restrictToProducer): array
     {
-        $snapshot = $this->readySnapshot();
+        $this->readySnapshot();
         $active = [];
         foreach ($this->allRules as $index => $lookup) {
             $name = $lookup['metadata']->name;
-            $ownEnabled = $this->isEnabled($name, $selection, $restrictToProducer)
-                && $snapshot->for($name)->isEnabled();
-            if ($ownEnabled || $this->hostsAnEnabledProducer($name, $selection, $restrictToProducer)) {
+            $ownEnabled = $enablement->runs($name) && ($restrictToProducer === null || $name === $restrictToProducer);
+            if ($ownEnabled || $this->hostsAnEnabledProducer($name, $enablement, $restrictToProducer)) {
                 $active[] = $this->ruleAt($index);
             }
         }
@@ -402,20 +372,25 @@ final class RuleExecution implements RuleExecutionInterface
 
     private function hostsAnEnabledProducer(
         string $hostRuleName,
-        RuleSelection $selection,
+        RuleEnablement $enablement,
         ?string $restrictToProducer = null,
     ): bool {
         foreach ($this->classlessProducers as $producer) {
             if (
                 $producer->hostRuleName === $hostRuleName
-                && $this->isEnabled($producer->name, $selection, $restrictToProducer)
-                && $this->readySnapshot()->for($producer->name)->isEnabled()
+                && $enablement->runs($producer->name)
+                && ($restrictToProducer === null || $producer->name === $restrictToProducer)
             ) {
                 return true;
             }
         }
 
         return false;
+    }
+    private function readyEnablement(): RuleEnablement
+    {
+        return $this->ruleOptionsRegistry->enablement()
+            ?? throw new LogicException('Rule enablement is unavailable before analysis preflight.');
     }
     private function readySnapshot(): ResolvedRuleOptions
     {

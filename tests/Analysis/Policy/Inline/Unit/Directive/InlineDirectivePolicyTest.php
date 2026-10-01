@@ -7,17 +7,17 @@ namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -114,9 +114,8 @@ final class InlineDirectivePolicyTest extends TestCase
     public function itIgnoresDirectivesAddressingARuleThisRunDisabled(): void
     {
         $configuration = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($configuration, new RuleSelection([], ['code-smell.goto']));
 
-        $policy = self::policy($configuration);
+        $policy = self::policy($configuration, disabled: ['code-smell.goto']);
         $policy->prepare(
             [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
             [],
@@ -155,9 +154,8 @@ final class InlineDirectivePolicyTest extends TestCase
     public function itStillAccountsForARuleLeftEnabledByItsOptions(): void
     {
         $configuration = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($configuration, ['code-smell.goto' => ['enabled' => true]]);
 
-        $policy = self::policy($configuration);
+        $policy = self::policy($configuration, rules: ['code-smell.goto' => ['enabled' => true]]);
         $policy->prepare(
             [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
             [],
@@ -264,7 +262,11 @@ final class InlineDirectivePolicyTest extends TestCase
         self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
-    private static function policy(?RuleOptionsRegistry $configuration = null): InlineDirectivePolicy
+    /**
+     * @param array<string, mixed> $rules
+     * @param list<string> $disabled
+     */
+    private static function policy(?RuleOptionsRegistry $configuration = null, array $rules = [], array $disabled = []): InlineDirectivePolicy
     {
         $channel = new FindingChannel('code-smell.goto');
 
@@ -275,12 +277,15 @@ final class InlineDirectivePolicyTest extends TestCase
             new ResolvedComputedMetricDefinitions([]),
         );
 
-        return new InlineDirectivePolicy(new DirectiveUsage(
-            $universe,
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            $configuration ?? new RuleOptionsRegistry(),
-            $universe,
+        $configuration ??= new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(
+            FindingConfiguration::none()->withRuleOptions($rules),
+            [new RuleMetadata('code-smell.goto', CodeSmellOptions::class, '', [], false)],
+            channels: $universe,
+            disabled: $disabled,
         ));
+
+        return new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe));
     }
 
     private static function symbolDirective(): Suppression

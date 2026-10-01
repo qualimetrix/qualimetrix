@@ -33,8 +33,7 @@ interface RuleExecutionInterface
      * rules to compare them against themselves is the cost the narrowing
      * removes.
      *
-     * A name rather than a {@see RuleSelection} because one name is the whole
-     * subject: a directive addresses exactly one rule, by exact equality —
+     * One name is the whole subject: a directive addresses exactly one rule, by exact equality —
      * never the broader selector grammar `--only-rule` accepts (a glob, or a
      * match by channel code). The host of a classless producer still runs
      * when the narrowing names one of the producers it hosts, exactly as
@@ -75,7 +74,7 @@ interface RuleExecutionInterface
      * not a second reading of the selection: the union-quantified half of the
      * grammar (a producer stopped because its disable selectors together cover
      * every declared level of every channel it emits) lives in
-     * {@see Rule\RuleSelector} and must not be re-derived per selector by a
+     * {@see RuleEnablement} and must not be re-derived per selector by a
      * caller.
      *
      * The per-rule exclusion ledger is deliberately **not** applied here; see

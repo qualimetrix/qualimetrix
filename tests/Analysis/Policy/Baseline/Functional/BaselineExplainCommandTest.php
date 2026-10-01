@@ -512,7 +512,7 @@ final class BaselineExplainCommandTest extends TestCase
         $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions($ruleOptions);
         $classes = $ruleClasses ?? ($registerRules ? [ComplexityRule::class] : []);
         $metadata = array_map(static fn(string $class): \Qualimetrix\Analysis\Finding\Contract\RuleMetadata => new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader::read($class), $class::getOptionsClass(), '', [], false), $classes);
-        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, $metadata)));
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata));
 
         $command = new BaselineExplainCommand(
             new StubBaselineRun(

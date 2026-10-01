@@ -55,6 +55,19 @@ final class ResolvedRuleOptionValuesTest extends TestCase
         $values->integer('unknown', 1);
     }
 
+    #[Test]
+    public function itAppliesTheDecidedRootEnablementWithoutRewritingAuthoredValues(): void
+    {
+        $document = self::document(['enabled' => false, 'class' => ['enabled' => false, 'count' => 7]]);
+        $values = (new ResolvedRuleOptionValues($document, 'fixture'))->withEnabled(true);
+
+        self::assertTrue($values->boolean('enabled', false));
+        self::assertFalse($values->atLevel('class')->boolean('enabled', true));
+        self::assertSame(7, $values->atLevel('class')->integer('count', 0));
+        self::assertFalse($document->get('rules', 'fixture', 'enabled')?->plain());
+        self::assertFalse((new ResolvedRuleOptionValues($document, 'fixture'))->boolean('enabled', true));
+    }
+
     /** @param array<string, mixed> $values */
     private static function document(array $values): ResolvedDocument
     {
@@ -64,7 +77,10 @@ final class ResolvedRuleOptionValuesTest extends TestCase
             'text' => NodeSchema::scalar(ScalarForm::String),
             'names' => NodeSchema::stringList(),
             'map' => NodeSchema::map([]),
-            'class' => NodeSchema::map(['count' => NodeSchema::scalar(ScalarForm::Integer)]),
+            'class' => NodeSchema::map([
+                'enabled' => NodeSchema::scalar(ScalarForm::Boolean),
+                'count' => NodeSchema::scalar(ScalarForm::Integer),
+            ]),
         ];
         $section = new class ($fields) implements DocumentSectionSchemaInterface {
             /** @param array<string, NodeSchema> $fields */

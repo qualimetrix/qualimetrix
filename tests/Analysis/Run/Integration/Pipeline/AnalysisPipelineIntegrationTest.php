@@ -41,11 +41,8 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -167,7 +164,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $registry = new RuleOptionsRegistry();
         $metadata = new RuleMetadata('test.spy', \Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions::class, '', [], false);
         $configuration = FindingConfiguration::none();
-        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, [$metadata])));
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, [$metadata]));
         $ruleExecutor = new RuleExecution([['metadata' => $metadata, 'create' => static fn(): RuleInterface => $spyRule]], $this->profiler, $registry);
 
         $pipeline = $this->createPipelineWithDependencies(
@@ -231,7 +228,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $registry = new RuleOptionsRegistry();
         $lookup = ResolvedOptionsFixture::lookup($rule);
         $configuration = FindingConfiguration::none();
-        $registry->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, [$lookup['metadata']])));
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, [$lookup['metadata']]));
         $ruleExecutor = new RuleExecution([$lookup], $this->profiler, $registry);
 
         // Pre-populate the repository with the classes so CouplingCollector can find them
@@ -311,16 +308,17 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $configurationPipeline = $container->get(ConfigurationPipelineInterface::class);
         self::assertInstanceOf(ConfigurationPipelineInterface::class, $configurationPipeline);
         $pipelineSections = LayeredDocument::sectionsOf($configurationPipeline);
+        $architectureValues = [
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['RunResetFixture\\First\\Controller\\**']],
+                ['name' => 'repository', 'patterns' => ['RunResetFixture\\First\\Repository\\**']],
+            ],
+            'allow' => ['controller' => [], 'repository' => []],
+            'coverage-gap' => 'ignore',
+        ];
         $architectureDocument = LayeredDocument::of([[
             'source' => 'test',
-            'values' => ['architecture' => [
-                'layers' => [
-                    ['name' => 'controller', 'patterns' => ['RunResetFixture\\First\\Controller\\**']],
-                    ['name' => 'repository', 'patterns' => ['RunResetFixture\\First\\Repository\\**']],
-                ],
-                'allow' => ['controller' => [], 'repository' => []],
-                'coverage-gap' => 'ignore',
-            ]],
+            'values' => ['architecture' => $architectureValues],
         ]], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections);
 
         /**
@@ -330,11 +328,18 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             string $path,
             ConfigurationDocument $document,
             string ...$disabledRules,
-        ) use ($fixtureRoot, $runtimeConfigurator, $pipeline, $checkCommand, $profileReport, $ruleInputValidator): array {
+        ) use ($fixtureRoot, $runtimeConfigurator, $pipeline, $checkCommand, $profileReport, $ruleInputValidator, $pipelineSections, $architectureValues): array {
             $runtimeConfigurator->resetRunState();
             $input = new ArrayInput(['--profile' => true], $checkCommand->getDefinition());
             $projectRoot = AbsolutePath::fromString($fixtureRoot);
-            $findingConfiguration = $ruleInputValidator->resolve($document, $input)->withSelection(new RuleSelection(disabled: array_values($disabledRules)));
+            if ($disabledRules !== []) {
+                $values = ['disabled_rules' => array_values($disabledRules)];
+                if ($document->resolved()->get('architecture') !== null) {
+                    $values['architecture'] = $architectureValues;
+                }
+                $document = LayeredDocument::of([['source' => 'test', 'values' => $values]], $projectRoot, ...$pipelineSections);
+            }
+            $findingConfiguration = $ruleInputValidator->resolve($document, $input);
             $runtimeConfigurator->configure($document, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration(self::runConfigurationFor($document), new CacheConfiguration(PathFactory::fromCliArgument('.qmx-cache', $projectRoot), true), new ParallelConfiguration()), $findingConfiguration, $input, new BufferedOutput());
             $result = $pipeline->analyze(new RunConfiguration(
                 pathExcludes: [],
@@ -802,17 +807,20 @@ PHP);
 
         $fileCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
+
         return TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
-            ->withRuleConfiguration(new RuleOptionsRegistry())
+            ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $this->profiler))
             ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
             ->withCircularDependencyPreparation(
                 $circularDependencyAnalysis ?? new CircularDependencyAnalysis(new CircularDependencyDetector()),
             )
-            ->withFileSetInspection($this->emptyFileSetInspection())
+            ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
             ->build();
     }
@@ -855,24 +863,27 @@ PHP);
             },
         );
 
+        $configuration = new RuleOptionsRegistry();
+        $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
+
         return TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
-            ->withRuleConfiguration(new RuleOptionsRegistry())
+            ->withRuleConfiguration($configuration)
             ->withMeasurementAggregation($globalCollectorRunner)
             ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
-            ->withFileSetInspection($this->emptyFileSetInspection())
+            ->withFileSetInspection($this->emptyFileSetInspection($configuration))
             ->withProfiler($this->profiler)
             ->build();
     }
 
-    private function emptyFileSetInspection(): FileSetInspectionComposite
+    private function emptyFileSetInspection(RuleConfigurationInterface $configuration): FileSetInspectionComposite
     {
         return new FileSetInspectionComposite(
             [],
-            new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+            new RuleSelectorProducerGate($configuration),
             $this->profiler,
         );
     }

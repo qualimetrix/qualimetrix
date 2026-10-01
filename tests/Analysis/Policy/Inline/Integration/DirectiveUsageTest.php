@@ -9,14 +9,14 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
@@ -129,9 +129,8 @@ final class DirectiveUsageTest extends TestCase
     public function itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff(): void
     {
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($registry, new RuleSelection(disabled: [self::CHANNEL]));
 
-        $verdicts = self::usage($registry)->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
+        $verdicts = self::usage($registry, disabled: [self::CHANNEL])->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, self::single($verdicts)->reason);
@@ -415,22 +414,34 @@ final class DirectiveUsageTest extends TestCase
         );
     }
 
-    private static function usage(?RuleOptionsRegistry $registry = null): DirectiveUsage
+    /** @param list<string> $disabled */
+    private static function usage(?RuleOptionsRegistry $registry = null, array $disabled = []): DirectiveUsage
     {
-        return new DirectiveUsage(
-            self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            $registry ?? new RuleOptionsRegistry(),
-            self::productionUniverse(),
-        );
+        $universe = self::productionUniverse();
+        $registry ??= new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(
+            FindingConfiguration::none(),
+            self::$metadata,
+            channels: $universe,
+            disabled: $disabled,
+        ));
+
+        return new DirectiveUsage($universe, $registry, $universe);
     }
+
+    /** @var list<RuleMetadata> */
+    private static array $metadata = [];
 
     private static ?RuleChannelSnapshotFactoryInterface $snapshotFactory = null;
 
     private static function productionUniverse(): ChannelUniverseInterface
     {
         if (self::$snapshotFactory === null) {
-            $universe = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+            $container = (new ContainerFactory())->create();
+            $execution = $container->get(RuleExecutionInterface::class);
+            \assert($execution instanceof RuleExecutionInterface);
+            self::$metadata = $execution->allRules();
+            $universe = $container->get(ChannelUniverseInterface::class);
             \assert($universe instanceof RuleChannelSnapshotFactoryInterface);
             self::$snapshotFactory = $universe;
         }

@@ -336,7 +336,7 @@ final class UnboundSuppressionAuditTest extends TestCase
         foreach ([true, false, true] as $enabled) {
             $registry->resetRuntimeState();
             $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions([$producer => ['enabled' => $enabled]]);
-            $registry->replace($configuration->withResolvedOptions(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build($configuration, $metadata)));
+            $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $metadata));
             $findings = $audit->findings(
                 [$this->path(SelectorKind::Subtree, 'src/Gone')],
                 [],

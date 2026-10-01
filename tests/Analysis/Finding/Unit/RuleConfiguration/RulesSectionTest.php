@@ -84,7 +84,7 @@ final class RulesSectionTest extends TestCase
     public function itRefusesAnInvalidSemanticSelectorBeforeAValidOverlay(string $producer, string $optionsClass, string $key): void
     {
         $execution = ResolvedOptionsFixture::execution([new RuleMetadata($producer, $optionsClass, '', [], false)]);
-        $schema = new DocumentSchema([new RulesSection($execution, 'rules')]);
+        $schema = new DocumentSchema([new RulesSection($execution, 'rules'), new RulesSection($execution, 'only_rules'), new RulesSection($execution, 'disabled_rules')]);
         $bad = [['regex' => '[']];
         $good = [['subtree' => 'App']];
         $position = ['rules', $producer, $key];
@@ -109,12 +109,15 @@ final class RulesSectionTest extends TestCase
             self::assertSame('0', $error->position()->written);
         }
         $document = DocumentComposer::compose($schema, [$upper]);
-        $options = (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild($execution))->build(new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration(
+        $configuration = new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration(
             new \Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument(),
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides(),
-            new \Qualimetrix\Analysis\Finding\Contract\RuleSelection(),
             document: $document,
-        ));
+        );
+        $resolver = new \Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver();
+        $stated = $resolver->decide($document, ResolvedOptionsFixture::universe($execution->allRules()));
+        $options = (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild($execution))->build($configuration, $stated);
+        $resolver->conclude($stated, $options);
         if ($key === 'include-namespaces') {
             $typed = $options->for($producer);
             self::assertInstanceOf(\Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions::class, $typed);

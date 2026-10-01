@@ -9,21 +9,28 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
@@ -34,6 +41,7 @@ use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(RuleProducerPreparation::class)]
@@ -72,7 +80,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $preparation = $this->preparation(
             circular: $circular,
-            selection: new RuleSelection(disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME]),
+            disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME],
             participants: [$participant],
         );
         $preparation->prepareCircularDependencies(
@@ -102,7 +110,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             architecture: $architecture,
-            selection: new RuleSelection(disabled: LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES),
+            disabled: LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -125,7 +133,8 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             architecture: $architecture,
-            selection: new RuleSelection(only: $only),
+            only: $only,
+            ruleOptions: [LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['mode' => 'warn']],
         )->prepareArchitecture($graph, [], self::createStub(ProfilerInterface::class));
     }
 
@@ -154,7 +163,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             circular: $circular,
-            selection: new RuleSelection(disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME]),
+            disabled: [CircularDependencyPreparationInterface::PRODUCER_RULE_NAME],
         )->prepareCircularDependencies(
             self::createStub(DependencyGraphInterface::class),
             $profiler,
@@ -212,19 +221,12 @@ final class RuleProducerPreparationTest extends TestCase
         );
     }
 
-    /**
-     * The edge this gate does not reach, asserted rather than left to be
-     * rediscovered: `architecture.unassigned-class` has no `enabled` option —
-     * `mode` is its only switch and `mode: ignore` is its default — so the
-     * gate answers "active" for it and the policy is still prepared. The
-     * selectors have always answered the same way, so the two spellings agree;
-     * what neither reaches is a producer that is off by its own default.
-     */
     #[Test]
-    public function itStillPreparesArchitecturePolicyWhenOnlyTheLayerViolationRuleIsSwitchedOff(): void
+    public function itResetsArchitecturePolicyWhenLayerViolationIsOffAndUnassignedClassIsMuted(): void
     {
         $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
-        $architecture->expects(self::once())->method('prepare');
+        $architecture->expects(self::never())->method('prepare');
+        $architecture->expects(self::once())->method('reset');
 
         $this->preparation(
             architecture: $architecture,
@@ -278,19 +280,9 @@ final class RuleProducerPreparationTest extends TestCase
     {
         $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
         $architecture->expects(self::once())->method('prepare');
-        $channels = new class implements RuleChannelRegistryInterface {
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return $producerRuleName === LayerPolicyPreparationInterface::PRODUCER_RULE_NAME
-                    ? [new FindingChannel('architecture.coverage-gap')]
-                    : [];
-            }
-        };
-
         $this->preparation(
             architecture: $architecture,
-            selector: new RuleSelector($channels),
-            selection: new RuleSelection(only: ['architecture.coverage-gap']),
+            only: ['architecture.coverage-gap'],
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -338,26 +330,53 @@ final class RuleProducerPreparationTest extends TestCase
     /**
      * @param (LayerPolicyPreparationInterface&MockObject)|null $architecture
      * @param (CircularDependencyPreparationInterface&MockObject)|null $circular
+     * @param list<string> $only
+     * @param list<string> $disabled
      * @param list<FileSetInspectionParticipantInterface> $participants
      * @param array<string, mixed> $ruleOptions
      */
     private function preparation(
         ?LayerPolicyPreparationInterface $architecture = null,
         ?CircularDependencyPreparationInterface $circular = null,
-        ?RuleSelector $selector = null,
-        ?RuleSelection $selection = null,
+        array $only = [],
+        array $disabled = [],
         array $participants = [],
         ?ThresholdDirectiveAuditInterface $thresholdAudit = null,
         array $ruleOptions = [],
     ): RuleProducerPreparation {
-        $selector ??= new RuleSelector(new InMemoryRuleChannelRegistry());
+        $metadata = [
+            new RuleMetadata(LayerPolicyPreparationInterface::PRODUCER_RULE_NAME, LayerViolationOptions::class, '', [], false),
+            new RuleMetadata(LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, UnassignedClassOptions::class, '', [], false),
+            new RuleMetadata(CircularDependencyPreparationInterface::PRODUCER_RULE_NAME, CircularDependencyOptions::class, '', [], false),
+            new RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false),
+        ];
+        $channelsByProducer = [
+            LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => [
+                ...LayerViolationRule::channelDeclarations(),
+                ...LayerDeclarationValidator::channelDeclarations(),
+            ],
+            LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => UnassignedClassRule::channelDeclarations(),
+            CircularDependencyPreparationInterface::PRODUCER_RULE_NAME => CircularDependencyRule::channelDeclarations(),
+            'duplication.clone' => CodeDuplicationRule::channelDeclarations(),
+        ];
+        $declarations = [];
+        $channelKeys = [];
+        $support = [];
+        foreach ($channelsByProducer as $producer => $channels) {
+            $declarations = [...$declarations, ...$channels];
+            $channelKeys[$producer] = array_keys($channels);
+            $support[$producer] = false;
+        }
+        $universe = new ChannelUniverse($declarations, $channelKeys, $support, new ResolvedComputedMetricDefinitions([]));
+        $document = ResolvedOptionsFixture::document([['source' => 'config', 'values' => [
+            'rules' => $ruleOptions,
+            'only_rules' => $only,
+            'disabled_rules' => $disabled,
+        ]]], AbsolutePath::fromString('/project'), $metadata);
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($registry, $selection ?? new RuleSelection());
-        ResolvedOptionsFixture::file($registry, $ruleOptions);
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata, channels: $universe));
 
-        // One gate, handed to both collaborators, exactly as the container
-        // composes them.
-        $producerGate = new RuleSelectorProducerGate($selector);
+        $producerGate = new RuleSelectorProducerGate($registry);
 
         return new RuleProducerPreparation(
             $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
@@ -370,7 +389,6 @@ final class RuleProducerPreparationTest extends TestCase
                 self::createStub(ProfilerInterface::class),
             ),
             $producerGate,
-            $registry,
         );
     }
 }

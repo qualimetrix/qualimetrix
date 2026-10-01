@@ -92,6 +92,7 @@ final readonly class ChannelDeclaration
         array $levels,
         public ?string $description = null,
         public bool $usesProducerWarningBoundary = true,
+        public ChannelSelectionRole $selectionRole = ChannelSelectionRole::Selectable,
     ) {
         $this->levels = self::canonicalLevels($levels);
     }
@@ -181,7 +182,7 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary);
+        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole);
     }
 
     /**
@@ -201,12 +202,17 @@ final readonly class ChannelDeclaration
             throw new InvalidArgumentException('A channel description must not be blank.');
         }
 
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary, $this->selectionRole);
     }
 
     public function withoutConfiguredWarningBoundary(): self
     {
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false, $this->selectionRole);
+    }
+
+    public function selectedAs(ChannelSelectionRole $role): self
+    {
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $role);
     }
 
     /**

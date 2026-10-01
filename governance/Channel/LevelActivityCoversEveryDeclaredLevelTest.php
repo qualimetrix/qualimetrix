@@ -6,16 +6,24 @@ namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
+use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Two things know what levels a producer works at, and they must agree.
  *
- * The rules answer {@see \Qualimetrix\Analysis\Finding\Rule\RuleInterface::levelActivity()}
- * for what ran; the channels declare, through
+ * The final options and enablement snapshot answers what can run; channels declare, through
  * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::$levels},
  * where a producer reports. The directive audit reads the first and addresses
  * the second, so a pair the channels declare and the activity omits is read as
@@ -35,18 +43,13 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * the channels this guard is about are `architecture.*` at project level, which
  * no case in that population carries a directive for: the probe was measured
  * there and missed its case, which would have recorded the mutation as
- * "guarded by nothing" rather than as guarded here. Removing the completion in
- * `RuleExecution::levelActivity()` reddens this test with the five channel
- * names in its message; that was verified by doing it.
+ * "guarded by nothing" rather than as guarded here. Omitting a declared
+ * validator pair from the enablement snapshot makes this test name the
+ * missing channel and level.
  *
- * **Population.** The container this builds has no `computed_metrics`
- * configuration, so the computed family contributes no definitions and the
- * check covers the producers that have a rule class — 44 of the 51 names
- * `allRules()` reports. The `health.*` seven are covered where their record is
- * actually decided, in
- * {@see \Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleTest::itRecordsOneProducerAsSwitchedOffWithoutItsNeighbours()}.
- * Saying "every producer" here without that sentence would claim seven names
- * this test never sees.
+ * **Population.** An explicitly empty immutable computed-metric catalog
+ * limits this guard to all statically declared channel/level pairs. Dynamic
+ * computed channels are checked by their own option and definition tests.
  */
 final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
 {
@@ -57,10 +60,13 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
 
         $universe = $container->get(ChannelUniverseInterface::class);
         self::assertInstanceOf(ChannelUniverseInterface::class, $universe);
+        self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $universe);
+        $universe = $universe->snapshot(new ResolvedComputedMetricDefinitions([]));
 
         $executor = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $executor);
 
+        self::prepareEmptyInvocation($container, $executor, $universe);
         $activity = $executor->levelActivity();
 
         $missing = [];
@@ -111,6 +117,11 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
 
         $executor = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $executor);
+        $universe = $container->get(ChannelUniverseInterface::class);
+        self::assertInstanceOf(ChannelUniverseInterface::class, $universe);
+        self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $universe);
+        $universe = $universe->snapshot(new ResolvedComputedMetricDefinitions([]));
+        self::prepareEmptyInvocation($container, $executor, $universe);
 
         $off = [];
 
@@ -128,4 +139,31 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
 
         self::assertSame($named, $off);
     }
+    private static function prepareEmptyInvocation(
+        ContainerBuilder $container,
+        RuleExecutionInterface $executor,
+        ChannelUniverseInterface $universe,
+    ): void {
+        $document = DocumentComposer::compose(new DocumentSchema([
+            new RulesSection($executor, 'rules'),
+            new RulesSection($executor, 'only_rules'),
+            new RulesSection($executor, 'disabled_rules'),
+        ]), []);
+        $empty = FindingConfiguration::none();
+        $configuration = new FindingConfiguration(
+            $empty->ruleOptions,
+            $empty->cliOverrides,
+            document: $document,
+        );
+        $resolver = new RuleEnablementResolver();
+        $stated = $resolver->decide($document, $universe);
+        $builder = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $builder);
+        $options = $builder->build($configuration, $stated);
+        $registry = $container->get(RuleConfigurationInterface::class);
+        self::assertInstanceOf(RuleConfigurationInterface::class, $registry);
+        $registry->replace($configuration->withChannelUniverse($universe)->withResolvedOptions($options)
+            ->withEnablement($resolver->conclude($stated, $options)));
+    }
+
 }

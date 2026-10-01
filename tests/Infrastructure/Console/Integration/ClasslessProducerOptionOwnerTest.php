@@ -15,14 +15,13 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
@@ -175,7 +174,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
 
         $snapshot = self::validator()->validate(
             self::inputWithoutRuleOpt(),
-            self::configurationExcluding($owner, 'health.cohesion'),
+            self::configurationExcluding($owner, 'health.cohesion', $definitions),
             $definitions,
         );
 
@@ -210,7 +209,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         try {
             self::validator()->validate(
                 self::inputWithoutRuleOpt(),
-                self::configurationExcluding($owner, 'health.typing'),
+                self::configurationExcluding($owner, 'health.typing', $definitions),
                 $definitions,
             );
         } catch (ConfigurationRefusal $refusal) {
@@ -275,13 +274,12 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         );
     }
 
-    private static function configurationExcluding(string $owner, string $key): FindingConfiguration
+    private static function configurationExcluding(string $owner, string $key, ResolvedComputedMetricDefinitions $definitions): FindingConfiguration
     {
         return new FindingConfiguration(
             new RuleOptionsDocument([$owner => ['suppress_namespace_channels' => [$key => ['App\\Legacy']]]]),
             new FindingCliOverrides([]),
-            new RuleSelection(),
-        );
+        )->withChannelUniverse(self::universe()->snapshot($definitions));
     }
 
     private static function refusalFor(string $owner): string
@@ -304,13 +302,12 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         return new FindingConfiguration(
             new RuleOptionsDocument([$owner => ['enabled' => false]]),
             new FindingCliOverrides([]),
-            new RuleSelection(),
-        );
+        )->withChannelUniverse(self::universe()->snapshot(new ResolvedComputedMetricDefinitions([])));
     }
 
     private static function emptyConfiguration(): FindingConfiguration
     {
-        return new FindingConfiguration(new RuleOptionsDocument([]), new FindingCliOverrides([]), new RuleSelection());
+        return FindingConfiguration::none()->withChannelUniverse(self::universe()->snapshot(new ResolvedComputedMetricDefinitions([])));
     }
 
     private static function inputWithoutRuleOpt(): InputInterface
@@ -328,17 +325,11 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     private static function validator(): RuleInputValidator
     {
         $container = (new ContainerFactory())->create();
-        $universe = self::universe();
+        $command = $container->get(CheckCommand::class);
+        $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
+        \assert($validator instanceof RuleInputValidator);
 
-        $registry = $container->get(RuleRegistryInterface::class);
-        \assert($registry instanceof RuleRegistryInterface);
-
-        return new RuleInputValidator(
-            $registry,
-            new RuleSelector($universe),
-            $universe,
-            new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
-        );
+        return $validator;
     }
 
     private static function universe(): ChannelUniverse

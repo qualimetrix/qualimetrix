@@ -26,7 +26,6 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
@@ -250,7 +249,6 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
         return $this->create(new FindingConfiguration(
             new RuleOptionsDocument($rules),
             new FindingCliOverrides(),
-            new RuleSelection(),
         ), $ruleName, $optionsClass);
     }
 

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -17,10 +18,10 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -433,6 +434,16 @@ final class SuppressionCompositionBuilderTest extends TestCase
                 return new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, $suppressions);
             }
 
+            public function enablement(): ?RuleEnablement
+            {
+                throw new LogicException('The projection must read the execution selection trace.');
+            }
+
+            public function channelUniverse(): ChannelUniverseInterface
+            {
+                throw new LogicException('The projection must not rebuild channel selection.');
+            }
+
             /** @param array<string, array<string, mixed>> $rulesConfig */
             public function __construct(private array $rulesConfig) {}
 
@@ -453,9 +464,9 @@ final class SuppressionCompositionBuilderTest extends TestCase
                 throw new LogicException('The projection must read the typed snapshot.');
             }
 
-            public function selection(): RuleSelection
+            public function selection(): never
             {
-                return new RuleSelection();
+                throw new LogicException('The projection must read the execution selection trace.');
             }
 
             public function captureExcludedFindings(): void {}

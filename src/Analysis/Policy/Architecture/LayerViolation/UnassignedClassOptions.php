@@ -4,21 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
- * Options for {@see UnassignedClassRule}: one key, and it is the gate.
- *
- * `mode` decides both whether the channel reports and how loudly, so
- * {@see isEnabled()} is derived from it rather than sitting beside it. A
- * second `enabled` key would be a second switch for one decision — and the
- * one that is off by default would silently win over the one the author
- * wrote.
+ * Options for {@see UnassignedClassRule}: mode controls activity and severity,
+ * while the framework enabled switch participates in the common selection.
  *
  * It is also the only gate in fact and not only in intent, which took one fix
  * after the split: the shared walk in
@@ -29,7 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  * own gate. `--disable-rule=architecture.layer-violation` never silenced this
  * rule — that is the selector, and it addresses the two producers separately.
  */
-final readonly class UnassignedClassOptions implements RuleOptionsInterface
+final readonly class UnassignedClassOptions implements ModeGatedOptionsInterface
 {
     /**
      * Duplicates {@see UnassignedClassRule::NAME} as a literal rather than
@@ -40,12 +34,14 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
 
     public function __construct(
         public UnassignedClassMode $mode = UnassignedClassMode::Ignore,
+        public bool $enabled = true,
     ) {}
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
             mode: UnassignedClassMode::from(strtolower($config->text('mode', 'ignore'))),
+            enabled: $config->boolean('enabled', true),
         );
     }
 
@@ -58,7 +54,12 @@ final readonly class UnassignedClassOptions implements RuleOptionsInterface
 
     public function isEnabled(): bool
     {
-        return $this->mode !== UnassignedClassMode::Ignore;
+        return $this->enabled && !$this->isMuted();
+    }
+
+    public function isMuted(): bool
+    {
+        return $this->mode === UnassignedClassMode::Ignore;
     }
 
     /**

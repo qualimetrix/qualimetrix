@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -134,7 +133,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
 
         $container->register(self::RULE_SELECTOR_PRODUCER_GATE, self::RULE_SELECTOR_PRODUCER_GATE_CLASS)
-            ->setArgument('$ruleSelector', new Reference(RuleSelector::class));
+            ->setArgument('$ruleConfiguration', new Reference(RuleConfigurationInterface::class));
         $container->register(self::FILE_SET_INSPECTION_COMPOSITE, self::FILE_SET_INSPECTION_COMPOSITE_CLASS)
             ->setArguments([
                 '$participants' => [],
@@ -159,7 +158,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::INLINE_DIRECTIVE_USAGE_CLASS, self::INLINE_DIRECTIVE_USAGE_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
-                new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
             ]);
@@ -170,7 +168,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::INLINE_THRESHOLD_AUDIT_CLASS, self::INLINE_THRESHOLD_AUDIT_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
-                new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
             ]);
         $container->setAlias(ThresholdDirectiveAuditInterface::class, self::INLINE_THRESHOLD_AUDIT_CLASS);
@@ -189,16 +186,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // this family's published order has the three directive diagnostics
         // ahead of `annotation.unused-directive`. See
         // ChannelDeclarationCompilerPass.
-        //
-        // The validator answers to the rule's own Options service — the one
-        // `--rule-opt=annotation.directive:enabled=false` configures — rather
-        // than to a copy of it. The id is derived from the rule the same way
-        // RuleOptionsCompilerPass derives it when it registers that service
-        // later in the build; a reference to it resolves at the end of
-        // compilation.
         $container->register(self::INLINE_DIRECTIVE_VALIDATOR_CLASS, self::INLINE_DIRECTIVE_VALIDATOR_CLASS)
             ->setArguments([
-                new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::INLINE_DIRECTIVE_RULE_CLASS)),
                 new Reference(self::INLINE_DIRECTIVE_POLICY_CLASS),
                 new Reference(ChannelIdentityInterface::class),
             ])
@@ -257,7 +246,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(ThresholdDirectiveAuditInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
                 new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
-                new Reference(RuleConfigurationInterface::class),
             ]);
     }
 

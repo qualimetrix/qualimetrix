@@ -8,15 +8,15 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
@@ -28,6 +28,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
@@ -106,7 +107,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $verdicts = self::audit(
             $executor,
             [self::override(10, $subject, warning: 30, error: 40)],
-            new RuleSelection(disabled: [self::RULE]),
+            [self::RULE],
         );
 
         self::assertSame(DirectiveEffect::Unmeasured, $verdicts[0]->effect);
@@ -523,10 +524,10 @@ final class ThresholdDirectiveAuditTest extends TestCase
         );
 
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($registry, new RuleSelection());
+        self::productionUniverse();
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
             $registry,
         );
 
@@ -594,10 +595,10 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $baseline = $executor->execute($context);
 
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($registry, new RuleSelection());
+        self::productionUniverse();
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
             $registry,
         );
 
@@ -648,10 +649,10 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $baseline = $executor->execute($context);
 
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($registry, new RuleSelection());
+        self::productionUniverse();
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
             $registry,
         );
 
@@ -687,16 +688,23 @@ final class ThresholdDirectiveAuditTest extends TestCase
 
     /**
      * @param list<ThresholdOverride> $overrides
+     * @param list<string> $disabled
      *
      * @return list<DirectiveVerdict>
      */
     private static function audit(
         ScriptedThresholdRuleExecution $executor,
         array $overrides,
-        ?RuleSelection $selection = null,
+        array $disabled = [],
     ): array {
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::selection($registry, $selection ?? new RuleSelection());
+        self::productionUniverse();
+        $registry->replace(ResolvedOptionsFixture::ready(
+            FindingConfiguration::none(),
+            self::$metadata,
+            channels: self::$scriptedUniverse,
+            disabled: $disabled,
+        ));
 
         return self::auditWith($executor, $overrides, $registry);
     }
@@ -711,13 +719,16 @@ final class ThresholdDirectiveAuditTest extends TestCase
         array $overrides,
         ?RuleOptionsRegistry $registry = null,
     ): array {
-        $registry ??= new RuleOptionsRegistry();
+        if ($registry === null) {
+            $registry = new RuleOptionsRegistry();
+            self::productionUniverse();
+            $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
+        }
 
         $context = self::context($overrides);
 
         $audit = new ThresholdDirectiveAudit(
             self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
             $registry,
         );
 
@@ -777,12 +788,27 @@ final class ThresholdDirectiveAuditTest extends TestCase
         ));
     }
 
+    /** @var list<RuleMetadata> */
+    private static array $metadata = [];
+
+    private static ?ChannelUniverseInterface $scriptedUniverse = null;
+
     private static ?RuleChannelSnapshotFactoryInterface $snapshotFactory = null;
 
     private static function productionUniverse(): ChannelUniverseInterface
     {
         if (self::$snapshotFactory === null) {
-            $universe = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+            $container = (new ContainerFactory())->create();
+            self::$metadata = array_map(
+                static fn(string $producer): RuleMetadata => new RuleMetadata($producer, CodeSmellOptions::class, '', [], false),
+                [self::RULE, 'complexity.ccn', 'complexity.cognitive'],
+            );
+            self::$scriptedUniverse = ResolvedOptionsFixture::universe(self::$metadata, [
+                self::RULE => [SymbolLevel::Class_, SymbolLevel::Callable],
+                'complexity.ccn' => [SymbolLevel::Class_, SymbolLevel::Callable],
+                'complexity.cognitive' => [SymbolLevel::Class_, SymbolLevel::Callable],
+            ]);
+            $universe = $container->get(ChannelUniverseInterface::class);
             \assert($universe instanceof RuleChannelSnapshotFactoryInterface);
             self::$snapshotFactory = $universe;
         }

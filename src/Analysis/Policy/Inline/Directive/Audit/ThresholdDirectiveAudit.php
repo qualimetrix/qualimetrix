@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
@@ -97,7 +96,6 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
 
     public function __construct(
         ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
-        private RuleSelector $ruleSelector,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {
         $this->addressability = new DirectiveAddressability($identity);
@@ -106,7 +104,6 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
     public function verdicts(ThresholdDirectiveAuditInput $input): array
     {
         $groups = self::groupByAuthoredSite($input->baseline->thresholdOverrides);
-        $selection = $this->ruleConfiguration->selection();
 
         $judged = [];
         $measurable = [];
@@ -115,8 +112,6 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
             $reason = $this->unmeasurableReason(
                 $group->bindings,
                 $input->baselineResult->levelActivity,
-                $selection->only,
-                $selection->disabled,
             );
 
             if ($reason === null) {
@@ -377,14 +372,10 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
      * of becoming `ProducerDisabled`.
      *
      * @param list<ThresholdOverride> $bindings
-     * @param list<string> $only
-     * @param list<string> $disabled
      */
     private function unmeasurableReason(
         array $bindings,
         LevelActivity $activity,
-        array $only,
-        array $disabled,
     ): ?DirectiveUnmeasurableReason {
         $override = $bindings[0];
 
@@ -392,8 +383,19 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
             return DirectiveUnmeasurableReason::AlreadyRefused;
         }
 
-        $enabled = $this->ruleSelector->isProducerEnabled($override->rulePattern, $only, $disabled)
-            && $activity->ranAtAnyOf($override->rulePattern, self::levelsOf($bindings));
+        $enablement = $this->ruleConfiguration->enablement()
+            ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
+        $levels = self::levelsOf($bindings);
+        $enabled = false;
+        foreach ($enablement->decisions() as $decision) {
+            if ($decision->producer === $override->rulePattern && $decision->live() && $decision->direct
+                && ($levels === [] || \in_array($decision->level, $levels, true))) {
+                $enabled = $activity->ranAtAnyOf($override->rulePattern, $levels);
+                if ($enabled) {
+                    break;
+                }
+            }
+        }
 
         return $enabled ? null : DirectiveUnmeasurableReason::ProducerDisabled;
     }

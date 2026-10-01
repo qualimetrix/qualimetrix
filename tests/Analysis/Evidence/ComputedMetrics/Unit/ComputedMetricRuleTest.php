@@ -12,14 +12,18 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -29,6 +33,8 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ComputedMetricRule::class)]
 #[CoversClass(ComputedMetricRuleOptions::class)]
@@ -47,7 +53,7 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $rule = $this->createRuleWithDefinitions([]);
 
-        self::assertSame('Checks user-defined computed metrics against their thresholds', $rule->getDescription());
+        self::assertSame('Checks user-defined computed metrics against their thresholds', $rule::getDescription());
     }
 
     #[Test]
@@ -378,13 +384,7 @@ final class ComputedMetricRuleTest extends TestCase
         self::assertSame([], $findings);
     }
 
-    /**
-     * One instance hosts the whole family, so the activity record it writes
-     * must switch one producer without its neighbours. The default answer on
-     * `AbstractRule` speaks for `getName()` alone, which for this rule would
-     * put all seven producers under the host's name and lose them — the reason
-     * {@see ComputedMetricRule::levelActivity()} overrides it.
-     */
+    /** One host serves the family, while the final invocation decides activity per producer. */
     #[Test]
     public function itRecordsOneProducerAsSwitchedOffWithoutItsNeighbours(): void
     {
@@ -395,11 +395,11 @@ final class ComputedMetricRuleTest extends TestCase
         $definitionNames = [...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES, 'computed.branch-load'];
         $off = $definitionNames[0];
 
-        $byProducer = [];
+        $written = [];
         $definitions = [];
 
         foreach (ComputedMetricChannelFamily::PRODUCER_RULE_NAMES as $producer) {
-            $byProducer[$producer] = new ComputedMetricRuleOptions(enabled: $producer !== $off);
+            $written[$producer] = ['enabled' => $producer !== $off];
         }
 
         foreach ($definitionNames as $name) {
@@ -413,26 +413,31 @@ final class ComputedMetricRuleTest extends TestCase
             );
         }
 
-        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-        $catalog->method('all')->willReturn($definitions);
-
-        $rule = new ComputedMetricRule(
-            new ComputedMetricRuleOptions(enabled: true),
-            $catalog,
-            new ComputedMetricFindingBuilder(),
-            self::createStub(ProfilerInterface::class),
-            new ComputedMetricProducerOptions($byProducer),
+        $metadata = array_map(
+            static fn(string $name): RuleMetadata => new RuleMetadata($name, ComputedMetricRuleOptions::class, $name, [], false),
+            ComputedMetricChannelFamily::PRODUCER_RULE_NAMES,
         );
-
-        $activity = $rule->levelActivity();
+        $document = ResolvedOptionsFixture::document([
+            ['source' => 'config', 'values' => ['rules' => $written]],
+        ], AbsolutePath::fromString('/project'), $metadata);
+        $universe = new ChannelUniverse(
+            [],
+            [],
+            array_fill_keys(ComputedMetricChannelFamily::PRODUCER_RULE_NAMES, false),
+            new ResolvedComputedMetricDefinitions($definitions),
+        );
+        $ready = ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata, channels: $universe);
+        $enablement = $ready->enablement;
+        self::assertNotNull($enablement);
+        $activity = $enablement->levelActivity()->toMap();
 
         self::assertNotSame([], $activity[$off] ?? [], 'the switched-off producer still declares its levels');
-        self::assertSame([], array_filter($activity[$off]), $off . ' must be recorded as not run');
+        self::assertSame([], array_filter($activity[$off], static fn(bool $live): bool => $live), $off . ' must be recorded as not run');
 
         foreach (\array_slice(ComputedMetricChannelFamily::PRODUCER_RULE_NAMES, 1) as $neighbour) {
             self::assertNotSame(
                 [],
-                array_filter($activity[$neighbour] ?? []),
+                array_filter($activity[$neighbour] ?? [], static fn(bool $live): bool => $live),
                 $neighbour . ' must stay live while only ' . $off . ' is switched off',
             );
         }

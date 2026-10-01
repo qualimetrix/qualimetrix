@@ -14,7 +14,17 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 final readonly class ResolvedRuleOptionValues
 {
     /** @param list<string> $prefix */
-    public function __construct(private ResolvedDocument $document, private string $producer, private array $prefix = []) {}
+    public function __construct(
+        private ResolvedDocument $document,
+        private string $producer,
+        private array $prefix = [],
+        private ?bool $decidedEnabled = null,
+    ) {}
+
+    public function withEnabled(bool $enabled): self
+    {
+        return new self($this->document, $this->producer, $this->prefix, $enabled);
+    }
 
     public function atLevel(string $level): self
     {
@@ -30,10 +40,17 @@ final readonly class ResolvedRuleOptionValues
     {
         $node = $this->node($key);
         if ($node === null) {
+            if ($this->prefix === [] && $key === 'enabled' && $this->decidedEnabled !== null) {
+                return $this->decidedEnabled;
+            }
             return $default;
         }
         $value = $node->plain();
-        return \is_bool($value) ? $value : self::wrongType($key);
+        if (!\is_bool($value)) {
+            self::wrongType($key);
+        }
+        return $this->prefix === [] && $key === 'enabled' && $this->decidedEnabled !== null
+            ? $this->decidedEnabled : $value;
     }
 
     public function integer(string $key, int $default): int

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
@@ -16,19 +17,15 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
@@ -44,6 +41,7 @@ use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(RulesCommand::class)]
@@ -86,13 +84,33 @@ final class RulesCommandTest extends TestCase
     public function itMarksFinalOnlyAndDisabledSelectorsFromTheDocument(): void
     {
         $tester = new CommandTester($this->createCommand(
-            [$this->createRuleMock('complexity.ccn', 'Cyclomatic complexity')],
-            selection: new RuleSelection(['complexity.*'], ['size.class-count']),
+            [
+                $this->createRuleMock('complexity.ccn', 'Cyclomatic complexity'),
+                $this->createRuleMock('size.class-count', 'Class count'),
+            ],
+            only: ['complexity.*'],
+            disabled: ['size.class-count'],
         ));
         $tester->execute([]);
 
         self::assertStringContainsString('Only selected by configuration: complexity.*', $tester->getDisplay());
-        self::assertStringContainsString('Disabled by configuration: size.class-count', $tester->getDisplay());
+        self::assertStringContainsString('Disabled by configuration: disabled_rules[0]: size.class-count', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itListsBothEqualRankDisableWritersForOneProducer(): void
+    {
+        $tester = new CommandTester($this->createCommand(
+            [$this->createRuleMock('complexity.alpha.beta', 'Nested complexity')],
+            disabled: ['complexity.*', 'complexity.alpha.*'],
+        ));
+        $tester->execute([]);
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString(
+            'Disabled by configuration: disabled_rules[0]: complexity.*, disabled_rules[1]: complexity.alpha.*',
+            $tester->getDisplay(),
+        );
     }
 
     #[Test]
@@ -105,6 +123,27 @@ final class RulesCommandTest extends TestCase
         $tester->execute([]);
 
         self::assertStringContainsString('Computed metrics: computed.delivery-risk', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itResolvesAComputedChannelLevelSelectorAgainstTheListingSnapshot(): void
+    {
+        $snapshots = 0;
+        $tester = new CommandTester($this->createCommand(
+            [$this->createRuleMock('computed', 'Computed metrics')],
+            only: ['computed.delivery-risk:class'],
+            definitions: [new ComputedMetricDefinition('computed.delivery-risk', ['class' => '1'], 'Delivery risk', [SymbolLevel::Class_])],
+            snapshotObserved: static function () use (&$snapshots): void {
+                ++$snapshots;
+            },
+        ));
+        $tester->execute([]);
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('computed', $tester->getDisplay());
+        self::assertStringContainsString('Computed metrics: computed.delivery-risk', $tester->getDisplay());
+        self::assertStringContainsString('Only selected by configuration: computed.delivery-risk:class', $tester->getDisplay());
+        self::assertSame(1, $snapshots);
     }
 
     /**
@@ -388,8 +427,10 @@ final class RulesCommandTest extends TestCase
      * @param list<RuleInterface|RuleMetadata> $rules
      * @param list<ComputedMetricDefinition> $definitions
      * @param array<string, array<string, list<string>>> $judged rule name => channel code => judged metric keys
+     * @param list<string> $only
+     * @param list<string> $disabled
      */
-    private function createCommand(array $rules, array $judged = [], ?RuleSelection $selection = null, array $definitions = []): RulesCommand
+    private function createCommand(array $rules, array $judged = [], array $only = [], array $disabled = [], array $definitions = [], ?Closure $snapshotObserved = null): RulesCommand
     {
         $metadata = array_map(
             static fn(RuleInterface|RuleMetadata $rule): RuleMetadata => $rule instanceof RuleMetadata ? $rule : new RuleMetadata(
@@ -408,7 +449,7 @@ final class RulesCommandTest extends TestCase
         $declarationByCode = [];
         foreach ($judged as $ruleName => $byChannel) {
             foreach ($byChannel as $code => $metricKeys) {
-                $channelsByRule[$ruleName][] = new FindingChannel($code);
+                $channelsByRule[$ruleName][] = $code;
                 $declarationByCode[$code] = $metricKeys === []
                     ? ChannelDeclaration::occurrence(SymbolLevel::Class_)
                     : ChannelDeclaration::judging(
@@ -419,17 +460,12 @@ final class RulesCommandTest extends TestCase
             }
         }
 
-        $channels = self::createStub(RuleChannelRegistryInterface::class);
-        $channels->method('channelsProducedBy')->willReturnCallback(
-            static fn(string $ruleName): array => $channelsByRule[$ruleName] ?? [],
+        $channels = new \Qualimetrix\Infrastructure\Rule\ChannelUniverse(
+            $declarationByCode,
+            $channelsByRule,
+            array_fill_keys(array_column($metadata, 'name'), false),
+            new ResolvedComputedMetricDefinitions([]),
         );
-
-        $registry = self::createStub(ChannelDeclarationRegistryInterface::class);
-        $registry->method('declarationFor')->willReturnCallback(
-            static fn(FindingChannel $channel): ?ChannelDeclaration => $declarationByCode[$channel->code] ?? null,
-        );
-
-        $selected = $selection ?? new RuleSelection();
         $schema = new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([
             new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, 'rules'),
             new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, 'only_rules'),
@@ -437,7 +473,7 @@ final class RulesCommandTest extends TestCase
         ]);
         $resolved = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose($schema, [new \Qualimetrix\Analysis\Configuration\Document\AuthoredLayer(
             \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
-            \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain(['only_rules' => $selected->only, 'disabled_rules' => $selected->disabled]),
+            \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain(['only_rules' => $only, 'disabled_rules' => $disabled]),
         )]);
         $pipeline = self::createStub(ConfigurationPipelineInterface::class);
         $pipeline->method('resolve')->willReturn(new ConfigurationDocument([], AbsolutePath::fromString('/project'), $resolved));
@@ -445,10 +481,19 @@ final class RulesCommandTest extends TestCase
         $computedMetrics = self::createStub(ComputedMetricConfiguratorInterface::class);
         $computedMetrics->method('resolve')->willReturn(new ResolvedComputedMetricDefinitions($definitions));
 
+        $snapshots = $channels;
+        if ($snapshotObserved !== null) {
+            $snapshots = self::createStub(RuleChannelSnapshotFactoryInterface::class);
+            $snapshots->method('snapshot')->willReturnCallback(static function ($definitions) use ($channels, $snapshotObserved) {
+                $snapshotObserved();
+                return $channels->snapshot($definitions);
+            });
+        }
+
         return new RulesCommand(
             $execution,
-            $channels,
-            $registry,
+            $snapshots,
+            new \Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver(),
             new RuleListingPresenter(),
             new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution),
             $computedMetrics,

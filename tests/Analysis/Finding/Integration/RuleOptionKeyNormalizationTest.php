@@ -58,7 +58,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     public function itAppliesVoErrorViaConfigFileKebabKey(): void
     {
         ResolvedOptionsFixture::file($this->registry, [
-            'code-smell.long-parameter-list' => ['vo-error' => 3],
+            'code-smell.long-parameter-list' => ['vo-warning' => 2, 'vo-error' => 3],
         ]);
 
         /** @var LongParameterListOptions $options */
@@ -70,7 +70,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesVoErrorViaRuleOptKebabSpelling(): void
     {
-        $resolved = $this->resolvedCliOptions(['--rule-opt' => ['code-smell.long-parameter-list:vo-error=3']]);
+        $resolved = $this->resolvedCliOptions(['--rule-opt' => ['code-smell.long-parameter-list:vo-warning=2', 'code-smell.long-parameter-list:vo-error=3']]);
 
         /** @var LongParameterListOptions $options */
         $options = $resolved->for('code-smell.long-parameter-list');
@@ -81,7 +81,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesVoErrorViaRuleOptCamelSpelling(): void
     {
-        $resolved = $this->resolvedCliOptions(['--rule-opt' => ['code-smell.long-parameter-list:voError=3']]);
+        $resolved = $this->resolvedCliOptions(['--rule-opt' => ['code-smell.long-parameter-list:voWarning=2', 'code-smell.long-parameter-list:voError=3']]);
 
         /** @var LongParameterListOptions $options */
         $options = $resolved->for('code-smell.long-parameter-list');
@@ -92,7 +92,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesVoErrorViaDedicatedCliFlag(): void
     {
-        $resolved = $this->resolvedCliOptions(['--long-parameter-list-vo-error' => '3']);
+        $resolved = $this->resolvedCliOptions(['--long-parameter-list-vo-error' => '3', '--rule-opt' => ['code-smell.long-parameter-list:vo-warning=2']]);
 
         /** @var LongParameterListOptions $options */
         $options = $resolved->for('code-smell.long-parameter-list');
@@ -130,7 +130,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesErrorViaDedicatedCliFlag(): void
     {
-        $resolved = $this->resolvedCliOptions(['--param-type-coverage-error' => '90.0']);
+        $resolved = $this->resolvedCliOptions(['--param-type-coverage-error' => '90.0', '--rule-opt' => ['design.type-coverage.param:warning=95']]);
 
         /** @var TypeCoverageOptions $options */
         $options = $resolved->for('design.type-coverage.param');
@@ -145,7 +145,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesErrorViaRuleOptToOneDimensionOnly(): void
     {
-        $resolved = $this->resolvedCliOptions(['--rule-opt' => ['design.type-coverage.return:error=85']]);
+        $resolved = $this->resolvedCliOptions(['--rule-opt' => ['design.type-coverage.return:warning=95', 'design.type-coverage.return:error=85']]);
 
         /** @var TypeCoverageOptions $configured */
         $configured = $resolved->for('design.type-coverage.return');

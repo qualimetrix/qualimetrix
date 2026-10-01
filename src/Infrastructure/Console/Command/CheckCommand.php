@@ -217,10 +217,6 @@ final class CheckCommand extends Command
             $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
         }
 
-        $selectionWarning = $this->ruleInputValidator->conflictingSelectionWarning($findingConfiguration);
-        if ($selectionWarning !== null) {
-            $this->writeWarning($output, $selectionWarning);
-        }
         $this->configurationInputAdapter->writeDiagnostics($document, $output);
         if ($output->isVerbose() && $document->appliedSources() !== []) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf(

@@ -18,12 +18,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -49,6 +48,7 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]
@@ -210,8 +210,8 @@ final class AnalysisPipelineTest extends TestCase
     ): AnalysisPipeline {
         $profiler = self::createStub(ProfilerInterface::class);
         $ruleConfiguration = new RuleOptionsRegistry();
-        $selector = new RuleSelector(new InMemoryRuleChannelRegistry());
-        $producerGate = new RuleSelectorProducerGate($selector);
+        $ruleConfiguration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
+        $producerGate = new RuleSelectorProducerGate($ruleConfiguration);
         $fileSetInspection = new FileSetInspectionComposite(
             [],
             $producerGate,
@@ -226,7 +226,6 @@ final class AnalysisPipelineTest extends TestCase
             self::createStub(ThresholdDirectiveAuditInterface::class),
             $fileSetInspection,
             $producerGate,
-            $ruleConfiguration,
         );
 
         $aggregation = self::createStub(MeasurementAggregationInterface::class);
