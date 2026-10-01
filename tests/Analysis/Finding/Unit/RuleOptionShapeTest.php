@@ -235,6 +235,20 @@ final class RuleOptionShapeTest extends TestCase
         self::assertFalse(RuleOptionShape::listOf(RuleOptionShape::integer())->matches([1, -1]));
         self::assertFalse(RuleOptionValueForm::WholeNumber->accepts(-1));
         self::assertTrue(RuleOptionValueForm::WholeNumber->accepts(0));
+
+        foreach ([[RuleOptionShape::number(), -0.5], [RuleOptionShape::integer(), -1]] as [$shape, $invalid]) {
+            $schema = NodeSchema::map(['boundary' => $shape->atLeast(-1)->asNodeSchema()]);
+            $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/floor.yaml');
+            $reader = new LayerReading();
+            self::assertSame(0, $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => 0])), 0)?->plain()['boundary']);
+            try {
+                $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => $invalid])), 0);
+                self::fail('An explicit minimum weakened the native non-negative form.');
+            } catch (ConfigurationRefusal $error) {
+                self::assertSame(\sprintf('"boundary" in configuration file "/floor.yaml" must be at least 0, got %s.', $invalid), $error->summary());
+                self::assertSame(['boundary'], $error->position()?->segments);
+            }
+        }
     }
 
     /**

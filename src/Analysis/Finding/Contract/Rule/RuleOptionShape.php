@@ -280,8 +280,8 @@ final readonly class RuleOptionShape
         if ($this->kind instanceof RuleOptionValueForm) {
             return match ($this->kind) {
                 RuleOptionValueForm::Boolean => NodeSchema::scalar(ScalarForm::Boolean),
-                RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast($this->minimum ?? 0),
-                RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast($this->minimum ?? 0),
+                RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast(max(0, $this->minimum ?? 0)),
+                RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast(max(0, $this->minimum ?? 0)),
                 RuleOptionValueForm::SignedNumber => $this->minimum === null
                     ? NodeSchema::scalar(ScalarForm::Number)
                     : NodeSchema::scalar(ScalarForm::Number)->atLeast($this->minimum),
