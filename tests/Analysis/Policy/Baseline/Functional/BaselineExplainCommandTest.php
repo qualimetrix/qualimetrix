@@ -509,7 +509,7 @@ final class BaselineExplainCommandTest extends TestCase
         $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
 
         $registry = new RuleOptionsRegistry();
-        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions($ruleOptions);
+        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => $ruleOptions]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project')));
         $classes = $ruleClasses ?? ($registerRules ? [ComplexityRule::class] : []);
         $metadata = array_map(static fn(string $class): \Qualimetrix\Analysis\Finding\Contract\RuleMetadata => new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader::read($class), $class::getOptionsClass(), '', [], false), $classes);
         $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata));

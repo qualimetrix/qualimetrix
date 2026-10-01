@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -190,8 +189,8 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         // The document engine must expand shorthands before the real builder reads them.
         $execution = self::createStub(RuleExecutionInterface::class);
         $execution->method('allRules')->willReturn([new RuleMetadata($ruleName, $optionsClass, '', [], false)]);
-        $baseline = ResolvedOptionsFixture::build(FindingConfiguration::none()->withRuleOptions([$ruleName => $baselineConfig]), $execution->allRules())->for($ruleName);
-        $probe = ResolvedOptionsFixture::build(FindingConfiguration::none()->withRuleOptions([$ruleName => $probeConfig]), $execution->allRules())->for($ruleName);
+        $baseline = ResolvedOptionsFixture::build(ResolvedOptionsFixture::authoredConfiguration(['rules' => [$ruleName => $baselineConfig]], $execution->allRules()), $execution->allRules())->for($ruleName);
+        $probe = ResolvedOptionsFixture::build(ResolvedOptionsFixture::authoredConfiguration(['rules' => [$ruleName => $probeConfig]], $execution->allRules()), $execution->allRules())->for($ruleName);
 
         $baselineTargets = self::inspectionTargets($baseline, $path, $isHierarchical);
         $probeTargets = self::inspectionTargets($probe, $path, $isHierarchical);

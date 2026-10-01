@@ -18,7 +18,7 @@ final class ResolvedDocumentObservationTest extends TestCase
     }
 
     #[Test]
-    public function itObservesResolvedValuesAndTheRemainingRawRuleLayers(): void
+    public function itObservesResolvedValuesAndAllRuleRoots(): void
     {
         $scratch = sys_get_temp_dir() . '/qmx-resolved-observation-' . bin2hex(random_bytes(6));
 
@@ -35,9 +35,9 @@ final class ResolvedDocumentObservationTest extends TestCase
             $values = json_decode($merged->text, true, 512, \JSON_THROW_ON_ERROR);
             self::assertSame('json', $values['format']);
             self::assertFalse($values['cache']['enabled']);
-            self::assertSame([['complexity.ccn' => ['callable' => ['warning' => 123]]]], $values['rules']);
-            self::assertSame([['complexity.ccn']], $values['only_rules']);
-            self::assertSame([['security']], $values['disabled_rules']);
+            self::assertSame(['complexity.ccn' => ['callable' => ['warning' => 123]]], $values['rules']);
+            self::assertSame(['complexity.ccn'], $values['only_rules']);
+            self::assertSame(['security'], $values['disabled_rules']);
         } finally {
             (new Filesystem())->remove($scratch);
         }

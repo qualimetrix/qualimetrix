@@ -16,16 +16,9 @@ use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
 
-/**
- * Mutable storage for rule options from config files and CLI.
- *
- * Holds per-rule options from two sources (config file and CLI) and manages
- * the namespace exclusion provider. This is the runtime state that gets
- * configured during the configuration pipeline and reset between runs.
- */
+/** Per-invocation resolved options, enablement and exclusions. */
 final class RuleOptionsRegistry implements RuleConfigurationInterface
 {
-    /** Rule options from the config file and the CLI, and the rule selection. */
     private FindingConfiguration $configuration;
 
     private bool $capturesExcludedFindings = false;
@@ -37,11 +30,6 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->configuration = FindingConfiguration::none();
     }
 
-    /**
-     * The one door the product configures a run through. Every narrower
-     * setter below is written in terms of it, so a field it learns to set is
-     * set by all of them rather than left behind by the ones only tests call.
-     */
     public function replace(FindingConfiguration $configuration): void
     {
         $snapshot = $configuration->resolvedOptions
@@ -85,31 +73,6 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
             throw new LogicException(\sprintf('Resolved options for "%s" must be %s.', $producer, $optionsClass));
         }
         return $options;
-    }
-
-    /**
-     * Gets rule options from config file.
-     *
-     * @return array<string, mixed>
-     */
-    public function configFileOptions(): array
-    {
-        return $this->configuration->ruleOptions->rules;
-    }
-
-    /**
-     * Gets all CLI options.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    public function cliOptions(): array
-    {
-        return $this->configuration->cliOverrides->options;
-    }
-
-    public function all(): array
-    {
-        return array_replace_recursive($this->configFileOptions(), $this->cliOptions());
     }
 
     public function captureExcludedFindings(): void

@@ -6,8 +6,6 @@ namespace Qualimetrix\Analysis\Configuration;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy;
-use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 
 /**
  * Vocabulary for current configuration keys and legacy ingress mappings.
@@ -17,8 +15,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
  * Declared owner sections receive their form validation and merge policy from
  * the configuration document engine.
  *
- * Consumers (YamlConfigLoader, ConfigDataNormalizer, and legacy source stages)
- * reference these constants instead of string literals.
+ * Delivery adapters reference these constants instead of string literals.
  *
  * Adding a new config option:
  * 1. Add a constant below
@@ -79,7 +76,7 @@ final class ConfigSchema
     public const array INTERNAL_KEYS = [self::DISCOVERED_AUTOLOAD_PATHS, self::DISCOVERED_AUTOLOAD_DEV_PATHS];
 
     /** Capability-owned roots transported in ordered configuration documents. */
-    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT, self::PARALLEL];
+    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE, self::FORMAT, self::PARALLEL, self::RULES];
 
     // -------------------------------------------------------------------------
     // Root key types
@@ -95,8 +92,8 @@ final class ConfigSchema
     /**
      * Unified config entries: [sourcePath, resultKey, rootKeyType, scalarType].
      *
-     * Source key path (camelCase — YamlConfigLoader normalizes snake_case before
-     * ConfigDataNormalizer sees the data, so only camelCase paths are needed):
+     * Source key paths retain the dictionary spelling; owner declarations
+     * govern accepted spellings in authored documents:
      * - 'key'           — top-level key
      * - 'section.key'   — nested key (dot = nesting level; root is auto-typed as section)
      *

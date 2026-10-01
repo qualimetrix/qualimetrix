@@ -268,11 +268,9 @@ final class DuplicateCopyIdentityTest extends TestCase
         $files = array_map(static fn(string $path): SplFileInfo => new SplFileInfo($path), $this->sourceFiles());
 
         $configuration = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($configuration, ['duplication.clone' => []]);
-        $findingConfiguration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions($configuration->configFileOptions());
-        $configuration->replace($findingConfiguration->withResolvedOptions(ResolvedOptionsFixture::build($findingConfiguration, [
-            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false),
-        ])));
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false)];
+        $findingConfiguration = ResolvedOptionsFixture::authoredConfiguration(['rules' => ['duplication.clone' => []]], $metadata);
+        $configuration->replace(ResolvedOptionsFixture::ready($findingConfiguration, $metadata));
         $provider = new DuplicationResultProvider();
         (new DuplicationDetector($configuration, $provider))->inspect($files, AbsolutePath::fromString($this->tmpDir));
 

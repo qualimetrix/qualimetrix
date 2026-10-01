@@ -133,7 +133,7 @@ final class RuleOptionsBuildTest extends TestCase
         $builder = new RuleOptionsBuild($execution);
         $prepare = static function (FindingConfiguration $input) use ($execution, $builder): FindingConfiguration {
             $metadata = $execution->allRules();
-            $configuration = ResolvedOptionsFixture::authoredConfiguration($input, $metadata);
+            $configuration = $input->document->roots() === [] ? ResolvedOptionsFixture::authoredConfiguration([], $metadata) : $input;
             $channels = ResolvedOptionsFixture::universe($metadata, [GotoRule::NAME => [\Qualimetrix\Core\Symbol\SymbolLevel::Callable]]);
             $resolver = new RuleEnablementResolver();
             $stated = $resolver->decide($configuration->document, $channels);
@@ -159,7 +159,7 @@ final class RuleOptionsBuildTest extends TestCase
         }
         self::assertCount(1, $execution->allRules());
         self::assertCount(1, $observed->rules);
-        $second = $prepare(FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => false]]));
+        $second = $prepare(FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [GotoRule::NAME => ['enabled' => false]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))));
         $registry->replace($second);
         self::assertFalse($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);
         self::assertCount(1, $observed->rules);
@@ -172,7 +172,7 @@ final class RuleOptionsBuildTest extends TestCase
         self::assertNotNull($secondOptions);
         self::assertNotSame($firstOptions->for(GotoRule::NAME), $secondOptions->for(GotoRule::NAME));
 
-        $third = $prepare(FindingConfiguration::none()->withRuleOptions([GotoRule::NAME => ['enabled' => true]]));
+        $third = $prepare(FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [GotoRule::NAME => ['enabled' => true]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))));
         $registry->replace($third);
         self::assertTrue($execution->levelActivity()->toMap()[GotoRule::NAME]['callable']);
         self::assertCount(1, $observed->rules);
@@ -510,14 +510,12 @@ final class RuleOptionsBuildTest extends TestCase
             new RulesSection($execution, 'only_rules'),
             new RulesSection($execution, 'disabled_rules'),
         ]), $layers);
-        $empty = FindingConfiguration::none();
         $resolver = new RuleEnablementResolver();
         $channels = ResolvedOptionsFixture::universe($metadata);
         $stated = $resolver->decide($document, $channels);
-        $configuration = new FindingConfiguration($empty->ruleOptions, $empty->cliOverrides, document: $document);
+        $configuration = new FindingConfiguration($document);
         $options = (new RuleOptionsBuild($execution))->build($configuration, $stated);
         return $configuration->withChannelUniverse($channels)->withResolvedOptions($options)
             ->withEnablement($resolver->conclude($stated, $options));
     }
-
 }

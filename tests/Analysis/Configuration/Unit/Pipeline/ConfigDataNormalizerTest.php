@@ -8,44 +8,41 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 
-#[CoversClass(ConfigDataNormalizer::class)]
+#[CoversClass(DocumentComposer::class)]
 final class ConfigDataNormalizerTest extends TestCase
 {
     #[Test]
     public function itKeepsPathsAsIs(): void
     {
-        $result = ConfigDataNormalizer::normalize(['paths' => ['src']]);
+        $result = self::document(['paths' => ['src']]);
 
         self::assertSame(['src'], $result['paths']);
     }
 
     #[Test]
-    public function itRenamesExcludeToExcludes(): void
+    public function itRefusesAScalarExclusionAndReadsItsDeclaredSelector(): void
     {
-        $result = ConfigDataNormalizer::normalize(['exclude' => ['vendor']]);
-
-        self::assertArrayNotHasKey('exclude', $result);
-        self::assertSame(['vendor'], $result['excludes']);
+        $this->assertRefusal(['exclude' => ['vendor']], '"exclude[0]" in configuration file "/project/qmx.yaml" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['exclude', '0']);
+        $result = self::document(['exclude' => [['subtree' => 'vendor']]]);
+        self::assertSame([['subtree' => 'vendor']], $result['exclude']);
+        self::assertArrayNotHasKey('excludes', $result);
     }
 
     #[Test]
-    public function itFlattensCacheSectionIntoDottedKeys(): void
+    public function itReadsTheDeclaredCacheFieldsWithoutTransportCopies(): void
     {
-        $result = ConfigDataNormalizer::normalize([
-            'cache' => ['dir' => '/tmp', 'enabled' => false],
-        ]);
-
-        self::assertArrayNotHasKey('cache', $result);
-        self::assertSame('/tmp', $result['cache.dir']);
-        self::assertFalse($result['cache.enabled']);
+        $result = self::document(['cache' => ['dir' => '/tmp', 'enabled' => false]]);
+        self::assertSame(['dir' => '/tmp', 'enabled' => false], $result['cache']);
+        self::assertArrayNotHasKey('cache.dir', $result);
+        self::assertArrayNotHasKey('cache.enabled', $result);
     }
 
     #[Test]
     public function itKeepsFormatAsIs(): void
     {
-        $result = ConfigDataNormalizer::normalize(['format' => 'json']);
+        $result = self::document(['format' => 'json']);
 
         self::assertSame('json', $result['format']);
     }
@@ -55,34 +52,23 @@ final class ConfigDataNormalizerTest extends TestCase
     {
         $rules = ['complexity.ccn' => ['callable' => ['warning' => 7]]];
 
-        $result = ConfigDataNormalizer::normalize(['rules' => $rules]);
+        $result = self::document(['rules' => $rules]);
 
         self::assertSame($rules, $result['rules']);
     }
 
     #[Test]
-    public function itPreservesAnAuthoredSelectorMappingForTheSelectorDecoder(): void
+    public function itRefusesAnEmptySelectorAndKeepsItsLawfulSibling(): void
     {
-        $result = ConfigDataNormalizer::normalize([
-            'suppressPaths' => [
-                ['subtree' => 'src/Generated'],
-                ['regex' => null],
-            ],
-        ]);
-
-        self::assertSame(
-            [
-                ['subtree' => 'src/Generated'],
-                ['regex' => null],
-            ],
-            $result['suppress_paths'],
-        );
+        $this->assertRefusal(['suppressPaths' => [['subtree' => 'src/Generated'], ['regex' => null]]], 'Item 1 of "suppressPaths" in configuration file "/project/qmx.yaml" writes nothing; remove it or give it a value.', ['suppressPaths', '1']);
+        $result = self::document(['suppressPaths' => [['subtree' => 'src/Generated']]]);
+        self::assertSame([['subtree' => 'src/Generated']], $result['suppress_paths']);
     }
 
     #[Test]
     public function itRenamesDisabledRulesToSnakeCase(): void
     {
-        $result = ConfigDataNormalizer::normalize(['disabledRules' => ['complexity']]);
+        $result = self::document(['disabledRules' => ['complexity']]);
 
         self::assertArrayNotHasKey('disabledRules', $result);
         self::assertSame(['complexity'], $result['disabled_rules']);
@@ -91,7 +77,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itRenamesFailOnToSnakeCase(): void
     {
-        $result = ConfigDataNormalizer::normalize(['failOn' => 'warning']);
+        $result = self::document(['failOn' => 'warning']);
 
         self::assertArrayNotHasKey('failOn', $result);
         self::assertSame('warning', $result['fail_on']);
@@ -100,7 +86,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itKeepsExcludeHealthKeyAsCamelCase(): void
     {
-        $result = ConfigDataNormalizer::normalize(['exclude_health' => ['typing']]);
+        $result = self::document(['exclude_health' => ['typing']]);
 
         self::assertSame(['typing'], $result['exclude_health']);
     }
@@ -108,7 +94,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itRenamesIncludeGeneratedToSnakeCase(): void
     {
-        $result = ConfigDataNormalizer::normalize(['includeGenerated' => true]);
+        $result = self::document(['includeGenerated' => true]);
 
         self::assertTrue($result['include_generated']);
     }
@@ -116,52 +102,46 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itReturnsAnEmptyArrayForEmptyInput(): void
     {
-        $result = ConfigDataNormalizer::normalize([]);
+        $result = self::document([]);
 
         self::assertSame([], $result);
     }
 
     #[Test]
-    public function itDropsUnknownKeys(): void
+    public function itRefusesAnUnknownRootWithItsOriginalSpelling(): void
     {
-        $result = ConfigDataNormalizer::normalize(['unknownKey' => 'value']);
-
-        self::assertSame([], $result);
+        $this->assertRefusal(['unknownKey' => 'value'], 'Unknown key "unknownKey" in configuration file "/project/qmx.yaml". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', ['unknownKey']);
     }
 
     #[Test]
-    public function itFlattensCouplingFrameworkNamespacesWhileKeepingTheOriginalSection(): void
+    public function itRefusesScalarNamespaceSelectorsAndReadsTheDeclaredList(): void
     {
-        $result = ConfigDataNormalizer::normalize([
-            'coupling' => [
-                'frameworkNamespaces' => ['Symfony', 'PhpParser', 'Psr'],
-            ],
-        ]);
-
-        self::assertSame(['Symfony', 'PhpParser', 'Psr'], $result['coupling.framework_namespaces']);
-        self::assertSame(
-            ['frameworkNamespaces' => ['Symfony', 'PhpParser', 'Psr']],
-            $result['coupling'],
-        );
+        $this->assertRefusal(['coupling' => ['frameworkNamespaces' => ['Symfony', 'PhpParser', 'Psr']]], '"coupling.frameworkNamespaces[0]" in configuration file "/project/qmx.yaml" must be a map, got string.', ['coupling', 'frameworkNamespaces', '0']);
+        $this->assertRefusal(['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony'], 'PhpParser', 'Psr']]], '"coupling.frameworkNamespaces[1]" in configuration file "/project/qmx.yaml" must be a map, got string.', ['coupling', 'frameworkNamespaces', '1']);
+        $this->assertRefusal(['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony'], ['subtree' => 'PhpParser'], 'Psr']]], '"coupling.frameworkNamespaces[2]" in configuration file "/project/qmx.yaml" must be a map, got string.', ['coupling', 'frameworkNamespaces', '2']);
+        $result = self::document(['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony'], ['subtree' => 'PhpParser'], ['subtree' => 'Psr']]]]);
+        self::assertSame(['framework_namespaces' => [['subtree' => 'Symfony'], ['subtree' => 'PhpParser'], ['subtree' => 'Psr']]], $result['coupling']);
+        self::assertArrayNotHasKey('coupling.framework_namespaces', $result);
     }
 
     #[Test]
     public function itRenamesMemoryLimitToSnakeCase(): void
     {
-        $result = ConfigDataNormalizer::normalize(['memoryLimit' => '1G']);
+        $result = self::document(['memoryLimit' => '1G']);
 
         self::assertArrayNotHasKey('memoryLimit', $result);
         self::assertSame('1G', $result['memory_limit']);
     }
 
     #[Test]
-    public function itFlattensParallelWorkersIntoADottedKey(): void
+    public function itReadsTheDeclaredParallelWorkersWithoutATransportCopy(): void
     {
-        $result = ConfigDataNormalizer::normalize([
+        $result = self::document([
             'parallel' => ['workers' => 4],
         ]);
 
-        self::assertSame(4, $result['parallel.workers']);
+        self::assertSame(['workers' => 4], $result['parallel']);
+        self::assertArrayNotHasKey('parallel.workers', $result);
     }
 
     #[Test]
@@ -171,7 +151,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[TestWith(['architecture'])]
     public function itReadsANullDocumentRootAsAnUnwrittenKey(string $root): void
     {
-        $result = ConfigDataNormalizer::normalize([$root => null]);
+        $result = self::document([$root => null]);
 
         self::assertSame([], $result);
     }
@@ -179,7 +159,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itReadsANullEntryKeyAsAnUnwrittenKey(): void
     {
-        $result = ConfigDataNormalizer::normalize(['paths' => null, 'format' => null]);
+        $result = self::document(['paths' => null, 'format' => null]);
 
         self::assertSame([], $result);
     }
@@ -187,14 +167,14 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itReadsANullKeyInsideACopiedSubtreeAsAnUnwrittenKeyWithoutTouchingItsSiblings(): void
     {
-        $result = ConfigDataNormalizer::normalize([
+        $result = self::document([
             'architecture' => ['coverage-gap' => 'ignore', 'layers' => null],
             'coupling' => ['frameworkNamespaces' => null],
             'computed_metrics' => ['health.typing' => ['enabled' => null, 'warning' => 80]],
         ]);
 
         self::assertSame(['coverage-gap' => 'ignore'], $result['architecture']);
-        self::assertSame([], $result['coupling']);
+        self::assertArrayNotHasKey('coupling', $result);
         self::assertArrayNotHasKey('coupling.framework_namespaces', $result);
         self::assertSame(['health.typing' => ['warning' => 80]], $result['computed_metrics']);
     }
@@ -202,7 +182,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function itReadsANullKeyAsUnwrittenAtEveryDepth(): void
     {
-        $result = ConfigDataNormalizer::normalize([
+        $result = self::document([
             'architecture' => [
                 'layers' => [
                     ['name' => 'domain', 'patterns' => ['App\\Domain\\*'], 'pending' => null],
@@ -211,62 +191,96 @@ final class ConfigDataNormalizerTest extends TestCase
         ]);
 
         self::assertSame(
-            ['layers' => [['name' => 'domain', 'patterns' => ['App\\Domain\\*']]]],
+            ['layers' => [['name' => 'domain', 'patterns' => [['App\\Domain\\*']]]]],
             $result['architecture'],
         );
     }
 
     #[Test]
-    public function itKeepsFalsyValuesThatAreNotNullAtEveryDepth(): void
+    public function itRefusesAnEmptyDirectoryAndKeepsOtherFalsyValues(): void
     {
-        $result = ConfigDataNormalizer::normalize([
+        $written = [
             'includeGenerated' => false,
             'cache' => ['enabled' => false, 'dir' => ''],
             'exclude_health' => [],
             'computed_metrics' => ['health.typing' => ['enabled' => false, 'warning' => 0]],
+        ];
+        $this->assertRefusal($written, 'Invalid value for "cache.dir": a directory path cannot be empty. Omit the key to use the default (.qmx-cache).', ['cache', 'dir']);
+        $result = self::document([
+            'includeGenerated' => false,
+            'cache' => ['enabled' => false],
+            'exclude_health' => [],
+            'computed_metrics' => ['health.typing' => ['enabled' => false, 'warning' => 0]],
         ]);
-
         self::assertFalse($result['include_generated']);
-        self::assertFalse($result['cache.enabled']);
-        self::assertSame('', $result['cache.dir']);
+        self::assertSame(['enabled' => false], $result['cache']);
         self::assertSame([], $result['exclude_health']);
         self::assertSame(['health.typing' => ['enabled' => false, 'warning' => 0]], $result['computed_metrics']);
     }
 
     #[Test]
-    public function itKeepsANullListElement(): void
+    public function itRefusesANullListElementAndKeepsItsLawfulSibling(): void
     {
-        $result = ConfigDataNormalizer::normalize(['exclude_health' => [null, 'health.typing']]);
+        $this->assertRefusal(['exclude_health' => [null, 'health.typing']], 'Item 0 of "exclude_health" in configuration file "/project/qmx.yaml" is null (`~`); a list item is a value, not an unwritten key — remove it or write a value.', ['exclude_health', '0']);
+        $result = self::document(['exclude_health' => ['health.typing']]);
+        self::assertSame(['health.typing'], $result['exclude_health']);
+    }
 
-        self::assertSame([null, 'health.typing'], $result['exclude_health']);
+    #[Test]
+    public function itRefusesAnInvalidIdentifierEvenWhenNullAndReadsTheLawfulSibling(): void
+    {
+        $this->assertRefusal([
+            'computed_metrics' => ['my-metric' => null, 'health.typing' => ['enabled' => null, 'warning' => 80]],
+        ], 'Computed metric name "my-metric" must be "health.<name>" or "computed.<name>", where every segment is lower-case kebab (/^(?:health|computed)(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)+$/) and the last segment is not the name of an aggregation strategy', ['computed_metrics', 'my-metric']);
+        $result = self::document(['computed_metrics' => ['health.typing' => ['enabled' => null, 'warning' => 80]]]);
+        self::assertSame(['health.typing' => ['warning' => 80]], $result['computed_metrics']);
+    }
+
+    #[Test]
+    public function itRefusesAnUndeclaredSlotEvenWhenNullAndKeepsAnUnwrittenRule(): void
+    {
+        $this->assertRefusal(['rules' => [
+            'complexity.ccn' => null,
+            'code-smell.boolean-argument' => ['callable' => ['warning' => null]],
+        ]], 'Unknown key "rules.code-smell.boolean-argument.callable" in configuration file "/project/qmx.yaml". Accepted keys: allowed-prefixes, flag-promoted-properties, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths.', ['rules', 'code-smell.boolean-argument', 'callable']);
+        self::assertSame(['rules' => ['complexity.ccn' => null]], self::document(['rules' => ['complexity.ccn' => null]]));
     }
 
     /**
-     * A level-1 key of an identifier-keyed root is an entity the author named,
-     * not an option with a default for `~` to fall back to. Erased here, the
-     * owner never saw it: `computed.foo: ~` ran clean while `computed.foo: {}`
-     * was refused.
+     * @param array<string, mixed> $written
+     * @param non-empty-list<string> $path
      */
-    #[Test]
-    public function itKeepsANullIdentifierEntryForTheRootOwnerToJudge(): void
+    private function assertRefusal(array $written, string $summary, array $path): void
     {
-        $result = ConfigDataNormalizer::normalize([
-            'computed_metrics' => ['my-metric' => null, 'health.typing' => ['enabled' => null, 'warning' => 80]],
-        ]);
-
-        self::assertSame(['my-metric' => null, 'health.typing' => ['warning' => 80]], $result['computed_metrics']);
+        try {
+            self::document($written);
+            self::fail('The authored input must be refused by its declaration.');
+        } catch (\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame($path, $refusal->position()?->segments);
+            self::assertSame($path[\count($path) - 1], $refusal->position()->written);
+        }
     }
 
-    #[Test]
-    public function itLeavesNullsInsideTheRulesSubtreeAlone(): void
+    /**
+     * @param array<string, mixed> $written
+     *
+     * @return array<string, mixed>
+     */
+    private static function document(array $written): array
     {
-        $rules = [
-            'complexity.ccn' => null,
-            'code-smell.boolean-argument' => ['callable' => ['warning' => null]],
-        ];
-
-        $result = ConfigDataNormalizer::normalize(['rules' => $rules]);
-
-        self::assertSame($rules, $result['rules']);
+        $document = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose(
+            new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([
+                ...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(),
+                ...\Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::standaloneSections(),
+            ]),
+            [new \Qualimetrix\Analysis\Configuration\Document\AuthoredLayer(
+                \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
+                \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain($written),
+            )],
+        );
+        return array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), $document->roots());
     }
 }

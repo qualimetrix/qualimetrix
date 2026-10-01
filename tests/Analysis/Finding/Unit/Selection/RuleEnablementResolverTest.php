@@ -126,7 +126,10 @@ final class RuleEnablementResolverTest extends TestCase
         self::assertSame(['only_rules[0]', 'disabled_rules[0]'], array_map(static fn($writer): string => $writer->displayPath(), $diagnostic->sources));
         self::assertSame([0, 1], array_map(static fn($writer): int => $writer->layerIndex, $diagnostic->sources));
         $configuration = FindingConfiguration::fromDocument($document)->withDiagnostics($stated->diagnostics());
-        foreach ([$configuration->withChannelUniverse($channels), $configuration->withRuleOptions([]), $configuration->withCliOverrides([])] as $copy) {
+        $ready = ResolvedOptionsFixture::ready(ResolvedOptionsFixture::authoredConfiguration([], $metadata), $metadata);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions::class, $ready->resolvedOptions);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleEnablement::class, $ready->enablement);
+        foreach ([$configuration->withChannelUniverse($channels), $configuration->withResolvedOptions($ready->resolvedOptions), $configuration->withEnablement($ready->enablement), $configuration->withDiagnostics($stated->diagnostics())] as $copy) {
             self::assertSame([$diagnostic], $copy->diagnostics);
         }
         $exact = ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['only_rules' => ['code-smell.eval']]]], AbsolutePath::fromString('/project'), $metadata);

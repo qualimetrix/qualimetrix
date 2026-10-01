@@ -11,14 +11,12 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * One configuration file taken the way the pipeline takes it: read as
- * written, composed against the document's roots, and only then refused for
- * what the folded values alone still judge.
+ * written and composed against the declarations of its roots.
  */
 final class WrittenFile
 {
@@ -27,32 +25,10 @@ final class WrittenFile
     {
         $loaded = (new YamlConfigLoader())->read($path, $path);
         $document = DocumentComposer::compose(
-            new DocumentSchema(DocumentRoots::completing(LayeredDocument::standaloneSections())),
+            new DocumentSchema([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...LayeredDocument::standaloneSections()]),
             [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $path), $loaded->authored)],
         );
 
-        if ($loaded->deferredRefusal !== null) {
-            throw $loaded->deferredRefusal;
-        }
-
         return $document;
-    }
-
-    /**
-     * The folded values the owners still read, with the refusal the loader
-     * holds for after the engine's judgement raised here instead.
-     *
-     * @throws ConfigurationRefusal
-     *
-     * @return array<string, mixed>
-     */
-    public static function foldedValues(string $path): array
-    {
-        $loaded = (new YamlConfigLoader())->read($path, $path);
-        if ($loaded->deferredRefusal !== null) {
-            throw $loaded->deferredRefusal;
-        }
-
-        return $loaded->values;
     }
 }

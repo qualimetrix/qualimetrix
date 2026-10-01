@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Support;
 
+use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
@@ -16,21 +17,12 @@ use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Console\ExitPolicySection;
-use Qualimetrix\Infrastructure\Console\MemoryLimitSection;
-use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
 use ReflectionProperty;
 
 /**
  * A configuration document built the way the pipeline builds it: every source
- * both as a contribution and as a written layer the engine composes, so a
- * resolver reading either sees the same input.
- *
- * Runtime roots formerly declared by Configuration use their real owners.
- * Other sections are carried unread until a fixture passes that owner's
- * declaration, or every declaration a compiled pipeline holds.
+ * as written against registered owner declarations and explicit fixture overrides.
  */
 final class LayeredDocument
 {
@@ -55,24 +47,27 @@ final class LayeredDocument
         return new ConfigurationDocument(
             $sources,
             $root,
-            DocumentComposer::compose(new DocumentSchema(DocumentRoots::completing(array_values($declarations))), $layers),
+            DocumentComposer::compose(new DocumentSchema([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...array_values($declarations)]), $layers),
         );
     }
 
     /**
-     * Owner declarations for roots formerly declared by Configuration, used
-     * by standalone fixtures without a compiled container.
+     * The actual registered owner declarations, without constructing rules or options.
      *
      * @return list<DocumentSectionSchemaInterface>
      */
     public static function standaloneSections(): array
     {
-        return [
-            new ExitPolicySection(),
-            new MemoryLimitSection(),
-            new ParallelConfigurationResolver(),
-            new PathsSection(),
-        ];
+        static $sections = null;
+        if ($sections === null) {
+            $container = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create();
+            $pipeline = $container->get(ConfigurationPipelineInterface::class);
+            if (!$pipeline instanceof ConfigurationPipelineInterface) {
+                throw new LogicException('The fixture container has no configuration pipeline.');
+            }
+            $sections = self::sectionsOf($pipeline);
+        }
+        return $sections;
     }
 
     /**

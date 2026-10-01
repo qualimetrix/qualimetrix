@@ -84,7 +84,7 @@ final class CliStageTest extends TestCase
             cliPathWrites: [new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '10', '--cyclomatic-warning', NodeSchema::scalar(ScalarForm::Integer))],
         ));
         self::assertNotNull($rules);
-        self::assertSame(['complexity.ccn' => ['callable' => ['warning' => 10]]], $rules->values['rules']);
-        self::assertSame($rules->values['rules'], $rules->authored[0]->root->children['rules']->plain());
+        self::assertArrayNotHasKey('rules', $rules->values);
+        self::assertSame(['complexity.ccn' => ['callable' => ['warning' => 10]]], $rules->authored[0]->root->children['rules']->plain());
     }
 }

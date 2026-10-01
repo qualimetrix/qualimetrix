@@ -77,7 +77,6 @@ final class PromiseEffectP1Set
      * @var list<string>
      */
     private const array P2_FILES = [
-        'src/Analysis/Configuration/Pipeline/ConfigDataNormalizer.php',
         'src/Analysis/Configuration/Loader/YamlConfigLoader.php',
     ];
 
@@ -108,8 +107,7 @@ final class PromiseEffectP1Set
         'src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php' => 'contract stating acceptedOptionKeys()',
         'src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php' => 'contract stating a level slot key set',
         'src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php' => 'contract stating levelOptionsClasses(), the source of slot existence',
-        'src/Analysis/Finding/RuleConfiguration/RuleOptionsFactory.php' => 'the consumer: refusal must read the declaration, not a substring of the key name',
-        'src/Analysis/Finding/RuleConfiguration/RuleOptionKeyRecognition.php' => 'the consumer asking the set what it knows',
+        'src/Analysis/Finding/RuleConfiguration/RuleOptionsBuild.php' => 'the consumer constructing typed options and attributing refusals to authored writes',
         'src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php' => 'the words of every rule-option refusal, including the one about a value\'s form',
         'src/Analysis/Finding/Exclusion/RuleNamespaceExclusionProvider.php' => 'the throw site behind most malformed framework-key cells, in no other package set',
         'src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php' => 'its neighbour, which judged no form at all',
@@ -130,20 +128,12 @@ final class PromiseEffectP1Set
     /**
      * Frozen whole files: none may enter the product-source promise set.
      *
-     * The first entry was named `RuleOptionThresholdModeResolver.php` when this
-     * list was written and is the same file under its current subject-oriented
-     * name: it unfolds a threshold shorthand rather than evicting a mode. The
-     * path is updated rather than the entry dropped because a rename does not
-     * retire a whole-file freeze. A path naming nothing would make the check pass by
-     * matching nothing, which is the failure mode this whole programme keeps
-     * finding.
+     * Keep only paths whose files still exist. A missing path would match
+     * nothing and silently weaken the whole-file freeze.
      *
      * @var list<string>
      */
     private const array FROZEN_FILES = [
-        'src/Analysis/Finding/RuleConfiguration/RuleOptionThresholdShorthand.php',
-        'src/Analysis/Finding/Configuration/FindingConfigurationResolver.php',
-        'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php',
         'src/Analysis/Finding/RuleConfiguration/RuleOptionsRegistry.php',
     ];
 

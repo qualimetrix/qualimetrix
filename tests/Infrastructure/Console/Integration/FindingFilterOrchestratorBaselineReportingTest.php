@@ -341,7 +341,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
     {
         $configuration = self::createStub(RuleConfigurationInterface::class);
         $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build(
-            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions([\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => ['enabled' => false]]),
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => ['enabled' => false]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))),
             [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
         );
         $configuration->method('resolvedOptions')->willReturn($snapshot);

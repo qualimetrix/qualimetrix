@@ -57,9 +57,9 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itAppliesVoErrorViaConfigFileKebabKey(): void
     {
-        ResolvedOptionsFixture::file($this->registry, [
+        $this->factory->inputs(['rules' => [
             'code-smell.long-parameter-list' => ['vo-warning' => 2, 'vo-error' => 3],
-        ]);
+        ]]);
 
         /** @var LongParameterListOptions $options */
         $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
@@ -104,9 +104,9 @@ final class RuleOptionKeyNormalizationTest extends TestCase
     #[Test]
     public function itRefusesAGenuinelyUnknownOption(): void
     {
-        ResolvedOptionsFixture::file($this->registry, [
+        $this->factory->inputs(['rules' => [
             'code-smell.long-parameter-list' => ['not_a_real_option' => 3],
-        ]);
+        ]]);
 
         try {
             $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);

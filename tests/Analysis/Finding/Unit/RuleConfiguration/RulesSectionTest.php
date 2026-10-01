@@ -129,11 +129,7 @@ final class RulesSectionTest extends TestCase
             self::assertSame('0', $error->position()->written);
         }
         $document = DocumentComposer::compose($schema, [$upper]);
-        $configuration = new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration(
-            new \Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument(),
-            new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides(),
-            document: $document,
-        );
+        $configuration = new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration($document);
         $resolver = new \Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver();
         $stated = $resolver->decide($document, ResolvedOptionsFixture::universe($execution->allRules()));
         $options = (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild($execution))->build($configuration, $stated);

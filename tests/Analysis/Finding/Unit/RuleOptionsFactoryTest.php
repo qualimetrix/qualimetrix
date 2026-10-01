@@ -18,24 +18,27 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithUnionType;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use stdClass;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(RuleOptionsBuild::class)]
 #[CoversClass(RuleOptionsRegistry::class)]
@@ -149,23 +152,30 @@ final class RuleOptionsFactoryTest extends TestCase
             'rule-b' => ['enabled' => true],
         ]);
 
-        $options = $this->registry->configFileOptions();
+        $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => $this->configFileRules], [
+            new RuleMetadata('rule-a', TestRuleOptions::class, '', [], false),
+            new RuleMetadata('rule-b', TestRuleOptions::class, '', [], false),
+        ]);
+        $options = $configuration->document->get('rules')?->plain();
 
         self::assertSame(['rule-a' => ['enabled' => false], 'rule-b' => ['enabled' => true]], $options);
     }
 
     #[Test]
-    public function itGetsCliOptions(): void
+    public function itRefusesUndeclaredCliKeysForEachProducer(): void
     {
-        $this->writeCliOption('rule-a', 'opt1', 'value1');
-        $this->writeCliOption('rule-b', 'opt2', 'value2');
-
-        $options = $this->registry->cliOptions();
-
-        self::assertSame([
-            'rule-a' => ['opt1' => 'value1'],
-            'rule-b' => ['opt2' => 'value2'],
-        ], $options);
+        $this->assertUnsupportedCliWrite(
+            'rule-a',
+            'opt1',
+            'value1',
+            'Option "opt1" is not an option of rule "rule-a". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'rule-b',
+            'opt2',
+            'value2',
+            'Option "opt2" is not an option of rule "rule-b". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
@@ -225,41 +235,37 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itExpandsDotNotationInCliOptions(): void
+    public function itRefusesUndeclaredCliLevels(): void
     {
-        $this->writeCliOption('test-rule', 'method.warning', 5);
-        $this->writeCliOption('test-rule', 'method.error', 10);
-        $this->writeCliOption('test-rule', 'class.enabled', false);
-
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertArrayHasKey('test-rule', $cliOptions);
-        self::assertSame([
-            'method.warning' => 5,
-            'method.error' => 10,
-            'class.enabled' => false,
-        ], $cliOptions['test-rule']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'method.warning',
+            5,
+            'Option "method.warning" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'method.error',
+            10,
+            'Option "method.error" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'class.enabled',
+            false,
+            'Option "class.enabled" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
-    public function itHandlesNestedConfigFileOptions(): void
+    public function itRefusesAnUndeclaredNestedFileOption(): void
     {
-        $this->writeConfigFile([
-            'test-rule' => [
-                'enabled' => true,
-                'nested' => [
-                    'level1' => [
-                        'level2' => 'deep-value',
-                    ],
-                ],
-            ],
-        ]);
-
-        $options = $this->registry->configFileOptions();
-
-        self::assertArrayHasKey('test-rule', $options);
-        self::assertIsArray($options['test-rule']['nested']);
-        self::assertSame('deep-value', $options['test-rule']['nested']['level1']['level2']);
+        $this->assertUnsupportedFileWrite(
+            'test-rule',
+            ['enabled' => true, 'nested' => ['level1' => ['level2' => 'deep-value']]],
+            'nested',
+            'Unknown key "rules.test-rule.nested" in configuration file "/project/qmx.yaml". Accepted keys: count-nullsafe, enabled, error-threshold, warning-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        );
     }
 
     #[Test]
@@ -343,17 +349,20 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesMultiLevelDotNotation(): void
+    public function itRefusesUndeclaredMultilevelCliKeys(): void
     {
-        $this->writeCliOption('test-rule', 'level1.level2.level3', 'deep');
-        $this->writeCliOption('test-rule', 'level1.level2.other', 'value');
-
-        // The factory stores raw dot notation, expansion happens during create()
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertArrayHasKey('test-rule', $cliOptions);
-        self::assertSame('deep', $cliOptions['test-rule']['level1.level2.level3']);
-        self::assertSame('value', $cliOptions['test-rule']['level1.level2.other']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'level1.level2.level3',
+            'deep',
+            'Option "level1.level2.level3" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'level1.level2.other',
+            'value',
+            'Option "level1.level2.other" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
@@ -449,7 +458,7 @@ final class RuleOptionsFactoryTest extends TestCase
         $this->writeCliOption('rule-a', 'errorThreshold', 10);
         $this->writeCliOption('rule-b', 'errorThreshold', 30);
 
-        $snapshot = ResolvedOptionsFixture::build(FindingConfiguration::none()->withRuleOptions($this->configFileRules)->withCliOverrides($this->cliRules), [
+        $snapshot = ResolvedOptionsFixture::build(ResolvedOptionsFixture::authoredConfiguration(['rules' => $this->configFileRules], [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('rule-a', TestRuleOptions::class, '', [], false), new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('rule-b', TestRuleOptions::class, '', [], false)], cliOptions: $this->cliRules), [
             new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('rule-a', TestRuleOptions::class, '', [], false),
             new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('rule-b', TestRuleOptions::class, '', [], false),
         ]);
@@ -467,19 +476,26 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesCliOptionsAddedIncrementally(): void
+    public function itRefusesEachUndeclaredIncrementalCliWrite(): void
     {
-        $this->writeCliOption('test-rule', 'option1', 'value1');
-        $this->writeCliOption('test-rule', 'option2', 'value2');
-        $this->writeCliOption('test-rule', 'option3', 'value3');
-
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertArrayHasKey('test-rule', $cliOptions);
-        self::assertCount(3, $cliOptions['test-rule']);
-        self::assertSame('value1', $cliOptions['test-rule']['option1']);
-        self::assertSame('value2', $cliOptions['test-rule']['option2']);
-        self::assertSame('value3', $cliOptions['test-rule']['option3']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'option1',
+            'value1',
+            'Option "option1" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'option2',
+            'value2',
+            'Option "option2" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'option3',
+            'value3',
+            'Option "option3" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
@@ -495,62 +511,65 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itReplacesCliOptionsWhenUsingSetCliOptions(): void
+    public function itRefusesBothUndeclaredReplacementCliWrites(): void
     {
-        $this->writeCliOption('test-rule', 'option1', 'old');
-        $this->writeCliOptions('test-rule', [
-            'option2' => 'new',
-        ]);
-
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertArrayNotHasKey('option1', $cliOptions['test-rule']);
-        self::assertArrayHasKey('option2', $cliOptions['test-rule']);
-        self::assertSame('new', $cliOptions['test-rule']['option2']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'option1',
+            'old',
+            'Option "option1" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'option2',
+            'new',
+            'Option "option2" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
-    public function itHandlesEmptyStringKeys(): void
+    public function itRefusesEmptyAndUndeclaredFileKeys(): void
     {
-        $this->writeConfigFile([
-            'test-rule' => [
-                '' => 'empty-key-value',
-                'valid_key' => 'valid-value',
-            ],
-        ]);
-
-        $options = $this->registry->configFileOptions();
-
-        self::assertArrayHasKey('test-rule', $options);
-        self::assertSame('empty-key-value', $options['test-rule']['']);
-        self::assertSame('valid-value', $options['test-rule']['valid_key']);
+        $this->assertUnsupportedFileWrite(
+            'test-rule',
+            ['' => 'empty-key-value'],
+            '',
+            'Unknown key "rules.test-rule." in configuration file "/project/qmx.yaml". Accepted keys: count-nullsafe, enabled, error-threshold, warning-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        );
+        $this->assertUnsupportedFileWrite(
+            'test-rule',
+            ['valid_key' => 'valid-value'],
+            'valid_key',
+            'Unknown key "rules.test-rule.valid_key" in configuration file "/project/qmx.yaml". Accepted keys: count-nullsafe, enabled, error-threshold, warning-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        );
     }
 
     #[Test]
-    public function itNormalizesNumericStringKeys(): void
+    public function itRefusesANumericPrefixInAnUndeclaredFileKey(): void
     {
-        $this->writeConfigFile([
-            'test-rule' => [
-                '123_value' => 'numeric-start',
-            ],
-        ]);
-
-        $normalized = $this->registry->configFileOptions();
-
-        // Key normalization should handle numeric prefixes
-        self::assertArrayHasKey('test-rule', $normalized);
+        $this->assertUnsupportedFileWrite(
+            'test-rule',
+            ['123_value' => 'numeric-start'],
+            '123_value',
+            'Unknown key "rules.test-rule.123_value" in configuration file "/project/qmx.yaml". Accepted keys: count-nullsafe, enabled, error-threshold, warning-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        );
     }
 
     #[Test]
-    public function itHandlesDotNotationWithSingleKey(): void
+    public function itRefusesUndeclaredSimpleAndDottedCliKeys(): void
     {
-        $this->writeCliOption('test-rule', 'simpleKey', 'value');
-        $this->writeCliOption('test-rule', 'nested.key', 'nested-value');
-
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertSame('value', $cliOptions['test-rule']['simpleKey']);
-        self::assertSame('nested-value', $cliOptions['test-rule']['nested.key']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'simpleKey',
+            'value',
+            'Option "simpleKey" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'nested.key',
+            'nested-value',
+            'Option "nested.key" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
@@ -640,23 +659,52 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itResetsClearsAllState(): void
+    public function itRefusesRawWritesAndResetsAnActuallyReadySnapshot(): void
     {
-        $this->writeConfigFile([
-            'rule1' => ['opt1' => 'val1'],
-            'rule2' => ['opt2' => 'val2'],
-        ]);
+        $this->assertUnsupportedFileWrite(
+            'rule1',
+            ['opt1' => 'val1'],
+            'opt1',
+            'Unknown key "rules.rule1.opt1" in configuration file "/project/qmx.yaml". Accepted keys: count-nullsafe, enabled, error-threshold, warning-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        );
+        $this->assertUnsupportedFileWrite(
+            'rule2',
+            ['opt2' => 'val2'],
+            'opt2',
+            'Unknown key "rules.rule2.opt2" in configuration file "/project/qmx.yaml". Accepted keys: count-nullsafe, enabled, error-threshold, warning-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'rule1',
+            'cliOpt',
+            'cliVal',
+            'Option "cliOpt" is not an option of rule "rule1". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'rule3',
+            'cliOpt2',
+            'cliVal2',
+            'Option "cliOpt2" is not an option of rule "rule3". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->writeConfigFile(['test-rule' => ['warning-threshold' => 30, 'error-threshold' => 40]]);
+        $configured = $this->factory->create('test-rule', TestRuleOptions::class);
+        self::assertInstanceOf(TestRuleOptions::class, $configured);
+        self::assertSame(30, $configured->warningThreshold);
+        self::assertSame($configured, $this->registry->resolvedOptions()->for('test-rule'));
 
-        $this->writeCliOption('rule1', 'cliOpt', 'cliVal');
-        $this->writeCliOption('rule3', 'cliOpt2', 'cliVal2');
-
-        self::assertNotEmpty($this->registry->configFileOptions());
-        self::assertNotEmpty($this->registry->cliOptions());
-
+        $this->registry->resetRuntimeState();
+        try {
+            $this->registry->resolvedOptions();
+            self::fail('Reset must invalidate the installed ready snapshot.');
+        } catch (LogicException $refusal) {
+            self::assertSame('Rule options are unavailable before analysis preflight.', $refusal->getMessage());
+        }
         $this->resetRun();
-
-        self::assertEmpty($this->registry->configFileOptions());
-        self::assertEmpty($this->registry->cliOptions());
+        $defaults = $this->factory->create('test-rule', TestRuleOptions::class);
+        self::assertInstanceOf(TestRuleOptions::class, $defaults);
+        self::assertTrue($defaults->enabled);
+        self::assertSame(10, $defaults->warningThreshold);
+        self::assertSame(20, $defaults->errorThreshold);
+        self::assertSame($defaults, $this->registry->resolvedOptions()->for('test-rule'));
     }
 
     #[Test]
@@ -768,35 +816,49 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itExpandsDeepDotNotationInCliOptions(): void
+    public function itRefusesEachUndeclaredComplexityCliLevel(): void
     {
-        // Test actual expansion during create() call
-        $this->writeCliOption('complexity', 'method.warning', 5);
-        $this->writeCliOption('complexity', 'method.error', 10);
-        $this->writeCliOption('complexity', 'class.warning', 15);
-        $this->writeCliOption('complexity', 'class.error', 20);
-
-        // Before expansion, options are stored as-is
-        $cliOptions = $this->registry->cliOptions();
-        self::assertArrayHasKey('complexity', $cliOptions);
-        self::assertArrayHasKey('method.warning', $cliOptions['complexity']);
-        self::assertArrayHasKey('method.error', $cliOptions['complexity']);
-        self::assertArrayHasKey('class.warning', $cliOptions['complexity']);
-        self::assertArrayHasKey('class.error', $cliOptions['complexity']);
+        $this->assertUnsupportedCliWrite(
+            'complexity',
+            'method.warning',
+            5,
+            'Option "method.warning" is not an option of rule "complexity". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'complexity',
+            'method.error',
+            10,
+            'Option "method.error" is not an option of rule "complexity". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'complexity',
+            'class.warning',
+            15,
+            'Option "class.warning" is not an option of rule "complexity". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'complexity',
+            'class.error',
+            20,
+            'Option "class.error" is not an option of rule "complexity". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
-    public function itHandlesDotNotationCollisionsCorrectly(): void
+    public function itRefusesBothUndeclaredSiblingCliKeys(): void
     {
-        // Test that dot notation expansion handles collisions
-        $this->writeCliOption('test-rule', 'nested.key1', 'value1');
-        $this->writeCliOption('test-rule', 'nested.key2', 'value2');
-
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertArrayHasKey('test-rule', $cliOptions);
-        self::assertSame('value1', $cliOptions['test-rule']['nested.key1']);
-        self::assertSame('value2', $cliOptions['test-rule']['nested.key2']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'nested.key1',
+            'value1',
+            'Option "nested.key1" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'nested.key2',
+            'value2',
+            'Option "nested.key2" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
@@ -868,15 +930,14 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itHandlesDeepNestedDotNotationLevels(): void
+    public function itRefusesAnUndeclaredDeepCliKey(): void
     {
-        // Test very deep nesting: a.b.c.d.e
-        $this->writeCliOption('test-rule', 'a.b.c.d.e', 'deep-value');
-
-        $cliOptions = $this->registry->cliOptions();
-
-        self::assertArrayHasKey('test-rule', $cliOptions);
-        self::assertSame('deep-value', $cliOptions['test-rule']['a.b.c.d.e']);
+        $this->assertUnsupportedCliWrite(
+            'test-rule',
+            'a.b.c.d.e',
+            'deep-value',
+            'Option "a.b.c.d.e" is not an option of rule "test-rule". Options here: count-nullsafe, enabled, error-threshold, suppress-namespace-channels, suppress-namespaces, suppress-paths, warning-threshold.',
+        );
     }
 
     #[Test]
@@ -1027,7 +1088,18 @@ final class RuleOptionsFactoryTest extends TestCase
             ],
         ]);
 
-        $this->factory->create('computed.health', TestRuleOptions::class);
+        $metadata = [new RuleMetadata('computed.health', TestRuleOptions::class, '', [], false)];
+        $channels = new \Qualimetrix\Infrastructure\Rule\ChannelUniverse(
+            [
+                'health.cohesion' => \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
+                'health.typing' => \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
+            ],
+            ['computed.health' => ['health.cohesion', 'health.typing']],
+            ['computed.health' => false],
+            new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([]),
+        );
+        $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => $this->configFileRules], $metadata);
+        $this->registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata, channels: $channels));
 
         self::assertTrue($this->registry->isNamespaceChannelExcluded(
             'computed.health',
@@ -1155,9 +1227,9 @@ final class RuleOptionsFactoryTest extends TestCase
         $registry = new RuleOptionsRegistry($provider);
         $factory = new ResolvedOptionsFixture($registry);
 
-        ResolvedOptionsFixture::configure($registry, self::configuration([
+        $factory->inputs(['rules' => [
             'test.rule' => ['suppress_namespaces' => [['subtree' => 'App\\Tests']]],
-        ]));
+        ]]);
         $factory->create('test.rule', TestRuleOptions::class);
         self::assertSame(
             ['subtree:App\\Tests'],
@@ -2215,23 +2287,60 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->configFileRules = [];
         $this->cliRules = [];
+        $this->factory->inputs([]);
         $this->registry->resetRuntimeState();
+    }
+
+    private function assertUnsupportedCliWrite(string $producer, string $key, mixed $value, string $summary): void
+    {
+        $parser = (new RuleOptionsParserFactory())->createFromMetadata([
+            new RuleMetadata($producer, TestRuleOptions::class, '', [], false),
+        ]);
+        $input = new ArrayInput(['--rule-opt' => [$producer . ':' . $key . '=' . json_encode($value, \JSON_THROW_ON_ERROR)]], new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]));
+        try {
+            (new CliOptionsParser($parser))->pathWrites($input);
+            self::fail('The authored CLI key must be refused before installing a ready snapshot.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
+            self::assertSame('--rule-opt', $refusal->sources()[0]->locator());
+            self::assertNull($refusal->position());
+        }
+        $this->assertNoReadySnapshot();
+    }
+
+    /** @param array<string, mixed> $options */
+    private function assertUnsupportedFileWrite(string $producer, array $options, string $key, string $summary): void
+    {
+        try {
+            ResolvedOptionsFixture::authoredConfiguration(['rules' => [$producer => $options]], [
+                new RuleMetadata($producer, TestRuleOptions::class, '', [], false),
+            ]);
+            self::fail('The authored file key must be refused before installing a ready snapshot.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['rules', $producer, $key], $refusal->position()?->segments);
+            self::assertSame($key, $refusal->position()->written);
+        }
+        $this->assertNoReadySnapshot();
+    }
+
+    private function assertNoReadySnapshot(): void
+    {
+        try {
+            $this->registry->resolvedOptions();
+            self::fail('An invalid ingress must not install a ready snapshot.');
+        } catch (LogicException $refusal) {
+            self::assertSame('Rule options are unavailable before analysis preflight.', $refusal->getMessage());
+        }
     }
 
     private function install(): void
     {
-        ResolvedOptionsFixture::configure($this->registry, self::configuration($this->configFileRules, $this->cliRules));
-    }
-
-    /**
-     * @param array<string, mixed> $configFileRules
-     * @param array<string, array<string, mixed>> $cliRules
-     */
-    private static function configuration(array $configFileRules, array $cliRules = []): FindingConfiguration
-    {
-        return new FindingConfiguration(
-            new RuleOptionsDocument($configFileRules),
-            new FindingCliOverrides($cliRules),
-        );
+        $this->factory->inputs(['rules' => $this->configFileRules], $this->cliRules);
     }
 }

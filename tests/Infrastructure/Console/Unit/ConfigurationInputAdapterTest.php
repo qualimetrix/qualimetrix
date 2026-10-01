@@ -35,7 +35,7 @@ final class ConfigurationInputAdapterTest extends TestCase
         $document = $this->adapter()->resolve($input);
         self::assertSame([
             'complexity.ccn' => ['callable' => ['warning' => 10], 'class' => ['max-error' => 20, 'max-warning' => 15]],
-        ], $document->ruleContributions()[0]);
+        ], $document->resolved()->get('rules')?->plain());
     }
 
     #[Test]
@@ -73,7 +73,7 @@ final class ConfigurationInputAdapterTest extends TestCase
     {
         $document = $this->adapter()->resolve(new ArrayInput([], $this->definition()), AnalysisPreflightProfile::graph());
 
-        self::assertSame([], $document->ruleContributions());
+        self::assertSame([], $document->resolved()->roots());
     }
 
     private function adapter(): ConfigurationInputAdapter
@@ -85,6 +85,10 @@ final class ConfigurationInputAdapterTest extends TestCase
         $execution->method('allRules')->willReturn([
             new RuleMetadata(ComplexityRule::NAME, ComplexityRule::getOptionsClass(), '', CliAliasReader::read(ComplexityRule::class), false),
         ]);
+
+        foreach (['rules', 'only_rules', 'disabled_rules'] as $root) {
+            $pipeline->addSection(new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, $root));
+        }
 
         return new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution);
     }

@@ -31,7 +31,7 @@ final class RuleOptionsDefaultsTest extends TestCase
             self::assertEquals(new $class(), $options, $producer);
             $disabled[$producer] = ['enabled' => false];
         }
-        $muted = ResolvedOptionsFixture::ready(FindingConfiguration::none()->withRuleOptions($disabled), $execution->allRules())->resolvedOptions;
+        $muted = ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => $disabled]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))), $execution->allRules())->resolvedOptions;
         self::assertNotNull($muted);
         foreach ($muted->all() as $producer => $options) {
             self::assertFalse($options->isEnabled(), $producer);

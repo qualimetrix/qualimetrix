@@ -761,12 +761,12 @@ final class UnusedDirectiveRuleTest extends TestCase
         self::productionUniverse();
         $registry = new RuleOptionsRegistry();
         $registry->replace(ResolvedOptionsFixture::ready(
-            FindingConfiguration::none()->withRuleOptions([
+            FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [
                 InlineDirectivePolicyInterface::PRODUCER_RULE_NAME => [
                     'enabled' => $options->enabled,
                     'unused-directive-severity' => $options->unusedDirectiveSeverity->value,
                 ],
-            ]),
+            ]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))),
             self::$metadata,
             channels: $identity,
         ));

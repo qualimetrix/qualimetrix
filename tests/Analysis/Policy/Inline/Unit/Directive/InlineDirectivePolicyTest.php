@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -279,10 +278,9 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $configuration ??= new RuleOptionsRegistry();
         $configuration->replace(ResolvedOptionsFixture::ready(
-            FindingConfiguration::none()->withRuleOptions($rules),
+            ResolvedOptionsFixture::authoredConfiguration(['rules' => $rules], [new RuleMetadata('code-smell.goto', CodeSmellOptions::class, '', [], false)], disabled: $disabled),
             [new RuleMetadata('code-smell.goto', CodeSmellOptions::class, '', [], false)],
             channels: $universe,
-            disabled: $disabled,
         ));
 
         return new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe));
@@ -333,5 +331,4 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         return LevelActivity::fromMap(['code-smell.goto' => [SymbolLevel::Callable->value => false]]);
     }
-
 }

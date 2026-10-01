@@ -86,8 +86,7 @@ final class RuleOptionAliasRangeRefusalTest extends TestCase
         $pipeline->addStage(new CliStage());
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::configure($registry, FindingConfiguration::fromDocument($document));
 
-        return (new ResolvedOptionsFixture($registry))->create(CircularDependencyRule::NAME, CircularDependencyOptions::class);
+        return (new ResolvedOptionsFixture($registry, FindingConfiguration::fromDocument($document)))->create(CircularDependencyRule::NAME, CircularDependencyOptions::class);
     }
 }

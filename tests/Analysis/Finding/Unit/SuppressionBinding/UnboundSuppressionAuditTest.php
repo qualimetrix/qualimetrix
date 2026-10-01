@@ -335,7 +335,7 @@ final class UnboundSuppressionAuditTest extends TestCase
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer, UnboundSuppressionOptions::class, '', [], false)];
         foreach ([true, false, true] as $enabled) {
             $registry->resetRuntimeState();
-            $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions([$producer => ['enabled' => $enabled]]);
+            $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [$producer => ['enabled' => $enabled]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project')));
             $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $metadata));
             $findings = $audit->findings(
                 [$this->path(SelectorKind::Subtree, 'src/Gone')],
@@ -357,7 +357,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             $producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(),
             'computed.health' => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(paths: [$this->path(SelectorKind::Subtree, 'src/Gone')]),
         ]);
-        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $configuration = self::createStub(RawDoorAuditConfiguration::class);
         $configuration->method('resolvedOptions')->willReturnCallback(static function () use (&$snapshot): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions {
             return $snapshot;
         });
@@ -404,7 +404,7 @@ final class UnboundSuppressionAuditTest extends TestCase
         // the subject, so `publishable()` passes everything through.
         $execution->method('publishable')->willReturnArgument(0);
 
-        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $configuration = self::createStub(RawDoorAuditConfiguration::class);
         $rules = array_values(array_unique([
             ...array_keys($pathLedger),
             ...array_keys($namespaceLedger),
@@ -478,4 +478,11 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
+}
+
+/** Raw entry points remain tripwires after their removal from the production interface. */
+interface RawDoorAuditConfiguration extends RuleConfigurationInterface
+{
+    /** @return array<string, mixed> */
+    public function all(): array;
 }

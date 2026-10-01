@@ -11,6 +11,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -18,7 +21,6 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Analysis\Configuration\UndeclaredRoot;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
@@ -531,11 +533,15 @@ final class ArchitectureSectionTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesToReadASectionTheDocumentCarriedUndeclared(): void
+    public function itRefusesToReadAnExplicitlyOpaqueSection(): void
     {
-        // An undeclared root rides through the engine unread; reading it as
-        // "no policy" would drop every layer without a word.
-        $document = DocumentComposer::compose(new DocumentSchema([new UndeclaredRoot(ArchitectureSection::KEY)]), [
+        // Reading an opaque fixture as "no policy" would silently discard its layers.
+        $document = DocumentComposer::compose(new DocumentSchema([new class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration(ArchitectureSection::KEY, NodeSchema::opaque());
+            }
+        }]), [
             new AuthoredLayer(
                 ConfigurationOrigin::of(ConfigurationSource::ConfigFile, ArchitectureDocument::FILE),
                 AuthoredNode::fromPlain(['architecture' => ['layers' => self::LAYERS]]),

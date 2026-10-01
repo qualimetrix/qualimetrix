@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -53,6 +54,8 @@ use Throwable;
 #[CoversClass(RuleOptionsBuild::class)]
 final class UnknownRuleOptionKeyRefusalTest extends TestCase
 {
+    private string $configurationPath;
+
     // -- depth 2: a key written inside a level slot ---------------------------
 
     /**
@@ -82,17 +85,15 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         );
 
         self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString(
-            \sprintf(
-                'Option "%s" is not an option of rule "complexity.ccn" at level "%s".'
-                . ' Options at that level: %s.',
-                $printedKey,
-                $slot,
-                $optionsAtThatLevel,
-            ),
-            $refusal->getMessage(),
-        );
-        self::assertStringContainsString('Other levels of this rule take different options.', $refusal->getMessage());
+        $expected = match ($writtenKey) {
+            'exclude_paths' => 'Key "rules.complexity.ccn.callable.exclude_paths" in configuration file "%s" is retired. The "exclude-paths" option was retired. To suppress findings the analysis already produces, use "suppress-paths". To exclude files from analysis entirely (the finding is never produced), use the "exclude" option instead — it is a different mechanism, not a renamed one.',
+            'WARNING' => 'Key "rules.complexity.ccn.callable.WARNING" in configuration file "%s" is not written in an accepted spelling; write "warning" (its snake_case, camelCase and kebab-case spellings are accepted).',
+            'warnign', 'warn' => 'Unknown key "rules.complexity.ccn.callable.' . $writtenKey . '" in configuration file "%s" (did you mean "warning"?). Accepted keys: enabled, error, warning, threshold.',
+            'max_warning' => 'Unknown key "rules.complexity.ccn.callable.max_warning" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.',
+            'warning' => 'Unknown key "rules.complexity.ccn.class.warning" in configuration file "%s". Accepted keys: enabled, max-error, max-warning, threshold.',
+            default => throw new LogicException('The refusal case has no literal oracle.'),
+        };
+        $this->assertFileRefusal($refusal, $expected, ['rules', 'complexity.ccn', $slot, $writtenKey]);
     }
 
     /**
@@ -126,8 +127,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString('Option "warnign"', $refusal->getMessage());
+        $this->assertFileRefusal($refusal, 'Unknown key "rules.complexity.ccn.callable.warnign" in configuration file "%s" (did you mean "warning"?). Accepted keys: enabled, error, warning, threshold.', ['rules', 'complexity.ccn', 'callable', 'warnign']);
         self::assertStringNotContainsString('errro', $refusal->getMessage());
     }
 
@@ -145,11 +145,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString(
-            'Level "callable" of rule "complexity.ccn" takes a map of options, got int.',
-            $refusal->getMessage(),
-        );
+        $this->assertFileRefusal($refusal, '"rules.complexity.ccn.callable" in configuration file "%s" must be a map, got int.', ['rules', 'complexity.ccn', 'callable']);
         self::assertStringNotContainsString('enabled: false', $refusal->getMessage());
     }
 
@@ -160,7 +156,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
      * one.
      */
     #[Test]
-    public function itRefusesALevelSlotWrittenFalseAndNamesTheOffSwitchToWriteInstead(): void
+    public function itRefusesABareFalseLevelAndAcceptsItsDeclaredOffSwitch(): void
     {
         $refusal = $this->refusalFrom(
             "  complexity.ccn:\n    callable: false\n",
@@ -168,12 +164,10 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString(
-            'Level "callable" of rule "complexity.ccn" takes a map of options, got bool.'
-            . ' To switch one level off write "callable: {enabled: false}".',
-            $refusal->getMessage(),
-        );
+        $this->assertFileRefusal($refusal, '"rules.complexity.ccn.callable" in configuration file "%s" must be a map, got bool.', ['rules', 'complexity.ccn', 'callable']);
+        $options = $this->optionsFrom("  complexity.ccn:\n    callable: {enabled: false}\n", 'complexity.ccn', ComplexityOptions::class);
+        self::assertInstanceOf(ComplexityOptions::class, $options);
+        self::assertFalse($options->callable->enabled);
     }
 
     /**
@@ -245,11 +239,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
 
         $refusal = $this->refusalFrom("  complexity.ccn:\n    warning: 3\n", 'complexity.ccn', ComplexityOptions::class);
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString(
-            'Option "warning" is not an option of rule "complexity.ccn". Options here:',
-            $refusal->getMessage(),
-        );
+        $this->assertFileRefusal($refusal, 'Unknown key "rules.complexity.ccn.warning" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', ['rules', 'complexity.ccn', 'warning']);
     }
 
     /**
@@ -283,7 +273,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
         self::assertInstanceOf(ConfigurationRefusal::class, $inClass);
-        self::assertStringContainsString('at level "class". Options at that level: enabled, max-error, max-warning, threshold.', $inClass->getMessage());
+        $this->assertFileRefusal($inClass, 'Unknown key "rules.complexity.ccn.class.warning" in configuration file "%s". Accepted keys: enabled, max-error, max-warning, threshold.', ['rules', 'complexity.ccn', 'class', 'warning']);
 
         $inCallable = $this->refusalFrom(
             "  complexity.ccn:\n    callable:\n      max_warning: 3\n",
@@ -291,7 +281,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
         self::assertInstanceOf(ConfigurationRefusal::class, $inCallable);
-        self::assertStringContainsString('at level "callable". Options at that level: enabled, error, threshold, warning.', $inCallable->getMessage());
+        $this->assertFileRefusal($inCallable, 'Unknown key "rules.complexity.ccn.callable.max_warning" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', ['rules', 'complexity.ccn', 'callable', 'max_warning']);
     }
 
     /**
@@ -358,7 +348,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
      * refusal would have to pick one answer for both.
      */
     #[Test]
-    public function itLetsTheUnassignedClassRuleAnswerForEnabledInBothDirections(): void
+    public function itRefusesExplicitEnablementWithIgnoreModeAndAcceptsTheOffSwitch(): void
     {
         $refusal = $this->refusalFrom(
             "  architecture.unassigned-class:\n    enabled: true\n",
@@ -367,7 +357,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         );
 
         self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString('"mode" is the only switch', $refusal->getMessage());
+        $this->assertFileRefusal($refusal, '"architecture.unassigned-class" is enabled by rules.architecture.unassigned-class.enabled: true (configuration file "%s") but its mode is ignore: mode of "architecture.unassigned-class" is ignore by default.', ['rules', 'architecture.unassigned-class', 'enabled']);
         self::assertStringNotContainsString('is not an option of rule', $refusal->getMessage());
 
         $accepted = $this->optionsFrom(
@@ -448,12 +438,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     ): void {
         $refusal = $this->refusalFrom(\sprintf("  %s:\n    %s: 3\n", $ruleName, $key), $ruleName, $optionsClass);
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString(
-            \sprintf('Option "%s" is not an option of rule "%s".', $key, $ruleName),
-            $refusal->getMessage(),
-        );
-        self::assertStringContainsString('callable, class, enabled,', $refusal->getMessage());
+        $this->assertFileRefusal($refusal, 'Unknown key "rules.' . $ruleName . '.' . $key . '" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', ['rules', $ruleName, $key]);
     }
 
     /**
@@ -489,11 +474,10 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     ): void {
         $refusal = $this->refusalFrom(\sprintf("  %s:\n    %s: 3\n", $ruleName, $alias), $ruleName, $optionsClass);
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString(
-            \sprintf('Option "%s" is not an option of rule "%s".', $printedAlias, $ruleName),
-            $refusal->getMessage(),
-        );
+        $accepted = $ruleName === 'coupling.distance'
+            ? 'include-namespaces, max-distance-error, max-distance-warning, min-class-count, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold'
+            : 'callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold';
+        $this->assertFileRefusal($refusal, 'Unknown key "rules.' . $ruleName . '.' . $alias . '" in configuration file "%s". Accepted keys: ' . $accepted . '.', ['rules', $ruleName, $alias]);
         self::assertStringContainsString($survivingKey, $refusal->getMessage(), 'the refusal must name the key that replaced the alias');
     }
 
@@ -564,8 +548,8 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     public function itAcceptsAFrameworkKeyAtTheTopLevelOfARule(): void
     {
         $registry = new RuleOptionsRegistry();
-        $this->configure($registry, "  complexity.ccn:\n    suppress_paths: [{regex: 'src/Generated/.*'}]\n");
-        (new ResolvedOptionsFixture($registry))->create('complexity.ccn', ComplexityOptions::class);
+        $fixture = $this->configure($registry, "  complexity.ccn:\n    suppress_paths: [{regex: 'src/Generated/.*'}]\n");
+        $fixture->create('complexity.ccn', ComplexityOptions::class);
 
         self::assertTrue($registry->isPathExcluded('complexity.ccn', RelativePath::fromString('src/Generated/Table.php')));
         self::assertFalse($registry->isPathExcluded('complexity.ccn', RelativePath::fromString('src/Handwritten/Table.php')));
@@ -586,9 +570,7 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString('Option "suppressPath" is not an option of rule "complexity.ccn".', $refusal->getMessage());
-        self::assertStringContainsString('suppress-paths', $refusal->getMessage());
+        $this->assertFileRefusal($refusal, 'Unknown key "rules.complexity.ccn.suppress_path" in configuration file "%s" (did you mean "suppress-paths"?). Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', ['rules', 'complexity.ccn', 'suppress_path']);
     }
 
     /**
@@ -605,29 +587,25 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
             ComplexityOptions::class,
         );
 
-        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
-        self::assertStringContainsString('at level "callable"', $refusal->getMessage());
+        $this->assertFileRefusal($refusal, 'Unknown key "rules.complexity.ccn.callable.suppress_paths" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', ['rules', 'complexity.ccn', 'callable', 'suppress_paths']);
         self::assertStringNotContainsString('suppress-paths', $refusal->getMessage(), 'the slot does not take it, so it must not be advertised there');
     }
 
-    /**
-     * ADR 0047's refusal runs before this walk and stays at depth 1, where it
-     * can name the replacement. At depth 2 the retired key and its replacement
-     * are both invalid, so one sentence covers both and the generic one is it.
-     */
+    /** A retired key must name its root-level replacement even inside a level that forbids it. */
     #[Test]
-    public function itKeepsTheRetiredKeyRefusalAtDepthOneAndTheGenericOneInsideASlot(): void
+    public function itRefusesRetiredSuppressionKeysAtBothDepthsAndAcceptsTheRootReplacement(): void
     {
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($registry, ['complexity.ccn' => ['excludePaths' => ['*']]]);
+        $fixture = new ResolvedOptionsFixture($registry);
+        $fixture->inputs(['rules' => ['complexity.ccn' => ['excludePaths' => ['*']]]]);
 
         $atDepthOne = $this->capture(
-            static fn() => (new ResolvedOptionsFixture($registry))->create('complexity.ccn', ComplexityOptions::class),
+            static fn() => $fixture->create('complexity.ccn', ComplexityOptions::class),
         );
 
         self::assertInstanceOf(ConfigurationRefusal::class, $atDepthOne);
-        self::assertStringContainsString('The "excludePaths" option was retired', $atDepthOne->getMessage());
-        self::assertStringContainsString('suppressPaths', $atDepthOne->getMessage());
+        $this->configurationPath = '/project/qmx.yaml';
+        $this->assertFileRefusal($atDepthOne, 'Key "rules.complexity.ccn.excludePaths" in configuration file "%s" is retired. The "exclude-paths" option was retired. To suppress findings the analysis already produces, use "suppress-paths". To exclude files from analysis entirely (the finding is never produced), use the "exclude" option instead — it is a different mechanism, not a renamed one.', ['rules', 'complexity.ccn', 'excludePaths']);
 
         $insideASlot = $this->refusalFrom(
             "  complexity.ccn:\n    callable:\n      exclude_paths: ['*']\n",
@@ -636,8 +614,9 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         );
 
         self::assertInstanceOf(ConfigurationRefusal::class, $insideASlot);
-        self::assertStringContainsString('is not an option of rule', $insideASlot->getMessage());
-        self::assertStringNotContainsString('was retired', $insideASlot->getMessage());
+        $this->assertFileRefusal($insideASlot, 'Key "rules.complexity.ccn.callable.exclude_paths" in configuration file "%s" is retired. The "exclude-paths" option was retired. To suppress findings the analysis already produces, use "suppress-paths". To exclude files from analysis entirely (the finding is never produced), use the "exclude" option instead — it is a different mechanism, not a renamed one.', ['rules', 'complexity.ccn', 'callable', 'exclude_paths']);
+        $options = $this->optionsFrom("  complexity.ccn:\n    suppress_paths: [{subtree: src/Generated}]\n", 'complexity.ccn', ComplexityOptions::class);
+        self::assertInstanceOf(ComplexityOptions::class, $options);
     }
 
     // -- the property the whole population must keep ---------------------------
@@ -665,12 +644,13 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
 
         foreach ($rules as $rule) {
             $registry = new RuleOptionsRegistry();
-            ResolvedOptionsFixture::file($registry, [$rule->name => false]);
+            $fixture = new ResolvedOptionsFixture($registry);
+            $fixture->inputs(['rules' => [$rule->name => false]]);
 
             $options = null;
             $refusal = $this->capture(
-                static function () use ($registry, $rule, &$options): void {
-                    $options = (new ResolvedOptionsFixture($registry))->create($rule->name, $rule->optionsClass);
+                static function () use ($fixture, $rule, &$options): void {
+                    $options = $fixture->create($rule->name, $rule->optionsClass);
                 },
             );
 
@@ -715,9 +695,9 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
     private function optionsFrom(string $rulesBlock, string $ruleName, string $optionsClass): RuleOptionsInterface
     {
         $registry = new RuleOptionsRegistry();
-        $this->configure($registry, $rulesBlock);
+        $fixture = $this->configure($registry, $rulesBlock);
 
-        return (new ResolvedOptionsFixture($registry))->create($ruleName, $optionsClass);
+        return $fixture->create($ruleName, $optionsClass);
     }
 
     /**
@@ -732,25 +712,31 @@ final class UnknownRuleOptionKeyRefusalTest extends TestCase
         return $refusal;
     }
 
-    /**
-     * Loads the block the way `qmx.yaml` is loaded, so the keys reaching the
-     * factory are folded exactly as a user's would be.
-     */
-    private function configure(RuleOptionsRegistry $registry, string $rulesBlock): void
+    private function configure(RuleOptionsRegistry $registry, string $rulesBlock): ResolvedOptionsFixture
     {
         $path = tempnam(sys_get_temp_dir(), 'qmx-rule-option-key-');
         self::assertNotFalse($path);
+        $this->configurationPath = $path;
         file_put_contents($path, "rules:\n" . $rulesBlock);
 
         try {
-            $config = WrittenFile::foldedValues($path);
+            $document = WrittenFile::compose($path);
         } finally {
             unlink($path);
         }
 
-        /** @var array<string, mixed> $rules */
-        $rules = $config['rules'] ?? [];
-        ResolvedOptionsFixture::file($registry, $rules);
+        return new ResolvedOptionsFixture($registry, new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration($document));
+    }
+
+    /** @param non-empty-list<string> $path */
+    private function assertFileRefusal(Throwable $refusal, string $expected, array $path): void
+    {
+        self::assertInstanceOf(ConfigurationRefusal::class, $refusal);
+        self::assertSame(\sprintf($expected, $this->configurationPath), $refusal->summary());
+        self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+        self::assertSame($this->configurationPath, $refusal->sources()[0]->locator());
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame($path[\count($path) - 1], $refusal->position()->written);
     }
 
     private function capture(callable $act): ?Throwable

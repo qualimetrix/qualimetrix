@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\XssRule;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -66,23 +65,14 @@ final class SharedRuleOptionsContainerTest extends TestCase
         $registry = $container->get(RuleOptionsRegistry::class);
         self::assertInstanceOf(RuleOptionsRegistry::class, $registry);
 
-        // This is the registry shape produced after YAML/preset resolution.
-        $configuration = FindingConfiguration::none()->withRuleOptions([
-            EvalRule::NAME => [
-                'enabled' => false,
-                'suppress_paths' => [['subtree' => 'src/Eval']],
-            ],
-            GotoRule::NAME => [
-                'suppress_namespaces' => [['subtree' => 'App\\Legacy']],
-            ],
+        $fileValues = ['rules' => [
+            EvalRule::NAME => ['enabled' => false, 'suppress_paths' => [['subtree' => 'src/Eval']]],
+            GotoRule::NAME => ['suppress_namespaces' => [['subtree' => 'App\\Legacy']]],
             SqlInjectionRule::NAME => ['enabled' => false],
-        ]);
-
-        // This is the registry seam used by --rule-opt.
-        $configuration = $configuration->withCliOverrides([XssRule::NAME => ['enabled' => false]]);
+        ]];
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
-        $configuration = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($configuration, $execution->allRules());
+        $configuration = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($fileValues, $execution->allRules(), cliOptions: [XssRule::NAME => ['enabled' => false]]);
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $catalog = $container->get(ChannelUniverse::class);

@@ -149,12 +149,7 @@ final class LevelActivityCoversEveryDeclaredLevelTest extends TestCase
             new RulesSection($executor, 'only_rules'),
             new RulesSection($executor, 'disabled_rules'),
         ]), []);
-        $empty = FindingConfiguration::none();
-        $configuration = new FindingConfiguration(
-            $empty->ruleOptions,
-            $empty->cliOverrides,
-            document: $document,
-        );
+        $configuration = new FindingConfiguration(document: $document);
         $resolver = new RuleEnablementResolver();
         $stated = $resolver->decide($document, $universe);
         $builder = $container->get(RuleOptionsBuild::class);

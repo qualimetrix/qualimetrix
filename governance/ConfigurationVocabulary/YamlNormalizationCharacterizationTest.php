@@ -9,45 +9,31 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
-/**
- * Pins the current key-normalization behavior of {@see YamlConfigLoader} for
- * every {@see ConfigSchema::allowedRootKeys()} root. Acts as the safety net
- * for the Phase 3 (ADR 0009) migration to a policy-driven loader: any change
- * to {@link YamlConfigLoader::normalizeKeys()} or
- * {@link ConfigSchema::sectionPolicies()} that drifts existing behavior makes
- * a row here flip from green to red.
- *
- * Migration responsibilities of this test (see ADR 0009 §5):
- *
- *  - Steps 3.2–3.4 (enum, `sectionPolicies()`, policy-driven loader): test
- *    stays green; no behavior change.
- *  - Step 3.5 (`architecture` → `PRESERVE_SUBTREE`): the architecture rows
- *    below switch from "snake_case mangled" to "snake_case preserved" with
- *    an inline marker documenting the migration. Existing positive
- *    assertions for non-architecture roots remain untouched.
- *
- * Distinct from {@see YamlKeyReachabilityTest}:
- *
- *  - Reachability test: documented-key coverage (every YAML key in
- *    `ConfigSchema::ENTRIES` survives to the spelling the factory looks
- *    for). Asserts the contract surface.
- *  - Characterization test (this class): per-root behavior snapshot of
- *    every root key — including unexposed keys and bug-state pins —
- *    intended to catch regressions in the normalization model itself.
- */
+/** Characterizes canonical document values and the refusal of superseded authored forms. */
 #[CoversClass(YamlConfigLoader::class)]
 final class YamlNormalizationCharacterizationTest extends TestCase
 {
-    private YamlConfigLoader $loader;
+    private ConfigurationPipelineInterface $pipeline;
 
     private string $tempDir;
 
     protected function setUp(): void
     {
-        $this->loader = new YamlConfigLoader();
+        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $pipeline->addStage(new ConfigFileStage(new YamlConfigLoader()));
+        $this->pipeline = $pipeline;
         $this->tempDir = sys_get_temp_dir() . '/qmx_yaml_norm_char_' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
     }
@@ -69,27 +55,17 @@ final class YamlNormalizationCharacterizationTest extends TestCase
     }
 
     /**
-     * Drives one assertion per root key. The provider yields the post-load
-     * array shape expected for a minimal YAML containing that root; the
-     * test simply parses the YAML and compares to {@code $expected}.
-     *
      * @param array<string, mixed> $expected
+     * @param array{string, list<string>, string}|null $refusal
      */
     #[Test]
     #[DataProvider('provideRootKeyCases')]
     #[TestDox('root key $description is normalized exactly as today')]
-    public function itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot(string $description, string $yaml, array $expected): void
+    public function itNormalizesEachRootKeyExactlyAsTheCurrentSnapshot(string $description, string $yaml, array $expected, ?array $refusal = null, ?string $companion = null): void
     {
-        self::assertSame($expected, $this->loadYaml($yaml), $description);
+        self::assertSame($expected, $this->acceptedYaml($yaml, $refusal, $companion), $description);
     }
 
-    /**
-     * Coverage smoke test: every root key in {@see ConfigSchema::allowedRootKeys()}
-     * has at least one characterization row. Catches the failure mode where a
-     * contributor adds a new root key without pinning its current behavior
-     * (which would let Phase 3.4's policy-driven loader silently change
-     * behavior for it).
-     */
     #[Test]
     public function itCoversEveryAllowedRootKeyWithACharacterizationCase(): void
     {
@@ -101,7 +77,7 @@ final class YamlNormalizationCharacterizationTest extends TestCase
         }
 
         $missing = [];
-        foreach (ConfigSchema::allowedRootKeys() as $root) {
+        foreach (DocumentRoots::known() as $root) {
             if (!isset($covered[$root])) {
                 $missing[] = $root;
             }
@@ -110,97 +86,97 @@ final class YamlNormalizationCharacterizationTest extends TestCase
         self::assertSame(
             [],
             $missing,
-            'Every ConfigSchema::allowedRootKeys() entry must have a characterization row. '
+            'Every DocumentRoots::known() entry must have a characterization row. '
             . 'Missing roots: ' . implode(', ', $missing) . '. '
             . 'Add a case to ' . __CLASS__ . '::provideRootKeyCases().',
         );
     }
 
     /**
-     * @return iterable<string, array{string, string, array<string, mixed>}>
+     * @return iterable<string, array{string, string, array<string, mixed>, 3?: array{string, list<string>, string}, 4?: string}>
      */
     public static function provideRootKeyCases(): iterable
     {
-        // --- TOP-LEVEL LIST ROOTS --------------------------------------------
-
         yield 'paths (list)' => [
-            'paths preserves list items, key already lowercase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "paths:\n  - src\n  - tests\n",
             ['paths' => ['src', 'tests']],
         ];
 
         yield 'exclude (list)' => [
-            'exclude (singular) key already lowercase, list items preserved',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "exclude:\n  - vendor\n",
-            ['exclude' => ['vendor']],
+            ['exclude' => [['subtree' => 'vendor']]],
+            ['"exclude[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['exclude', '0'], '0'],
+            "exclude:\n  - subtree: vendor\n",
         ];
 
         yield 'disabled_rules → disabledRules' => [
-            'snake_case root list key normalized to camelCase, items preserved',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "disabled_rules:\n  - complexity.ccn\n",
-            ['disabledRules' => ['complexity.ccn']],
+            ['disabled_rules' => ['complexity.ccn']],
         ];
 
         yield 'only_rules → onlyRules' => [
-            'snake_case root list key normalized to camelCase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "only_rules:\n  - complexity.cognitive\n",
-            ['onlyRules' => ['complexity.cognitive']],
+            ['only_rules' => ['complexity.cognitive']],
         ];
 
         yield 'suppress_paths → suppressPaths' => [
-            'snake_case root list key normalized to camelCase, glob items preserved',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "suppress_paths:\n  - src/Generated/*\n",
-            ['suppressPaths' => ['src/Generated/*']],
+            ['suppress_paths' => [['exact' => 'src/Generated/*']]],
+            ['"suppress_paths[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['suppress_paths', '0'], '0'],
+            "suppress_paths:\n  - exact: 'src/Generated/*'\n",
         ];
 
         yield 'suppress_namespaces → suppressNamespaces' => [
-            'snake_case root list key normalized to camelCase, namespace strings preserved',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "suppress_namespaces:\n  - App\\Generated\n",
-            ['suppressNamespaces' => ['App\\Generated']],
+            ['suppress_namespaces' => [['subtree' => 'App\\Generated']]],
+            ['"suppress_namespaces[0]" in configuration file "{actual_config_path}" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', ['suppress_namespaces', '0'], '0'],
+            "suppress_namespaces:\n  - subtree: 'App\\Generated'\n",
         ];
 
         yield 'exclude_health → exclude_health' => [
-            'snake_case root list key normalized to camelCase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "exclude_health:\n  - tests/**\n",
             ['exclude_health' => ['tests/**']],
         ];
 
-        // --- TOP-LEVEL SCALAR ROOTS ------------------------------------------
-
         yield 'format (scalar)' => [
-            'single-word scalar key passes through',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "format: json\n",
             ['format' => 'json'],
         ];
 
         yield 'fail_on → failOn (scalar)' => [
-            'snake_case scalar root normalized to camelCase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "fail_on: error\n",
-            ['failOn' => 'error'],
+            ['fail_on' => 'error'],
         ];
 
         yield 'include_generated → includeGenerated (scalar bool)' => [
-            'snake_case scalar root normalized to camelCase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "include_generated: true\n",
-            ['includeGenerated' => true],
+            ['include_generated' => true],
         ];
 
         yield 'include_autoload_dev → includeAutoloadDev (scalar bool)' => [
-            'snake_case scalar root normalized to camelCase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "include_autoload_dev: true\n",
-            ['includeAutoloadDev' => true],
+            ['include_autoload_dev' => true],
         ];
 
         yield 'memory_limit → memoryLimit (scalar)' => [
-            'snake_case scalar root normalized to camelCase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "memory_limit: 512M\n",
-            ['memoryLimit' => '512M'],
+            ['memory_limit' => '512M'],
         ];
 
-        // --- TYPED SECTIONS (camelCase everywhere) ---------------------------
-
         yield 'cache: sub-keys camelCased' => [
-            'cache section sub-keys are typed options — normalize at every level',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "cache:\n  dir: .qmx-cache\n  enabled: true\n",
             [
                 'cache' => [
@@ -211,118 +187,116 @@ final class YamlNormalizationCharacterizationTest extends TestCase
         ];
 
         yield 'parallel: workers' => [
-            'parallel section sub-keys are typed options — already single-word, pass through',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "parallel:\n  workers: 4\n",
             ['parallel' => ['workers' => 4]],
         ];
 
         yield 'coupling: framework_namespaces → frameworkNamespaces' => [
-            'coupling section sub-keys are typed options — normalize at every level',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "coupling:\n  framework_namespaces:\n    - Symfony\\\n",
-            ['coupling' => ['frameworkNamespaces' => ['Symfony\\']]],
+            ['coupling' => ['framework_namespaces' => [['subtree' => 'Symfony']]]],
+            ['"coupling.framework_namespaces[0]" in configuration file "{actual_config_path}" must be a map, got string.', ['coupling', 'framework_namespaces', '0'], '0'],
+            "coupling:\n  framework_namespaces:\n    - subtree: Symfony\n",
         ];
 
-        // --- IDENTIFIER SECTIONS (preserve level 1, normalize level 2+) -----
-
         yield 'rules: identifier preserved, option keys normalized' => [
-            'rules section — level 1 keys are rule slugs (preserve); level 2+ are options (normalize)',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "rules:\n  complexity.ccn:\n    enabled: true\n    warning_threshold: 10\n  namespace_size:\n    enabled: false\n",
-            [
-                'rules' => [
-                    'complexity.ccn' => [
-                        'enabled' => true,
-                        'warningThreshold' => 10,
-                    ],
-                    'namespace_size' => [
-                        'enabled' => false,
-                    ],
-                ],
-            ],
+            ['rules' => ['complexity.ccn' => ['enabled' => true, 'callable' => ['warning' => 10]], 'size.class-count' => ['enabled' => false]]],
+            ['Unknown key "rules.complexity.ccn.warning_threshold" in configuration file "{actual_config_path}". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', ['rules', 'complexity.ccn', 'warning_threshold'], 'warning_threshold'],
+            "rules:\n  complexity.ccn:\n    enabled: true\n    callable:\n      warning: 10\n  size.class-count:\n    enabled: false\n",
         ];
 
         yield 'rules: nested option subtree normalizes recursively' => [
-            'rules.*.complexity.callable.warning — nested options camelCased at every level below the identifier',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "rules:\n  complexity:\n    callable:\n      warning_threshold: 12\n",
-            [
-                'rules' => [
-                    'complexity' => [
-                        'callable' => [
-                            'warningThreshold' => 12,
-                        ],
-                    ],
-                ],
-            ],
+            ['rules' => ['complexity.ccn' => ['callable' => ['warning' => 12]]]],
+            ['Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity'],
+            "rules:\n  complexity.ccn:\n    callable:\n      warning: 12\n",
         ];
 
         yield 'computed_metrics → computed_metrics root; identifier preserved, options normalized' => [
-            'computed_metrics — level 1 keys are user-defined metric names (preserve); level 2+ are typed options',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "computed_metrics:\n  computed.my-score:\n    formula: 'loc * 2'\n    warning_threshold: 80\n",
-            [
-                'computed_metrics' => [
-                    'computed.my-score' => [
-                        'formula' => 'loc * 2',
-                        'warningThreshold' => 80,
-                    ],
-                ],
-            ],
+            ['computed_metrics' => ['computed.my-score' => ['formula' => 'm["size.loc"] * 2', 'warning' => 80]]],
+            ['Invalid formula syntax for computed metric "computed.my-score": Variable "loc" is not valid around position 1 for expression `loc * 2`. (formula: loc * 2)', ['computed_metrics', 'computed.my-score', 'formula'], 'formula'],
+            "computed_metrics:\n  computed.my-score:\n    formula: 'm[\"size.loc\"] * 2'\n    warning: 80\n",
         ];
 
-        // --- ARCHITECTURE (PRESERVE_SUBTREE since Phase 3.5, ADR 0009) -------
-        //
-        // Migrated to PRESERVE_SUBTREE in ADR 0009 / Phase 3.5. The entire
-        // descendant tree below the `architecture` root is preserved
-        // verbatim, including:
-        //   * `layers` list items (camelCase or single-word — pass through).
-        //   * `allow` subtree (user-defined layer names + snake_case
-        //     long-form keys like `allow_cross_instance` survive untouched).
-        //   * `coverage` scalar key (single-word — pass through).
-        //   * `max_expanded_layers` SCALAR LEAF — pre-3.5 was mangled to
-        //     `maxExpandedLayers` (C1 bug); since 3.5 reaches downstream
-        //     consumers as the user wrote it.
-
         yield 'architecture.layers (list, items preserved)' => [
-            'architecture.layers is a list; entries pass through verbatim under PRESERVE_SUBTREE',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "architecture:\n  layers:\n    - name: app\n      patterns: ['App']\n",
-            [
-                'architecture' => [
-                    'layers' => [
-                        ['name' => 'app', 'patterns' => ['App']],
-                    ],
-                ],
-            ],
+            ['architecture' => ['layers' => [['name' => 'app', 'patterns' => [['App']]]]]],
         ];
 
         yield 'architecture.allow subtree preserves snake_case verbatim' => [
-            'architecture.allow under PRESERVE_SUBTREE — layer names AND long-form keys preserved at every depth',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "architecture:\n  allow:\n    app_core:\n      - target: app_service\n        allow_cross_instance: true\n",
-            [
-                'architecture' => [
-                    'allow' => [
-                        'app_core' => [
-                            [
-                                'target' => 'app_service',
-                                'allow_cross_instance' => true,
-                            ],
-                        ],
-                    ],
-                ],
-            ],
+            ['architecture' => ['layers' => [['name' => 'app_core', 'patterns' => [['Core']]], ['name' => 'app_service', 'patterns' => [['Service']]]], 'allow' => ['app_core' => [[['target' => 'app_service', 'allow_cross_instance' => true]]]]]],
+            ['Unknown name "app_core" under "architecture.allow", written in configuration file "{actual_config_path}": the names come from "layers", which declares none.', ['architecture', 'allow', 'app_core'], 'app_core'],
+            "architecture:\n  layers:\n    - name: app_core\n      patterns: ['Core']\n    - name: app_service\n      patterns: ['Service']\n  allow:\n    app_core:\n      - target: app_service\n        allow_cross_instance: true\n",
         ];
 
         yield 'architecture.coverage-gap (scalar, single-word key)' => [
-            'architecture.coverage-gap scalar value flows through; key already lowercase',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "architecture:\n  coverage-gap: ignore\n",
             ['architecture' => ['coverage-gap' => 'ignore']],
         ];
 
-        // Migrated to PRESERVE_SUBTREE in ADR 0009 / Phase 3.5: closes the
-        // C1 bug. The scalar leaf reaches ArchitectureConfigurationFactory
-        // under the snake_case spelling the factory looks for.
         yield 'architecture.max_expanded_layers (scalar leaf preserved under PRESERVE_SUBTREE)' => [
-            'architecture.max_expanded_layers — C1 closed in Phase 3.5: scalar leaf preserved verbatim, factory honors user value',
+            'Canonical document value; original refused forms retain a separate literal oracle',
             "architecture:\n  max_expanded_layers: 256\n",
             ['architecture' => ['max_expanded_layers' => 256]],
         ];
+    }
+
+    /**
+     * @param array{string, list<string>, string}|null $refusal
+     *
+     * @return array<string, mixed>
+     */
+    private function acceptedYaml(string $yaml, ?array $refusal, ?string $companion): array
+    {
+        if ($refusal !== null) {
+            $file = $this->writeYaml($yaml);
+            $this->assertRefusedFile($file, $refusal);
+            self::assertNotNull($companion);
+            $yaml = $companion;
+        }
+
+        return $this->loadYaml($yaml);
+    }
+
+    private function writeYaml(string $yaml): string
+    {
+        $file = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
+        file_put_contents($file, $yaml);
+
+        return $file;
+    }
+
+    /**
+     * @param array{string, list<string>, string} $expected
+     */
+    private function assertRefusedFile(string $file, array $expected): void
+    {
+        try {
+            $this->loadFile($file);
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(str_replace('{actual_config_path}', $file, $expected[0]), $refusal->summary());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame($file, $refusal->sources()[0]->locator());
+            $position = $refusal->position();
+            self::assertNotNull($position);
+            self::assertSame($expected[1], $position->segments);
+            self::assertSame($expected[2], $position->written);
+
+            return;
+        }
+
+        self::fail('The original YAML must be refused before loading its lawful companion.');
     }
 
     /**
@@ -330,11 +304,22 @@ final class YamlNormalizationCharacterizationTest extends TestCase
      */
     private function loadYaml(string $yaml): array
     {
-        $path = $this->tempDir . '/config_' . bin2hex(random_bytes(6)) . '.yaml';
-        file_put_contents($path, $yaml);
+        return $this->loadFile($this->writeYaml($yaml));
+    }
 
-        $loaded = $this->loader->read($path, $path);
+    /**
+     * @return array<string, mixed>
+     */
+    private function loadFile(string $file): array
+    {
+        $document = $this->pipeline->resolve(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->tempDir),
+            configFilePath: $file,
+        ));
 
-        return $loaded->deferredRefusal === null ? $loaded->values : throw $loaded->deferredRefusal;
+        return array_map(
+            static fn(ResolvedValueInterface $value): mixed => $value->plain(),
+            $document->resolved()->roots(),
+        );
     }
 }

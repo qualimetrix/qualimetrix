@@ -35,11 +35,6 @@ final class CliStage implements ConfigurationStageInterface
         }
 
         $layer = CommandLineLayer::of($request);
-        $values = $request->cliValues;
-        if ($request->cliPathWrites !== []) {
-            $values['rules'] = $layer->root->children['rules']->plain();
-        }
-
-        return new ConfigurationLayer('cli', $values, authored: [$layer]);
+        return new ConfigurationLayer('cli', $request->cliValues, authored: [$layer]);
     }
 }

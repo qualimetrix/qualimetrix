@@ -78,8 +78,7 @@ final class CliAliasKeyWalkAgreementTest extends TestCase
             $writes = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser($parser))->pathWrites($input);
             self::assertCount(1, $writes, \sprintf('--%s did not produce exactly one authored record', $alias));
             self::assertSame(['rules', $target['rule'], ...($address->level === null ? [] : [$address->level]), $address->key], $writes[0]->path);
-            $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none();
-            $resolved = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration($configuration, $execution->allRules(), $writes);
+            $resolved = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration([], $execution->allRules(), $writes);
             self::assertNotNull($resolved->document->get(...$writes[0]->path), \sprintf('--%s never reached the resolved key walk', $alias));
         }
     }

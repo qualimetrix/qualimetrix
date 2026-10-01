@@ -10,9 +10,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\MergePolicy;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
@@ -45,25 +42,36 @@ final class DocumentRootsTest extends TestCase
         self::assertEqualsCanonicalizing(DocumentRoots::known(), [...$declared, ...$ownerRoots]);
     }
 
-    /** A known root nobody declares is carried unread; an owner's section displaces that stand-in. */
     #[Test]
-    public function itStandsInForAKnownRootOnlyUntilItsOwnerDeclaresIt(): void
+    public function itRequiresTheActualOwnerForEveryKnownRoot(): void
     {
-        $standIns = static fn(array $sections): array => self::keys(array_values(array_filter(
-            $sections,
-            static fn(DocumentSectionSchemaInterface $section): bool => $section->declaration()->schema->policy === MergePolicy::PerLayer,
-        )));
-
-        self::assertContains('coupling', $standIns(DocumentRoots::completing([])));
-
-        $completed = DocumentRoots::completing([new class implements DocumentSectionSchemaInterface {
-            public function declaration(): SectionDeclaration
-            {
-                return new SectionDeclaration('coupling', NodeSchema::map([]));
-            }
-        }]);
-        self::assertNotContains('coupling', $standIns($completed));
-        self::assertEqualsCanonicalizing(DocumentRoots::known(), self::keys($completed));
+        $layer = new \Qualimetrix\Analysis\Configuration\Document\AuthoredLayer(
+            \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin::of(
+                \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile,
+                '/project/qmx.yaml',
+            ),
+            \Qualimetrix\Analysis\Configuration\Document\AuthoredNode::fromPlain([
+                'coupling' => ['framework_namespaces' => [['subtree' => 'App']]],
+            ]),
+        );
+        try {
+            \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose(
+                new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema(ConfigurationRoot::cases()),
+                [$layer],
+            );
+            self::fail('A known root requires its declared owner.');
+        } catch (\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal $refusal) {
+            self::assertSame('Unknown key "coupling" in configuration file "/project/qmx.yaml". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache.', $refusal->summary());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['coupling'], $refusal->position()?->segments);
+        }
+        $sections = [...ConfigurationRoot::cases(), ...LayeredDocument::standaloneSections()];
+        $document = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose(
+            new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema($sections),
+            [$layer],
+        );
+        self::assertSame([['subtree' => 'App']], $document->get('coupling', 'framework_namespaces')?->plain());
+        self::assertEqualsCanonicalizing(DocumentRoots::known(), self::keys($sections));
     }
 
     /** Every key the command line writes under has a place in the document. */

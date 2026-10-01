@@ -35,7 +35,7 @@ final class YamlConfigLoaderTest extends TestCase
             : '[complexity]';
         file_put_contents($path, \sprintf("%s: %s\n", $written, $value));
 
-        self::assertSame([$canonical], array_keys(WrittenFile::foldedValues($path)));
+        self::assertSame([$canonical], array_keys(array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots())));
     }
 
     protected function setUp(): void
@@ -85,22 +85,30 @@ cache:
 format: text
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertArrayHasKey('rules', $config);
-        // Rule name keys are preserved as-is (not normalized)
         self::assertArrayHasKey('cyclomatic-complexity', $config['rules']);
         self::assertTrue($config['rules']['cyclomatic-complexity']['enabled']);
-        // But option keys within rules ARE normalized
-        self::assertSame(10, $config['rules']['cyclomatic-complexity']['warningThreshold']);
-        self::assertSame(20, $config['rules']['cyclomatic-complexity']['errorThreshold']);
+        self::assertSame(10, $config['rules']['cyclomatic-complexity']['warning_threshold']);
+        self::assertSame(20, $config['rules']['cyclomatic-complexity']['error_threshold']);
         self::assertTrue($config['cache']['enabled']);
         self::assertSame('.qmx-cache', $config['cache']['dir']);
         self::assertSame('text', $config['format']);
+        $this->assertDocumentRefusal($path, 'Rule option owner "cyclomatic-complexity" does not match any registered producer rule.', ['rules', 'cyclomatic-complexity'], 'cyclomatic-complexity');
+        $lawful = $this->lawfulDocument('rules:
+  complexity.ccn:
+    callable: {warning: 10, error: 20}
+cache: {enabled: true, dir: .qmx-cache}
+format: text
+');
+        self::assertSame(['warning' => 10, 'error' => 20], $lawful->get('rules', 'complexity.ccn', 'callable')?->plain());
+        self::assertSame('.qmx-cache', $lawful->get('cache', 'dir')?->plain());
+        self::assertSame('text', $lawful->get('format')?->plain());
     }
 
     #[Test]
-    public function itNormalizesSnakeCaseToCamelCase(): void
+    public function itPreservesSnakeCaseKeysUntilTheDeclaredOwnerJudgesThem(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -111,15 +119,18 @@ rules:
     count_traits: false
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertArrayHasKey('rules', $config);
-        // Rule name keys are preserved as-is
         self::assertArrayHasKey('namespace_size', $config['rules']);
-        // But option keys within rules ARE normalized to camelCase
-        self::assertSame(10, $config['rules']['namespace_size']['warningThreshold']);
-        self::assertTrue($config['rules']['namespace_size']['countInterfaces']);
-        self::assertFalse($config['rules']['namespace_size']['countTraits']);
+        self::assertSame(10, $config['rules']['namespace_size']['warning_threshold']);
+        self::assertTrue($config['rules']['namespace_size']['count_interfaces']);
+        self::assertFalse($config['rules']['namespace_size']['count_traits']);
+        $this->assertDocumentRefusal($path, 'Rule option owner "namespace_size" does not match any registered producer rule.', ['rules', 'namespace_size'], 'namespace_size');
+        $lawful = $this->lawfulDocument('rules:
+  size.class-count: {warning: 10, error: 20}
+');
+        self::assertSame(10, $lawful->get('rules', 'size.class-count', 'warning')?->plain());
     }
 
     #[Test]
@@ -128,7 +139,7 @@ YAML);
         $path = $this->tempDir . '/empty.yaml';
         file_put_contents($path, '');
 
-        $config = WrittenFile::foldedValues($path);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
 
         self::assertSame([], $config);
     }
@@ -141,7 +152,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Configuration file not found');
 
-        WrittenFile::foldedValues($path);
+        array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
 
     #[Test]
@@ -163,7 +174,7 @@ YAML);
             self::expectException(ConfigurationRefusal::class);
             self::expectExceptionMessage('Configuration file is not readable');
 
-            WrittenFile::foldedValues($path);
+            array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
         } finally {
             chmod($path, 0o644);
         }
@@ -183,7 +194,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('Failed to parse configuration file');
 
-        WrittenFile::foldedValues($path);
+        array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
 
     #[Test]
@@ -211,7 +222,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('is not valid YAML format');
 
-        WrittenFile::foldedValues($path);
+        array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
 
     #[Test]
@@ -224,16 +235,21 @@ rules:
     warningThreshold: 15
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // Rule name keys are preserved exactly as written
         self::assertArrayHasKey('cyclomaticComplexity', $config['rules']);
         self::assertSame(15, $config['rules']['cyclomaticComplexity']['warningThreshold']);
+        $this->assertDocumentRefusal($path, 'Rule option owner "cyclomaticComplexity" does not match any registered producer rule.', ['rules', 'cyclomaticComplexity'], 'cyclomaticComplexity');
+        $lawful = $this->lawfulDocument('rules:
+  complexity.ccn:
+    class: {maxWarning: 15}
+');
+        self::assertSame(15, $lawful->get('rules', 'complexity.ccn', 'class', 'max-warning')?->plain());
     }
 
-    /** The document as written reaches the engine even when its folded values are refused; the refusal waits. */
+    /** Physical loading preserves the document before the declared schema judges it. */
     #[Test]
-    public function itHoldsARefusalOfTheFoldedValuesBesideTheWrittenDocument(): void
+    public function itCarriesTheWrittenDocumentUntilTheEngineJudgesIt(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, "rules: 5\nFail_On: error\n");
@@ -241,9 +257,12 @@ YAML);
         $loaded = $this->loader->read($path, $path);
 
         self::assertSame(['rules' => 5, 'Fail_On' => 'error'], $loaded->authored->plain());
-        self::assertSame([], $loaded->values);
-        self::assertNotNull($loaded->deferredRefusal);
-        self::assertStringContainsString('"rules" must be an associative array', $loaded->deferredRefusal->summary());
+        $this->assertDocumentRefusal($path, \sprintf('"rules" in configuration file "%s" must be a map, got int.', $path), ['rules'], 'rules');
+        $lawful = $this->lawfulDocument("rules: {}\nfail_on: error\n");
+        self::assertSame('error', $lawful->get('fail_on')?->plain());
+        file_put_contents($path, "rules: {}\nFail_On: error\n");
+        self::assertSame(['rules' => [], 'Fail_On' => 'error'], $this->loader->read($path, $path)->authored->plain());
+        $this->assertDocumentRefusal($path, \sprintf('Key "Fail_On" in configuration file "%s" is not written in an accepted spelling; write "fail_on" (its snake_case, camelCase and kebab-case spellings are accepted).', $path), ['Fail_On'], 'Fail_On');
     }
 
     #[Test]
@@ -258,11 +277,12 @@ unknown_key: some_value
 another_bad_key: true
 YAML);
 
-        self::expectException(ConfigurationRefusal::class);
-        // The key as its author wrote it, not a folded spelling
-        self::expectExceptionMessage('Unknown key "unknown_key"');
-
-        WrittenFile::compose($path);
+        $this->assertDocumentRefusal($path, 'Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity');
+        $path = $this->tempDir . '/known-owner.yaml';
+        file_put_contents($path, "rules:\n  complexity.ccn: {enabled: true}\nunknown_key: some_value\nanother_bad_key: true\n");
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "unknown_key" in configuration file "%s". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', $path), ['unknown_key'], 'unknown_key');
+        file_put_contents($path, "rules:\n  complexity.ccn: {enabled: true}\nformat: json\nanother_bad_key: true\n");
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "another_bad_key" in configuration file "%s". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache, parallel, coupling, computed_metrics, exclude_health, rules, only_rules, disabled_rules, architecture, fail_on, memory_limit, paths, format.', $path), ['another_bad_key'], 'another_bad_key');
     }
 
     /**
@@ -292,10 +312,7 @@ cache:
   bogus: ~
 YAML);
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown key in "cache" section: "bogus"');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "cache.bogus" in configuration file "%s". Accepted keys: dir, enabled.', $path), ['cache', 'bogus'], 'bogus');
     }
 
     /**
@@ -311,14 +328,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, $section . ": [something]\n");
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage(\sprintf(
-            'Invalid value for "%s": expected a section of named keys (%s), got a list.',
-            $section,
-            $allowed,
-        ));
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"%s" in configuration file "%s" must be a map, got a list.', $section, $path), [$section], $section);
     }
 
     #[Test]
@@ -334,12 +344,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, $field . ": {a: something}\n");
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage(
-            \sprintf('Invalid value for "%s": expected a list of entries, got a map.', $field),
-        );
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"%s" in configuration file "%s" must be a list, got a map.', $field, $path), [$field], $field);
     }
 
     /**
@@ -363,11 +368,25 @@ suppress_namespaces: []
 exclude_health: []
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertSame([], $config['cache']);
         self::assertSame([], $config['paths']);
         self::assertSame([], $config['exclude_health']);
+        $this->assertDocumentRefusal($path, 'Invalid value for "paths": the list is empty, so this run would analyse nothing. Name at least one path, or omit the key to analyse the working directory.', ['paths'], 'paths');
+        $lawful = $this->lawfulDocument('cache: {}
+parallel: {}
+coupling: {}
+paths: [src]
+exclude: []
+disabled_rules: []
+only_rules: []
+suppress_paths: []
+suppress_namespaces: []
+exclude_health: []
+');
+        self::assertSame(['src'], $lawful->get('paths')?->plain());
+        self::assertSame([], $lawful->get('exclude_health')?->plain());
     }
 
     #[Test]
@@ -383,13 +402,26 @@ exclude: [vendor]
 exclude_health: [complexity]
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertSame('/tmp/x', $config['cache']['dir']);
         self::assertSame(2, $config['parallel']['workers']);
-        self::assertSame(['Symfony'], $config['coupling']['frameworkNamespaces']);
+        self::assertSame(['Symfony'], $config['coupling']['framework_namespaces']);
         self::assertSame(['src'], $config['paths']);
         self::assertSame(['complexity'], $config['exclude_health']);
+        $this->assertDocumentRefusal($path, \sprintf('"coupling.framework_namespaces[0]" in configuration file "%s" must be a map, got string.', $path), ['coupling', 'framework_namespaces', '0'], '0');
+        $lawful = $this->lawfulDocument('cache: {dir: /tmp/x, enabled: false}
+parallel: {workers: 2}
+coupling: {framework_namespaces: [{subtree: Symfony}]}
+paths: [src]
+exclude: [{subtree: vendor}]
+exclude_health: [complexity]
+');
+        self::assertSame('/tmp/x', $lawful->get('cache', 'dir')?->plain());
+        self::assertSame(2, $lawful->get('parallel', 'workers')?->plain());
+        self::assertSame([['subtree' => 'Symfony']], $lawful->get('coupling', 'framework_namespaces')?->plain());
+        self::assertSame(['src'], $lawful->get('paths')?->plain());
+        self::assertSame(['complexity'], $lawful->get('exclude_health')?->plain());
     }
 
     #[Test]
@@ -398,10 +430,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'rules: not_an_array');
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"rules" must be an associative array');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"rules" in configuration file "%s" must be a map, got string.', $path), ['rules'], 'rules');
     }
 
     #[Test]
@@ -413,10 +442,10 @@ rules:
   complexity: "invalid string value"
 YAML);
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Rule "complexity" configuration must be an array, boolean, or null');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, 'Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity');
+        $path = $this->tempDir . '/known-owner.yaml';
+        file_put_contents($path, "rules:\n  complexity.ccn: \"invalid string value\"\n");
+        $this->assertDocumentRefusal($path, \sprintf('"rules.complexity.ccn" in configuration file "%s" must be boolean, got string.', $path), ['rules', 'complexity.ccn'], 'complexity.ccn');
     }
 
     #[Test]
@@ -429,10 +458,17 @@ rules:
   size: false
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertTrue($config['rules']['complexity']);
         self::assertFalse($config['rules']['size']);
+        $this->assertDocumentRefusal($path, 'Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity');
+        $lawful = $this->lawfulDocument('rules:
+  complexity.ccn: true
+  size.class-count: false
+');
+        self::assertTrue($lawful->get('rules', 'complexity.ccn', 'enabled')?->plain());
+        self::assertFalse($lawful->get('rules', 'size.class-count', 'enabled')?->plain());
     }
 
     #[Test]
@@ -444,9 +480,15 @@ rules:
   complexity: ~
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertNull($config['rules']['complexity']);
+        $this->assertDocumentRefusal($path, 'Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity');
+        $lawful = $this->lawfulDocument('rules:
+  complexity.ccn: ~
+');
+        self::assertNull($lawful->get('rules', 'complexity.ccn')?->plain());
+        self::assertNotNull($lawful->get('rules', 'complexity.ccn'));
     }
 
     #[Test]
@@ -455,10 +497,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'cache: not_an_array');
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"cache" must be an associative array');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"cache" in configuration file "%s" must be a map, got string.', $path), ['cache'], 'cache');
     }
 
     #[Test]
@@ -479,10 +518,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'disabled_rules: not_a_list');
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"disabled_rules" must be a list');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"disabled_rules" in configuration file "%s" must be a list, got string.', $path), ['disabled_rules'], 'disabled_rules');
     }
 
     #[Test]
@@ -508,12 +544,25 @@ suppress_paths:
   - src/Entity/*
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertArrayHasKey('rules', $config);
         self::assertArrayHasKey('cache', $config);
         self::assertSame('json', $config['format']);
-        self::assertSame(['src/Entity/*'], $config['suppressPaths']);
+        self::assertSame(['src/Entity/*'], $config['suppress_paths']);
+        $this->assertDocumentRefusal($path, 'Rule option owner "complexity" does not match any registered producer rule.', ['rules', 'complexity'], 'complexity');
+        $lawful = $this->lawfulDocument('rules:
+  complexity.ccn: {enabled: true}
+cache: {enabled: true}
+format: json
+disabled_rules: [size]
+only_rules: [complexity]
+paths: [src]
+exclude: [{subtree: vendor}]
+suppress_paths: [{regex: \'src/Entity/.*\'}]
+');
+        self::assertSame('json', $lawful->get('format')?->plain());
+        self::assertSame([['regex' => 'src/Entity/.*']], $lawful->get('suppress_paths')?->plain());
     }
 
     #[Test]
@@ -522,10 +571,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'suppress_paths: not_a_list');
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"suppress_paths" must be a list');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"suppress_paths" in configuration file "%s" must be a list, got string.', $path), ['suppress_paths'], 'suppress_paths');
     }
 
     // The retired root-level `exclude_paths`/`exclude_namespaces` spelling
@@ -598,16 +644,26 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, $document);
 
-        try {
-            WrittenFile::foldedValues($path);
-            self::fail(\sprintf('"%s" was accepted instead of refused.', $authored));
-        } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString(
-                \sprintf('The "%s" option was retired', $authored),
-                $e->getMessage(),
+        if (str_starts_with($document, 'rules:')) {
+            $canonical = str_contains($authored, 'amespace') ? 'exclude-namespaces' : 'exclude-paths';
+            $new = str_contains($authored, 'amespace') ? 'suppress-namespaces' : 'suppress-paths';
+            $this->assertDocumentRefusal(
+                $path,
+                \sprintf('Key "rules.code-smell.long-parameter-list.%s" in configuration file "%s" is retired. The "%s" option was retired. To suppress findings the analysis already produces, use "%s". To exclude files from analysis entirely (the finding is never produced), use the "exclude" option instead — it is a different mechanism, not a renamed one.', $authored, $path, $canonical, $new),
+                ['rules', 'code-smell.long-parameter-list', $authored],
+                $authored,
             );
-            self::assertStringContainsString(\sprintf('use "%s"', $replacement), $e->getMessage());
-            self::assertStringContainsString('"exclude" option instead', $e->getMessage());
+            $lawful = $this->lawfulDocument("rules:\n  code-smell.long-parameter-list:\n    suppress-paths: [{exact: src/Entity/Foo.php}]\n");
+            self::assertSame([['exact' => 'src/Entity/Foo.php']], $lawful->get('rules', 'code-smell.long-parameter-list', 'suppress-paths')?->plain());
+            return;
+        }
+        try {
+            WrittenFile::compose($path);
+            self::fail(\sprintf('"%s" was accepted instead of refused.', $authored));
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString(\sprintf('The "%s" option was retired', $authored), $refusal->summary());
+            self::assertStringContainsString(\sprintf('use "%s"', $replacement), $refusal->summary());
+            self::assertStringContainsString('"exclude" option instead', $refusal->summary());
         }
     }
 
@@ -622,13 +678,16 @@ rules:
     error_threshold: 30
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // Rule name key is preserved exactly as-is
         self::assertArrayHasKey('size.method-count', $config['rules']);
-        // Option keys within the rule are normalized to camelCase
-        self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
-        self::assertSame(30, $config['rules']['size.method-count']['errorThreshold']);
+        self::assertSame(15, $config['rules']['size.method-count']['warning_threshold']);
+        self::assertSame(30, $config['rules']['size.method-count']['error_threshold']);
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "rules.size.method-count.warning_threshold" in configuration file "%s". Accepted keys: error, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', $path), ['rules', 'size.method-count', 'warning_threshold'], 'warning_threshold');
+        $lawful = $this->lawfulDocument('rules:
+  size.method-count: {warning: 15, error: 30}
+');
+        self::assertSame(['warning' => 15, 'error' => 30], $lawful->get('rules', 'size.method-count')?->plain());
     }
 
     #[Test]
@@ -641,14 +700,14 @@ rules:
     enabled: false
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
 
         self::assertArrayHasKey('code-smell.boolean-argument', $config['rules']);
         self::assertFalse($config['rules']['code-smell.boolean-argument']['enabled']);
     }
 
     #[Test]
-    public function itNormalizesNonRuleRootKeys(): void
+    public function itPreservesRootSpellingsUntilTheDeclaredSchemaJudgesThem(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -658,13 +717,18 @@ suppress_paths:
   - vendor
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // Root-level snake_case keys are normalized to camelCase
-        self::assertArrayHasKey('disabledRules', $config);
-        self::assertArrayHasKey('suppressPaths', $config);
-        self::assertSame(['size.method-count'], $config['disabledRules']);
-        self::assertSame(['vendor'], $config['suppressPaths']);
+        self::assertArrayHasKey('disabled_rules', $config);
+        self::assertArrayHasKey('suppress_paths', $config);
+        self::assertSame(['size.method-count'], $config['disabled_rules']);
+        self::assertSame(['vendor'], $config['suppress_paths']);
+        $this->assertDocumentRefusal($path, \sprintf('"suppress_paths[0]" in configuration file "%s" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', $path), ['suppress_paths', '0'], '0');
+        $lawful = $this->lawfulDocument('disabled_rules: [size.method-count]
+suppress_paths: [{subtree: vendor}]
+');
+        self::assertSame(['size.method-count'], $lawful->get('disabled_rules')?->plain());
+        self::assertSame([['subtree' => 'vendor']], $lawful->get('suppress_paths')?->plain());
     }
 
     #[Test]
@@ -676,7 +740,7 @@ parallel:
   workers: 4
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
 
         self::assertSame(4, $config['parallel']['workers']);
     }
@@ -742,7 +806,7 @@ YAML);
     }
 
     #[Test]
-    public function itAcceptsNullForTypedScalarKeys(): void
+    public function itPreservesAuthoredNullsWithoutMaterializingUnwrittenKeys(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -754,12 +818,9 @@ include_generated: ~
 memory_limit: ~
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
-
-        self::assertNull($config['cache']['enabled']);
-        self::assertNull($config['parallel']['workers']);
-        self::assertNull($config['includeGenerated']);
-        self::assertNull($config['memoryLimit']);
+        $authored = $this->authoredValues($path);
+        self::assertSame(['cache' => ['enabled' => null], 'parallel' => ['workers' => null], 'include_generated' => null, 'memory_limit' => null], $authored);
+        self::assertSame([], WrittenFile::compose($path)->roots());
     }
 
     #[Test]
@@ -773,9 +834,14 @@ coupling:
     - Doctrine
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['frameworkNamespaces']);
+        self::assertSame(['Symfony', 'Doctrine'], $config['coupling']['framework_namespaces']);
+        $this->assertDocumentRefusal($path, \sprintf('"coupling.framework_namespaces[0]" in configuration file "%s" must be a map, got string.', $path), ['coupling', 'framework_namespaces', '0'], '0');
+        $lawful = $this->lawfulDocument('coupling:
+  framework_namespaces: [{subtree: Symfony}, {subtree: Doctrine}]
+');
+        self::assertSame([['subtree' => 'Symfony'], ['subtree' => 'Doctrine']], $lawful->get('coupling', 'framework_namespaces')?->plain());
     }
 
     #[Test]
@@ -789,7 +855,7 @@ YAML);
         }
 
         // Smoke test: the project's own config file must load without errors
-        $config = WrittenFile::foldedValues($configPath);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($configPath)->roots());
 
         self::assertNotEmpty($config, 'Project qmx.yaml should produce non-empty config');
     }
@@ -805,7 +871,7 @@ YAML);
         }
 
         // The example file is fully commented out — should parse as empty
-        $config = WrittenFile::foldedValues($examplePath);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($examplePath)->roots());
 
         self::assertSame([], $config);
     }
@@ -826,17 +892,25 @@ rules:
     enabled: true
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // All rule name keys are preserved exactly as written
         self::assertArrayHasKey('complexity.ccn', $config['rules']);
         self::assertArrayHasKey('size.method-count', $config['rules']);
         self::assertArrayHasKey('code-smell.boolean-argument', $config['rules']);
         self::assertArrayHasKey('simple_rule', $config['rules']);
 
-        // Option keys are still normalized
-        self::assertSame(10, $config['rules']['complexity.ccn']['warningThreshold']);
-        self::assertSame(15, $config['rules']['size.method-count']['warningThreshold']);
+        self::assertSame(10, $config['rules']['complexity.ccn']['warning_threshold']);
+        self::assertSame(15, $config['rules']['size.method-count']['warning_threshold']);
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "rules.complexity.ccn.warning_threshold" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', $path), ['rules', 'complexity.ccn', 'warning_threshold'], 'warning_threshold');
+        $lawful = $this->lawfulDocument('rules:
+  complexity.ccn:
+    callable: {warning: 10}
+  size.method-count: {warning: 15}
+  code-smell.boolean-argument: {enabled: false}
+');
+        self::assertSame(10, $lawful->get('rules', 'complexity.ccn', 'callable', 'warning')?->plain());
+        self::assertSame(15, $lawful->get('rules', 'size.method-count', 'warning')?->plain());
+        self::assertFalse($lawful->get('rules', 'code-smell.boolean-argument', 'enabled')?->plain());
     }
 
     #[Test]
@@ -852,16 +926,22 @@ computed_metrics:
     error_threshold: 50
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // Computed metric name keys are preserved exactly as written
         self::assertArrayHasKey('computed.my-score', $config['computed_metrics']);
         self::assertArrayHasKey('health.complexity', $config['computed_metrics']);
 
-        // Option keys within metrics are still normalized
         self::assertSame('loc * 2', $config['computed_metrics']['computed.my-score']['formula']);
-        self::assertSame(80, $config['computed_metrics']['computed.my-score']['warningThreshold']);
-        self::assertSame(50, $config['computed_metrics']['health.complexity']['errorThreshold']);
+        self::assertSame(80, $config['computed_metrics']['computed.my-score']['warning_threshold']);
+        self::assertSame(50, $config['computed_metrics']['health.complexity']['error_threshold']);
+        $this->assertDocumentRefusal($path, 'Invalid formula syntax for computed metric "computed.my-score": Variable "loc" is not valid around position 1 for expression `loc * 2`. (formula: loc * 2)', ['computed_metrics', 'computed.my-score', 'formula'], 'formula');
+        $lawful = $this->lawfulDocument('computed_metrics:
+  computed.my-score: {formula: \'1 * 2\', warning: 80}
+  health.complexity: {error: 50}
+');
+        self::assertSame('1 * 2', $lawful->get('computed_metrics', 'computed.my-score', 'formula')?->plain());
+        self::assertSame(80, $lawful->get('computed_metrics', 'computed.my-score', 'warning')?->plain());
+        self::assertSame(50, $lawful->get('computed_metrics', 'health.complexity', 'error')?->plain());
     }
 
     #[Test]
@@ -874,10 +954,7 @@ cache:
   typo_key: something
 YAML);
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown key in "cache" section: "typo_key"');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "cache.typo_key" in configuration file "%s". Accepted keys: dir, enabled.', $path), ['cache', 'typo_key'], 'typo_key');
     }
 
     #[Test]
@@ -928,7 +1005,7 @@ YAML);
         self::expectException(ConfigurationRefusal::class);
         self::expectExceptionMessage('did you mean "workers"?');
 
-        WrittenFile::foldedValues($path);
+        array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
     }
 
     #[Test]
@@ -973,10 +1050,7 @@ cache:
   baz: qux
 YAML);
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Unknown keys in "cache" section');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "cache.foo" in configuration file "%s" (did you mean "dir"?). Accepted keys: dir, enabled.', $path), ['cache', 'foo'], 'foo');
     }
 
     #[Test]
@@ -988,12 +1062,7 @@ cache:
   foo: bar
 YAML);
 
-        try {
-            WrittenFile::foldedValues($path);
-            self::fail('Expected ConfigurationRefusal');
-        } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString('Allowed keys: dir, enabled', $e->getMessage());
-        }
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "cache.foo" in configuration file "%s" (did you mean "dir"?). Accepted keys: dir, enabled.', $path), ['cache', 'foo'], 'foo');
     }
 
     #[Test]
@@ -1002,10 +1071,7 @@ YAML);
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'architecture: false');
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"architecture" must be an associative array');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"architecture" in configuration file "%s" must be a map, got bool.', $path), ['architecture'], 'architecture');
     }
 
     #[Test]
@@ -1015,20 +1081,12 @@ YAML);
         file_put_contents($path, 'computed_metrics: not_a_map');
 
         // Belongs to the same associativeRootKeys() family — verify symmetry with rules
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('"computed_metrics" must be an associative array');
-
-        WrittenFile::foldedValues($path);
+        $this->assertDocumentRefusal($path, \sprintf('"computed_metrics" in configuration file "%s" must be a map, got string.', $path), ['computed_metrics'], 'computed_metrics');
     }
 
     #[Test]
     public function itPreservesArchitectureLayerNamesVerbatim(): void
     {
-        // Under ADR 0006 `architecture.layers` is an ordered list; layer names
-        // live in the `name` field of each entry, not as map keys. The values
-        // of `name` are scalars and never touched by the loader's key
-        // normalization, so the new shape preserves snake_case/kebab-case
-        // names by construction. This test pins that behaviour.
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
 architecture:
@@ -1041,14 +1099,21 @@ architecture:
       patterns: ['App\AppCore']
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // Layer list preserved as a sequential list.
         self::assertIsArray($config['architecture']['layers']);
         self::assertCount(3, $config['architecture']['layers']);
         self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
         self::assertSame('app-core-services', $config['architecture']['layers'][1]['name']);
         self::assertSame('appCore', $config['architecture']['layers'][2]['name']);
+        $this->assertDocumentRefusal($path, 'architecture.layers[2] ("appCore"): Layer name "appCore" must match pattern /^[a-z][a-z0-9_-]*$/ (lowercase letter followed by lowercase letters, digits, underscores, or hyphens).', ['architecture', 'layers', '2', 'name'], 'name');
+        $lawful = $this->lawfulDocument('architecture:
+  layers:
+    - {name: app_core, patterns: [\'App\\Core\']}
+    - {name: app-core-services, patterns: [\'App\\CoreServices\']}
+    - {name: app_core_v2, patterns: [\'App\\AppCore\']}
+');
+        self::assertSame('app_core_v2', $lawful->get('architecture', 'layers', '2', 'name')?->plain());
     }
 
     #[Test]
@@ -1067,14 +1132,14 @@ architecture:
       - app_service
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
 
         // Source layer name in `allow` is still a map key — preserved verbatim
         // by the architecture section's PRESERVE_SUBTREE policy
         // (ConfigSchema::sectionPolicies()).
         self::assertArrayHasKey('app_core', $config['architecture']['allow']);
         // Target list values are scalars — unaffected by key normalization
-        self::assertSame(['app_service'], $config['architecture']['allow']['app_core']);
+        self::assertSame([['app_service']], $config['architecture']['allow']['app_core']);
     }
 
     #[Test]
@@ -1099,9 +1164,9 @@ architecture:
         allow_cross_instance: true
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
 
-        $entry = $config['architecture']['allow']['app-{m}'][0];
+        $entry = $config['architecture']['allow']['app-{m}'][0][0];
 
         self::assertArrayHasKey('target', $entry);
         self::assertArrayHasKey('allow_cross_instance', $entry, 'snake_case long-form key must survive normalization.');
@@ -1111,7 +1176,7 @@ YAML);
     }
 
     #[Test]
-    public function itStillNormalizesCliKeysOutsideArchitecture(): void
+    public function itPreservesWrittenRootKeysBesideArchitecture(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -1125,13 +1190,19 @@ suppress_paths:
   - tests/
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
-        // CLI-style top-level snake_case keys are normalized to camelCase as before
-        self::assertArrayHasKey('disabledRules', $config);
-        self::assertArrayHasKey('suppressPaths', $config);
-        // Architecture layer name preserved (as the value of `name`).
+        self::assertArrayHasKey('disabled_rules', $config);
+        self::assertArrayHasKey('suppress_paths', $config);
         self::assertSame('app_core', $config['architecture']['layers'][0]['name']);
+        $this->assertDocumentRefusal($path, \sprintf('"suppress_paths[0]" in configuration file "%s" must be a map, got string. A selector names its kind: {exact: value}, {subtree: value}, or {regex: value}.', $path), ['suppress_paths', '0'], '0');
+        $lawful = $this->lawfulDocument('architecture:
+  layers: [{name: app_core, patterns: [\'App\\Core\']}]
+disabled_rules: [architecture.layer-violation]
+suppress_paths: [{subtree: tests/}]
+');
+        self::assertSame(['architecture.layer-violation'], $lawful->get('disabled_rules')?->plain());
+        self::assertSame([['subtree' => 'tests/']], $lawful->get('suppress_paths')?->plain());
     }
 
     #[Test]
@@ -1149,7 +1220,7 @@ architecture:
       patterns: ['App\CoreV2']
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = array_map(static fn(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface $value): mixed => $value->plain(), WrittenFile::compose($path)->roots());
 
         self::assertSame('app-core', $config['architecture']['layers'][0]['name']);
         self::assertSame('app_core_v2', $config['architecture']['layers'][1]['name']);
@@ -1174,16 +1245,26 @@ rules:
       computed.my-score: ['App\Legacy']
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertSame(
             ['size.class-count', 'code-smell.*', 'size.class-count:namespace', 'computed.my-score'],
-            array_keys($config['rules']['size.class-count']['suppressNamespaceChannels']),
+            array_keys($config['rules']['size.class-count']['suppress_namespace_channels']),
         );
         self::assertSame(
             ['App\Legacy'],
-            $config['rules']['size.class-count']['suppressNamespaceChannels']['code-smell.*'],
+            $config['rules']['size.class-count']['suppress_namespace_channels']['code-smell.*'],
         );
+        $this->assertDocumentRefusal($path, \sprintf('"rules.size.class-count.suppress_namespace_channels.size.class-count[0]" in configuration file "%s" must be a map, got string.', $path), ['rules', 'size.class-count', 'suppress_namespace_channels', 'size.class-count', '0'], '0');
+        $lawful = $this->lawfulDocument('rules:
+  size.class-count:
+    suppress_namespace_channels:
+      size.class-count: [{subtree: \'App\\Legacy\'}]
+      code-smell.*: [{subtree: \'App\\Legacy\'}]
+      \'size.class-count:namespace\': [{subtree: \'App\\Legacy\'}]
+      computed.my-score: [{subtree: \'App\\Legacy\'}]
+');
+        self::assertSame(['size.class-count', 'code-smell.*', 'size.class-count:namespace', 'computed.my-score'], array_keys($lawful->get('rules', 'size.class-count', 'suppress-namespace-channels')?->plain()));
     }
 
     /** The option is written in either spelling, so both have to reach the same map. */
@@ -1198,12 +1279,19 @@ rules:
       size.class-count: ['App\Legacy']
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertSame(
             ['size.class-count'],
             array_keys($config['rules']['size.class-count']['suppressNamespaceChannels']),
         );
+        $this->assertDocumentRefusal($path, \sprintf('"rules.size.class-count.suppressNamespaceChannels.size.class-count[0]" in configuration file "%s" must be a map, got string.', $path), ['rules', 'size.class-count', 'suppressNamespaceChannels', 'size.class-count', '0'], '0');
+        $lawful = $this->lawfulDocument('rules:
+  size.class-count:
+    suppressNamespaceChannels:
+      size.class-count: [{subtree: \'App\\Legacy\'}]
+');
+        self::assertSame(['size.class-count' => [['subtree' => 'App\Legacy']]], $lawful->get('rules', 'size.class-count', 'suppress-namespace-channels')?->plain());
     }
 
     /**
@@ -1211,7 +1299,7 @@ YAML);
      * keep being normalized, and so is the name of the map itself.
      */
     #[Test]
-    public function itStillNormalizesTheTypedOptionKeysBesideAnExclusionMap(): void
+    public function itPreservesWrittenOptionKeysBesideAChannelMap(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -1224,13 +1312,56 @@ rules:
       warning_threshold: 5
 YAML);
 
-        $config = WrittenFile::foldedValues($path);
+        $config = $this->authoredValues($path);
 
         self::assertSame(
-            ['warningThreshold', 'suppressNamespaceChannels', 'callable'],
+            ['warning_threshold', 'suppress_namespace_channels', 'callable'],
             array_keys($config['rules']['size.class-count']),
         );
-        self::assertSame(['warningThreshold' => 5], $config['rules']['size.class-count']['callable']);
+        self::assertSame(['warning_threshold' => 5], $config['rules']['size.class-count']['callable']);
+        $this->assertDocumentRefusal($path, \sprintf('Unknown key "rules.size.class-count.warning_threshold" in configuration file "%s". Accepted keys: error, warning, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', $path), ['rules', 'size.class-count', 'warning_threshold'], 'warning_threshold');
+        $lawful = $this->lawfulDocument('rules:
+  size.class-count: {warning: 3}
+  complexity.ccn:
+    callable: {warning: 5}
+');
+        self::assertSame(3, $lawful->get('rules', 'size.class-count', 'warning')?->plain());
+        self::assertSame(5, $lawful->get('rules', 'complexity.ccn', 'callable', 'warning')?->plain());
+    }
+
+    /** @return array<string, mixed> */
+    private function authoredValues(string $path): array
+    {
+        $plain = $this->loader->read($path, $path)->authored->plain();
+        self::assertIsArray($plain);
+        $values = [];
+        foreach ($plain as $key => $value) {
+            self::assertIsString($key);
+            $values[$key] = $value;
+        }
+        return $values;
+    }
+
+    private function lawfulDocument(string $yaml): \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument
+    {
+        $path = $this->tempDir . '/lawful.yaml';
+        file_put_contents($path, $yaml);
+        return WrittenFile::compose($path);
+    }
+
+    /** @param list<string> $segments */
+    private function assertDocumentRefusal(string $path, string $summary, array $segments, string $written): void
+    {
+        try {
+            WrittenFile::compose($path);
+            self::fail('The original written value must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($summary, $refusal->summary());
+            self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame($path, $refusal->sources()[0]->locator());
+            self::assertSame($segments, $refusal->position()?->segments);
+            self::assertSame($written, $refusal->position()->written);
+        }
     }
 
     private function removeDirectory(string $dir): void

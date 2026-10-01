@@ -866,10 +866,11 @@ final class RuleExecutionTest extends TestCase
             }
         };
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($registry, ['complexity.cognitive' => ['class' => ['enabled' => false]]]);
+        $fileRules = ['complexity.cognitive' => ['class' => ['enabled' => false]]];
         $executor = $this->createExecution(
             [$rule],
             $registry,
+            fileRules: $fileRules,
         );
 
         self::assertFalse($executor->publication()->publishes('complexity.cognitive', $channel, SymbolLevel::Class_));
@@ -1176,12 +1177,12 @@ final class RuleExecutionTest extends TestCase
         $rule = $this->createRule('computed.health', [$excludedFinding]);
 
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($registry, [$channel => [
+        $fileRules = [$channel => [
             'suppress_namespaces' => [['subtree' => 'App\\Metrics']],
-        ]]);
+        ]];
         $registry->configureNamespaceExclusions($channel, [$this->namespaceSubtree('App\\Metrics')]);
 
-        $executor = $this->createExecution([$rule], $registry, classlessProducers: [new ProducerDeclaration(name: $channel, hostRuleName: 'computed.health', optionsClass: RuleExecutionFixtureOptions::class, description: 'Cohesion health, hosted by computed.health')]);
+        $executor = $this->createExecution([$rule], $registry, classlessProducers: [new ProducerDeclaration(name: $channel, hostRuleName: 'computed.health', optionsClass: RuleExecutionFixtureOptions::class, description: 'Cohesion health, hosted by computed.health')], fileRules: $fileRules);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
@@ -1209,11 +1210,11 @@ final class RuleExecutionTest extends TestCase
         );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
-        ResolvedOptionsFixture::file($registry, ['computed.health' => [
+        $fileRules = ['computed.health' => [
             'suppress_namespace_channels' => [$channel => [['subtree' => 'App\\Metrics']]],
-        ]]);
+        ]];
 
-        $executor = $this->createExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry, fileRules: $fileRules);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
@@ -1249,12 +1250,12 @@ final class RuleExecutionTest extends TestCase
         ]);
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
-        ResolvedOptionsFixture::file($registry, ['rule1' => ['suppress_paths' => [
+        $fileRules = ['rule1' => ['suppress_paths' => [
             ['subtree' => 'src/Excluded'],
             ['subtree' => 'src/Excluded/Deep'],
-        ]]]);
+        ]]];
 
-        $executor = $this->createExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry, fileRules: $fileRules);
 
         $stats = $executor->execute($this->createMinimalContext())->exclusions;
 
@@ -1347,6 +1348,7 @@ final class RuleExecutionTest extends TestCase
      * @param iterable<RuleInterface> $rules
      * @param iterable<ProducerDeclaration> $classlessProducers
      * @param array<string, string> $producerByChannel
+     * @param array<string, mixed> $fileRules
      * @param RuleOptionsRegistry|array{registry: RuleOptionsRegistry, only: list<string>, disabled: list<string>}|null $registry
      */
     private function createExecution(
@@ -1354,6 +1356,7 @@ final class RuleExecutionTest extends TestCase
         RuleOptionsRegistry|array|null $registry = null,
         iterable $classlessProducers = [],
         array $producerByChannel = [],
+        array $fileRules = [],
     ): RuleExecution {
         $only = [];
         $disabled = [];
@@ -1374,11 +1377,9 @@ final class RuleExecutionTest extends TestCase
             $metadata[] = new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer->name, $producer->optionsClass, $producer->description, $producer->aliases, false);
         }
         $manual = [];
-        foreach (array_unique([...array_column($metadata, 'name'), ...array_keys($registry->configFileOptions())]) as $producerName) {
+        foreach (array_unique([...array_column($metadata, 'name'), ...array_keys($fileRules)]) as $producerName) {
             $manual[$producerName] = [$registry->namespaceExclusions($producerName), $registry->namespaceChannelExclusions($producerName), $registry->pathExclusions($producerName)];
         }
-        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()
-            ->withRuleOptions($registry->configFileOptions())->withCliOverrides($registry->cliOptions());
         $declarations = [];
         $produced = [];
         $supports = [];
@@ -1404,7 +1405,8 @@ final class RuleExecutionTest extends TestCase
             }
         }
         $channels = new ChannelUniverse($declarations, $produced, $supports, new ResolvedComputedMetricDefinitions([]));
-        $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata, channels: $channels, only: $only, disabled: $disabled));
+        $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => $fileRules], $metadata, only: $only, disabled: $disabled);
+        $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata, channels: $channels));
         foreach ($manual as $producer => [$namespaces, $channelExclusions, $paths]) {
             if ($namespaces !== []) {
                 $registry->configureNamespaceExclusions($producer, $namespaces);

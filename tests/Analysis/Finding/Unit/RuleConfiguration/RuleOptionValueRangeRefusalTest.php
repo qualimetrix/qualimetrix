@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\RuleConfiguration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,12 +22,9 @@ use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -52,9 +50,10 @@ use Throwable;
  * the working half asserts the value arrived rather than that nothing threw.
  */
 #[CoversClass(RuleOptionsBuild::class)]
-#[CoversClass(RuleOptionKeyRecognition::class)]
 final class RuleOptionValueRangeRefusalTest extends TestCase
 {
+    private string $configurationPath;
+
     /**
      * @param class-string<RuleOptionsInterface> $optionsClass
      */
@@ -69,7 +68,19 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
         $refusal = $this->capture(fn() => $this->fromConfigurationFile($rulesBlock, $ruleName, $optionsClass));
 
         self::assertInstanceOf(ConfigurationRefusal::class, $refusal, 'a negative value was accepted');
-        self::assertStringContainsString($expectedSentence, $refusal->getMessage());
+        $expected = str_replace('/project/qmx.yaml', $this->configurationPath, $expectedSentence);
+        self::assertSame($expected, $refusal->summary());
+        self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+        self::assertSame($this->configurationPath, $refusal->sources()[0]->locator());
+        $path = match ($ruleName) {
+            'size.method-count' => ['rules', 'size.method-count', str_contains($rulesBlock, 'threshold:') ? 'threshold' : 'warning'],
+            'complexity.ccn' => ['rules', 'complexity.ccn', 'callable', 'warning'],
+            'cohesion.lcom' => ['rules', 'cohesion.lcom', 'min_methods'],
+            'coupling.instability' => ['rules', 'coupling.instability', 'class', 'max_warning'],
+            default => throw new LogicException('The numeric refusal has no literal path oracle.'),
+        };
+        self::assertSame($path, $refusal->position()?->segments);
+        self::assertSame($path[\count($path) - 1], $refusal->position()->written);
     }
 
     /**
@@ -105,14 +116,14 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             "  coupling.instability:\n    class:\n      max_warning: -0.5\n",
             'coupling.instability',
             InstabilityOptions::class,
-            '"rules.coupling.instability.class.maxWarning" in configuration file "/project/qmx.yaml" must be at least 0, got -0.5.',
+            '"rules.coupling.instability.class.max_warning" in configuration file "/project/qmx.yaml" must be at least 0, got -0.5.',
         ];
 
         yield 'a minimum count' => [
             "  cohesion.lcom:\n    min_methods: -3\n",
             'cohesion.lcom',
             LcomOptions::class,
-            '"rules.cohesion.lcom.minMethods" in configuration file "/project/qmx.yaml" must be at least 0, got -3.',
+            '"rules.cohesion.lcom.min_methods" in configuration file "/project/qmx.yaml" must be at least 0, got -3.',
         ];
     }
 
@@ -235,21 +246,16 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'qmx-rule-option-range-');
         self::assertNotFalse($path);
+        $this->configurationPath = $path;
         file_put_contents($path, "rules:\n" . $rulesBlock);
 
         try {
-            $config = WrittenFile::foldedValues($path);
+            $document = WrittenFile::compose($path);
         } finally {
             unlink($path);
         }
 
-        /** @var array<string, mixed> $rules */
-        $rules = $config['rules'] ?? [];
-
-        return $this->create(new FindingConfiguration(
-            new RuleOptionsDocument($rules),
-            new FindingCliOverrides(),
-        ), $ruleName, $optionsClass);
+        return $this->create(new FindingConfiguration($document), $ruleName, $optionsClass);
     }
 
     /**
@@ -292,9 +298,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
     private function create(FindingConfiguration $configuration, string $ruleName, string $optionsClass): RuleOptionsInterface
     {
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::configure($registry, $configuration);
-
-        return (new ResolvedOptionsFixture($registry))->create($ruleName, $optionsClass);
+        return (new ResolvedOptionsFixture($registry, $configuration))->create($ruleName, $optionsClass);
     }
 
     private function capture(callable $act): ?Throwable

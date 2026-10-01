@@ -20,15 +20,6 @@ interface RuleConfigurationInterface
 
     public function replace(FindingConfiguration $configuration): void;
 
-    /** @return array<string, mixed> */
-    public function configFileOptions(): array;
-
-    /** @return array<string, array<string, mixed>> */
-    public function cliOptions(): array;
-
-    /** @return array<string, mixed> */
-    public function all(): array;
-
     public function captureExcludedFindings(): void;
 
     public function capturesExcludedFindings(): bool;

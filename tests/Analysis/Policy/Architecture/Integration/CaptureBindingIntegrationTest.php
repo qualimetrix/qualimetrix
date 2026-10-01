@@ -108,8 +108,8 @@ final class CaptureBindingIntegrationTest extends TestCase
             YAML);
 
         try {
-            $loaded = WrittenFile::foldedValues($yamlPath);
-            $analysis = $this->runPipelineWithConfig($loaded['architecture']);
+            $loaded = WrittenFile::compose($yamlPath);
+            $analysis = $this->runPipelineWithConfig($loaded);
 
             $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
             self::assertSame(
@@ -123,14 +123,25 @@ final class CaptureBindingIntegrationTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $configArray
+     * @param array<string, mixed>|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray
      */
-    private function runPipelineWithConfig(array $configArray): AnalysisResult
+    private function runPipelineWithConfig(array|\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument $configArray): AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
-        $result = $factory->fromResolved(ArchitectureDocument::file($configArray));
+        $result = $factory->fromResolved($configArray instanceof \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument ? $configArray : ArchitectureDocument::file($configArray));
 
         $container = (new ContainerFactory())->create();
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $registry = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry::class, $registry);
+        $document = $configArray instanceof \Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument
+            ? $configArray
+            : \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['architecture' => $configArray]]], AbsolutePath::fromString(self::FIXTURE_PATH))->resolved();
+        $catalog = $container->get(\Qualimetrix\Infrastructure\Rule\ChannelUniverse::class);
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Rule\ChannelUniverse::class, $catalog);
+        $channels = $catalog->snapshot(new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([]));
+        $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(new \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration($document), $execution->allRules(), channels: $channels));
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);

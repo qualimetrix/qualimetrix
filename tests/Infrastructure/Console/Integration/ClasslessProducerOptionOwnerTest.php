@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -316,11 +315,11 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         $execution = (new ContainerFactory())->create()->get(RuleExecutionInterface::class);
         \assert($execution instanceof RuleExecutionInterface);
         $metadata = $execution->allRules();
-        $document = ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => $rules]]], AbsolutePath::fromString('/project'), $metadata);
         $writes = $input === null ? null : (new CliOptionsParser(new RuleOptionsParser(
             optionsClasses: array_combine(array_column($metadata, 'name'), array_column($metadata, 'optionsClass')),
         )))->pathWrites($input);
-        return ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata, $writes, self::universe()->snapshot($definitions));
+        $authored = ResolvedOptionsFixture::authoredConfiguration(['rules' => $rules], $metadata, $writes);
+        return ResolvedOptionsFixture::ready($authored, $metadata, channels: self::universe()->snapshot($definitions));
     }
 
     private static function inputWithoutRuleOpt(): InputInterface

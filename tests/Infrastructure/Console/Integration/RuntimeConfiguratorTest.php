@@ -15,6 +15,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
@@ -266,7 +267,7 @@ final class RuntimeConfiguratorTest extends TestCase
         } catch (ConfigurationRefusal) {
             self::assertTrue($this->cacheStore->current()->enabled);
             self::assertNull($this->parallelStore->current()->workers);
-            self::assertSame([], $this->rules->all());
+            self::assertSnapshotUnavailable($this->rules);
             self::assertFalse($this->rules->capturesExcludedFindings());
             self::assertSame([], $this->lcomStore->current()->excludedMethods);
             self::assertFalse($this->profile->isEnabled());
@@ -285,6 +286,7 @@ final class RuntimeConfiguratorTest extends TestCase
             new BufferedOutput(),
         );
         $firstCache = $this->cacheFactory->create();
+        $firstSnapshot = $this->rules->resolvedOptions();
 
         $this->configurator->resetRunState();
         $this->configure(
@@ -299,7 +301,13 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertSame($this->projectRoot . '/.qmx-cache', $this->cacheStore->current()->directory->value());
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
-        self::assertSame([], $this->rules->all());
+        $secondSnapshot = $this->rules->resolvedOptions();
+        self::assertNotSame($firstSnapshot, $secondSnapshot);
+        self::assertSame(['cohesion.lcom'], array_keys($secondSnapshot->all()));
+        $options = $secondSnapshot->for('cohesion.lcom');
+        self::assertInstanceOf(LcomOptions::class, $options);
+        self::assertTrue($options->enabled);
+        self::assertNotSame($firstSnapshot->for('cohesion.lcom'), $options);
         $enablement = $this->rules->enablement();
         self::assertNotNull($enablement);
         self::assertNull($enablement->filter());
@@ -327,7 +335,7 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertNull($this->rules->enablement());
         self::assertTrue($this->cacheStore->current()->enabled);
         self::assertNull($this->parallelStore->current()->workers);
-        self::assertSame([], $this->rules->all());
+        self::assertSnapshotUnavailable($this->rules);
         self::assertSame([], $this->lcomStore->current()->excludedMethods);
         self::assertFalse($this->profile->isEnabled());
         $this->expectException(LogicException::class);
@@ -360,7 +368,7 @@ final class RuntimeConfiguratorTest extends TestCase
         } catch (InvalidArgumentException) {
             self::assertNull($this->parallelStore->current()->workers);
             self::assertTrue($this->cacheStore->current()->enabled);
-            self::assertSame([], $this->rules->all());
+            self::assertSnapshotUnavailable($this->rules);
             self::assertFalse($this->rules->capturesExcludedFindings());
             self::assertSame([], $this->lcomStore->current()->excludedMethods);
             self::assertFalse($this->profile->isEnabled());
@@ -686,4 +694,13 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         return array_map(static fn(string $key): \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection => new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, $key), ['rules', 'only_rules', 'disabled_rules']);
     }
 
+    private static function assertSnapshotUnavailable(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface $registry): void
+    {
+        try {
+            $registry->resolvedOptions();
+            self::fail('The invocation must have no ready rule options.');
+        } catch (LogicException $refusal) {
+            self::assertSame('Rule options are unavailable before analysis preflight.', $refusal->getMessage());
+        }
+    }
 }

@@ -50,25 +50,37 @@ final class ConfigurationPipelineTest extends TestCase
     }
 
     #[Test]
-    public function itRetainsFindingsOrderedRawInputsInsteadOfApplyingFeatureMergeSemantics(): void
+    public function itPreservesTypedValuesAndEveryAuthoredListWriteInStageOrder(): void
     {
+        $original = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $original->addStage($this->stage(20, 'config', [], [self::file(['rules' => ['size.loc' => ['warning' => 1000]], 'disabled_rules' => ['security']])]));
+        $original->addStage($this->stage(30, 'cli', [], [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--rule-opt'), AuthoredNode::fromPlain(['rules' => ['size.loc' => ['error' => 2000]], 'disabled_rules' => ['design']]))]));
+        try {
+            $original->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
+            self::fail('An undeclared producer must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Rule option owner "size.loc" does not match any registered producer rule.', $refusal->summary());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['rules', 'size.loc'], $refusal->position()?->segments);
+            self::assertSame('size.loc', $refusal->position()->written);
+        }
         $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
-        $pipeline->addStage($this->stage(20, 'config', [
-            'rules' => ['size.loc' => ['warning' => 1000]],
-            'disabled_rules' => ['security'],
-        ]));
-        $pipeline->addStage($this->stage(30, 'cli', [
-            'rules' => ['size.loc' => ['error' => 2000]],
-            'disabled_rules' => ['design'],
-        ]));
-
+        $pipeline->addStage($this->stage(20, 'config', [], [self::file(['rules' => ['size.method-count' => ['warning' => 1000]], 'disabled_rules' => ['security']])]));
+        $pipeline->addStage($this->stage(30, 'cli', [], [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::CommandLine, '--rule-opt'), AuthoredNode::fromPlain(['rules' => ['size.method-count' => ['error' => 2000]], 'disabled_rules' => ['design']]))]));
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
-
-        self::assertSame([
-            ['size.loc' => ['warning' => 1000]],
-            ['size.loc' => ['error' => 2000]],
-        ], $document->ruleContributions());
-        self::assertSame([['security'], ['design']], $document->disabledRuleContributions());
+        $warning = $document->resolved()->get('rules', 'size.method-count', 'warning');
+        $error = $document->resolved()->get('rules', 'size.method-count', 'error');
+        self::assertNotNull($warning);
+        self::assertNotNull($error);
+        self::assertSame(1000, $warning->plain());
+        self::assertSame(2000, $error->plain());
+        self::assertSame('/project/qmx.yaml', $warning->contributors()[0]->origin->locator());
+        self::assertSame('--rule-opt', $error->contributors()[0]->origin->locator());
+        self::assertSame([0, 1], [$warning->contributors()[0]->layerIndex, $error->contributors()[0]->layerIndex]);
+        $disabled = $document->resolved()->get('disabled_rules');
+        self::assertInstanceOf(\Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface::class, $disabled);
+        self::assertSame(['security', 'design'], $disabled->plain());
+        self::assertSame([['security'], ['design']], array_map(static fn(array $write): mixed => $write['value'], $disabled->writes()));
         self::assertSame(['config', 'cli'], $document->appliedSources());
     }
 
@@ -86,9 +98,6 @@ final class ConfigurationPipelineTest extends TestCase
     {
         $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
         $pipeline->addStage($this->stage(15, 'preset:strict,ci', [], [
-            ['fail_on' => 'warning'],
-            ['fail_on' => 'error'],
-        ], [
             self::preset(['fail_on' => 'warning']),
             new AuthoredLayer(
                 ConfigurationOrigin::of(ConfigurationSource::Preset, 'ci'),
@@ -109,27 +118,35 @@ final class ConfigurationPipelineTest extends TestCase
     #[Test]
     public function itComposesTheAuthoredLayers(): void
     {
-        $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $original = new ConfigurationPipeline(LayeredDocument::standaloneSections());
+        $original->addStage($this->stage(15, 'preset:strict', [], [self::preset(['fail_on' => 'error', 'rules' => ['size.loc' => false]])]));
+        try {
+            $original->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
+            self::fail('The ordinary rules owner must judge its producers.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Rule option owner "size.loc" does not match any registered producer rule.', $refusal->summary());
+            self::assertSame('strict', $refusal->sources()[0]->locator());
+            self::assertSame(['rules', 'size.loc'], $refusal->position()?->segments);
+            self::assertSame('size.loc', $refusal->position()->written);
+        }
+        $pipeline = new ConfigurationPipeline(array_values(array_filter(LayeredDocument::standaloneSections(), static fn(DocumentSectionSchemaInterface $section): bool => !\in_array($section->declaration()->key, ['coupling', 'rules'], true))));
         $pipeline->addSection(self::couplingSection());
-        $pipeline->addStage($this->stage(20, 'qmx.yaml', ['fail_on' => 'warning'], [], [
-            self::file(['failOn' => 'warning', 'coupling' => ['frameworkNamespaces' => ['App']]]),
-        ]));
-        $pipeline->addStage($this->stage(15, 'preset:strict', [], [['fail_on' => 'error']], [
-            self::preset(['fail_on' => 'error', 'rules' => ['size.loc' => false]]),
-        ]));
-
+        $pipeline->addSection(new class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('rules', NodeSchema::opaque());
+            }
+        });
+        $pipeline->addStage($this->stage(20, 'qmx.yaml', ['fail_on' => 'warning'], [self::file(['failOn' => 'warning', 'coupling' => ['frameworkNamespaces' => ['App']]])]));
+        $pipeline->addStage($this->stage(15, 'preset:strict', [], [self::preset(['fail_on' => 'error', 'rules' => ['size.loc' => false]])]));
         $document = $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
-
         $failOn = $document->resolved()->get('fail_on');
         self::assertNotNull($failOn);
         self::assertSame('warning', $failOn->plain());
-        self::assertSame(['/project/qmx.yaml'], array_map(
-            static fn(Provenance $writer): ?string => $writer->origin->locator(),
-            $failOn->contributors(),
-        ));
+        self::assertSame(['/project/qmx.yaml'], array_map(static fn(Provenance $writer): ?string => $writer->origin->locator(), $failOn->contributors()));
         self::assertSame(['App'], $document->resolved()->get('coupling', 'framework_namespaces')?->plain(), 'An owner-registered section is read.');
         $rules = $document->resolved()->get('rules');
-        self::assertInstanceOf(ResolvedOpaqueInterface::class, $rules, 'A known root no section declares yet is carried unread.');
+        self::assertInstanceOf(ResolvedOpaqueInterface::class, $rules, 'The fixture declares its opaque section explicitly.');
         self::assertSame([['size.loc' => false]], $rules->plain());
         self::assertSame('strict', $rules->contributors()[0]->origin->locator());
     }
@@ -142,7 +159,7 @@ final class ConfigurationPipelineTest extends TestCase
     public function itRefusesARootNoOneKnowsEvenWhenWrittenNull(): void
     {
         $pipeline = new ConfigurationPipeline(LayeredDocument::standaloneSections());
-        $pipeline->addStage($this->stage(20, 'qmx.yaml', [], [], [self::file(['fail_onn' => null])]));
+        $pipeline->addStage($this->stage(20, 'qmx.yaml', [], [self::file(['fail_onn' => null])]));
 
         try {
             $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
@@ -154,34 +171,23 @@ final class ConfigurationPipelineTest extends TestCase
         }
     }
 
-    /**
-     * A refusal of the folded values a stage deferred is raised once the
-     * engine accepted every layer — and never ahead of the engine's own.
-     */
     #[Test]
-    public function itRaisesADeferredRefusalOnlyAfterTheEngineJudgedEveryLayer(): void
+    public function itJudgesEachAuthoredLayerWithoutAParallelRefusalTransport(): void
     {
-        $deferred = ConfigurationRefusal::aboutConfigFileDocument('/project/qmx.yaml', 'the folded values are refused');
-
         $accepted = new ConfigurationPipeline(LayeredDocument::standaloneSections());
-        $accepted->addStage($this->stage(20, 'qmx.yaml', [], [], [self::file(['fail_on' => 'error'])], [$deferred]));
-
-        try {
-            $accepted->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
-            self::fail('A deferred refusal must still be raised.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertSame($deferred, $refusal);
-        }
-
+        $accepted->addStage($this->stage(20, 'qmx.yaml', [], [self::file(['fail_on' => 'error'])]));
+        $document = $accepted->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
+        self::assertSame('error', $document->resolved()->get('fail_on')?->plain());
         $refused = new ConfigurationPipeline(LayeredDocument::standaloneSections());
-        $refused->addStage($this->stage(20, 'qmx.yaml', [], [], [self::file(['Fail_On' => 'error'])], [$deferred]));
-
+        $refused->addStage($this->stage(20, 'qmx.yaml', [], [self::file(['Fail_On' => 'error'])]));
         try {
             $refused->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
             self::fail('The written document must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertNotSame($deferred, $refusal);
-            self::assertStringContainsString('write "fail_on"', $refusal->summary());
+            self::assertSame('Key "Fail_On" in configuration file "/project/qmx.yaml" is not written in an accepted spelling; write "fail_on" (its snake_case, camelCase and kebab-case spellings are accepted).', $refusal->summary());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['Fail_On'], $refusal->position()?->segments);
+            self::assertSame('Fail_On', $refusal->position()->written);
         }
     }
 
@@ -199,51 +205,27 @@ final class ConfigurationPipelineTest extends TestCase
 
     /**
      * @param array<string, mixed>|null $values
-     * @param list<array<string, mixed>> $documents
      * @param list<AuthoredLayer> $authored
-     * @param list<ConfigurationRefusal> $deferred
      */
-    private function stage(
-        int $priority,
-        string $name,
-        ?array $values,
-        array $documents = [],
-        array $authored = [],
-        array $deferred = [],
-    ): ConfigurationStageInterface {
-        return new class ($priority, $name, $values, $documents, $authored, $deferred) implements ConfigurationStageInterface {
+    private function stage(int $priority, string $name, ?array $values, array $authored = []): ConfigurationStageInterface
+    {
+        return new class ($priority, $name, $values, $authored) implements ConfigurationStageInterface {
             /**
              * @param array<string, mixed>|null $values
-             * @param list<array<string, mixed>> $documents
              * @param list<AuthoredLayer> $authored
-             * @param list<ConfigurationRefusal> $deferred
              */
-            public function __construct(
-                private readonly int $stagePriority,
-                private readonly string $stageName,
-                private readonly ?array $values,
-                private readonly array $documents,
-                private readonly array $authored,
-                private readonly array $deferred,
-            ) {}
-
+            public function __construct(private readonly int $stagePriority, private readonly string $stageName, private readonly ?array $values, private readonly array $authored) {}
             public function priority(): int
             {
                 return $this->stagePriority;
             }
-
             public function name(): string
             {
                 return $this->stageName;
             }
-
             public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
             {
-                if ($this->values === null) {
-                    return null;
-                }
-
-                return new ConfigurationLayer($this->stageName, $this->values, $this->documents, $this->authored, $this->deferred);
+                return $this->values === null ? null : new ConfigurationLayer($this->stageName, $this->values, $this->authored);
             }
         };
     }

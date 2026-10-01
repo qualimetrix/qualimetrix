@@ -15,10 +15,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -42,10 +40,7 @@ final class RuleInputValidatorTest extends TestCase
         $validator = $this->validator($rules);
 
         $input = new ArrayInput([], new InputDefinition());
-        $this->validate($validator, $input, new FindingConfiguration(
-            new RuleOptionsDocument([]),
-            new FindingCliOverrides([]),
-        ), new ResolvedComputedMetricDefinitions([]));
+        $this->validate($validator, $input, [], new ResolvedComputedMetricDefinitions([]));
 
         self::assertFalse($input->hasOption('workers'));
     }
@@ -67,7 +62,7 @@ final class RuleInputValidatorTest extends TestCase
         ]);
 
         foreach (['health.complexity', 'health.*'] as $selector) {
-            $snapshot = $this->validate($validator, new ArrayInput([], new InputDefinition()), FindingConfiguration::none(), $definitions);
+            $snapshot = $this->validate($validator, new ArrayInput([], new InputDefinition()), [], $definitions);
             $document = ResolvedOptionsFixture::document([
                 ['source' => 'config', 'values' => ['only_rules' => [$selector]]],
             ], AbsolutePath::fromString('/project'), []);
@@ -104,20 +99,14 @@ final class RuleInputValidatorTest extends TestCase
             ),
         ]);
 
-        $accepted = new FindingConfiguration(
-            new RuleOptionsDocument([
-                'health.complexity' => ['suppress_namespace_channels' => ['health.complexity' => [['subtree' => 'App\\Legacy']]]],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        $accepted = [
+            'health.complexity' => ['suppress_namespace_channels' => ['health.complexity' => [['subtree' => 'App\\Legacy']]]],
+        ];
         $this->validate($validator, new ArrayInput([], new InputDefinition()), $accepted, $definitions);
 
-        $rejected = new FindingConfiguration(
-            new RuleOptionsDocument([
-                'health.complexity' => ['suppress_namespace_channels' => ['health' => [['subtree' => 'App\\Legacy']]]],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        $rejected = [
+            'health.complexity' => ['suppress_namespace_channels' => ['health' => [['subtree' => 'App\\Legacy']]]],
+        ];
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('keyed by "health", addresses no channel');
@@ -137,22 +126,16 @@ final class RuleInputValidatorTest extends TestCase
         $validator = $this->validator($rules);
         $definitions = self::healthComplexityDefinitions(SymbolLevel::Class_, SymbolLevel::Namespace_);
 
-        $accepted = new FindingConfiguration(
-            new RuleOptionsDocument([
-                'health.complexity' => [
-                    'suppress_namespace_channels' => ['health.complexity:namespace' => [['subtree' => 'App\\Legacy']]],
-                ],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        $accepted = [
+            'health.complexity' => [
+                'suppress_namespace_channels' => ['health.complexity:namespace' => [['subtree' => 'App\\Legacy']]],
+            ],
+        ];
         $this->validate($validator, new ArrayInput([], new InputDefinition()), $accepted, $definitions);
 
-        $rejected = new FindingConfiguration(
-            new RuleOptionsDocument([
-                'health.complexity' => ['suppress_namespace_channels' => ['health.complexity:file' => [['subtree' => 'App\\Legacy']]]],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        $rejected = [
+            'health.complexity' => ['suppress_namespace_channels' => ['health.complexity:file' => [['subtree' => 'App\\Legacy']]]],
+        ];
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('it does not report at level "file"');
@@ -253,12 +236,9 @@ final class RuleInputValidatorTest extends TestCase
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $validator = $this->validator($rules);
 
-        $configuration = new FindingConfiguration(
-            new RuleOptionsDocument([
-                'health.complexity' => ['suppress_namespace_channels' => ['health.complexity' => [['subtree' => 'App\\Legacy']]]],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        $configuration = [
+            'health.complexity' => ['suppress_namespace_channels' => ['health.complexity' => [['subtree' => 'App\\Legacy']]]],
+        ];
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('addresses no channel');
@@ -282,12 +262,9 @@ final class RuleInputValidatorTest extends TestCase
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class, LcomRule::class]);
         $validator = $this->validator($rules);
 
-        $configuration = new FindingConfiguration(
-            new RuleOptionsDocument([
-                LcomRule::NAME => ['suppress_namespace_channels' => ['health.complexity' => [['subtree' => 'App\\Legacy']]]],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        $configuration = [
+            LcomRule::NAME => ['suppress_namespace_channels' => ['health.complexity' => [['subtree' => 'App\\Legacy']]]],
+        ];
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('addresses none of the channels of "cohesion.lcom"');
@@ -323,7 +300,7 @@ final class RuleInputValidatorTest extends TestCase
         $snapshot = $this->validate(
             $validator,
             new ArrayInput([], new InputDefinition()),
-            FindingConfiguration::none(),
+            [],
             self::healthComplexityDefinitions(),
         );
         $metadata = array_values(array_map(
@@ -353,7 +330,7 @@ final class RuleInputValidatorTest extends TestCase
         $this->validate(
             $this->validator($rules),
             self::ruleOptionInput('cohesion.lcom:exclude_methods'),
-            new FindingConfiguration(new RuleOptionsDocument([]), new FindingCliOverrides([])),
+            [],
             new ResolvedComputedMetricDefinitions([]),
         );
     }
@@ -368,7 +345,7 @@ final class RuleInputValidatorTest extends TestCase
         $this->validate(
             $this->validator($rules),
             $input,
-            new FindingConfiguration(new RuleOptionsDocument([]), new FindingCliOverrides([])),
+            [],
             new ResolvedComputedMetricDefinitions([]),
         );
 
@@ -408,14 +385,12 @@ final class RuleInputValidatorTest extends TestCase
         ]);
     }
 
-    private static function channelExclusion(string $key): FindingConfiguration
+    /** @return array<string, mixed> */
+    private static function channelExclusion(string $key): array
     {
-        return new FindingConfiguration(
-            new RuleOptionsDocument([
-                'health.complexity' => ['suppress_namespace_channels' => [$key => [['subtree' => 'App\\Legacy']]]],
-            ]),
-            new FindingCliOverrides([]),
-        );
+        return [
+            'health.complexity' => ['suppress_namespace_channels' => [$key => [['subtree' => 'App\\Legacy']]]],
+        ];
     }
 
     private function validator(RuleRegistryInterface $rules): RuleInputValidator
@@ -431,10 +406,11 @@ final class RuleInputValidatorTest extends TestCase
         );
     }
 
+    /** @param array<string, mixed> $rules */
     private function validate(
         RuleInputValidator $validator,
         InputInterface $input,
-        FindingConfiguration $configuration,
+        array $rules,
         ResolvedComputedMetricDefinitions $definitions,
     ): ChannelUniverse {
         $names = [ComputedMetricRule::NAME, LcomRule::NAME, ...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES];
@@ -442,7 +418,7 @@ final class RuleInputValidatorTest extends TestCase
         $execution = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         \assert($execution instanceof \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface);
         $cliWrites = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser((new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory())->createFromMetadata($execution->allRules())))->pathWrites($input);
-        $authored = ResolvedOptionsFixture::authoredConfiguration($configuration, $execution->allRules(), $cliWrites);
+        $authored = ResolvedOptionsFixture::authoredConfiguration($rules === [] ? [] : ['rules' => $rules], $execution->allRules(), $cliWrites);
         $document = new \Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument([], AbsolutePath::fromString('/project'), $authored->document);
         $computed = self::createStub(ComputedMetricConfiguratorInterface::class);
         $computed->method('resolve')->willReturn($definitions);

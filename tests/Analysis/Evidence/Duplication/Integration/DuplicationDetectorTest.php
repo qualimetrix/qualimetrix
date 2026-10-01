@@ -613,7 +613,7 @@ PHP;
     public function itReadsTheCurrentTypedThresholdsOnEachInspectionWithoutTheRawDoor(): void
     {
         $options = new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions(min_tokens: 1000, min_lines: 0);
-        $configuration = $this->createMock(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        $configuration = $this->createMock(RawDoorRuleConfiguration::class);
         $configuration->expects(self::never())->method('all');
         $configuration->method('resolvedOptions')->willReturnCallback(static function () use (&$options): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions {
             return new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions(
@@ -637,17 +637,11 @@ PHP;
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
         $ruleConfiguration = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($ruleConfiguration, [
-            'duplication.clone' => [
-                'min_tokens' => $minTokens,
-                'min_lines' => $minLines,
-            ],
-        ]);
-
-        $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none()->withRuleOptions($ruleConfiguration->configFileOptions());
-        $ruleConfiguration->replace($configuration->withResolvedOptions(ResolvedOptionsFixture::build($configuration, [
-            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions::class, '', [], false),
-        ])));
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions::class, '', [], false)];
+        $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => [
+            'duplication.clone' => ['min_tokens' => $minTokens, 'min_lines' => $minLines],
+        ]], $metadata);
+        $ruleConfiguration->replace(ResolvedOptionsFixture::ready($configuration, $metadata));
 
         $this->resultProvider = new DuplicationResultProvider();
 
@@ -800,4 +794,10 @@ PHP;
         }
         rmdir($dir);
     }
+}
+
+interface RawDoorRuleConfiguration extends \Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface
+{
+    /** @return array<string, mixed> */
+    public function all(): array;
 }

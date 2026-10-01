@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use UnexpectedValueException;
@@ -59,9 +58,8 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
         return new ConfigurationLayer(
             basename($configPath),
-            $this->normalizeConfigData($loaded->values),
+            [],
             authored: [new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $sourceName), $loaded->authored)],
-            deferredRefusals: $loaded->deferredRefusal === null ? [] : [$loaded->deferredRefusal],
             diagnostics: $diagnostics,
         );
     }
@@ -146,17 +144,4 @@ final class ConfigFileStage implements ConfigurationStageInterface
         return preg_match('/(?:^|[._-])qmx(?:[._-]|$)/', $name) === 1
             && (str_contains($name, '.yaml') || str_contains($name, '.yml'));
     }
-
-    /**
-     * Normalizes config data to flat dot-notation keys.
-     *
-     * @param array<string, mixed> $data
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizeConfigData(array $data): array
-    {
-        return ConfigDataNormalizer::normalize($data);
-    }
-
 }

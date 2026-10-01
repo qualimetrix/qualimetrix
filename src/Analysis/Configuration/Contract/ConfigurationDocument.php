@@ -42,24 +42,6 @@ final readonly class ConfigurationDocument
         return [...$this->resolved->diagnostics(), ...$this->sourceDiagnostics];
     }
 
-    /** @return list<mixed> Ordered raw `rules:` values, pending Finding's resolved-rule migration. */
-    public function ruleContributions(): array
-    {
-        return $this->valuesFor(ConfigSchema::RULES);
-    }
-
-    /** @return list<mixed> Ordered raw `only_rules:` values, pending Finding's resolved-rule migration. */
-    public function onlyRuleContributions(): array
-    {
-        return $this->valuesFor(ConfigSchema::ONLY_RULES);
-    }
-
-    /** @return list<mixed> Ordered raw `disabled_rules:` values, pending Finding's resolved-rule migration. */
-    public function disabledRuleContributions(): array
-    {
-        return $this->valuesFor(ConfigSchema::DISABLED_RULES);
-    }
-
     /** @return list<string> */
     public function discoveredProductionAutoloadTargets(): array
     {

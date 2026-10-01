@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
@@ -50,17 +49,9 @@ final class PresetStage implements ConfigurationStageInterface
             return null;
         }
 
-        [$documents, $authored, $deferred] = $this->loadPresets($presetNames, $request->workingDirectory->value());
-        if ($documents === []) {
-            return null;
-        }
-
         return new ConfigurationLayer(
             'preset:' . implode(',', $presetNames),
-            [],
-            $documents,
-            $authored,
-            $deferred,
+            authored: $this->loadPresets($presetNames, $request->workingDirectory->value()),
         );
     }
 
@@ -107,33 +98,18 @@ final class PresetStage implements ConfigurationStageInterface
     }
 
     /**
-     * Loads each preset as its own layer, in precedence order: normalized
-     * layer values for Finding's temporary raw reads, and authored input for
-     * the document engine.
-     *
      * @param list<string> $presetNames
      *
-     * @return array{list<array<string, mixed>>, list<AuthoredLayer>, list<ConfigurationRefusal>}
+     * @return list<AuthoredLayer>
      */
     private function loadPresets(array $presetNames, string $workingDirectory): array
     {
-        $documents = [];
         $authored = [];
-        $deferred = [];
-
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
             $loaded = $this->loader->read($path, $path);
-
-            if ($loaded->deferredRefusal !== null) {
-                $deferred[] = $loaded->deferredRefusal;
-
-            }
-
-            $documents[] = ConfigDataNormalizer::normalize($loaded->values);
             $authored[] = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, $name), $loaded->authored);
         }
-
-        return [$documents, $authored, $deferred];
+        return $authored;
     }
 }

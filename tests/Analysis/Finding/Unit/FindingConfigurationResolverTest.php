@@ -36,7 +36,7 @@ final class FindingConfigurationResolverTest extends TestCase
         // The overlay's `threshold` shorthand is unfolded into the graduated
         // pair BEFORE merging, so both survive as `warning`/`error` — not as
         // a bare `threshold` (that was eviction's shape, now gone).
-        self::assertSame(['warning' => 15, 'error' => 15], $configuration->ruleOptions->rules['size.method-count']);
+        self::assertSame(['warning' => 15, 'error' => 15], $configuration->document->get('rules', 'size.method-count')?->plain());
         self::assertSame(['design'], $configuration->document->get('only_rules')?->plain());
         self::assertSame(['size', 'security'], $configuration->document->get('disabled_rules')?->plain());
     }
@@ -66,7 +66,7 @@ final class FindingConfigurationResolverTest extends TestCase
 
         $configuration = FindingConfiguration::fromDocument($document);
 
-        self::assertSame(['warning' => 10, 'error' => 25], $configuration->ruleOptions->rules['size.method-count']);
+        self::assertSame(['warning' => 10, 'error' => 25], $configuration->document->get('rules', 'size.method-count')?->plain());
     }
 
     /**
@@ -89,7 +89,7 @@ final class FindingConfigurationResolverTest extends TestCase
 
         $configuration = FindingConfiguration::fromDocument($document);
 
-        self::assertSame(['warning' => 2, 'error' => 3], $configuration->ruleOptions->rules['size.method-count']);
+        self::assertSame(['warning' => 2, 'error' => 3], $configuration->document->get('rules', 'size.method-count')?->plain());
     }
 
     /**
@@ -112,7 +112,7 @@ final class FindingConfigurationResolverTest extends TestCase
 
         $configuration = FindingConfiguration::fromDocument($document);
 
-        self::assertSame(['warning' => 2, 'error' => 100], $configuration->ruleOptions->rules['size.method-count']);
+        self::assertSame(['warning' => 2, 'error' => 100], $configuration->document->get('rules', 'size.method-count')?->plain());
     }
 
     /**
@@ -135,7 +135,7 @@ final class FindingConfigurationResolverTest extends TestCase
 
         $configuration = FindingConfiguration::fromDocument($document);
 
-        self::assertSame(['warning' => 5, 'error' => 5], $configuration->ruleOptions->rules['size.method-count']);
+        self::assertSame(['warning' => 5, 'error' => 5], $configuration->document->get('rules', 'size.method-count')?->plain());
     }
 
     /**
@@ -168,7 +168,7 @@ final class FindingConfigurationResolverTest extends TestCase
 
         self::assertSame(
             ['callable' => ['warning' => 2, 'error' => 3]],
-            $configuration->ruleOptions->rules['complexity.ccn'],
+            $configuration->document->get('rules', 'complexity.ccn')?->plain(),
         );
     }
 
@@ -191,6 +191,6 @@ final class FindingConfigurationResolverTest extends TestCase
 
         $configuration = FindingConfiguration::fromDocument($document);
 
-        self::assertSame(['callable' => ['warning' => 2, 'error' => 3], 'enabled' => false], $configuration->ruleOptions->rules['complexity.ccn']);
+        self::assertSame(['callable' => ['warning' => 2, 'error' => 3], 'enabled' => false], $configuration->document->get('rules', 'complexity.ccn')?->plain());
     }
 }

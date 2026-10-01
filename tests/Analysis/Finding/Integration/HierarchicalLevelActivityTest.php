@@ -8,12 +8,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -137,14 +134,11 @@ final class HierarchicalLevelActivityTest extends TestCase
 
         $configuration = $container->get(RuleConfigurationInterface::class);
         self::assertInstanceOf(RuleConfigurationInterface::class, $configuration);
-        $input = new FindingConfiguration(
-            new RuleOptionsDocument($options),
-            new FindingCliOverrides([]),
-        );
         $builder = $container->get(RuleOptionsBuild::class);
         self::assertInstanceOf(RuleOptionsBuild::class, $builder);
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
+        $input = ResolvedOptionsFixture::authoredConfiguration(['rules' => $options], $execution->allRules());
         $configuration->replace(ResolvedOptionsFixture::ready($input, $execution->allRules()));
 
         $execution = $container->get(RuleExecutionInterface::class);

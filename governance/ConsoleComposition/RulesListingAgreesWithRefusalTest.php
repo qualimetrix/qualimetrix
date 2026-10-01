@@ -7,11 +7,17 @@ namespace Qualimetrix\Governance\ConsoleComposition;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -91,14 +97,14 @@ final class RulesListingAgreesWithRefusalTest extends TestCase
             sort($reassembled);
 
             self::assertSame(
-                self::refusedAt($producer->name, $producer->optionsClass, null),
+                self::refusedAt($execution, $producer->name, null),
                 $reassembled,
                 \sprintf('Rule "%s" advertises a different set than its refusal admits.', $producer->name),
             );
 
             foreach ($surface->levels() as $level) {
                 self::assertSame(
-                    self::refusedAt($producer->name, $producer->optionsClass, $level),
+                    self::refusedAt($execution, $producer->name, $level),
                     $listed[$producer->name][$level] ?? [],
                     \sprintf('Rule "%s" at level "%s" advertises a different set.', $producer->name, $level),
                 );
@@ -147,23 +153,31 @@ final class RulesListingAgreesWithRefusalTest extends TestCase
     }
 
     /**
-     * The allowed set the refusal names at one depth, read off the carrier
-     * rather than out of its sentence.
-     *
-     * @param class-string<\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface> $optionsClass
+     * The allowed set the actual rule document refusal names at one depth.
      *
      * @return list<string>
      */
-    private static function refusedAt(string $ruleName, string $optionsClass, ?string $level): array
+    private static function refusedAt(RuleExecutionInterface $execution, string $ruleName, ?string $level): array
     {
         $written = $level === null
             ? ['zzNotAnOption' => 1]
             : [$level => ['zzNotAnOption' => 1]];
+        $schema = new DocumentSchema([new RulesSection($execution, 'rules')]);
+        $layer = new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
+            AuthoredNode::fromPlain(['rules' => [$ruleName => $written]]),
+        );
 
         try {
-            RuleOptionKeyRecognition::refuseUnknownKeys($written, $ruleName, $optionsClass);
+            DocumentComposer::compose($schema, [$layer]);
         } catch (ConfigurationRefusal $refusal) {
-            return $refusal->position()->accepted ?? [];
+            $position = $refusal->position()
+                ?? self::fail('The unknown rule option was refused without a position.');
+
+            $accepted = $position->accepted;
+            sort($accepted);
+
+            return $accepted;
         }
 
         self::fail(\sprintf('Rule "%s" accepted an option nobody declares at depth "%s".', $ruleName, $level ?? '-'));

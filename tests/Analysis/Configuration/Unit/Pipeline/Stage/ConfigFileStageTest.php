@@ -60,14 +60,13 @@ final class ConfigFileStageTest extends TestCase
     }
 
     #[Test]
-    public function itLoadsAndNormalizesTheAutoDetectedYamlDocument(): void
+    public function itHandsTheAutoDetectedDocumentToItsDeclaredOwners(): void
     {
         touch($this->directory . '/qmx.yaml');
         $this->loader->expects(self::once())->method('read')
             ->with($this->directory . '/qmx.yaml', 'qmx.yaml')
             ->willReturn(new LoadedDocument(
                 AuthoredNode::fromPlain(['cache' => ['enabled' => false], 'paths' => ['src']]),
-                ['cache' => ['enabled' => false], 'paths' => ['src']],
             ));
 
         $layer = (new ConfigFileStage($this->loader))
@@ -75,7 +74,10 @@ final class ConfigFileStageTest extends TestCase
 
         self::assertNotNull($layer);
         self::assertSame('qmx.yaml', $layer->source);
-        self::assertSame(['paths' => ['src'], 'cache.enabled' => false], $layer->values);
+        self::assertSame([], $layer->values);
+        $document = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose(new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...\Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::standaloneSections()]), $layer->authored);
+        self::assertSame(['src'], $document->get('paths')?->plain());
+        self::assertFalse($document->get('cache', 'enabled')?->plain());
         self::assertCount(1, $layer->authored);
         self::assertSame(ConfigurationSource::ConfigFile, $layer->authored[0]->origin->source());
         self::assertSame('qmx.yaml', $layer->authored[0]->origin->locator());
@@ -87,17 +89,26 @@ final class ConfigFileStageTest extends TestCase
      * written document first and answers in its own words.
      */
     #[Test]
-    public function itHandsTheFoldedValuesRefusalOnInsteadOfThrowingIt(): void
+    public function itHandsTheOriginalWrittenValueToTheEngineForJudgement(): void
     {
         touch($this->directory . '/qmx.yaml');
-        $refusal = ConfigurationRefusal::aboutConfigFileDocument($this->directory . '/qmx.yaml', 'folded values refused');
-        $this->loader->expects(self::once())->method('read')->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['rules' => 5]), [], $refusal));
-
-        $layer = (new ConfigFileStage($this->loader))
-            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
-
+        $this->loader->expects(self::once())->method('read')->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['rules' => 5])));
+        $layer = (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
         self::assertNotNull($layer);
-        self::assertSame([$refusal], $layer->deferredRefusals);
+        self::assertSame(['rules' => 5], $layer->authored[0]->root->plain());
+        $schema = new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...\Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::standaloneSections()]);
+        try {
+            \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose($schema, $layer->authored);
+            self::fail('The engine must refuse the original invalid rules value.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('"rules" in configuration file "qmx.yaml" must be a map, got int.', $refusal->summary());
+            self::assertSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertSame('qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertSame(['rules'], $refusal->position()?->segments);
+            self::assertSame('rules', $refusal->position()->written);
+        }
+        $lawful = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose($schema, [new \Qualimetrix\Analysis\Configuration\Document\AuthoredLayer($layer->authored[0]->origin, AuthoredNode::fromPlain(['rules' => []]))]);
+        self::assertNull($lawful->get('rules'));
     }
 
     #[Test]
@@ -107,7 +118,7 @@ final class ConfigFileStageTest extends TestCase
         touch($this->directory . '/custom.yaml');
         $this->loader->expects(self::once())->method('read')
             ->with($this->directory . '/custom.yaml', $this->directory . '/custom.yaml')
-            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json']), ['format' => 'json']));
+            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json'])));
 
         $layer = (new ConfigFileStage($this->loader))->apply(
             new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory), $this->directory . '/custom.yaml'),
@@ -115,7 +126,8 @@ final class ConfigFileStageTest extends TestCase
 
         self::assertNotNull($layer);
         self::assertSame('custom.yaml', $layer->source);
-        self::assertSame(['format' => 'json'], $layer->values);
+        self::assertSame(['format' => 'json'], $layer->authored[0]->root->plain());
+        self::assertSame([], $layer->values);
         self::assertSame($this->directory . '/custom.yaml', $layer->authored[0]->origin->locator());
     }
 
@@ -188,7 +200,7 @@ final class ConfigFileStageTest extends TestCase
         touch($this->directory . '/qmx.yaml');
         $this->loader->expects(self::once())->method('read')
             ->with($this->directory . '/qmx.yaml', 'qmx.yaml')
-            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain([]), []));
+            ->willReturn(new LoadedDocument(AuthoredNode::fromPlain([])));
 
         $layer = (new ConfigFileStage($this->loader))
             ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));

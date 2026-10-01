@@ -55,9 +55,10 @@ final class LevelActivityReadsBothDisablingSpellingsTest extends TestCase
     private static function levelsOfAGotoRuleConfiguredWith(array|false $configured): array
     {
         $registry = new RuleOptionsRegistry();
-        ResolvedOptionsFixture::file($registry, $configured === [] ? [] : [GotoRule::NAME => $configured]);
+        $fixture = new ResolvedOptionsFixture($registry);
+        $fixture->inputs($configured === [] ? [] : ['rules' => [GotoRule::NAME => $configured]]);
 
-        (new ResolvedOptionsFixture($registry))->create(GotoRule::NAME, GotoRule::getOptionsClass());
+        $fixture->create(GotoRule::NAME, GotoRule::getOptionsClass());
 
         return $registry->enablement()?->levelActivity()->toMap()[GotoRule::NAME] ?? [];
     }

@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Finding\Support;
 use Closure;
 use InvalidArgumentException;
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
@@ -21,7 +20,6 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
 use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
 use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
-use Qualimetrix\Analysis\Configuration\DocumentRoots;
 use Qualimetrix\Analysis\Configuration\Loader\CommandLineLayer;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
@@ -30,13 +28,10 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
-use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
-use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
@@ -50,9 +45,26 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 
 /** Builds test snapshots with the product builder and explicit producer metadata. */
-final readonly class ResolvedOptionsFixture
+final class ResolvedOptionsFixture
 {
-    public function __construct(private RuleOptionsRegistry $registry) {}
+    /** @var array<string, mixed> */
+    private array $fileValues = [];
+
+    /** @var array<string, array<string, mixed>> */
+    private array $cliOptions = [];
+
+    public function __construct(private readonly RuleOptionsRegistry $registry, private ?FindingConfiguration $authored = null) {}
+
+    /**
+     * @param array<string, mixed> $fileValues
+     * @param array<string, array<string, mixed>> $cliOptions
+     */
+    public function inputs(array $fileValues, array $cliOptions = []): void
+    {
+        $this->fileValues = $fileValues;
+        $this->cliOptions = $cliOptions;
+        $this->authored = null;
+    }
 
     /** @param class-string<RuleOptionsInterface> $optionsClass */
     public function create(string $producer, string $optionsClass): RuleOptionsInterface
@@ -63,10 +75,9 @@ final readonly class ResolvedOptionsFixture
         if (!is_a($optionsClass, RuleOptionsInterface::class, true)) {
             throw new InvalidArgumentException('An options class must implement RuleOptionsInterface.');
         }
-        $configuration = FindingConfiguration::none()
-            ->withRuleOptions($this->registry->configFileOptions())
-            ->withCliOverrides($this->registry->cliOptions());
-        $ready = self::ready($configuration, [new RuleMetadata($producer, $optionsClass, '', [], false)]);
+        $metadata = [new RuleMetadata($producer, $optionsClass, '', [], false)];
+        $configuration = $this->authored ?? self::authoredConfiguration($this->fileValues, $metadata, cliOptions: $this->cliOptions);
+        $ready = self::ready($configuration, $metadata);
         $this->registry->replace($ready);
         return $ready->resolvedOptions?->for($producer)
             ?? throw new LogicException('Fixture resolution did not build options.');
@@ -96,12 +107,19 @@ final readonly class ResolvedOptionsFixture
         ?array $only = null,
         ?array $disabled = null,
     ): FindingConfiguration {
-        $resolved = self::authoredConfiguration($configuration, $metadata, $cliPathWrites, $only, $disabled);
+        $resolved = $configuration;
+        if ($configuration->document->roots() === [] || $cliPathWrites !== null || $only !== null || $disabled !== null) {
+            if ($configuration->document->roots() !== []) {
+                throw new LogicException('Additional writes must be composed with the original authored layers.');
+            }
+            $resolved = self::authoredConfiguration([], $metadata, $cliPathWrites, $only, $disabled);
+        }
         $channels ??= self::universe($metadata);
         $resolver = new RuleEnablementResolver();
         $stated = $resolver->decide($resolved->document, $channels);
         $options = (new RuleOptionsBuild(self::execution($metadata)))->build($resolved, $stated);
         return $resolved->withChannelUniverse($channels)->withResolvedOptions($options)
+            ->withDiagnostics([...$configuration->diagnostics, ...$stated->diagnostics()])
             ->withEnablement($resolver->conclude($stated, $options));
     }
 
@@ -157,7 +175,7 @@ final readonly class ResolvedOptionsFixture
                 : ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $root->value() . '/qmx.yaml');
             $layers[] = new AuthoredLayer($origin, AuthoredNode::fromPlain($source['values']));
         }
-        $resolved = DocumentComposer::compose(new DocumentSchema(DocumentRoots::completing($sections)), $layers);
+        $resolved = DocumentComposer::compose(new DocumentSchema(self::sections($sections)), $layers);
         return new ConfigurationDocument($sources, $root, $resolved);
     }
 
@@ -196,37 +214,30 @@ final readonly class ResolvedOptionsFixture
     }
 
     /**
+     * @param array<string, mixed> $fileValues
+     * @param array<string, array<string, mixed>> $cliOptions
      * @param list<RuleMetadata> $metadata
      * @param list<CommandLinePathWrite>|null $cliPathWrites
      * @param list<string>|null $only
      * @param list<string>|null $disabled
      */
     public static function authoredConfiguration(
-        FindingConfiguration $configuration,
+        array $fileValues,
         array $metadata,
         ?array $cliPathWrites = null,
         ?array $only = null,
         ?array $disabled = null,
+        array $cliOptions = [],
     ): FindingConfiguration {
-        $hasDocument = $configuration->document->roots() !== [];
-        $documentRules = $hasDocument ? ($configuration->document->get('rules')?->plain() ?? []) : [];
-        if ($hasDocument && $configuration->ruleOptions->rules === $documentRules
-            && $configuration->cliOverrides->options === [] && $cliPathWrites === null
-            && $only === null && $disabled === null) {
-            return $configuration;
-        }
-        $cli = $configuration->cliOverrides->options;
         $sources = [];
         $layers = [];
-        $file = $configuration->ruleOptions->rules;
-        $fileValues = $file === [] ? [] : ['rules' => $file];
-        $only ??= $hasDocument ? ($configuration->document->get('only_rules')?->plain() ?? []) : [];
-        $disabled ??= $hasDocument ? ($configuration->document->get('disabled_rules')?->plain() ?? []) : [];
-        if ($only !== []) {
-            $fileValues['only_rules'] = $only;
-        }
-        if ($disabled !== []) {
-            $fileValues['disabled_rules'] = $disabled;
+        foreach (['only_rules' => $only, 'disabled_rules' => $disabled] as $root => $selection) {
+            if ($selection !== null) {
+                if (\array_key_exists($root, $fileValues)) {
+                    throw new LogicException('A fixture selection root must have one authored input.');
+                }
+                $fileValues[$root] = $selection;
+            }
         }
         if ($fileValues !== []) {
             $sources[] = ['source' => 'config', 'values' => $fileValues];
@@ -240,14 +251,9 @@ final readonly class ResolvedOptionsFixture
         if ($cliPathWrites === null) {
             foreach ($metadata as $producer) {
                 $surface = RuleOptionSurface::of($producer->optionsClass);
-                foreach ($cli[$producer->name] ?? [] as $option => $value) {
+                foreach ($cliOptions[$producer->name] ?? [] as $option => $value) {
                     RetiredSuppressionOptions::refuseRuleOption([(string) $option => $value], ConfigurationOrigin::of(ConfigurationSource::Resolved));
                     $address = $surface->locate((string) $option);
-                    if ($address === null) {
-                        $framework = FrameworkOptionKeys::declared();
-                        $spelling = $framework->spellingOf(ConfigKeySpelling::normalize((string) $option));
-                        $address = $spelling === null ? null : new RuleOptionAddress(null, $spelling);
-                    }
                     if ($address === null) {
                         throw new LogicException('Test CLI option has no declared address: ' . $option);
                     }
@@ -277,38 +283,23 @@ final readonly class ResolvedOptionsFixture
         foreach (['rules', 'only_rules', 'disabled_rules'] as $root) {
             $sections[] = new RulesSection($execution, $root);
         }
-        $resolved = DocumentComposer::compose(new DocumentSchema(DocumentRoots::completing($sections)), $layers);
+        $resolved = DocumentComposer::compose(new DocumentSchema(self::sections($sections)), $layers);
         $document = new ConfigurationDocument($sources, AbsolutePath::fromString('/project'), $resolved);
-        $typed = FindingConfiguration::fromDocument($document);
-        return new FindingConfiguration($configuration->ruleOptions, $configuration->cliOverrides, document: $typed->document);
+        return FindingConfiguration::fromDocument($document);
     }
 
-    /** @param array<string, mixed> $rules */
-    public static function file(RuleOptionsRegistry $registry, array $rules): void
+    /**
+     * @param list<DocumentSectionSchemaInterface> $overrides
+     *
+     * @return list<DocumentSectionSchemaInterface>
+     */
+    private static function sections(array $overrides): array
     {
-        self::configure($registry, FindingConfiguration::none()->withRuleOptions($rules)->withCliOverrides($registry->cliOptions()));
-    }
-
-    /** @param array<string, mixed> $options */
-    public static function cli(RuleOptionsRegistry $registry, string $producer, array $options): void
-    {
-        $cli = $registry->cliOptions();
-        $cli[$producer] = $options;
-        self::configure($registry, FindingConfiguration::none()->withRuleOptions($registry->configFileOptions())->withCliOverrides($cli));
-    }
-
-    public static function cliValue(RuleOptionsRegistry $registry, string $producer, string $key, mixed $value): void
-    {
-        $options = $registry->cliOptions()[$producer] ?? [];
-        $options[$key] = $value;
-        self::cli($registry, $producer, $options);
-    }
-
-    /** Installs raw input for a unit test that subsequently chooses its producer metadata. */
-    public static function configure(RuleOptionsRegistry $registry, FindingConfiguration $configuration): void
-    {
-        $registry->replace($configuration->withResolvedOptions(new ResolvedRuleOptions([], []))
-            ->withChannelUniverse(self::universe([]))->withEnablement(new RuleEnablement([], null)));
+        $sections = [];
+        foreach ([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...\Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::standaloneSections(), ...$overrides] as $section) {
+            $sections[$section->declaration()->key] = $section;
+        }
+        return array_values($sections);
     }
 
     /** @return array{metadata: RuleMetadata, create: Closure(): RuleInterface} */

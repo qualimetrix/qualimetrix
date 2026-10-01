@@ -1053,12 +1053,12 @@ final class CboRuleTest extends TestCase
     {
         $registry = new RuleOptionsRegistry();
         $factory = new ResolvedOptionsFixture($registry);
-        ResolvedOptionsFixture::file($registry, [
+        $factory->inputs(['rules' => [
             'coupling.cbo' => [
                 'scope' => 'application',
                 'class' => ['warning' => 5, 'error' => 10],
             ],
-        ]);
+        ]]);
 
         /** @var CboOptions $options */
         $options = $factory->create('coupling.cbo', CboOptions::class);

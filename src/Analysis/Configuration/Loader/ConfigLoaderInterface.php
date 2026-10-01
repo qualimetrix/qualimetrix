@@ -9,7 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 interface ConfigLoaderInterface
 {
     /**
-     * Read the physical document for the engine beside its folded values;
+     * Read the physical document as written for the declared schema;
      * sourceName identifies that document in refusals.
      *
      * @throws ConfigurationRefusal If the document cannot be read as a whole

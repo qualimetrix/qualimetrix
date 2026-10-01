@@ -91,7 +91,6 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild;
@@ -370,9 +369,7 @@ final class ContainerFactoryTest extends TestCase
 
         $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
         self::assertInstanceOf(RuleConfigurationInterface::class, $ruleConfiguration);
-        $findingInput = FindingConfiguration::none()
-            ->withCliOverrides([CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
-        $finding = ResolvedOptionsFixture::authoredConfiguration($findingInput, $ruleExecution->allRules(), only: [CodeDuplicationRule::NAME]);
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), only: [CodeDuplicationRule::NAME], cliOptions: [CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
         $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($container->get(CheckCommand::class));
         $channelFactory = (new ReflectionProperty(RuleInputValidator::class, 'ruleChannelSnapshotFactory'))->getValue($validator);
         self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $channelFactory);
@@ -415,7 +412,7 @@ PHP;
         $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
 
-        $finding = ResolvedOptionsFixture::authoredConfiguration($findingInput, $ruleExecution->allRules(), disabled: [CodeDuplicationRule::NAME]);
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), disabled: [CodeDuplicationRule::NAME], cliOptions: [CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
         $stated = $resolver->decide($finding->document, $channels);
         $options = $builder->build($finding, $stated);
         $ruleConfiguration->replace($finding->withChannelUniverse($channels)->withResolvedOptions($options)
@@ -427,7 +424,7 @@ PHP;
 
         self::assertSame([], $resultProvider->all());
 
-        $finding = ResolvedOptionsFixture::authoredConfiguration($findingInput, $ruleExecution->allRules(), only: [CodeDuplicationRule::NAME]);
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), only: [CodeDuplicationRule::NAME], cliOptions: [CodeDuplicationRule::NAME => ['min-lines' => 2, 'min-tokens' => 10]]);
         $stated = $resolver->decide($finding->document, $channels);
         $options = $builder->build($finding, $stated);
         $ruleConfiguration->replace($finding->withChannelUniverse($channels)->withResolvedOptions($options)
@@ -654,7 +651,7 @@ PHP;
 
         self::assertArrayHasKey(
             'health.cohesion',
-            array_merge(...array_values($document->ruleContributions())),
+            $document->resolved()->get('rules')?->plain() ?? [],
         );
 
         $invented = $this->tempDir . '/invented-producer.yaml';
@@ -692,9 +689,7 @@ PHP;
             (new ReflectionProperty($ruleExecution, 'ruleOptionsRegistry'))->getValue($ruleExecution),
         );
 
-        $finding = FindingConfiguration::none()
-            ->withCliOverrides(['complexity.ccn' => ['callable.warning' => 20, 'callable.error' => 40]]);
-        $finding = ResolvedOptionsFixture::authoredConfiguration($finding, $ruleExecution->allRules());
+        $finding = ResolvedOptionsFixture::authoredConfiguration([], $ruleExecution->allRules(), cliOptions: ['complexity.ccn' => ['callable.warning' => 20, 'callable.error' => 40]]);
         $validator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($container->get(CheckCommand::class));
         $channelFactory = (new ReflectionProperty(RuleInputValidator::class, 'ruleChannelSnapshotFactory'))->getValue($validator);
         self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $channelFactory);

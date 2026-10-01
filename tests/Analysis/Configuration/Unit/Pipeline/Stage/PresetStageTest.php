@@ -50,12 +50,10 @@ final class PresetStageTest extends TestCase
     {
         $loaded = [
             new LoadedDocument(
-                AuthoredNode::fromPlain(['format' => 'text']),
-                ['format' => 'text', 'rules' => ['size.loc' => ['warning' => 1000]]],
+                AuthoredNode::fromPlain(['format' => 'text', 'rules' => ['size.loc' => ['warning' => 1000]]]),
             ),
             new LoadedDocument(
-                AuthoredNode::fromPlain(['fail-on' => 'error']),
-                ['failOn' => 'error', 'rules' => ['size.loc' => ['error' => 2000]]],
+                AuthoredNode::fromPlain(['fail-on' => 'error', 'rules' => ['size.loc' => ['error' => 2000]]]),
             ),
         ];
         $paths = [
@@ -81,14 +79,41 @@ final class PresetStageTest extends TestCase
         self::assertSame([], $layer->values);
         self::assertSame([
             ['format' => 'text', 'rules' => ['size.loc' => ['warning' => 1000]]],
-            ['rules' => ['size.loc' => ['error' => 2000]], 'fail_on' => 'error'],
-        ], $layer->documents);
+            ['fail-on' => 'error', 'rules' => ['size.loc' => ['error' => 2000]]],
+        ], array_map(static fn(AuthoredLayer $preset): mixed => $preset->root->plain(), $layer->authored));
         self::assertSame(['strict', 'ci'], array_map(
             static fn(AuthoredLayer $preset): ?string => $preset->origin->locator(),
             $layer->authored,
         ), 'Each preset is a layer of its own, named.');
         self::assertSame(ConfigurationSource::Preset, $layer->authored[1]->origin->source());
-        self::assertSame(['fail-on' => 'error'], $layer->authored[1]->root->plain(), 'A preset reaches the engine as written.');
+        self::assertSame(['fail-on' => 'error', 'rules' => ['size.loc' => ['error' => 2000]]], $layer->authored[1]->root->plain(), 'A preset reaches the engine as written.');
+        self::assertCount(2, $layer->authored);
+        $schema = new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([...\Qualimetrix\Analysis\Configuration\ConfigurationRoot::cases(), ...\Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument::standaloneSections()]);
+        try {
+            \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose($schema, $layer->authored);
+            self::fail('The actual rules owner must refuse the original unknown producer.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Rule option owner "size.loc" does not match any registered producer rule.', $refusal->summary());
+            self::assertSame(ConfigurationSource::Preset, $refusal->sources()[0]->source());
+            self::assertSame('strict', $refusal->sources()[0]->locator());
+            self::assertSame(['rules', 'size.loc'], $refusal->position()?->segments);
+            self::assertSame('size.loc', $refusal->position()->written);
+        }
+        $document = \Qualimetrix\Analysis\Configuration\Document\DocumentComposer::compose($schema, [
+            new AuthoredLayer($layer->authored[0]->origin, AuthoredNode::fromPlain(['format' => 'text', 'rules' => ['size.method-count' => ['warning' => 1000]]])),
+            new AuthoredLayer($layer->authored[1]->origin, AuthoredNode::fromPlain(['fail-on' => 'error', 'rules' => ['size.method-count' => ['error' => 2000]]])),
+        ]);
+        $warning = $document->get('rules', 'size.method-count', 'warning');
+        $error = $document->get('rules', 'size.method-count', 'error');
+        self::assertNotNull($warning);
+        self::assertNotNull($error);
+        self::assertSame(1000, $warning->plain());
+        self::assertSame(2000, $error->plain());
+        self::assertSame(['strict', 'ci'], [$warning->contributors()[0]->origin->locator(), $error->contributors()[0]->origin->locator()]);
+        self::assertSame([0, 1], [$warning->contributors()[0]->layerIndex, $error->contributors()[0]->layerIndex]);
+        self::assertSame('text', $document->get('format')?->plain());
+        self::assertSame('error', $document->get('fail_on')?->plain());
+
     }
 
     /**
@@ -113,7 +138,7 @@ final class PresetStageTest extends TestCase
     {
         $path = (new PresetResolver())->resolve('strict', '/project');
         $this->loader->expects(self::once())->method('read')->with($path, $path)->willReturn(
-            new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json']), ['format' => 'json']),
+            new LoadedDocument(AuthoredNode::fromPlain(['format' => 'json'])),
         );
 
         $layer = $this->stage()->apply(
