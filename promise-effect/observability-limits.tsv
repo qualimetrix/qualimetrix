@@ -67,8 +67,8 @@
 # 7331; in argv they are six literal characters. `int` and `string-number`
 # therefore have ONE spelling on a CLI door, which is what the registry says in
 # its own words ("the CLI door carries scalar text only") by promising both
-# names of one write. `list` and `map` have no CLI spelling at all for the same
-# reason: the brackets arrive as characters.
+# names of one write. Native rule-option and alias list effects are measured
+# without a blanket limit. Root flag containers retain their own limits below.
 #
 # `null` is deliberately NOT here. `--flag=` with nothing after it is a write a
 # user makes and the registry answers for it per door, so the empty value is a
@@ -97,8 +97,6 @@ door-cannot-express	cli-root	workers	string-number	a CLI door carries text: `733
 door-cannot-express	cli-root	include_generated	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
 door-cannot-express	cli-root	memory_limit	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
 door-cannot-express	cli-root	exclude_health	string-number	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters
-door-cannot-express	rule-opt	*	list	a CLI door has no list syntax: the brackets arrive as characters
-door-cannot-express	cli-alias	*	list	a CLI door has no list syntax: the brackets arrive as characters
 stand-writes-one-where-the-door-repeats	cli-root	paths	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 stand-writes-one-where-the-door-repeats	cli-root	exclude	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
 stand-writes-one-where-the-door-repeats	cli-root	disabled_rules	list	this flag is array-valued: the door writes a list by repeating it, and the stand writes one flag
