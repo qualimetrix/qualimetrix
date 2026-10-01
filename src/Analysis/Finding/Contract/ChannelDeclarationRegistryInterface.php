@@ -39,10 +39,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * The interface lives beside {@see ChannelDeclaration}, {@see ChannelShape} and
  * {@see FindingChannel} — the types it traffics in — rather than beside its
  * implementation in `Infrastructure\Rule`. Any consumer that may not depend on
- * `Infrastructure` still needs this lookup; mirrors
- * {@see \Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface}
- * (contract) / {@see \Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter}
- * (adapter) — the same split for the same reason.
+ * `Infrastructure` still needs this lookup.
  */
 interface ChannelDeclarationRegistryInterface
 {

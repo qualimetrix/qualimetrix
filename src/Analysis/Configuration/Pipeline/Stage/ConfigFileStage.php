@@ -8,7 +8,6 @@ use DirectoryIterator;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 
@@ -19,7 +18,6 @@ use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
 use UnexpectedValueException;
 
 /**
@@ -36,7 +34,6 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
-        private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
     ) {}
 
     public function priority(): int
@@ -59,10 +56,6 @@ final class ConfigFileStage implements ConfigurationStageInterface
 
         $sourceName = $request->configFilePath ?? basename($configPath);
         $loaded = $this->loader->read($configPath, $sourceName);
-
-        if ($loaded->deferredRefusal === null) {
-            $this->validateRuleNames($loaded->values, $sourceName);
-        }
 
         return new ConfigurationLayer(
             basename($configPath),
@@ -166,15 +159,4 @@ final class ConfigFileStage implements ConfigurationStageInterface
         return ConfigDataNormalizer::normalize($data);
     }
 
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function validateRuleNames(array $data, string $sourceName): void
-    {
-        if ($this->knownRuleNamesProvider === null) {
-            return;
-        }
-
-        RuleNameValidator::validateRuleNames($data, basename($sourceName), $this->knownRuleNamesProvider, $sourceName);
-    }
 }

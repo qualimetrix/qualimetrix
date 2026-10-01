@@ -5,19 +5,29 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Selection;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
 
 /** Decisions from authored statements, before options decide level activity. */
 final readonly class StatedEnablement
 {
-    /** @param list<EnablementDecision> $decisions */
-    public function __construct(private array $decisions, private ?SelectionFilter $filter) {}
+    /**
+     * @param list<EnablementDecision> $decisions
+     * @param list<ConfigurationDiagnostic> $diagnostics
+     */
+    public function __construct(private array $decisions, private ?SelectionFilter $filter, private array $diagnostics = []) {}
 
     /** @return list<EnablementDecision> */
     public function decisions(): array
     {
         return $this->decisions;
+    }
+
+    /** @return list<ConfigurationDiagnostic> */
+    public function diagnostics(): array
+    {
+        return $this->diagnostics;
     }
 
     public function isEnabled(string $producer): bool

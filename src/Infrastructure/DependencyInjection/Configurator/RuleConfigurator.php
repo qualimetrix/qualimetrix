@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Finding\ChannelPresentationView;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
@@ -16,7 +15,6 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\ComputedMetricChannelPresentation;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
-use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -43,15 +41,6 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
         $container->setAlias(RuleRegistryInterface::class, RuleRegistry::class)
             ->setPublic(true);
-
-        // The finished list of producer names is injected by
-        // ChannelDeclarationCompilerPass, which is the one place the classless
-        // producers are known as well as the rule classes.
-        $container->register(KnownRuleNamesAdapter::class)
-            ->setArguments(['$ruleNames' => []])
-            ->setPublic(false);
-
-        $container->setAlias(KnownRuleNamesProviderInterface::class, KnownRuleNamesAdapter::class);
 
         // Filled in by ConfigurationValidatorCompilerPass, the same way
         // RuleRegistry is filled in by RuleRegistryCompilerPass.

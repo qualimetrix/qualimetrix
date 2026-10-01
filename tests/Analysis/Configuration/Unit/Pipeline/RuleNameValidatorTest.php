@@ -7,20 +7,33 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
+use Qualimetrix\Analysis\Finding\Selection\RuleNameJudge;
 
-#[CoversClass(RuleNameValidator::class)]
+#[CoversClass(RuleNameJudge::class)]
 final class RuleNameValidatorTest extends TestCase
 {
     #[Test]
     public function itAcceptsARuleNameThatExactlyMatchesAKnownRule(): void
     {
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['complexity.ccn' => ['callable' => ['warning' => 10]]]],
             'test.yaml',
-            $this->createProvider(['complexity.ccn']),
+            $this->knownNames(['complexity.ccn']),
             '/path/to/test.yaml',
         );
 
@@ -35,10 +48,10 @@ final class RuleNameValidatorTest extends TestCase
         // key. Passing validation was the bug.
         $this->expectException(ConfigurationRefusal::class);
 
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['complexity' => ['cyclomatic' => ['callable' => ['warning' => 10]]]]],
             'test.yaml',
-            $this->createProvider(['complexity.ccn', 'complexity.cognitive']),
+            $this->knownNames(['complexity.ccn', 'complexity.cognitive']),
             '/path/to/test.yaml',
         );
     }
@@ -49,10 +62,10 @@ final class RuleNameValidatorTest extends TestCase
         // A `rules:` key owns an options object; a channel does not have one.
         $this->expectException(ConfigurationRefusal::class);
 
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['complexity.cyclomatic.callable' => ['warning' => 10]]],
             'test.yaml',
-            $this->createProvider(['complexity.ccn']),
+            $this->knownNames(['complexity.ccn']),
             '/path/to/test.yaml',
         );
     }
@@ -62,10 +75,10 @@ final class RuleNameValidatorTest extends TestCase
     {
         $this->expectException(ConfigurationRefusal::class);
 
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['complexity.*' => ['warning' => 10]]],
             'test.yaml',
-            $this->createProvider(['complexity.ccn']),
+            $this->knownNames(['complexity.ccn']),
             '/path/to/test.yaml',
         );
     }
@@ -74,12 +87,12 @@ final class RuleNameValidatorTest extends TestCase
     public function itRejectsAnUnknownRuleName(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/Unknown rule "nonexistent\.rule"/');
+        self::expectExceptionMessageMatches('/Rule option owner "nonexistent\.rule"/');
 
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['nonexistent.rule' => ['warning' => 10]]],
             'preset:strict',
-            $this->createProvider(['complexity.ccn']),
+            $this->knownNames(['complexity.ccn']),
             '/path/to/preset.yaml',
         );
     }
@@ -87,10 +100,10 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itAcceptsAnEmptyRulesSection(): void
     {
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => []],
             'test.yaml',
-            $this->createProvider(['complexity.ccn']),
+            $this->knownNames(['complexity.ccn']),
             '/path/to/test.yaml',
         );
 
@@ -100,10 +113,10 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itAcceptsConfigWithoutARulesSection(): void
     {
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['format' => 'json'],
             'test.yaml',
-            $this->createProvider(['complexity.ccn']),
+            $this->knownNames(['complexity.ccn']),
             '/path/to/test.yaml',
         );
 
@@ -111,47 +124,48 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function itReportsAllUnknownNamesWhenMultipleRulesAreInvalid(): void
+    public function itRefusesTheFirstUnknownOwnerBeforeInspectingTheNext(): void
     {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/nonexistent\.one/');
-        self::expectExceptionMessageMatches('/nonexistent\.two/');
-
-        RuleNameValidator::validateRuleNames(
-            ['rules' => [
-                'nonexistent.one' => ['warning' => 5],
-                'nonexistent.two' => ['warning' => 10],
-            ]],
-            'test.yaml',
-            $this->createProvider(['complexity.ccn']),
-            '/path/to/test.yaml',
-        );
+        try {
+            $this->compose(
+                ['rules' => ['nonexistent.one' => ['warning' => 5], 'nonexistent.two' => ['warning' => 10]]],
+                'test.yaml',
+                ['complexity.ccn'],
+                '/path/to/test.yaml',
+            );
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Rule option owner "nonexistent.one" does not match any registered producer rule.', $refusal->summary());
+            self::assertSame('/path/to/test.yaml', $refusal->sources()[0]->locator());
+            self::assertNotNull($refusal->position());
+            self::assertSame(['rules', 'nonexistent.one'], $refusal->position()->segments);
+        }
     }
 
     #[Test]
     public function itNamesTheSourceFileInTheExceptionForAnUnknownRule(): void
     {
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/Unknown rule "bogus\.rule" in qmx\.yaml/');
-
-        RuleNameValidator::validateRuleNames(
-            ['rules' => ['bogus.rule' => ['warning' => 5]]],
-            'qmx.yaml',
-            $this->createProvider(['complexity.ccn', 'cohesion.lcom4']),
-            '/project/qmx.yaml',
-        );
+        try {
+            $this->compose(['rules' => ['bogus.rule' => ['warning' => 5]]], 'qmx.yaml', ['complexity.ccn', 'cohesion.lcom4'], '/project/qmx.yaml');
+            self::fail('Expected ConfigurationRefusal');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame('Rule option owner "bogus.rule" does not match any registered producer rule.', $refusal->summary());
+            self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
+            self::assertNotNull($refusal->position());
+            self::assertSame(['rules', 'bogus.rule'], $refusal->position()->segments);
+        }
     }
 
     #[Test]
     public function itSuggestsACloseMatchForAMisspelledRuleName(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/Unknown rule "complexty".*Did you mean "complexity"\?/');
+        self::expectExceptionMessageMatches('/Rule option owner "complexty".*Did you mean "complexity"\?/');
 
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['complexty' => ['cyclomatic' => ['warning' => 10]]]],
             'qmx.yaml',
-            $this->createProvider(['complexity', 'cohesion', 'coupling']),
+            $this->knownNames(['complexity', 'cohesion', 'coupling']),
             '/project/qmx.yaml',
         );
     }
@@ -160,15 +174,15 @@ final class RuleNameValidatorTest extends TestCase
     public function itOmitsASuggestionWhenNoKnownRuleIsClose(): void
     {
         try {
-            RuleNameValidator::validateRuleNames(
+            $this->compose(
                 ['rules' => ['zzzzz' => ['warning' => 10]]],
                 'qmx.yaml',
-                $this->createProvider(['complexity.ccn', 'cohesion.lcom4']),
+                $this->knownNames(['complexity.ccn', 'cohesion.lcom4']),
                 '/project/qmx.yaml',
             );
             self::fail('Expected ConfigurationRefusal');
         } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString('Unknown rule "zzzzz"', $e->getMessage());
+            self::assertStringContainsString('Rule option owner "zzzzz"', $e->getMessage());
             self::assertStringNotContainsString('Did you mean', $e->getMessage());
         }
     }
@@ -183,12 +197,12 @@ final class RuleNameValidatorTest extends TestCase
     public function itSuggestsTheRenamedRuleByItsSharedLeafNotByRawDistance(): void
     {
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/Unknown rule "design\.lcom".*Did you mean "cohesion\.lcom"\?/');
+        self::expectExceptionMessageMatches('/Rule option owner "design\.lcom".*Did you mean "cohesion\.lcom"\?/');
 
-        RuleNameValidator::validateRuleNames(
+        $this->compose(
             ['rules' => ['design.lcom' => ['warning' => 10]]],
             'qmx.yaml',
-            $this->createProvider(['design.noc', 'cohesion.lcom']),
+            $this->knownNames(['design.noc', 'cohesion.lcom']),
             '/project/qmx.yaml',
         );
     }
@@ -196,31 +210,43 @@ final class RuleNameValidatorTest extends TestCase
     #[Test]
     public function itReportsEachUnknownRuleNameSeparately(): void
     {
-        try {
-            RuleNameValidator::validateRuleNames(
-                ['rules' => [
-                    'bogus.one' => ['warning' => 5],
-                    'bogus.two' => ['warning' => 10],
-                ]],
-                'qmx.yaml',
-                $this->createProvider(['complexity.ccn']),
-                '/project/qmx.yaml',
-            );
-            self::fail('Expected ConfigurationRefusal');
-        } catch (ConfigurationRefusal $e) {
-            self::assertStringContainsString('Unknown rule "bogus.one"', $e->getMessage());
-            self::assertStringContainsString('Unknown rule "bogus.two"', $e->getMessage());
+        foreach (['bogus.one' => 5, 'bogus.two' => 10] as $name => $warning) {
+            try {
+                $this->compose(['rules' => [$name => ['warning' => $warning]]], 'qmx.yaml', ['complexity.ccn'], '/project/qmx.yaml');
+                self::fail('Expected ConfigurationRefusal');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertSame(\sprintf('Rule option owner "%s" does not match any registered producer rule.', $name), $refusal->summary());
+                self::assertNotNull($refusal->position());
+                self::assertSame(['rules', $name], $refusal->position()->segments);
+            }
         }
     }
 
     /**
      * @param list<string> $names
+     *
+     * @return list<string>
      */
-    private function createProvider(array $names): KnownRuleNamesProviderInterface
+    private function knownNames(array $names): array
     {
-        $provider = self::createStub(KnownRuleNamesProviderInterface::class);
-        $provider->method('getKnownRuleNames')->willReturn($names);
+        return $names;
+    }
 
-        return $provider;
+    /** @param array<string, mixed> $data
+     * @param list<string> $names */
+    private function compose(array $data, string $source, array $names, string $path): void
+    {
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('allRules')->willReturn(array_map(static fn(string $name): RuleMetadata => new RuleMetadata($name, ComplexityOptions::class, '', [], false), $names));
+        $format = new class implements DocumentSectionSchemaInterface {
+            public function declaration(): SectionDeclaration
+            {
+                return new SectionDeclaration('format', NodeSchema::scalar(ScalarForm::String));
+            }
+        };
+        DocumentComposer::compose(new DocumentSchema([new RulesSection($execution, 'rules'), $format]), [new AuthoredLayer(
+            ConfigurationOrigin::of(str_starts_with($source, 'preset:') ? ConfigurationSource::Preset : ConfigurationSource::ConfigFile, $path),
+            AuthoredNode::fromPlain($data),
+        )]);
     }
 }

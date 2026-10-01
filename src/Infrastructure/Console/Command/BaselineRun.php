@@ -65,7 +65,7 @@ final readonly class BaselineRun implements BaselineRunInterface
             $input,
             $output,
         );
-        $this->configurationInputAdapter->writeDiagnostics($document, $output);
+        $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics);
         (new AnalysisInputPathValidator())->validate($configuration->paths, $document);
 
         $run = $this->measuredFindingSet->run(

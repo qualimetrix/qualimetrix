@@ -64,7 +64,7 @@ final readonly class AnalysisPreflight
             $output,
             $profile,
         );
-        $this->configurationInputAdapter->writeDiagnostics($document, $output);
+        $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics ?? []);
 
         return new PreparedAnalysisInput(
             $runConfiguration,

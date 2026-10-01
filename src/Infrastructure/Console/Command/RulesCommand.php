@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
@@ -18,6 +19,7 @@ use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -82,7 +84,7 @@ final class RulesCommand extends Command
             );
         }
 
-        $this->configurationInputAdapter->writeDiagnostics($document, $output);
+        $this->configurationInputAdapter->writeDiagnostics($document, $output, $selection->diagnostics());
         $this->presenter->present($output, $this->rulesIn($groupFilter, $channels));
         if ($definitions !== []) {
             $output->writeln('');
@@ -97,22 +99,39 @@ final class RulesCommand extends Command
             $output->writeln('<comment>Only selected by configuration:</comment> ' . implode(', ', $only));
         }
         $disabled = [];
+        $sources = [];
+        if ($filter !== null) {
+            $statement = ($filter->provenance->path === null ? ($filter->provenance->origin->locator() ?? '--only-rule') : $filter->provenance->displayPath()) . ': [' . implode(', ', $filter->selectors) . ']';
+            $sources[serialize([$statement, $filter->provenance])] = self::selectionSource($statement, $filter->provenance);
+        }
         foreach ($selection->decisions() as $decision) {
             if ($decision->on) {
                 continue;
             }
             if ($decision->decisiveStatements === [] && $decision->statement !== null) {
                 $disabled[$decision->statement] = true;
+                if ($decision->provenance !== null) {
+                    $sources[serialize([$decision->statement, $decision->provenance])] = self::selectionSource($decision->statement, $decision->provenance);
+                }
             }
             foreach ($decision->decisiveStatements as $statement) {
                 $disabled[$statement['text']] = true;
+                $sources[serialize([$statement['text'], $statement['provenance']])] = self::selectionSource($statement['text'], $statement['provenance']);
             }
         }
         if ($disabled !== []) {
             $output->writeln('<comment>Disabled by configuration:</comment> ' . implode(', ', array_keys($disabled)));
         }
+        foreach ($sources as $source) {
+            $output->writeln(OutputFormatter::escape($source));
+        }
 
         return self::SUCCESS;
+    }
+
+    private static function selectionSource(string $statement, Provenance $writer): string
+    {
+        return \sprintf('Selection source: %s (%s; layer %d)', $statement, $writer->origin->describe(), $writer->layerIndex);
     }
 
     /**

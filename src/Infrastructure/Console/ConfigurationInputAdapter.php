@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
@@ -44,10 +45,10 @@ final class ConfigurationInputAdapter
         );
     }
 
-    /** The document's warnings about accepted configuration, one `Warning:` line each on the error stream. */
-    public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output): void
+    /** @param list<ConfigurationDiagnostic> $additional */
+    public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output, array $additional = []): void
     {
-        foreach ($document->diagnostics() as $diagnostic) {
+        foreach ([...$document->diagnostics(), ...$additional] as $diagnostic) {
             $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', OutputFormatter::escape($diagnostic->message)));
         }
     }
@@ -56,12 +57,14 @@ final class ConfigurationInputAdapter
      * The same warnings as a structured report publishes them, each with every
      * layer it is about.
      *
+     * @param list<ConfigurationDiagnostic> $additional
+     *
      * @return list<array{message: string, source: list<array<string, mixed>>}>
      */
-    public function publishedDiagnostics(ConfigurationDocument $document): array
+    public function publishedDiagnostics(ConfigurationDocument $document, array $additional = []): array
     {
         $published = [];
-        foreach ($document->diagnostics() as $diagnostic) {
+        foreach ([...$document->diagnostics(), ...$additional] as $diagnostic) {
             $published[] = [
                 'message' => $diagnostic->message,
                 'source' => array_map(

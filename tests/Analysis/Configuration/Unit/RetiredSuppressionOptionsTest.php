@@ -11,21 +11,11 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
-/**
- * The three refusal doors of {@see RetiredSuppressionOptions} as carrier
- * sites, direct rather than through a caller: `refuseInRules()` and
- * `refuseRootKey()` are already exercised end-to-end through
- * {@see \Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader}
- * (`YamlConfigLoaderTest::itRefusesARetiredRootOptionInTheSpellingItsAuthorUsed()`
- * and `itRefusesARetiredRuleOptionInTheSpellingItsAuthorUsed()`), but nothing
- * exercises `refuseRuleOption()`'s own default origin — the `--rule-opt` door
- * — because its only production caller,
- * `RuleOptionsParser::parseRuleOption()`, sits outside this package's file
- * set. `RuleOptionsFactory` (this package's own caller) always passes an
- * explicit {@see ConfigurationSource::Resolved} origin, so the default branch
- * needs a test that calls the door directly.
- */
 #[CoversClass(RetiredSuppressionOptions::class)]
 final class RetiredSuppressionOptionsTest extends TestCase
 {
@@ -93,11 +83,7 @@ final class RetiredSuppressionOptionsTest extends TestCase
     public function itRefusesARetiredKeyInsideARulesBlockWithTheConfigFileOrigin(): void
     {
         try {
-            RetiredSuppressionOptions::refuseInRules(
-                ['rules' => [['exclude_namespaces' => ['App\\Tests']]]],
-                'rules',
-                '/tmp/qmx.yaml',
-            );
+            ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => ['complexity.ccn' => ['exclude_namespaces' => ['App\\Tests']]]]]], AbsolutePath::fromString('/tmp'), [new RuleMetadata('complexity.ccn', ComplexityOptions::class, '', [], false)]);
             self::fail('The retired rule-option key was accepted.');
         } catch (ConfigurationRefusal $e) {
             self::assertCount(1, $e->sources());
@@ -105,7 +91,7 @@ final class RetiredSuppressionOptionsTest extends TestCase
             self::assertSame('/tmp/qmx.yaml', $e->sources()[0]->locator());
             self::assertNotNull($e->position());
             self::assertSame('exclude_namespaces', $e->position()->written);
-            self::assertSame(['rules', 'exclude_namespaces'], $e->position()->segments);
+            self::assertSame(['rules', 'complexity.ccn', 'exclude_namespaces'], $e->position()->segments);
         }
     }
 }

@@ -10,18 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
+use Qualimetrix\Analysis\Finding\Selection\RuleNameJudge;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
-/**
- * The file and preset stages validate rule names only when a provider of
- * known names is wired in, and the argument is optional: a missing alias
- * would switch the check off without a word, and every unit test would stay
- * green because each passes its own stub. Only the production container
- * shows the wiring, so the refusal is asked of it through both doors.
- */
-#[CoversClass(RuleNameValidator::class)]
+#[CoversClass(RuleNameJudge::class)]
 final class ContainerRuleNameValidationTest extends TestCase
 {
     private string $directory;
@@ -46,7 +39,7 @@ final class ContainerRuleNameValidationTest extends TestCase
         file_put_contents($this->directory . '/qmx.yaml', "rules:\n  coupling.classrank:\n    enabled: false\n");
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Unknown rule "coupling.classrank"');
+        $this->expectExceptionMessage('Rule option owner "coupling.classrank" does not match any registered producer rule. Did you mean "coupling.class-rank"?');
 
         $this->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory), null, []));
     }
@@ -57,7 +50,7 @@ final class ContainerRuleNameValidationTest extends TestCase
         file_put_contents($this->directory . '/team.yaml', "rules:\n  coupling.classrank:\n    enabled: false\n");
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Unknown rule "coupling.classrank"');
+        $this->expectExceptionMessage('Rule option owner "coupling.classrank" does not match any registered producer rule. Did you mean "coupling.class-rank"?');
 
         $this->resolve(new ConfigurationResolutionRequest(
             AbsolutePath::fromString($this->directory),

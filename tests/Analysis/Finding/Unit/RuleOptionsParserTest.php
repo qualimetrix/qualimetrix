@@ -35,7 +35,7 @@ final class RuleOptionsParserTest extends TestCase
             'text' => '["a,b"]',
         ], $this->parser->parseAuthoredRuleOption('complexity.ccn:callable.warning=["a,b"]'));
         self::assertSame([
-            'rule' => 'complexity.ccn',
+            'rule' => 'COMPLEXITY.CCN',
             'option' => 'callable.max_warning',
             'text' => '1e0',
         ], $this->parser->parseAuthoredRuleOption('COMPLEXITY.CCN:callable.max_warning=1e0'));

@@ -11,9 +11,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Selection\RuleNameJudge;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
-use Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 
 /**
@@ -26,7 +26,7 @@ use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
  * reports at this level" and "this rule's channel reports at this level" cannot
  * be told apart.
  */
-#[CoversClass(ChannelExclusionKeyValidator::class)]
+#[CoversClass(RuleNameJudge::class)]
 final class ChannelExclusionKeyValidatorTest extends TestCase
 {
     /**
@@ -43,14 +43,14 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
             . ' and it does not report at level "namespace"',
         );
 
-        self::validator()->assertAddressesAProducedChannel('coupling.class-rank', 'coupling.*:namespace');
+        self::assertAddressesAProducedChannel('coupling.class-rank', 'coupling.*:namespace');
     }
 
     /** The same wildcard key under the rule that does report at that level stays accepted. */
     #[Test]
     public function itAcceptsAWildcardKeyWhoseOwnRuleReportsAtTheLevel(): void
     {
-        self::validator()->assertAddressesAProducedChannel('coupling.cbo', 'coupling.*:namespace');
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.*:namespace');
 
         $this->expectNotToPerformAssertions();
     }
@@ -69,14 +69,14 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
             . ' is "namespace". Drop the level, or write "coupling.cbo:namespace".',
         );
 
-        self::validator()->assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo:class');
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo:class');
     }
 
     #[Test]
     public function itAcceptsTheNamespaceLevelAndTheLevelFreeSpelling(): void
     {
-        self::validator()->assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo:namespace');
-        self::validator()->assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo');
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo:namespace');
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo');
 
         $this->expectNotToPerformAssertions();
     }
@@ -92,7 +92,7 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('spelling of a channel is gone');
 
-        self::validator()->assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo#coupling.cbo:class');
+        self::assertAddressesAProducedChannel('coupling.cbo', 'coupling.cbo#coupling.cbo:class');
     }
 
     /** A level-free key naming another rule's channel keeps naming this rule's channels back. */
@@ -100,14 +100,18 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
     public function itRefusesALevelFreeKeyNamingAnotherRulesChannel(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('none of them produced by "coupling.class-rank"');
+        $this->expectExceptionMessage('addresses none of the channels of "coupling.class-rank"');
 
-        self::validator()->assertAddressesAProducedChannel('coupling.class-rank', 'coupling.cbo');
+        self::assertAddressesAProducedChannel('coupling.class-rank', 'coupling.cbo');
     }
 
-    private static function validator(): ChannelExclusionKeyValidator
+    private static function assertAddressesAProducedChannel(string $producer, string $key): void
     {
-        return new ChannelExclusionKeyValidator(self::universe());
+        $channels = self::universe();
+        $problem = (new RuleNameJudge($channels->ruleNames()))->namespaceChannel($producer, $key, $channels);
+        if ($problem !== null) {
+            throw ConfigurationRefusal::aboutResolvedInput($problem->summary);
+        }
     }
 
     private static function universe(): ChannelUniverseInterface

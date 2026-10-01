@@ -620,7 +620,7 @@ final class RuleExecutionTest extends TestCase
             $this->createExecution([$rule1, $rule2], $provider);
             self::fail('A bare prefix is not a group selector.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('Rule selector "complexity" does not match any registered producer or channel.', $refusal->summary());
+            self::assertSame('Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.', $refusal->summary());
         }
     }
 

@@ -53,7 +53,7 @@ final readonly class RuleOptionsParser
         if ($colon === false || $colon === 0 || $equals === false || $equals <= $colon + 1) {
             throw ConfigurationRefusal::aboutCommandLineInput('--rule-opt', \sprintf('Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.', $text));
         }
-        $rule = $this->normalizeRuleName(substr($text, 0, $colon));
+        $rule = substr($text, 0, $colon);
         $authoredOption = substr($text, $colon + 1, $equals - $colon - 1);
         RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
         $value = substr($text, $equals + 1);
@@ -91,9 +91,9 @@ final readonly class RuleOptionsParser
         ];
     }
 
-    /** Normalizes a rule name to kebab case. */
-    private function normalizeRuleName(string $name): string
+    /** @return list<string> Every producer whose options the parser can address. */
+    public function producerNames(): array
     {
-        return strtolower(trim($name));
+        return array_keys($this->optionsClasses);
     }
 }

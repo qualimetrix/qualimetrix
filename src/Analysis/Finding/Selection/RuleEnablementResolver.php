@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Selection;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedMapInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
@@ -28,6 +28,7 @@ final readonly class RuleEnablementResolver
 {
     public function decide(ResolvedDocument $document, ChannelUniverseInterface $channels): StatedEnablement
     {
+        $diagnostics = self::judgeNames($document, $channels);
         $statements = self::statements($document);
         $filter = self::filter($document);
         $cells = [];
@@ -74,8 +75,7 @@ final readonly class RuleEnablementResolver
             }
         }
 
-        self::validateSelectors($statements, $filter, $cells, $channels);
-        return new StatedEnablement($cells, $filter);
+        return new StatedEnablement($cells, $filter, $diagnostics);
     }
 
     public function conclude(StatedEnablement $stated, ResolvedRuleOptions $options): RuleEnablement
@@ -267,42 +267,69 @@ final readonly class RuleEnablementResolver
         return $applicable[0] ?? null;
     }
 
-    /** @param list<array{selector: string, enabled: bool, exactEnable: bool, text: string, provenance: Provenance}> $statements
-     * @param list<EnablementDecision> $cells
-     */
-    private static function validateSelectors(array $statements, ?SelectionFilter $filter, array $cells, ChannelUniverseInterface $channels): void
+    /** @return list<ConfigurationDiagnostic> */
+    private static function judgeNames(ResolvedDocument $document, ChannelUniverseInterface $channels): array
     {
-        $all = array_map(static fn(array $statement): string => $statement['selector'], array_filter($statements, static fn(array $statement): bool => !$statement['exactEnable']));
-        if ($filter !== null) {
-            array_push($all, ...$filter->selectors);
-        }
-        foreach ($all as $selector) {
-            if (FindingChannel::isRetiredPairSpelling($selector)) {
-                throw ConfigurationRefusal::aboutResolvedInput(\sprintf(
-                    'Rule selector "%s" is written in the retired channel-pair form. %s',
-                    $selector,
-                    FindingChannel::retiredPairAdvice($selector),
-                ));
+        $judge = new RuleNameJudge($channels->ruleNames());
+        $diagnosticSources = [];
+        foreach (['only_rules', 'disabled_rules'] as $root) {
+            $node = $document->get($root);
+            if (!$node instanceof ResolvedWriteHistoryInterface) {
+                continue;
             }
-            $parsed = ChannelLevelSelector::tryParse($selector);
-            $problem = (new ChannelLevelAddressing($channels))->problemWith($selector, \sprintf('Rule selector "%s"', $selector));
-            if ($problem !== null) {
-                throw ConfigurationRefusal::aboutResolvedInput($problem);
-            }
-            if ($parsed === null) {
-                throw ConfigurationRefusal::aboutResolvedInput(\sprintf('Rule selector "%s" does not match any registered producer or channel.', $selector));
-            }
-            $known = false;
-            foreach ($cells as $cell) {
-                if (self::specificity($selector, $cell->producer, $cell->channel, $cell->level, false) !== null) {
-                    $known = true;
-                    break;
+            foreach ($node->writes() as $write) {
+                if (!\is_array($write['value']) || !array_is_list($write['value'])) {
+                    throw new LogicException('A rule selector write must be a declared list.');
+                }
+                foreach ($write['value'] as $index => $selector) {
+                    if (!\is_string($selector)) {
+                        throw new LogicException('A rule selector write must contain strings.');
+                    }
+                    $writer = self::atIndex($write['provenance'], $index);
+                    $problem = $judge->selector($selector, $channels);
+                    if ($problem !== null) {
+                        throw Provenance::refusalOf([$writer], $problem->summary);
+                    }
+                    $message = RetiredRuleNames::diagnosticFor($selector);
+                    if ($message !== null) {
+                        $diagnosticSources[$message][] = $writer;
+                    }
                 }
             }
-            if (!$known) {
-                throw ConfigurationRefusal::aboutResolvedInput(\sprintf('Rule selector "%s" does not match any registered producer or channel.', $selector));
+        }
+        $rules = $document->get('rules');
+        if ($rules instanceof ResolvedMapInterface) {
+            foreach ($rules->entries() as $producer => $rule) {
+                if (!$rule instanceof ResolvedMapInterface) {
+                    continue;
+                }
+                $keys = $rule->get(FrameworkOptionKeys::NAMESPACE_CHANNELS);
+                if (!$keys instanceof ResolvedMapInterface) {
+                    continue;
+                }
+                foreach ($keys->entries() as $selector => $patterns) {
+                    if (!$patterns instanceof ResolvedWriteHistoryInterface) {
+                        throw new LogicException('A namespace channel key must carry its selector-list writers.');
+                    }
+                    $problem = $judge->namespaceChannel($producer, $selector, $channels);
+                    if ($problem !== null) {
+                        $writers = array_map(static fn(array $write): Provenance => $write['provenance'], $patterns->writes());
+                        throw Provenance::refusalOf($writers, $problem->summary);
+                    }
+                }
             }
         }
+        $diagnostics = [];
+        foreach ($diagnosticSources as $message => $writers) {
+            usort($writers, static fn(Provenance $a, Provenance $b): int => $a->layerIndex <=> $b->layerIndex);
+            $diagnostics[] = new ConfigurationDiagnostic($message, $writers);
+        }
+        return $diagnostics;
+    }
+
+    private static function atIndex(Provenance $writer, int $index): Provenance
+    {
+        return new Provenance($writer->origin, $writer->path === null ? null : [...$writer->path, (string) $index], $writer->layerIndex, $writer->line);
     }
 
     private static function refuseEmptyFilter(RuleEnablement $final, ResolvedRuleOptions $options): void

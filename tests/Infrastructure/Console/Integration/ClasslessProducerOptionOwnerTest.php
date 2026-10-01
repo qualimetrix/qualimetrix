@@ -12,15 +12,18 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\Console\CliOptionsParser;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -106,7 +109,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
     {
         $snapshot = self::validator()->validate(
             self::inputWithRuleOpt($producerRuleName . ':enabled=false'),
-            self::emptyConfiguration(),
+            self::emptyConfiguration(self::inputWithRuleOpt($producerRuleName . ':enabled=false')),
             new ResolvedComputedMetricDefinitions([]),
         );
 
@@ -214,7 +217,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
             );
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(
-                \sprintf('none of them produced by "%s"', $owner),
+                \sprintf('addresses none of the channels of "%s"', $owner),
                 $refusal->getMessage(),
                 'The refusal must say that this producer does not publish that channel.',
             );
@@ -276,10 +279,10 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
 
     private static function configurationExcluding(string $owner, string $key, ResolvedComputedMetricDefinitions $definitions): FindingConfiguration
     {
-        return new FindingConfiguration(
-            new RuleOptionsDocument([$owner => ['suppress_namespace_channels' => [$key => ['App\\Legacy']]]]),
-            new FindingCliOverrides([]),
-        )->withChannelUniverse(self::universe()->snapshot($definitions));
+        return self::configuration(
+            [$owner => ['suppress_namespace_channels' => [$key => [['subtree' => 'App\\Legacy']]]]],
+            $definitions,
+        );
     }
 
     private static function refusalFor(string $owner): string
@@ -299,15 +302,25 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
 
     private static function configurationOwning(string $owner): FindingConfiguration
     {
-        return new FindingConfiguration(
-            new RuleOptionsDocument([$owner => ['enabled' => false]]),
-            new FindingCliOverrides([]),
-        )->withChannelUniverse(self::universe()->snapshot(new ResolvedComputedMetricDefinitions([])));
+        return self::configuration([$owner => ['enabled' => false]], new ResolvedComputedMetricDefinitions([]));
     }
 
-    private static function emptyConfiguration(): FindingConfiguration
+    private static function emptyConfiguration(?InputInterface $input = null): FindingConfiguration
     {
-        return FindingConfiguration::none()->withChannelUniverse(self::universe()->snapshot(new ResolvedComputedMetricDefinitions([])));
+        return self::configuration([], new ResolvedComputedMetricDefinitions([]), $input);
+    }
+
+    /** @param array<string, mixed> $rules */
+    private static function configuration(array $rules, ResolvedComputedMetricDefinitions $definitions, ?InputInterface $input = null): FindingConfiguration
+    {
+        $execution = (new ContainerFactory())->create()->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        $metadata = $execution->allRules();
+        $document = ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => $rules]]], AbsolutePath::fromString('/project'), $metadata);
+        $writes = $input === null ? null : (new CliOptionsParser(new RuleOptionsParser(
+            optionsClasses: array_combine(array_column($metadata, 'name'), array_column($metadata, 'optionsClass')),
+        )))->pathWrites($input);
+        return ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata, $writes, self::universe()->snapshot($definitions));
     }
 
     private static function inputWithoutRuleOpt(): InputInterface

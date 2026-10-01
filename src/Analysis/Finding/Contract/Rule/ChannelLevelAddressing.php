@@ -16,7 +16,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * The addressing vocabulary has five values, so a level a channel does not
  * report at is something a user can write. There
  * was no seam that could refuse it: the configuration one
- * ({@see \Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator})
+ * ({@see \Qualimetrix\Analysis\Finding\Selection\RuleNameJudge})
  * throws, but only on the option whose key is a channel, and the inline one
  * ({@see \Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability})
  * reports, but only on a target that already parsed. Two seams deciding this
@@ -128,6 +128,37 @@ final readonly class ChannelLevelAddressing
         }
 
         return ChannelLevelRefusalWording::addressesNoneOf($subject, $raw, $candidatesAre);
+    }
+
+    /**
+     * One selected member of the caller's set must report at the applied level,
+     * including when the author did not spell that level in the selector.
+     *
+     * @param list<FindingChannel> $candidates
+     */
+    public function problemWithAtLevelAmong(
+        string $raw,
+        SymbolLevel $requiredLevel,
+        array $candidates,
+        string $candidatesAre,
+        ?string $subject = null,
+    ): ?string {
+        $problem = $this->problemWithAmong($raw, $candidates, $candidatesAre, $subject);
+        if ($problem !== null) {
+            return $problem;
+        }
+        $parsed = ChannelLevelSelector::tryParse($raw);
+        if ($parsed === null || $this->identity->expand($parsed->channel()) === []) {
+            return ChannelLevelRefusalWording::addressesNoChannel($subject, $raw, $requiredLevel->value);
+        }
+        if ($parsed->level() !== null && $parsed->level() !== $requiredLevel) {
+            return ChannelLevelRefusalWording::notTheAppliedLevel($subject, (string) $parsed->channel(), $parsed->level()->value, $requiredLevel->value);
+        }
+        $addressed = $this->within($parsed->channel(), $candidates);
+        if ($addressed === []) {
+            return ChannelLevelRefusalWording::addressesNoneOf($subject, $raw, $candidatesAre);
+        }
+        return $this->refuseLevel($addressed, $requiredLevel, $subject, (string) $parsed->channel());
     }
 
     /**

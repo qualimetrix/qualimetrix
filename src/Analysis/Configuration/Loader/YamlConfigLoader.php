@@ -189,7 +189,6 @@ final class YamlConfigLoader implements ConfigLoaderInterface
             }
         }
 
-        RetiredSuppressionOptions::refuseInRules($rawConfig, $this->originalKey(ConfigSchema::RULES, $keyMap), $path);
     }
 
     /**

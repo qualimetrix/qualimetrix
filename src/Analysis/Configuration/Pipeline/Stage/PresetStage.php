@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
-use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -14,7 +13,6 @@ use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 
 /**
@@ -32,7 +30,6 @@ final class PresetStage implements ConfigurationStageInterface
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
         private readonly PresetResolver $resolver,
-        private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
     ) {}
 
     public function priority(): int
@@ -130,8 +127,7 @@ final class PresetStage implements ConfigurationStageInterface
 
             if ($loaded->deferredRefusal !== null) {
                 $deferred[] = $loaded->deferredRefusal;
-            } elseif ($this->knownRuleNamesProvider !== null) {
-                RuleNameValidator::validateRuleNames($loaded->values, "preset:{$name}", $this->knownRuleNamesProvider, $path);
+
             }
 
             $documents[] = ConfigDataNormalizer::normalize($loaded->values);

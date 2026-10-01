@@ -51,6 +51,26 @@ final class RulesSectionTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAnUnknownLowerOwnerAtItsAuthoredKey(): void
+    {
+        $lower = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/bad.yaml'), AuthoredNode::mapping([
+            'rules' => AuthoredNode::mapping([
+                'nosuch.rule' => AuthoredNode::mapping(['enabled' => AuthoredNode::scalar(false)], 7),
+            ]),
+        ]));
+        try {
+            DocumentComposer::compose(self::schema(), [$lower, self::layer(['rules' => [ComplexityRule::NAME => false]], '/good.yaml')]);
+            self::fail('The unknown lower owner disappeared.');
+        } catch (ConfigurationRefusal $error) {
+            self::assertSame('Rule option owner "nosuch.rule" does not match any registered producer rule.', $error->summary());
+            self::assertSame(ConfigurationSource::ConfigFile, $error->sources()[0]->source());
+            self::assertSame('/bad.yaml', $error->sources()[0]->locator());
+            self::assertSame(['rules', 'nosuch.rule'], $error->position()?->segments);
+            self::assertSame('nosuch.rule', $error->position()->written);
+        }
+    }
+
+    #[Test]
     public function itPreservesBareSwitchAndIndependentSelectionMergePolicies(): void
     {
         $document = DocumentComposer::compose(self::schema(), [self::layer(['rules' => [ComplexityRule::NAME => false], 'only_rules' => ['complexity.*'], 'disabled_rules' => ['size.*', 'design.*']], '/base.yaml'), self::layer(['only_rules' => [], 'disabled_rules' => ['size.*', 'coupling.*']], '/overlay.yaml')]);
@@ -79,7 +99,7 @@ final class RulesSectionTest extends TestCase
     #[Test]
     #[\PHPUnit\Framework\Attributes\TestWith(['complexity.ccn', ComplexityOptions::class, 'suppress-namespaces'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['complexity.ccn', ComplexityOptions::class, 'suppress-paths'])]
-    #[\PHPUnit\Framework\Attributes\TestWith(['complexity.ccn', ComplexityOptions::class, 'suppress-namespace-channels'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['coupling.cbo', \Qualimetrix\Analysis\Evidence\Coupling\CboOptions::class, 'suppress-namespace-channels'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['coupling.distance', \Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions::class, 'include-namespaces'])]
     public function itRefusesAnInvalidSemanticSelectorBeforeAValidOverlay(string $producer, string $optionsClass, string $key): void
     {
@@ -89,9 +109,9 @@ final class RulesSectionTest extends TestCase
         $good = [['subtree' => 'App']];
         $position = ['rules', $producer, $key];
         if ($key === 'suppress-namespace-channels') {
-            $bad = ['complexity.ccn.callable' => $bad];
-            $good = ['complexity.ccn.callable' => $good];
-            $position[] = 'complexity.ccn.callable';
+            $bad = [$producer => $bad];
+            $good = [$producer => $good];
+            $position[] = $producer;
         }
         $position[] = '0';
         $upper = self::layer(['rules' => [$producer => [$key => $good]]], '/good.yaml');
@@ -101,7 +121,7 @@ final class RulesSectionTest extends TestCase
         } catch (ConfigurationRefusal $error) {
             $prefix = $key === 'include-namespaces'
                 ? 'Option "include_namespaces" for rule "coupling.distance" entry 0 is invalid: '
-                : 'Option "' . implode('.', \array_slice($position, 2)) . '" for rule "complexity.ccn" ';
+                : 'Option "' . implode('.', \array_slice($position, 2)) . '" for rule "' . $producer . '" ';
             self::assertSame($prefix . 'Selector "regex:[" is not valid PCRE: preg_match(): Compilation failed: escape sequence is invalid in character class at offset 49.', $error->summary());
             self::assertSame(ConfigurationSource::ConfigFile, $error->sources()[0]->source());
             self::assertSame('/bad.yaml', $error->sources()[0]->locator());
@@ -127,7 +147,7 @@ final class RulesSectionTest extends TestCase
             $patterns = match ($key) {
                 'suppress-paths' => $suppression->paths,
                 'suppress-namespaces' => $suppression->namespaces,
-                default => $suppression->namespaceChannels['complexity.ccn.callable'],
+                default => $suppression->namespaceChannels[$producer],
             };
         }
         self::assertNotNull($patterns);

@@ -8,11 +8,11 @@ use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\RefusedName;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Selection\RuleNameJudge;
 
 /** The rule option entries and the two independent rule selection lists. */
 final readonly class RulesSection implements DocumentSectionSchemaInterface
@@ -36,11 +36,10 @@ final readonly class RulesSection implements DocumentSectionSchemaInterface
         foreach ($this->execution->allRules() as $producer) {
             $entries[$producer->name] = RuleOptionSurface::of($producer->optionsClass)->schema();
         }
-        $names = array_keys($entries);
+        $judge = new RuleNameJudge(array_keys($entries));
         return new SectionDeclaration('rules', NodeSchema::namedMapOf(
             static fn(string $name): ?NodeSchema => $entries[$name] ?? null,
-            NameVocabulary::predicate(static fn(string $name): ?RefusedName => isset($entries[$name]) ? null
-                : RefusedName::among(\sprintf('Rule option owner "%s" does not match any registered producer rule.', $name), $names)),
+            NameVocabulary::predicate($judge->judge(...)),
         ));
     }
 }

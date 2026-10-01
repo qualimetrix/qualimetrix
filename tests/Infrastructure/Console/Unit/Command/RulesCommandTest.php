@@ -95,6 +95,8 @@ final class RulesCommandTest extends TestCase
 
         self::assertStringContainsString('Only selected by configuration: complexity.*', $tester->getDisplay());
         self::assertStringContainsString('Disabled by configuration: disabled_rules[0]: size.class-count', $tester->getDisplay());
+        self::assertStringContainsString('Selection source: only_rules: [complexity.*] (configuration file "/project/qmx.yaml"; layer 0)', $tester->getDisplay());
+        self::assertStringContainsString('Selection source: disabled_rules[0]: size.class-count (configuration file "/project/qmx.yaml"; layer 0)', $tester->getDisplay());
     }
 
     #[Test]
@@ -111,6 +113,8 @@ final class RulesCommandTest extends TestCase
             'Disabled by configuration: disabled_rules[0]: complexity.*, disabled_rules[1]: complexity.alpha.*',
             $tester->getDisplay(),
         );
+        self::assertStringContainsString('Selection source: disabled_rules[0]: complexity.* (configuration file "/project/qmx.yaml"; layer 0)', $tester->getDisplay());
+        self::assertStringContainsString('Selection source: disabled_rules[1]: complexity.alpha.* (configuration file "/project/qmx.yaml"; layer 0)', $tester->getDisplay());
     }
 
     #[Test]

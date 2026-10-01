@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use LogicException;
+
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite;
@@ -12,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
+use Qualimetrix\Analysis\Finding\Selection\RuleNameJudge;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -43,6 +46,7 @@ final readonly class CliOptionsParser
         $records ??= AuthoredRuleOptionWrites::fromInput($input, $aliasForms);
         usort($records, static fn(array $a, array $b): int => $a['ordinal'] <=> $b['ordinal']);
 
+        $judge = new RuleNameJudge($this->ruleOptionsParser->producerNames());
         $writes = [];
         foreach ($records as $record) {
             $optionName = $record['optionName'];
@@ -76,10 +80,12 @@ final readonly class CliOptionsParser
                 }
             }
 
-            $surface = $this->ruleOptionsParser->surfaceFor($rule);
-            if ($surface === null) {
-                throw ConfigurationRefusal::aboutCommandLineInput($optionName, \sprintf('Rule option owner "%s" does not match any registered producer rule.', $rule));
+            $problem = $judge->judge($rule);
+            if ($problem !== null) {
+                throw ConfigurationRefusal::aboutCommandLineInput($optionName, $problem->summary);
             }
+            $surface = $this->ruleOptionsParser->surfaceFor($rule)
+                ?? throw new LogicException('An admitted producer must supply its option schema.');
             $address = $surface->locate($option);
             if ($address === null) {
                 $framework = FrameworkOptionKeys::declared();

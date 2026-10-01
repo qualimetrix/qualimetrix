@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
-use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -142,7 +141,6 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
     {
         return [
             ChannelUniverse::class,
-            KnownRuleNamesAdapter::class,
             RuleExecution::class,
             ChannelPresentationView::class,
             RemediationTimeRegistry::class,
@@ -190,11 +188,6 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
             ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
             ->setArgument('$thresholdOverrideSupportByRule', $thresholdOverrideSupport);
 
-        if ($container->hasDefinition(KnownRuleNamesAdapter::class)) {
-            $container->getDefinition(KnownRuleNamesAdapter::class)
-                ->setArgument('$ruleNames', array_keys($thresholdOverrideSupport));
-        }
-
         if ($container->hasDefinition(RuleExecution::class)) {
             $container->getDefinition(RuleExecution::class)
                 ->setArgument('$classlessProducers', $classlessProducers);
@@ -220,8 +213,7 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
      * heading — a producer displayed under nothing at all. Checked here
      * because this is the one place both halves of "every registered
      * producer" are in hand: `$thresholdOverrideSupport` is keyed by every
-     * rule class's name and by every classless producer's, which is also why
-     * {@see KnownRuleNamesAdapter} is handed its keys.
+     * rule class's name and by every classless producer's, so no class-only enumeration can replace it.
      *
      * **This refuses one shape of bad name, not a name grammar.** Rejected:
      * an empty name and one starting with the separator — exactly the two

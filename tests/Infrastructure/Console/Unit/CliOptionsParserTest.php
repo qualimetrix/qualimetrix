@@ -40,6 +40,33 @@ use Symfony\Component\Console\Input\InputOption;
 final class CliOptionsParserTest extends TestCase
 {
     #[Test]
+    public function itRefusesUnregisteredRuleOptionOwnersWithTheirActualCliOrigin(): void
+    {
+        $parser = new CliOptionsParser(new RuleOptionsParser([], [
+            'complexity.ccn' => \Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class,
+            'cohesion.lcom' => LcomOptions::class,
+        ]));
+        $definition = new InputDefinition([
+            new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
+        ]);
+        foreach ([
+            'nosuch.rule' => 'Rule option owner "nosuch.rule" does not match any registered producer rule.',
+            'COMPLEXITY.CCN' => 'Rule option owner "COMPLEXITY.CCN" does not match any registered producer rule.',
+            'design.lcom' => 'Rule option owner "design.lcom" does not match any registered producer rule. Did you mean "cohesion.lcom"?',
+        ] as $owner => $summary) {
+            try {
+                $parser->pathWrites(new ArrayInput(['--rule-opt' => [$owner . ':enabled=false']], $definition));
+                self::fail('An unregistered owner was accepted.');
+            } catch (ConfigurationRefusal $error) {
+                self::assertSame($summary, $error->summary());
+                self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::CommandLine, $error->sources()[0]->source());
+                self::assertSame('--rule-opt', $error->sources()[0]->locator());
+                self::assertNull($error->position());
+            }
+        }
+    }
+
+    #[Test]
     public function itTargetsTheDeclaredSchemaAndKeepsSelectorPayloadPlain(): void
     {
         $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
