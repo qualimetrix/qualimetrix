@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Integration test that runs the full analysis pipeline on fixture files
@@ -31,7 +31,7 @@ final class GoldenFileAggregationTest extends TestCase
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
         $root = AbsolutePath::fromString((string) getcwd());
-        $fixture = PreparedAnalysisFixture::start($root, [$fixtureRoot], ['include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);

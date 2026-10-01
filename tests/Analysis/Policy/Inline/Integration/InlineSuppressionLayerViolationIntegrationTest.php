@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Verifies that {@code @qmx-ignore architecture.layer-violation} on a source
@@ -113,7 +113,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
     private function analyse(array $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
         try {
             $holder = $fixture->container()->get(LayerPolicyPreparationInterface::class);
             self::assertInstanceOf(ArchitecturePolicy::class, $holder);

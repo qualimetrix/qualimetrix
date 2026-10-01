@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Where an inheritance chain leaves the analysed set, read through the real
@@ -389,7 +389,7 @@ final class AncestryBorderIntegrationTest extends TestCase
     private function analyse(array $config): array
     {
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $config, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $config, 'include_generated' => true]);
         $container = $fixture->container();
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);

@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolationProjector;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Pins the Phase-1-shape (post-ADR 0006) YAML schema against every
@@ -68,7 +68,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
         self::assertSame([], $result->warnings, 'Phase-1 config must not produce deferred warnings.');
 
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
         $container = $fixture->container();
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);

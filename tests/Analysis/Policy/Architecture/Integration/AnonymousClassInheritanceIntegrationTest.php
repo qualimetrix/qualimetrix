@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Regression coverage for the anonymous-class-inheritance defect:
@@ -218,7 +218,7 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
     private function runPipelineWithConfiguration(array $architecture): AnalysisResult
     {
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
         $container = $fixture->container();
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);

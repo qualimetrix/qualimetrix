@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * End-to-end test for Phase 2 direction 2 (template layers). Loads a YAML
@@ -178,7 +178,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     private function runPipelineWithConfig(array $configArray): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
         $container = $fixture->container();
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);

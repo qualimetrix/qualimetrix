@@ -17,7 +17,7 @@ use Symfony\Component\Yaml\Yaml;
 use Throwable;
 
 /** A real console invocation prepared on the same container used by the analysis. */
-final class PreparedAnalysisFixture
+final class PreparedAnalysis
 {
     private bool $closed = false;
 

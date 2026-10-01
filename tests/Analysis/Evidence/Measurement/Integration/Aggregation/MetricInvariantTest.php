@@ -15,7 +15,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Integration test that verifies mathematical invariants hold for ALL
@@ -40,7 +40,7 @@ final class MetricInvariantTest extends TestCase
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
         $root = AbsolutePath::fromString((string) getcwd());
-        $fixture = PreparedAnalysisFixture::start($root, [$fixtureRoot], ['include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);

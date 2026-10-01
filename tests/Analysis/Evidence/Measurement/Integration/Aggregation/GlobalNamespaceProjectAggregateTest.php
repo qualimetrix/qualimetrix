@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * A project written entirely in the global namespace must be scored, not
@@ -33,7 +33,7 @@ final class GlobalNamespaceProjectAggregateTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         $fixtureRoot = AbsolutePath::fromString(\dirname(__DIR__, 2) . '/Fixtures/GlobalNamespaceOnly');
-        $fixture = PreparedAnalysisFixture::start(AbsolutePath::fromString((string) getcwd()), [$fixtureRoot], ['include_generated' => true]);
+        $fixture = PreparedAnalysis::start(AbsolutePath::fromString((string) getcwd()), [$fixtureRoot], ['include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);

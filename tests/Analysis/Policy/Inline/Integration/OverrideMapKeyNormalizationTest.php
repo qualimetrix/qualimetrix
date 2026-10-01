@@ -15,7 +15,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\AuthoredDirectiveGroup;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * The keys of the run's per-file threshold-override map are already what
@@ -87,7 +87,7 @@ final class OverrideMapKeyNormalizationTest extends TestCase
     private static function producedOverrides(): array
     {
         $root = AbsolutePath::fromString(self::FIXTURE);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['include_generated' => true]);
         $container = $fixture->container();
         $architecture = $container->get(LayerPolicyPreparationInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $architecture);

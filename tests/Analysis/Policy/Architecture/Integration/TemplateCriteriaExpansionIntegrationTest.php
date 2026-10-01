@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Pins that the three graph-backed membership criteria — {@code extends},
@@ -123,7 +123,7 @@ final class TemplateCriteriaExpansionIntegrationTest extends TestCase
     private function expandedDomainLayers(array $configArray): array
     {
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $configArray, 'include_generated' => true]);
         $container = $fixture->container();
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);

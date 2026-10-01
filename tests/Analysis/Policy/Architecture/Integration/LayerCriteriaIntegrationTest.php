@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * End-to-end integration test for the Phase 2 direction-1 membership criteria
@@ -225,7 +225,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
     private function analyze(array $architecture): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         $root = AbsolutePath::fromString(self::FIXTURE_PATH);
-        $fixture = PreparedAnalysisFixture::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($root, [$root], ['architecture' => $architecture, 'include_generated' => true]);
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);

@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureViolationProjector;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * End-to-end test: runs the real {@see AnalysisPipelineInterface} against a
@@ -174,7 +174,7 @@ final class LayerViolationIntegrationTest extends TestCase
         if ($architecture !== null) {
             $config['architecture'] = $architecture;
         }
-        $fixture = PreparedAnalysisFixture::start($root, [$root], $config);
+        $fixture = PreparedAnalysis::start($root, [$root], $config);
         try {
             $holder = $fixture->container()->get(ArchitecturePolicyConfiguratorInterface::class);
             self::assertInstanceOf(ArchitecturePolicy::class, $holder);

@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationVali
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysisFixture;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Executable proof for the fail-closed modular-topology contract.
@@ -156,7 +156,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
     {
         $root = AbsolutePath::fromString($path);
         $workingDirectory = AbsolutePath::fromString(is_dir($path) ? $path : \dirname($path));
-        $fixture = PreparedAnalysisFixture::start($workingDirectory, [$root], ['architecture' => $architecture, 'include_generated' => true]);
+        $fixture = PreparedAnalysis::start($workingDirectory, [$root], ['architecture' => $architecture, 'include_generated' => true]);
         $container = $fixture->container();
         $processor = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $processor);
