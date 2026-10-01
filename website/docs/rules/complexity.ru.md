@@ -546,4 +546,4 @@ bin/qmx check src/ --rule-opt="complexity.wmc:error=100"
 
 ## Сокращение слоя и class activation
 
-Верхнее сокращение CCN/cognitive/NPath меняет callable и сохраняет class band. Явные целевые level blocks конфликтуют с ним в одном слое; разные слои сливают раскрытые листья. Написанная class-пара NPath действует без лишнего true, class.enabled:false выключает её. Integer bands отказывают на дробных значениях; итоговый порядок учитывает default halves. Academic algorithms и default numbers не меняются. См. [формы конфигурации](../getting-started/configuration.ru.md).
+Верхнее сокращение CCN/cognitive/NPath меняет callable и сохраняет class band. В одном слое конфликтуют явные записи в те же раскрытые листья; независимые настройки, например callable.enabled, сохраняются. Разные слои сливают раскрытые листья. Написанная class-пара NPath действует без лишнего true, class.enabled:false выключает её. Integer bands отказывают на дробных значениях; итоговый порядок учитывает default halves. Academic algorithms и default numbers не меняются. См. [формы конфигурации](../getting-started/configuration.ru.md).

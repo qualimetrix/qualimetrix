@@ -127,8 +127,9 @@ options, final enablement and the invocation channel snapshot. No raw options,
 `resetRuntimeState()` clears invocation configuration and exclusions before a new
 run; configuration must complete preflight before the next replacement.
 
-A rule instance is shared by the process and executed more than once per run,
-so it carries no state between calls: `RuleInterface::analyze()` states the
+A rule instance is reused within one resolved options snapshot and replaced
+when the snapshot changes. It is executed more than once per run, so it carries
+no state between calls: `RuleInterface::analyze()` states the
 contract, including which writes through an injected collaborator stay inside
 it, and `governance/RuleDeclaration/RuleInstanceStatelessnessTest` refuses a
 registered rule or validator with a reassignable or static property, a readonly
@@ -225,8 +226,9 @@ that completed carrier atomically; lazy rule execution never parses raw arrays.
 
 Forms are expanded in the layer that wrote them, before merging. `threshold`
 and its graduated pair are mutually exclusive in one band in one layer. A top
-hierarchical shorthand conflicts with explicit target level blocks in that layer;
-different layers merge their expanded leaves. Empty rule/level maps and null
+hierarchical shorthand conflicts with an explicit write to the same expanded
+leaf in that layer; independent leaves such as level enabled are preserved.
+Different layers merge their expanded leaves. Empty rule/level maps and null
 write nothing. The boolean rule form changes enabled only and preserves lower
 options. A reset without enumerating defaults is not expressed by this language.
 

@@ -34,7 +34,7 @@ diagnostics remain unchanged. See ADR 0092.
 
 1. **Rule option validation moves before discovery.** Previously a bad option could survive until Collection. Every authored layer is now shaped and judged before Discovery, including writes later overridden. Correct the offending file, preset or command-line value; disabling its producer does not make malformed input lawful.
 
-2. **Hierarchical shorthand no longer discards sibling level blocks.** A top-level shorthand and an explicit target level in the same layer now refuse instead of silently losing the block. Put the two writes in distinct layers or use explicit level blocks only; later layers merge the expanded leaves.
+2. **Hierarchical shorthand no longer discards sibling level settings.** A top-level shorthand and an explicit write to the same expanded leaf in one layer now refuse. Independent leaves, such as callable.enabled beside a threshold shorthand, are preserved. Put overlapping writes in distinct layers or use explicit level bands only; later layers merge the expanded leaves.
 
 3. **Complexity shorthand preserves the class band.** A top-level threshold for complexity.ccn, complexity.cognitive or complexity.npath changes the callable band and no longer disables the class band. To retain the former no-class result, write class.enabled: false explicitly.
 
@@ -44,7 +44,7 @@ diagnostics remain unchanged. See ADR 0092.
 
 6. **Reset without enumerating defaults is not available.** There is no reset token or constructor compatibility mode. Empty and null bodies do not erase lower options. A future reset contract would need an explicit owner-declared default representation; consumers must currently write the values.
 
-7. **Coupling shorthand spreads per writing layer.** Top-level CBO and instability bands expand into class and namespace leaves in that layer before merging. Do not combine that shorthand with its target level blocks in the same layer; configure distinct levels explicitly when their values differ.
+7. **Coupling shorthand spreads per writing layer.** Top-level CBO and instability bands expand into class and namespace leaves in that layer before merging. Explicit writes to the same expanded leaves conflict in one layer; independent level settings remain lawful. Configure distinct level bands explicitly when their values differ.
 
 8. **Later exact enable can cancel an earlier disable.** Disable is no longer permanently dominant. A higher-layer exact rules.PRODUCER.enabled: true can reverse a lower disable. Remove the later enable when the producer must remain off.
 

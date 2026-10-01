@@ -291,8 +291,9 @@ own enabled slot. Owners build with `fromResolved`, never `fromArray` or constru
 reflection as a schema.
 
 Top-level CCN/cognitive/NPath shorthand changes the callable band and preserves
-the class band. Same-layer shorthand plus explicit target level blocks refuses;
-different layers merge the expanded leaves. A written NPath class band activates
+the class band. A shorthand and an explicit write to the same expanded leaf
+refuse in one layer; independent leaves such as callable.enabled are preserved.
+Different layers merge the expanded leaves. A written NPath class band activates
 without an extra true switch. An explicit class.enabled:false still turns it off.
 DoD retains independent callable/class defaults, effective-band ordering and
 pre-discovery refusal of every malformed authored layer. Metric algorithms and
