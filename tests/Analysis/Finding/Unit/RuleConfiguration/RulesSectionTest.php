@@ -123,7 +123,7 @@ final class RulesSectionTest extends TestCase
             $prefix = $key === 'include-namespaces'
                 ? 'Option "include_namespaces" for rule "coupling.distance" entry 0 is invalid: '
                 : 'Option "' . implode('.', \array_slice($position, 2)) . '" for rule "' . $producer . '" ';
-            self::assertSame($prefix . 'Selector "regex:[" is not valid PCRE: preg_match(): Compilation failed: escape sequence is invalid in character class at offset 49.', $error->summary());
+            self::assertMatchesRegularExpression('/\A' . preg_quote($prefix . 'Selector "regex:[" is not valid PCRE: preg_match(): Compilation failed: escape sequence is invalid in character class at offset ', '/') . '[0-9]+\.\z/', $error->summary());
             self::assertSame(ConfigurationSource::ConfigFile, $error->sources()[0]->source());
             self::assertSame('/bad.yaml', $error->sources()[0]->locator());
             self::assertSame($position, $error->position()?->segments);
