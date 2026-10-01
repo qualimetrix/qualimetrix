@@ -449,26 +449,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
 
             public function replace(FindingConfiguration $configuration): void {}
 
-            public function configFileOptions(): array
-            {
-                return $this->rulesConfig;
-            }
-
-            public function cliOptions(): array
-            {
-                return [];
-            }
-
-            public function all(): array
-            {
-                throw new LogicException('The projection must read the typed snapshot.');
-            }
-
-            public function selection(): never
-            {
-                throw new LogicException('The projection must read the execution selection trace.');
-            }
-
             public function captureExcludedFindings(): void {}
 
             public function capturesExcludedFindings(): bool
