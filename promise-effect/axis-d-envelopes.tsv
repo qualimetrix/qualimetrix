@@ -28,7 +28,7 @@ computed_metrics.<name>	computed_metrics.computed\.probe-metric	{}	no
 computed_metrics.<name>.description	computed_metrics.computed\.probe-metric.description	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
 computed_metrics.<name>.enabled	computed_metrics.computed\.probe-metric.enabled	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
 computed_metrics.<name>.error	computed_metrics.computed\.probe-metric.error	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no
-computed_metrics.<name>.formula	computed_metrics.health\.complexity.formula	{"computed_metrics":{"health.complexity":{"levels":["project"]}}}	no
+computed_metrics.<name>.formula	computed_metrics.health\.complexity.formula	{"computed_metrics":{"health.complexity":{"levels":["project"],"warning":10000,"error":10000}}}	no
 computed_metrics.<name>.formulas	computed_metrics.computed\.probe-metric.formulas	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"],"warning":1.5,"error":1.8}}}	no
 computed_metrics.<name>.formulas.<level>	computed_metrics.computed\.probe-metric.formulas.class	{"computed_metrics":{"computed.probe-metric":{"levels":["class"]}}}	no
 computed_metrics.<name>.inverted	computed_metrics.computed\.probe-metric.inverted	{"computed_metrics":{"computed.probe-metric":{"formula":"1","levels":["class"]}}}	no

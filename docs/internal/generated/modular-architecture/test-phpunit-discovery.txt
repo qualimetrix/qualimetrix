@@ -1639,6 +1639,7 @@ Available tests:
  - Qualimetrix\PromiseEffect\Tests\FloorTest::itRefusesARowDeclaredBothCuredAndWithdrawn
  - Qualimetrix\PromiseEffect\Tests\FloorTest::itRefusesFreezeBeforeNarrowedByAxis
  - Qualimetrix\PromiseEffect\Tests\FloorTest::itRefusesFreezeBeforeWhenADuplicateAxisStandsInForAMissingOne
+ - Qualimetrix\PromiseEffect\Tests\FloorTest::itRejectsAPendingFrozenRetakeThatLostTheOldDefect
  - Qualimetrix\PromiseEffect\Tests\FloorTest::itReportsNoPendingRowsWhenNoneStands
  - Qualimetrix\PromiseEffect\Tests\LedgerVocabularyTest::itAcceptsTheOneWinsFormWhichCarriesItsWinnerInTheValue
  - Qualimetrix\PromiseEffect\Tests\LedgerVocabularyTest::itRefusesACoexistenceTheClassifierWouldSilentlyReadAsCompose
@@ -1653,8 +1654,17 @@ Available tests:
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itDoesNotCountTheWitnessAsAProductRun
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheSameEnvelopeWithTheFrameAsAFramedRefusal
  - Qualimetrix\PromiseEffect\Tests\RefusalFramingWitnessTest::itReadsTheWitnessAsAnUnframedRefusalAndTheControlHoldsOnIt
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itDistinguishesOwnedCacheDirectoriesWithEqualFileCountsByName
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itKeepsTheSameAuthoredThresholdCompanionAtEveryDoorAndChangesTheTarget
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itKeepsTypedYamlAndScalarCliSelectorHitsOnTheirOwnDoors
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itKeepsUnwrittenFieldsBesideTheirEffectiveNeighbour
  - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itObservesResolvedValuesAndAllRuleRoots
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itSuppliesBothBooleanMagnitudesAtTheDeclaredDepth
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itSuppliesDeclaredNamespaceSelectorMappings
+ - Qualimetrix\PromiseEffect\Tests\ResolvedDocumentObservationTest::itSuppliesDeclaredRetiredKeysForRefusalProbes
  - Qualimetrix\PromiseEffect\Tests\ValuelessFlagCollapseTest::itDecidesNoValuelessFlagCellByTheCollapseComparison
+ - Qualimetrix\PromiseEffect\Tests\ValuelessFlagCollapseTest::itKeepsOnlyTheExpressibleWmcAliasFormsInTheActualAxisACells
+ - Qualimetrix\PromiseEffect\Tests\ValuelessFlagCollapseTest::itReadsTheActualAliasModeBeforeTreatingScalarSpellingsAsValues
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itLeavesAWildcardTargetInHistoryAlone
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itReachesTheOccurrenceFixedPointAfterOneWriteOfANewMetric
  - Qualimetrix\RenameEnumeration\Tests\RenameEnumerationRetirementTest::itRefusesAnUnknownRenameStep
@@ -2907,13 +2917,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itGetsOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itHasCorrectOptionDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itLoadsExcludeMethodsFromArray
- - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itLoadsExcludeMethodsFromArrayAsString
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itLoadsExcludeMethodsFromArraySnakeCase
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itLoadsOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itPreservesExcludeMethodsOnOverride
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itPreservesReadonlyMinMethodAndExactOverrideEligibility
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itProducesNoFindingForCohesiveClass
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations
+ - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itRefusesScalarExcludeMethods
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itReportsDistinctUnmatchedExclusionsOnlyForWholeProjectMethodFacts
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itRespectsBoundaryThresholds"above error threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit\LcomRuleTest::itRespectsBoundaryThresholds"above warning, below error"

@@ -185,6 +185,8 @@ is published. A normal live run may publish a red measurement.
 
 The formula placeholder is instantiated as `health.complexity.formula` at the
 project level, with the built-in formula as its lawful omitted/default case.
+All forms on both versions use the same warning/error thresholds 10000/10000,
+so both the declared `1 + 1` hit and the numeric string `7331` change findings.
 The formulas-map placeholder remains `computed.probe-metric.formulas`, with a
 sibling `formula: "1"` and class thresholds 1.5/1.8. Its `{class: "1 + 1"}`
 write changes the reported findings; `null` leaves the sibling formula in place.

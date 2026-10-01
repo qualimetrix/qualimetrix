@@ -55,7 +55,7 @@ src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php	form-deciding,
 src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php	options-class	6	error,threshold,vo-error,vo-threshold,vo-warning,warning	8	-	declares 6 axis-A pairs over 6 key paths; carries 8 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/Cohesion/LcomOptions.php	options-class	6	error,exclude-methods,exclude-readonly,min-methods,threshold,warning	9	-	declares 6 axis-A pairs over 6 key paths; carries 9 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Cohesion/LcomOptions.php	options-class	6	error,exclude-methods,exclude-readonly,min-methods,threshold,warning	9	promise-docblock:103-106	declares 6 axis-A pairs over 6 key paths; carries 9 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Complexity/ClassComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	4	-	declares 4 axis-A pairs over 4 key paths; carries 4 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php	options-class	4	class.enabled,class.max-error,class.max-warning,class.threshold	3	-	declares 4 axis-A pairs over 4 key paths; carries 3 subject sites of form-deciding-sites.tsv
@@ -70,7 +70,7 @@ src/Analysis/Evidence/Coupling/CboOptions.php	options-class	6	class,error,namesp
 src/Analysis/Evidence/Coupling/ClassCboOptions.php	options-class	5	class.enabled,class.error,class.scope,class.threshold,class.warning	7	-	declares 5 axis-A pairs over 5 key paths; carries 7 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php	options-class	5	class.enabled,class.max-error,class.max-warning,class.min-afferent,class.threshold	5	-	declares 5 axis-A pairs over 5 key paths; carries 5 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Coupling/ClassRankOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/Coupling/DistanceOptions.php	options-class	4	max-distance-error,max-distance-warning,min-class-count,threshold	8	-	declares 4 axis-A pairs over 4 key paths; carries 8 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Coupling/DistanceOptions.php	options-class	4	max-distance-error,max-distance-warning,min-class-count,threshold	8	promise-docblock:74-109	declares 4 axis-A pairs over 4 key paths; carries 8 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Coupling/InstabilityOptions.php	options-class	5	class,max-error,max-warning,namespace,threshold	3	flat_branch_line:48	declares 5 axis-A pairs over 5 key paths; carries 3 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	options-class	5	namespace.enabled,namespace.error,namespace.min-class-count,namespace.threshold,namespace.warning	5	-	declares 5 axis-A pairs over 5 key paths; carries 5 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php	options-class	6	namespace.enabled,namespace.max-error,namespace.max-warning,namespace.min-afferent,namespace.min-class-count,namespace.threshold	6	-	declares 6 axis-A pairs over 6 key paths; carries 6 subject sites of form-deciding-sites.tsv
@@ -90,9 +90,9 @@ src/Analysis/Evidence/Size/MethodCountOptions.php	options-class	3	error,threshol
 src/Analysis/Evidence/Size/PropertyCountOptions.php	options-class	5	error,exclude-promoted-only,exclude-readonly,threshold,warning	6	-	declares 5 axis-A pairs over 5 key paths; carries 6 subject sites of form-deciding-sites.tsv
 src/Analysis/Finding/Contract/Configuration/RuleOptionsBuild.php	contract	0	-	1	-	explicit contract-and-consumer seed: the consumer constructing typed options and attributing refusals to authored writes; carries 1 subject sites of form-deciding-sites.tsv
 src/Analysis/Finding/Contract/Rule/HierarchicalRuleOptionsInterface.php	contract	0	-	0	-	explicit contract-and-consumer seed: contract stating levelOptionsClasses(), the source of slot existence
-src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	contract	0	-	0	promise-docblock:33-39	explicit contract-and-consumer seed: contract stating a level slot key set
+src/Analysis/Finding/Contract/Rule/LevelOptionsInterface.php	contract	0	-	0	promise-docblock:31-37	explicit contract-and-consumer seed: contract stating a level slot key set
 src/Analysis/Finding/Contract/Rule/ResolvedRuleOptionValues.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
-src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	contract	0	-	0	promise-docblock:23-27,promise-docblock:28-34	explicit contract-and-consumer seed: the declaration itself absorbs value form into this set
+src/Analysis/Finding/Contract/Rule/RuleOptionKeySet.php	contract	0	-	0	promise-docblock:26-32	explicit contract-and-consumer seed: the declaration itself absorbs value form into this set
 src/Analysis/Finding/Contract/Rule/RuleOptionRefusalWording.php	contract	0	-	0	-	explicit ownership addition: the words of every rule-option refusal, including the one about a value's form
 src/Analysis/Finding/Contract/Rule/RuleOptionsInterface.php	contract	0	-	0	-	explicit contract-and-consumer seed: contract stating acceptedOptionKeys()
 src/Analysis/Finding/Contract/Rule/ThresholdParser.php	form-deciding, declares nothing	0	-	4	-	carries 4 subject sites of form-deciding-sites.tsv
@@ -101,7 +101,7 @@ src/Analysis/Finding/Exclusion/RulePathExclusionProvider.php	consumer	0	-	0	-	ex
 src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php	form-deciding, declares nothing	0	-	4	-	carries 4 subject sites of form-deciding-sites.tsv
 src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php	form-deciding, declares nothing	0	-	2	-	carries 2 subject sites of form-deciding-sites.tsv
 src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
-src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	options-class	1	severity	5	-	declares 1 axis-A pairs over 1 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	options-class	1	severity	5	promise-docblock:90-110	declares 1 axis-A pairs over 1 key paths; carries 5 subject sites of form-deciding-sites.tsv
 src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	options-class	1	mode	3	-	declares 1 axis-A pairs over 1 key paths; carries 3 subject sites of form-deciding-sites.tsv
 src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php	options-class	1	unused-directive-severity	5	-	declares 1 axis-A pairs over 1 key paths; carries 5 subject sites of form-deciding-sites.tsv
 src/Analysis/Run/ExcludeBinding/UnmatchedExcludeOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv
