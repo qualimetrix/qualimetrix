@@ -69,12 +69,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LongFormAllowEntryNormalizer"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
-        },
-        {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDeclarations"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -235,6 +235,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\Contract\\ConfiguredFindingExclusionsResolverInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationDiagnosticsPublisher"
         }
       ]
     },
@@ -246,7 +250,7 @@
       "consumers": [
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection"
         }
       ]
     },
@@ -270,10 +274,6 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Configuration\\RuleOptionsBuild"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
         },
         {
@@ -286,7 +286,23 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionActivityResolution"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\ThresholdBandRefusal"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionCauses"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionRefusals"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -298,15 +314,19 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLimits"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationDiagnosticsPublisher"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
         }
       ]
     },
@@ -347,6 +367,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -438,11 +462,11 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -517,6 +541,10 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleSuppressionSelectorDecoder"
         },
         {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection"
+        },
+        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\CarriedValueForm"
         },
@@ -574,15 +602,19 @@
       "consumers": [
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Configuration\\RuleOptionsBuild"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ThresholdParser"
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionActivityResolution"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\ThresholdBandRefusal"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection"
         }
       ]
     },
@@ -875,14 +907,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckCommandDefinition"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitPolicySection"
         },
         {
@@ -900,6 +924,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -1014,6 +1042,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -1250,6 +1282,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -1261,7 +1297,7 @@
       "consumers": [
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionCauses"
         },
         {
           "owner": "Analysis.Run",
@@ -2614,6 +2650,10 @@
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
         }
       ]
     },
@@ -6938,6 +6978,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleEnablement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
         }
       ]
     },
@@ -8705,15 +8749,15 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -9372,7 +9416,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -9782,7 +9826,7 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -10067,6 +10111,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -10577,6 +10625,12 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleEnablement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\StatedEnablement"
         }
       ]
     },
@@ -10603,6 +10657,84 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\RuleExecutionResult"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision": {
+      "path": "src/Analysis/Finding/Contract/Selection/AuthoredCellDecision.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\CellAdmission": {
+      "path": "src/Analysis/Finding/Contract/Selection/CellAdmission.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\CellSwitch": {
+      "path": "src/Analysis/Finding/Contract/Selection/CellSwitch.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\AuthoredCellDecision"
         }
       ]
     },
@@ -10638,7 +10770,33 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\SelectionCellAddress": {
+      "path": "src/Analysis/Finding/Contract/Selection/SelectionCellAddress.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\RulesCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\EnablementDecision"
         }
       ]
     },
@@ -10659,6 +10817,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleListingPresenter"
         }
       ]
     },
@@ -11182,6 +11344,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionActivityResolution": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionActivityResolution.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\CompoundOptionKind": {
       "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/CompoundOptionKind.php",
       "kind": "enum",
@@ -11224,6 +11393,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\ProducerOptionsBuild": {
+      "path": "src/Analysis/Finding/RuleConfiguration/ProducerOptionsBuild.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionValueWrittenness": {
       "path": "src/Analysis/Finding/RuleConfiguration/RuleOptionValueWrittenness.php",
       "kind": "class",
@@ -11240,6 +11416,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
         }
       ]
     },
@@ -11312,6 +11492,13 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\ThresholdBandRefusal": {
+      "path": "src/Analysis/Finding/RuleConfiguration/ThresholdBandRefusal.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\RuleExecution": {
       "path": "src/Analysis/Finding/RuleExecution.php",
       "kind": "class",
@@ -11373,8 +11560,43 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Finding\\Selection\\AuthoredSelection": {
+      "path": "src/Analysis/Finding/Selection/AuthoredSelection.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Selection\\EnablementIndex": {
+      "path": "src/Analysis/Finding/Selection/EnablementIndex.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Finding\\Selection\\RetiredRuleNames": {
       "path": "src/Analysis/Finding/Selection/RetiredRuleNames.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionCauses": {
+      "path": "src/Analysis/Finding/Selection/SelectionCauses.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionRefusals": {
+      "path": "src/Analysis/Finding/Selection/SelectionRefusals.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionSpecificity": {
+      "path": "src/Analysis/Finding/Selection/SelectionSpecificity.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
@@ -17003,11 +17225,11 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleEnablementResolver"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleNameJudge"
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\RuleNameJudge"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Selection\\SelectionCellAddress"
         },
         {
           "owner": "Analysis.Finding",
@@ -17016,6 +17238,14 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\EnablementIndex"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Selection\\SelectionSpecificity"
         },
         {
           "owner": "Analysis.Finding",
@@ -18142,6 +18372,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing": {
+      "path": "src/Infrastructure/Console/CliRuleOptionAddressing.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\Console\\CliSelectorDecoder": {
       "path": "src/Infrastructure/Console/CliSelectorDecoder.php",
       "kind": "class",
@@ -18461,6 +18698,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\ConfigurationDiagnosticsPublisher": {
+      "path": "src/Infrastructure/Console/ConfigurationDiagnosticsPublisher.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter": {
       "path": "src/Infrastructure/Console/ConfigurationInputAdapter.php",
@@ -18884,6 +19128,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RuleOptionArgv": {
+      "path": "src/Infrastructure/Console/RuleOptionArgv.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
     },
     "Qualimetrix\\Infrastructure\\Console\\RunConfigurationPreparation": {
       "path": "src/Infrastructure/Console/RunConfigurationPreparation.php",

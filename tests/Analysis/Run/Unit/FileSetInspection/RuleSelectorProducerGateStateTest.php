@@ -12,6 +12,10 @@ use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 
 /**
@@ -74,14 +78,8 @@ final class RuleSelectorProducerGateStateTest extends TestCase
     private function enablementKnowingTheChannel(): RuleEnablement
     {
         return new RuleEnablement([new EnablementDecision(
-            self::PRODUCER,
-            new FindingChannel(self::CHANNEL),
-            null,
-            true,
-            true,
-            ChannelSelectionRole::Selectable,
-            null,
-            null,
+            new SelectionCellAddress(self::PRODUCER, new FindingChannel(self::CHANNEL), null, ChannelSelectionRole::Selectable),
+            new AuthoredCellDecision(CellSwitch::On, CellAdmission::Direct),
         )], null);
     }
 }

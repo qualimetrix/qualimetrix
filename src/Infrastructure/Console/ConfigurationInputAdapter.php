@@ -15,8 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
-use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -48,9 +46,7 @@ final class ConfigurationInputAdapter
     /** @param list<ConfigurationDiagnostic> $additional */
     public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output, array $additional = []): void
     {
-        foreach ([...$document->diagnostics(), ...$additional] as $diagnostic) {
-            $this->errorStream->write($output, \sprintf('<comment>Warning: %s</comment>', OutputFormatter::escape($diagnostic->message)));
-        }
+        (new ConfigurationDiagnosticsPublisher($this->errorStream))->write($document, $output, $additional);
     }
 
     /**
@@ -63,18 +59,7 @@ final class ConfigurationInputAdapter
      */
     public function publishedDiagnostics(ConfigurationDocument $document, array $additional = []): array
     {
-        $published = [];
-        foreach ([...$document->diagnostics(), ...$additional] as $diagnostic) {
-            $published[] = [
-                'message' => $diagnostic->message,
-                'source' => array_map(
-                    static fn(Provenance $provenance): array => RefusalPresenter::sourceDocument($provenance->origin),
-                    $diagnostic->sources,
-                ),
-            ];
-        }
-
-        return $published;
+        return (new ConfigurationDiagnosticsPublisher($this->errorStream))->report($document, $additional);
     }
 
     /**

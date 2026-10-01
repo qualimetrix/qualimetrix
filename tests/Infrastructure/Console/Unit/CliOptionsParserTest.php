@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
@@ -27,6 +26,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
+use Qualimetrix\Infrastructure\Console\CliRuleOptionAddressing;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Symfony\Component\Console\Command\Command;
@@ -37,6 +37,7 @@ use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 
 #[CoversClass(CliOptionsParser::class)]
+#[CoversClass(CliRuleOptionAddressing::class)]
 final class CliOptionsParserTest extends TestCase
 {
     #[Test]

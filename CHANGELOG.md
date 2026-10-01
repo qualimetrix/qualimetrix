@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Linked enablement decisions.** Replace independent EnablementDecision constructor
+arguments with SelectionCellAddress, AuthoredCellDecision and OptionActivity.
+Use CellSwitch and CellAdmission for the choice and pass the complete decisive
+writer list; its first writer supplies statement and provenance. The existing
+readonly observations remain available. See ADR 0092.
+
 **Typed document and option declarations.** Programmatic declaration consumers
 must replace NodeSchema scalar/map/list getters with its readonly typed facts.
 Replace stringList() with list(scalar(ScalarForm::String)), and oneOf(words, foldCase)

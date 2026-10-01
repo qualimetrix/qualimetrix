@@ -45,21 +45,26 @@ final readonly class RuleNameJudge
             || ($parsed->level() === null && array_any($channels->ruleNames(), $parsed->channel()->matches(...))))) {
             return null;
         }
-        $summary = \sprintf('Rule selector "%s" does not match any registered producer or channel.', $written);
+        return RefusedName::open(
+            \sprintf('Rule selector "%s" does not match any registered producer or channel.', $written)
+            . $this->selectorAdvice($written, $channels),
+        );
+    }
+
+    private function selectorAdvice(string $written, ChannelUniverseInterface $channels): string
+    {
         $replacement = RetiredRuleNames::replacementFor($written);
         if ($replacement !== null) {
-            $summary .= \sprintf(' Write "%s" instead.', $replacement);
-        } elseif ($written === 'computed.*' && \in_array('computed', $channels->ruleNames(), true)) {
-            $summary .= ' Write "computed" to select the producer; "computed.*" selects only declared descendant channels.';
-        } elseif (array_any($channels->ruleNames(), static fn(string $producer): bool => str_starts_with($producer, $written . '.'))) {
-            $summary .= \sprintf(' Write "%s.*" to select its descendants.', $written);
-        } else {
-            $closest = $this->closestTo($written);
-            if ($closest !== null) {
-                $summary .= \sprintf(' Did you mean "%s"?', $closest);
-            }
+            return \sprintf(' Write "%s" instead.', $replacement);
         }
-        return RefusedName::open($summary);
+        if ($written === 'computed.*' && \in_array('computed', $channels->ruleNames(), true)) {
+            return ' Write "computed" to select the producer; "computed.*" selects only declared descendant channels.';
+        }
+        if (array_any($channels->ruleNames(), static fn(string $producer): bool => str_starts_with($producer, $written . '.'))) {
+            return \sprintf(' Write "%s.*" to select its descendants.', $written);
+        }
+        $closest = $this->closestTo($written);
+        return $closest === null ? '' : \sprintf(' Did you mean "%s"?', $closest);
     }
 
     public function namespaceChannel(string $producer, string $written, ChannelUniverseInterface $channels): ?RefusedName

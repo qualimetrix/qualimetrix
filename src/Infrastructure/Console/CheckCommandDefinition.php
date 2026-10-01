@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -373,8 +372,7 @@ final class CheckCommandDefinition
             $surface = RuleOptionSurface::of($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                $address = $surface->locate($optionName);
-                if ($address !== null && $surface->schemaAt($address)->scalar->forms === [ScalarForm::Boolean]) {
+                if (CliRuleOptionAddressing::acceptsText($surface, $optionName) === false) {
                     $booleanAliases[] = $alias;
                 }
             }

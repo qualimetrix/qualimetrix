@@ -31,6 +31,13 @@ option word sets use the same explicit comparison choice. A vocabulary may still
 contain a blank word; refusing blank text requires the independent non-empty
 text constraint.
 
+An enablement decision is constructed from its declared cell address, authored
+switch and admission, complete decisive writers and option activity. The existing
+readonly observations remain available. Statement and provenance are projected
+from the first decisive writer, so callers cannot supply independent display facts.
+Private selection indexes and option builders keep the decide/build/conclude
+publication boundary and preserve writer ordering and refusals.
+
 ## Consumer migration
 
 Replace `NodeSchema::stringList()` with a list of ScalarForm::String nodes.
@@ -44,6 +51,12 @@ Replace `RuleOptionShape::oneOf()` and `::oneOfIgnoringCase()` with
 `::words(RuleOptionWordSet::of())` and
 `::words(RuleOptionWordSet::foldingCase())`. Read its declared vocabulary through
 the readonly word set. The DSL remains the authority for schema conversion.
+
+Replace independent `EnablementDecision` constructor arguments with
+`SelectionCellAddress`, `AuthoredCellDecision` and `OptionActivity`. Choose
+`CellSwitch::On` or `::Off` and `CellAdmission::Direct` or `::Filtered`.
+Provide all decisive writers; the first writer supplies statement and provenance.
+Readers retain the existing readonly observation names.
 
 ## Consequences
 

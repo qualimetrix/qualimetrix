@@ -28,42 +28,28 @@ final class AuthoredRuleOptionWrites
         }
 
         if (!$input instanceof ArgvInput) {
-            $records = [];
-            foreach ($available as $name => $acceptsValue) {
-                $value = $input->getOption($name);
-                if ($value === null || ($value === false && !$acceptsValue) || $value === []) {
-                    continue;
-                }
-                foreach (\is_array($value) ? $value : [$value] as $text) {
-                    $records[] = ['optionName' => '--' . $name, 'text' => $acceptsValue ? CommandLineSpelling::of($text, '--' . $name) : 'true', 'ordinal' => \count($records)];
-                }
-            }
-
-            return $records;
+            return self::boundInput($input, $available);
         }
 
-        $tokens = $input->getRawTokens(false);
+        return RuleOptionArgv::scan($input, $available);
+    }
+
+    /**
+     * @param array<string, bool> $available option name => accepts a value
+     *
+     * @return list<array{optionName: string, text: string, ordinal: int}>
+     */
+    private static function boundInput(InputInterface $input, array $available): array
+    {
         $records = [];
-        for ($index = 0, $count = \count($tokens); $index < $count; ++$index) {
-            $token = $tokens[$index];
-            if ($token === '--') {
-                break;
-            }
-            if (!str_starts_with($token, '--')) {
+        foreach ($available as $name => $acceptsValue) {
+            $value = $input->getOption($name);
+            if ($value === null || ($value === false && !$acceptsValue) || $value === []) {
                 continue;
             }
-            $parts = explode('=', substr($token, 2), 2);
-            $name = $parts[0];
-            $inline = $parts[1] ?? null;
-            if (!\array_key_exists($name, $available)) {
-                continue;
+            foreach (\is_array($value) ? $value : [$value] as $text) {
+                $records[] = ['optionName' => '--' . $name, 'text' => $acceptsValue ? CommandLineSpelling::of($text, '--' . $name) : 'true', 'ordinal' => \count($records)];
             }
-            if (!$available[$name]) {
-                $text = 'true';
-            } else {
-                $text = $inline ?? $tokens[++$index] ?? '';
-            }
-            $records[] = ['optionName' => '--' . $name, 'text' => $text, 'ordinal' => \count($records)];
         }
 
         return $records;

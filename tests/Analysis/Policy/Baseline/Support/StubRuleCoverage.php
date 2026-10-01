@@ -20,6 +20,10 @@ use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -69,14 +73,11 @@ final class StubRuleCoverage
             }
             foreach (SymbolLevel::cases() as $level) {
                 $decisions[] = new EnablementDecision(
-                    $producer,
-                    $channel,
-                    $level,
-                    true,
-                    !\in_array($producer, $notSelected, true),
-                    ChannelSelectionRole::Selectable,
-                    null,
-                    null,
+                    new SelectionCellAddress($producer, $channel, $level, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(
+                        CellSwitch::On,
+                        \in_array($producer, $notSelected, true) ? CellAdmission::Filtered : CellAdmission::Direct,
+                    ),
                     new OptionActivity(!\in_array($producer, $disabledEverywhere, true)),
                 );
             }

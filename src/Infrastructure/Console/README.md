@@ -17,6 +17,12 @@ Console/
 ├── Application.php
 ├── CliSelectorDecoder.php       # explicit kind:value scalar → Core path/namespace pattern
 ├── CliOptionsParser.php
+├── AuthoredRuleOptionWrites.php    # preserves authored occurrences across input adapters
+├── RuleOptionArgv.php              # repeated argv tokens and their original ordinal
+├── CliRuleOptionAddressing.php     # alias admission and the declared option address
+├── ConfigurationInputAdapter.php   # shared document and CLI ingress
+├── ConfigurationDiagnosticsPublisher.php # warnings and source diagnostics on the error stream
+├── RuleListingPresenter.php        # producer rows, computed footer and selection sources
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
@@ -480,6 +486,11 @@ builds the actual invocation channel snapshot. Measurement commands perform
 RuleEnablementResolver decide → RuleOptionsBuild build → conclude before runtime
 publication. Aliases and rule-opt contribute to one authored CLI layer with the
 same YAML value grammar, duplicate-write refusal and actual option locator.
+`RuleOptionArgv` preserves repeated tokens before Symfony folds scalar options;
+`AuthoredRuleOptionWrites` retains the bound-input fallback.
+`CliRuleOptionAddressing` judges aliases and addresses through the single
+`RuleOptionSurface` declaration. `ConfigurationInputAdapter` owns ingress
+and delegates diagnostic publication to `ConfigurationDiagnosticsPublisher`.
 The shared document/run doors and mandatory scope remain unchanged.
 
 `rules` reads declared forms and resolves stated selection without build,
@@ -488,7 +499,9 @@ from aliases and shared framework footer. It retains the effective only filter
 and all tied decisive disabling writers. `Selection source` names actual
 origin.describe() and zero-based layerIndex; repeated cells of a writer collapse,
 while identical displayed text from distinct writers remains distinct.
-DoD distinguishes a valid listing from successful effective-band preflight.
+`RuleListingPresenter` renders the selected rows, computed-metric footer and
+selection sources together. DoD distinguishes a valid listing from successful
+effective-band preflight.
 
 ## Locality
 

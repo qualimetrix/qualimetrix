@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Infrastructure\Console\AuthoredRuleOptionWrites;
+use Qualimetrix\Infrastructure\Console\RuleOptionArgv;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,6 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\StringInput;
 
 #[CoversClass(AuthoredRuleOptionWrites::class)]
+#[CoversClass(RuleOptionArgv::class)]
 final class AuthoredRuleOptionWritesTest extends TestCase
 {
     #[Test]

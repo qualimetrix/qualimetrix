@@ -20,6 +20,7 @@ use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\DirectivesCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\ConfigurationDiagnosticsPublisher;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
@@ -35,6 +36,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * rules, the file writes `only_rules: []` and lifts that filter.
  */
 #[CoversClass(ConfigurationInputAdapter::class)]
+#[CoversClass(ConfigurationDiagnosticsPublisher::class)]
 #[CoversClass(AnalysisPreflight::class)]
 #[CoversClass(BaselineRun::class)]
 #[CoversClass(CheckCommand::class)]

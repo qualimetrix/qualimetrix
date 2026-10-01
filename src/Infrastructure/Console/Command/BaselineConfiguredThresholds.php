@@ -98,29 +98,43 @@ final readonly class BaselineConfiguredThresholds
         $thresholds = [];
 
         foreach ($this->rules->getClasses() as $ruleClass) {
-            $declarations = ChannelDeclarationReader::read($ruleClass);
-
-            if ($declarations === []) {
-                continue;
-            }
-
-            $options = $this->optionsFor($ruleClass);
-
-            foreach ($declarations as $channelKey => $declaration) {
-                if (!$declaration->usesProducerWarningBoundary) {
-                    continue;
-                }
-                foreach ($declaration->levels as $level) {
-                    $threshold = self::thresholdFor($options, $level);
-
-                    if ($threshold !== null) {
-                        $thresholds[$channelKey][$level->value] = $threshold;
-                    }
+            foreach ($this->producerThresholds($ruleClass) as $channelKey => $levels) {
+                foreach ($levels as $level => $threshold) {
+                    $thresholds[$channelKey][$level] = $threshold;
                 }
             }
         }
 
         return $thresholds;
+    }
+
+    /**
+     * @param class-string<RuleDefinitionInterface> $ruleClass
+     *
+     * @return array<string, array<string, int|float>>
+     */
+    private function producerThresholds(string $ruleClass): array
+    {
+        $declarations = ChannelDeclarationReader::read($ruleClass);
+        if ($declarations === []) {
+            return [];
+        }
+
+        $options = $this->optionsFor($ruleClass);
+        $rows = [];
+        foreach ($declarations as $channelKey => $declaration) {
+            if (!$declaration->usesProducerWarningBoundary) {
+                continue;
+            }
+            foreach ($declaration->levels as $level) {
+                $threshold = self::thresholdFor($options, $level);
+                if ($threshold !== null) {
+                    $rows[$channelKey][$level->value] = $threshold;
+                }
+            }
+        }
+
+        return $rows;
     }
 
     /**

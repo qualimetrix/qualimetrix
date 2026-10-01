@@ -11,6 +11,10 @@ Finding/
 │   │   ├── FindingConfiguration.php
 │   │   └── RuleOptionsBuild.php
 │   ├── Selection/        # public authored decisions and name judgement
+│   │   ├── SelectionCellAddress.php # declared producer/channel/level/role
+│   │   ├── AuthoredCellDecision.php # switch, admission and decisive writers
+│   │   ├── CellSwitch.php
+│   │   ├── CellAdmission.php
 │   │   ├── RuleEnablementResolver.php
 │   │   ├── RuleNameJudge.php
 │   │   └── StatedEnablement.php
@@ -21,6 +25,9 @@ Finding/
 ├── Exclusion/            # Private namespace and path exclusion stores, plus the one reader of a producer's configured suppression options
 ├── Rule/                 # Internal producer and channel implementations
 ├── RuleConfiguration/    # private RulesSection schema, suppression decoder and invocation stores
+│   ├── ProducerOptionsBuild.php # immutable options for one producer
+│   ├── OptionActivityResolution.php # per-cell mode and level activity
+│   ├── ThresholdBandRefusal.php # winning authored and default halves
 │   └── OptionForms/      # private declaration and document projection
 │       ├── RuleOptionDefinition.php # scalar, word or compound declaration
 │       ├── CompoundRuleOptionForm.php # list/map/union matching and wording
@@ -28,7 +35,12 @@ Finding/
 │       ├── RuleOptionSchemaProjection.php # the document form of one declaration
 │       ├── RuleOptionDeclarations.php # disjoint recognition states
 │       └── RuleOptionKeyMetadata.php # bands, shorthands, axes and retirements
-├── Selection/            # private retired-name advice
+├── Selection/            # private authored selection and retired-name advice
+│   ├── AuthoredSelection.php # every authored writer and name judgement
+│   ├── SelectionSpecificity.php # selector-cell membership and rank
+│   ├── SelectionRefusals.php # contradictory or ineffective authored choices
+│   ├── SelectionCauses.php # complete decisive ties and source ordering
+│   └── EnablementIndex.php # immutable producer/channel cell lookup
 ├── SuppressionBinding/   # Whether a configured suppression value named anything the run holds
 ├── RuleExecution.php     # Selects producers, executes them, and returns what happened as a value
 └── ChannelPresentationView.php # Joins a channel to its description and its producer's docs page
@@ -231,6 +243,12 @@ hint, not by a second raw dictionary walk.
 removed by the final selection are recorded separately from producers that never
 ran. Decisive tied writers remain attached to the decision, so listings and audit
 publishers do not reconstruct provenance from displayed text.
+`EnablementDecision` is constructed from a `SelectionCellAddress`, an
+`AuthoredCellDecision` and `OptionActivity`. Its readonly observations remain
+available; statement and provenance are projected from the first decisive writer.
+`CellSwitch` and `CellAdmission` express the authored choice without independent
+boolean constructor switches. Private selection and options builders retain
+the same decide/build/conclude publication boundary.
 
 `ControlScope` and `ThresholdOverride` are Finding-owned vocabulary. Inline
 produces them from source annotations, Run transports them, and Finding applies

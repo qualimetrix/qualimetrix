@@ -4,24 +4,29 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Selection;
 
-use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
 use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\SelectionFilter;
+use Qualimetrix\Analysis\Finding\Selection\EnablementIndex;
 
 /** Decisions from authored statements, before options decide level activity. */
 final readonly class StatedEnablement
 {
+    private EnablementIndex $index;
+
     /**
      * @param list<EnablementDecision> $decisions
      * @param list<ConfigurationDiagnostic> $diagnostics
      */
-    public function __construct(private array $decisions, private ?SelectionFilter $filter, private array $diagnostics = []) {}
+    public function __construct(array $decisions, private ?SelectionFilter $filter, private array $diagnostics = [])
+    {
+        $this->index = new EnablementIndex($decisions);
+    }
 
     /** @return list<EnablementDecision> */
     public function decisions(): array
     {
-        return $this->decisions;
+        return $this->index->all();
     }
 
     /** @return list<ConfigurationDiagnostic> */
@@ -32,24 +37,12 @@ final readonly class StatedEnablement
 
     public function isEnabled(string $producer): bool
     {
-        foreach ($this->decisions as $decision) {
-            if ($decision->producer === $producer && $decision->on) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->index->enabled($producer);
     }
 
     public function decisionFor(string $producer): EnablementDecision
     {
-        foreach ($this->decisions as $decision) {
-            if ($decision->producer === $producer) {
-                return $decision;
-            }
-        }
-
-        throw new LogicException(\sprintf('No declared cell for producer "%s".', $producer));
+        return $this->index->firstForProducer($producer);
     }
 
     public function filter(): ?SelectionFilter
