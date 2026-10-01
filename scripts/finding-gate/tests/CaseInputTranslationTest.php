@@ -126,7 +126,12 @@ final class CaseInputTranslationTest extends TestCase
         $original = Fs::read($this->directory . '/presets/local.yaml');
         $case = CaseDefinition::load($this->directory);
         $witness = new ChannelWitness(\dirname(__DIR__, 3));
-        self::assertContains('computed.input-probe@class', $witness->computedPairs($case));
+        try {
+            $pairs = $witness->computedPairs($case);
+        } catch (GateError $error) {
+            self::fail($error->getMessage());
+        }
+        self::assertContains('computed.input-probe@class', $pairs);
         self::assertNotContains('computed.input-probe@class', $witness->staticPairs());
         self::assertSame($original, Fs::read($this->directory . '/presets/local.yaml'));
         self::assertDirectoryDoesNotExist($this->directory . '/.qmx-cache');

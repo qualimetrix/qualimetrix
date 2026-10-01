@@ -45,19 +45,29 @@ $container = (new ContainerFactory())->create();
 $pipeline = $container->get(ConfigurationPipelineInterface::class);
 $computed = $container->get(ComputedMetricConfiguratorInterface::class);
 $rules = $container->get(RuleRegistryInterface::class);
-$execution = $container->get(RuleExecutionInterface::class);
 $snapshot = $container->get(ChannelUniverseInterface::class);
 assert($pipeline instanceof ConfigurationPipelineInterface);
 assert($computed instanceof ComputedMetricConfiguratorInterface);
 assert($rules instanceof RuleRegistryInterface);
-assert($execution instanceof RuleExecutionInterface);
 assert($snapshot instanceof RuleChannelSnapshotFactoryInterface);
 $command = new Command('check');
 $command->setApplication(new Application());
 CheckCommandDefinition::addOptions($command, $rules);
 $command->mergeApplicationDefinition(false);
 $arguments = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
-$document = $pipeline->resolve((new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution))->adapt($arguments, $directory));
+$constructor = new ReflectionMethod(ConfigurationInputAdapter::class, '__construct');
+$dependencies = [$pipeline, new ErrorStream()];
+if ($constructor->getNumberOfRequiredParameters() === 3
+    && ($constructor->getParameters()[2]->getType() instanceof ReflectionNamedType)
+    && $constructor->getParameters()[2]->getType()->getName() === RuleExecutionInterface::class) {
+    $execution = $container->get(RuleExecutionInterface::class);
+    assert($execution instanceof RuleExecutionInterface);
+    $dependencies[] = $execution;
+} elseif ($constructor->getNumberOfRequiredParameters() !== 2) {
+    throw new RuntimeException('The probe does not support this configuration adapter constructor.');
+}
+$adapter = (new ReflectionClass(ConfigurationInputAdapter::class))->newInstanceArgs($dependencies);
+$document = $pipeline->resolve($adapter->adapt($arguments, $directory));
 $generator = new BaselineGenerator($snapshot->snapshot($computed->resolve($document)), new SystemClock());
 
 $findings = [];
