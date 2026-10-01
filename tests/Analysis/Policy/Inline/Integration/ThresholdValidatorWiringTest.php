@@ -11,8 +11,10 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
@@ -71,11 +73,18 @@ final class ThresholdValidatorWiringTest extends TestCase
                 $validatorMap,
                 "Rule '{$ruleName}' supports threshold overrides but the factory did not emit a validator for it.",
             );
+            self::assertInstanceOf(RuleOptionForms::class, $validatorMap[$ruleName]);
             self::assertSame(
                 $expectedValidator,
-                $validatorMap[$ruleName],
+                $validatorMap[$ruleName]->strategy,
                 "Factory-emitted validator for '{$ruleName}' differs from the expected validator for {$optionsClass}.",
             );
+            foreach ($validatorMap[$ruleName]->levels() as $level) {
+                self::assertTrue($validatorMap[$ruleName]->hasAxis($ruleName, $level, 'warning'));
+                if (!$expectedValidator instanceof WarningOnlyValidator) {
+                    self::assertTrue($validatorMap[$ruleName]->hasAxis($ruleName, $level, 'error'));
+                }
+            }
 
             ++$checkedThresholdAware;
         }
@@ -112,10 +121,13 @@ final class ThresholdValidatorWiringTest extends TestCase
         $validators = $extractorDefinition->getArgument('$validators');
 
         self::assertArrayHasKey(MethodCountRule::NAME, $validators);
+        self::assertInstanceOf(RuleOptionForms::class, $validators[MethodCountRule::NAME]);
         self::assertSame(
             MethodCountOptions::getOverrideValidator(),
-            $validators[MethodCountRule::NAME],
+            $validators[MethodCountRule::NAME]->strategy,
         );
+        self::assertSame('integer at least 0', $validators[MethodCountRule::NAME]->formOf(MethodCountRule::NAME, null, 'warning')->describe());
+        self::assertSame('integer at least 0', $validators[MethodCountRule::NAME]->formOf(MethodCountRule::NAME, null, 'error')->describe());
     }
 
     #[Test]

@@ -10,12 +10,32 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 
 #[CoversClass(RuleOptionKeySet::class)]
 final class RuleOptionKeySetTest extends TestCase
 {
+    #[Test]
+    public function itKeepsTheThreeDeclaredOverrideAxisMapsDistinct(): void
+    {
+        self::assertSame(
+            ['warning' => 'woc-threshold', 'error' => 'wmc-threshold'],
+            DataClassOptions::acceptedOptionKeys()->overrideAxes(),
+        );
+        self::assertSame(
+            ['warning' => 'min-criteria'],
+            GodClassOptions::acceptedOptionKeys()->overrideAxes(),
+        );
+        self::assertSame(
+            ['warning' => 'max-warning', 'error' => 'max-error'],
+            ClassComplexityOptions::acceptedOptionKeys()->overrideAxes(),
+        );
+    }
+
     #[Test]
     public function itPlacesAnAcceptedKeyInTheAcceptedStateOnly(): void
     {

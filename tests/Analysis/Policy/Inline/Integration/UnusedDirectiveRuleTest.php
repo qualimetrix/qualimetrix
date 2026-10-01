@@ -598,6 +598,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $diagnostics[] = new ThresholdDiagnostic(
                 line: 13,
                 subject: $subject,
+                rulePattern: 'complexity.ccn',
                 message: '@qmx-threshold complexity.ccn: invalid syntax',
             );
         }

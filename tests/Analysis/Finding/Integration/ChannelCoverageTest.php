@@ -365,6 +365,7 @@ final class ChannelCoverageTest extends TestCase
                         line: 30,
                         subject: $subject,
                         message: '@qmx-threshold complexity.ccn: warning (20) must not exceed error (10)',
+                        rulePattern: 'complexity.ccn',
                         code: 'warning_exceeds_error',
                     ),
                 ],

@@ -8,6 +8,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult;
@@ -217,6 +218,7 @@ final readonly class ThresholdOverrideExtractor
             return new ThresholdDiagnostic(
                 line: $line,
                 subject: $subject,
+                rulePattern: $rulePattern,
                 message: \sprintf(
                     '@qmx-threshold %s: invalid syntax "%s" — expected a number or warning=N error=N',
                     $rulePattern,
@@ -228,15 +230,24 @@ final readonly class ThresholdOverrideExtractor
         // Unknown rule names (or wildcard / prefix patterns) skip validation —
         // the post-analysis `annotation.unsupported-threshold` diagnostic
         // surfaces those instead.
-        $failure = ($this->validators[$rulePattern] ?? null)?->validate($parsed[0], $parsed[1], $parsed[2]);
+        $validator = $this->validators[$rulePattern] ?? null;
+        $failure = $validator?->validate($parsed[0], $parsed[1], $parsed[2]);
         if ($failure !== null) {
             return new ThresholdDiagnostic(
                 line: $line,
                 subject: $subject,
+                rulePattern: $rulePattern,
                 message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
                 code: $failure->code,
                 hint: $failure->hint,
             );
+        }
+
+        if ($validator instanceof RuleOptionForms) {
+            $formProblem = self::formProblem($validator, $rulePattern, $parsed, $line, $subject);
+            if ($formProblem !== null) {
+                return $formProblem;
+            }
         }
 
         if (!isset($seenRules[$rulePattern])) {
@@ -246,12 +257,62 @@ final readonly class ThresholdOverrideExtractor
         return new ThresholdDiagnostic(
             line: $line,
             subject: $subject,
+            rulePattern: $rulePattern,
             message: \sprintf(
                 '@qmx-threshold %s: duplicate annotation — rule "%s" already has a threshold override on this symbol',
                 $rulePattern,
                 $rulePattern,
             ),
         );
+    }
+
+    /**
+     * An annotation addresses a rule, not one level. Every level it can retune
+     * must accept each written axis before an Options class converts it.
+     *
+     * @param array{int|float|null, int|float|null, bool} $parsed
+     */
+    private static function formProblem(
+        RuleOptionForms $forms,
+        string $rulePattern,
+        array $parsed,
+        int $line,
+        MetricSubject $subject,
+    ): ?ThresholdDiagnostic {
+        foreach ($forms->levels() as $level) {
+            foreach (['warning' => $parsed[0], 'error' => $parsed[1]] as $axis => $value) {
+                if ($value === null || ($axis === 'error' && !$parsed[2] && !$forms->hasAxis($rulePattern, $level, $axis))) {
+                    continue;
+                }
+
+                if (!$forms->hasAxis($rulePattern, $level, $axis)) {
+                    return new ThresholdDiagnostic(
+                        line: $line,
+                        subject: $subject,
+                        rulePattern: $rulePattern,
+                        code: 'unsupported_' . $axis . '_axis',
+                        message: \sprintf('@qmx-threshold %s: %s threshold has no declared override form%s', $rulePattern, $axis, $level === null ? '' : ' at ' . $level . ' level'),
+                    );
+                }
+                $form = $forms->formOf($rulePattern, $level, $axis);
+
+                $accepts = false;
+                foreach ($form->scalarForms() as $scalarForm) {
+                    $accepts = $accepts || $scalarForm->accepts($value);
+                }
+                if (!$accepts || ($form->minimum() !== null && $value < $form->minimum())) {
+                    return new ThresholdDiagnostic(
+                        line: $line,
+                        subject: $subject,
+                        rulePattern: $rulePattern,
+                        code: 'invalid_' . $axis . '_form',
+                        message: \sprintf('@qmx-threshold %s: %s threshold%s must be %s (got %s)', $rulePattern, $axis, $level === null ? '' : ' at ' . $level . ' level', $form->describe(), $value),
+                    );
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
