@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -14,1 +14,1 @@
+-        "produced_findings": 18
++        "produced_findings": 17

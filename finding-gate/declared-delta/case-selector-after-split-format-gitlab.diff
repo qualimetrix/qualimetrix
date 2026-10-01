@@ -1,0 +1,25 @@
+--- candidate
++++ reference (mapped)
+@@ -2,15 +2,7 @@
+-    "error": "Configuration error: Rule selector \"complexity\" does not match any registered producer or channel. Write \"complexity.*\" to select its descendants.",
+-    "exit_code": 3,
+-    "position": {
+-        "path": [
+-            "only_rules",
+-            "0"
+-        ],
+-        "written": "0",
+-        "accepted": [],
+-        "closed": false
+-    },
+-    "source": [
+-        {
+-            "kind": "file",
+-            "name": "qmx.yaml",
++    "error": "Configuration error: Rule selector \"complexity\" does not match any registered producer or channel. A bare prefix is not a group: write \"complexity.*\" to select every rule under \"complexity\".",
++    "exit_code": 3,
++    "position": null,
++    "source": [
++        {
++            "kind": "resolved",
++            "name": null,

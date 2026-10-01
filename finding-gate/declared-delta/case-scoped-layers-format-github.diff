@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -2,1 +2,1 @@
+-::notice title=run.project-scope::Project scope narrowed: the analysed paths do not cover autoload target(s) src, so these channels, judged only on a whole-project run, were not judged: architecture.empty-template, architecture.unmatched-exclude, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger.
++::notice title=run.project-scope::Project scope narrowed: the analysed paths do not cover autoload target(s) src, so these channels, judged only on a whole-project run, were not judged: architecture.empty-template, architecture.unmatched-exclude, architecture.unreachable-layer, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger.

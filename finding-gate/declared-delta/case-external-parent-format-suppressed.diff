@@ -1,6 +1,24 @@
 --- candidate
 +++ reference (mapped)
-@@ -22,2 +22,1 @@
--        "unjudgedValues": [],
--        "reasons": []
-+        "unjudgedValues": []
+@@ -32,2 +32,1 @@
+-        "rule-path-suppression",
+-        "selection"
++        "rule-path-suppression"
+@@ -42,13 +41,4 @@
+-        "rule-path-suppression": 0,
+-        "selection": 0
+-    },
+-    "suppressed": [],
+-    "neverMatched": [],
+-    "notRun": [
+-        {
+-            "producer": "architecture.unassigned-class",
+-            "reason": "disabled",
+-            "statement": "inactive by default",
+-            "layer": "default"
+-        }
+-    ]
++        "rule-path-suppression": 0
++    },
++    "suppressed": [],
++    "neverMatched": []

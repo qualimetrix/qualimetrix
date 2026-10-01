@@ -234,10 +234,10 @@ bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.ccn`'s `callable:`/`class:`).
 
 **Hierarchical shorthand is a per-layer form.** A top `threshold` changes the
-callable band of CCN/cognitive/NPath and preserves the class band's defaults.
+callable band of CCN/cognitive/NPath and preserves the class band's values and defaults.
 Write class.enabled:false if class reporting should be off. A top shorthand
-beside one of its explicit target level blocks in the same layer is refused,
-rather than silently dropping that block. To configure both levels in one layer:
+and an explicit write to the same expanded leaf in one layer refuse; an independent
+child in a target level block can coexist. To configure both levels in one layer:
 
 ```yaml
 rules:
@@ -250,8 +250,8 @@ rules:
 ```
 
 CBO and instability spread a top band to class and namespace in the writing
-layer. An explicit target block conflicts with that shorthand in the same layer;
-put independent levels in explicit blocks. A higher layer may override the
+layer. An explicit write conflicts only at an overlapping expanded leaf in that layer;
+independent level children coexist. A higher layer may override the
 expanded leaves of a lower layer without discarding unrelated values.
 
 Each type-coverage dimension is a rule of its own, so each takes its own bare
@@ -1493,7 +1493,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 Misspelled rule names in the `rules:` section are rejected:
 
 ```
-Configuration error: Unknown rule "complexty.ccn" in qmx.yaml. Did you mean "complexity.ccn"?
+Configuration error: Rule option owner "complexty.ccn" does not match any registered producer rule. Did you mean "complexity.ccn"?
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -1503,7 +1503,7 @@ An option key a rule does not have is a configuration error at **every** depth
 it can be written at — the run stops with exit code 3 and nothing is analyzed:
 
 ```
-Configuration error: Option "warningThreshold" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
+Configuration error: Unknown key "rules.complexity.ccn.warning_threshold" in configuration file "qmx.yaml". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -1511,18 +1511,18 @@ Inside a level slot the message names the slot, because the allowed set is per
 level and not per rule:
 
 ```
-Configuration error: Option "warning" is not an option of rule "complexity.ccn" at level "class". Options at that level: enabled, max-error, max-warning, threshold. Other levels of this rule take different options.
+Configuration error: Unknown key "rules.complexity.ccn.class.warning" in configuration file "qmx.yaml". Accepted keys: enabled, max-error, max-warning, threshold.
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
-The same applies to `--rule-opt` on the command line, with the same code and the
-same message.
+`--rule-opt` rejects the same undeclared keys with exit code 3, naming its own
+flag (`Source: option --rule-opt.`); its wording and hints can differ from YAML.
 
-!!! note "The key is quoted in its folded spelling"
-    Separators are folded before the key reaches the rule, so a mistyped
-    `max_warnign` is answered as `"maxWarnign"`. The letters — which is what a
-    typo gets wrong — are unchanged. The allowed keys are always listed in the
-    canonical kebab spelling.
+!!! note "The key keeps its authored spelling"
+    An unknown key keeps its separators: `max_warnign` is printed as
+    `"max_warnign"`, without folding. File refusals name the full authored
+    key path and file; CLI refusals name the flag. Allowed keys are listed in
+    the canonical kebab spelling of the declaration.
 
 ### The shape of a value
 
@@ -1539,7 +1539,7 @@ source the value arrives from is judged, not only the one that wins: a wrong
 overrides it, because a value nobody will use is still a value somebody wrote:
 
 ```
-Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.
+Configuration error: "rules.complexity.ccn.callable.warning" in configuration file "qmx.yaml" must be integer at least 0, got string.
 Configuration error: "only_rules" in configuration file "qmx.yaml" must be a list, got a map.
 Configuration error: "cache" in configuration file "qmx.yaml" must be a map, got a list.
 ```
@@ -1698,15 +1698,15 @@ There is no permissive raw option bag or second constructor-reflected vocabulary
 Unknown owners, retired keys and invalid spellings refuse with their authored
 producer/key path and source before Discovery.
 
-A rule boolean writes only `enabled`. `true` preserves lower thresholds and
-exclusions; `false` turns the producer off. A rule or level `{}` writes nothing,
+A rule boolean writes only `enabled`. `true` preserves thresholds, exclusions and
+each level's own switch; `false` disables every level. A rule or level `{}` writes nothing,
 and `~` leaves the lower value. No empty-body reset restores defaults. To restore
 a default over an earlier layer, write its value explicitly. A level requires
 its own declared map, such as `class: {enabled: false}`, rather than a rule boolean.
 
 Shorthands expand in their own layer. Writing `threshold` and one of its band
-halves in the same layer refuses. A top hierarchical shorthand and its explicit
-target level blocks also conflict within one layer; in separate layers their
+halves in the same layer refuses. A top hierarchical shorthand conflicts only with
+an explicit write to the same expanded leaf; independent children coexist, and across layers
 expanded leaves merge. Complexity's top shorthand changes callable only and
 preserves class; CBO and instability spread their flat bands to class and
 namespace. A written NPath class band activates without a redundant true switch.

@@ -1,0 +1,321 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-visible 14107
++visible 1303
+@@ -33,2 +33,1 @@
+-        "rule-path-suppression",
+-        "selection"
++        "rule-path-suppression"
+@@ -43,307 +42,4 @@
+-        "rule-path-suppression": 0,
+-        "selection": 0
+-    },
+-    "suppressed": [],
+-    "neverMatched": [],
+-    "notRun": [
+-        {
+-            "producer": "code-smell.boolean-argument",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.constructor-overinjection",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.count-in-loop",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.debug-code",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.empty-catch",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.error-suppression",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.eval",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.exit",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.goto",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.identical-subexpression",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.long-parameter-list",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.superglobals",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.unreachable-code",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "code-smell.unused-private",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "cohesion.lcom",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "complexity.wmc",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "coupling.cbo",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "coupling.class-rank",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "coupling.distance",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "coupling.instability",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "coupling.unmatched-framework-namespace",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.data-class",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.god-class",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.dit",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.noc",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.type-coverage.param",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.type-coverage.return",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "design.type-coverage.property",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "maintainability.mi",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.command-injection",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.hardcoded-credentials",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.sensitive-parameter",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.sql-injection",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "security.xss",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "size.class-count",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "size.method-count",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "size.property-count",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "computed",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "suppression.configuration",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "architecture.layer-violation",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "architecture.unassigned-class",
+-            "reason": "disabled",
+-            "statement": "inactive by default",
+-            "layer": "default"
+-        },
+-        {
+-            "producer": "architecture.circular-dependency",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "duplication.clone",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "discovery.unmatched-exclude",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "health.complexity",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "health.cohesion",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "health.coupling",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "health.typing",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "health.maintainability",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {
+-            "producer": "health.overall",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        }
+-    ]
++        "rule-path-suppression": 0
++    },
++    "suppressed": [],
++    "neverMatched": []

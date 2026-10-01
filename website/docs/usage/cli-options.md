@@ -1246,9 +1246,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 Rules are grouped by category. `options:` names what the rule accepts in its
 own block, and an `options at <level>:` line names what a level slot accepts —
 these are the complete set, whether or not an option also has a CLI alias. The
-three keys in the footer are legal under every rule. `enabled` is listed per
-rule rather than in the footer because one rule, `architecture.unassigned-class`,
-does not take it — its switch is `mode`.
+three keys in the footer are legal under every rule. `enabled` is listed with
+each rule, including `architecture.unassigned-class`: false disables it even in a reportable mode;
+explicit true with `mode: ignore` refuses because the producer would remain inactive.
 
 Each CLI alias is listed with the long `--rule-opt` form it expands to. Default
 threshold values are not part of this output — see

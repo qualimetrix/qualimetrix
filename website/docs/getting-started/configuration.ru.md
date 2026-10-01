@@ -237,10 +237,10 @@ bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 То же самое работает и в обратную сторону (`threshold` из нижнего слоя перекрывается парой `warning`/`error` из более приоритетного), а также для составных правил — на том уровне вложенности, где заданы ключи (например, `callable:`/`class:` у `complexity.ccn`).
 
 **Сокращение составного правила — форма одного слоя.** Верхний `threshold`
-меняет callable-пару CCN/cognitive/NPath и сохраняет class defaults. Если class
-не нужен, напиши class.enabled:false. Верхнее сокращение рядом с явным блоком
-его целевого уровня в одном слое отказывает, а не молча удаляет блок. Для обоих
-уровней в одном слое используй:
+меняет callable-пару CCN/cognitive/NPath и сохраняет значения и defaults class. Если class
+не нужен, напиши class.enabled:false. Верхнее сокращение и явная запись того же
+раскрытого листа в одном слое отказывают; независимый дочерний ключ целевого
+блока может сосуществовать. Для обоих уровней в одном слое используй:
 
 ```yaml
 rules:
@@ -253,8 +253,8 @@ rules:
 ```
 
 CBO и instability раскрывают верхнюю пару в class и namespace в написавшем
-слое. Явный целевой блок конфликтует с таким сокращением в том же слое; отдельные
-уровни настрой явными блоками. Более высокий слой может перекрыть раскрытые
+слое. Явная запись конфликтует только с тем же раскрытым листом; независимые
+дочерние ключи уровня сосуществуют. Более высокий слой может перекрыть раскрытые
 листья нижнего, не стирая остальные значения.
 
 Каждое измерение покрытия типами -- отдельное правило, и у каждого свой обычный
@@ -1505,7 +1505,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 Опечатки в именах правил в секции `rules:` отклоняются:
 
 ```
-Configuration error: Unknown rule "complexty.ccn" in qmx.yaml. Did you mean "complexity.ccn"?
+Configuration error: Rule option owner "complexty.ccn" does not match any registered producer rule. Did you mean "complexity.ccn"?
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -1515,7 +1515,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 где его можно написать: прогон останавливается с кодом 3, анализ не выполняется:
 
 ```
-Configuration error: Option "warningThreshold" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
+Configuration error: Unknown key "rules.complexity.ccn.warning_threshold" in configuration file "qmx.yaml". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
@@ -1523,17 +1523,17 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ключей своё у каждого уровня, а не у правила целиком:
 
 ```
-Configuration error: Option "warning" is not an option of rule "complexity.ccn" at level "class". Options at that level: enabled, max-error, max-warning, threshold. Other levels of this rule take different options.
+Configuration error: Unknown key "rules.complexity.ccn.class.warning" in configuration file "qmx.yaml". Accepted keys: enabled, max-error, max-warning, threshold.
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
-То же верно для `--rule-opt` в командной строке — тот же код и то же сообщение.
+`--rule-opt` тоже отказывает с кодом 3, но называет свой флаг (`Source: option --rule-opt.`); текст и подсказки YAML и CLI могут различаться.
 
-!!! note "Ключ цитируется в свёрнутом написании"
-    Разделители сворачиваются до того, как ключ доходит до правила, поэтому на
-    опечатку `max_warnign` ответ придёт как `"maxWarnign"`. Буквы — а именно их
-    и путает опечатка — не меняются. Допустимые ключи всегда перечисляются в
-    каноническом kebab-написании.
+!!! note "Ключ сохраняет авторское написание"
+    Неизвестный ключ сохраняет разделители: `max_warnign` печатается как
+    `"max_warnign"`, без свёртки. Отказ файла называет полный авторский путь
+    ключа и файл, отказ CLI — флаг. Допустимые ключи перечисляются в
+    каноническом kebab-написании объявления.
 
 ### Форма значения
 
@@ -1551,7 +1551,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 воспользуется, всё равно кем-то написано:
 
 ```
-Configuration error: Option "warning" of rule "complexity.ccn" at level "callable" must be a non-negative whole number or null, got a string.
+Configuration error: "rules.complexity.ccn.callable.warning" in configuration file "qmx.yaml" must be integer at least 0, got string.
 Configuration error: "only_rules" in configuration file "qmx.yaml" must be a list, got a map.
 Configuration error: "cache" in configuration file "qmx.yaml" must be a map, got a list.
 ```
@@ -1712,15 +1712,15 @@ rules:
 Неизвестные владельцы, удалённые ключи и неверные написания отказывают до
 Discovery с полным авторским producer/key path и источником.
 
-Булева форма правила пишет только `enabled`. `true` сохраняет нижние пороги и
-исключения, `false` выключает producer. `{}` для правила или уровня ничего не
+Булева форма правила пишет только `enabled`. `true` сохраняет пороги, исключения
+и собственный switch каждого уровня; `false` выключает все уровни. `{}` ничего не
 пишет, `~` оставляет нижнее значение. Пустое тело не возвращает defaults: чтобы
 вернуть default поверх нижнего слоя, напиши его значение явно. Уровень требует
 своей объявленной map, например `class: {enabled: false}`, а не boolean правила.
 
 Сокращения раскрываются в своём слое. `threshold` рядом с одной из половин его
-пары в одном слое отказывает. Верхнее сокращение составного правила и явные
-блоки его целевых уровней также конфликтуют в одном слое; в разных слоях их
+пары в одном слое отказывает. Верхнее сокращение конфликтует только с явной
+записью того же раскрытого листа; независимые ключи сосуществуют, а в разных слоях их
 раскрытые листья сливаются. Верхнее сокращение complexity меняет только callable
 и сохраняет class; плоские пары CBO и instability раскрываются в class и
 namespace. Написанная class-пара NPath действует без лишнего true. Явное

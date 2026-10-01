@@ -1,6 +1,4 @@
 --- candidate
 +++ reference (mapped)
-@@ -44,2 +44,1 @@
--        "unjudgedValues": [],
--        "reasons": []
-+        "unjudgedValues": []
+@@ -38,1 +38,0 @@
+-            "cohesion.unmatched-exclude-method",

@@ -80,12 +80,12 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     }
 
     /**
-     * The three removed severity keys are declared as answered-by-the-class,
-     * not accepted: {@see assertNoRemovedSeverityKeys()} recognises them only
-     * to refuse them in its own words, naming what replaced them. Declaring
-     * them accepted would silence that message; leaving them unknown would
-     * print the generic "Unknown option" sentence one line above the bespoke
-     * one, which is the defect this declaration exists to remove.
+     * The three removed severity keys are retired with owner-declared wording,
+     * not accepted as live options. The schema refuses them before construction
+     * and names both the removal and its replacement. Treating them as
+     * unknown keys would lose that migration advice; accepting them would
+     * silently discard a setting for diagnostics that always fail the run.
+     * The retired declaration keeps the removed configuration traceable.
      */
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
