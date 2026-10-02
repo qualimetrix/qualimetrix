@@ -153,7 +153,7 @@ final class Probes
             [
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "plain"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "glued to the docblock star"',
-                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a closed fence"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target cut at a call"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "star"',
@@ -735,8 +735,10 @@ final class Probes
                 'a documented example is counted as an authored directive',
                 self::SCAN,
                 [
-                    'foreach (explode("\n", self::blankBacktickRegions($token[1])) as $offset => $line) {'
+                    'foreach (self::commentLines($token[1]) as $offset => $line) {'
                     => 'foreach (explode("\n", $token[1]) as $offset => $line) {',
+                    '            if (self::quotedMention($line, $position)) {'
+                    => '            if (false) {',
                 ],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "backticked"'],
             )->alsoReddens(
@@ -750,10 +752,10 @@ final class Probes
                 'a backtick region is removed rather than blanked, so everything below it moves up',
                 self::SCAN,
                 [
-                    "            static fn(array \$match): string => preg_replace('/[^\\r\\n]/', ' ', \$match[0]) ?? \$match[0],"
-                    => "            static fn(array \$match): string => '',",
+                    '        return array_values($lines);'
+                    => "        return array_values(array_filter(\$lines, static fn(string \$line): bool => trim(\$line) !== ''));",
                 ],
-                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a multiline backtick region"'],
+                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "after a closed fence"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
@@ -786,8 +788,9 @@ final class Probes
                 'a second directive behind a target the product cut short is dropped',
                 self::SCAN,
                 [
-                    "            if (\$address['values'] !== '' || \$address['carriesValues']) {"
-                    => '            if (true) {',
+                    "            \$cursor = \$address['end'];"
+                    => "            if (!\$address['carriesValues']) { return \$addresses; }
+            \$cursor = \$address['end'];",
                 ],
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
@@ -828,8 +831,8 @@ final class Probes
                 'the reason text of a complete directive is scanned for another one, so a quoted tag becomes a site',
                 self::SCAN,
                 [
-                    "            if (\$address['values'] !== '' || \$address['carriesValues']) {"
-                    => '            if (false) {',
+                    '            if (self::quotedMention($line, $position)) {'
+                    => '            if (self::quotedMention($line, $position) && $addresses === []) {',
                 ],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"', 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture'],
             ),
@@ -837,7 +840,7 @@ final class Probes
                 'scan-admits-an-empty-target',
                 'a tag followed by something no channel starts with is admitted as a site addressing nothing',
                 self::SCAN,
-                ["        if (\$target === '') {" => '        if (false) {'],
+                ["        if (\$target === '' || (\$stars > 0 && (\$line[\$afterSeparators + \$stars] ?? null) === '/')) {" => '        if (false) {'],
                 ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target wrapped in parens"'],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',

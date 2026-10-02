@@ -56,6 +56,9 @@ final readonly class DirectiveRefusal
         public DirectiveRefusalReason $reason,
         public string $form,
         public string $tag,
+        private ?int $fenceLine = null,
+        private ?string $intended = null,
+        private ?string $spaceName = null,
     ) {}
 
     /** @param non-empty-string $form the tag as authored, without its `@qmx-` prefix */
@@ -99,6 +102,34 @@ final readonly class DirectiveRefusal
         return new self(DirectiveRefusalReason::NamesNoTarget, $form, self::tagOf($form));
     }
 
+    public static function notAtLineStart(string $tag): self
+    {
+        return new self(DirectiveRefusalReason::NotAtLineStart, self::formOf($tag), $tag);
+    }
+
+    public static function insideUnclosedFence(string $tag, int $fenceLine): self
+    {
+        return new self(DirectiveRefusalReason::InsideUnclosedFence, self::formOf($tag), $tag, $fenceLine);
+    }
+
+    public static function misspelledPrefix(string $written, string $intended, ?string $spaceName = null): self
+    {
+        return new self(
+            DirectiveRefusalReason::MisspelledPrefix,
+            self::FORM_OF_TAG[$intended] ?? $intended,
+            $written,
+            intended: $intended,
+            spaceName: $spaceName,
+        );
+    }
+
+    private static function formOf(string $tag): string
+    {
+        $name = substr($tag, \strlen(self::TAG_PREFIX));
+
+        return self::FORM_OF_TAG[$name] ?? $name;
+    }
+
     public static function noDeclarationToBind(): self
     {
         return new self(DirectiveRefusalReason::NoDeclarationToBind, SuppressionType::Symbol->value, self::tagOf(SuppressionType::Symbol->value));
@@ -131,6 +162,22 @@ final readonly class DirectiveRefusal
         $isThreshold = $this->form === self::THRESHOLD_FORM;
 
         return match ($this->reason) {
+            DirectiveRefusalReason::NotAtLineStart => \sprintf(
+                '"%s" stands mid-line, so it is not a directive; move it to the start of its own comment line, or quote a mention as inline code',
+                $this->tag,
+            ),
+            DirectiveRefusalReason::InsideUnclosedFence => \sprintf(
+                '"%s" stands inside a code fence opened on line %d that is never closed in this comment, so it is read as quoted text and does nothing; close the fence with the same character, at least as long',
+                $this->tag,
+                $this->fenceLine,
+            ),
+            DirectiveRefusalReason::MisspelledPrefix => \sprintf(
+                '"%s" looks like the directive @qmx-%s but is not spelled as one, so it does nothing. Write @qmx-%s.%s',
+                $this->tag,
+                $this->intended,
+                $this->intended,
+                $this->spaceName === null ? '' : ' Replace ' . $this->spaceName . ' with an ordinary space.',
+            ),
             DirectiveRefusalReason::FormNotRecognised => \sprintf(
                 'Directive "%s" is not a tag this tool reads. The tags are @qmx-ignore, @qmx-ignore-next-line,'
                 . ' @qmx-ignore-file and @qmx-threshold; the first two name a channel before the reason.',

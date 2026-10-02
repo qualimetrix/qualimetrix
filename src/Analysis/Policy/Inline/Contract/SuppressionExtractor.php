@@ -43,8 +43,8 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * where the channel is optional, that is the only way to write a reason
  * without the first word of it being read as the channel.
  *
- * Note: inline same-line comments (e.g., `$x = foo(); // @qmx-ignore rule`) are not supported.
- * Only separate-line comments are recognized.
+ * A trailing comment such as `// @qmx-ignore-next-line rule` is read from
+ * the start of the comment. Next-line still addresses the line after its end.
  */
 final readonly class SuppressionExtractor
 {
@@ -98,6 +98,15 @@ final readonly class SuppressionExtractor
      * the family by name instead of spelling the prefix a second time.
      */
     public const string TAG_PREFIX = '@qmx-';
+
+    private const string UNICODE_SPACE = '(?:\xC2[\x85\xA0]|\xE1\x9A\x80|\xE2\x80[\x80-\x8A\xA8\xA9\xAF]|\xE2\x81\x9F|\xE3\x80\x80)';
+
+    private const string NEAR_PREFIX = '/(?:@qmx(?:[-_ \t]|' . self::UNICODE_SPACE . ')*(?:ignore|threshold)[\w-]*|qmx[-_](?:ignore|threshold)[\w-]*)/i';
+
+    public static function mayCarryDirective(string $text): bool
+    {
+        return str_contains($text, self::TAG_PREFIX) || self::regexResult(preg_match(self::NEAR_PREFIX, $text)) === 1;
+    }
 
     private const MODE_FULL = 'full';
     private const MODE_PHYSICAL = 'physical';
@@ -177,9 +186,16 @@ final readonly class SuppressionExtractor
 
         foreach (self::commentsOf($node) as $comment) {
             $text = DocumentationRegions::mask($comment->getText());
+            $typos = self::misspelledForms($comment, $text);
+            foreach ($typos as $typo) {
+                $offset = $typo->position - $comment->getStartFilePos();
+                $refusal = $typo->refusal ?? throw new LogicException('A misspelled directive must carry its refusal');
+                $length = \strlen($refusal->tag);
+                $text = substr_replace($text, str_repeat(' ', $length), $offset, $length);
+            }
             $read = [];
 
-            foreach ($this->matchText($text) as $match) {
+            foreach ($this->matchText($text, $comment->getText()) as $match) {
                 $read[] = $match['offset'];
                 $suppression = $this->projectMatch(
                     $match,
@@ -198,7 +214,21 @@ final readonly class SuppressionExtractor
             }
 
             if ($mode !== self::MODE_FILE_ONLY) {
-                array_push($suppressions, ...self::unreadableForms($comment, $text, $read, $thresholdRead));
+                array_push($suppressions, ...$typos, ...self::unreadableForms($comment, $text, $read, $thresholdRead));
+                foreach (DocumentationRegions::mentions($comment->getText()) as $mention) {
+                    $refusal = $mention['fenceLine'] === null
+                        ? DirectiveRefusal::notAtLineStart($mention['tag'])
+                        : DirectiveRefusal::insideUnclosedFence($mention['tag'], $comment->getStartLine() + $mention['fenceLine'] - 1);
+                    preg_match('/^[^\S\n\r]+(?!\*+\/)([\w.*#:-]+)/', substr($comment->getText(), $mention['offset'] + \strlen($mention['tag'])), $argument);
+                    $suppressions[] = new Suppression(
+                        rule: $argument[1] ?? '',
+                        reason: null,
+                        line: self::lineAtOffset($comment->getText(), $comment->getStartLine(), $mention['offset']),
+                        type: SuppressionType::Symbol,
+                        position: self::positionAtOffset($comment, $mention['offset']),
+                        refusal: $refusal,
+                    );
+                }
             }
         }
 
@@ -237,7 +267,7 @@ final readonly class SuppressionExtractor
     /**
      * @return list<array{type: SuppressionType, rule: non-empty-string, reason: ?string, offset: int}>
      */
-    private function matchText(string $text): array
+    private function matchText(string $text, string $authoredText): array
     {
         $matches = [];
 
@@ -250,7 +280,13 @@ final readonly class SuppressionExtractor
                 continue;
             }
 
-            foreach ($patternMatches as $match) {
+            foreach ($patternMatches as $candidate) {
+                if (preg_match($pattern, $authoredText, $match, \PREG_OFFSET_CAPTURE, $candidate[0][1]) !== 1) {
+                    continue;
+                }
+                if ($match[0][1] !== $candidate[0][1]) {
+                    continue;
+                }
                 $authored = self::authoredArgument($type, $match[1][0] ?? '', $match[2][0] ?? null);
 
                 if ($authored !== null) {
@@ -285,7 +321,13 @@ final readonly class SuppressionExtractor
 
         $refused = [];
 
-        foreach ($matches as $match) {
+        foreach ($matches as $candidate) {
+            if (preg_match(self::PATTERN_ANY_TAG, $comment->getText(), $match, \PREG_OFFSET_CAPTURE, $candidate[0][1]) !== 1) {
+                continue;
+            }
+            if ($match[0][1] !== $candidate[0][1]) {
+                continue;
+            }
             $offset = $match[0][1];
             $tag = $match[1][0];
             $argument = $match[2][0] ?? '';
@@ -312,6 +354,73 @@ final readonly class SuppressionExtractor
         }
 
         return $refused;
+    }
+
+    /** @return list<Suppression> */
+    private static function misspelledForms(Comment $comment, string $text): array
+    {
+        self::regexResult(preg_match_all(self::NEAR_PREFIX, $text, $matches, \PREG_OFFSET_CAPTURE));
+        $refused = [];
+        foreach ($matches[0] as [$written, $offset]) {
+            $intended = strtolower(preg_replace('/^(?:@qmx(?:[-_ \t]|' . self::UNICODE_SPACE . ')*|qmx[-_])/i', '', $written)
+                ?? throw new LogicException('Cannot normalize a directive prefix: ' . preg_last_error_msg()));
+            $after = substr($comment->getText(), $offset + \strlen($written));
+            self::regexResult(preg_match('/^' . self::UNICODE_SPACE . '/', $after, $space));
+            $unicodeSpace = $space[0] ?? null;
+            if ($written === self::TAG_PREFIX . $intended && $unicodeSpace === null) {
+                continue;
+            }
+            $refused[] = new Suppression(
+                rule: '',
+                reason: null,
+                line: self::lineAtOffset($text, $comment->getStartLine(), $offset),
+                type: SuppressionType::Symbol,
+                position: self::positionAtOffset($comment, $offset),
+                refusal: DirectiveRefusal::misspelledPrefix(
+                    $written,
+                    $intended,
+                    $unicodeSpace === null ? null : self::spaceName($unicodeSpace),
+                ),
+            );
+        }
+
+        return $refused;
+    }
+
+    private static function regexResult(int|false $result): int
+    {
+        if ($result === false) {
+            throw new LogicException('Cannot read directive grammar: ' . preg_last_error_msg());
+        }
+
+        return $result;
+    }
+
+    private static function spaceName(string $space): string
+    {
+        $name = match ($space) {
+            "\u{00A0}" => 'NO-BREAK SPACE',
+            "\u{1680}" => 'OGHAM SPACE MARK',
+            "\u{2000}" => 'EN QUAD',
+            "\u{2001}" => 'EM QUAD',
+            "\u{2002}" => 'EN SPACE',
+            "\u{2003}" => 'EM SPACE',
+            "\u{2004}" => 'THREE-PER-EM SPACE',
+            "\u{2005}" => 'FOUR-PER-EM SPACE',
+            "\u{2006}" => 'SIX-PER-EM SPACE',
+            "\u{2007}" => 'FIGURE SPACE',
+            "\u{2008}" => 'PUNCTUATION SPACE',
+            "\u{2009}" => 'THIN SPACE',
+            "\u{200A}" => 'HAIR SPACE',
+            "\u{202F}" => 'NARROW NO-BREAK SPACE',
+            "\u{205F}" => 'MEDIUM MATHEMATICAL SPACE',
+            "\u{3000}" => 'IDEOGRAPHIC SPACE',
+            "\u{2028}" => 'LINE SEPARATOR',
+            "\u{2029}" => 'PARAGRAPH SEPARATOR',
+            default => 'NEXT LINE',
+        };
+
+        return \sprintf('U+%04X %s', mb_ord($space), $name);
     }
 
     private static function lineAtOffset(string $text, int $startLine, int $offset): int

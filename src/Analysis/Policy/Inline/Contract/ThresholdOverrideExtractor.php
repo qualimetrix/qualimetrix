@@ -166,7 +166,13 @@ final readonly class ThresholdOverrideExtractor
             return;
         }
 
-        foreach ($matches as $match) {
+        foreach ($matches as $candidate) {
+            if (preg_match(self::PATTERN, $docComment->getText(), $match, \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL, $candidate[0][1]) !== 1) {
+                continue;
+            }
+            if ($match[0][1] !== $candidate[0][1]) {
+                continue;
+            }
             $rulePattern = $match[1][0];
             if (!\is_string($rulePattern)) {
                 continue;

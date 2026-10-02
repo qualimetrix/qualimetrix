@@ -144,8 +144,7 @@ final class DirectiveUsage
      * a misconfigured directive is not silenced by another directive, and the
      * projection enforces that for every report. Counting such a finding as
      * something a suppression matched would call a directive live that can
-     * never do anything — measured on a fixture, `@qmx-ignore-file
-     * annotation.unresolved-directive` reported "effective" while `check`
+     * never do anything — measured on a fixture, `@qmx-ignore-file annotation.unresolved-directive` reported "effective" while `check`
      * printed the error it claimed to silence.
      *
      * This is not the publication ledger of D4 creeping back in. That ledger

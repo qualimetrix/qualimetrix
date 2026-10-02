@@ -62,10 +62,12 @@ final class AuthoredThresholdForms
     public function backticked(): void {}
 
     /**
-     * A backtick region spanning lines, before a real directive:
-     * `one
-     *  two
-     *  three`
+     * A fenced example, before a real directive:
+     * ```php
+     * one
+     * two
+     * three
+     * ```
      *
      * @qmx-threshold after.backticks 20
      */
@@ -74,12 +76,14 @@ final class AuthoredThresholdForms
     public function outsideADocblock(): void
     {
         // @qmx-threshold outside.docblock 20
+        /*** @qmx-ignore-file complexity.ccn */
+        /// @qmx-ignore-next-line complexity.ccn
     }
 
     /**
      * The values run to the end of the line, so the second tag is text.
      *
-     * @qmx-threshold first.of.two 20 @qmx-threshold second.of.two 30
+     * @qmx-threshold first.of.two 20 @qmx-threshold second.of.two 30 `@qmx-threshold quoted.reason 40`
      */
     public function twoOnOneLine(): void {}
 
@@ -136,8 +140,7 @@ final class AuthoredThresholdForms
 
     /**
      * A target cut short carries no values, and the product's own scan resumes
-     * where the target ended — so the second tag on this line is a second site,
-     * not part of the first one's reason text.
+     * where the target ended. The second tag is separately refused for its placement.
      *
      * @qmx-threshold cut.first(x) @qmx-threshold second.target 20
      */
@@ -155,6 +158,66 @@ final class AuthoredThresholdForms
      * @qmx-threshold plus+target 20
      */
     public function targetCutAtAPlus(): void {}
+
+    /**
+     * A ` stray, then @qmx-threshold prose.span 20` here
+     */
+    public function proseInsideACodeSpan(): void {}
+
+    /**
+     * Write ``@qmx-threshold double.quoted 20`` here.
+     */
+    public function doubleBackticks(): void {}
+
+    /**
+     * ~~~php
+     *
+     * @qmx-threshold tilde.quoted 20
+     * ~~~~
+     */
+    public function closedTildeFence(): void {}
+
+    /**
+     * ````php
+     *
+     * @qmx-threshold unclosed.fence 20
+     * ```
+     */
+    public function unclosedFence(): void {}
+
+    /**
+     * `an unfinished inline example
+     *
+     * @qmx-threshold continued.line 20
+     * finishes here`
+     */
+    public function inlineContinuation(): void {}
+
+    /**
+     ** @qmx-threshold decorated.line 20
+     */
+    public function commentDecoration(): void {}
+
+    /**
+     * - @qmx-threshold list.item 20
+     */
+    public function listItemMention(): void {}
+
+    /** Summary. @qmx-threshold summary.line 20 */
+    public function summaryMention(): void {}
+
+    /** @qmx-threshold typed.integer warning=15 error=25 */
+    public function typedInteger(): void {}
+
+    /** @qmx-threshold typed.fraction 0.8 */
+    public function typedFraction(): void {}
+
+    /** @qmx-threshold typed.negative -3 */
+    public function typedNegative(): void {}
+
+    /** @qmx-threshold */
+    /** @qmx-threshold **/
+    public function missingTarget(): void {}
 
     /**
      * @qmx-threshold comma.target,20

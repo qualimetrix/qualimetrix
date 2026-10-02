@@ -32,6 +32,19 @@ final class ThresholdOverrideExtractorTest extends TestCase
 {
     private ThresholdOverrideExtractor $extractor;
 
+    #[Test]
+    public function itRefusesTheFullAuthoredTailWhenAnotherTagIsMasked(): void
+    {
+        foreach (['20 @qmx-ignore-file', '@qmx-ignore-file 20', '20 @qmx-threshold other 30'] as $values) {
+            $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+            $node->setDocComment(new Doc('/** @qmx-threshold complexity.ccn ' . $values . ' */', 10, 50));
+            $result = $this->extractor->extractWithDiagnostics($node, MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))), ControlScope::Class_);
+            self::assertSame([], $result->overrides, $values);
+            self::assertCount(1, $result->diagnostics, $values);
+            self::assertStringContainsString($values, $result->diagnostics[0]->message);
+        }
+    }
+
     protected function setUp(): void
     {
         $validator = StandardOverrideValidator::instance();

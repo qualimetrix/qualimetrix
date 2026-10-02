@@ -1520,6 +1520,108 @@ final class SuppressionExtractorTest extends TestCase
         self::assertStringContainsString('"@qmx-bogus"', $suppressions[0]->refusal->describe($suppressions[0]->rule));
     }
 
+    #[Test]
+    public function itReportsPrefixTyposOnlyAtPhysicalCommentLineStarts(): void
+    {
+        foreach (['ignore', 'threshold'] as $family) {
+            foreach (['@qmx_' . $family, '@QMX-' . $family, '@qmx ' . $family, '@qmx' . $family, 'qmx-' . $family] as $written) {
+                $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+                $node->setDocComment(new Doc('/** ' . $written . ' complexity.ccn 20 */', 10, 50));
+                $read = $this->extract($node);
+                self::assertCount(1, $read, $written);
+                self::assertSame(DirectiveRefusalReason::MisspelledPrefix, $read[0]->refusal?->reason, $written);
+                self::assertStringContainsString('Write @qmx-' . $family, $read[0]->refusal->describe(''));
+                self::assertSame(54, $read[0]->position);
+                self::assertTrue(SuppressionExtractor::mayCarryDirective($written));
+                $node->setDocComment(new Doc('/** Prose ' . $written . ' complexity.ccn 20 */', 10, 50));
+                self::assertSame([], $this->extract($node), $written);
+            }
+        }
+        self::assertFalse(SuppressionExtractor::mayCarryDirective('prose qmx ignores a problem'));
+    }
+
+    #[Test]
+    public function itNamesUnicodeSeparatorsAndRefusesTheirWiderFileSuppression(): void
+    {
+        foreach (["\u{00A0}" => 'NO-BREAK SPACE', "\u{2003}" => 'EM SPACE', "\u{202F}" => 'NARROW NO-BREAK SPACE'] as $space => $name) {
+            foreach (['ignore', 'ignore-file', 'threshold'] as $tag) {
+                $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+                $node->setDocComment(new Doc('/** @qmx-' . $tag . $space . 'complexity.ccn 20 */', 10, 50));
+                $read = $this->extract($node);
+                self::assertCount(1, $read);
+                self::assertSame(DirectiveRefusalReason::MisspelledPrefix, $read[0]->refusal?->reason);
+                self::assertStringContainsString($name, $read[0]->refusal->describe(''));
+                self::assertFalse($read[0]->matches('complexity.ccn', null));
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsTheSecondTagInTheFirstSuppressionsAuthoredReason(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+        $node->setDocComment(new Doc('/** @qmx-ignore complexity.ccn -- @qmx-ignore-file */', 10, 50));
+        $read = $this->extract($node);
+        self::assertCount(2, $read);
+        self::assertNull($read[0]->refusal);
+        self::assertSame('@qmx-ignore-file', $read[0]->reason);
+        self::assertSame(DirectiveRefusalReason::NotAtLineStart, $read[1]->refusal?->reason);
+        $node->setDocComment(new Doc('/** @qmx-ignore @qmx-ignore-file complexity.ccn */', 10, 50));
+        $read = $this->extract($node);
+        self::assertCount(2, $read);
+        self::assertSame(DirectiveRefusalReason::NamesNoTarget, $read[0]->refusal?->reason);
+        self::assertSame(DirectiveRefusalReason::NotAtLineStart, $read[1]->refusal?->reason);
+    }
+
+    #[Test]
+    public function itCarriesUnclosedFenceRefusalsOnTheTagLineWithTheOpeningLine(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 16, 'endLine' => 30]);
+        $node->setDocComment(new Doc("/**\n * ~~~php\n * @qmx-threshold complexity.ccn 20\n */", 10, 50));
+        $read = $this->extract($node);
+        self::assertCount(1, $read);
+        self::assertSame(12, $read[0]->line);
+        self::assertSame(DirectiveRefusalReason::InsideUnclosedFence, $read[0]->refusal?->reason);
+        self::assertStringContainsString('opened on line 11', $read[0]->refusal->describe(''));
+        foreach (['//', '#', '///'] as $prefix) {
+            $node->setAttribute('comments', [new Comment($prefix . ' ```', 10, 50), new Comment($prefix . ' @qmx-ignore complexity.ccn', 11, 60)]);
+            $read = $this->extract($node);
+            self::assertCount(1, $read);
+            self::assertNull($read[0]->refusal);
+        }
+        $node->setAttribute('comments', [new Comment('/*** @qmx-ignore complexity.ccn */', 10, 50)]);
+        self::assertNull($this->extract($node)[0]->refusal);
+    }
+
+    #[Test]
+    public function itReadsDirectiveGrammarFromParsedCommentsWithInvalidUtf8Bytes(): void
+    {
+        $byte = \chr(255);
+        foreach ([
+            ['/** prose ' . $byte . ' @qmx-ignore-file code-smell.boolean-argument */', DirectiveRefusalReason::NotAtLineStart],
+            ['/** @qmx_ignore complexity.ccn -- reason ' . $byte . ' */', DirectiveRefusalReason::MisspelledPrefix],
+            ['/** @qmx-ignore complexity.ccn -- reason ' . $byte . ' */', null],
+            ["/**\n * ~~~ " . $byte . "\n * @qmx-ignore-file complexity.ccn\n */", DirectiveRefusalReason::InsideUnclosedFence],
+        ] as [$comment, $reason]) {
+            $source = "<?php\n" . $comment . "\nclass Foo {}";
+            $nodes = (new \PhpParser\ParserFactory())->createForNewestSupportedVersion()->parse($source);
+            self::assertNotNull($nodes);
+            $read = $this->extract($nodes[0]);
+            self::assertCount(1, $read);
+            self::assertSame($reason, $read[0]->refusal?->reason);
+            self::assertSame(strpos($source, '@qmx'), $read[0]->position);
+            if ($reason === null) {
+                self::assertSame('reason ' . $byte, $read[0]->reason);
+            } else {
+                self::assertFalse($read[0]->matches('code-smell.boolean-argument', null));
+            }
+        }
+        $source = "<?php\n/**\n * ```php" . $byte . "\n * @qmx-ignore complexity.ccn\n * ```\n */\nclass Foo {}";
+        $nodes = (new \PhpParser\ParserFactory())->createForNewestSupportedVersion()->parse($source);
+        self::assertNotNull($nodes);
+        self::assertSame([], $this->extract($nodes[0]));
+    }
+
     /** @return list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression> */
     private function extractFileLevel(\PhpParser\Node $node): array
     {

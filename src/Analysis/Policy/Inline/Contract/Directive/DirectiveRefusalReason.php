@@ -17,6 +17,12 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
  */
 enum DirectiveRefusalReason: string
 {
+    case NotAtLineStart = 'not-at-line-start';
+
+    case InsideUnclosedFence = 'inside-unclosed-fence';
+
+    case MisspelledPrefix = 'misspelled-prefix';
+
     /** The tag name is not one this tool reads (`@qmx-ignore-lines`). */
     case FormNotRecognised = 'form-not-recognised';
 
