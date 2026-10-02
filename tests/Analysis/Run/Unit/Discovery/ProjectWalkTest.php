@@ -556,6 +556,143 @@ final class ProjectWalkTest extends TestCase
     }
 
     #[Test]
+    public function itRemovesAnAuthoredExcludedFifoBeforeHeaderClassification(): void
+    {
+        if (!\function_exists('posix_mkfifo')) {
+            self::markTestSkipped('POSIX named pipes are unavailable.');
+        }
+        self::assertTrue(posix_mkfifo($this->root . '/src/Pipe.php', 0o600));
+        $read = [];
+        $filter = $this->createMock(GeneratedFileFilterInterface::class);
+        $filter->expects(self::exactly(2))->method('isGenerated')->willReturnCallback(
+            static function (SplFileInfo $file) use (&$read): bool {
+                $read[] = $file->getFilename();
+
+                return false;
+            },
+        );
+        $result = (new ProjectFiles(new ProjectWalk(new EntryInspector()), $filter))->discover($this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Exact, 'src/Pipe.php', ConfigurationSource::ConfigFile)],
+        ));
+
+        self::assertSame(['A.php', 'O.php'], array_map(
+            static fn(SplFileInfo $file): string => $file->getFilename(),
+            $result->eligibleFiles,
+        ));
+        self::assertSame(['A.php', 'O.php'], $read);
+        self::assertSame([], $result->skippedEntries);
+        self::assertSame(ExcludeSelectorOutcome::Removed, $result->selectorVerdicts[0]->outcome);
+        self::assertSame(['src/Pipe.php'], $result->selectorVerdicts[0]->removedEntries);
+        self::assertNull($result->selectorVerdicts[0]->phpEvidence);
+    }
+
+    #[Test]
+    public function itRemovesARegularFileMatchingAFileShapedRegexBeforeHeaderClassification(): void
+    {
+        self::assertSame(EntryKind::RegularFile, (new EntryInspector())->inspect($this->root . '/src/A.php'));
+        $read = [];
+        $filter = $this->createMock(GeneratedFileFilterInterface::class);
+        $filter->expects(self::once())->method('isGenerated')->willReturnCallback(
+            static function (SplFileInfo $file) use (&$read): bool {
+                $read[] = $file->getFilename();
+
+                return false;
+            },
+        );
+        $result = (new ProjectFiles(new ProjectWalk(new EntryInspector()), $filter))->discover($this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Regex, 'src/A\\.php', ConfigurationSource::ConfigFile)],
+        ));
+
+        self::assertSame(['O.php'], array_map(
+            static fn(SplFileInfo $file): string => $file->getFilename(),
+            $result->eligibleFiles,
+        ));
+        self::assertSame(['O.php'], $read);
+        self::assertSame([], $result->skippedEntries);
+        self::assertSame(ExcludeSelectorOutcome::Removed, $result->selectorVerdicts[0]->outcome);
+        self::assertSame(['src/A.php'], $result->selectorVerdicts[0]->removedEntries);
+        self::assertSame('php-file', $result->selectorVerdicts[0]->phpEvidence);
+    }
+
+    #[Test]
+    public function itRecordsAChildStatFailureAndKeepsItsSiblingsAndBlockedSelector(): void
+    {
+        $blocked = $this->root . '/src/Blocked';
+        mkdir($blocked);
+        file_put_contents($blocked . '/Hidden.php', '<?php');
+        $delegate = new EntryInspector();
+        $inspector = self::createStub(EntryInspectorInterface::class);
+        $inspector->method('inspect')->willReturnCallback(
+            static function (string $path) use ($delegate, $blocked): EntryKind {
+                self::assertNotSame($blocked . '/Hidden.php', $path);
+
+                return $path === $blocked ? EntryKind::StatFailed : $delegate->inspect($path);
+            },
+        );
+        $inspector->method('list')->willReturnCallback(
+            static function (string $directory) use ($delegate, $blocked): ?array {
+                self::assertNotSame($blocked, $directory);
+
+                return $delegate->list($directory);
+            },
+        );
+        $walked = (new ProjectWalk($inspector))->walk(new WalkRequest($this->configuration(
+            [$this->root . '/src'],
+            [$this->selector(SelectorKind::Exact, 'src/Blocked/Hidden.php', ConfigurationSource::ConfigFile)],
+        )));
+
+        self::assertSame(['A.php', 'O.php'], array_map(
+            static fn(SplFileInfo $file): string => $file->getFilename(),
+            $walked->candidates,
+        ));
+        self::assertCount(1, $walked->skipped);
+        self::assertSame($blocked, $walked->skipped[0]->path->value());
+        self::assertSame(AnalysisFailureKind::UnreadableEntry, $walked->skipped[0]->reason);
+        self::assertSame(ExcludeSelectorOutcome::Unjudgeable, $walked->verdicts[0]->outcome);
+        self::assertSame('src/Blocked', $walked->verdicts[0]->blockedAt);
+        self::assertSame([], $walked->verdicts[0]->removedEntries);
+    }
+
+    #[Test]
+    public function itRefusesAReadableNamedDirectoryWithoutSearchPermissionAndClassifiesItsChild(): void
+    {
+        if (!\function_exists('posix_geteuid') || posix_geteuid() === 0) {
+            self::markTestSkipped('Requires a non-root POSIX user; root bypasses directory search permissions.');
+        }
+        $locked = $this->root . '/src/ReadOnly';
+        mkdir($locked);
+        file_put_contents($locked . '/Hidden.php', '<?php');
+        try {
+            self::assertTrue(chmod($locked, 0o444));
+            clearstatcache(true);
+            $mode = fileperms($locked);
+            self::assertIsInt($mode);
+            self::assertSame(0o444, $mode & 0o777);
+            $inspector = new EntryInspector();
+            self::assertSame(EntryKind::Directory, $inspector->inspect($locked));
+            self::assertSame(EntryKind::StatFailed, $inspector->inspect($locked . '/Hidden.php'));
+            self::assertNull($inspector->list($locked));
+            $walked = (new ProjectWalk($inspector))->walk(new WalkRequest($this->configuration(
+                [$locked, $this->root . '/src/A.php'],
+                [],
+            )));
+
+            self::assertSame(['A.php'], array_map(
+                static fn(SplFileInfo $file): string => $file->getFilename(),
+                $walked->candidates,
+            ));
+            self::assertCount(1, $walked->skipped);
+            self::assertSame($locked, $walked->skipped[0]->path->value());
+            self::assertSame(AnalysisFailureKind::UnreadableDirectory, $walked->skipped[0]->reason);
+        } finally {
+            chmod($locked, 0o755);
+            clearstatcache(true);
+        }
+    }
+
+    #[Test]
     public function itReportsAWalkedFileLinkAsFailureWhileKeepingTheRegularTarget(): void
     {
         symlink($this->root . '/src/A.php', $this->root . '/src/Linked.php');
