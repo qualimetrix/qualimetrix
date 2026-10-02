@@ -541,7 +541,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
 
     private function realBaselineRun(): BaselineRun
     {
-        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class));
+        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream());
     }
 
     private function nonExistentBaselinePath(): string

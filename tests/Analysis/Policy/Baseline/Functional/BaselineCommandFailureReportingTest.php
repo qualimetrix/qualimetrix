@@ -200,7 +200,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
             'qmx.yaml was not found',
         ));
-        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class));
+        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream());
 
         try {
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());

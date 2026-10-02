@@ -46,7 +46,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         private ConfigurationInputAdapter $configurationInputAdapter,
         private RunConfigurationPreparation $runConfigurationPreparation,
         private ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
-        private ErrorStream $errorStream = new ErrorStream(),
+        private ErrorStream $errorStream,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
