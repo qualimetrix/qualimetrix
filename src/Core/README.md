@@ -938,7 +938,8 @@ facts. `EntryControl` judges placement and replacement from directory and entry
 facts. `HeldTarget::claim()` holds an unchanged regular file, an exclusively
 created name or a supplied stream; `write()`, `append()` and `release()` own the
 resource lifecycle. `FileReplacement::replace()` publishes a complete sibling,
-and `HeldLock::acquire()` holds a named lock without truncating it.
+and `HeldLock::acquire()` holds a named lock without truncating it, using a
+monotonic acquisition deadline.
 `TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
 support these operations. `FileTargetFailure` carries an explicit kind, path,
 reason and optional detail. Consumer policy remains with its subject.

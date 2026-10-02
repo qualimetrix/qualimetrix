@@ -44,7 +44,8 @@ complete writes and flush; append locks the file and seeks to its current end.
 Replacement writes a complete sibling first, preserves the old mode unless an
 explicit mode is supplied, and distinguishes exclusive creation from declared
 last-writer-wins publication. A held lock checks its named inode after locking;
-releasing the lock does not remove its name.
+releasing the lock does not remove its name. Its acquisition deadline uses a
+monotonic clock, so a system-clock adjustment cannot shorten or extend it.
 
 Descriptor duplication preserves the supplied stream's offset and avoids
 truncation. A path-opened handle with the e mode is close-on-exec. PHP's

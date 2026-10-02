@@ -24,7 +24,7 @@ final class HeldLock
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $lockFile->spelling, 'lock target changed before acquisition');
         }
 
-        $deadline = microtime(true) + $timeoutSeconds;
+        $deadline = hrtime(true) / 1e9 + $timeoutSeconds;
         do {
             $now = TargetPath::resolve($lockFile->spelling);
             if ($now->kind !== TargetKind::Regular && $now->kind !== TargetKind::Absent) {
@@ -69,7 +69,7 @@ final class HeldLock
             }
             fclose($handle);
             usleep(10_000);
-        } while (microtime(true) < $deadline);
+        } while (hrtime(true) / 1e9 < $deadline);
 
         throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $lockFile->spelling, 'timed out waiting for lock');
     }

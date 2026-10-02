@@ -9399,6 +9399,7 @@ Available tests:
  - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itRefusesAnAppearedNameWithoutOverwritingIt
  - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itUsesAFixedLengthTemporaryNameBesideALongTargetName
  - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itCreatesAnAbsentLockAndLeavesItForFutureOwners
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itKeepsWaitingForTheLockWhenWallClockJumpsForward
  - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itOpensAnExistingLockWithoutChangingItsContent
  - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itRefusesAChangedLockIdentityBeforeOpeningIt
  - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itAppendsWholeRecordsThroughTheHeldHandle
