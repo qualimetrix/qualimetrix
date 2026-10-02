@@ -57,7 +57,8 @@
     "suggest": {
         "ext-igbinary": "For faster serialization in parallel processing",
         "ext-pcntl": "Required for parallel processing on Unix (alternative to ext-parallel)",
-        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)"
+        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)",
+        "ext-posix": "For effective process ownership checks without a temporary-file probe"
     },
     "autoload": {
         "psr-4": {

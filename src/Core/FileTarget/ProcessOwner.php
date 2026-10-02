@@ -14,7 +14,7 @@ final class ProcessOwner
 
     public static function effectiveUid(string $nearDirectory): int
     {
-        if (\function_exists('posix_geteuid')) {
+        if (\extension_loaded('posix') && \function_exists('posix_geteuid')) {
             return posix_geteuid();
         }
 

@@ -208,6 +208,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
+        'tests/Core/FileTarget/Unit/HeldTargetTest.php:218' => 'The descriptor regression binds stdout directly to '
+            . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
+            . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
+            . 'read stream can be left unserviced.',
+
         'scripts/finding-gate-controls/Shell.php:89' => 'The finding-gate controls supervisor: a global '
             . '`stream_select` across every live child, plus process-group isolation, descendant termination and a '
             . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
