@@ -30,6 +30,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
+use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
@@ -55,10 +56,37 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
  * fails outright against a check written over the static declarations, and the
  * rejection cases fail if the directive is left inert.
  */
+#[CoversClass(StaleDirectiveFinding::class)]
 #[CoversClass(UnusedDirectiveRule::class)]
 final class UnusedDirectiveRuleTest extends TestCase
 {
     private const string FILE = 'src/Foo.php';
+
+    #[Test]
+    public function itNamesTheExactDeclarationReachOfAStaleSymbolDirective(): void
+    {
+        $finding = StaleDirectiveFinding::of(
+            RelativePath::fromString(self::FILE),
+            new Suppression(
+                'complexity.ccn',
+                null,
+                7,
+                SuppressionType::Symbol,
+                position: 12,
+                binding: new DeclarationBinding(
+                    self::subject(),
+                    ControlScope::Class_,
+                    DeclarationReach::lines(10, 14, 'property $value'),
+                ),
+            ),
+            Severity::Warning,
+        );
+
+        self::assertStringContainsString(
+            'Suppression "complexity.ccn" on property $value, lines 10–14 matched nothing',
+            $finding->message,
+        );
+    }
 
     /**
      * A rule name is not a channel. A level is not part of a channel name, so

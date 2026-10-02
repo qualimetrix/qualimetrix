@@ -8,9 +8,11 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan;
+use Qualimetrix\Core\Path\RelativePath;
 
 /**
  * Filters findings based on suppression tags in code.
@@ -51,15 +53,18 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
 
         $retained = [];
         $suppressed = [];
+        $suppressors = [];
         foreach ($findings as $finding) {
-            if ($this->shouldInclude($finding)) {
+            $suppressor = $this->matchingSuppressor($finding);
+            if ($suppressor === null) {
                 $retained[] = $finding;
             } else {
                 $suppressed[] = $finding;
+                $suppressors[] = $suppressor;
             }
         }
 
-        return new AnnotationSuppressionResult($retained, $suppressed);
+        return new AnnotationSuppressionResult($retained, $suppressed, $suppressors);
     }
 
     /**
@@ -84,23 +89,28 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      */
     public function shouldInclude(Finding $finding): bool
     {
+        return $this->matchingSuppressor($finding) === null;
+    }
+
+    private function matchingSuppressor(Finding $finding): ?DirectiveSite
+    {
         $file = $finding->location->pathString();
 
-        foreach ($this->symbolSuppressionsBySubject[$finding->subject->toCanonical()] ?? [] as $authoredIn) {
-            foreach ($authoredIn as $suppression) {
+        foreach ($this->symbolSuppressionsBySubject[$finding->subject->toCanonical()] ?? [] as $authoredIn => $symbolSuppressions) {
+            foreach ($symbolSuppressions as $suppression) {
                 if (self::applies($file, $suppression, $finding)) {
-                    return false;
+                    return self::site($authoredIn, $suppression);
                 }
             }
         }
 
         foreach ($this->suppressions[$file] ?? [] as $suppression) {
             if ($suppression->type !== SuppressionType::Symbol && self::applies($file, $suppression, $finding)) {
-                return false;
+                return self::site($file, $suppression);
             }
         }
 
-        return true;
+        return null;
     }
 
     /**
@@ -111,15 +121,6 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      * answers "is this finding suppressed by anything". Both go through
      * {@see applies()}, so the two questions cannot drift into disagreeing
      * about what a directive covers.
-     *
-     * A third reader asks a narrower question elsewhere —
-     * `Reporting\FindingProjection\DirectiveSuppressorResolver` names the
-     * line of the directive that silenced an already-suppressed finding — and
-     * it reproduces the placement half of {@see applies()} rather than calling
-     * it, because Reporting holds these values as `mixed`. What it leaves out
-     * is the channel ban, and the set it is asked about is this filter's own
-     * output: a banned channel never reaches it, because the ban is what kept
-     * the finding out of that set.
      *
      * @param string $file the file the directive was authored in — the key
      *                     the caller holds it under
@@ -171,7 +172,8 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
         }
 
         if ($suppression->type === SuppressionType::Symbol) {
-            return $suppression->binding?->subject->toCanonical() === $finding->subject->toCanonical();
+            return $suppression->binding?->subject->toCanonical() === $finding->subject->toCanonical()
+                && $suppression->binding->reach->covers($finding);
         }
 
         if ($finding->location->pathString() !== $file) {
@@ -184,6 +186,17 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
 
         return $finding->location->line !== null
             && $finding->location->line === $suppression->silencedLine;
+    }
+
+    private static function site(string $file, Suppression $suppression): DirectiveSite
+    {
+        return new DirectiveSite(
+            file: RelativePath::fromString($file),
+            line: $suppression->line,
+            form: $suppression->form(),
+            target: (string) $suppression->target(),
+            position: $suppression->position,
+        );
     }
 
     /**

@@ -43,6 +43,9 @@ enum DirectiveRefusalReason: string
     /** A callable exists below the carrier, but is not its direct declaration value. */
     case ClosureNotDirectValue = 'closure-not-direct-value';
 
+    /** An explicit `:level` is valid for the channel but unreachable from this carrier. */
+    case LevelNotReachableHere = 'level-not-reachable-here';
+
     /** `@qmx-threshold` written in a line or block comment; only a docblock carries it. */
     case ThresholdOutsideDocblock = 'threshold-outside-docblock';
 }

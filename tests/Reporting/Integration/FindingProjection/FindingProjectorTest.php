@@ -519,6 +519,10 @@ final class FindingProjectorTest extends TestCase
 
         self::assertSame([], $result->findings);
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Suppression));
+        $site = $result->annotationSuppression->suppressorOf($finding);
+        self::assertSame('src/Service/UserService.php', (string) $site->file);
+        self::assertSame(1, $site->line);
+        self::assertSame(0, $site->position);
     }
 
     // -- `--no-suppression-annotations`: report-only, never a wider set --

@@ -165,7 +165,6 @@ final class ResultPresenter
                 $analysisResult->ruleExecution,
                 $this->ruleConfiguration,
                 $projectionOptions,
-                $analysisResult->directives->suppressions,
             ));
         }
     }

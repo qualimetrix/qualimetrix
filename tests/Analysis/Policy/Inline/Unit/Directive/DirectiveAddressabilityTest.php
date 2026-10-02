@@ -212,6 +212,24 @@ final class DirectiveAddressabilityTest extends TestCase
         self::assertStringContainsString('is not a tag this tool reads', $problem);
     }
 
+    #[Test]
+    public function itNamesTheCarrierWhoseReachCannotSupplyTheRequestedLevel(): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            'coupling.cbo:callable',
+            null,
+            7,
+            SuppressionType::Symbol,
+            position: 12,
+            refusal: DirectiveRefusal::levelNotReachableHere('property $value'),
+        ));
+
+        self::assertSame(
+            'Suppression "coupling.cbo:callable" asks for a level that is not reachable from property $value; move it to a declaration at that level or remove the level suffix.',
+            $problem,
+        );
+    }
+
     /**
      * A tag this tool reads, written without its argument, used to be told
      * that it is not a tag this tool reads — and the sentence then listed it.

@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 
 /**
  * What the finding pipeline produced, and what each of its stages removed.
@@ -34,6 +35,7 @@ final readonly class FindingProjectionResult
 {
     /**
      * @param list<Finding> $findings what the run reports, after every stage
+     * @param AnnotationSuppressionResult $annotationSuppression the Inline-owned result carrying exact directive attribution
      * @param list<Finding> $measuredFindings the set a baseline measures — the baseline stage's input
      * @param array<string, list<Finding>> $removedByStage what each stage removed, keyed by {@see FindingFilterStage}'s value
      * @param list<BaselineEntry> $staleEntries entries whose identity the measured set did not hold (ADR 0017);
@@ -47,6 +49,7 @@ final readonly class FindingProjectionResult
      */
     public function __construct(
         public array $findings,
+        public AnnotationSuppressionResult $annotationSuppression,
         public array $measuredFindings = [],
         public array $removedByStage = [],
         public array $staleEntries = [],

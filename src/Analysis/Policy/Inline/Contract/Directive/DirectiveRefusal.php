@@ -59,6 +59,7 @@ final readonly class DirectiveRefusal
         private ?int $fenceLine = null,
         private ?string $intended = null,
         private ?string $spaceName = null,
+        private ?string $standsOn = null,
     ) {}
 
     /** @param non-empty-string $form the tag as authored, without its `@qmx-` prefix */
@@ -147,6 +148,16 @@ final readonly class DirectiveRefusal
         return new self(DirectiveRefusalReason::ClosureNotDirectValue, $form, self::tagOf($form));
     }
 
+    public static function levelNotReachableHere(string $standsOn): self
+    {
+        return new self(
+            DirectiveRefusalReason::LevelNotReachableHere,
+            SuppressionType::Symbol->value,
+            self::tagOf(SuppressionType::Symbol->value),
+            standsOn: $standsOn,
+        );
+    }
+
     public static function thresholdOutsideDocblock(): self
     {
         return new self(DirectiveRefusalReason::ThresholdOutsideDocblock, self::THRESHOLD_FORM, self::tagOf(self::THRESHOLD_FORM));
@@ -216,6 +227,11 @@ final readonly class DirectiveRefusal
             DirectiveRefusalReason::ClosureNotDirectValue => \sprintf(
                 'Directive "%s" stands on an expression that contains an anonymous callable but does not declare it directly; move the tag immediately before the function or fn it is about.',
                 $authored,
+            ),
+            DirectiveRefusalReason::LevelNotReachableHere => \sprintf(
+                'Suppression "%s" asks for a level that is not reachable from %s; move it to a declaration at that level or remove the level suffix.',
+                $argument,
+                $this->standsOn ?? throw new LogicException('A placement refusal requires the declaration it stands on'),
             ),
             DirectiveRefusalReason::ThresholdOutsideDocblock => \sprintf(
                 'Threshold "%s" is written in a line or block comment, and a threshold is read only from a'

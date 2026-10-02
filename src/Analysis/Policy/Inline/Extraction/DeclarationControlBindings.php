@@ -9,6 +9,8 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -147,33 +149,54 @@ final readonly class DeclarationControlBindings
     }
 
     /**
-     * @return list<array{subject: MetricSubject, scope: ControlScope}>
+     * @return list<DeclarationBinding>
      */
     public function suppressionBindingsFor(Node $node): array
     {
+        $standsOn = self::describe($node);
+
         if ($node->getType() === 'Stmt_Property') {
-            return $this->propertyHookBindings($node);
+            return [
+                ...self::wholeReach($this->propertyHookBindings($node), $node, $standsOn),
+                ...self::lineReach($this->containingBinding($this->classRanges, $node->getStartFilePos()), $node, $standsOn),
+            ];
         }
 
         if (self::isClassLike($node)) {
-            return $this->classBindings($node);
+            return self::wholeReach($this->classBindings($node), $node, $standsOn);
         }
 
         if (\in_array($node->getType(), self::CALLABLE_TYPES, true)) {
-            return $this->callablesBeginningWith($node);
+            $own = self::wholeReach($this->callablesBeginningWith($node), $node, $standsOn);
+
+            return $node->getType() === 'Stmt_ClassMethod'
+                ? [
+                    ...$own,
+                    ...self::lineReach($this->containingBinding($this->classRanges, $node->getStartFilePos()), $node, $standsOn),
+                ]
+                : $own;
         }
 
         $start = $node->getStartFilePos();
 
-        if ($node->getType() === 'Param') {
-            return $this->containingBinding($this->callableRanges, $start);
+        if ($node instanceof Node\Param) {
+            $bindings = self::lineReach($this->containingBinding($this->callableRanges, $start), $node, $standsOn);
+            if (!$node->isPromoted()) {
+                return $bindings;
+            }
+
+            return [
+                ...$bindings,
+                ...self::lineReach($this->containingBinding($this->classRanges, $start), $node, $standsOn),
+                ...self::wholeReach($this->propertyHookBindings($node), $node, $standsOn),
+            ];
         }
 
         if ($node->getType() === 'Stmt_EnumCase' || $node->getType() === 'Stmt_ClassConst') {
-            return $this->containingBinding($this->classRanges, $start);
+            return self::lineReach($this->containingBinding($this->classRanges, $start), $node, $standsOn);
         }
 
-        return $this->directCallableBindings($node);
+        return self::wholeReach($this->directCallableBindings($node), $node, $standsOn);
     }
 
     /**
@@ -405,6 +428,44 @@ final readonly class DeclarationControlBindings
         }
 
         return $bindings;
+    }
+
+    /**
+     * @param list<array{subject: MetricSubject, scope: ControlScope}> $bindings
+     *
+     * @return list<DeclarationBinding>
+     */
+    private static function wholeReach(array $bindings, Node $node, string $standsOn): array
+    {
+        $reach = DeclarationReach::whole($node->getEndLine() > 0 ? $node->getEndLine() : null, $standsOn);
+
+        return array_map(
+            static fn(array $binding): DeclarationBinding => new DeclarationBinding(
+                $binding['subject'],
+                $binding['scope'],
+                $reach,
+            ),
+            $bindings,
+        );
+    }
+
+    /**
+     * @param list<array{subject: MetricSubject, scope: ControlScope}> $bindings
+     *
+     * @return list<DeclarationBinding>
+     */
+    private static function lineReach(array $bindings, Node $node, string $standsOn): array
+    {
+        $reach = DeclarationReach::lines($node->getStartLine(), $node->getEndLine(), $standsOn);
+
+        return array_map(
+            static fn(array $binding): DeclarationBinding => new DeclarationBinding(
+                $binding['subject'],
+                $binding['scope'],
+                $reach,
+            ),
+            $bindings,
+        );
     }
 
     /**

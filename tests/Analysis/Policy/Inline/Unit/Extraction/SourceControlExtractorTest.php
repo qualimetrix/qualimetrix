@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -33,6 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionMethod;
 
 #[CoversClass(SourceControls::class)]
+#[CoversClass(DirectiveLevels::class)]
 #[CoversClass(SourceControlExtractor::class)]
 final class SourceControlExtractorTest extends TestCase
 {
@@ -91,13 +93,54 @@ final class SourceControlExtractorTest extends TestCase
         self::assertContains(SuppressionType::File, array_map(static fn($suppression): SuppressionType => $suppression->type, $controls->suppressions));
         self::assertContains(SuppressionType::NextLine, array_map(static fn($suppression): SuppressionType => $suppression->type, $controls->suppressions));
         $symbol = array_values(array_filter($controls->suppressions, static fn($suppression): bool => $suppression->type === SuppressionType::Symbol));
-        self::assertCount(1, $symbol);
+        self::assertCount(2, $symbol);
         self::assertNotNull($symbol[0]->binding);
         self::assertSame($run->toCanonical(), $symbol[0]->binding->subject->toCanonical());
         self::assertSame('method run', $symbol[0]->binding->reach->describe());
+        self::assertSame($classDeclaration->toCanonical(), $symbol[1]->binding?->subject->toCanonical());
+        self::assertSame('method run, lines 6–9', $symbol[1]->binding->reach->describe());
         self::assertCount(0, $controls->thresholdOverrides);
         self::assertCount(1, $controls->thresholdDiagnostics);
         self::assertSame($invalid->toCanonical(), $controls->thresholdDiagnostics[0]->subject->toCanonical());
+    }
+
+    #[Test]
+    public function itRefusesOnlyExplicitLevelsOutsideTheCarriersSuppressionReach(): void
+    {
+        $controls = self::measuredControls(<<<'PHP'
+            <?php
+            namespace App;
+            class Named
+            {
+                /** @qmx-ignore coupling.cbo:class */
+                public function classReach(): void {}
+
+                /** @qmx-ignore coupling.cbo:callable */
+                public int $property;
+
+                /** @qmx-ignore coupling.cbo:callable */
+                public const VALUE = 1;
+
+                /** @qmx-ignore coupling.cbo */
+                public function bareChannel(): void {}
+            }
+            PHP);
+
+        $byLine = [];
+        foreach ($controls->suppressions as $suppression) {
+            $byLine[$suppression->line][] = $suppression;
+        }
+
+        self::assertCount(2, $byLine[5]);
+        self::assertNull($byLine[5][0]->refusal);
+        self::assertNull($byLine[5][1]->refusal);
+        self::assertCount(1, $byLine[8]);
+        self::assertSame(DirectiveRefusalReason::LevelNotReachableHere, $byLine[8][0]->refusal?->reason);
+        self::assertCount(1, $byLine[11]);
+        self::assertSame(DirectiveRefusalReason::LevelNotReachableHere, $byLine[11][0]->refusal?->reason);
+        self::assertCount(2, $byLine[14]);
+        self::assertNull($byLine[14][0]->refusal);
+        self::assertNull($byLine[14][1]->refusal);
     }
 
     #[Test]
@@ -480,18 +523,18 @@ final class SourceControlExtractorTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideDocblocksAfterAnAttribute')]
-    public function itAnswersForADirectiveWrittenAfterAnAttribute(string $docblock): void
+    public function itAnswersForADirectiveWrittenAfterAnAttribute(string $docblock, int $expectedCount): void
     {
         $controls = self::measuredControls("<?php\nnamespace App;\nclass Named\n{\n    #[\\Deprecated]\n    {$docblock}\n    public function run(): void {}\n}\n");
 
-        self::assertCount(1, $controls->suppressions, $docblock);
+        self::assertCount($expectedCount, $controls->suppressions, $docblock);
     }
 
-    /** @return iterable<string, array{non-empty-string}> */
+    /** @return iterable<string, array{non-empty-string, int}> */
     public static function provideDocblocksAfterAnAttribute(): iterable
     {
-        yield 'a directive' => ['/** @qmx-ignore complexity.ccn -- after the attribute */'];
-        yield 'a misspelled tag' => ['/** @qmx-ignorr complexity.ccn -- after the attribute */'];
+        yield 'a directive' => ['/** @qmx-ignore complexity.ccn -- after the attribute */', 2];
+        yield 'a misspelled tag' => ['/** @qmx-ignorr complexity.ccn -- after the attribute */', 1];
     }
 
     /**
@@ -558,7 +601,7 @@ final class SourceControlExtractorTest extends TestCase
     {
         $controls = self::measuredControls("<?php\nnamespace App;\nclass Named\n{\n{$method}\n}\n");
 
-        self::assertCount(1, $controls->suppressions);
+        self::assertCount(2, $controls->suppressions);
         self::assertNull($controls->suppressions[0]->refusal);
         self::assertStringContainsString('Named::run', $controls->suppressions[0]->binding?->subject->toCanonical() ?? '');
     }
@@ -636,11 +679,15 @@ final class SourceControlExtractorTest extends TestCase
 
         $read = array_map(static fn(string $entry): array => explode('|', $entry), self::readable($controls));
 
-        self::assertCount(2, $read);
+        self::assertCount(4, $read);
         self::assertSame(['symbol', 'complexity.ccn'], \array_slice($read[0], 0, 2));
-        self::assertSame(['symbol', 'size.loc'], \array_slice($read[1], 0, 2));
+        self::assertSame(['symbol', 'complexity.ccn'], \array_slice($read[1], 0, 2));
+        self::assertSame(['symbol', 'size.loc'], \array_slice($read[2], 0, 2));
+        self::assertSame(['symbol', 'size.loc'], \array_slice($read[3], 0, 2));
         self::assertStringContainsString('Named::run', $read[0][2]);
-        self::assertSame($read[0][2], $read[1][2]);
+        self::assertStringContainsString('Named::run', $read[2][2]);
+        self::assertSame($read[0][2], $read[2][2]);
+        self::assertSame($read[1][2], $read[3][2]);
     }
 
     /**

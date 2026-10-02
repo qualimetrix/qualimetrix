@@ -23,6 +23,8 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionAttribution;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -58,6 +60,17 @@ final class SuppressionCompositionBuilderTest extends TestCase
     {
         $finding = $this->finding('code-smell.debug-code', 'src/Foo.php');
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: new AnnotationSuppressionResult(
+                retained: [],
+                suppressed: [$finding],
+                suppressors: [new DirectiveSite(
+                    file: RelativePath::fromString('src/Authored.php'),
+                    line: 7,
+                    form: 'symbol',
+                    target: 'code-smell.debug-code',
+                    position: 12,
+                )],
+            ),
             findings: [],
             removedByStage: [FindingFilterStage::Suppression->value => [$finding]],
         );
@@ -67,11 +80,11 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
         self::assertSame(SuppressionMechanism::Suppression, $composition->all[0]->mechanism);
+        self::assertSame('src/Authored.php:7', $composition->all[0]->suppressor);
     }
 
     #[Test]
@@ -79,6 +92,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     {
         $finding = $this->finding('code-smell.debug-code', 'src/Excluded/Foo.php');
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
             findings: [],
             removedByStage: [FindingFilterStage::PathExclusion->value => [$finding]],
         );
@@ -88,7 +102,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(suppressPaths: $this->paths(['src/Excluded'])),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -101,6 +114,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     {
         $finding = $this->finding('code-smell.debug-code', 'src/Foo.php', 'App\\Excluded');
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
             findings: [],
             removedByStage: [FindingFilterStage::NamespaceExclusion->value => [$finding]],
         );
@@ -110,7 +124,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(suppressNamespaces: $this->namespaces(['App\\Excluded'])),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -123,6 +136,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     {
         $finding = $this->finding('complexity.ccn', 'src/Foo.php');
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
             findings: [],
             removedByStage: [FindingFilterStage::Baseline->value => [$finding]],
         );
@@ -132,7 +146,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -145,6 +158,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     {
         $finding = $this->finding('code-smell.debug-code', 'src/Foo.php');
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
             findings: [],
             removedByStage: [FindingFilterStage::GitScope->value => [$finding]],
         );
@@ -160,7 +174,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             $options,
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -179,11 +192,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
-            new FindingProjectionResult(findings: []),
+            new FindingProjectionResult(
+                findings: [],
+                annotationSuppression: self::emptyAnnotationSuppression(),
+            ),
             $ruleExecution,
             $this->ruleConfiguration(['coupling.cbo' => ['suppress_namespaces' => $this->namespaces(['App\\Excluded'])]]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -202,11 +217,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
-            new FindingProjectionResult(findings: []),
+            new FindingProjectionResult(
+                findings: [],
+                annotationSuppression: self::emptyAnnotationSuppression(),
+            ),
             $ruleExecution,
             $this->ruleConfiguration(['code-smell.long-parameter-list' => ['suppress_paths' => $this->paths(['src/Excluded'])]]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -218,11 +235,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
     public function itReportsAGlobalExcludePathPatternThatMatchedNothingAsInert(): void
     {
         $composition = $this->builder->build(
-            new FindingProjectionResult(findings: []),
+            new FindingProjectionResult(
+                findings: [],
+                annotationSuppression: self::emptyAnnotationSuppression(),
+            ),
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(suppressPaths: $this->exactPaths(['src/NeverMatched.php'])),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->neverMatched);
@@ -239,11 +258,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
     public function itReportsAPerRuleExcludePathPatternThatMatchedNothingAsInert(): void
     {
         $composition = $this->builder->build(
-            new FindingProjectionResult(findings: []),
+            new FindingProjectionResult(
+                findings: [],
+                annotationSuppression: self::emptyAnnotationSuppression(),
+            ),
             $this->ruleExecution(),
             $this->ruleConfiguration(['coupling.cbo' => ['suppress_paths' => $this->exactPaths(['src/DoesNotExist.php'])]]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->neverMatched);
@@ -271,11 +292,13 @@ final class SuppressionCompositionBuilderTest extends TestCase
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
-            new FindingProjectionResult(findings: []),
+            new FindingProjectionResult(
+                findings: [],
+                annotationSuppression: self::emptyAnnotationSuppression(),
+            ),
             $ruleExecution,
             $this->ruleConfiguration([$channel => ['suppress_namespaces' => $this->namespaces(['App\\Excluded'])]]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -301,14 +324,16 @@ final class SuppressionCompositionBuilderTest extends TestCase
         ), LevelActivity::empty());
 
         $composition = $this->builder->build(
-            new FindingProjectionResult(findings: []),
+            new FindingProjectionResult(
+                findings: [],
+                annotationSuppression: self::emptyAnnotationSuppression(),
+            ),
             $ruleExecution,
             $this->ruleConfiguration(['computed.health' => ['suppress_namespace_channels' => [
                 $channel => $this->namespaces(['App\\Excluded']),
                 $siblingChannel => $this->namespaces(['App\\NeverMatched']),
             ]]]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -332,6 +357,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
     {
         $finding = $this->finding('code-smell.debug-code', 'src/Reporting/Foo.php');
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
             findings: [],
             removedByStage: [FindingFilterStage::PathExclusion->value => [$finding]],
         );
@@ -341,7 +367,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(suppressPaths: $this->paths(['src', 'src/Reporting'])),
-            suppressions: [],
         );
 
         self::assertSame([], $composition->neverMatched);
@@ -367,6 +392,7 @@ final class SuppressionCompositionBuilderTest extends TestCase
             occurrenceKey: $occurrenceKey,
         );
         $filterResult = new FindingProjectionResult(
+            annotationSuppression: self::emptyAnnotationSuppression(),
             findings: [],
             removedByStage: [FindingFilterStage::Baseline->value => [$finding]],
         );
@@ -376,7 +402,6 @@ final class SuppressionCompositionBuilderTest extends TestCase
             $this->ruleExecution(),
             $this->ruleConfiguration([]),
             new FindingProjectionOptions(),
-            suppressions: [],
         );
 
         self::assertCount(1, $composition->all);
@@ -406,6 +431,11 @@ final class SuppressionCompositionBuilderTest extends TestCase
             message: 'test',
             severity: Severity::Warning,
         );
+    }
+
+    private static function emptyAnnotationSuppression(): AnnotationSuppressionResult
+    {
+        return new AnnotationSuppressionResult([], [], []);
     }
 
     private function ruleExecution(): RuleExecutionResult

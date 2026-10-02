@@ -93,14 +93,14 @@ final class DeclarationControlBindingsTest extends TestCase
             ],
         ]);
 
-        self::assertSame($class->toCanonical(), $bindings->suppressionBindingsFor($namedClass)[0]['subject']->toCanonical());
+        self::assertSame($class->toCanonical(), $bindings->suppressionBindingsFor($namedClass)[0]->subject->toCanonical());
         self::assertCount(6, $bindings->suppressionBindingsFor($namedClass));
         self::assertSame([], $bindings->suppressionBindingsFor($anonymousClass));
-        self::assertSame(ControlScope::Property, $bindings->suppressionBindingsFor($property)[0]['scope']);
-        self::assertSame(ControlScope::Hook, $bindings->suppressionBindingsFor($hooks[0])[0]['scope']);
-        self::assertSame(ControlScope::Callable, $bindings->suppressionBindingsFor($method->params[0])[0]['scope']);
-        self::assertSame($metrics[0]->declarationPath->toCanonical(), $bindings->suppressionBindingsFor($method->params[0])[0]['subject']->toCanonical());
-        self::assertSame($metrics[5]->declarationPath->toCanonical(), $bindings->suppressionBindingsFor($hooks[1]->params[0])[0]['subject']->toCanonical());
+        self::assertSame(ControlScope::Property, $bindings->suppressionBindingsFor($property)[0]->controlScope);
+        self::assertSame(ControlScope::Hook, $bindings->suppressionBindingsFor($hooks[0])[0]->controlScope);
+        self::assertSame(ControlScope::Callable, $bindings->suppressionBindingsFor($method->params[0])[0]->controlScope);
+        self::assertSame($metrics[0]->declarationPath->toCanonical(), $bindings->suppressionBindingsFor($method->params[0])[0]->subject->toCanonical());
+        self::assertSame($metrics[5]->declarationPath->toCanonical(), $bindings->suppressionBindingsFor($hooks[1]->params[0])[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -186,21 +186,58 @@ final class DeclarationControlBindingsTest extends TestCase
 
         self::assertCount(5, $bindings->suppressionBindingsFor($class));
         self::assertCount(5, $bindings->thresholdBindingsFor($class));
-        self::assertCount(1, $bindings->suppressionBindingsFor($methods[0]));
+        self::assertCount(2, $bindings->suppressionBindingsFor($methods[0]));
+        self::assertSame([
+            'whole:' . $methods[0]->getEndLine(),
+            \sprintf('lines:%d:%d', $methods[0]->getStartLine(), $methods[0]->getEndLine()),
+        ], array_map(static fn($binding): string => $binding->reach->key(), $bindings->suppressionBindingsFor($methods[0])));
+        self::assertSame(
+            ['method run'],
+            array_values(array_unique(array_map(
+                static fn($binding): string => $binding->reach->standsOn,
+                $bindings->suppressionBindingsFor($methods[0]),
+            ))),
+        );
         self::assertCount(1, $bindings->thresholdBindingsFor($methods[0]));
         self::assertCount(1, $bindings->suppressionBindingsFor($function));
+        self::assertSame('whole:' . $function->getEndLine(), $bindings->suppressionBindingsFor($function)[0]->reach->key());
         self::assertCount(1, $bindings->thresholdBindingsFor($function));
-        self::assertSame([], $bindings->suppressionBindingsFor($properties[0]));
+        self::assertCount(1, $bindings->suppressionBindingsFor($properties[0]));
+        self::assertSame(
+            \sprintf('lines:%d:%d', $properties[0]->getStartLine(), $properties[0]->getEndLine()),
+            $bindings->suppressionBindingsFor($properties[0])[0]->reach->key(),
+        );
         self::assertSame([], $bindings->thresholdBindingsFor($properties[0]));
-        self::assertCount(2, $bindings->suppressionBindingsFor($properties[1]));
+        self::assertCount(3, $bindings->suppressionBindingsFor($properties[1]));
+        self::assertSame([
+            'whole:' . $hooks[0]->getEndLine(),
+            'whole:' . $hooks[1]->getEndLine(),
+            \sprintf('lines:%d:%d', $properties[1]->getStartLine(), $properties[1]->getEndLine()),
+        ], array_map(static fn($binding): string => $binding->reach->key(), $bindings->suppressionBindingsFor($properties[1])));
         self::assertCount(2, $bindings->thresholdBindingsFor($properties[1]));
         self::assertCount(1, $bindings->suppressionBindingsFor($constant));
+        self::assertSame(
+            \sprintf('lines:%d:%d', $constant->getStartLine(), $constant->getEndLine()),
+            $bindings->suppressionBindingsFor($constant)[0]->reach->key(),
+        );
         self::assertSame([], $bindings->thresholdBindingsFor($constant));
         self::assertCount(1, $bindings->suppressionBindingsFor($enumCase));
+        self::assertSame(
+            \sprintf('lines:%d:%d', $enumCase->getStartLine(), $enumCase->getEndLine()),
+            $bindings->suppressionBindingsFor($enumCase)[0]->reach->key(),
+        );
         self::assertSame([], $bindings->thresholdBindingsFor($enumCase));
         self::assertCount(1, $bindings->suppressionBindingsFor($methods[0]->params[0]));
+        self::assertSame(
+            \sprintf('lines:%d:%d', $methods[0]->params[0]->getStartLine(), $methods[0]->params[0]->getEndLine()),
+            $bindings->suppressionBindingsFor($methods[0]->params[0])[0]->reach->key(),
+        );
         self::assertSame([], $bindings->thresholdBindingsFor($methods[0]->params[0]));
-        self::assertCount(1, $bindings->suppressionBindingsFor($methods[1]->params[0]));
+        self::assertCount(2, $bindings->suppressionBindingsFor($methods[1]->params[0]));
+        self::assertSame([
+            \sprintf('lines:%d:%d', $methods[1]->params[0]->getStartLine(), $methods[1]->params[0]->getEndLine()),
+            \sprintf('lines:%d:%d', $methods[1]->params[0]->getStartLine(), $methods[1]->params[0]->getEndLine()),
+        ], array_map(static fn($binding): string => $binding->reach->key(), $bindings->suppressionBindingsFor($methods[1]->params[0])));
         self::assertSame([], $bindings->thresholdBindingsFor($methods[1]->params[0]));
     }
 
@@ -228,7 +265,7 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertCount(1, $thresholdBindings);
         self::assertSame(
             $callable->declarationPath->toCanonical(),
-            $suppressionBindings[0]['subject']->toCanonical(),
+            $suppressionBindings[0]->subject->toCanonical(),
         );
         self::assertSame(
             $callable->declarationPath->toCanonical(),

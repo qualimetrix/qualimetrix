@@ -13,13 +13,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
@@ -113,13 +115,17 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
                 continue;
             }
 
-            $reach = DeclarationReach::whole(
-                $node->getEndLine() > 0 ? $node->getEndLine() : null,
-                DeclarationControlBindings::describe($node),
-            );
+            $nodeSuppressions = [];
             foreach ($nodeBindings as $binding) {
-                array_push($suppressions, ...$extractor->extract($node, $binding['subject'], $binding['scope'], $reach, $thresholdRead));
+                array_push($nodeSuppressions, ...$extractor->extract(
+                    $node,
+                    $binding->subject,
+                    $binding->controlScope,
+                    $binding->reach,
+                    $thresholdRead,
+                ));
             }
+            array_push($suppressions, ...self::refuseUnreachableLevels($nodeSuppressions, $nodeBindings));
         }
 
         foreach ($unattached->unowned() as $comment) {
@@ -134,6 +140,50 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         }
 
         return self::deduplicate($suppressions);
+    }
+
+    /**
+     * An authored level is valid only when at least one suppression binding of
+     * this carrier reaches it. Bare channels keep their existing semantics,
+     * and threshold bindings never enter this union.
+     *
+     * @param list<Suppression> $suppressions
+     * @param non-empty-list<\Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding> $bindings
+     *
+     * @return list<Suppression>
+     */
+    private static function refuseUnreachableLevels(array $suppressions, array $bindings): array
+    {
+        $groups = [];
+        foreach ($suppressions as $suppression) {
+            $groups[$suppression->authoredSite()][] = $suppression;
+        }
+
+        $reachable = DirectiveLevels::reachableByBindings($bindings);
+        $result = [];
+        foreach ($groups as $group) {
+            $directive = $group[0];
+            $requested = $directive->target()->selector()?->level();
+            if ($directive->type !== SuppressionType::Symbol
+                || $directive->refusal !== null
+                || $requested === null
+                || \in_array($requested, $reachable, true)
+            ) {
+                array_push($result, ...$group);
+                continue;
+            }
+
+            $result[] = new Suppression(
+                rule: $directive->rule,
+                reason: $directive->reason,
+                line: $directive->line,
+                type: $directive->type,
+                position: $directive->position,
+                refusal: DirectiveRefusal::levelNotReachableHere($bindings[0]->reach->standsOn),
+            );
+        }
+
+        return $result;
     }
 
     /**

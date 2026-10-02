@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
@@ -14,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
@@ -26,6 +28,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+#[CoversClass(AnnotationSuppressionResult::class)]
 #[CoversClass(SuppressionFilter::class)]
 final class SuppressionFilterTest extends TestCase
 {
@@ -410,6 +413,81 @@ final class SuppressionFilterTest extends TestCase
         $finding = $this->createFinding('src/Foo.php', 999, 'complexity');
 
         self::assertFalse($filter->shouldInclude($finding), 'Suppression without endLine should suppress until end of file');
+    }
+
+    #[Test]
+    public function itAppliesLineReachOnlyAtItsInclusiveBoundaries(): void
+    {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression(
+                'complexity',
+                null,
+                7,
+                SuppressionType::Symbol,
+                position: 0,
+                binding: new DeclarationBinding(
+                    $this->subject(),
+                    ControlScope::Class_,
+                    DeclarationReach::lines(10, 20, 'property $value'),
+                ),
+            ),
+        ]);
+
+        self::assertTrue($filter->shouldInclude($this->createFinding('src/Foo.php', 9, 'complexity')));
+        self::assertFalse($filter->shouldInclude($this->createFinding('src/Foo.php', 10, 'complexity')));
+        self::assertFalse($filter->shouldInclude($this->createFinding('src/Foo.php', 20, 'complexity')));
+        self::assertTrue($filter->shouldInclude($this->createFinding('src/Foo.php', 21, 'complexity')));
+        self::assertTrue($filter->shouldInclude(new Finding(
+            location: new Location(RelativePath::fromString('src/Foo.php'), null),
+            subject: $this->subject(),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            code: 'complexity',
+            message: 'Test message',
+            severity: Severity::Warning,
+        )));
+    }
+
+    #[Test]
+    public function itCarriesTheFirstActuallyAppliedDirectiveForTheExactFindingIdentity(): void
+    {
+        $finding = $this->createFinding('src/Presented.php', 42, 'complexity');
+        $result = (new SuppressionFilter())->apply([$finding], [
+            'src/First.php' => [new Suppression(
+                'complexity',
+                null,
+                5,
+                SuppressionType::Symbol,
+                position: 10,
+                binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'method bar')),
+            )],
+            'src/Second.php' => [new Suppression(
+                'complexity',
+                null,
+                6,
+                SuppressionType::Symbol,
+                position: 20,
+                binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'method bar')),
+            )],
+        ]);
+
+        self::assertSame([], $result->retained);
+        self::assertSame([$finding], $result->suppressed);
+        self::assertSame('src/First.php', (string) $result->suppressorOf($finding)->file);
+        self::assertSame(5, $result->suppressorOf($finding)->line);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('No annotation suppressor was recorded for this finding identity');
+        $result->suppressorOf($this->createFinding('src/Presented.php', 42, 'complexity'));
+    }
+
+    #[Test]
+    public function itRejectsUnequalSuppressionAttributionCounts(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Suppressed findings and their directive sites must have equal counts');
+        new AnnotationSuppressionResult([], [$this->createFinding('src/Foo.php', 10, 'complexity')], []);
     }
 
     #[Test]
