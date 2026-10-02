@@ -7,6 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
@@ -65,6 +66,16 @@ final class ChannelPublicationConsistencyTest extends TestCase
      * @var list<array{path: string, pattern: string, set: string, mode?: string, omitted?: list<string>, count?: string}>
      */
     private const PUBLICATIONS = [
+        [
+            'path' => 'website/docs/usage/output-formats.md',
+            'pattern' => '/(?<count>\S+) channels ask the first question:\s*(?<list>.*?)\.\s*`discovery\.unmatched-exclude`/su',
+            'set' => 'project-scope-namespace-claims',
+        ],
+        [
+            'path' => 'website/docs/usage/output-formats.ru.md',
+            'pattern' => '/Первый вопрос задают (?<count>\S+) каналов:\s*(?<list>.*?)\.\s*Второй используют/su',
+            'set' => 'project-scope-namespace-claims',
+        ],
         [
             'path' => 'website/docs/getting-started/configuration.md',
             'pattern' => '/apply to the (?<count>\S+) layer-policy diagnostics —(?<list>.*?)— which report/su',
@@ -467,6 +478,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
             )),
             'layer-policy-channels' => $layerPolicy,
             'annotation-channels' => $annotationChannels,
+            'project-scope-namespace-claims' => ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS,
         ];
 
         foreach ($sets as $name => $channels) {

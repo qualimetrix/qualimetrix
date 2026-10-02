@@ -1,5 +1,7 @@
 # 0089. Composer Manifest Facts and Project Scope Reasons
 
+> **Amendment:** [ADR 0093](0093-measured-run-scope-and-project-tree-queries.md) retains this captured Composer universe and source lifetime and measures final filesystem selection before building one shared judgement. It replaces the path-only reader gate and shared discovery API below; original gate observations remain historical.
+
 **Date:** 2026-09-29
 **Status:** Accepted
 

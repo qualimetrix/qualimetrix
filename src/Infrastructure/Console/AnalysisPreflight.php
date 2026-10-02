@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -26,11 +25,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * declared cost; a `check` that silently disagreed with this one would be a
  * defect, and the finding-equivalence gate is what would say so.
  *
- * **The discovery comes out of the same step as the configuration it belongs
- * to.** That is the point of returning it rather than letting each caller
- * build one: `AnalysisFileDiscovery` falls back to a default that knows nothing
- * of the user's `exclude`, so a command that forgets silently analyses a wider
- * tree than the project does.
+ * The resolved run captures the project paths and exclude policy that every
+ * downstream discovery caller receives.
  */
 final readonly class AnalysisPreflight
 {
@@ -39,7 +35,6 @@ final readonly class AnalysisPreflight
         private ConfigurationInputAdapter $configurationInputAdapter,
         private RunConfigurationPreparation $runConfigurationPreparation,
         private RuleInputValidator $ruleInputValidator,
-        private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
         private AnalysisInputPathValidator $pathValidator = new AnalysisInputPathValidator(),
     ) {}
 
@@ -69,7 +64,6 @@ final readonly class AnalysisPreflight
         return new PreparedAnalysisInput(
             $runConfiguration,
             $findingConfiguration,
-            $this->fileDiscoveryFactory->create($runConfiguration->projectRoot, $runConfiguration->pathExcludes),
         );
     }
 

@@ -8,23 +8,24 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
-use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
-use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Analysis\Run\Discovery\WalkedProject;
+use Qualimetrix\Analysis\Run\Discovery\WalkRequest;
 use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
-/**
- * What the walk refuses, and that it says so.
- *
- * Every case here used to end the same way: the file set came out smaller than
- * the tree, the run reported success, and nothing named the difference. The
- * assertions are therefore always a pair — not yielded **and** recorded.
- */
-#[CoversClass(FinderFileDiscovery::class)]
+#[CoversClass(ProjectWalk::class)]
 final class FinderFileDiscoverySkipTest extends TestCase
 {
     private string $root;
@@ -59,19 +60,6 @@ final class FinderFileDiscoverySkipTest extends TestCase
     }
 
     #[Test]
-    public function itFollowsASymlinkToAFileAsAnOrdinaryUnitOfAnalysis(): void
-    {
-        mkdir($this->root . '/outside', 0755, true);
-        file_put_contents($this->root . '/outside/Target.php', '<?php class Target {}');
-        symlink($this->root . '/outside/Target.php', $this->root . '/tree/Linked.php');
-
-        [$files, $skips] = $this->walk();
-
-        self::assertSame(['Kept.php', 'Linked.php'], $files);
-        self::assertSame([], $skips);
-    }
-
-    #[Test]
     public function itSaysNothingAboutASelfReferencingSymlinkThatIsNoCandidate(): void
     {
         symlink($this->root . '/tree/loop', $this->root . '/tree/loop');
@@ -102,6 +90,7 @@ final class FinderFileDiscoverySkipTest extends TestCase
      * refuses by throwing — turning the fix for a silent loss into a run that
      * produces nothing at all.
      */
+
     #[Test]
     public function itRecordsAnEntryOnceWhenOverlappingRootsBothReachIt(): void
     {
@@ -109,17 +98,13 @@ final class FinderFileDiscoverySkipTest extends TestCase
         mkdir($this->root . '/outside', 0755, true);
         symlink($this->root . '/outside', $this->root . '/tree/sub/link');
 
-        $discovery = $this->discovery();
-        iterator_to_array($discovery->discover([
-            AbsolutePath::fromString($this->root . '/tree'),
-            AbsolutePath::fromString($this->root . '/tree/sub'),
-        ]), false);
+        $walked = $this->walkProject([$this->root . '/tree', $this->root . '/tree/sub']);
 
         self::assertSame(
             [$this->root . '/tree/sub/link' => AnalysisFailureKind::DirectorySymlink],
-            $this->reasonsByPath($discovery->skippedEntries()),
+            $this->reasonsByPath($walked->skipped),
         );
-        self::assertCount(1, $discovery->skippedEntries());
+        self::assertCount(1, $walked->skipped);
     }
 
     /**
@@ -128,22 +113,6 @@ final class FinderFileDiscoverySkipTest extends TestCase
      * failure. Discovery inventing a second answer would give it two terminal
      * states.
      */
-    #[Test]
-    public function itYieldsAnUnreadableRegularFileRatherThanRecordingIt(): void
-    {
-        $this->requireUnprivilegedUser();
-        file_put_contents($this->root . '/tree/Sealed.php', '<?php class Sealed {}');
-        chmod($this->root . '/tree/Sealed.php', 0000);
-
-        try {
-            [$files, $skips] = $this->walk();
-        } finally {
-            chmod($this->root . '/tree/Sealed.php', 0644);
-        }
-
-        self::assertSame(['Kept.php', 'Sealed.php'], $files);
-        self::assertSame([], $skips);
-    }
 
     #[Test]
     public function itRecordsADanglingPhpSymlink(): void
@@ -155,24 +124,6 @@ final class FinderFileDiscoverySkipTest extends TestCase
         self::assertSame(['Kept.php'], $files);
         self::assertSame(
             [$this->root . '/tree/Dangling.php' => AnalysisFailureKind::NotRegularFile],
-            $this->reasonsByPath($skips),
-        );
-    }
-
-    #[Test]
-    public function itRecordsANamedPipeNamedLikeSource(): void
-    {
-        if (!\function_exists('posix_mkfifo')) {
-            self::markTestSkipped('ext-posix is required to create a FIFO');
-        }
-
-        posix_mkfifo($this->root . '/tree/Pipe.php', 0644);
-
-        [$files, $skips] = $this->walk();
-
-        self::assertSame(['Kept.php'], $files);
-        self::assertSame(
-            [$this->root . '/tree/Pipe.php' => AnalysisFailureKind::NotRegularFile],
             $this->reasonsByPath($skips),
         );
     }
@@ -202,14 +153,8 @@ final class FinderFileDiscoverySkipTest extends TestCase
         file_put_contents($this->root . '/sealed/Sealed.php', '<?php class Sealed {}');
         chmod($this->root . '/sealed', 0000);
 
-        $discovery = new FinderFileDiscovery(new DirectoryPruner(
-            AbsolutePath::fromString($this->root),
-            [],
-        ));
-        $files = iterator_to_array($discovery->discover([
-            AbsolutePath::fromString($this->root . '/tree'),
-            AbsolutePath::fromString($this->root . '/sealed'),
-        ]), false);
+        $walked = $this->walkProject([$this->root . '/tree', $this->root . '/sealed']);
+        $files = $walked->candidates;
 
         self::assertSame(
             ['Kept.php'],
@@ -217,7 +162,7 @@ final class FinderFileDiscoverySkipTest extends TestCase
         );
         self::assertSame(
             [$this->root . '/sealed' => AnalysisFailureKind::UnreadableDirectory],
-            $this->reasonsByPath($discovery->skippedEntries()),
+            $this->reasonsByPath($walked->skipped),
         );
     }
 
@@ -230,16 +175,13 @@ final class FinderFileDiscoverySkipTest extends TestCase
 
         posix_mkfifo($this->root . '/Explicit.php', 0644);
 
-        $discovery = $this->discovery();
-        $files = iterator_to_array(
-            $discovery->discover(AbsolutePath::fromString($this->root . '/Explicit.php')),
-            false,
-        );
+        $walked = $this->walkProject([$this->root . '/Explicit.php']);
+        $files = $walked->candidates;
 
         self::assertSame([], $files);
         self::assertSame(
             [$this->root . '/Explicit.php' => AnalysisFailureKind::NotRegularFile],
-            $this->reasonsByPath($discovery->skippedEntries()),
+            $this->reasonsByPath($walked->skipped),
         );
     }
 
@@ -248,14 +190,14 @@ final class FinderFileDiscoverySkipTest extends TestCase
     {
         symlink($this->root . '/tree', $this->root . '/tree/self');
 
-        $discovery = $this->discovery();
-        iterator_to_array($discovery->discover(AbsolutePath::fromString($this->root . '/tree')), false);
-        self::assertCount(1, $discovery->skippedEntries());
+        $walker = new ProjectWalk(new EntryInspector());
+        $first = $this->walkProject([$this->root . '/tree'], $walker);
+        self::assertCount(1, $first->skipped);
 
         unlink($this->root . '/tree/self');
-        iterator_to_array($discovery->discover(AbsolutePath::fromString($this->root . '/tree')), false);
+        $second = $this->walkProject([$this->root . '/tree'], $walker);
 
-        self::assertSame([], $discovery->skippedEntries());
+        self::assertSame([], $second->skipped);
     }
 
     #[Test]
@@ -264,40 +206,42 @@ final class FinderFileDiscoverySkipTest extends TestCase
         mkdir($this->root . '/outside', 0755, true);
         symlink($this->root . '/outside', $this->root . '/tree/vendor');
 
-        $discovery = new FinderFileDiscovery(new DirectoryPruner(
-            AbsolutePath::fromString($this->root),
-            DirectoryPruner::builtInPatterns(),
-        ));
-        $files = iterator_to_array(
-            $discovery->discover(AbsolutePath::fromString($this->root . '/tree')),
-            false,
-        );
+        $walked = $this->walkProject([$this->root . '/tree']);
+        $files = $walked->candidates;
 
         self::assertSame(
             ['Kept.php'],
             array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $files),
         );
-        self::assertSame([], $discovery->skippedEntries());
+        self::assertSame([], $walked->skipped);
     }
 
     /** @return array{list<string>, list<SkippedEntry>} */
     private function walk(): array
     {
-        $discovery = $this->discovery();
-        $files = iterator_to_array(
-            $discovery->discover(AbsolutePath::fromString($this->root . '/tree')),
-            false,
-        );
-
-        $names = array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $files);
+        $walked = $this->walkProject([$this->root . '/tree']);
+        $names = array_map(static fn(SplFileInfo $file): string => $file->getFilename(), $walked->candidates);
         sort($names);
 
-        return [$names, $discovery->skippedEntries()];
+        return [$names, $walked->skipped];
     }
 
-    private function discovery(): FinderFileDiscovery
+    /** @param list<string> $paths */
+    private function walkProject(array $paths, ?ProjectWalk $walker = null): WalkedProject
     {
-        return new FinderFileDiscovery(new DirectoryPruner(AbsolutePath::fromString($this->root), []));
+        $root = AbsolutePath::fromString($this->root);
+        $absolutePaths = array_map(AbsolutePath::fromString(...), $paths);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $run = new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new ProjectScopeMeasurement($universe, $absolutePaths, ProjectScopeState::Covered, []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
+
+        return ($walker ?? new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($run));
     }
 
     /**

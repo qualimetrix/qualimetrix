@@ -53,6 +53,7 @@ Reporting/
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
 │   ├── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── GitScopeFindingFilter.php          # Private Git publication predicate; the projector retains query and order
 │   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
 │   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)
 │   ├── InertSuppressor.php                # A configured suppressor (pattern/rule) that excluded nothing this run
@@ -498,21 +499,30 @@ and three commands outside `check` (`directives`,
 
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` has none: a selection does not narrow it.
 
-**`projectScope`:** always present with one shape:
+**`projectScope`:** always has
 `{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues, reasons}`.
-`state` is `covered`, `narrowed`, `unknown` or `unmeasured`.
-`narrowed` and `unmeasured` withhold the eight whole-project channels and
-have no individually judged values. `covered` and `unknown` list skipped
-suppression values as `{option, pattern}` and derive their unjudged channels
-from those values. Namespace location uses accepted PSR-4 facts independently
-of the enum. Each reason is a flat object with `kind` and its named fields,
-retained even on a covered run or a run already withholding judgement.
-`metrics` and `suppressed` publish the same object. SARIF
-(`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML and human formats
-add a diagnostic whenever `describe()` has a sentence, including a covered
-run with reasons. `gitlab` and `checkstyle` omit it because every entry is a
-finding to their consumers. Auxiliary install issues explain ancestry limits
-without changing main-project coverage. See ADR 0089.
+`state` remains `covered`, `narrowed`, `unknown` or `unmeasured`; the pipeline's
+final measured judgement, rather than this enum alone, answers declaration
+absence and selector/path completeness separately. Missing observed PHP, authored
+PHP removal, generated removal and uncertain denominator are named causes.
+All nine project-scoped channels use these measured questions; see
+[ADR 0093](../../docs/adr/0093-measured-run-scope-and-project-tree-queries.md).
+
+Each published skipped value has `{channel, option, pattern}`.
+`unjudgedChannels` lists channels with no judged value; a partially judged channel
+can be absent while its skipped values remain named. Reasons retain
+flat named cause fields even on a `covered` run. Namespace location still uses
+accepted PSR-4 facts independently of state. `metrics` and `suppressed` share
+this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
+and human formats render the scope explanation; `gitlab` and `checkstyle` have
+no diagnostic entry because their consumers treat every entry as a finding.
+Auxiliary install issues explain ancestry limits without changing main-project
+coverage. `coverage.excluded` counts named authored entries separately from
+`discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
+terminal entries. Named exclusions are outside that sum; failures may name
+directories, links or special entries rather than PHP files. A complete
+intentionally empty run and an incomplete run remain distinct; failure has
+priority and its policy/health result is not authoritative.
 
 **`configurationDiagnostics`:** always present, `[]` when the configuration drew no warning. Each entry is `{message, source}`: the warning as `check` also prints it on stderr, and `source` every layer it is about, lowest precedence first, each as the refusal envelope's `source` entries are — `{kind, name, imported_by}`. The entries arrive already published (`Infrastructure\Console\ConfigurationInputAdapter::publishedDiagnostics()`), so `Reporting` does not read the configuration document.
 
@@ -797,6 +807,11 @@ rendering of that payload lives in `html-report/`.
 coverage state. Every formatter must preserve a useful payload for zero files and
 must make incomplete analysis machine-detectable; see
 [ADR 0018](../../docs/adr/0018-analysis-coverage-verdict-and-output-projection.md).
+
+CoverageNarrator is the Reporting contract for the human coverage sentence.
+BaselineRun, GraphExportCommand and DirectiveAuditPresenter construct
+ReportCoverage and reuse that sentence for complete intentionally empty results.
+The manifest names these exact adapter consumers.
 
 ## Accepted level (baseline breach)
 

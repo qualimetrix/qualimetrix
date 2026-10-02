@@ -49,6 +49,7 @@ final class CheckCommandBaselineTest extends TestCase
         PHP;
 
     private string $tempDir;
+    private string $originalWorkingDirectory;
     private string $configPath;
     private string $baselinePath;
 
@@ -77,10 +78,20 @@ final class CheckCommandBaselineTest extends TestCase
             suppress_paths: [{regex: '.*ConfiguredPath\.php'}]
             suppress_namespaces: [{subtree: App\ConfiguredNamespace}]
             YAML . "\n");
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         self::removeDirectory($this->tempDir);
     }
 

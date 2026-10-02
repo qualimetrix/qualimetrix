@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Constraint\IsType;
 use PHPUnit\Framework\NativeType;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use RuntimeException;
@@ -35,7 +36,7 @@ final class PhpFileParserTest extends TestCase
     {
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
-        $ast = $this->parser->parse($file);
+        $ast = $this->parseFile($this->parser, $file);
 
         self::assertNotEmpty($ast);
         self::assertContainsOnlyInstancesOf(Node::class, $ast);
@@ -46,7 +47,7 @@ final class PhpFileParserTest extends TestCase
     {
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
-        $ast = $this->parser->parse($file);
+        $ast = $this->parseFile($this->parser, $file);
 
         // First node should be declare(strict_types=1)
         self::assertInstanceOf(Declare_::class, $ast[0]);
@@ -70,7 +71,7 @@ final class PhpFileParserTest extends TestCase
     {
         $file = new SplFileInfo($this->fixturesPath . '/empty_file.php');
 
-        $ast = $this->parser->parse($file);
+        $ast = $this->parseFile($this->parser, $file);
 
         // Minimal PHP file with only declare(strict_types=1) parses successfully
         // and produces exactly one Declare_ node
@@ -86,28 +87,17 @@ final class PhpFileParserTest extends TestCase
         self::expectException(ParseException::class);
         self::expectExceptionMessageMatches('/Failed to parse.*invalid_syntax\.php/');
 
-        $this->parser->parse($file);
-    }
-
-    #[Test]
-    public function itThrowsExceptionForNonExistentFile(): void
-    {
-        $file = new SplFileInfo($this->fixturesPath . '/nonexistent.php');
-
-        self::expectException(ParseException::class);
-        self::expectExceptionMessage('File does not exist or is not a regular file');
-
-        $this->parser->parse($file);
+        $this->parseFile($this->parser, $file);
     }
 
     #[Test]
     public function itIncludesFilePathInParseException(): void
     {
-        $filePath = $this->fixturesPath . '/nonexistent.php';
+        $filePath = $this->fixturesPath . '/invalid_syntax.php';
         $file = new SplFileInfo($filePath);
 
         try {
-            $this->parser->parse($file);
+            $this->parseFile($this->parser, $file);
             self::fail('Expected ParseException was not thrown');
         } catch (ParseException $e) {
             self::assertSame($filePath, $e->filePath->value());
@@ -142,7 +132,7 @@ final class PhpFileParserTest extends TestCase
         $fileParser = new PhpFileParser($mockParser);
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
-        $ast = $fileParser->parse($file);
+        $ast = $this->parseFile($fileParser, $file);
 
         self::assertSame([], $ast);
     }
@@ -160,7 +150,7 @@ final class PhpFileParserTest extends TestCase
         self::expectException(ParseException::class);
         self::expectExceptionMessage('Parser returned null');
 
-        $fileParser->parse($file);
+        $this->parseFile($fileParser, $file);
     }
 
     #[Test]
@@ -176,11 +166,20 @@ final class PhpFileParserTest extends TestCase
         $file = new SplFileInfo($this->fixturesPath . '/ValidClass.php');
 
         try {
-            $fileParser->parse($file);
+            $this->parseFile($fileParser, $file);
             self::fail('Expected ParseException was not thrown');
         } catch (ParseException $e) {
             self::assertSame($originalException, $e->getPrevious());
             self::assertStringContainsString('Original error', $e->getMessage());
         }
+    }
+
+    /** @return array<Node> */
+    private function parseFile(FileParserInterface $parser, SplFileInfo $file): array
+    {
+        $content = file_get_contents($file->getPathname());
+        self::assertIsString($content);
+
+        return $parser->parseContent($file, $content);
     }
 }

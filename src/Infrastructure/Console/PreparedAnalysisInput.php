@@ -6,7 +6,6 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 
 /**
  * One resolved invocation: what to analyse, under which rule configuration,
@@ -22,6 +21,5 @@ final readonly class PreparedAnalysisInput
     public function __construct(
         public RunConfiguration $runConfiguration,
         public ?FindingConfiguration $findingConfiguration,
-        public FileDiscoveryInterface $fileDiscovery,
     ) {}
 }

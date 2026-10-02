@@ -117,7 +117,8 @@ into `LcomCollectionConfiguration`, never a raw option map or fallback defaults.
 normalized names and retains the first authored spelling in diagnostics.
 
 `cohesion.unmatched-exclude-method` is a secondary channel of the LCOM producer.
-On a covered whole-project run it reports each configured normalized name that
+When measured judgement permits declaration absence, it reports each configured
+normalized name that
 matches no precomputed Method-kind declaration. Functions and property hooks do
 not witness a method; partial runs make no project-wide absence claim. Its project
 magnitude is 1, its occurrence identifies the normalized name, and it explicitly
@@ -126,7 +127,8 @@ LCOM4 graph algorithm and lifecycle are unchanged.
 
 DoD includes typed snapshot handoff, case-insensitive matching with original
 spelling, normalized duplicate handling, method-kind-only whole-project evidence
-and silence on a partial run.
+and silence when paths, authored PHP removal, generated removal or an unknown
+denominator withhold declaration absence.
 
 ## Locality
 

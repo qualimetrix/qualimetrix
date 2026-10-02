@@ -260,7 +260,7 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         self::assertCount(1, $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_PATH));
         self::assertSame('unknown', $scope['state'] ?? null);
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $scope['unjudgedChannels'] ?? null);
-        self::assertSame([['option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']], $scope['unjudgedValues'] ?? null);
+        self::assertSame([['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']], $scope['unjudgedValues'] ?? null);
     }
 
     /**
@@ -389,13 +389,13 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         self::assertSame('covered', $scope['state'] ?? null);
         self::assertSame(
             [
-                ['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy'],
-                ['option' => 'rules.complexity.ccn.suppress_namespaces', 'pattern' => 'subtree:Sample\\Tests\\Unit'],
+                ['channel' => UnboundSuppressionOptions::UNMATCHED_PATH, 'option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy'],
+                ['channel' => UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER, 'option' => 'rules.complexity.ccn.suppress_namespaces', 'pattern' => 'subtree:Sample\\Tests\\Unit'],
             ],
             $scope['unjudgedValues'] ?? null,
         );
         self::assertSame(
-            [UnboundSuppressionOptions::UNMATCHED_PATH, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER],
+            [UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER],
             $scope['unjudgedChannels'] ?? null,
         );
 
@@ -439,13 +439,14 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
     /**
      * A regex broad enough to match `(project)` removed the project finding
-     * the same way. It still removes every finding whose namespace it names;
-     * the run does not cover the project root, so the regex itself is not
-     * judged, and the report says so rather than calling it bound.
+     * the same way. It still removes every finding whose namespace it names.
+     * The omitted development tree contains no PHP, so the measured scope
+     * remains complete and the regex is judged as bound.
      */
     #[Test]
     public function itKeepsAProjectFindingUnderABroadPerRuleRegex(): void
     {
+        $this->declareDevelopmentTests();
         $this->writeUntypedClass();
 
         $tester = $this->check("rules:\n  health.typing:\n    suppress_namespaces:\n      - {regex: '.*'}\n");
@@ -453,8 +454,8 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         self::assertSame(['(project)'], $this->symbolsOn($tester, 'health.typing'));
         self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER));
         self::assertSame(
-            [['option' => 'rules.health.typing.suppress_namespaces', 'pattern' => 'regex:.*']],
-            $this->projectScope($tester)['unjudgedValues'] ?? null,
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => [], 'reasons' => []],
+            $this->projectScope($tester),
         );
     }
 

@@ -596,6 +596,23 @@ PHP;
         self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
+    #[Test]
+    public function itMeasuresSuppliedBytesEvenWhenTheFileDoesNotExist(): void
+    {
+        $code = "<?php\n// note\n\nclass Test {}";
+        $file = new SplFileInfo($this->tempDir . '/absent.php');
+        $ast = (new ParserFactory())->createForHostVersion()->parse($code) ?? [];
+
+        $this->collector->reset();
+        $this->collector->measureSource($code);
+        $metrics = $this->collector->collect($file, $ast);
+
+        self::assertFileDoesNotExist($file->getPathname());
+        self::assertSame(4, $metrics->get('size.loc'));
+        self::assertSame(1, $metrics->get('size.cloc'));
+        self::assertSame(2, $metrics->get('size.lloc'));
+    }
+
     private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         // Create actual temp file
@@ -608,7 +625,9 @@ PHP;
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $code !== '' ? ($parser->parse($code) ?? []) : [];
 
+        $this->collector->reset();
         $this->collector->useDeclarationIndex(new FileDeclarationIndex());
+        $this->collector->measureSource($code);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());

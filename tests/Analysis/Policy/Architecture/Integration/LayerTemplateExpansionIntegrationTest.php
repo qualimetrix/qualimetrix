@@ -47,13 +47,13 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings(), LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertSame([], $emptyTemplates, 'A non-typo template should expand and not raise empty-template.');
 
         // Customer depends on Logger (shared) — under allow rules
         // `domain-Order -> shared` this is permitted; ensure no layer-violation
         // fires for the expanded layer pair.
-        $allowedEdges = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $allowedEdges = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         self::assertSame([], $allowedEdges, 'Allowed edge under expanded names must not produce violations.');
     }
 
@@ -69,7 +69,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings(), LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplates, 'A typo template must emit exactly one empty-template diagnostic.');
         self::assertSame(Severity::Error, $emptyTemplates[0]->severity);
         self::assertStringContainsString('noop-{module}', $emptyTemplates[0]->message);
@@ -137,7 +137,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($configFits);
 
-        $emptyTemplates = $this->filterByRule($analysis->findings, LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        $emptyTemplates = $this->filterByRule($analysis->findings(), LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(
             1,
             $emptyTemplates,
@@ -158,7 +158,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         self::assertNotEmpty($layerViolations, 'Expected the Customer -> Logger edge to violate the empty allow list.');
 
         $messages = array_map(static fn(Finding $v): string => $v->message, $layerViolations);

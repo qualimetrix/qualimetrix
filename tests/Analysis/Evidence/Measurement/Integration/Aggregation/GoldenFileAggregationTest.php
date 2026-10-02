@@ -35,7 +35,7 @@ final class GoldenFileAggregationTest extends TestCase
         try {
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);
-            self::$repository = $pipeline->analyze($fixture->prepared()->runConfiguration)->metrics;
+            self::$repository = $pipeline->analyze($fixture->prepared()->runConfiguration)->measured->repository;
         } finally {
             $fixture->close();
         }

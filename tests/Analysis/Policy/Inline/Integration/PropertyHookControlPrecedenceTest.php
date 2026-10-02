@@ -80,11 +80,6 @@ final class PropertyHookControlPrecedenceTest extends TestCase
                 /** @param list<Node> $ast */
                 public function __construct(private array $ast) {}
 
-                public function parse(SplFileInfo $file): array
-                {
-                    return $this->ast;
-                }
-
                 public function parseContent(SplFileInfo $file, string $content): array
                 {
                     return $this->ast;

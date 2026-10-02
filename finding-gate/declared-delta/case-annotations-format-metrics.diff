@@ -1,0 +1,4 @@
+--- candidate
++++ reference (mapped)
+@@ -919,1 +919,0 @@
+-        "excluded": 0,

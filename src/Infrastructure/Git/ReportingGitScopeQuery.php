@@ -48,20 +48,45 @@ final readonly class ReportingGitScopeQuery implements GitScopeQueryInterface
             // against the explicit project root (NOT git top-level — the two
             // differ when the project sits in a git subdirectory).
             $fullPath = $request->projectRoot->joinRelative($file->path);
-            if ($request->includeParentNamespaces && $fullPath->isFile()) {
-                foreach ($this->extractNamespaces($fullPath) as $namespace) {
-                    // Add all parent namespaces
-                    $parts = explode('\\', $namespace);
-                    while ($parts !== []) {
-                        $ns = implode('\\', $parts);
-                        $namespaces[$ns] = true;
-                        array_pop($parts);
-                    }
-                }
+            if (!$request->includeParentNamespaces) {
+                continue;
             }
+
+            $this->indexFileNamespaces($fullPath, $namespaces);
         }
 
         return new GitScopeResult(array_keys($paths), array_keys($namespaces));
+    }
+
+    /** @param array<string, true> $namespaces */
+    private function indexFileNamespaces(AbsolutePath $filePath, array &$namespaces): void
+    {
+        if (!self::isRegularFile($filePath)) {
+            return;
+        }
+
+        foreach ($this->extractNamespaces($filePath) as $namespace) {
+            self::indexNamespaceParents($namespace, $namespaces);
+        }
+    }
+
+    private static function isRegularFile(AbsolutePath $filePath): bool
+    {
+        // @qmx-ignore-next-line code-smell.error-suppression -- A missing local entry omits optional namespaces while its changed PHP path remains reportable.
+        $entry = @lstat($filePath->value());
+
+        return $entry !== false && ($entry['mode'] & 0o170000) === 0o100000;
+    }
+
+    /** @param array<string, true> $namespaces */
+    private static function indexNamespaceParents(string $namespace, array &$namespaces): void
+    {
+        $parts = explode('\\', $namespace);
+        while ($parts !== []) {
+            $ns = implode('\\', $parts);
+            $namespaces[$ns] = true;
+            array_pop($parts);
+        }
     }
 
     /**

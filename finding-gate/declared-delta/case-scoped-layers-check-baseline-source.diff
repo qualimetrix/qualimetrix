@@ -1,4 +1,4 @@
 --- candidate
 +++ reference (mapped)
-@@ -36,1 +36,0 @@
--            "cohesion.unmatched-exclude-method",
+@@ -27,1 +27,0 @@
+-        "excluded": 0,

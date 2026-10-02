@@ -16,6 +16,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -186,7 +188,7 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
             static fn(SymbolPath $path): bool => \in_array($path->toCanonical(), $canonical, true),
         );
 
-        return new AnalysisContext($metrics, $graph, coversProjectScope: $coversProjectScope);
+        return new AnalysisContext($metrics, $graph, projectScope: new ProjectScopeJudgement($coversProjectScope ? [] : [ProjectScopeDoor::Paths]));
     }
 
     /** One edge: `Sample\Service` depends on `Symfony\Component\Console\Command\Command`. */

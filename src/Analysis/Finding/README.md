@@ -18,6 +18,7 @@ Finding/
 │   │   ├── RuleEnablementResolver.php
 │   │   ├── RuleNameJudge.php
 │   │   └── StatedEnablement.php
+│   ├── ProjectScope/     # measured judgement, doors, channel lists and selector verdicts
 │   ├── Control/          # finding control scope vocabulary
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
@@ -65,7 +66,9 @@ per-finding channel selection ran), `$published` (the subset `execute()` used
 to return), `$exclusions` (`RuleExclusionStats`, unchanged), and
 `$levelActivity` (`LevelActivity`), and `$selection` (`SelectionTrace`). Reporting's
 `SuppressionCompositionBuilder` reads `$produced` and `$exclusions` to publish
-`--format=suppressed`; every other caller keeps reading `$published`. See
+`--format=suppressed`. Run's outward `AnalysisResult::findings()` composes
+execution `$published` with late Inline usage and unmatched-exclude findings;
+those late findings never enlarge execution publication or its audit ledger. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md`.
 
 The ledger half of the `$produced`/`$published` difference is in `$exclusions`.
@@ -87,26 +90,34 @@ which no repaired code can cause. `UnboundSuppressionRule` gives the three
 `qmx rules`; `UnboundSuppressionAudit` — the namespace's only published type —
 builds the findings and passes them through `publishable()` itself, and is
 called by `FindingFilterOrchestrator` at the reporting seam, the one place the
-configured values and the run's universes are both in hand. The coverage
+configured values and the run's universes are both in hand.
 Every value is an explicit `exact`, `subtree`, or `regex` selector mapping;
 the application and audit carry the same bound Core pattern, while reports use
 its authored `kind:value` identity rather than the rendered PCRE.
 
-The coverage
-precondition is asked at that call site, so a run narrowed below the project's
-production autoload roots produces nothing here; a project whose manifest
-declares no readable production autoload is judged, its analysed paths taken
-as the whole project. `ValueScopeJudgement` asks the
-second half of that question, per value: it places a value's subject through
-the run's paths and the manifest's PSR-4 map, and a value naming a place this
-run never analysed is not judged at all. On a project whose manifest declares
-no readable production autoload nothing locates a namespace, so no namespace
-value is judged there — only path values. A skipped value is not silent:
-`UnboundSuppressionAudit::unjudgedValues()` enumerates the same values
-`findings()` judges, and the report's project scope publishes the ones skipped
-and their channels, on a `covered` run too. The judgement is built at the same
-call site from the run's shape, so this namespace does not read
-`composer.json` itself.
+The audit consumes the pipeline's single measured `ProjectScopeJudgement`.
+Namespace/declaration absence asks `judgesNamespaceClaims()`; path values ask
+`judgesExcludeSelectors()`, and rule-ledger namespace values also ask the former.
+Report state and a second Console boolean do not substitute for those facts.
+Accepted PSR-4 records still locate values independently of report state;
+without a usable map namespace values remain unjudged.
+
+`ValueScopeJudgement` also checks each location. A literal under a removed-entry
+anchor is not judged. Path/ledger regex is unjudged when path completeness is
+withheld or authored removal could hide a match; a complete named PHP roster
+can satisfy that measured path question just as a directory selection can.
+Namespace regex also needs complete declaration evidence. Generated removal
+withholds that namespace question while leaving path completeness open. This
+conservative rule may leave an unrelated stale regex unjudged; rerun without the exclusion to settle it. The audit opens
+no source or manifest. Reports publish skipped `{channel, option, pattern}`
+values even on a `covered` run.
+
+`Contract/ProjectScope` owns the judgement, doors, channel lists and selector
+verdict vocabulary. Its closed factory derives source/hidden-directory outcomes
+from measured facts; nonempty distinct origin lists are required, and duplicates
+are refused. Run supplies facts, and readers ask their own question.
+Settled `Removed` and named inaccessible evidence survive withheld selector
+completeness. See [ADR 0093](../../../docs/adr/0093-measured-run-scope-and-project-tree-queries.md).
 
 `LevelActivity` records the producer/level cells admitted by the committed
 `RuleEnablement`. `RuleExecutionInterface::levelActivity()` reads that immutable

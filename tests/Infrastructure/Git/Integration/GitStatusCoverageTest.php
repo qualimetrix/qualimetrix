@@ -12,6 +12,8 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\ChangedFile;
 use Qualimetrix\Infrastructure\Git\ChangeStatus;
 use Qualimetrix\Infrastructure\Git\GitClient;
+use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use ReflectionMethod;
 use RuntimeException;
 use Stringable;
@@ -27,6 +29,7 @@ use Symfony\Component\Process\Process;
  * healthy git produces and which is therefore fed to the parser directly.
  */
 #[CoversClass(GitClient::class)]
+#[CoversClass(ReportingGitScopeQuery::class)]
 final class GitStatusCoverageTest extends TestCase
 {
     private string $repoRoot;
@@ -79,6 +82,7 @@ final class GitStatusCoverageTest extends TestCase
         self::assertCount(1, $changed);
         self::assertSame('a.php', $changed[0]->path->value());
         self::assertSame(ChangeStatus::TypeChanged, $changed[0]->status);
+
         self::assertFalse($changed[0]->isDeleted(), 'a type change is not a deletion');
         self::assertSame([], $logger->warnings(), 'a carried row is not a skipped one');
     }
@@ -92,7 +96,7 @@ final class GitStatusCoverageTest extends TestCase
     public function itCarriesAFileReplacedBySymlink(): void
     {
         file_put_contents($this->repoRoot . '/a.php', "<?php\n\nclass A {}\n");
-        file_put_contents($this->repoRoot . '/b.php', "<?php\n\nclass B {}\n");
+        file_put_contents($this->repoRoot . '/b.php', "<?php\n\nnamespace Target; class B {}\n");
         $this->exec('git add -A');
         $this->exec('git commit -m initial');
 
@@ -107,6 +111,14 @@ final class GitStatusCoverageTest extends TestCase
             array_map(static fn(ChangedFile $file): string => $file->path->value(), $changed),
         );
         self::assertSame(ChangeStatus::TypeChanged, $changed[0]->status);
+
+        $result = (new ReportingGitScopeQuery())->resolve(new GitScopeRequest(
+            'staged',
+            AbsolutePath::fromString($this->repoRoot),
+            true,
+        ));
+        self::assertSame(['a.php'], $result->paths);
+        self::assertSame([], $result->namespaces, 'the link target must not supply namespace scope');
     }
 
     /**
@@ -169,12 +181,10 @@ final class GitStatusCoverageTest extends TestCase
     }
 
     /**
-     * The source name of a rename, held to the same standard as the new one.
-     * The file is analysed — its new name is carriable — so the row is kept;
-     * what the warning covers is the half of it that was dropped.
+     * A rename preserves a literal POSIX backslash in its source name.
      */
     #[Test]
-    public function itSaysWhenARenameSourceNameCannotBeCarried(): void
+    public function itPreservesARenameSourceNameWithALiteralBackslash(): void
     {
         $source = 'old\\name.php';
         file_put_contents(
@@ -189,15 +199,10 @@ final class GitStatusCoverageTest extends TestCase
         $logger = new StatusRecordingLogger();
         $changed = (new GitClient(AbsolutePath::fromString($this->repoRoot), $logger))->getChangedFiles('staged');
 
-        self::assertCount(1, $changed, 'the rename must still be reported — its new name is carriable');
+        self::assertCount(1, $changed);
         self::assertSame('New.php', $changed[0]->path->value());
-        self::assertNull($changed[0]->oldPath);
-
-        $warnings = $logger->warnings();
-        self::assertCount(1, $warnings, 'the lost source name must leave exactly one trace');
-        self::assertStringContainsString('Kept 1 changed file(s)', $warnings[0]);
-        self::assertStringContainsString('source name', $warnings[0]);
-        self::assertStringContainsString($source, $warnings[0]);
+        self::assertSame($source, $changed[0]->oldPath?->value());
+        self::assertSame([], $logger->warnings());
     }
 
     /**

@@ -1,2 +1,3 @@
 kind	key	level	reason
-exit	rules	*	Rules now judges the authored selector against the invocation channel universe before listing; selector-after-split retains the invalid bare complexity selector and changes rules from listing exit 0 to configuration refusal exit 3.
+field	message	project	The existing discovery fixture excludes subtree:NoSuchDir, which matches no entry. UnmatchedExcludeFinding retains the same channel, project subject and pattern occurrence; its message now describes entry selection rather than only directories. Measure actual changed occurrences, preserving all neighbouring values.
+field	recommendation	project	The existing discovery fixture excludes subtree:NoSuchDir, which matches no entry. UnmatchedExcludeFinding retains the same channel, project subject and pattern occurrence; its recommendation now describes entry selection rather than only directories. Measure actual changed occurrences, preserving all neighbouring values.

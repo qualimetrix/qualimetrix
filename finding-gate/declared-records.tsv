@@ -1,2 +1,1 @@
 change	case	report	view	selector	reason
-introduced	complexity	json	format:json	{"channel":"cohesion.unmatched-exclude-method","subject":"project:","occurrence":"9d07ae19bcd6c2e5","message":"The exclude_methods name \"brigde\" matched no method declared in this project."}	On a covered whole-project run LCOM now reports the configured brigde exclusion that matches no Method-kind declaration; the normalized name has one project occurrence and magnitude 1.

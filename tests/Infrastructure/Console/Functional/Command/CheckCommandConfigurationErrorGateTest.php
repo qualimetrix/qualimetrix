@@ -11,6 +11,7 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -34,6 +35,7 @@ final class CheckCommandConfigurationErrorGateTest extends TestCase
     private const string UNRESOLVED_CHANNEL = 'annotation.unresolved-directive';
 
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
@@ -42,10 +44,20 @@ final class CheckCommandConfigurationErrorGateTest extends TestCase
         // A configuration of its own, so the repository's `qmx.yaml` — with
         // its layers and its own diagnostics — never reaches this run.
         file_put_contents($this->tempDir . '/qmx.yaml', "rules: {}\n");
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         self::removeDirectory($this->tempDir);
     }
 

@@ -29,17 +29,24 @@ final class GraphExportCommandTest extends TestCase
     private ?GraphExportCommand $containerCommand = null;
     private string $originalMemoryLimit;
 
+    private string $originalCwd;
+
     protected function setUp(): void
     {
         // Create temporary directory for test files
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
         $this->originalMemoryLimit = (string) \ini_get('memory_limit');
+        $cwd = getcwd();
+        self::assertNotFalse($cwd);
+        $this->originalCwd = $cwd;
+        chdir($this->tempDir);
     }
 
     protected function tearDown(): void
     {
         ini_set('memory_limit', $this->originalMemoryLimit);
+        chdir($this->originalCwd);
         // Clean up temporary directory
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
@@ -331,6 +338,39 @@ final class GraphExportCommandTest extends TestCase
         $included = $this->createCommandTester();
         self::assertSame(0, $included->execute(['paths' => [$this->tempDir], '--include-generated' => true]));
         self::assertStringContainsString('Generated', $included->getDisplay());
+    }
+
+    #[Test]
+    public function itExportsAnEmptyGraphForACompleteNamedExclusion(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace App; final class Legacy {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+
+        $tester = new CommandTester($this->containerCommand());
+        $tester->execute(['--config' => $this->tempDir . '/qmx.yaml'], ['capture_stderr_separately' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringStartsWith('digraph', $tester->getDisplay());
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itLeavesTheGraphArtifactUntouchedWhenAnotherNamedPathFails(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace App; final class Legacy {}');
+        file_put_contents($this->tempDir . '/src/Broken.php', '<?php final class Broken {');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{exact: src/Legacy.php}]\ncache: {enabled: false}\n");
+        $destination = $this->tempDir . '/graph.dot';
+        file_put_contents($destination, 'sentinel');
+
+        $tester = new CommandTester($this->containerCommand());
+        $tester->execute(['--config' => $this->tempDir . '/qmx.yaml', '--output' => $destination], ['capture_stderr_separately' => true]);
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame('sentinel', file_get_contents($destination));
+        self::assertStringContainsString('Analysis incomplete', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -867,10 +907,9 @@ final class CountingDependencyGraphAnalyzer implements DependencyGraphAnalyzerIn
 
     public function analyze(
         \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
-        \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery,
     ): DependencyGraphAnalysisResult {
         ++$this->calls;
 
-        return $this->delegate->analyze($configuration, $fileDiscovery);
+        return $this->delegate->analyze($configuration);
     }
 }

@@ -68,7 +68,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
         // suppression filter.
         $rawSources = array_map(
             static fn(Finding $v): string => $v->symbolPath->toString(),
-            $this->filterByRule($analysisResult->findings, LayerViolationRule::NAME),
+            $this->filterByRule($analysisResult->findings(), LayerViolationRule::NAME),
         );
         self::assertNotEmpty(
             array_filter($rawSources, static fn(string $s): bool => str_contains($s, 'PolicedController')),
@@ -81,7 +81,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
         );
 
         $suppressionFilter = new SuppressionFilter();
-        $filtered = $suppressionFilter->apply($analysisResult->findings, $analysisResult->suppressions)->retained;
+        $filtered = $suppressionFilter->apply($analysisResult->findings(), $analysisResult->directives->suppressions)->retained;
 
         $filteredSources = array_map(
             static fn(Finding $v): string => $v->symbolPath->toString(),

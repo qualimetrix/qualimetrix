@@ -125,6 +125,10 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0092 — Typed Document Declarations and Option Judgement](0092-typed-document-declarations-and-option-judgement.md) — typed document facts and rule option form projection.
 
+- [0093 — Measured Run Scope and Project Tree Queries](0093-measured-run-scope-and-project-tree-queries.md) — one metadata walk separates declaration absence from selector binding and retains the source snapshot.
+
+- [0094 — Analysis Results Publish Subject-Owned Values](0094-analysis-results-publish-subject-owned-values.md) — measurement and directive observations have their own owners; execution publication and late findings compose without duplicates and preserve merge order.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

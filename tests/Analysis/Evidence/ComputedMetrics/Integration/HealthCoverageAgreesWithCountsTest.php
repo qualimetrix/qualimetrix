@@ -157,6 +157,7 @@ final class HealthCoverageAgreesWithCountsTest extends TestCase
         $process = new Process([
             \PHP_BINARY,
             'bin/qmx',
+            '--working-dir=' . $this->fixtureDirectory,
             'check',
             $this->fixtureDirectory,
             '--workers=0',

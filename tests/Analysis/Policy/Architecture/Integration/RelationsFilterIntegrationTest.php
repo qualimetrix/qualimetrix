@@ -192,7 +192,7 @@ final class RelationsFilterIntegrationTest extends TestCase
         return array_values(array_map(
             static fn(Finding $v): string => $v->message,
             array_filter(
-                $analysis->findings,
+                $analysis->findings(),
                 static fn(Finding $v): bool => $v->ruleName === LayerViolationRule::NAME,
             ),
         ));

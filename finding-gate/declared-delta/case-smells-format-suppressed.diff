@@ -1,21 +1,4 @@
 --- candidate
 +++ reference (mapped)
-@@ -32,2 +32,1 @@
--        "rule-path-suppression",
--        "selection"
-+        "rule-path-suppression"
-@@ -42,2 +41,1 @@
--        "rule-path-suppression": 0,
--        "selection": 0
-+        "rule-path-suppression": 0
-@@ -62,9 +60,1 @@
--    "neverMatched": [],
--    "notRun": [
--        {
--            "producer": "architecture.unassigned-class",
--            "reason": "disabled",
--            "statement": "inactive by default",
--            "layer": "default"
--        }
--    ]
-+    "neverMatched": []
+@@ -16,1 +16,0 @@
+-        "excluded": 0,

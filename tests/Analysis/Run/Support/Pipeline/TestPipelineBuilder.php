@@ -27,10 +27,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
-use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
-use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
@@ -67,7 +64,7 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
  */
 final class TestPipelineBuilder
 {
-    private ?FileDiscoveryInterface $defaultDiscovery = null;
+    private ?ProjectFilesInterface $projectFiles = null;
 
     private ?CollectionOrchestratorInterface $collectionOrchestrator = null;
 
@@ -108,9 +105,9 @@ final class TestPipelineBuilder
         return new self();
     }
 
-    public function withDefaultDiscovery(FileDiscoveryInterface $discovery): self
+    public function withProjectFiles(ProjectFilesInterface $projectFiles): self
     {
-        $this->defaultDiscovery = $discovery;
+        $this->projectFiles = $projectFiles;
 
         return $this;
     }
@@ -269,13 +266,10 @@ final class TestPipelineBuilder
         }
 
         return new AnalysisPipeline(
-            analysisFileDiscovery: new AnalysisFileDiscovery(
-                $this->defaultDiscovery ?? throw new LogicException(
-                    'TestPipelineBuilder: defaultDiscovery is required (call withDefaultDiscovery())',
-                ),
-                new GeneratedFileFilter(),
-                new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()),
+            projectFiles: $this->projectFiles ?? throw new LogicException(
+                'TestPipelineBuilder: projectFiles is required (call withProjectFiles())',
             ),
+            unmatchedExcludeAudit: new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()),
             collectionOrchestrator: $this->collectionOrchestrator ?? throw new LogicException(
                 'TestPipelineBuilder: collectionOrchestrator is required (call withCollectionOrchestrator())',
             ),

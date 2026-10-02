@@ -15,6 +15,7 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
+use RuntimeException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -46,15 +47,26 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class RuleExclusionStatsWiringTest extends TestCase
 {
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx-rule-exclusion-wiring-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         $this->removeDirectory($this->tempDir);
     }
 

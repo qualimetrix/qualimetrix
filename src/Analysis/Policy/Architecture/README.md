@@ -348,11 +348,13 @@ builds four of them: `architecture.coverage-gap`, `architecture.unreachable-laye
 `PotentialShadowDiagnostic` renders `architecture.potential-shadow` from the
 shadow evidence, which no other verdict reads. `unreachable-layer` and
 `empty-template` say that no class matches a declaration, so the validator
-withholds them on a run whose paths do not cover the project's autoload roots
-(`AnalysisContext::$coversProjectScope`, the gate `architecture.unmatched-exclude`
-reads); the run's scope warning and the report's `projectScope` say so. A
-project whose manifest declares no readable production autoload is judged,
-with its analysed paths taken as the whole project. The validator declares `architecture.layer-violation`
+withholds them unless measured `ProjectScopeJudgement::judgesNamespaceClaims()`
+permits declaration absence. `architecture.unmatched-exclude` asks that same
+question. Missing observed PHP, authored removal hiding PHP, generated removal
+and an unknown denominator can withhold it; covering written path roots alone
+is insufficient. Scope warnings and `projectScope` name these measured doors.
+A whole-root fallback can establish filesystem completeness without declared
+Composer code; a subset cannot assume it. The validator declares `architecture.layer-violation`
 as its producer, so all five are registered, addressed, excluded, described and
 switched off exactly as they were while the rule declared them, and it runs in
 the rule's slot so their position in an unsorted report is unchanged.

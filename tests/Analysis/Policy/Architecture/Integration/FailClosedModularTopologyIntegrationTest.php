@@ -48,8 +48,8 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         );
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Boundary', $architecture);
-        self::assertSame([], $this->findingsFor($result->findings, LayerViolationRule::NAME));
-        self::assertSame([], $this->findingsFor($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->findingsFor($result->findings(), LayerViolationRule::NAME));
+        self::assertSame([], $this->findingsFor($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -61,7 +61,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         );
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Analysis/DirectTaxonomyType.php', $architecture);
-        $diagnostic = $this->singleCoverageDiagnostic($result->findings);
+        $diagnostic = $this->singleCoverageDiagnostic($result->findings());
 
         self::assertSame(Severity::Error, $diagnostic->severity);
         self::assertStringContainsString('1 class(es) outside all declared layers', $diagnostic->message);
@@ -77,7 +77,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         );
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Analysis/Evidence', $architecture);
-        $diagnostic = $this->singleCoverageDiagnostic($result->findings);
+        $diagnostic = $this->singleCoverageDiagnostic($result->findings());
 
         self::assertStringContainsString('1 class(es) outside all declared layers', $diagnostic->message);
         self::assertStringContainsString('UnlistedEvidence', $diagnostic->recommendation ?? '');
@@ -93,7 +93,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         );
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Coverage/Owned', $architecture);
-        $diagnostic = $this->singleCoverageDiagnostic($result->findings);
+        $diagnostic = $this->singleCoverageDiagnostic($result->findings());
 
         self::assertStringContainsString('1 edge(s) with unmatched target layer', $diagnostic->message);
         self::assertStringContainsString('UncoveredEndpoint', $diagnostic->recommendation ?? '');
@@ -108,7 +108,7 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         );
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Coverage/Isolated/IsolatedUncovered.php', $architecture);
-        $diagnostic = $this->singleCoverageDiagnostic($result->findings);
+        $diagnostic = $this->singleCoverageDiagnostic($result->findings());
 
         self::assertStringContainsString('0 edge(s) with unmatched source layer', $diagnostic->message);
         self::assertStringContainsString('0 edge(s) with unmatched target layer', $diagnostic->message);
@@ -125,14 +125,14 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         );
 
         $result = $this->analyze(self::FIXTURE_PATH . '/Cycle', $architecture);
-        $cycles = $this->findingsFor($result->findings, CircularDependencyRule::NAME);
+        $cycles = $this->findingsFor($result->findings(), CircularDependencyRule::NAME);
 
         self::assertCount(1, $cycles);
         self::assertSame(Severity::Error, $cycles[0]->severity);
         self::assertStringContainsString('CycleA', $cycles[0]->message);
         self::assertStringContainsString('CycleB', $cycles[0]->message);
-        self::assertSame([], $this->findingsFor($result->findings, LayerViolationRule::NAME));
-        self::assertSame([], $this->findingsFor($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->findingsFor($result->findings(), LayerViolationRule::NAME));
+        self::assertSame([], $this->findingsFor($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
     }
 
     /**

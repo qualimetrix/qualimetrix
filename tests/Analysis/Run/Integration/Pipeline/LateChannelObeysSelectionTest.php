@@ -376,16 +376,23 @@ final class LateChannelObeysSelectionTest extends TestCase
         $application->addCommand($command);
         $tester = new CommandTester($command);
 
-        $tester->execute([
-            'paths' => [$this->tempDir . '/src'],
-            '--config' => $config,
-            '--format' => 'json',
-            '--workers' => 0,
-            '--no-cache' => true,
-            '--no-progress' => true,
-            '--fail-on' => 'none',
-            ...$invocation,
-        ]);
+        $originalDirectory = getcwd();
+        self::assertIsString($originalDirectory);
+        self::assertTrue(chdir($this->tempDir));
+        try {
+            $tester->execute([
+                'paths' => [$this->tempDir . '/src'],
+                '--config' => $config,
+                '--format' => 'json',
+                '--workers' => 0,
+                '--no-cache' => true,
+                '--no-progress' => true,
+                '--fail-on' => 'none',
+                ...$invocation,
+            ]);
+        } finally {
+            chdir($originalDirectory);
+        }
 
         return $tester;
     }

@@ -28,9 +28,25 @@ are discovered normally; an empty PHP tree remains a separate analysis refusal.
 
 A path you name that is itself a `vendor`, `node_modules` or `.git` directory (`bin/qmx check lib/vendor`) stops the run with a configuration error: Qualimetrix never walks into one, so the run would analyse nothing. Name a file or a directory inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside a path you name is still skipped.
 
-A directory you name — here or under `paths:` in `qmx.yaml` — that your own `exclude:` or `--exclude` removes stops the run with a configuration error (exit code 3) before analysis starts, naming the path and the selector that removes it: the run would otherwise succeed without having looked inside it. `directives`, `baseline:generate`, `baseline:update`, `baseline:cleanup` and `baseline:explain` refuse it the same way. A file you name inside an excluded directory is still analysed, and so is a directory below one that an `exact:` selector removes, because `exact:` does not reach below the directory it names. A path detected from `composer.json` that you exclude is skipped without a word: there the exclusion is doing what it was written for.
+Authored `exclude:` and `--exclude` apply to named files and directories from
+CLI, YAML and presets. `exact:` removes only the named entry; `subtree:` reaches
+its descendants. A matching written root is measured as excluded, not refused
+as input. When `analyzed=0`, `failed=0` and `excluded + generatedExcluded > 0`,
+the result is intentionally empty: `check` and `directives` return 0,
+`graph:export` writes an empty graph, and `baseline:generate` writes an empty
+baseline. Its explanation remains on stderr and in formats with a diagnostic
+place. Incompleteness takes priority with exit 4: diagnostic output is retained,
+but no baseline mutation or authoritative graph is published. Truly undiscovered
+empty input retains each command's existing outcome.
 
-If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, so a run with no paths always counts as covering it. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
+`.` and canonically equivalent root spellings are valid. A directory or named
+alias must canonically target the captured root or a descendant; an external
+alias spelling targeting an internal directory is valid, the reverse refuses
+with exit 3. For files, the canonical parent is checked and the final name stays
+literal, including a named link to an outside file. `--working-dir` chooses the
+invocation root; publication has no outside-root fallback.
+
+If you omit paths, Qualimetrix auto-detects them from every path the `autoload` section of your `composer.json` declares — `psr-4` and `psr-0` roots, `classmap` entries (a `*` wildcard expanded to the directories it matches) and `files` entries alike. These are the same paths a run is judged against when Qualimetrix asks whether it covered the whole project, final scope also measures missing PHP, authored/generated removal and universe certainty. An entry that is, or lies inside, a `vendor`, `node_modules` or `.git` directory — which Qualimetrix never walks into — is left out of both and named in a warning instead: third-party code is not analysed as your project's. A declared path that does not exist on disk stops the run with a configuration error. `autoload-dev` is not included: test code is analysed only when you name its path (`bin/qmx check src/ tests/`, or `paths:` in `qmx.yaml`), or when you count it as part of the project with [`--include-autoload-dev`](#--include-autoload-dev).
 
 ---
 
@@ -64,15 +80,14 @@ Exclude directories from analysis with an explicit path selector. Can be repeate
 bin/qmx check src/ --exclude=subtree:src/Generated --exclude=exact:src/Legacy
 ```
 
-A value that removes no directory is reported as
-[`discovery.unmatched-exclude`](../rules/discovery.md) — a `warning` at project
-level, not a refusal, and only on a run whose paths cover the project: every
-path `composer.json` declares under `autoload`, and under `autoload-dev` too
-with [`--include-autoload-dev`](#--include-autoload-dev). On a narrower run the pattern may bind nothing
-simply because the code it names lies outside the slice.
-
-A value that removes a directory you named as a path is refused instead; see
-[Paths argument](#paths-argument).
+Binding is reported through
+[`discovery.unmatched-exclude`](../rules/discovery.md). PHP-path completeness
+and universe certainty permit judging unsettled selectors; authored/generated
+removal alone does not close that question. A bound selector remains `Removed`
+on a narrow run. A possible hidden subtree from the same source gives a qualified
+warning; one from another source gives a named unjudged value and a request to
+rerun without that exclusion. A removed written root is measured, not refused.
+See [Paths argument](#paths-argument).
 
 ### `--include-generated`
 
@@ -577,11 +592,11 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Git scope options
 
-Report only violations from changed files. See [Git Integration](git-integration.md) for the full guide.
+Publish findings relative to changed files while retaining project-scoped diagnostics. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
-Control which violations to report. Analyzes the full project but only shows violations from changed files:
+Limit publication by Git while preserving selected analysis paths. Non-strict mode also retains relevant namespace/project findings; project-scoped configuration channels remain visible:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD
@@ -590,7 +605,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-In diff mode, only show violations from the changed files themselves. Without this flag, violations from parent namespaces are also shown:
+Limit code findings to changed files without namespace/project widening. All nine project-scoped configuration channels remain visible even in strict mode:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -1083,7 +1098,13 @@ The four selection options exist because a verdict is relative to the run that p
 
 A `@qmx-threshold` names exactly one rule, so under `--sweep=narrow` a counterfactual re-executes only that rule. `--sweep=full` re-executes every enabled rule for the same verdicts, at far higher cost — it is not a slower fallback but the control that measures, rather than assumes, that removing a directive of one rule cannot move another rule's findings: the two scopes are swept over the same tree and compared verdict for verdict. On this project's own `src/` the narrow sweep is several times cheaper and the two scopes agree on every verdict. Both the text report and `--format=json` state the sweep the verdicts were measured under.
 
-Exit codes: `0` nothing inert, `2` at least one inert directive whose boundary was observable, `3` bad input or configuration — including a scope that analysed no PHP files at all (a directory with no PHP in it, an `exclude` that swallowed everything, or nothing but `@generated` files), `4` the run failed to parse part of the tree, `1` the command itself failed unexpectedly.
+Exit codes: `0` no inert directive with an observable boundary, including a
+complete intentionally empty excluded set; `2` at least one such inert directive;
+`3` bad input/configuration, including truly undiscovered empty input;
+`4` incomplete input (read, parse, processing or skipped-entry failure);
+`1` unexpected command failure. Incompleteness takes priority. Text and JSON
+retain the diagnostic report; a measured coverage note appears in text and
+JSON `scope.note`.
 
 Four verdicts, of which three are answers and one is the absence of one:
 

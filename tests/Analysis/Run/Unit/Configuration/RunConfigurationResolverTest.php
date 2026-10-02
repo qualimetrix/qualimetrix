@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
@@ -23,6 +25,54 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 final class RunConfigurationResolverTest extends TestCase
 {
+    /** @return iterable<string, array{string, ConfigurationSource, ?string}> */
+    public static function provideOutsidePathSources(): iterable
+    {
+        yield 'command line' => ['cli', ConfigurationSource::CommandLine, null];
+        yield 'configuration file' => ['qmx.yaml', ConfigurationSource::ConfigFile, 'qmx.yaml'];
+        yield 'preset' => ['preset strict', ConfigurationSource::Preset, 'preset strict'];
+    }
+
+    #[Test]
+    #[DataProvider('provideOutsidePathSources')]
+    public function itRefusesTheSpecificOutsidePathAuthor(string $source, ConfigurationSource $expectedSource, ?string $locator): void
+    {
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $document = LayeredDocument::of([
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src']]],
+            ['source' => $source, 'values' => [ConfigSchema::PATHS => ['src', '/outside-project/source']]],
+        ], $root);
+
+        try {
+            (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
+            self::fail('The outside path must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame($expectedSource, $refusal->sources()[0]->source());
+            self::assertSame($locator, $refusal->sources()[0]->locator());
+            self::assertSame($source === 'cli' ? null : ['paths', '1'], $refusal->position()?->segments);
+            self::assertCount(1, $refusal->sources());
+            self::assertStringContainsString('--working-dir', $refusal->summary());
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnOutsideComposerTargetWithoutInventingAPathsPosition(): void
+    {
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $document = LayeredDocument::of([
+            ['source' => 'composer.json', 'values' => [ConfigSchema::DISCOVERED_AUTOLOAD_PATHS => ['/outside-project/source']]],
+        ], $root);
+
+        try {
+            (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve($document);
+            self::fail('The outside Composer target must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::ComposerJson, $refusal->sources()[0]->source());
+            self::assertSame($root->value() . '/composer.json', $refusal->sources()[0]->locator());
+            self::assertNull($refusal->position());
+        }
+    }
+
     #[Test]
     public function itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot(): void
     {

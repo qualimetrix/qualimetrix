@@ -148,17 +148,9 @@ final class GraphExportCommand extends Command
 
     private function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        // Every check in this method runs before `analyzeDependencyGraph()`:
-        // `--direction`/`--format`/`--output` refusals must
-        // not pay for a Discovery+Collection run that their own answer
-        // throws away. A bogus `--direction` or `--format` must reach the
-        // analyzer zero times.
         $format = self::resolveFormat(CommandLineSpelling::option($input, 'format') ?? '');
         $direction = self::resolveDirection(CommandLineSpelling::option($input, 'direction') ?? '');
-
-        $outputPath = CommandLineSpelling::option($input, 'output');
-        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
-        $outputFile?->refuseUnwritable();
+        $outputFile = self::prepareOutputFile($input);
 
         $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
         $request = $this->buildProjectionRequest($input, $format, $direction);
@@ -167,49 +159,84 @@ final class GraphExportCommand extends Command
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $prepared->runConfiguration->paths),
         ]);
 
-        $result = $this->analyzeDependencyGraph(
-            $prepared->runConfiguration,
-            $prepared->fileDiscovery,
-        );
+        $result = $this->analyzeDependencyGraph($prepared->runConfiguration);
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);
 
-        if ($result->coverage->discoveredFiles() === 0) {
-            // An analysis outcome, not an input refusal.
-            $output->writeln('<error>No files found to analyze</error>');
-
-            return self::FAILURE;
+        $coverageExit = $this->resolveCoverageExit($result, $output);
+        if ($coverageExit !== null) {
+            return $coverageExit;
         }
 
-        $this->logger->info('Dependency collection completed', [
-            'processed' => $result->coverage->analyzedFilesCount(),
-            'skipped' => $result->coverage->skippedFilesCount(),
-            'dependencies' => \count($result->graph->getAllDependencies()),
-        ]);
+        $this->logGraphBuilt($result);
+        $this->assertIncludeNamespacesBind($result, $request);
+        $content = $this->projection->project($result->graph, $request);
+        self::publishGraph($output, $outputFile, $content, $format);
 
+        return self::SUCCESS;
+    }
+
+    private static function prepareOutputFile(InputInterface $input): ?ArtifactFile
+    {
+        $outputPath = CommandLineSpelling::option($input, 'output');
+        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
+        $outputFile?->refuseUnwritable();
+
+        return $outputFile;
+    }
+
+    private function resolveCoverageExit(DependencyGraphAnalysisResult $result, OutputInterface $output): ?int
+    {
         if (!$result->coverage->isComplete()) {
             $this->writeIncompleteAnalysis($output, new IncompleteAnalysisException($result->coverage));
 
             return self::EXIT_ANALYSIS_INCOMPLETE;
         }
 
+        if ($result->coverage->discoveredFiles() === 0 && !$result->coverage->isIntentionallyEmpty()) {
+            // An analysis outcome, not an input refusal.
+            $output->writeln('<error>No files found to analyze</error>');
+
+            return self::FAILURE;
+        }
+
+        if ($result->coverage->isIntentionallyEmpty()) {
+            $coverage = $result->coverage;
+            $this->errorStream->write($output, \Qualimetrix\Reporting\Formatter\CoverageNarrator::describe(new \Qualimetrix\Reporting\ReportCoverage(
+                $coverage->discoveredFiles(),
+                $coverage->analyzedFilesCount(),
+                $coverage->generatedExcludedFilesCount(),
+                $coverage->failedFilesCount(),
+                excluded: $coverage->excludedCount(),
+            )));
+        }
+
+        return null;
+    }
+
+    private function logGraphBuilt(DependencyGraphAnalysisResult $result): void
+    {
+        $this->logger->info('Dependency collection completed', [
+            'processed' => $result->coverage->analyzedFilesCount(),
+            'skipped' => $result->coverage->skippedFilesCount(),
+            'dependencies' => \count($result->graph->getAllDependencies()),
+        ]);
+
         $this->logger->info('Dependency graph built', [
             'classes' => \count($result->graph->getAllClasses()),
             'namespaces' => \count($result->graph->getAllNamespaces()),
             'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
+    }
 
-        $this->assertIncludeNamespacesBind($result, $request);
-        $content = $this->projection->project($result->graph, $request);
-
+    private static function publishGraph(OutputInterface $output, ?ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
+    {
         if ($outputFile !== null) {
             self::writeToFile($output, $outputFile, $content, $format);
         } else {
             OutputHelper::write($output, $content);
         }
-
-        return self::SUCCESS;
     }
 
     /**
@@ -309,9 +336,8 @@ final class GraphExportCommand extends Command
 
     private function analyzeDependencyGraph(
         \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
-        \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery,
     ): DependencyGraphAnalysisResult {
-        return $this->analyzer->analyze($configuration, $fileDiscovery);
+        return $this->analyzer->analyze($configuration);
     }
 
     private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
-use Closure;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
@@ -33,6 +31,11 @@ final readonly class FindingProjector
     ) {}
 
     /**
+     * Git keeps declared project-scoped channels, changed file locations,
+     * and non-strict namespace or unlocated project aggregates. A project
+     * subject with a file location (such as a duplication copy) is judged by
+     * that copy's own file.
+     *
      * @param list<Finding> $findings
      * @param array<string, list<Suppression>> $suppressions
      */
@@ -84,31 +87,12 @@ final readonly class FindingProjector
             $namespaceSet = array_fill_keys($git->namespaces, true);
             // The same scope the exclusion stages read — see exclusionStages().
             $fileScope = DeclaredChannelFileScope::create();
-            $filter = new class (
+            $filter = new GitScopeFindingFilter(
                 $pathSet,
                 $namespaceSet,
-                static fn(Finding $finding): bool => !$fileScope->isFileScoped($finding->channel()),
-            ) implements FindingFilterInterface {
-                /**
-                 * @param array<string, true> $paths
-                 * @param array<string, true> $namespaces
-                 * @param Closure(Finding): bool $isProjectScoped
-                 */
-                public function __construct(
-                    private array $paths,
-                    private array $namespaces,
-                    private Closure $isProjectScoped,
-                ) {}
-                public function shouldInclude(Finding $finding): bool
-                {
-                    if (($this->isProjectScoped)($finding)) {
-                        return true;
-                    }
-
-                    return isset($this->paths[$finding->location->pathString()])
-                        || ($finding->symbolPath->namespace !== null && isset($this->namespaces[$finding->symbolPath->namespace]));
-                }
-            };
+                $options->gitScope->includeParentNamespaces,
+                $fileScope,
+            );
             $outcome = (new PredicateFilterStage(FindingFilterStage::GitScope, $filter))->apply(array_values($findings));
             $findings = $outcome->findings;
             $removed[FindingFilterStage::GitScope->value] = $outcome->removed;

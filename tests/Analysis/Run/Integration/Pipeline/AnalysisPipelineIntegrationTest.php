@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 
-use ArrayIterator;
 use PHPUnit\Framework\Attributes\Group;
 
 use PHPUnit\Framework\Attributes\Test;
@@ -55,11 +54,16 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -98,6 +102,7 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
+use ReflectionMethod;
 use ReflectionProperty;
 use SplFileInfo;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -125,6 +130,43 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     protected function setUp(): void
     {
         $this->profiler = new ProfileSession();
+    }
+
+    #[Test]
+    public function itMapsEveryCollectionFailureKindToItsCoverageFailureKind(): void
+    {
+        $paths = [
+            RelativePath::fromString('parse.php'),
+            RelativePath::fromString('unreadable.php'),
+            RelativePath::fromString('processing.php'),
+        ];
+        $failures = [
+            FileProcessingResult::failure($paths[0], 'parse error', FileProcessingFailureKind::Parse),
+            FileProcessingResult::failure($paths[1], 'read error', FileProcessingFailureKind::UnreadableFile),
+            FileProcessingResult::failure($paths[2], 'processing error', FileProcessingFailureKind::Processing),
+        ];
+
+        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+            null,
+            $paths,
+            [],
+            new CollectionPhaseOutput([], $failures),
+            [],
+            [],
+            AbsolutePath::fromString(sys_get_temp_dir()),
+        );
+
+        self::assertSame(3, $coverage->failedFilesCount());
+        $mapped = [];
+        foreach ($coverage->failures as $failure) {
+            $mapped[$failure->path->value()] = [$failure->kind, $failure->message];
+        }
+        ksort($mapped);
+        self::assertSame([
+            'parse.php' => [AnalysisFailureKind::Parse, 'parse error'],
+            'processing.php' => [AnalysisFailureKind::Processing, 'processing error'],
+            'unreadable.php' => [AnalysisFailureKind::UnreadableFile, 'read error'],
+        ], $mapped);
     }
 
     /**
@@ -173,7 +215,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Assert: the rule should have received a non-null dependency graph
         self::assertNotNull($capturedContext, 'Rule should have been executed');
@@ -254,11 +296,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Assert: should find circular dependency findings
         $circularFindings = array_filter(
-            $result->findings,
+            $result->findings(),
             static fn(Finding $v): bool => $v->ruleName === CircularDependencyRule::NAME,
         );
 
@@ -355,20 +397,20 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         try {
             [$first] = $run($cyclicRoot, $architectureDocument);
-            self::assertNotEmpty(self::findingsNamed($first->findings, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::findingsNamed($first->findings, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings(), LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings(), CircularDependencyRule::NAME));
 
             [$second] = $run($cleanRoot, LayeredDocument::of([], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections));
-            self::assertSame([], self::findingsNamed($second->findings, LayerViolationRule::NAME));
-            self::assertSame([], self::findingsNamed($second->findings, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings(), LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings(), CircularDependencyRule::NAME));
 
             [$withoutCycles, $cycleDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
                 CircularDependencyRule::NAME,
             );
-            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings, LayerViolationRule::NAME));
-            self::assertSame([], self::findingsNamed($withoutCycles->findings, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings(), LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutCycles->findings(), CircularDependencyRule::NAME));
             self::assertArrayHasKey('architecture-prepare', $cycleDisabledSpans);
             self::assertArrayNotHasKey('cycles', $cycleDisabledSpans);
 
@@ -380,8 +422,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 $architectureDocument,
                 ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
             );
-            self::assertSame([], self::findingsNamed($withoutLayers->findings, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutLayers->findings(), LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings(), CircularDependencyRule::NAME));
             self::assertArrayNotHasKey('architecture-prepare', $architectureDisabledSpans);
             self::assertArrayHasKey('cycles', $architectureDisabledSpans);
         } finally {
@@ -465,10 +507,10 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString('/tmp/src')));
+        $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Verify class-level CBO was computed (sanity check)
-        $orderServiceBag = $result->metrics->get(
+        $orderServiceBag = $result->measured->repository->get(
             SymbolPath::forClass('App\Service', 'OrderService'),
         );
         self::assertNotNull(
@@ -477,7 +519,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Now check namespace-level aggregated CBO
-        $namespaceBag = $result->metrics->get(SymbolPath::forNamespace('App\Service'));
+        $namespaceBag = $result->measured->repository->get(SymbolPath::forNamespace('App\Service'));
 
         // The CouplingCollector defines cbo aggregation at namespace level
         // with Sum, Average, Max strategies. These should produce cbo.sum, cbo.avg, cbo.max.
@@ -711,13 +753,6 @@ PHP);
                     $this->parser = new PhpFileParser();
                 }
 
-                public function parse(SplFileInfo $file): array
-                {
-                    ++$this->parsed;
-
-                    return $this->parser->parse($file);
-                }
-
                 public function parseContent(SplFileInfo $file, string $content): array
                 {
                     ++$this->parsed;
@@ -780,10 +815,16 @@ PHP);
         ?InMemoryMetricRepository $existingRepository = null,
         ?CircularDependencyAnalysis $circularDependencyAnalysis = null,
     ): AnalysisPipeline {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo('/tmp/dummy.php'),
-        ]));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(sys_get_temp_dir() . '/dummy.php')],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
@@ -797,10 +838,7 @@ PHP);
                 }
 
                 return new CollectionPhaseOutput([
-                    PathFactory::bestEffortRelative(
-                        $files[0]->getPathname(),
-                        AbsolutePath::fromString('/tmp/src'),
-                    ),
+                    RelativePath::fromString('dummy.php'),
                 ], [], dependencies: $dependencies);
             },
         );
@@ -811,7 +849,7 @@ PHP);
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
 
         return TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)
@@ -838,10 +876,16 @@ PHP);
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,
     ): AnalysisPipeline {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo('/tmp/dummy.php'),
-        ]));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(sys_get_temp_dir() . '/dummy.php')],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
@@ -855,10 +899,7 @@ PHP);
                 }
 
                 return new CollectionPhaseOutput([
-                    PathFactory::bestEffortRelative(
-                        $files[0]->getPathname(),
-                        AbsolutePath::fromString('/tmp/src'),
-                    ),
+                    RelativePath::fromString('dummy.php'),
                 ], [], dependencies: $dependencies);
             },
         );
@@ -867,7 +908,7 @@ PHP);
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
 
         return TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)

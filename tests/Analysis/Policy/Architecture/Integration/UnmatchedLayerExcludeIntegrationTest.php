@@ -50,6 +50,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
 
         $this->writeClass('Controller/UserController.php', 'Sample\\Controller', 'UserController');
         $this->writeClass('Controller/Legacy/OldController.php', 'Sample\\Controller\\Legacy', 'OldController');
+        file_put_contents($this->fixture . '/src/Outside.php', '<?php final class OutsideFixture {}');
     }
 
     protected function tearDown(): void
@@ -57,6 +58,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
         foreach ([
             '/src/Controller/Legacy/OldController.php',
             '/src/Controller/UserController.php',
+            '/src/Outside.php',
             '/composer.json',
         ] as $file) {
             @unlink($this->fixture . $file);

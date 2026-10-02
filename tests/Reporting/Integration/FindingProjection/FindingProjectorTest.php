@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
@@ -29,7 +30,9 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
@@ -867,6 +870,97 @@ final class FindingProjectorTest extends TestCase
         self::assertSame(0, $result->removedCountBy(FindingFilterStage::GitScope));
     }
 
+    #[Test]
+    public function itUsesEachFindingPropertyForGitProjection(): void
+    {
+        $projectScoped = $this->makeFinding('src/unchanged.php', code: ProjectScopeChannels::WALK_CHANNEL);
+        $changedClass = $this->makeFinding('src/changed.php', 'App\\Deep');
+        $unchangedClass = $this->makeFinding('src/unchanged.php', 'App\\Deep');
+        $namespaceSubject = SymbolPath::forNamespace('App');
+        $namespace = new Finding(
+            location: Location::none(),
+            subject: MetricSubject::aggregate($namespaceSubject),
+            symbolPath: SymbolPath::forNamespace('Misleading'),
+            ruleName: 'health.overall',
+            code: 'health.overall',
+            message: 'Namespace health',
+            severity: Severity::Warning,
+        );
+        $namespaceSelfSubject = SymbolPath::forNamespace('App\\Deep');
+        $namespaceSelf = new Finding(
+            location: Location::none(),
+            subject: MetricSubject::aggregate($namespaceSelfSubject),
+            symbolPath: $namespaceSelfSubject,
+            ruleName: 'health.cohesion',
+            code: 'health.cohesion',
+            message: 'Direct namespace health',
+            severity: Severity::Warning,
+        );
+        $unlocatedClass = new Finding(
+            location: Location::none(),
+            subject: $unchangedClass->subject,
+            symbolPath: $unchangedClass->symbolPath,
+            ruleName: 'health.cohesion',
+            code: 'health.cohesion',
+            message: 'Class health',
+            severity: Severity::Warning,
+        );
+        $methodPath = RelativePath::fromString('src/unchanged.php');
+        $methodSymbol = SymbolPath::forMethod('App\\Deep', 'Other', 'run');
+        $unchangedMethod = new Finding(
+            location: new Location($methodPath),
+            subject: MetricSubject::declaration(DeclarationPath::of($methodSymbol, $methodPath, DeclarationOrdinal::fromRank(0))),
+            symbolPath: $methodSymbol,
+            ruleName: 'complexity.ccn',
+            code: 'complexity.ccn',
+            message: 'Method complexity',
+            severity: Severity::Warning,
+        );
+        $projectSubject = SymbolPath::forProject();
+        $project = new Finding(
+            location: Location::none(),
+            subject: MetricSubject::aggregate($projectSubject),
+            symbolPath: $projectSubject,
+            ruleName: 'health.overall',
+            code: 'health.overall',
+            message: 'Project health',
+            severity: Severity::Warning,
+        );
+        $unchangedCopy = new Finding(
+            location: new Location(RelativePath::fromString('src/unchanged.php')),
+            subject: MetricSubject::aggregate($projectSubject),
+            symbolPath: $projectSubject,
+            ruleName: 'duplication.clone',
+            code: 'duplication.clone',
+            message: 'Unchanged copy',
+            severity: Severity::Warning,
+        );
+        $changedCopy = new Finding(
+            location: new Location(RelativePath::fromString('src/changed.php')),
+            subject: MetricSubject::aggregate($projectSubject),
+            symbolPath: $projectSubject,
+            ruleName: 'duplication.clone',
+            code: 'duplication.clone',
+            message: 'Changed copy',
+            severity: Severity::Warning,
+        );
+        $findings = [$projectScoped, $changedClass, $unchangedClass, $unchangedMethod, $namespace, $namespaceSelf, $unlocatedClass, $project, $unchangedCopy, $changedCopy];
+        $scope = new GitScopeResult(['src/changed.php'], ['App\\Deep', 'App']);
+
+        self::assertSame(
+            [$projectScoped, $changedClass, $namespace, $namespaceSelf, $project, $changedCopy],
+            $this->projectWithSyntheticGitScope($findings, $scope, true)->findings,
+        );
+        self::assertSame(
+            [$projectScoped, $changedClass, $changedCopy],
+            $this->projectWithSyntheticGitScope($findings, $scope, false)->findings,
+        );
+        self::assertSame(
+            [$projectScoped],
+            $this->projectWithSyntheticGitScope($findings, new GitScopeResult([], []), true)->findings,
+        );
+    }
+
     // -- Helper methods --
 
     /**
@@ -957,6 +1051,32 @@ final class FindingProjectorTest extends TestCase
             $declarations,
             new ReportingGitScopeQuery(),
         );
+    }
+
+    /** @param list<Finding> $findings */
+    private function projectWithSyntheticGitScope(array $findings, GitScopeResult $scope, bool $includeAggregates): FindingProjectionResult
+    {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $query = new class ($scope) implements GitScopeQueryInterface {
+            public function __construct(private GitScopeResult $scope) {}
+
+            public function resolve(GitScopeRequest $request): GitScopeResult
+            {
+                return $this->scope;
+            }
+        };
+        $projector = new FindingProjector(
+            new SuppressionFilter(),
+            new BaselineLoader(new BaselineEntryParser($declarations)),
+            $declarations,
+            $query,
+        );
+
+        return $projector->project($findings, [], new FindingProjectionOptions(gitScope: new GitScopeRequest(
+            'staged',
+            AbsolutePath::fromString('/synthetic'),
+            $includeAggregates,
+        )));
     }
 
     /** @param list<Finding> $findings */

@@ -164,7 +164,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
             return [];
         }
 
-        if (!$context->coversProjectScope) {
+        if (!$context->projectScope->judgesNamespaceClaims()) {
             return [];
         }
 

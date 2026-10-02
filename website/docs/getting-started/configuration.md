@@ -60,22 +60,38 @@ analysed project's invocation snapshot of `composer.json`. If its selected
 autoload records are unusable, inferred defaults refuse with exit 3 rather
 than analysing unrelated paths. Accepted fragments of a damaged manifest can
 still be analysed, but inferred partial defaults do not establish a whole
-project. Explicitly selecting the whole project root permits judgement with
-state `unknown`; selecting a subset without a complete declared universe gives
+project. Explicitly selecting the whole root can establish filesystem completeness with
+state `unknown`; final removal/uncertainty can still withhold declaration claims.
+Selecting a subset without a complete declared universe gives
 `unmeasured`. See [Project scope](../usage/output-formats.md#project-scope-in-every-format).
 A missing path or an explicitly named existing non-PHP regular file refuses
 with exit 3 in every measuring command before discovery.
 
+Input directories must canonically target the captured root or a descendant;
+an external alias spelling targeting an internal directory is valid. For files,
+the canonical parent is checked and the last name is kept literally, including
+file symlinks. `.` and equivalent root spellings are valid. A directory targeting
+outside refuses with exit 3; `--working-dir` chooses the intended root.
+
 ### Exclude
 
-Directories to skip entirely. Files in these directories are not analyzed at all:
+Filesystem entries removed from analysis: files, directories and other matching entries. The walk does not descend into an excluded directory:
 
 ```yaml
 exclude:
   - subtree: tests/Fixtures
 ```
 
-Each entry is a path selector written the same way as under [Suppress Paths](#suppress-paths) — `exact`, `subtree` or `regex`; a bare string is refused. `vendor`, `node_modules` and `.git` are never walked, so they need no entry. A directory you name under `paths` or on the command line that an entry here removes stops the run with a configuration error (exit code 3) instead of a successful run that never looked inside it; see [Paths argument](../usage/cli-options.md#paths-argument).
+Each entry is an explicit `exact`, `subtree` or `regex` selector, as under
+`suppress_paths`; a bare string is refused. The built-in `vendor`, `node_modules`
+and `.git` floor is separate from authored selectors. Authored exclusions apply
+to named CLI, YAML and preset paths without refusing a root merely because it
+was written explicitly. All matching selectors bind before an entry is pruned.
+A complete run with `analyzed=0`, `failed=0` and
+`excluded + generatedExcluded > 0` is intentionally empty and succeeds with
+its measured scope explanation. `baseline:generate` writes an empty file;
+any failure takes priority with exit 4. See
+[Paths argument](../usage/cli-options.md#paths-argument).
 
 ### Include Generated
 

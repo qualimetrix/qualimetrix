@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
+use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
@@ -57,9 +58,8 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
 
         if ($report->coverage !== null && !$report->coverage->isComplete()) {
             $banner = \sprintf(
-                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">Analysis incomplete: %d of %d discovered PHP file(s) failed. Policy results are not authoritative.</div>',
-                $report->coverage->failed,
-                $report->coverage->discovered,
+                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">%s</div>',
+                htmlspecialchars(CoverageNarrator::describe($report->coverage), \ENT_QUOTES),
             );
             $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
         }

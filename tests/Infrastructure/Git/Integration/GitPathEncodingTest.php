@@ -152,27 +152,20 @@ final class GitPathEncodingTest extends TestCase
     }
 
     /**
-     * The one name this build cannot carry, and the reason it is a refusal
-     * rather than a repair: `RelativePath` rewrites `\` as a directory
-     * separator, so `back\slash.php` would become the two segments
-     * `back/slash.php` and match findings belonging to a file that exists.
-     *
-     * The second case is the octal escape the old decoder-shaped fix would
-     * have had to get right: a name whose bytes spell `\057`, which decodes
-     * to `/`. Here it is never decoded — it is refused as a backslash name,
-     * and the refusal is visible.
+     * Git's NUL-separated output preserves a literal POSIX backslash. The
+     * spelling that resembles an octal escape is also a literal file name.
      *
      * @return iterable<string, array{string}>
      */
-    public static function provideNamesThisBuildCannotCarry(): iterable
+    public static function provideLiteralBackslashNames(): iterable
     {
         yield 'backslash' => ['back\\slash.php'];
         yield 'text spelling an octal escape for the separator' => ['a\\057b.php'];
     }
 
     #[Test]
-    #[DataProvider('provideNamesThisBuildCannotCarry')]
-    public function itRefusesANameItWouldHaveToRewriteAndSaysSo(string $name): void
+    #[DataProvider('provideLiteralBackslashNames')]
+    public function itCarriesALiteralBackslashNameWithoutAWarning(string $name): void
     {
         file_put_contents($this->repoRoot . '/' . $name, "<?php\n");
         file_put_contents($this->repoRoot . '/Plain.php', "<?php\n");
@@ -182,26 +175,22 @@ final class GitPathEncodingTest extends TestCase
         $client = new GitClient(AbsolutePath::fromString($this->repoRoot), $logger);
         $changed = $client->getChangedFiles('staged');
 
-        // The refused name is gone from the answer, and the other file is not.
-        self::assertSame(['Plain.php'], array_map(static fn(ChangedFile $f): string => $f->path->value(), $changed));
-
-        $warnings = $logger->warnings();
-        self::assertCount(1, $warnings, 'a dropped file must leave exactly one trace');
-        self::assertStringContainsString('Skipped 1 changed file(s)', $warnings[0]);
-        self::assertStringContainsString('backslash', $warnings[0]);
-        self::assertStringContainsString($name, $warnings[0]);
+        $names = array_map(static fn(ChangedFile $f): string => $f->path->value(), $changed);
+        sort($names);
+        self::assertSame(['Plain.php', $name], $names);
+        self::assertSame([], $logger->warnings());
     }
 
     /**
-     * The end-to-end witness for the finding: before this, a repository whose
-     * only staged change was a non-ASCII name reported nothing and exited 0,
-     * while the same run without `--report` reported the violation.
+     * The report uses the exact staged file name for both non-ASCII and
+     * literal-backslash names.
      */
     #[Test]
-    public function itReportsAFindingForAStagedNonAsciiNameThroughTheCli(): void
+    #[DataProvider('provideCliNames')]
+    public function itReportsAFindingForAStagedNameThroughTheCli(string $name): void
     {
         file_put_contents(
-            $this->repoRoot . '/Тест.php',
+            $this->repoRoot . '/' . $name,
             "<?php\n\nclass Tested { public function run(string \$code): void { eval(\$code); } }\n",
         );
         $this->exec('git add -A');
@@ -225,10 +214,17 @@ final class GitPathEncodingTest extends TestCase
 
         self::assertIsArray($violations);
         self::assertContains(
-            'Тест.php',
+            $name,
             array_column($violations, 'file'),
-            'the staged non-ASCII file produced no finding',
+            'the staged file produced no finding under its literal name',
         );
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideCliNames(): iterable
+    {
+        yield 'non-ASCII' => ['Тест.php'];
+        yield 'literal backslash' => ['back\\slash.php'];
     }
 
     private function exec(string $command): void

@@ -10,8 +10,10 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRunContext;
@@ -64,12 +66,20 @@ final readonly class StubBaselineRun implements BaselineRunInterface
     {
         ($this->onMeasure ?? static fn(): null => null)();
 
-        $result = new AnalysisResult(
-            findings: $this->findings,
-            duration: 0.0,
-            metrics: $this->metrics ?? new InMemoryMetricRepository(),
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
-            thresholdOverrides: $this->thresholdOverrides,
+        $result = AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $this->metrics ?? new InMemoryMetricRepository(),
+                coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.0,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: $this->thresholdOverrides,
+            ),
+            ruleExecution: null,
+            latePublished: $this->findings,
         );
 
         return new BaselineRunContext(

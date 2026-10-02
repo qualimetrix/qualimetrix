@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ValueScopeJudgement` now requires its existing fifth constructor argument, the measured `ProjectScopeJudgement`; omitting it previously assumed both questions were open. Pass the pipeline judgement explicitly. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for the single measured authority.
+
+- Replace the nine-input `AnalysisResult` constructor with `AnalysisResult::fromRun(measured, directives, ruleExecution, latePublished)`. Read metrics as `measured.repository`; read coverage, namespaceTree, projectScope and duration under `measured`, and suppressions/thresholdOverrides under `directives`. Replace the findings property with `findings()` and filesAnalyzed/filesSkipped with measured coverage methods. Execution publication and late findings remain separate, and merge preserves their original order. See [ADR 0094](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0094-analysis-results-publish-subject-owned-values.md) for PHP-consumer migration.
+- Run scope is measured from the captured project universe and final entry selection. Namespace/declaration absence and exclude-selector binding use separate judgements. A complete named PHP roster can cover paths; authored removal hiding PHP and generated removal still withhold declaration-absence claims. Unjudged report values now include `channel` beside `option` and `pattern`.
+- Authored `exclude` removes named files and directories instead of refusing written directories or bypassing selectors for named files. A complete intentionally empty run (`analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0`) succeeds: `check` and `directives` return 0, `graph:export` writes an empty graph, and `baseline:generate` writes an empty baseline with a stderr explanation. Incomplete input takes priority with exit 4 and no baseline mutation or authoritative graph output. Exclusion is not remediation; baseline cleanup/explain retain the metadata-coverage limitation described in their guide.
+- Replace Run's `FileDiscoveryInterface`, `FileDiscoveryFactoryInterface`, `SkipReportingDiscoveryInterface` and `AnalysisFileDiscovery` composition with `ProjectFilesInterface::discover(RunConfiguration): DiscoveredProjectFiles`. Remove `FinderFileDiscovery`, `DiscoveredAnalysisFiles`, `DirectoryPruner`, `DirectoryWalk`, `ExcludeBindingProbe` and `ExcludeBindingVerdict` integrations. Graph and debug pass the captured run configuration. `LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath)` replaces separate path/exclude/root inputs and `resolveIncludingGenerated()`.
+- Replace `AnalysisContext::$coversProjectScope` with Finding's measured `ProjectScopeJudgement`: use `judgesNamespaceClaims()` for declaration absence and `judgesExcludeSelectors()` for selector completeness. Carry the pipeline's judgement into copied contexts instead of deriving another boolean from report state. Replace `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` with Finding's sole `ProjectScopeChannels` roster. `unjudgedChannels` contains only channels with no judged value; partially judged channels can still have named skipped values.
+- `FileParserInterface::parse(SplFileInfo)` is removed: supply caller-owned bytes through `parseContent(SplFileInfo, string)` with the original absolute file identity. Replace file-based `CacheKeyGenerator::generate()` with `generateForContent()`. Run supplies one snapshot to parser, LOC and Inline processing; source-read refusal becomes `unreadable-file` before parsing.
+- Replace `PathFactory::bestEffortRelative()` and `structurePreservingFallback()` with `published(AbsolutePath, AbsolutePath)`. Publication requires a canonical parent inside the captured root and preserves lexical basename and POSIX backslashes. Outside parents refuse instead of producing a fallback path. Explicit directory aliases targeting the root or its descendants remain valid.
+- `GitRepositoryLocator::findGitDir()` and `findHooksDir()` require an explicit `AbsolutePath`. Git reporting retains all nine project-scoped configuration channels even in strict mode, resolves empty range endpoints as HEAD and uses root-relative diffs. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for migration and limits.
+
 **Authored threshold override requests.** Replace validate(warning, error,
 errorWasExplicit) with validate(ThresholdOverrideRequest). An absent override
 skips validation; equal non-null shorthand and explicit corresponding axes
@@ -1093,6 +1104,8 @@ What changes for a configuration you already have:
   copy of a duplicate block can be told apart.
 
 ### Fixed
+
+- Stale suppression regex values are audited on a complete named PHP file roster using measured path completeness, with the separate declaration-completeness requirement for namespace values.
 
 - Analysis durations, baseline lock deadlines and script elapsed-time checks use
   monotonic clocks. A backward adjustment of the system date no longer makes

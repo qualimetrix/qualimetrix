@@ -57,4 +57,21 @@ final class HookInstallWorkingDirectoryTest extends TestCase
         self::assertTrue(PreCommitHook::isOurs($hook));
         self::assertStringContainsString($binary, $hook);
     }
+
+    #[Test]
+    public function itLocatesHooksFromTheEffectiveWorkingDirectory(): void
+    {
+        $binary = realpath(\dirname(__DIR__, 5) . '/bin/qmx');
+        self::assertIsString($binary);
+
+        $run = ChildProcess::run(
+            [\PHP_BINARY, $binary, 'hook:install', '--working-dir', $this->repository],
+            sys_get_temp_dir(),
+        );
+
+        self::assertSame(0, $run['exitCode'], $run['stdout'] . $run['stderr']);
+        $hook = file_get_contents($this->repository . '/.git/hooks/pre-commit');
+        self::assertIsString($hook);
+        self::assertTrue(PreCommitHook::isOurs($hook));
+    }
 }

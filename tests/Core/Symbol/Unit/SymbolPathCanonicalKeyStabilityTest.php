@@ -13,14 +13,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Pins the SymbolPath canonical-key string format across the ADR 0015 migration.
  *
- * Baselines persist canonical-key strings to disk; any change to the format
- * silently invalidates user baselines on upgrade. This test asserts the format
- * is byte-stable using hard-coded `assertSame` pairs (round-2 reviewer note F8:
- * avoid golden-file complexity for a small fixed-shape surface).
+ * Baselines persist canonical-key strings to disk. This test pins their
+ * spelling with hard-coded `assertSame` pairs (round-2 reviewer note F8:
+ * avoid golden-file complexity for a small fixed-shape surface). A literal
+ * POSIX backslash remains distinct from a path separator.
  *
  * `forFile()` is the migration target — its argument changed from `string` to
  * `RelativePath` in Phase 1c. The canonical-key format `"file:" . $path->value()`
- * must remain identical to the pre-migration `"file:" . $stringPath` output.
+ * retains the slash-delimited pre-migration `"file:" . $stringPath` output.
  */
 #[CoversClass(SymbolPath::class)]
 final class SymbolPathCanonicalKeyStabilityTest extends TestCase
@@ -66,9 +66,13 @@ final class SymbolPathCanonicalKeyStabilityTest extends TestCase
             SymbolPath::forFile(RelativePath::fromString('./src/Foo.php'))->toCanonical(),
         );
 
-        // Windows-style separators are normalized to '/' inside RelativePath; canonical key shows '/'
+        // POSIX backslashes are literal filename bytes, distinct from path separators.
         self::assertSame(
-            'file:src/Foo.php',
+            'file:src\\Foo.php',
+            SymbolPath::forFile(RelativePath::fromString('src\\Foo.php'))->toCanonical(),
+        );
+        self::assertNotSame(
+            SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))->toCanonical(),
             SymbolPath::forFile(RelativePath::fromString('src\\Foo.php'))->toCanonical(),
         );
     }

@@ -43,33 +43,6 @@ final class GitClientTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsTrueWhenGitDirectoryExists(): void
-    {
-        mkdir($this->repoRoot . '/.git');
-        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
-
-        self::assertTrue($client->isRepository());
-    }
-
-    #[Test]
-    public function itReturnsTrueWhenGitIsAFile(): void
-    {
-        // In worktrees, .git is a file pointing to the main repo
-        file_put_contents($this->repoRoot . '/.git', 'gitdir: /some/other/path/.git/worktrees/test');
-        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
-
-        self::assertTrue($client->isRepository());
-    }
-
-    #[Test]
-    public function itReturnsFalseWhenGitDirectoryDoesNotExist(): void
-    {
-        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
-
-        self::assertFalse($client->isRepository());
-    }
-
-    #[Test]
     public function itGetsRepositoryRoot(): void
     {
         $this->initGitRepo();
@@ -309,6 +282,36 @@ final class GitClientTest extends TestCase
         self::assertSame('file2.php', $files[0]->path->value());
     }
 
+    /** @return iterable<string, array{string}> */
+    public static function provideRangesWithAnEmptyEndpoint(): iterable
+    {
+        yield 'two-dot left' => ['..HEAD'];
+        yield 'two-dot right' => ['t1..'];
+        yield 'three-dot left' => ['...HEAD'];
+        yield 'three-dot right' => ['t1...'];
+    }
+
+    #[Test]
+    #[DataProvider('provideRangesWithAnEmptyEndpoint')]
+    public function itCompletesAnEmptyRangeEndpointWithHead(string $scope): void
+    {
+        $this->initGitRepo();
+        file_put_contents($this->repoRoot . '/first.php', '<?php');
+        $this->exec('git add first.php');
+        $this->exec('git commit -m first');
+        $this->exec('git tag t1');
+        file_put_contents($this->repoRoot . '/second.php', '<?php');
+        $this->exec('git add second.php');
+        $this->exec('git commit -m second');
+
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
+        $expected = str_starts_with($scope, 't1') ? ['second.php'] : [];
+        self::assertSame($expected, array_map(
+            static fn(ChangedFile $file): string => $file->path->value(),
+            $client->getChangedFiles($scope),
+        ));
+    }
+
     /**
      * Git accepts refnames containing shell metacharacters, and such a name
      * reaches `git diff` as part of a range. That is the one place where
@@ -506,20 +509,19 @@ final class GitClientTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAnEmptyRevisionWithoutQuotingGit(): void
+    public function itUsesHeadForBothEmptyRangeEndpoints(): void
     {
         $this->initGitRepoWithCommit();
         $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
-        try {
-            $client->getChangedFiles('..');
-            self::fail('Expected the empty revision to be refused.');
-        } catch (UnresolvedGitReferenceException $refusal) {
-            // The one refusal raised without asking git, so the one with no tail.
-            self::assertSame(
-                'Git reference "" does not resolve to a commit.',
-                $refusal->getMessage(),
-            );
+        foreach (['..', '...'] as $scope) {
+            try {
+                $changed = $client->getChangedFiles($scope);
+            } catch (UnresolvedGitReferenceException $refusal) {
+                self::fail($scope . ' must use HEAD for both endpoints, not refuse an empty revision: ' . $refusal->getMessage());
+            }
+
+            self::assertSame([], $changed, $scope . ' must compare HEAD with itself');
         }
     }
 

@@ -26,20 +26,21 @@ The two questions look alike in a report and lead to opposite actions, which is 
 
 All the channels report at **project level**, at severity `warning`.
 
-The [project scope](../usage/output-formats.md#project-scope-in-every-format)
-controls whether the channels can judge: `covered` reaches all counted targets,
-while `narrowed` and `unmeasured` withhold them. `unknown` permits judgement
-when a missing, damaged or undeclared autoload universe is paired with the
-whole project root. A subset without a complete declared universe is
-`unmeasured`, not a whole project by assumption. The report names the reasons
-and withheld channels.
+Measured [project scope](../usage/output-formats.md#project-scope-in-every-format)
+asks two questions. Namespace absence needs complete declaration evidence:
+omitted PHP, authored PHP removal, generated exclusions and an uncertain universe
+withhold it. Path values use PHP-path completeness and universe certainty
+separately; authored/generated removal alone does not close that question.
+Rule-ledger namespace values also ask the declaration question.
 
-A judging run still asks where each value belongs. Namespace values use
-accepted production and development PSR-4 records from the current invocation
-snapshot; map usability is independent of `unknown` or `covered`. Without a
-usable map, namespace values remain unjudged and appear in `unjudgedValues`.
-
-Each value is then judged separately, against the place it names. `subtree: tests/Legacy` points at `tests/`, which `qmx check src/` never analysed, so that entry is not judged on that run — while `subtree: src/Legacy` on the same run is. A skipped value is not silent: the report's project scope names it in `unjudgedValues`, on a `covered` run too. A namespace value is placed through the PSR-4 map, `autoload-dev` included. An arbitrary `regex` has no sound static location; it is therefore judged only when the run covers the complete relevant universe, never by guessing a literal prefix from regex syntax.
+Every value is placed separately. Accepted production/development PSR-4 facts
+from the invocation snapshot locate namespaces independently of report state;
+without a map they remain unjudged. A literal under a removed entry is not judged.
+Path/ledger regex is unjudged with incomplete paths or authored removal that could
+hide a match; namespace regex also requires complete declaration evidence. This
+conservative answer can withhold an unrelated stale regex: rerun without the
+exclusion. Reports name every skipped `{channel, option, pattern}` value,
+including on a `covered` run.
 
 They are not written into a generated baseline: `baseline:generate` measures findings on a different seam, and a warning about the author's own configuration should not become accepted debt in the file that author generates with one command.
 

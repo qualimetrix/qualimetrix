@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
@@ -16,18 +17,23 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Process\Process;
 
 final class MultiNamespaceAnalysisTest extends TestCase
 {
+    private string $fixtureDirectory;
     private string $filePath;
     private string $globalStatementFilePath;
 
     protected function setUp(): void
     {
-        $this->filePath = sys_get_temp_dir() . '/qmx_multi_namespace_' . bin2hex(random_bytes(6)) . '.php';
+        $this->fixtureDirectory = sys_get_temp_dir() . '/qmx_multi_namespace_' . bin2hex(random_bytes(6));
+        mkdir($this->fixtureDirectory, 0o755);
+        $this->filePath = $this->fixtureDirectory . '/multi.php';
         $written = file_put_contents($this->filePath, <<<'PHP'
 <?php
 namespace One { class A {} }
@@ -39,7 +45,7 @@ PHP);
             throw new RuntimeException('Failed to create multi-namespace fixture');
         }
 
-        $this->globalStatementFilePath = sys_get_temp_dir() . '/qmx_global_statement_' . bin2hex(random_bytes(6)) . '.php';
+        $this->globalStatementFilePath = $this->fixtureDirectory . '/global.php';
         $written = file_put_contents($this->globalStatementFilePath, <<<'PHP'
 <?php
 declare(strict_types=1);
@@ -53,12 +59,14 @@ PHP);
 
     protected function tearDown(): void
     {
-        if (is_file($this->filePath)) {
-            unlink($this->filePath);
+        $entries = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($this->fixtureDirectory, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($entries as $entry) {
+            $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
         }
-        if (is_file($this->globalStatementFilePath)) {
-            unlink($this->globalStatementFilePath);
-        }
+        rmdir($this->fixtureDirectory);
     }
 
     #[TestWith([0])]
@@ -72,6 +80,7 @@ PHP);
             'bin/qmx',
             'check',
             $this->filePath,
+            '--working-dir=' . \dirname($this->filePath),
             '--only-rule=size.class-count',
             '--workers=' . $workers,
             '--no-cache',
@@ -98,6 +107,7 @@ PHP);
             'bin/qmx',
             'check',
             $this->globalStatementFilePath,
+            '--working-dir=' . \dirname($this->globalStatementFilePath),
             '--only-rule=coupling.distance',
             '--distance-warning=2',
             '--distance-error=2',

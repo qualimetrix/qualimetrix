@@ -55,6 +55,11 @@ line break ends its last line and does not open another, so a file ending in a
 newline has exactly `wc -l` lines, and a last line without a newline still
 counts.
 
+`LocCollector` receives the Run-owned snapshot through
+Measurement-owned `SourceMeasuringCollectorInterface`. Collection resets it before byte handoff
+and AST traversal. LOC, parsing and Inline extraction use the same bytes; LOC
+does not reopen source. The line-count formula is unchanged.
+
 For files with namespace declarations, namespace LOC/LLOC/CLOC use each
 `Namespace_` AST node's inclusive source span. Declarations before the first
 namespace remain file-owned, so project totals always describe the physical file

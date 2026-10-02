@@ -29,9 +29,9 @@ final class RelativePathTest extends TestCase
     }
 
     #[Test]
-    public function itReplacesWindowsSeparators(): void
+    public function itPreservesLiteralBackslashes(): void
     {
-        self::assertSame('src/Foo.php', RelativePath::fromString('src\\Foo.php')->value());
+        self::assertSame('src\\Foo.php', RelativePath::fromString('src\\Foo.php')->value());
     }
 
     #[Test]

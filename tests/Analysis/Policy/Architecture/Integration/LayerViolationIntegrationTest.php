@@ -42,8 +42,8 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         $result = $this->analyze(null);
 
-        $layerViolations = $this->filterByRule($result->findings, LayerViolationRule::NAME);
-        $coverageDiagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        $layerViolations = $this->filterByRule($result->findings(), LayerViolationRule::NAME);
+        $coverageDiagnostics = $this->filterByRule($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
         self::assertSame([], $layerViolations, 'No layers declared → rule must short-circuit.');
         self::assertSame([], $coverageDiagnostics, 'Empty config → no coverage diagnostic.');
@@ -54,7 +54,7 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         $result = $this->analyze($this->buildPolicy(CoverageMode::Ignore));
 
-        $layerViolations = $this->filterByRule($result->findings, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($result->findings(), LayerViolationRule::NAME);
         self::assertNotEmpty(
             $layerViolations,
             'Controller depends on Repository — at least one layer-violation expected.',
@@ -100,7 +100,7 @@ final class LayerViolationIntegrationTest extends TestCase
 
         $result = $this->analyze($architecture);
 
-        $diagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertCount(1, $diagnostics, 'Exactly one coverage diagnostic expected in warn mode.');
 
         $diagnostic = $diagnostics[0];
@@ -124,7 +124,7 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         $result = $this->analyze($this->buildPolicy(CoverageMode::Ignore));
 
-        $actual = ArchitectureViolationProjector::project($result->findings);
+        $actual = ArchitectureViolationProjector::project($result->findings());
         $goldenPath = self::FIXTURE_PATH . '/expected-violations.json';
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
@@ -162,7 +162,7 @@ final class LayerViolationIntegrationTest extends TestCase
 
         $result = $this->analyze($architecture);
 
-        $diagnostics = $this->filterByRule($result->findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
+        $diagnostics = $this->filterByRule($result->findings(), LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
         self::assertSame([], $diagnostics);
     }
 

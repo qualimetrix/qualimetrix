@@ -20,10 +20,11 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -40,7 +41,6 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
-use Qualimetrix\Reporting\ReportProjectScope;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -221,7 +221,6 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             self::diagnosticConsole($output),
             new GitScopeResolution(
                 paths: [$projectRoot],
-                fileDiscovery: self::createStub(FileDiscoveryInterface::class),
                 gitClient: null,
                 reportScope: null,
                 projectRoot: $projectRoot,
@@ -305,7 +304,7 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             $output,
             // Not a whole-project run, so the suppression-binding audit is not
             // asked: it is not this file's subject.
-            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored), ReportProjectScope::narrowed([], [])),
+            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored)),
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
@@ -381,12 +380,20 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
-        return new AnalysisResult(
-            findings: $findings,
-            duration: 0.1,
-            metrics: $repository,
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $repository,
+                coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+                namespaceTree: null,
+                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString(sys_get_temp_dir()), true, [], [], [], true, []), [AbsolutePath::fromString(sys_get_temp_dir())], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+                duration: 0.1,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
             ruleExecution: new RuleExecutionResult($findings, $findings, new RuleExclusionStats(), LevelActivity::empty()),
+            latePublished: [],
         );
     }
 
@@ -402,7 +409,6 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
                 static fn(string $path): AbsolutePath => AbsolutePath::fromString($projectRoot->value() . '/' . $path),
                 $paths,
             ),
-            fileDiscovery: self::createStub(FileDiscoveryInterface::class),
             gitClient: null,
             reportScope: null,
             projectRoot: $projectRoot,

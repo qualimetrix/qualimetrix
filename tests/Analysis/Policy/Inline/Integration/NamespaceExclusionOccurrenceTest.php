@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -20,6 +21,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class NamespaceExclusionOccurrenceTest extends TestCase
 {
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
@@ -47,10 +49,20 @@ function run(string $code): void
     eval($code);
 }
 PHP);
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         $this->removeDirectory($this->tempDir);
     }
 

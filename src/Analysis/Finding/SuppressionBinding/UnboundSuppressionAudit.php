@@ -162,6 +162,25 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
+     * @param list<PathPattern> $suppressPaths
+     * @param list<NamespacePattern> $suppressNamespaces
+     * @param ?list<string> $declaredNamespaces
+     *
+     * @return list<string>
+     */
+    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
+    {
+        $channels = [];
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
+            if ($this->judges($value, $declaredNamespaces, $scope)) {
+                $channels[$value['channel']] = true;
+            }
+        }
+
+        return array_keys($channels);
+    }
+
+    /**
      * Every configured value, global and per-rule, with the channel that
      * reports it.
      *

@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -9,1 +9,1 @@
+-Analysis incomplete: 1 of 2 discovered entries failed (1 directory-symlink); policy results are not authoritative.
++Analysis incomplete: 1 of 2 discovered PHP file(s) failed; policy results are not authoritative.

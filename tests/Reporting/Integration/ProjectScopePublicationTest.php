@@ -32,9 +32,9 @@ final class ProjectScopePublicationTest extends TestCase
 
     private const array UNKNOWN_CHANNELS = ['suppression.unmatched-namespace'];
 
-    private const array UNKNOWN_VALUES = [['option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']];
+    private const array UNKNOWN_VALUES = [['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Tests']];
 
-    private const array SKIPPED_VALUES = [['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']];
+    private const array SKIPPED_VALUES = [['channel' => 'suppression.unmatched-path', 'option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']];
 
     /** @return iterable<string, array{string}> */
     public static function documentFormats(): iterable
@@ -71,7 +71,7 @@ final class ProjectScopePublicationTest extends TestCase
         ]);
         $published = self::decode($this->format($format, $scope))['projectScope'];
         self::assertSame([$reason->toArray()], $published['reasons']);
-        self::assertSame([['option' => 'suppress_paths', 'pattern' => 'subtree:tests/Legacy']], $published['unjudgedValues']);
+        self::assertSame(self::SKIPPED_VALUES, $published['unjudgedValues']);
     }
 
     #[Test]
@@ -199,14 +199,14 @@ final class ProjectScopePublicationTest extends TestCase
     private static function unknown(): ReportProjectScope
     {
         return ReportProjectScope::unknown()->withUnjudgedValues([
-            ['channel' => 'suppression.unmatched-namespace', ...self::UNKNOWN_VALUES[0]],
+            self::UNKNOWN_VALUES[0],
         ]);
     }
 
     private static function coveredWithSkippedValues(): ReportProjectScope
     {
         return ReportProjectScope::covered()->withUnjudgedValues([
-            ['channel' => 'suppression.unmatched-path', ...self::SKIPPED_VALUES[0]],
+            self::SKIPPED_VALUES[0],
         ]);
     }
 

@@ -9,7 +9,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -37,7 +47,7 @@ final class GeneratedFileFilterTest extends TestCase
         $normal = $this->createFile('Normal.php', "<?php\nclass Normal {}");
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([
+        $result = $this->eligibleFiles([
             new SplFileInfo($generated),
             new SplFileInfo($normal),
         ]);
@@ -53,7 +63,7 @@ final class GeneratedFileFilterTest extends TestCase
         $file2 = $this->createFile('B.php', "<?php\nclass B {}");
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([
+        $result = $this->eligibleFiles([
             new SplFileInfo($file1),
             new SplFileInfo($file2),
         ]);
@@ -69,7 +79,7 @@ final class GeneratedFileFilterTest extends TestCase
         $file3 = $this->createFile('Lower.php', "<?php\n/** @generated */\nclass Lower {}");
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([
+        $result = $this->eligibleFiles([
             new SplFileInfo($file1),
             new SplFileInfo($file2),
             new SplFileInfo($file3),
@@ -88,7 +98,7 @@ final class GeneratedFileFilterTest extends TestCase
         $file = $this->createFile('Late.php', $content);
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([new SplFileInfo($file)]);
+        $result = $this->eligibleFiles([new SplFileInfo($file)]);
 
         self::assertCount(1, $result, 'File with @generated after 2KB should not be filtered');
     }
@@ -102,7 +112,7 @@ final class GeneratedFileFilterTest extends TestCase
         $file = $this->createFile('Early.php', $content);
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([new SplFileInfo($file)]);
+        $result = $this->eligibleFiles([new SplFileInfo($file)]);
 
         self::assertCount(0, $result, 'File with @generated within 2KB should be filtered');
     }
@@ -114,7 +124,7 @@ final class GeneratedFileFilterTest extends TestCase
         $file = $this->createFile('Test.php', $content);
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([new SplFileInfo($file)]);
+        $result = $this->eligibleFiles([new SplFileInfo($file)]);
 
         if ($shouldBeFiltered) {
             self::assertCount(0, $result, 'File should be filtered as generated');
@@ -193,7 +203,7 @@ final class GeneratedFileFilterTest extends TestCase
     public function itHandlesEmptyFileList(): void
     {
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([]);
+        $result = $this->eligibleFiles([]);
 
         self::assertSame([], $result);
     }
@@ -205,7 +215,7 @@ final class GeneratedFileFilterTest extends TestCase
         $normal = $this->createFile('Normal.php', "<?php\nclass N {}");
 
         $filter = new GeneratedFileFilter();
-        $result = $filter->filter([
+        $result = $this->eligibleFiles([
             new SplFileInfo($generated),
             new SplFileInfo($normal),
         ]);
@@ -239,6 +249,27 @@ final class GeneratedFileFilterTest extends TestCase
         return $path;
     }
 
+    /** @param list<SplFileInfo> $files
+     * @return list<SplFileInfo>
+     */
+    private function eligibleFiles(array $files): array
+    {
+        $root = AbsolutePath::fromString($this->tempDir);
+        $paths = array_map(static fn(SplFileInfo $file): AbsolutePath => AbsolutePath::fromString($file->getPathname()), $files);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $configuration = new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new ProjectScopeMeasurement($universe, $paths, ProjectScopeState::Covered, []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
+
+        return (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))
+            ->discover($configuration)->eligibleFiles;
+    }
+
     /**
      * `fopen()` succeeds on a directory and `fread()` then raises a notice.
      * The CLI writes interpreter diagnostics to **stdout**, so that notice
@@ -253,10 +284,10 @@ final class GeneratedFileFilterTest extends TestCase
         mkdir($this->tempDir . '/subdir', 0755, true);
 
         [$verdict, $diagnostics] = $this->withoutReadingDiagnostics(
-            fn(): bool => (new GeneratedFileFilter())->isGenerated(new SplFileInfo($this->tempDir . '/subdir')),
+            fn(): ?bool => (new GeneratedFileFilter())->isGenerated(new SplFileInfo($this->tempDir . '/subdir')),
         );
 
-        self::assertFalse($verdict);
+        self::assertNull($verdict);
         self::assertSame([], $diagnostics);
     }
 
@@ -270,17 +301,17 @@ final class GeneratedFileFilterTest extends TestCase
         posix_mkfifo($this->tempDir . '/Pipe.php', 0644);
 
         [$verdict, $diagnostics] = $this->withoutReadingDiagnostics(
-            fn(): bool => (new GeneratedFileFilter())->isGenerated(new SplFileInfo($this->tempDir . '/Pipe.php')),
+            fn(): ?bool => (new GeneratedFileFilter())->isGenerated(new SplFileInfo($this->tempDir . '/Pipe.php')),
         );
 
-        self::assertFalse($verdict);
+        self::assertNull($verdict);
         self::assertSame([], $diagnostics);
     }
 
     /**
-     * @param callable(): bool $probe
+     * @param callable(): ?bool $probe
      *
-     * @return array{bool, list<string>}
+     * @return array{?bool, list<string>}
      */
     private function withoutReadingDiagnostics(callable $probe): array
     {

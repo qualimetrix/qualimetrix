@@ -17,12 +17,14 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Reporting\ReportCoverage;
 
 #[CoversClass(HealthTextFormatter::class)]
 final class HealthTextFormatterTest extends TestCase
@@ -65,6 +67,25 @@ final class HealthTextFormatterTest extends TestCase
         self::assertStringContainsString('No health data available', $output);
         self::assertStringContainsString('computed metrics enabled', $output);
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
+    }
+
+    #[Test]
+    public function itNamesSeveralEntryFailureKindsWithoutCallingThemPhpFiles(): void
+    {
+        $coverage = new ReportCoverage(4, 1, 0, 3, [
+            new CoverageFailure('src/link', 'directory-symlink', 'Directory link'),
+            new CoverageFailure('src/closed', 'unreadable-directory', 'Cannot list directory'),
+            new CoverageFailure('src/pipe', 'not-regular-file', 'FIFO'),
+        ]);
+        $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(3)->coverage($coverage)->build();
+
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false));
+
+        self::assertStringContainsString(
+            'Analysis incomplete: 3 of 4 discovered entries failed (1 directory-symlink, 1 not-regular-file, 1 unreadable-directory); policy results are not authoritative.',
+            $output,
+        );
+        self::assertStringNotContainsString('discovered PHP file(s) failed', $output);
     }
 
     #[Test]

@@ -28,7 +28,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * and the list below drift apart in either direction — a new channel not
  * listed, or a listed channel gone.
  *
- * **What the silent half does not cover.** Three of the seven place no subject of
+ * **What the subject half does not cover.** Three of the seven place no subject of
  * their own — `coupling.unmatched-framework-namespace` names code outside the
  * project, `cohesion.unmatched-exclude-method` names a configured method
  * rather than a located subject, and a rule cannot see the run's paths — so they answer the
@@ -43,10 +43,12 @@ use Symfony\Component\Console\Tester\CommandTester;
  * suppression channel under a manifest declaring no production autoload at
  * all, when the caller selects the whole root (ADR 0089);
  * on the same tree and the same configuration under a manifest declaring a
- * production target the run never looked at, every one of the seven must be
- * silent. Without the speaking half, silence would not distinguish a
- * working gate from a fixture that cannot produce the channel at all; without
- * the silent half, a channel with no gate passes.
+ * production target the run never looked at, the five project-wide or
+ * unlocated channels must be silent while the two path-valued channels can
+ * judge their values under the selected `src/` tree. Without the speaking half,
+ * silence would not distinguish a working gate from a fixture that cannot
+ * produce the channel at all; without the partial half, a channel with no
+ * gate passes.
  *
  * Production targets declared through `classmap`, `psr-0` or `files` are
  * judged like PSR-4 targets. Silence is earned only by a target outside the
@@ -84,7 +86,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         // Production code the run over `src` never looks at. It exists on
         // disk on purpose: a declared target that does not resolve is skipped
         // by the measurement, so a phantom one would leave the gate open and
-        // the silent half would pass without proving anything.
+        // the partial half would pass without proving anything.
         file_put_contents($this->fixture . '/bootstrap/helpers.php', "<?php\n\nfunction sample_helper(): int\n{\n    return 1;\n}\n");
 
         file_put_contents($this->fixture . '/src/Service.php', <<<'PHP'
@@ -212,7 +214,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
         self::assertSame(
             $namespaceMapUsable ? self::SCOPE_CONDITIONED : array_values(array_diff(self::SCOPE_CONDITIONED, [self::UNLOCATED_WITHOUT_AUTOLOAD])),
             $spoke,
-            'The fixture must be able to produce every channel, or the silent half proves nothing.',
+            'The fixture must be able to produce every channel, or the partial half proves nothing.',
         );
     }
 
@@ -240,20 +242,24 @@ final class ScopeConditionedChannelGuardTest extends TestCase
     }
 
     /**
-     * The silent half, first shape: the same tree and the same configuration
-     * under a manifest declaring production code the run never analysed. The
-     * run is a slice, so no channel may accuse anyone — and it
-     * makes no difference which section declared the part left out.
+     * The partial half: the same tree and configuration under a manifest declaring
+     * production code the run never analysed. Declaration absence remains
+     * unjudgeable, while path values rooted under selected `src/` can still be
+     * judged. It makes no difference which section declared the part left out.
      *
      * @param array<string, mixed> $autoload
      */
     #[Test]
     #[DataProvider('provideManifestsWithProductionOutsideTheRun')]
-    public function itStaysSilentOnEveryScopeConditionedChannelWhenTheRunIsASlice(array $autoload): void
+    public function itJudgesLocatedPathValuesButWithholdsDeclarationClaimsOnASlice(array $autoload): void
     {
         $spoke = $this->channelsOf($this->check($autoload));
 
-        self::assertSame([], $spoke, 'A run that did not cover the declared production code may judge no value.');
+        self::assertSame(
+            ['suppression.unmatched-path', 'suppression.unmatched-rule-ledger'],
+            $spoke,
+            'A partial project run judges located values under src while withholding declaration absence and unlocated selectors.',
+        );
     }
 
     /** @return iterable<string, array{array<string, mixed>}> */

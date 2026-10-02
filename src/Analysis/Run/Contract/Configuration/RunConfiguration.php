@@ -18,7 +18,7 @@ final readonly class RunConfiguration
 
     /**
      * @param list<PathPattern> $pathExcludes
-     * @param list<PathPattern> $authoredPathExcludes
+     * @param list<AuthoredExclude> $authoredPathExcludes
      */
     public function __construct(
         public array $pathExcludes,

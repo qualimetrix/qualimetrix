@@ -86,7 +86,7 @@ final class HashIndexBuilder
         }
 
         $fileIdx = \count($filePaths);
-        $filePaths[] = PathFactory::bestEffortRelative($ioPath, $projectRoot)->value();
+        $filePaths[] = PathFactory::published(PathFactory::fromCliArgument($ioPath, $projectRoot), $projectRoot)->value();
         $ioPaths[] = $ioPath;
 
         $this->observeFileCandidates($tokens, $minTokens, $candidates);

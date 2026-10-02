@@ -96,7 +96,7 @@ final class OverrideMapKeyNormalizationTest extends TestCase
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
         try {
-            return $pipeline->analyze($fixture->prepared()->runConfiguration)->thresholdOverrides;
+            return $pipeline->analyze($fixture->prepared()->runConfiguration)->directives->thresholdOverrides;
         } finally {
             $fixture->close();
         }

@@ -1,6 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1,2 +1,1 @@
--Configuration error: Rule selector "complexity" does not match any registered producer or channel. Write "complexity.*" to select its descendants.
--Source: configuration file "qmx.yaml".
-+Configuration error: Rule selector "complexity" does not match any registered producer or channel. A bare prefix is not a group: write "complexity.*" to select every rule under "complexity".

@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Path;
 
 use InvalidArgumentException;
+use LogicException;
 
 /**
- * Boundary factory consolidating the three string-to-VO conversions previously
+ * Boundary factory consolidating string-to-VO conversions previously
  * spread across the (now removed) `Core\Util\PathNormalizer` and ad-hoc call sites.
  *
- * The three boundaries:
+ * The boundaries:
  * - **CLI input** — {@see fromCliArgument()} resolves a user-supplied path against cwd.
  * - **Project pipeline** — {@see projectRelative()} / {@see tryProjectRelative()} accept
  *   either absolute (under project root) or already-relative strings.
  * - **Git output** — {@see gitRelative()} converts git-toplevel-relative output to
  *   project-relative, returning `null` when the file lies outside the project root.
+ * - **File publication** — {@see published()} retains the named final segment
+ *   under a canonical containing directory.
  *
  * See ADR 0015.
  */
@@ -57,75 +60,35 @@ final class PathFactory
     }
 
     /**
-     * Best-effort project-relative conversion that never throws.
+     * Publishes the named file, preserving its final segment even when it is a
+     * symlink. The containing directory must resolve inside the canonical root.
      *
-     * Used at file-result boundaries where the caller wants a structurally
-     * meaningful {@see RelativePath} for any input — including symlinked
-     * sources and the rare file that lies outside the configured project
-     * root. A basename-only fallback
-     * collapsed distinct out-of-root files (`/a/X.php` and `/b/X.php`) to
-     * the same key, silently breaking suppression maps and repository
-     * indexing. This helper preserves directory structure instead.
-     *
-     * Behavior:
-     * 1. Canonicalize absolute inputs via realpath() so a symlinked source
-     *    (`/var/build/src/Foo.php`) relativizes against a canonicalized
-     *    project root (`/opt/project`).
-     * 2. Try project-relative resolution; return the VO on success.
-     * 3. Otherwise drop the leading `/` and any leading `..` segments,
-     *    keeping the rest of the structure (mirrors the legacy
-     *    `PathNormalizer` "leading-slash-strip" fallback).
+     * @throws LogicException when the parent cannot be resolved or lies outside the root
      */
-    public static function bestEffortRelative(string $absolute, AbsolutePath $projectRoot): RelativePath
+    public static function published(AbsolutePath $file, AbsolutePath $canonicalRoot): RelativePath
     {
-        $candidate = $absolute;
-
-        if (str_starts_with($candidate, '/')) {
-            $real = @realpath($candidate);
-            if ($real !== false) {
-                $candidate = $real;
-            }
+        $parent = \dirname($file->value());
+        $canonicalParent = realpath($parent);
+        if ($canonicalParent === false) {
+            throw new LogicException(\sprintf('Cannot publish "%s": its parent cannot be resolved', $file->value()));
         }
 
-        $relative = self::tryProjectRelative($candidate, $projectRoot);
-        if ($relative !== null) {
-            return $relative;
+        $root = realpath($canonicalRoot->value());
+        if ($root === false) {
+            throw new LogicException(\sprintf('Cannot publish "%s": project root cannot be resolved', $file->value()));
         }
 
-        return RelativePath::fromString(self::structurePreservingFallback($candidate));
-    }
-
-    /**
-     * Strips the leading `/` and resolves `.` / `..` segments lexically,
-     * dropping any leading `..` that would escape the filesystem root.
-     * The result is non-empty and constructable by {@see RelativePath::fromString}.
-     */
-    private static function structurePreservingFallback(string $raw): string
-    {
-        $normalized = str_replace('\\', '/', $raw);
-        $segments = [];
-
-        foreach (explode('/', $normalized) as $segment) {
-            if ($segment === '' || $segment === '.') {
-                continue;
-            }
-            if ($segment === '..') {
-                if ($segments !== []) {
-                    array_pop($segments);
-                }
-
-                continue;
-            }
-            $segments[] = $segment;
+        $candidate = AbsolutePath::fromString($canonicalParent . '/' . basename($file->value()));
+        $relative = $candidate->tryRelativizeTo(AbsolutePath::fromString($root));
+        if ($relative === null) {
+            throw new LogicException(\sprintf(
+                'Cannot publish "%s" outside project root "%s"',
+                $file->value(),
+                $canonicalRoot->value(),
+            ));
         }
 
-        if ($segments === []) {
-            // Path collapsed entirely (e.g. "/", "/./../", "/.."). Return a
-            // stable placeholder so the result is still a valid RelativePath.
-            return 'unknown';
-        }
-
-        return implode('/', $segments);
+        return $relative;
     }
 
     /**

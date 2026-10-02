@@ -211,24 +211,15 @@ final class DirectivesCommand extends Command
 
         $prepared = $this->preflight->resolve($input, $output);
 
-        // The discovery the preflight resolved, not the pipeline's default: the
-        // default knows nothing of the user's `exclude`, and a verdict is
-        // relative to the file set that was measured.
         $report = $this->directiveAudit->auditDirectives(
             $prepared->runConfiguration,
-            $prepared->fileDiscovery,
             $sweep,
         );
 
-        if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {
-            // A run that measured nothing has no standing to call a tree clean.
-            // The paths existed — they were checked above — so this is
-            // `exclude`, an empty `paths:`, a directory with no PHP in it, or a
-            // scope of nothing but `@generated` files, and every one of them is
-            // the caller's to fix. Measured, not discovered: a discovered file
-            // the run then skipped was not read either. A run that failed to
-            // parse everything it found is a different answer, and the code
-            // below already gives it.
+        if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete() && !$report->coverage->isIntentionallyEmpty()) {
+            // A complete but truly empty selection has no standing to call a
+            // tree clean. Named exclusions and generated-only runs are measured
+            // intentional empties; failed files take the incomplete exit below.
             throw ConfigurationRefusal::aboutResolvedInput(
                 'the configured scope analysed no PHP files, so no directive could be judged',
             );

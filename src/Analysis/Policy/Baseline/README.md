@@ -205,10 +205,29 @@ that call these services (Infrastructure, a later package) own argument
 parsing, the scope-guard refusal message, and writing the result through
 `BaselineWriter`.
 
+### Intentionally excluded empty input
+
+An authored exclusion can remove a written file or directory without an input
+refusal. `analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0` identifies
+a complete intentionally empty result. `baseline:generate` writes an empty file
+and exits 0 with the measured scope explanation on stderr. Update/cleanup retain
+their existing complete-run and recorded-scope checks; `--force` still has only
+its existing meaning. Explain returns 0 after the scope observation without
+claiming the requested subject was remediated. Any incomplete input wins with
+exit 4 before baseline interpretation, classification or destination mutation.
+
+There is a metadata-coverage limitation until baseline lifecycle consumers use
+Run's explicit full-universe query. Cleanup can label an unmeasured excluded entry
+stale, and partial explain has no per-entry `outsideCoverage` verdict. Partial
+explanations qualify absence by measured coverage. Exclusion is not remediation;
+review removals against a full run without the relevant exclusion. Unknown
+metadata means unknown presence, not absence.
+
 ### The scope guard
 
 Before the recorded-scope guard is even constructed, `BaselineRun` requires
-the analysis coverage to be complete. A parse or processing failure stops all
+the analysis coverage to be complete. Any failure, including skipped filesystem
+entries or unreadable source, stops all
 lifecycle commands with the dedicated analysis-failure outcome: no requested
 path is recorded as proven coverage, no baseline is interpreted, no cleanup
 candidate is reported, and no destination is created or mutated. `--force`
@@ -234,7 +253,9 @@ at: a baseline is a tracked file, and `/Users/<you>/...` in one both breaks
 portability between checkouts and violates the repository's own rule on
 absolute home paths (CLAUDE.md §10). A path genuinely *outside* the project
 root has no relative form and is kept as given — the analysed tree really is
-elsewhere.
+elsewhere. This portable value format is not permission to analyze an outside
+parent: Run preflight/publication requires the canonical input boundary to stay
+inside its captured root. Explicit aliases to internal directories remain valid.
 
 Coverage is by whole path segment: `src` covers `src/Foo` but neither covers
 nor is covered by `srcfoo` or by `src/Foo` itself. Two paths cover

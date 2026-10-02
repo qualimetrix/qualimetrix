@@ -1,5 +1,7 @@
 # 0084. A Project Scope Has Three States, and the Report Names It
 
+> **Amendment:** [ADR 0093](0093-measured-run-scope-and-project-tree-queries.md) replaces the single `coversProjectScope` predicate with separate measured declaration-absence and exclude-selector judgements and adds the ninth consumer channel. The report state represents evidence rather than authorizing both questions. Original observations below remain historical.
+
 **Date:** 2026-09-24
 **Status:** Accepted
 

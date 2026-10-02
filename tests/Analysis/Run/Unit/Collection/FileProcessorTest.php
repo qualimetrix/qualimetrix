@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
@@ -130,15 +131,17 @@ final class FileProcessorTest extends TestCase
         $parsed = [];
         $this->parser->method('parseContent')->willReturnCallback(function (SplFileInfo $file, string $content) use (&$parsed): array {
             $parsed[] = $content;
+            file_put_contents($file->getPathname(), "<?php\n");
 
             return $this->parseLiteral($content);
         });
 
-        $result = $this->makeProcessor(new CompositeCollector([], new DeclarationRegistrarFactory()))
+        $result = $this->makeProcessor(new CompositeCollector([new LocCollector()], new DeclarationRegistrarFactory()))
             ->process(new SplFileInfo($this->root . '/test.php'));
 
         self::assertSame([$source], $parsed);
         self::assertTrue($result->isSuccessful());
+        self::assertSame(4, $result->fileBag()->get('size.loc'));
         self::assertCount(1, $result->suppressions());
         self::assertSame(3, $result->suppressions()[0]->line);
         self::assertNotNull($result->suppressions()[0]->refusal);
@@ -152,14 +155,16 @@ final class FileProcessorTest extends TestCase
     #[Test]
     public function itFailsAFileItCouldNotReadEvenWhenTheParserAnswers(): void
     {
-        $this->parser->method('parse')->willReturn([]);
+        $this->parser->method('parseContent')->willReturnCallback(static function (): never {
+            self::fail('Unreadable source must be refused before parsing');
+        });
 
         $result = $this->makeProcessor(new CompositeCollector([], new DeclarationRegistrarFactory()))
             ->process(new SplFileInfo($this->root . '/missing.php'));
 
         self::assertFalse($result->isSuccessful());
-        self::assertSame(FileProcessingFailureKind::Parse, $result->failureKind());
-        self::assertSame('Failed to read file contents', $result->error());
+        self::assertSame(FileProcessingFailureKind::UnreadableFile, $result->failureKind());
+        self::assertSame('File does not exist or is not a regular file', $result->error());
     }
 
     #[Test]

@@ -8,6 +8,9 @@ use ArgumentCountError;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
@@ -41,7 +44,7 @@ final class RunConfigurationScopeTest extends TestCase
         );
         self::assertSame(
             ['subtree:Legacy'],
-            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $narrowed->authoredPathExcludes),
+            array_map(static fn(AuthoredExclude $selector): string => $selector->display(), $narrowed->authoredPathExcludes),
         );
         self::assertSame($root->value(), $narrowed->projectRoot->value());
         self::assertSame(GeneratedFilePolicy::Include, $narrowed->generatedFilePolicy);
@@ -89,7 +92,7 @@ final class RunConfigurationScopeTest extends TestCase
             projectRoot: AbsolutePath::fromString('/project'),
             generatedFilePolicy: GeneratedFilePolicy::Include,
             projectScope: self::projectScope(),
-            authoredPathExcludes: [self::pathPattern('Legacy')],
+            authoredPathExcludes: [new AuthoredExclude(self::pathPattern('Legacy'), [ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')])],
             autoloadDevPolicy: AutoloadDevPolicy::Include,
         );
     }

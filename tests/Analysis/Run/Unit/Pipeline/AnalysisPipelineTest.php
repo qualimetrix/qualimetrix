@@ -31,10 +31,9 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
-use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
-use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
@@ -61,10 +60,10 @@ final class AnalysisPipelineTest extends TestCase
     {
         $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
         $file = new SplFileInfo(__FILE__);
-        $relative = PathFactory::bestEffortRelative(__FILE__, $root);
+        $relative = PathFactory::published(AbsolutePath::fromString(__FILE__), $root);
 
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn([$file]);
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(self::discovered([$file]));
 
         $collection = $this->createMock(CollectionOrchestratorInterface::class);
         $collection->expects(self::once())->method('collect')
@@ -83,35 +82,30 @@ final class AnalysisPipelineTest extends TestCase
 
         $result = $pipeline->analyze($configuration);
 
-        self::assertSame([$relative], $result->coverage->analyzedFiles);
-        self::assertSame([], $result->findings);
+        self::assertSame([$relative], $result->measured->coverage->analyzedFiles);
+        self::assertSame([], $result->findings());
     }
 
     #[Test]
-    public function itUsesTheInvocationDiscoveryOverrideWithoutMutatingTheDefault(): void
+    public function itPassesCapturedConfigurationToProjectFiles(): void
     {
         $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
-        $default = $this->createMock(FileDiscoveryInterface::class);
-        $default->expects(self::never())->method('discover');
-        $override = self::createStub(FileDiscoveryInterface::class);
-        $override->method('discover')->willReturn([]);
-
+        $configuration = new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        );
+        $projectFiles = $this->createMock(ProjectFilesInterface::class);
+        $projectFiles->expects(self::once())->method('discover')->with(self::identicalTo($configuration))->willReturn(self::discovered([]));
         $collection = self::createStub(CollectionOrchestratorInterface::class);
         $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
-        $result = $this->pipeline($default, $collection)->analyze(
-            new RunConfiguration(
-                pathExcludes: [],
-                projectRoot: $root,
-                generatedFilePolicy: GeneratedFilePolicy::Include,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-                authoredPathExcludes: [],
-                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-            ),
-            $override,
-        );
+        $result = $this->pipeline($projectFiles, $collection)->analyze($configuration);
 
-        self::assertSame([], $result->coverage->analyzedFiles);
+        self::assertSame([], $result->measured->coverage->analyzedFiles);
     }
 
     #[Test]
@@ -119,8 +113,8 @@ final class AnalysisPipelineTest extends TestCase
     {
         $firstRoot = AbsolutePath::fromString(\dirname(__DIR__, 5));
         $secondRoot = AbsolutePath::fromString(sys_get_temp_dir());
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn([]);
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(self::discovered([]));
 
         $seenRoots = [];
         $collection = self::createStub(CollectionOrchestratorInterface::class);
@@ -184,8 +178,8 @@ final class AnalysisPipelineTest extends TestCase
             require $prefix;
 
             $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
-            $discovery = self::createStub(FileDiscoveryInterface::class);
-            $discovery->method('discover')->willReturn([]);
+            $discovery = self::createStub(ProjectFilesInterface::class);
+            $discovery->method('discover')->willReturn(self::discovered([]));
             $collection = self::createStub(CollectionOrchestratorInterface::class);
             $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
@@ -200,14 +194,20 @@ final class AnalysisPipelineTest extends TestCase
                 ),
             );
 
-            self::assertSame(5.0, $result->duration);
+            self::assertSame(5.0, $result->measured->duration);
         } finally {
             unlink($prefix);
         }
     }
 
+    /** @param list<SplFileInfo> $files */
+    private static function discovered(array $files): DiscoveredProjectFiles
+    {
+        return new DiscoveredProjectFiles($files, [], [], [], [], new ScopeFacts([], [], [], false), \count($files));
+    }
+
     private function pipeline(
-        FileDiscoveryInterface $discovery,
+        ProjectFilesInterface $discovery,
         CollectionOrchestratorInterface $collection,
     ): AnalysisPipeline {
         $profiler = self::createStub(ProfilerInterface::class);
@@ -251,7 +251,8 @@ final class AnalysisPipelineTest extends TestCase
         $rules->method('allRules')->willReturn([]);
 
         return new AnalysisPipeline(
-            new AnalysisFileDiscovery($discovery, new GeneratedFileFilter(), new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe())),
+            $discovery,
+            new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()),
             $collection,
             $rules,
             $preparation,

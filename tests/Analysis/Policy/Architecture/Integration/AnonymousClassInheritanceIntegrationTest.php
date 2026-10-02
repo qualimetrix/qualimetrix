@@ -210,7 +210,7 @@ final class AnonymousClassInheritanceIntegrationTest extends TestCase
         $analysis = $this->runPipelineWithConfiguration($config);
 
         return $this->collectSourceFqns(
-            $this->filterByRule($analysis->findings, LayerViolationRule::NAME),
+            $this->filterByRule($analysis->findings(), LayerViolationRule::NAME),
         );
     }
 

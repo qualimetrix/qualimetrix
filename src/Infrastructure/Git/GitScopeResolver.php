@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 
 /**
  * Resolves analysis scope, file discovery strategy and git client from the
@@ -19,7 +18,6 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 final class GitScopeResolver
 {
     public function __construct(
-        private readonly FileDiscoveryFactoryInterface $fileDiscoveryFactory,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
@@ -45,11 +43,8 @@ final class GitScopeResolver
             $gitClient->validateScope($reportScope->ref);
         }
 
-        $fileDiscovery = $this->fileDiscoveryFactory->create($projectRoot, $configuration->pathExcludes);
-
         return new GitScopeResolution(
             paths: $paths,
-            fileDiscovery: $fileDiscovery,
             gitClient: $gitClient,
             reportScope: $reportScope,
             projectRoot: $projectRoot,

@@ -46,6 +46,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -81,6 +82,30 @@ final class BaselineExplainCommandTest extends TestCase
     protected function tearDown(): void
     {
         TempDirectory::remove($this->tempDir);
+    }
+
+    #[Test]
+    public function itReportsAnIntentionallyEmptyRunWithoutClaimingSubjectRemediation(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace Sample; final class Legacy {}');
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Sample\\\\":"src/"}}}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        try {
+            chdir($this->tempDir);
+            $command = (new ContainerFactory())->create()->get(BaselineExplainCommand::class);
+            self::assertInstanceOf(BaselineExplainCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['subject' => 'file:src/Legacy.php', '--workers' => '0'], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+        self::assertStringNotContainsString('Subject:', $tester->getDisplay());
     }
 
     /**

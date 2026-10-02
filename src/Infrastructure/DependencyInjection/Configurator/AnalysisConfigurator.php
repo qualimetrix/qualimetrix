@@ -24,12 +24,17 @@ use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspectorInterface;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectTree;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
@@ -54,10 +59,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string RULE_PRODUCER_PREPARATION_CLASS = 'Qualimetrix\\Analysis\\Run\\RuleProducerPreparation';
     private const string INLINE_DIRECTIVE_RUN = 'qmx.analysis.run.inline_directive_run';
     private const string INLINE_DIRECTIVE_RUN_CLASS = 'Qualimetrix\\Analysis\\Run\\InlineDirectiveRun';
-    private const string FILE_DISCOVERY = 'qmx.run.file_discovery';
-    private const string FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery';
-    private const string ANALYSIS_FILE_DISCOVERY = 'qmx.analysis.run.file_discovery';
-    private const string ANALYSIS_FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery';
     private const string FILE_PROCESSOR = 'qmx.run.file_processor';
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
@@ -66,28 +67,25 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string INLINE_THRESHOLD_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit';
     private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule';
     private const string INLINE_DIRECTIVE_VALIDATOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator';
-    private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
-    private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
     private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
     private const string GENERATED_FILE_FILTER_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\GeneratedFileFilter';
-    private const string EXCLUDE_BINDING_PROBE_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe';
     private const string UNMATCHED_EXCLUDE_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit';
     private const string UNMATCHED_EXCLUDE_RULE_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule';
 
     public function configure(ContainerBuilder $container): void
     {
-        $container->register(self::FILE_DISCOVERY, self::FILE_DISCOVERY_CLASS);
-        $container->setAlias(FileDiscoveryInterface::class, self::FILE_DISCOVERY);
-        $container->register(self::FILE_DISCOVERY_FACTORY, self::FILE_DISCOVERY_FACTORY_CLASS);
-        $container->setAlias(FileDiscoveryFactoryInterface::class, self::FILE_DISCOVERY_FACTORY);
+        $container->register(EntryInspector::class);
+        $container->setAlias(EntryInspectorInterface::class, EntryInspector::class);
+        $container->register(ProjectWalk::class)->setArgument('$inspector', new Reference(EntryInspectorInterface::class));
+        $container->register(ProjectTree::class)->setArgument('$inspector', new Reference(EntryInspectorInterface::class));
+        $container->setAlias(ProjectTreeQueryInterface::class, ProjectTree::class);
         $container->register(self::GENERATED_FILE_FILTER, self::GENERATED_FILE_FILTER_CLASS);
         $container->setAlias(GeneratedFileFilterInterface::class, self::GENERATED_FILE_FILTER);
-        $container->register(self::ANALYSIS_FILE_DISCOVERY, self::ANALYSIS_FILE_DISCOVERY_CLASS)
-            ->setArguments([
-                new Reference(FileDiscoveryInterface::class),
-                new Reference(GeneratedFileFilterInterface::class),
-                new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
-            ]);
+        $container->register(ProjectFiles::class)->setArguments([
+            new Reference(ProjectWalk::class),
+            new Reference(GeneratedFileFilterInterface::class),
+        ]);
+        $container->setAlias(ProjectFilesInterface::class, ProjectFiles::class);
 
         // ThresholdOverrideExtractor - per-rule `@qmx-threshold` validator map injected
         // by ThresholdValidatorMapCompilerPass after RuleRegistryCompilerPass runs
@@ -219,8 +217,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
      */
     private function registerUnmatchedExcludeProducer(ContainerBuilder $container): void
     {
-        $container->register(self::EXCLUDE_BINDING_PROBE_CLASS, self::EXCLUDE_BINDING_PROBE_CLASS);
-
         // Lazy, and that is the whole reason the audit may hold its rule's
         // Options service: constructed eagerly it would capture the options as
         // they stood before the console applied `rules.<name>.enabled` or
@@ -229,7 +225,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::UNMATCHED_EXCLUDE_AUDIT_CLASS, self::UNMATCHED_EXCLUDE_AUDIT_CLASS)
             ->setArguments([
                 new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::UNMATCHED_EXCLUDE_RULE_CLASS)),
-                new Reference(self::EXCLUDE_BINDING_PROBE_CLASS),
             ])
             ->setLazy(true);
 
@@ -274,7 +269,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // retains its own state behind a narrow public contract.
         $container->register(self::ANALYSIS_PIPELINE, self::ANALYSIS_PIPELINE_CLASS)
             ->setArguments([
-                new Reference(self::ANALYSIS_FILE_DISCOVERY),
+                new Reference(ProjectFilesInterface::class),
+                new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(RuleExecutionInterface::class),
                 new Reference(self::RULE_PRODUCER_PREPARATION),

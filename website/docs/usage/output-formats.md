@@ -922,6 +922,7 @@ a finding back, and the identity leads to the finding's own record.
         "discovered": 1204,
         "analyzed": 1204,
         "generatedExcluded": 0,
+        "excluded": 0,
         "failed": 0,
         "failures": []
     },
@@ -1055,87 +1056,79 @@ reads back, with its own schema, not a report.
 
 ## Analysis coverage in every format
 
-Every discovered entry is classified as analyzed, intentionally excluded as
-generated, or failed. An entry is a PHP file the run measured, a PHP file it
-could not read, or a filesystem entry it never opened at all — a directory it
-may not list, a link it does not descend into. Generated exclusions are a
-complete run; any failure makes the analysis incomplete and the policy result
-non-authoritative. Zero discovered files still pass through the selected
-formatter instead of being replaced with command prose.
+An entry ends analyzed, intentionally authored/generated excluded, or failed.
+`excluded` counts named authored entries outside `discovered`. The latter sums
+`analyzed` PHP, `generatedExcluded` PHP and `failed` selected terminal entries;
+failures can name directories, links or special entries as well as PHP files.
+Removing a directory does not count its unseen PHP descendants. Exclusion retains completeness; any failure
+closes it. A complete intentionally empty set (`analyzed=0`, `failed=0`,
+`excluded + generatedExcluded > 0`) differs from a truly undiscovered empty tree.
+Incomplete exit 4 takes priority over success and policy findings. `check`
+retains the selected diagnostic report, whose policy result is not authoritative.
 
-| Format         | Coverage representation                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `summary`      | Human coverage sentence after the header                                                                       |
-| `text`         | Human coverage sentence after the violation summary                                                            |
-| `text-verbose` | Same projection as `text --detail`                                                                             |
-| `health`       | Human coverage sentence after the header                                                                       |
-| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
-| `metrics`      | The same top-level `coverage` object as `json`                                                                 |
-| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                       |
-| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`             |
-| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                   |
-| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                        |
-| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
-| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
+| Format         | Coverage representation                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `summary`      | Human coverage sentence after the header                                                                                   |
+| `text`         | Human coverage sentence after the violation summary                                                                        |
+| `text-verbose` | Same projection as `text --detail`                                                                                         |
+| `health`       | Human coverage sentence after the header                                                                                   |
+| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| `metrics`      | The same top-level `coverage` object as `json`                                                                             |
+| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                                   |
+| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`                         |
+| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                               |
+| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                                    |
+| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                               |
+| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
 
-For `json` and `metrics`, each `failures[]` item has `path`, `kind`, and
-`message`. Human formats distinguish no discovered files, generated-only input,
-complete analysis, and incomplete analysis.
+For `json` and `metrics`, each `failures[]` item has `path`, `kind`
+and `message`. Human formats report measured counts without claiming every named
+path was excluded when another root was merely empty.
 
-`kind` is one of five values:
+| `kind`                 | Entry                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `parse`                | PHP with a syntax error                                                      |
+| `processing`           | PHP measurement failed                                                       |
+| `unreadable-file`      | Source snapshot could not be obtained before parser invocation               |
+| `directory-symlink`    | A directory link met inside the walk and not followed                        |
+| `not-regular-file`     | A non-regular PHP entry: FIFO, socket, device or disallowed walked file link |
+| `unreadable-directory` | A directory that cannot be listed                                            |
 
-| `kind`                 | The entry                                                                                            |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `parse`                | a PHP file that could not be parsed                                                                  |
-| `processing`           | a PHP file that failed while being measured                                                          |
-| `directory-symlink`    | a symbolic link to a directory, found inside a scanned tree and not followed                         |
-| `not-regular-file`     | a `*.php` entry that is not a regular file — a FIFO, a socket, a device, a link whose target is gone |
-| `unreadable-directory` | a directory the process may not list                                                                 |
-
-The last three name an entry that never became a unit of analysis, so they carry
-the path of that entry rather than of a PHP file. Treat a value you do not
-recognize as an entry the run did not read: the list can grow, and refusing the
-whole document to learn that is a worse trade than reporting the run as
-incomplete.
+Skips name the entry that never became a unit of analysis. An unknown `kind`
+means incomplete input rather than a reason to discard the whole document.
 
 ## Project scope in every format {#project-scope-in-every-format}
 
-Some channels say that a configured value matches nothing in the project:
-a layer, a directory exclusion or a suppression. A subset cannot establish
-that claim about code it did not analyse. The report names the evidence
-behind its answer:
+Reports publish final measurement combining the captured Composer universe and
+actual entry selection. The initial target state before discovery is not the
+result: omitting an empty directory alone does not establish missing PHP.
 
-| State        | When                                                                      | Whole-project channels |
-| ------------ | ------------------------------------------------------------------------- | ---------------------- |
-| `covered`    | Every counted target of the intact selected Composer autoload is reached  | judged                 |
-| `narrowed`   | A counted target lies outside the analysed paths                          | withheld               |
-| `unknown`    | No complete declared universe, but the whole project root is selected     | judged                 |
-| `unmeasured` | No complete declared universe over a subset, or inferred partial defaults | withheld               |
+`state` remains `covered`, `narrowed`, `unknown` or `unmeasured`. This enum
+represents evidence rather than granting the same permission to every audit.
+Two measured questions have separate answers:
 
-Production targets are selected by default; `--include-autoload-dev` adds
-development targets. An absent manifest or intact document without declared
-code falls back to the whole root when paths are omitted. A damaged manifest
-requires authored paths to establish a whole-root `unknown` run.
-Unusable damaged defaults refuse with exit 3 before analysis.
+- **Declaration absence.** Missing PHP, authored PHP removal, generated
+  exclusions and an uncertain universe withhold namespace, class or method-name
+  absence claims.
+- **Selector/path completeness.** PHP-path completeness and universe certainty
+  are checked separately. Authored/generated removal are not inputs to this
+  question. A bound selector remains `Removed` when the answer is withheld.
 
-An intact declaration whose targets are all missing on disk can still leave
-an empty denominator and report `covered` on an authored subset.
-`missing-target` reasons name this existing limit; the state does not prove
-that every declared target exists.
+Six channels ask the first question:
+`architecture.empty-template`, `architecture.unmatched-exclude`,
+`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
+`coupling.unmatched-framework-namespace`, `suppression.unmatched-namespace`.
+`discovery.unmatched-exclude`, `suppression.unmatched-path` and
+`suppression.unmatched-rule-ledger` use the second; namespace values under the
+last also ask the first. There are nine channels in total.
 
-The whole-project channels are
-`architecture.unreachable-layer`, `architecture.empty-template`,
-`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
-`discovery.unmatched-exclude`, `suppression.unmatched-path`,
-`suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`.
-Both withheld states list the entire family, whether enabled or not.
-
-Coverage does not establish that every suppression value was judged.
-A value outside the analysed location is skipped, for example
-`suppress_paths: [{subtree: tests/Legacy}]` when only production code was
-analysed. Namespace values need an accepted PSR-4 location map; that fact is
-independent of the state enum. The report names skipped values and their
-channels. See [Suppression rules](../rules/suppression.md#scope-and-severity).
+A complete named PHP roster can cover a known universe. An observed regular
+`.php` outside selection is missing PHP, even when an exclude matches it. An
+excluded directory outside selection hides unseen descendants: named
+`incomplete-universe` evidence withholds both questions without listing or PHP
+search there. Assets and special entries are not inferred missing PHP. The
+whole root can establish completeness without usable declared autoload code;
+an arbitrary subset cannot.
 
 | Format                                      | Project scope representation                                    |
 | ------------------------------------------- | --------------------------------------------------------------- |
@@ -1146,23 +1139,24 @@ channels. See [Suppression rules](../rules/suppression.md#scope-and-severity).
 | `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line                                        |
 | `gitlab`, `checkstyle`                      | No scope entry: every entry is a finding to their consumers     |
 
-The object has the same five fields in every state:
-`state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`,
-`unjudgedValues[]` and `reasons[]`.
-Targets are empty except on `narrowed`.
-On `narrowed` and `unmeasured`, no whole-project value is judged,
-so `unjudgedValues` is empty. Otherwise each skipped value is
-`{option, pattern}`, and its channel contributes to `unjudgedChannels`.
+The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
+`unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Each skipped value has
+`{channel, option, pattern}`. `unjudgedChannels` contains only channels with no
+judged value; a partially judged channel may be absent while its skipped values
+remain with their `channel`. An empty channel list therefore does not prove
+that every value was judged. Reasons retain `kind` and named cause fields,
+including removals and uncertain locations. Auxiliary Composer issues explain
+ancestry limits without closing main-project coverage. Accepted PSR-4 facts still
+place namespace values independently of the enum.
+See [Suppression rules](../rules/suppression.md#scope-and-severity).
 
-Each reason is an object with `kind` and named cause fields.
-Kinds are `manifest-issue`, `no-declared-code`, `incomplete-universe`,
-`pruned-target`, `missing-target` and `omitted-composer-root`.
-Manifest issues retain source, location and detail. Auxiliary manifest issues
-and root omissions explain degraded ancestry evidence and do not close
-main-project coverage. Reasons survive suppression-value projection.
-Formats with a diagnostic place add an entry for either withheld state,
-`unknown`, or a covered run with skipped values or reasons.
 
+For a selector hidden by another source, the skipped value keeps its three keys.
+An Exclude reason links `selector` to `coveredBy`, names only hider `sources`
+absent from that selector's origins, and supplies `rerun` advice. This explains
+withholding without turning it into a finding or proof of remediation.
+Unavailable search metadata inside an actual removed run entry also withholds
+only declaration absence, with the actual `unlistable` evidence retained.
 ## Comparison table
 
 | Format         | Readable    | Machine   | Grouping                     | CI Integration             |

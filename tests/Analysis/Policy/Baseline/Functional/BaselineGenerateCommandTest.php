@@ -21,6 +21,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
@@ -43,6 +44,54 @@ final class BaselineGenerateCommandTest extends TestCase
     protected function tearDown(): void
     {
         TempDirectory::remove($this->tempDir);
+    }
+
+    #[Test]
+    public function itWritesAnEmptyBaselineForACompleteNamedExclusion(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace Sample; final class Legacy {}');
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Sample\\\\":"src/"}}}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        try {
+            chdir($this->tempDir);
+            $command = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['baseline' => $this->baselinePath, '--workers' => '0'], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame([], self::entriesOf($this->baselinePath));
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itDoesNotWriteABaselineWhenAnotherNamedPathFails(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace Sample; final class Legacy {}');
+        file_put_contents($this->tempDir . '/src/Broken.php', '<?php final class Broken {');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{exact: src/Legacy.php}]\ncache: {enabled: false}\n");
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        try {
+            chdir($this->tempDir);
+            $command = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['baseline' => $this->baselinePath, '--workers' => '0'], ['capture_stderr_separately' => true]);
+        } finally {
+            chdir($previous);
+        }
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertFileDoesNotExist($this->baselinePath);
+        self::assertStringContainsString('Analysis incomplete', $tester->getDisplay());
     }
 
     /**

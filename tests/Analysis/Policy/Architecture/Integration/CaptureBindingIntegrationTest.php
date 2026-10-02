@@ -49,7 +49,7 @@ final class CaptureBindingIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
 
         $messages = array_map(static fn(Finding $v): string => $v->message, $layerViolations);
 
@@ -81,7 +81,7 @@ final class CaptureBindingIntegrationTest extends TestCase
 
         $analysis = $this->runPipelineWithConfig($config);
 
-        $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $layerViolations = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         self::assertSame([], $layerViolations, 'allow_cross_instance must lift the binding-identity check.');
     }
 
@@ -111,7 +111,7 @@ final class CaptureBindingIntegrationTest extends TestCase
             $loaded = WrittenFile::compose($yamlPath);
             $analysis = $this->runPipelineWithConfig($loaded);
 
-            $layerViolations = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+            $layerViolations = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
             self::assertSame(
                 [],
                 $layerViolations,

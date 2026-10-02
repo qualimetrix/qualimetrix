@@ -45,9 +45,9 @@ final class MetricInvariantTest extends TestCase
             $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
             \assert($pipeline instanceof AnalysisPipelineInterface);
             $result = $pipeline->analyze($fixture->prepared()->runConfiguration);
-            self::$repository = $result->metrics;
-            self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');
-            self::$namespaceTree = $result->namespaceTree;
+            self::$repository = $result->measured->repository;
+            self::assertNotNull($result->measured->namespaceTree, 'NamespaceTree must be present in analysis result');
+            self::$namespaceTree = $result->measured->namespaceTree;
         } finally {
             $fixture->close();
         }

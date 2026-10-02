@@ -23,10 +23,12 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -459,12 +461,20 @@ final class ResultPresenterTest extends TestCase
         ?InMemoryMetricRepository $metrics = null,
         ?NamespaceTree $namespaceTree = null,
     ): AnalysisResult {
-        return new AnalysisResult(
-            $findings,
-            0.1,
-            $metrics ?? new InMemoryMetricRepository(),
-            $coverage ?? new AnalysisCoverage([], [], []),
-            namespaceTree: $namespaceTree,
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $metrics ?? new InMemoryMetricRepository(),
+                coverage: $coverage ?? new AnalysisCoverage([], [], []),
+                namespaceTree: $namespaceTree,
+                projectScope: null,
+                duration: 0.1,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: $findings,
         );
     }
 

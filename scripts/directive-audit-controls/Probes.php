@@ -52,13 +52,13 @@ final class Probes
 
     private const string PROJECTOR = 'src/Reporting/FindingProjection/FindingProjector.php';
 
-    private const string LEVEL_ACTIVITY = 'src/Analysis/Finding/Contract/LevelActivity.php';
+    private const string ELIGIBILITY = 'src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveEligibility.php';
 
     private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
 
-    private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditPresenter.php';
+    private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditTextPresenter.php';
 
-    private const string DISCOVERY = 'src/Analysis/Run/Discovery/FinderFileDiscovery.php';
+    private const string DISCOVERY = 'src/Analysis/Run/Discovery/WalkedEntrySelection.php';
 
     private const string CONFIG_FILE_STAGE = 'src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php';
 
@@ -950,6 +950,9 @@ final class Probes
             )->alsoReddens(
                 'every case of the command reads the coverage the pipeline hands back, so emptying it moves the whole rendered report, not one line of it',
                 [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead',
@@ -1062,6 +1065,7 @@ final class Probes
             )->alsoReddens(
                 'a blanket denial of the comparison every verdict rests on; the flag exempts it from the upper bound, not from naming what it reaches',
                 [
+                    'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itIgnoresTheInternalAddressedProducer',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itComparesTheCounterfactualAgainstAReferenceTakenByTheSameNarrowing',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itDoesNotCallAPairMaskedWhereTheRuleNeverReports',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallAProducerDisabledAtALevelItNeverReportsAt',
@@ -1392,7 +1396,7 @@ final class Probes
                 'sweep-line-dropped-from-text',
                 'the text report stops printing which sweep scope measured it',
                 self::PRESENTER,
-                ["        \$lines[] = \\sprintf('  Sweep        %s', self::sweepLine(\$report->sweep));\n" => ''],
+                ["            \\sprintf('  Sweep        %s', self::sweepLine(\$this->report->sweep)),\n" => ''],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats'],
             ),
             Probe::breaking(
@@ -1468,8 +1472,17 @@ final class Probes
                 'command-drops-the-discovery',
                 'the audited file set is not the one an analysis of the same configuration would measure',
                 self::COMMAND,
-                ['            $prepared->fileDiscovery,' => '            null,'],
+                [
+                    '            $prepared->runConfiguration,'
+                    => '            new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([], $prepared->runConfiguration->projectRoot, $prepared->runConfiguration->generatedFilePolicy, $prepared->runConfiguration->projectScope, [], $prepared->runConfiguration->autoloadDevPolicy),',
+                ],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes'],
+            )->alsoReddens(
+                'dropping excludes changes the measured counts and admits the broken file whose failure the priority case deliberately excluded',
+                [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath',
+                ],
             ),
             Probe::breaking(
                 'suppression-never-inert',
@@ -1755,14 +1768,6 @@ final class Probes
                 ],
             ),
             Probe::breaking(
-                'guard-counts-discovered-not-analysed',
-                'a scope of nothing but skipped files counts as a scope that was read',
-                self::COMMAND,
-                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
-                    => 'if ($report->coverage->discoveredFiles() === 0) {'],
-                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles'],
-            ),
-            Probe::breaking(
                 'command-accepts-any-format',
                 'the command renders an unrecognised --format instead of refusing it',
                 self::COMMAND,
@@ -1801,6 +1806,7 @@ final class Probes
             )->alsoReddens(
                 'the unknown-sweep-in-JSON case is refused through the same carrier this breakage silences',
                 [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesTheFileThatWroteANonExistentPath',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAnUnknownSweepInJson',
                 ],
             ),
@@ -1839,9 +1845,9 @@ final class Probes
                 'scope-that-read-nothing-is-clean',
                 'a run that discovered no file at all reports the tree clean',
                 self::COMMAND,
-                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
+                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete() && !$report->coverage->isIntentionallyEmpty()) {'
                     => 'if (false) {'],
-                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles', 'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles'],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles'],
             ),
             ...self::command(),
         ];
@@ -1864,10 +1870,14 @@ final class Probes
             Probe::breaking(
                 'missing-path-not-refused',
                 'a path that does not exist is not refused by name before the run',
-                self::COMMAND,
-                ['        $missing = AnalysisPreflight::missingPaths($prepared->runConfiguration);'
-                    => '        $missing = [];'],
+                'src/Infrastructure/Console/AnalysisPreflight.php',
+                ['        $this->pathValidator->validate($runConfiguration->paths, $document);' => ''],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesANonExistentPath'],
+            )->alsoReddens(
+                'the file-authored missing-path case reaches the same preflight validation; without it neither the named refusal nor its provenance is published',
+                [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesTheFileThatWroteANonExistentPath',
+                ],
             ),
             Probe::breaking(
                 'incomplete-run-exits-clean',
@@ -1879,6 +1889,7 @@ final class Probes
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath',
                 ],
             ),
             Probe::breaking(
@@ -1886,13 +1897,7 @@ final class Probes
                 'a directory discovery cannot list is left out of the run without being recorded as unread',
                 self::DISCOVERY,
                 [
-                    "        if (!is_readable(\$entry->getPathname()) || !is_executable(\$entry->getPathname())) {\n"
-                    . "            \$this->record(\n"
-                    . "                \$path,\n"
-                    . "                AnalysisFailureKind::UnreadableDirectory,\n"
-                    . "                'Directory cannot be listed',\n"
-                    . "            );\n"
-                    => "        if (!is_readable(\$entry->getPathname()) || !is_executable(\$entry->getPathname())) {\n",
+                    '            $this->outcome->unlistable($path, $relative, $zone, EntryKind::Directory);' => '',
                 ],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead'],
             ),
@@ -1925,6 +1930,9 @@ final class Probes
             )->alsoReddens(
                 'every JSON case of the command decodes stdout as one document, and a trailing line makes none of them parse',
                 [
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnalysesTheSameFilesAsCheckUnderTheSameExcludes',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itCallsASuppressionEffectiveWhenItSilencedAFinding',
@@ -1971,15 +1979,19 @@ final class Probes
             Probe::breaking(
                 'judge-the-unaskable',
                 'a directive the addressability check already refused is judged anyway',
-                self::AUDIT,
+                self::ELIGIBILITY,
                 ['if ($this->addressability->problemWithThreshold($override) !== null) {' => 'if (false) {'],
                 ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveNamingNoRule'],
             ),
             Probe::breaking(
                 'ignore-disabled-producer',
                 'a directive addressing a switched-off producer is judged anyway',
-                self::AUDIT,
-                ['return $enabled ? null : DirectiveUnmeasurableReason::ProducerDisabled;' => 'return null;'],
+                self::ELIGIBILITY,
+                [
+                    '        return $this->ranAtDeclaredLevel($override->rulePattern, $levels, $declaredLevels, $enablement, $activity)'
+                        . "\n            ? null\n            : DirectiveUnmeasurableReason::ProducerDisabled;"
+                    => '        return null;',
+                ],
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsDisabled',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions',
@@ -1996,10 +2008,10 @@ final class Probes
                 'producer-granularity-instead-of-level',
                 'enablement is judged per producer, so a rule switched off only at the'
                 . ' directive\'s level still reads as running',
-                self::LEVEL_ACTIVITY,
+                self::ELIGIBILITY,
                 [
-                    'return $declared ? false : !$this->disabledEverywhere($producer);' =>
-                        'return !$this->disabledEverywhere($producer);',
+                    'if ($declaredLevels !== [] && !\in_array($decision->level, $declaredLevels, true)) {' => 'if (false) {',
+                    'if ($activity->ranAtAnyOf($producer, $levels)) {' => 'if (!$activity->disabledEverywhere($producer)) {',
                 ],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff with data set "the level the directive sits on"'],
             ),
