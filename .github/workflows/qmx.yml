@@ -331,30 +331,12 @@ jobs:
               sys.exit(f'the git scope analysed {analysed} files, expected the one staged file')
           PY
 
-      # Run from a scratch directory with absolute paths. From the repository
-      # root the analysis discovers this repository's own qmx.yaml and applies
-      # its declared layers to a target that is not this repository, which
-      # raises a configuration-error channel that --fail-on cannot suppress:
-      # measured exit 2 from the root against exit 0 from elsewhere.
+      # Evidence is written outside the target, while the explicit project
+      # root is the target itself. This avoids loading this repository's
+      # qmx.yaml and keeps absolute paths inside the measured root.
       #
-      # The exit codes are compared rather than required to be zero. The
-      # subject here is "the phar agrees with the tree", and a run that exits
-      # non-zero for a reason both sides share is evidence of agreement, not a
-      # broken job. Inheriting bash -e's implicit zero would have made every
-      # run of this job red.
-      # Run from a scratch directory with absolute paths. From the repository
-      # root the analysis discovers this repository's own qmx.yaml and applies
-      # its declared layers to a target that is not this repository, which
-      # raises a configuration-error channel that --fail-on cannot suppress:
-      # measured exit 2 from the root against exit 0 from elsewhere. The
-      # scratch directory also has no composer.json, so namespace detection is
-      # degraded and coupling figures differ from a normal run -- equally on
-      # both sides, which is all this comparison needs.
-      #
-      # The exit codes are compared rather than required to be zero. The
-      # subject here is "the phar agrees with the tree", and a run that exits
-      # non-zero for a reason both sides share is evidence of agreement, not a
-      # broken job. Inheriting bash -e's implicit zero made every run red.
+      # Both sides must enter the parallel branch and publish the same report.
+      # Equal nonzero exits alone would also accept two configuration refusals.
       - name: It publishes what the tree publishes, with workers
         run: |
           target="$GITHUB_WORKSPACE/vendor/symfony/console"
@@ -364,10 +346,10 @@ jobs:
           cd "$GITHUB_WORKSPACE/build/evidence"
 
           set +e
-          php "$GITHUB_WORKSPACE/bin/qmx" check "$target" --workers=4 --no-cache \
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$target" --working-dir="$target" --workers=4 --no-cache \
             --no-progress --format=json --fail-on=none -vv > tree.json 2> tree.log
           tree_exit=$?
-          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$target" --workers=4 --no-cache \
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$target" --working-dir="$target" --workers=4 --no-cache \
             --no-progress --format=json --fail-on=none -vv > phar.json 2> phar.log
           phar_exit=$?
           set -e
@@ -468,10 +450,10 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/build/evidence"
           cd "$GITHUB_WORKSPACE/build/evidence"
           set +e
-          php "$GITHUB_WORKSPACE/bin/qmx" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+          php "$GITHUB_WORKSPACE/bin/qmx" check "$GITHUB_WORKSPACE/src/Core" --working-dir="$GITHUB_WORKSPACE/src/Core" --workers=0 \
             --no-cache --no-progress --format=html --fail-on=none > tree.html
           tree_exit=$?
-          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$GITHUB_WORKSPACE/src/Core" --workers=0 \
+          php "$GITHUB_WORKSPACE/build/qmx.phar" check "$GITHUB_WORKSPACE/src/Core" --working-dir="$GITHUB_WORKSPACE/src/Core" --workers=0 \
             --no-cache --no-progress --format=html --fail-on=none > phar.html
           phar_exit=$?
           set -e
