@@ -1,3 +1,8 @@
 kind	key	level	reason
-field	message	project	The existing discovery fixture excludes subtree:NoSuchDir, which matches no entry. UnmatchedExcludeFinding retains the same channel, project subject and pattern occurrence; its message now describes entry selection rather than only directories. Measure actual changed occurrences, preserving all neighbouring values.
-field	recommendation	project	The existing discovery fixture excludes subtree:NoSuchDir, which matches no entry. UnmatchedExcludeFinding retains the same channel, project subject and pattern occurrence; its recommendation now describes entry selection rather than only directories. Measure actual changed occurrences, preserving all neighbouring values.
+field	severity	file	Unused directive findings now default to Warning rather than Info; explicitly configured Info remains unchanged. Measure each concrete finding transition and retain every neighbouring field.
+field	message	file	Inline admission and declaration reach now publish precise refusal diagnostics before bans, using one shared classifier. Measure each concrete diagnostic wording transition; channels, subjects and neighbouring values remain independently compared.
+field	line	file	Directive findings and audit sites now use the physical tag line rather than the opening comment line; preserve every named transition exactly.
+field	ranking.impactScore	file	Unused directives now have Warning severity by default, which changes their measured priority score; retain unchanged channels, subjects and metric tokens.
+field	effect	file	Refused directives now have an explicit refused verdict instead of unmeasured; ordinary blanket decisions use effective or inert with bans preserved.
+field	reason	file	Refused directives publish refusal details and no unmeasured reason; valid blanket sites no longer carry the former addresses-every-channel reason.
+exit	directives	*	Publishable refused sites now fail the audit with exit 2; complete selected-out refusals stay 0 and incomplete runs retain dominant exit 4.

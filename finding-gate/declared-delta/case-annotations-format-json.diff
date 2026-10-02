@@ -1,4 +1,10 @@
 --- candidate
 +++ reference (mapped)
-@@ -27,1 +27,0 @@
--        "excluded": 0,
+@@ -15,2 +15,2 @@
+-        "warningCount": 1,
+-        "infoCount": 0,
++        "warningCount": 0,
++        "infoCount": 1,
+@@ -94,1 +94,1 @@
+-            "message": "Suppression \"code-smell.eval\" matched nothing in this run — the finding it silences is gone.",
++            "message": "Suppression \"code-smell.eval\" matched nothing in this run \u2014 the finding it silences is gone.",

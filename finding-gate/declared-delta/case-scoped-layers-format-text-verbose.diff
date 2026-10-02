@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -10,1 +10,1 @@
--Project scope narrowed: the analysed paths do not cover src/Other.php; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {"kind":"explicit-files","namedFiles":1,"missingFiles":1}.
-+Project scope narrowed: the analysed paths do not cover autoload target(s) src, so these channels, judged only on a whole-project run, were not judged: architecture.empty-template, architecture.unmatched-exclude, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger.

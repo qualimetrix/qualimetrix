@@ -1,1 +1,2 @@
 change	report	view	field	reason
+added	directives	directives	refusals	Each directive now publishes its explicit refusal list, nonempty exactly for refused sites, rather than encoding refusals as unmeasured. Measure each exact list without publishing internal selection addresses.

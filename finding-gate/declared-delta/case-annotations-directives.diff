@@ -1,0 +1,14 @@
+--- candidate
++++ reference (mapped)
+@@ -35,6 +35,5 @@
+-        "total": 7,
+-        "effective": 0,
+-        "overrun": 0,
+-        "inert": 1,
+-        "unmeasured": 0,
+-        "refused": 6
++        "total": 6,
++        "effective": 0,
++        "overrun": 0,
++        "inert": 1,
++        "unmeasured": 5

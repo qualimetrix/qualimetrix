@@ -1,0 +1,6 @@
+--- candidate
++++ reference (mapped)
+@@ -63,2 +63,1 @@
+-        "unmeasured": 0,
+-        "refused": 0
++        "unmeasured": 0
