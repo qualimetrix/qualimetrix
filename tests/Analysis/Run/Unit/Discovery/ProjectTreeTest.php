@@ -110,13 +110,37 @@ final class ProjectTreeTest extends TestCase
     {
         symlink($this->root . '/src/Excluded', $this->root . '/src/Alias');
 
-        $snapshot = (new ProjectTree(new EntryInspector()))->snapshot($this->universe());
+        $inspector = new class implements EntryInspectorInterface {
+            /** @var list<string> */
+            public array $listed = [];
+            private EntryInspector $delegate;
+
+            public function __construct()
+            {
+                $this->delegate = new EntryInspector();
+            }
+
+            public function inspect(string $path): EntryKind
+            {
+                return $this->delegate->inspect($path);
+            }
+
+            public function list(string $directory): ?array
+            {
+                $this->listed[] = $directory;
+
+                return $this->delegate->list($directory);
+            }
+        };
+
+        $snapshot = (new ProjectTree($inspector))->snapshot($this->universe());
 
         self::assertSame(['src/A.php', 'src/Excluded/B.php'], array_map(
             static fn(RelativePath $path): string => $path->value(),
             $snapshot->phpFiles,
         ));
         self::assertTrue($snapshot->complete());
+        self::assertNotContains($this->root . '/src/Alias', $inspector->listed);
     }
 
     private function universe(): ProjectScopeUniverse
