@@ -19,6 +19,7 @@ src/Reporting/FindingProjection/DirectiveSuppressorResolver.php	Qualimetrix\Repo
 src/Reporting/FindingProjection/FindingProjectionOptions.php	Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	"output projection"	Reporting
 src/Reporting/FindingProjection/FindingProjectionResult.php	Qualimetrix\Reporting\FindingProjection\FindingProjectionResult	"output projection"	Reporting
 src/Reporting/FindingProjection/FindingProjector.php	Qualimetrix\Reporting\FindingProjection\FindingProjector	"output projection"	Reporting
+src/Reporting/FindingProjection/GitScopeFindingFilter.php	Qualimetrix\Reporting\FindingProjection\GitScopeFindingFilter	"output projection"	Reporting
 src/Reporting/FindingProjection/InertSuppressor.php	Qualimetrix\Reporting\FindingProjection\InertSuppressor	"output projection"	Reporting
 src/Reporting/FindingProjection/RuleExclusionLedgerAttributor.php	Qualimetrix\Reporting\FindingProjection\RuleExclusionLedgerAttributor	"output projection"	Reporting
 src/Reporting/FindingProjection/SuppressedFinding.php	Qualimetrix\Reporting\FindingProjection\SuppressedFinding	"output projection"	Reporting
