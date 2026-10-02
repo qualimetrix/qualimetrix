@@ -246,7 +246,8 @@ jobs:
         run: |
           set -o pipefail
           docker run --rm -v "$PWD/src/Core:/code:ro" qmx \
-            check /code --workers=0 --no-progress --format=json --fail-on=none \
+            check /code --working-dir=/code --cache-dir=/tmp/qmx-cache \
+            --workers=0 --no-progress --format=json --fail-on=none \
             | tee /tmp/docker-qmx.json > /dev/null
           python3 - <<'PY'
           import json
