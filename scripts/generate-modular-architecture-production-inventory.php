@@ -2427,6 +2427,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0093-measured-run-scope-and-project-tree-queries.md' => 'Analysis.Run',
         'docs/adr/0094-analysis-results-publish-subject-owned-values.md' => 'Analysis.Run',
         'docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md' => 'Analysis.Policy.Inline',
+        'docs/adr/0096-file-target-claims.md' => 'Core.FileTarget',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

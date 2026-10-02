@@ -26,6 +26,26 @@ Core/
 │   └── FileParserInterface.php            # AST parsing contract
 ├── Exception/
 │   └── ParseException.php                 # Parse error value
+├── Environment/
+│   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
+├── FileTarget/
+│   ├── ClaimMode.php
+│   ├── DirectoryFacts.php
+│   ├── EntryControl.php
+│   ├── EntryFacts.php
+│   ├── FileIdentity.php
+│   ├── FileReplacement.php
+│   ├── FileTargetFailure.php
+│   ├── FileTargetFailureKind.php
+│   ├── HeldLock.php
+│   ├── HeldTarget.php
+│   ├── NewName.php
+│   ├── PathExposure.php
+│   ├── ProcessOwner.php
+│   ├── ResolvedTarget.php
+│   ├── TargetKind.php
+│   ├── TargetPath.php
+│   └── TemporarySibling.php
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Path/
@@ -902,6 +922,39 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 `morePermissive()`'s result type does not depend on argument order, even when the two boundaries are numerically equal but differ in `int`/`float` type: the result is written to the baseline file (ADR 0017), whose byte-stability contract leaves no room for `morePermissive(10, 10.0)` and `morePermissive(10.0, 10)` to disagree. A tie normalizes to `int` only when both inputs are `int`, and to `float` the moment either one is.
 
 ---
+
+
+## File targets
+
+`Core\\FileTarget` is the first filesystem writer in Core. It owns target
+resolution, entry-control judgement, held descriptors, temporary siblings and
+publication; `Core\\Path` only represents paths and its lexical normalization
+is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
+marks storage or delivery failures with complete user-facing messages.
+
+`TargetPath::resolve()` returns a `ResolvedTarget` with target kind, resolved
+path or process descriptor, inode identity, directory identities and exposure
+facts. `EntryControl` judges placement and replacement from directory and entry
+facts. `HeldTarget::claim()` holds an unchanged regular file, an exclusively
+created name or a supplied stream; `write()`, `append()` and `release()` own the
+resource lifecycle. `FileReplacement::replace()` publishes a complete sibling,
+and `HeldLock::acquire()` holds a named lock without truncating it.
+`TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
+support these operations. `FileTargetFailure` carries an explicit kind, path,
+reason and optional detail. Consumer policy remains with its subject.
+
+Existing regular files open without truncation and are checked against their
+judged inode before a write. An unwritten exclusive name is removed on release
+only if it still identifies the held file. Sticky directory mode protects
+existing owned entries from replacement but does not make a link trustworthy.
+Without POSIX, effective-uid discovery uses an empty diagnostic temporary file
+that must be removed immediately; unsafe cleanup refuses the operation.
+
+A duplicated `php://fd/N` preserves stream offset but may survive `proc_open`;
+path-held handles opened with `e` are close-on-exec. Mode-bit judgement does not
+cover ACLs, authorized hard-link placement or all component-swap races. A
+same-uid swap before FIFO `we` can truncate a replacement before identity
+refusal. [ADR 0096](../../docs/adr/0096-file-target-claims.md) records these limits.
 
 ## File publication
 

@@ -1211,6 +1211,7 @@ function testSuitePrefixTable(): array
         ['prefix' => 'tests/Analysis/Run/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/GraphProjection/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Reporting/Unit/', 'suite' => 'Unit'],
+        ['prefix' => 'tests/Core/FileTarget/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Path/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Unit/', 'suite' => 'Unit'],
         ['prefix' => 'tests/Core/Symbol/Integration/', 'suite' => 'Integration'],

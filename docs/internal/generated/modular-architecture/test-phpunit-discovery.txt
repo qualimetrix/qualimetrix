@@ -9391,6 +9391,36 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyPreparationWhenItsOwnOptionsSwitchTheRuleOff#0
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsCircularDependencyPreparationWhenItsOwnOptionsSwitchTheRuleOff#1
  - Qualimetrix\Tests\Analysis\Run\Unit\RuleProducerPreparationTest::itSkipsFileSetInspectionWhenTheParticipantsOwnOptionsSwitchTheProducerOff
+ - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itExposesLinksInGroupWritableAndForeignDirectoriesEvenForRoot
+ - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itLeavesLinksInOwnedAndRootOwnedClosedDirectoriesUnexposed
+ - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itTreatsDirectoriesAsUnplaceableWhenStickyProtectsThem
+ - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itTreatsStickyAsProtectionAgainstReplacementButNotPlacement
+ - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itPublishesACompleteReplacementWithTheOldMode
+ - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itRefusesAnAppearedNameWithoutOverwritingIt
+ - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itUsesAFixedLengthTemporaryNameBesideALongTargetName
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itCreatesAnAbsentLockAndLeavesItForFutureOwners
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itOpensAnExistingLockWithoutChangingItsContent
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldLockTest::itRefusesAChangedLockIdentityBeforeOpeningIt
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itAppendsWholeRecordsThroughTheHeldHandle
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itCompletesShortWritesForReplacementAndAppend
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itDoesNotDeleteAnotherEntryWhenAnUnwrittenNameIsReplaced
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itPreservesExistingBytesUntilTheClaimedHandleWrites
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itRefusesANameThatBecameADanglingLinkBeforeClaim
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itRefusesAReplacementInstalledImmediatelyBeforeOpening
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itRefusesAnIdentityChangeBeforeOpeningWithoutTruncatingEitherFile
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itRemovesAnUnwrittenExclusiveNameOnRelease
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itReportsPartialWriteWhenFlushFails
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itReportsPartialWriteWhenTheWriterStopsAfterTwoBytes
+ - Qualimetrix\Tests\Core\FileTarget\Unit\HeldTargetTest::itWritesThroughADuplicatedDescriptorWithoutTruncatingItsFile
+ - Qualimetrix\Tests\Core\FileTarget\Unit\ProcessOwnerTest::itMarksTargetFailuresAsEnvironmentFailuresWithACompleteMessage
+ - Qualimetrix\Tests\Core\FileTarget\Unit\ProcessOwnerTest::itRemovesFallbackProbesOnSuccessAndLaterRefusal
+ - Qualimetrix\Tests\Core\FileTarget\Unit\ProcessOwnerTest::itUsesTheEffectiveUidWhenPosixIsAvailable
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itAcceptsAbsoluteFileUrlsAndRefusesOverlongNamesBeforeCreation
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itFollowsRelativeLinksBeforeApplyingParentComponents
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRecognizesDescriptorsBeforeFollowingProcLinks
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRefusesAPlaceableLinkEvenWhenTheLinkIsOwned
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRefusesUnknownSchemesAndRelativeFileUrls
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itStopsAtFortySymbolicLinkHops
  - Qualimetrix\Tests\Core\Symbol\Integration\BuiltinNameCaseRunTest::itCountsNoBuiltinAsAnEfferentDependencyInEitherSpelling
  - Qualimetrix\Tests\Core\Symbol\Integration\BuiltinNameCaseRunTest::itMeasuresTheFoldedSpellingAsTheCanonicalOne"Failure coupling.cbo"
  - Qualimetrix\Tests\Core\Symbol\Integration\BuiltinNameCaseRunTest::itMeasuresTheFoldedSpellingAsTheCanonicalOne"Failure coupling.ce"

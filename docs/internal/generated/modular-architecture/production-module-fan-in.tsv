@@ -282,9 +282,10 @@ Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	4	2
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	9	3
+Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	1	1
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	70	13
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	77	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	91	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	8	4

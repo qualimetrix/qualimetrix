@@ -951,6 +951,28 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
         - 'Qualimetrix\Analysis\Run\Pipeline\PreparedRun'
         - 'Qualimetrix\Analysis\Run\RuleProducerPreparation'
+    - name: core-environment
+      patterns:
+        - 'Qualimetrix\Core\Environment\EnvironmentFailureInterface'
+    - name: core-filetarget
+      patterns:
+        - 'Qualimetrix\Core\FileTarget\ClaimMode'
+        - 'Qualimetrix\Core\FileTarget\DirectoryFacts'
+        - 'Qualimetrix\Core\FileTarget\EntryControl'
+        - 'Qualimetrix\Core\FileTarget\EntryFacts'
+        - 'Qualimetrix\Core\FileTarget\FileIdentity'
+        - 'Qualimetrix\Core\FileTarget\FileReplacement'
+        - 'Qualimetrix\Core\FileTarget\FileTargetFailure'
+        - 'Qualimetrix\Core\FileTarget\FileTargetFailureKind'
+        - 'Qualimetrix\Core\FileTarget\HeldLock'
+        - 'Qualimetrix\Core\FileTarget\HeldTarget'
+        - 'Qualimetrix\Core\FileTarget\NewName'
+        - 'Qualimetrix\Core\FileTarget\PathExposure'
+        - 'Qualimetrix\Core\FileTarget\ProcessOwner'
+        - 'Qualimetrix\Core\FileTarget\ResolvedTarget'
+        - 'Qualimetrix\Core\FileTarget\TargetKind'
+        - 'Qualimetrix\Core\FileTarget\TargetPath'
+        - 'Qualimetrix\Core\FileTarget\TemporarySibling'
     - name: core-neutral
       patterns:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
@@ -1481,6 +1503,12 @@ architecture:
       - core-path
       - core-profiler
       - core-symbol
+      - external
+    core-environment:
+      - external
+    core-filetarget:
+      - core-environment
+      - core-path
       - external
     core-neutral:
       - core-path

@@ -1965,6 +1965,7 @@ Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	Qualimetrix\Infrastructure
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator	Infrastructure.DependencyInjection	src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php	ast-name
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator	Infrastructure.DependencyInjection	src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php	ast-name
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator	Infrastructure.DependencyInjection	src/Infrastructure/DependencyInjection/Configurator/ParserConfigurator.php	ast-name
+Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	src/Core/FileTarget/FileTargetFailure.php	ast-name
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	Qualimetrix\Analysis\Run\Collection\FileProcessor	Analysis.Run	src/Analysis/Run/Collection/FileProcessor.php	ast-name
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer	Analysis.Run	src/Analysis/Run/Pipeline/DependencyGraphAnalyzer.php	ast-name
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	Qualimetrix\Infrastructure\Ast\PhpFileParser	Infrastructure.Ast	src/Infrastructure/Ast/PhpFileParser.php	ast-name
@@ -2032,6 +2033,13 @@ Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\FileSetIns
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	src/Analysis/Run/Pipeline/AnalysisPipeline.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\RuleProducerPreparation	Analysis.Run	src/Analysis/Run/RuleProducerPreparation.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\Exception\ParseException	Core.Neutral	src/Core/Exception/ParseException.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\FileReplacement	Core.FileTarget	src/Core/FileTarget/FileReplacement.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	src/Core/FileTarget/HeldLock.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	src/Core/FileTarget/HeldTarget.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	src/Core/FileTarget/ProcessOwner.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	src/Core/FileTarget/ResolvedTarget.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	src/Core/FileTarget/TargetPath.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	src/Core/FileTarget/TemporarySibling.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Ast\PhpFileParser	Infrastructure.Ast	src/Infrastructure/Ast/PhpFileParser.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Ast\WorkerParserFactory	Infrastructure.Ast	src/Infrastructure/Ast/WorkerParserFactory.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver	Infrastructure.Cache	src/Infrastructure/Cache/CacheConfigurationResolver.php	ast-name

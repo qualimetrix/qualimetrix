@@ -23,6 +23,8 @@
     "Analysis.Policy.Inline",
     "Analysis.ProjectManifest",
     "Analysis.Run",
+    "Core.Environment",
+    "Core.FileTarget",
     "Core.Neutral",
     "Core.Path",
     "Core.Profiler",
@@ -15635,6 +15637,34 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\BaselineFilterReporter"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\FileReplacement"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\HeldLock"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\HeldTarget"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\ProcessOwner"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\ResolvedTarget"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TargetPath"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TemporarySibling"
         }
       ]
     },
@@ -21800,6 +21830,137 @@
       "path": "src/Analysis/Policy/Inline/Extraction/DeclarationRanges.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\Environment\\EnvironmentFailureInterface": {
+      "path": "src/Core/Environment/EnvironmentFailureInterface.php",
+      "kind": "interface",
+      "owner": "Core.Environment",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\FileTargetFailure"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\FileTarget\\ClaimMode": {
+      "path": "src/Core/FileTarget/ClaimMode.php",
+      "kind": "enum",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\DirectoryFacts": {
+      "path": "src/Core/FileTarget/DirectoryFacts.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\EntryControl": {
+      "path": "src/Core/FileTarget/EntryControl.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\EntryFacts": {
+      "path": "src/Core/FileTarget/EntryFacts.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\FileIdentity": {
+      "path": "src/Core/FileTarget/FileIdentity.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\FileReplacement": {
+      "path": "src/Core/FileTarget/FileReplacement.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\FileTargetFailure": {
+      "path": "src/Core/FileTarget/FileTargetFailure.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\FileTargetFailureKind": {
+      "path": "src/Core/FileTarget/FileTargetFailureKind.php",
+      "kind": "enum",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\HeldLock": {
+      "path": "src/Core/FileTarget/HeldLock.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\HeldTarget": {
+      "path": "src/Core/FileTarget/HeldTarget.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\NewName": {
+      "path": "src/Core/FileTarget/NewName.php",
+      "kind": "enum",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\PathExposure": {
+      "path": "src/Core/FileTarget/PathExposure.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\ProcessOwner": {
+      "path": "src/Core/FileTarget/ProcessOwner.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\ResolvedTarget": {
+      "path": "src/Core/FileTarget/ResolvedTarget.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\TargetKind": {
+      "path": "src/Core/FileTarget/TargetKind.php",
+      "kind": "enum",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\TargetPath": {
+      "path": "src/Core/FileTarget/TargetPath.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\TemporarySibling": {
+      "path": "src/Core/FileTarget/TemporarySibling.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
       "visibility": "internal",
       "consumers": []
     }

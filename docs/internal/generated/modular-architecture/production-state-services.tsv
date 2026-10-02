@@ -93,6 +93,10 @@ src/Analysis/Run/Collection/FileProcessor.php	Qualimetrix\Analysis\Run\Collectio
 src/Analysis/Run/Discovery/WalkedEntryOutcome.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome	Analysis.Run	"request scratch or mutable internal value"	-	candidates,hiddenOutside,missing,namedExcluded,skipped,unlistableOutside,unlistableOutsideRoot	-
 src/Analysis/Run/Discovery/WalkedEntrySelection.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntrySelection	Analysis.Run	"request scratch or mutable internal value"	-	visited	-
 src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger	Analysis.Run	"request scratch or mutable internal value"	-	bound,phpEvidence,removed,removedSubtrees,unjudgeable	bind
+src/Core/FileTarget/HeldLock.php	Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	"request scratch or mutable internal value"	-	handle	-
+src/Core/FileTarget/HeldTarget.php	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	"request scratch or mutable internal value"	-	created,handle	-
+src/Core/FileTarget/ProcessOwner.php	Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	"process-wide static"	byDevice	-	-
+src/Core/FileTarget/TemporarySibling.php	Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	"request scratch or mutable internal value"	-	handle,path	-
 src/Core/Symbol/FileDeclarationIndex.php	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	"request scratch or mutable internal value"	-	positions	register
 src/Core/Symbol/PhpBuiltinClassRegistry.php	Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	"process-wide static"	byFoldedName	-	-
 src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	"adapter session or cache"	-	resolvedCache	-
