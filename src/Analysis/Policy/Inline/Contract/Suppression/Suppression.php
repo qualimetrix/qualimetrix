@@ -51,12 +51,23 @@ final readonly class Suppression
         public ?string $reason,
         public int $line,
         public SuppressionType $type,
+        public int $position,
         public ?DeclarationBinding $binding = null,
         public ?DirectiveRefusal $refusal = null,
+        public ?int $silencedLine = null,
     ) {
+        if ($position < 0) {
+            throw new InvalidArgumentException('A suppression position must be non-negative');
+        }
+
         $isSymbolControl = $type === SuppressionType::Symbol && $refusal === null;
         if ($isSymbolControl !== ($binding !== null)) {
             throw new InvalidArgumentException('Symbol suppressions require a declaration binding; physical and refused suppressions require none');
+        }
+
+        $requiresSilencedLine = $type === SuppressionType::NextLine && $refusal === null;
+        if ($requiresSilencedLine !== ($silencedLine !== null)) {
+            throw new InvalidArgumentException('A carried next-line suppression requires its silenced line, and no other suppression may carry one');
         }
 
         $this->target = SuppressionTarget::fromAnnotation($rule);

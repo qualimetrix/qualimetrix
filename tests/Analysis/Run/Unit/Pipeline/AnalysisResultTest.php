@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -303,15 +304,17 @@ final class AnalysisResultTest extends TestCase
             null,
             10,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding($sharedSubject, ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($sharedSubject, ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
-        $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine);
+        $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine, position: 0, silencedLine: 20 + 1);
         $suppression3 = new Suppression(
             'cohesion.lcom',
             null,
             30,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding(MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding(MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         $result1 = AnalysisResult::fromRun(

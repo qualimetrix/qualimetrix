@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -514,7 +515,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('nope.nothing', null, 10, SuppressionType::File)]],
+            [self::FILE => [new Suppression('nope.nothing', null, 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -604,6 +605,7 @@ final class UnusedDirectiveRuleTest extends TestCase
                 subject: $subject,
                 rulePattern: 'complexity.ccn',
                 message: '@qmx-threshold complexity.ccn: invalid syntax',
+                position: 0,
             );
         }
         $policy->prepare([], [self::FILE => $overrides], [self::FILE => $diagnostics]);
@@ -637,7 +639,8 @@ final class UnusedDirectiveRuleTest extends TestCase
                 'reason',
                 $line,
                 SuppressionType::Symbol,
-                binding: new DeclarationBinding($subject, ControlScope::Class_),
+                position: 0,
+                binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
             ),
             self::boundSubjects(),
         );
@@ -664,7 +667,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         $identity ??= self::productionUniverse();
         $policy = self::policy($identity);
         $policy->prepare(
-            [self::FILE => [new Suppression($authored, 'reason', 10, SuppressionType::File)]],
+            [self::FILE => [new Suppression($authored, 'reason', 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );

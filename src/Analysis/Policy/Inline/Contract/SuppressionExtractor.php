@@ -11,6 +11,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
@@ -116,9 +117,14 @@ final readonly class SuppressionExtractor
      *
      * @return list<Suppression>
      */
-    public function extract(Node $node, MetricSubject $subject, ControlScope $controlScope, Closure $thresholdRead): array
-    {
-        return $this->extractNode($node, $subject, $controlScope, self::MODE_FULL, $thresholdRead);
+    public function extract(
+        Node $node,
+        MetricSubject $subject,
+        ControlScope $controlScope,
+        DeclarationReach $reach,
+        Closure $thresholdRead,
+    ): array {
+        return $this->extractNode($node, $subject, $controlScope, $reach, self::MODE_FULL, $thresholdRead);
     }
 
     /**
@@ -138,7 +144,7 @@ final readonly class SuppressionExtractor
      */
     public function extractPhysical(Node $node, Closure $thresholdRead): array
     {
-        return $this->extractNode($node, null, null, self::MODE_PHYSICAL, $thresholdRead);
+        return $this->extractNode($node, null, null, null, self::MODE_PHYSICAL, $thresholdRead);
     }
 
     /**
@@ -148,7 +154,7 @@ final readonly class SuppressionExtractor
      */
     public function extractFileLevelSuppressions(Node $node): array
     {
-        return $this->extractNode($node, null, null, self::MODE_FILE_ONLY, static fn(): bool => true);
+        return $this->extractNode($node, null, null, null, self::MODE_FILE_ONLY, static fn(): bool => true);
     }
 
     /**
@@ -163,11 +169,11 @@ final readonly class SuppressionExtractor
         Node $node,
         ?MetricSubject $subject,
         ?ControlScope $controlScope,
+        ?DeclarationReach $reach,
         string $mode,
         Closure $thresholdRead,
     ): array {
         $suppressions = [];
-        $nodeEndLine = $node->getEndLine() > 0 ? $node->getEndLine() : null;
 
         foreach (self::commentsOf($node) as $comment) {
             $text = DocumentationRegions::mask($comment->getText());
@@ -179,7 +185,8 @@ final readonly class SuppressionExtractor
                     $match,
                     $comment->getStartLine(),
                     $comment->getEndLine(),
-                    $nodeEndLine,
+                    self::positionAtOffset($comment, $match['offset']),
+                    $reach,
                     $subject,
                     $controlScope,
                     $mode,
@@ -297,6 +304,7 @@ final readonly class SuppressionExtractor
                 reason: null,
                 line: self::lineAtOffset($text, $comment->getStartLine(), $offset),
                 type: SuppressionType::Symbol,
+                position: self::positionAtOffset($comment, $offset),
                 refusal: $isThreshold && !$comment instanceof Doc
                     ? DirectiveRefusal::thresholdOutsideDocblock()
                     : DirectiveRefusal::ofUnreadTag($tag, $argument),
@@ -309,6 +317,16 @@ final readonly class SuppressionExtractor
     private static function lineAtOffset(string $text, int $startLine, int $offset): int
     {
         return $startLine + substr_count(substr($text, 0, $offset), "\n");
+    }
+
+    private static function positionAtOffset(Comment $comment, int $offset): int
+    {
+        $start = $comment->getStartFilePos();
+        if ($start < 0) {
+            throw new LogicException('A comment without a file position cannot name a directive site');
+        }
+
+        return $start + $offset;
     }
 
     /**
@@ -357,7 +375,8 @@ final readonly class SuppressionExtractor
         array $match,
         int $startLine,
         int $endLine,
-        ?int $nodeEndLine,
+        int $position,
+        ?DeclarationReach $reach,
         ?MetricSubject $subject,
         ?ControlScope $controlScope,
         string $mode,
@@ -372,12 +391,13 @@ final readonly class SuppressionExtractor
                 reason: $match['reason'],
                 line: $startLine,
                 type: SuppressionType::Symbol,
+                position: $position,
                 refusal: DirectiveRefusal::noDeclarationToBind(),
             );
         }
 
         if ($match['type'] === SuppressionType::Symbol) {
-            if ($subject === null || $controlScope === null) {
+            if ($subject === null || $controlScope === null || $reach === null) {
                 throw new LogicException('Symbol suppression requires an explicit declaration binding');
             }
 
@@ -386,7 +406,8 @@ final readonly class SuppressionExtractor
                 reason: $match['reason'],
                 line: $startLine,
                 type: SuppressionType::Symbol,
-                binding: new DeclarationBinding($subject, $controlScope, $nodeEndLine),
+                position: $position,
+                binding: new DeclarationBinding($subject, $controlScope, $reach),
             );
         }
 
@@ -395,6 +416,8 @@ final readonly class SuppressionExtractor
             reason: $match['reason'],
             line: $match['type'] === SuppressionType::File ? $startLine : $endLine,
             type: $match['type'],
+            position: $position,
+            silencedLine: $match['type'] === SuppressionType::NextLine ? $endLine + 1 : null,
         );
     }
 

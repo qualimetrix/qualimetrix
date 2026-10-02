@@ -29,6 +29,7 @@ final readonly class ThresholdDiagnostic
         public MetricSubject $subject,
         public string $rulePattern,
         public string $message,
+        public int $position,
         public ?string $code = null,
         public ?string $hint = null,
     ) {}

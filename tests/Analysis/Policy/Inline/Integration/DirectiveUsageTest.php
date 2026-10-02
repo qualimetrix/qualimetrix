@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
@@ -190,8 +191,8 @@ final class DirectiveUsageTest extends TestCase
     public function itKeepsTwoDirectiveFormsWrittenOnOneLineApart(): void
     {
         $verdicts = self::usage()->verdicts([self::FILE => [
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File),
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 0),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine, position: 0, silencedLine: 7 + 1),
         ]], [], LevelActivity::empty());
 
         self::assertCount(2, $verdicts);
@@ -211,7 +212,7 @@ final class DirectiveUsageTest extends TestCase
     public function itCarriesTheSiteTheDirectiveWasWrittenAt(): void
     {
         $verdicts = self::usage()->verdicts(
-            ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File)]],
+            ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File, position: 0)]],
             [],
             LevelActivity::empty(),
         );
@@ -232,8 +233,8 @@ final class DirectiveUsageTest extends TestCase
     {
         $directives = [self::FILE => [
             ...self::classDocblockBindings(self::CHANNEL),
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File),
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 0),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine, position: 0, silencedLine: 7 + 1),
         ]];
 
         $policy = new InlineDirectivePolicy(self::usage());
@@ -263,9 +264,9 @@ final class DirectiveUsageTest extends TestCase
     public function itProjectsExactlyTheInertVerdictsIntoStaleFindings(): void
     {
         $directives = [self::FILE => [
-            new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File),
-            new Suppression(SuppressionTarget::NO_RULE_FILTER, 'reason', 4, SuppressionType::File),
-            new Suppression('complexity.ccn', 'reason', 5, SuppressionType::File),
+            new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File, position: 0),
+            new Suppression(SuppressionTarget::NO_RULE_FILTER, 'reason', 4, SuppressionType::File, position: 0),
+            new Suppression('complexity.ccn', 'reason', 5, SuppressionType::File, position: 0),
         ]];
         $usage = self::usage();
 
@@ -304,6 +305,7 @@ final class DirectiveUsageTest extends TestCase
             null,
             3,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         )]];
 
@@ -322,6 +324,7 @@ final class DirectiveUsageTest extends TestCase
             null,
             3,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
         )]];
 
@@ -341,9 +344,9 @@ final class DirectiveUsageTest extends TestCase
     public function itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart(): void
     {
         $directives = [self::FILE => [
-            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lines')),
-            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lins')),
-            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::noDeclarationToBind()),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::formNotRecognised('ignore-lines')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::formNotRecognised('ignore-lins')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::noDeclarationToBind()),
         ]];
 
         $policy = new InlineDirectivePolicy(self::usage());
@@ -361,7 +364,7 @@ final class DirectiveUsageTest extends TestCase
     /** @return array<string, list<Suppression>> */
     private static function fileDirective(string $authored): array
     {
-        return [self::FILE => [new Suppression($authored, 'reason', 3, SuppressionType::File)]];
+        return [self::FILE => [new Suppression($authored, 'reason', 3, SuppressionType::File, position: 0)]];
     }
 
     /**
@@ -393,7 +396,8 @@ final class DirectiveUsageTest extends TestCase
                 'reason',
                 4,
                 SuppressionType::Symbol,
-                binding: new DeclarationBinding($subject, ControlScope::Class_),
+                position: 0,
+                binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
             ),
             $subjects,
         );

@@ -183,7 +183,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
         }
 
         return $finding->location->line !== null
-            && $finding->location->line === $suppression->line + 1;
+            && $finding->location->line === $suppression->silencedLine;
     }
 
     /**

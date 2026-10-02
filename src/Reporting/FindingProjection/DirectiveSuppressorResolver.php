@@ -81,7 +81,7 @@ final readonly class DirectiveSuppressorResolver
                 continue;
             }
 
-            if ($suppression->type->value === 'file' || $finding->location->line === $suppression->line + 1) {
+            if ($suppression->type->value === 'file' || $finding->location->line === $suppression->silencedLine) {
                 return $file . ':' . $suppression->line;
             }
         }

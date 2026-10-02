@@ -18,6 +18,7 @@ final readonly class DeclaredOverrideForms
         private RuleOptionForms $forms,
         private string $rulePattern,
         private int $line,
+        private int $position,
         private MetricSubject $subject,
     ) {}
 
@@ -50,6 +51,7 @@ final readonly class DeclaredOverrideForms
                 line: $this->line,
                 subject: $this->subject,
                 rulePattern: $this->rulePattern,
+                position: $this->position,
                 code: 'unsupported_' . $axis->value . '_axis',
                 message: \sprintf('@qmx-threshold %s: %s threshold has no declared override form%s', $this->rulePattern, $axis->value, $level === null ? '' : ' at ' . $level . ' level'),
             );
@@ -60,6 +62,7 @@ final readonly class DeclaredOverrideForms
                 line: $this->line,
                 subject: $this->subject,
                 rulePattern: $this->rulePattern,
+                position: $this->position,
                 code: 'invalid_' . $axis->value . '_form',
                 message: \sprintf('@qmx-threshold %s: %s threshold%s must be %s (got %s)', $this->rulePattern, $axis->value, $level === null ? '' : ' at ' . $level . ' level', $form->describe(), $value),
             );

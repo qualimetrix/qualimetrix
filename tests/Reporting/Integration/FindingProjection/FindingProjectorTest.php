@@ -150,7 +150,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Service/UserService.php' => [
-                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -181,7 +181,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Service/UserService.php' => [
-                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -511,7 +511,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Service/UserService.php' => [
-                new Suppression(rule: '*', reason: 'Ignoring for now', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Ignoring for now', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -997,7 +997,7 @@ final class FindingProjectorTest extends TestCase
 
     private static function ignoreLine20(): Suppression
     {
-        return new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 20, type: SuppressionType::NextLine);
+        return new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 20, type: SuppressionType::NextLine, position: 0, silencedLine: 20 + 1);
     }
 
     /**

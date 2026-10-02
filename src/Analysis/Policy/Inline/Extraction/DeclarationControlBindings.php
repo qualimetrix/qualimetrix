@@ -171,6 +171,30 @@ final readonly class DeclarationControlBindings
         return $this->callablesBeginningWith($node);
     }
 
+    /** Human-readable source construct on which an authored directive stands. */
+    public static function describe(Node $node): string
+    {
+        $directCallable = self::directAnonymousCallable($node);
+        if ($directCallable !== null) {
+            return 'closure at line ' . $directCallable->getStartLine();
+        }
+
+        return match (true) {
+            $node instanceof Node\Stmt\Class_ => 'class ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
+            $node instanceof Node\Stmt\Interface_ => 'interface ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
+            $node instanceof Node\Stmt\Trait_ => 'trait ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
+            $node instanceof Node\Stmt\Enum_ => 'enum ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
+            $node instanceof Node\Stmt\ClassMethod => 'method ' . $node->name->toString(),
+            $node instanceof Node\Stmt\Function_ => 'function ' . $node->name->toString(),
+            $node instanceof Node\PropertyHook => 'hook ' . $node->name->toString(),
+            $node instanceof Node\Stmt\Property => self::propertyDescription($node),
+            $node instanceof Node\Stmt\ClassConst => self::constantDescription($node),
+            $node instanceof Node\Stmt\EnumCase => 'case ' . $node->name->toString(),
+            $node instanceof Node\Param => self::parameterDescription($node),
+            default => 'source construct at line ' . $node->getStartLine(),
+        };
+    }
+
     /**
      * The measured callables that begin where the node begins.
      *
@@ -359,6 +383,51 @@ final readonly class DeclarationControlBindings
     private static function isClassLike(Node $node): bool
     {
         return \in_array($node->getType(), self::CLASS_LIKE_TYPES, true);
+    }
+
+    private static function directAnonymousCallable(Node $node): Node\Expr\Closure|Node\Expr\ArrowFunction|null
+    {
+        if ($node instanceof Node\Expr\Closure || $node instanceof Node\Expr\ArrowFunction) {
+            return $node;
+        }
+
+        $start = $node->getStartFilePos();
+        if ($start < 0) {
+            return null;
+        }
+
+        $callable = (new NodeFinder())->findFirst(
+            $node,
+            static fn(Node $candidate): bool => ($candidate instanceof Node\Expr\Closure || $candidate instanceof Node\Expr\ArrowFunction)
+                && $candidate->getStartFilePos() === $start,
+        );
+
+        return $callable instanceof Node\Expr\Closure || $callable instanceof Node\Expr\ArrowFunction
+            ? $callable
+            : null;
+    }
+
+    private static function propertyDescription(Node\Stmt\Property $property): string
+    {
+        $name = $property->props[0]->name->toString();
+
+        return 'property $' . $name;
+    }
+
+    private static function constantDescription(Node\Stmt\ClassConst $constant): string
+    {
+        $name = $constant->consts[0]->name->toString();
+
+        return 'constant ' . $name;
+    }
+
+    private static function parameterDescription(Node\Param $parameter): string
+    {
+        $name = $parameter->var instanceof Node\Expr\Variable && \is_string($parameter->var->name)
+            ? $parameter->var->name
+            : '';
+
+        return 'parameter $' . $name;
     }
 
 }

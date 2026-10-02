@@ -347,7 +347,7 @@ final class ChannelCoverageTest extends TestCase
         $policy->prepare(
             [
                 $file => [
-                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File),
+                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File, position: 0),
                 ],
             ],
             [
@@ -369,6 +369,7 @@ final class ChannelCoverageTest extends TestCase
                         subject: $subject,
                         message: '@qmx-threshold complexity.ccn: warning (20) must not exceed error (10)',
                         rulePattern: 'complexity.ccn',
+                        position: 0,
                         code: 'warning_exceeds_error',
                     ),
                 ],
@@ -404,7 +405,7 @@ final class ChannelCoverageTest extends TestCase
 
         $policy = self::directivePolicy();
         $policy->prepare(
-            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File)]],
+            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );

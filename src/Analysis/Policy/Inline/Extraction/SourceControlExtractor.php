@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -122,8 +123,12 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
                 continue;
             }
 
+            $reach = DeclarationReach::whole(
+                $node->getEndLine() > 0 ? $node->getEndLine() : null,
+                DeclarationControlBindings::describe($node),
+            );
             foreach ($nodeBindings as $binding) {
-                array_push($suppressions, ...$extractor->extract($node, $binding['subject'], $binding['scope'], $thresholdRead));
+                array_push($suppressions, ...$extractor->extract($node, $binding['subject'], $binding['scope'], $reach, $thresholdRead));
             }
         }
 
@@ -249,7 +254,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
                 $suppression->authoredSite(),
                 $suppression->type->value,
                 $suppression->reason ?? '',
-                (string) ($suppression->binding->endLine ?? -1),
+                $suppression->binding?->reach->key() ?? '',
                 $suppression->binding?->subject->toCanonical() ?? '',
                 self::scopeKey($suppression->binding?->controlScope),
             ])] = $suppression;

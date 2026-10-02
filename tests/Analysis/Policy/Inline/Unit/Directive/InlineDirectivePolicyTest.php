@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -75,7 +76,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -90,7 +91,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 10, SuppressionType::NextLine)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1)]],
             [],
             [],
         );
@@ -116,7 +117,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $policy = self::policy($configuration, disabled: ['code-smell.goto']);
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -139,7 +140,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $policy = self::policy($configuration);
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -156,7 +157,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $policy = self::policy($configuration, rules: ['code-smell.goto' => ['enabled' => true]]);
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -176,7 +177,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -214,7 +215,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto:project', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto:project', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -228,7 +229,7 @@ final class InlineDirectivePolicyTest extends TestCase
     public function itNeverReportsTheNoRuleFilterForm(): void
     {
         $policy = self::policy();
-        $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File)]], [], []);
+        $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File, position: 0)]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
         self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
@@ -293,7 +294,8 @@ final class InlineDirectivePolicyTest extends TestCase
             'reason',
             10,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding(self::declarationSubject(), ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding(self::declarationSubject(), ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         );
     }
 

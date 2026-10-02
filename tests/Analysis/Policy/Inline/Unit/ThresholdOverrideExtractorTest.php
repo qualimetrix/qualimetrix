@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -62,6 +63,18 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(15, $overrides[0]->error);
         self::assertSame(11, $overrides[0]->line);
         self::assertSame(50, $overrides[0]->endLine);
+    }
+
+    #[Test]
+    public function itRejectsAThresholdCommentWithoutAFilePosition(): void
+    {
+        $node = new Class_('TestClass');
+        $node->setDocComment(new Doc('/** @qmx-threshold complexity.ccn 15 */', 10));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('A comment without a file position cannot name a directive site');
+
+        $this->extract($node);
     }
 
     /**
@@ -216,6 +229,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(1, $result->diagnostics);
         self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
         self::assertSame(11, $result->diagnostics[0]->line);
+        self::assertSame(17, $result->diagnostics[0]->position);
         self::assertSame('invalid_warning_form', $result->diagnostics[0]->code);
         self::assertStringContainsString('integer at least 0', $result->diagnostics[0]->message);
         self::assertStringContainsString('40.5', $result->diagnostics[0]->message);
@@ -255,6 +269,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(1, $result->diagnostics);
         self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
         self::assertSame(22, $result->diagnostics[0]->line);
+        self::assertSame(69, $result->diagnostics[0]->position);
         self::assertSame('invalid_error_form', $result->diagnostics[0]->code);
     }
 
@@ -495,6 +510,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
         self::assertSame(11, $result->diagnostics[0]->line);
+        self::assertSame(17, $result->diagnostics[0]->position);
         self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
         self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
         self::assertStringContainsString('complexity.ccn', $result->diagnostics[0]->message);
@@ -609,6 +625,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
         self::assertSame(11, $result->diagnostics[0]->line);
+        self::assertSame(17, $result->diagnostics[0]->position);
         self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
         self::assertStringContainsString('warning threshold (25) must not exceed error threshold (10)', $result->diagnostics[0]->message);
     }
@@ -653,6 +670,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(15, $result->overrides[0]->warning);
         self::assertCount(1, $result->diagnostics);
         self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
+        self::assertSame(53, $result->diagnostics[0]->position);
         self::assertStringContainsString('duplicate annotation', $result->diagnostics[0]->message);
         self::assertStringContainsString('complexity.ccn', $result->diagnostics[0]->message);
     }

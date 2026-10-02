@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls;
@@ -91,7 +92,9 @@ final class SourceControlExtractorTest extends TestCase
         self::assertContains(SuppressionType::NextLine, array_map(static fn($suppression): SuppressionType => $suppression->type, $controls->suppressions));
         $symbol = array_values(array_filter($controls->suppressions, static fn($suppression): bool => $suppression->type === SuppressionType::Symbol));
         self::assertCount(1, $symbol);
-        self::assertSame($run->toCanonical(), $symbol[0]->binding?->subject->toCanonical());
+        self::assertNotNull($symbol[0]->binding);
+        self::assertSame($run->toCanonical(), $symbol[0]->binding->subject->toCanonical());
+        self::assertSame('method run', $symbol[0]->binding->reach->describe());
         self::assertCount(0, $controls->thresholdOverrides);
         self::assertCount(1, $controls->thresholdDiagnostics);
         self::assertSame($invalid->toCanonical(), $controls->thresholdDiagnostics[0]->subject->toCanonical());
@@ -106,8 +109,8 @@ final class SourceControlExtractorTest extends TestCase
             1,
             new MetricBag(),
         )->subject;
-        $classControl = new Suppression('complexity.ccn', 'reason', 4, SuppressionType::Symbol, new DeclarationBinding($subject, ControlScope::Class_, 12));
-        $callableControl = new Suppression('complexity.ccn', 'reason', 4, SuppressionType::Symbol, new DeclarationBinding($subject, ControlScope::Callable, 12));
+        $classControl = new Suppression('complexity.ccn', 'reason', 4, SuppressionType::Symbol, 0, new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(12, 'test')));
+        $callableControl = new Suppression('complexity.ccn', 'reason', 4, SuppressionType::Symbol, 0, new DeclarationBinding($subject, ControlScope::Callable, DeclarationReach::whole(12, 'test')));
         $method = new ReflectionMethod(SourceControlExtractor::class, 'deduplicate');
 
         /** @var list<Suppression> $deduplicated */

@@ -203,6 +203,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
         ));
 
@@ -228,6 +229,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::namesNoTarget($form),
         ));
 
@@ -253,6 +255,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::thresholdWithNoDeclarationToBind(),
         ));
         $outsideDocblock = self::addressability()->problemWithSuppression(new Suppression(
@@ -260,6 +263,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::thresholdOutsideDocblock(),
         ));
 
@@ -278,6 +282,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         ));
 
@@ -299,6 +304,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         ));
 
@@ -348,7 +354,7 @@ final class DirectiveAddressabilityTest extends TestCase
 
     private static function suppression(string $rule): Suppression
     {
-        return new Suppression($rule, null, 1, SuppressionType::File);
+        return new Suppression($rule, null, 1, SuppressionType::File, position: 0);
     }
 
     private static function declarationSubject(): MetricSubject
