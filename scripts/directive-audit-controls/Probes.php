@@ -975,6 +975,7 @@ final class Probes
                 'every case of the command reads the coverage the pipeline hands back, so emptying it moves the whole rendered report, not one line of it',
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
@@ -1531,7 +1532,8 @@ final class Probes
                 'the verdict names a line other than the one the author wrote on',
                 self::USAGE,
                 ['                            line: $directive->line,' => '                            line: 1,'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itCarriesTheSiteTheDirectiveWasWrittenAt'],
+                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itCarriesTheSiteTheDirectiveWasWrittenAt',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites'],
             )->alsoReddens(
                 'the site is the identity a verdict is grouped, projected and refused by, so moving it moves each of those',
                 [
@@ -1543,18 +1545,20 @@ final class Probes
             ),
             Probe::breaking(
                 'grouping-ignores-the-tag',
-                'two directive forms written on one line are counted as one authored site',
+                'different directive forms or byte positions on one line are counted as one authored site',
                 self::USAGE,
                 // The usage's own grouping line, not `Suppression::authoredSite()`:
                 // the policy reads that key too, so breaking it there keeps the
                 // two readers in agreement and the agreement case cannot see it.
-                // The replacement is the key without the form and nothing else.
+                // The replacement omits the form and the authored byte position.
                 ['            $groups[$suppression->authoredSite()][] = $suppression;'
                     => '            $groups[implode("\0", [(string) $suppression->line, $suppression->rule,'
                     . ' $suppression->refusal->reason->value ?? \'\'])][] = $suppression;'],
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart',
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsIdenticalSuppressionsFromTwoPositionsOnOneLineApart',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites',
                 ],
             )->alsoReddens(
                 'the grouping this breaks is the one the policy-agreement case reads as well',
@@ -1955,6 +1959,7 @@ final class Probes
                 'every JSON case of the command decodes stdout as one document, and a trailing line makes none of them parse',
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAcceptsAnExplicitFullSweep',
