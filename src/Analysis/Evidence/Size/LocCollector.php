@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Size;
 
+use LogicException;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -36,7 +38,7 @@ use SplFileInfo;
  * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are
  * comments/whitespace count as CLOC.
  */
-final class LocCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface, NamespaceMetricProviderInterface
+final class LocCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface, NamespaceMetricProviderInterface, SourceMeasuringCollectorInterface
 {
     use DeclarationIndexAwareTrait;
 
@@ -44,6 +46,13 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
 
     /** @var list<NamespaceWithMetrics> */
     private array $namespaceMetrics = [];
+
+    private ?string $source = null;
+
+    public function measureSource(string $source): void
+    {
+        $this->source = $source;
+    }
 
     public function __construct()
     {
@@ -73,21 +82,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
      */
     public function collect(SplFileInfo $file, array $ast): MetricBag
     {
-        if (!$file->isFile() || !$file->isReadable()) {
-            return (new MetricBag())
-                ->with(MetricName::SIZE_LOC, 0)
-                ->with(MetricName::SIZE_LLOC, 0)
-                ->with(MetricName::SIZE_CLOC, 0);
-        }
-
-        $content = file_get_contents($file->getPathname());
-
-        if ($content === false) {
-            return (new MetricBag())
-                ->with(MetricName::SIZE_LOC, 0)
-                ->with(MetricName::SIZE_LLOC, 0)
-                ->with(MetricName::SIZE_CLOC, 0);
-        }
+        $content = $this->source ?? throw new LogicException('Source bytes must be measured before LOC collection');
 
         $metrics = $this->calculateMetrics($content);
         $this->namespaceMetrics = $this->calculateNamespaceMetrics($content);
@@ -120,6 +115,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
     {
         parent::reset();
         $this->namespaceMetrics = [];
+        $this->source = null;
     }
 
     /**

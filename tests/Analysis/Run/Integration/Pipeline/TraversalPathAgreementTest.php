@@ -83,7 +83,7 @@ final class TraversalPathAgreementTest extends TestCase
     private function edgeSourcesFromCheckPath(): array
     {
         $file = new SplFileInfo($this->root . '/src/Dup.php');
-        $ast = (new PhpFileParser())->parse($file);
+        $ast = (new PhpFileParser())->parseContent($file, (string) file_get_contents($file->getPathname()));
         $collector = new CompositeCollector([], new DeclarationRegistrarFactory(), [], new DependencyVisitor());
 
         return self::canonicalSources(

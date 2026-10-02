@@ -54,11 +54,14 @@ use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
@@ -99,6 +102,7 @@ use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
+use ReflectionMethod;
 use ReflectionProperty;
 use SplFileInfo;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -126,6 +130,43 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     protected function setUp(): void
     {
         $this->profiler = new ProfileSession();
+    }
+
+    #[Test]
+    public function itMapsEveryCollectionFailureKindToItsCoverageFailureKind(): void
+    {
+        $paths = [
+            RelativePath::fromString('parse.php'),
+            RelativePath::fromString('unreadable.php'),
+            RelativePath::fromString('processing.php'),
+        ];
+        $failures = [
+            FileProcessingResult::failure($paths[0], 'parse error', FileProcessingFailureKind::Parse),
+            FileProcessingResult::failure($paths[1], 'read error', FileProcessingFailureKind::UnreadableFile),
+            FileProcessingResult::failure($paths[2], 'processing error', FileProcessingFailureKind::Processing),
+        ];
+
+        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+            null,
+            $paths,
+            [],
+            new CollectionPhaseOutput([], $failures),
+            [],
+            [],
+            AbsolutePath::fromString(sys_get_temp_dir()),
+        );
+
+        self::assertSame(3, $coverage->failedFilesCount());
+        $mapped = [];
+        foreach ($coverage->failures as $failure) {
+            $mapped[$failure->path->value()] = [$failure->kind, $failure->message];
+        }
+        ksort($mapped);
+        self::assertSame([
+            'parse.php' => [AnalysisFailureKind::Parse, 'parse error'],
+            'processing.php' => [AnalysisFailureKind::Processing, 'processing error'],
+            'unreadable.php' => [AnalysisFailureKind::UnreadableFile, 'read error'],
+        ], $mapped);
     }
 
     /**
@@ -710,13 +751,6 @@ PHP);
                 public function __construct()
                 {
                     $this->parser = new PhpFileParser();
-                }
-
-                public function parse(SplFileInfo $file): array
-                {
-                    ++$this->parsed;
-
-                    return $this->parser->parse($file);
                 }
 
                 public function parseContent(SplFileInfo $file, string $content): array

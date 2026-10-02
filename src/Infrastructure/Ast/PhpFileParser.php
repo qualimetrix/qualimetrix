@@ -30,41 +30,6 @@ final class PhpFileParser implements FileParserInterface
     }
 
     /**
-     * @throws ParseException
-     *
-     * @return Node[]
-     */
-    public function parse(SplFileInfo $file): array
-    {
-        $filePath = $file->getPathname();
-        $absolutePath = $this->resolveAbsolutePath($file);
-
-        if (!$file->isFile()) {
-            $this->logger->warning('File does not exist or is not a regular file', [
-                'file' => $filePath,
-            ]);
-            throw new ParseException($absolutePath, 'File does not exist or is not a regular file');
-        }
-
-        if (!$file->isReadable()) {
-            $this->logger->warning('File is not readable', [
-                'file' => $filePath,
-            ]);
-            throw new ParseException($absolutePath, 'File is not readable');
-        }
-
-        $content = @file_get_contents($filePath);
-        if ($content === false) {
-            $this->logger->warning('Failed to read file contents', [
-                'file' => $filePath,
-            ]);
-            throw new ParseException($absolutePath, 'Failed to read file contents');
-        }
-
-        return $this->parseContent($file, $content);
-    }
-
-    /**
      * @return Node[]
      */
     public function parseContent(SplFileInfo $file, string $content): array
@@ -103,27 +68,10 @@ final class PhpFileParser implements FileParserInterface
     }
 
     /**
-     * Resolves the parser's view of the file to an absolute path.
-     *
-     * SplFileInfo may carry a relative path when callers pass relative
-     * arguments (e.g. `bin/qmx check src/`). The {@see ParseException}
-     * identity is the absolute path of the file we tried to read, so the
-     * resolution happens eagerly:
-     * 1. `getRealPath()` for real files (handles `.`, `..`, symlinks).
-     * 2. Bare {@see SplFileInfo::getPathname()} as fallback (broken symlink,
-     *    non-existent path, race).
-     * 3. Prepend {@see getcwd()} if the result is still relative — keeps the
-     *    AbsolutePath invariant ("starts with /") without touching the disk.
+     * The caller provides the absolute identity of the source snapshot.
      */
     private function resolveAbsolutePath(SplFileInfo $file): AbsolutePath
     {
-        $realPath = $file->isFile() ? $file->getRealPath() : false;
-        $resolvedPath = $realPath !== false ? $realPath : $file->getPathname();
-
-        if (str_starts_with($resolvedPath, '/')) {
-            return AbsolutePath::fromString($resolvedPath);
-        }
-
-        return AbsolutePath::fromString(((string) getcwd()) . '/' . $resolvedPath);
+        return AbsolutePath::fromString($file->getPathname());
     }
 }

@@ -393,6 +393,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                     $failure->filePath,
                     match ($failure->failureKind()) {
                         FileProcessingFailureKind::Parse => AnalysisFailureKind::Parse,
+                        FileProcessingFailureKind::UnreadableFile => AnalysisFailureKind::UnreadableFile,
                         FileProcessingFailureKind::Processing => AnalysisFailureKind::Processing,
                     },
                     $failure->error(),

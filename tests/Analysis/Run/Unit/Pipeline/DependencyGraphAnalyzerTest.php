@@ -14,12 +14,15 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
 use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
@@ -128,15 +131,6 @@ PHP);
                 private readonly string $processingFailure,
             ) {}
 
-            public function parse(SplFileInfo $file): array
-            {
-                if ($file->getPathname() === $this->processingFailure) {
-                    throw new RuntimeException('Synthetic processing failure');
-                }
-
-                return $this->delegate->parse($file);
-            }
-
             public function parseContent(SplFileInfo $file, string $content): array
             {
                 if ($file->getPathname() === $this->processingFailure) {
@@ -174,7 +168,7 @@ PHP);
     {
         symlink($this->tempDir, $this->tempDir . '/Link.php');
         $parser = $this->createMock(FileParserInterface::class);
-        $parser->expects(self::never())->method('parse');
+        $parser->expects(self::never())->method('parseContent');
 
         $result = $this->createAnalyzer($parser)->analyze($this->configuration());
 
@@ -182,6 +176,39 @@ PHP);
         self::assertSame(0, $result->coverage->analyzedFilesCount());
         self::assertSame(1, $result->coverage->failedFilesCount());
         self::assertSame(AnalysisFailureKind::DirectorySymlink, $result->coverage->failures[0]->kind);
+    }
+
+    #[Test]
+    public function itReportsADeletedCandidateAsUnreadableBeforeParsing(): void
+    {
+        $path = $this->tempDir . '/Deleted.php';
+        $projectFiles = self::createStub(ProjectFilesInterface::class);
+        $projectFiles->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo($path)],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
+        $parser = $this->createMock(FileParserInterface::class);
+        $parser->expects(self::never())->method('parseContent');
+        $analyzer = new DependencyGraphAnalyzer(
+            $projectFiles,
+            $parser,
+            new DependencyVisitor(new DependencyResolver()),
+            AdjacencyGraphBuilder::builder(),
+            new DeclarationRegistrarFactory(),
+        );
+
+        $result = $analyzer->analyze($this->configuration());
+
+        self::assertFalse($result->coverage->isComplete());
+        self::assertSame(1, $result->coverage->failedFilesCount());
+        self::assertSame(AnalysisFailureKind::UnreadableFile, $result->coverage->failures[0]->kind);
+        self::assertSame('Deleted.php', $result->coverage->failures[0]->path->value());
+        self::assertSame([], $result->graph->getAllDependencies());
     }
 
     private function createAnalyzer(FileParserInterface $parser): DependencyGraphAnalyzer
@@ -204,17 +231,6 @@ PHP);
     private function parser(): FileParserInterface
     {
         return new class implements FileParserInterface {
-            /** @return list<Node> */
-            public function parse(SplFileInfo $file): array
-            {
-                $content = file_get_contents($file->getPathname());
-                if ($content === false) {
-                    throw new RuntimeException('Unable to read test fixture');
-                }
-
-                return $this->parseContent($file, $content);
-            }
-
             /** @return list<Node> */
             public function parseContent(SplFileInfo $file, string $content): array
             {

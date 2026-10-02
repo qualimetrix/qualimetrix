@@ -12,6 +12,8 @@ interface FileMeasurementCollectorInterface
 {
     public function reset(): void;
 
+    public function measureSource(string $source): void;
+
     /** @param array<Node> $nodes */
     public function collect(SplFileInfo $file, array $nodes, RelativePath $filePath): CollectionOutput;
 

@@ -13,6 +13,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
+use Qualimetrix\Analysis\Run\Collection\SourceReader;
+use Qualimetrix\Analysis\Run\Collection\UnreadableSource;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
@@ -35,13 +37,17 @@ use Throwable;
  */
 final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerInterface
 {
+    private SourceReader $sourceReader;
+
     public function __construct(
         private ProjectFilesInterface $projectFiles,
         private FileParserInterface $fileParser,
         private DependencyTraversalParticipantInterface $dependencyVisitor,
         private DependencyGraphBuilderInterface $graphBuilder,
         private DeclarationRegistrarFactory $declarationRegistrarFactory,
-    ) {}
+    ) {
+        $this->sourceReader = new SourceReader();
+    }
 
     public function analyze(RunConfiguration $configuration): DependencyGraphAnalysisResult
     {
@@ -58,8 +64,15 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         foreach ($files as $file) {
             $path = PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot);
 
+            $source = $this->sourceReader->read($file);
+            if ($source instanceof UnreadableSource) {
+                $failures[] = new AnalysisFailure($path, AnalysisFailureKind::UnreadableFile, $source->reason);
+
+                continue;
+            }
+
             try {
-                $ast = $this->fileParser->parse($file);
+                $ast = $this->fileParser->parseContent($file, $source);
                 $traverser = new NodeTraverser();
                 $registrar = $this->beginNumbering($traverser);
                 $traverser->addVisitor($this->dependencyVisitor);
