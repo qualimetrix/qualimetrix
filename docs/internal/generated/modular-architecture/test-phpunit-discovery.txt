@@ -9212,14 +9212,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceForPossibleHiddenRegexMatch
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPrefersOtherSourceWhenTheHiddenSelectorHasMixedHistory
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itPublishesWalkedDirectoryLinksToTheRootAndOutsideByTheirWrittenNames
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRecordsAChildStatFailureAndKeepsItsSiblingsAndBlockedSelector
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRecordsANamedDirectoryAliasRemovedByAnExcludeAsHidden
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesANamedFileLinkToANamedPipeBeforeOpeningIt
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesAReadableNamedDirectoryWithoutSearchPermissionAndClassifiesItsChild
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesEveryNamedReservedDirectoryBeforeWalking".git"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesEveryNamedReservedDirectoryBeforeWalking"nested vendor"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesEveryNamedReservedDirectoryBeforeWalking"node_modules"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesEveryNamedReservedDirectoryBeforeWalking"trailing slash"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesEveryNamedReservedDirectoryBeforeWalking"vendor"
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRefusesMultipleReservedRootsBeforeReturningASelectedSibling
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRemovesARegularFileMatchingAFileShapedRegexBeforeHeaderClassification
+ - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itRemovesAnAuthoredExcludedFifoBeforeHeaderClassification
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsAWalkedFileLinkAsFailureWhileKeepingTheRegularTarget
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsAWalkedPhpNamedPipeWithoutPhpEvidence
  - Qualimetrix\Tests\Analysis\Run\Unit\Discovery\ProjectWalkTest::itReportsUnreadableHeaderAsFailureInsteadOfTreatingItAsOrdinary
