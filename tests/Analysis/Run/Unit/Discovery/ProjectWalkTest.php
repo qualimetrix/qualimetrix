@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Discovery;
 
 use FilesystemIterator;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -35,6 +36,8 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
+#[CoversClass(ProjectWalk::class)]
+#[CoversClass(ProjectFiles::class)]
 final class ProjectWalkTest extends TestCase
 {
     private string $root;

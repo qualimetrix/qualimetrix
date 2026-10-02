@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Run\Unit\Discovery;
+namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Run\Configuration\ProjectScopePaths;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(ProjectScopePaths::class)]
-final class DirectoryPrunerTest extends TestCase
+final class ProjectScopePathsTest extends TestCase
 {
     #[Test]
     public function itProvidesBuiltInsThatMatchReservedDirectoriesAtAnyDepth(): void

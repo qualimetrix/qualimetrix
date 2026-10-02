@@ -238,7 +238,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'real function fail in the parent. The generated harness it goes into opens nothing of its own and '
             . 'reaches the module through its ordinary entry point, like any other caller.',
 
-        'src/Infrastructure/Git/GitRepositoryLocator.php:94' => 'Production code, which may not import a '
+        'src/Infrastructure/Git/GitRepositoryLocator.php:80' => 'Production code, which may not import a '
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',

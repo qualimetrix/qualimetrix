@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Run\Unit\ExcludeBinding;
+namespace Qualimetrix\Tests\Analysis\Run\Unit\Discovery;
 
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -35,7 +35,7 @@ use RecursiveIteratorIterator;
 
 #[CoversClass(ProjectWalk::class)]
 #[CoversClass(RunConfigurationResolver::class)]
-final class ExcludeBindingProbeTest extends TestCase
+final class ExcludeSelectorBindingTest extends TestCase
 {
     private string $root = '';
 

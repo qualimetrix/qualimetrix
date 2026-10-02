@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Finding\Unit\ProjectScope;
+namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\ProjectScope;
 
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;

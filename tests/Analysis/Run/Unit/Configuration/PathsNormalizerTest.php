@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Configuration\PathsNormalizer;
 use Qualimetrix\Core\Path\AbsolutePath;
 
+#[CoversClass(PathsNormalizer::class)]
 final class PathsNormalizerTest extends TestCase
 {
     private string $base;

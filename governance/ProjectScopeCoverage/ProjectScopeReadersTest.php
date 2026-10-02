@@ -2,37 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Run\Unit\Configuration;
+namespace Qualimetrix\Governance\ProjectScopeCoverage;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * The report names the channels a narrowed run did not judge from
- * {@see ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS}, a list nothing derives:
- * the readers of the predicate are silent when they are silent, and say
- * nothing about it. So the list is held to the readers from outside — every
- * production file that names the predicate is either a reader whose channels
- * are listed or a carrier that judges nothing, and a file that is neither
- * reddens this test by name.
+ * Direct mentions of the two measured question APIs and their judgement type
+ * are either registered readers with exact channels or registered carriers.
+ * Indirect wrappers and variable provenance are outside this literal scan.
  */
-#[CoversClass(ProjectScopeCoverage::class)]
+#[CoversClass(ProjectScopeChannels::class)]
 final class ProjectScopeReadersTest extends TestCase
 {
-    private const string PREDICATE = '/coversProjectScope|pathsCoverProjectScope|ProjectScopeState/';
+    private const string PREDICATE = '/judgesNamespaceClaims|judgesExcludeSelectors|ProjectScopeJudgement/';
 
     /**
-     * Every production PHP file naming the predicate, and the channels it
-     * withholds on a narrowed run; an empty list is a carrier.
+     * Every production PHP file naming a measured question or its judgement type,
+     * and the channels it judges; an empty list is a carrier or projection.
      *
      * @return array<string, list<string>>
      */
@@ -49,27 +45,22 @@ final class ProjectScopeReadersTest extends TestCase
             'src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' => ['cohesion.unmatched-exclude-method'],
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' => [UnmatchedExcludeOptions::CHANNEL],
-            'src/Infrastructure/Console/FindingFilterOrchestrator.php' => [
+            'src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php' => [
                 UnboundSuppressionOptions::UNMATCHED_PATH,
                 UnboundSuppressionOptions::UNMATCHED_NAMESPACE,
                 UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
             ],
+            'src/Analysis/Finding/Contract/ProjectScope/ProjectScopeJudgement.php' => [],
             'src/Analysis/Finding/Contract/Rule/AnalysisContext.php' => [],
-            'src/Analysis/Policy/Inline/Directive/Audit/ThresholdDirectiveAudit.php' => [],
-            'src/Analysis/Run/Configuration/ProjectScopeCoverage.php' => [],
             'src/Analysis/Run/Contract/Configuration/ProjectScopeMeasurement.php' => [],
-            'src/Analysis/Run/Contract/Configuration/ProjectScopeState.php' => [],
-            'src/Analysis/Run/Contract/Configuration/RunConfiguration.php' => [],
-            'src/Analysis/Run/Pipeline/AnalysisPipeline.php' => [],
-            'src/Infrastructure/Console/CheckScopeResolver.php' => [],
-            'src/Infrastructure/Console/ResolvedCheckScope.php' => [],
+            'src/Reporting/ReportProjectScope.php' => [],
         ];
     }
 
     #[Test]
     public function itAccountsForEveryProductionFileThatNamesThePredicate(): void
     {
-        $root = \dirname(__DIR__, 5);
+        $root = \dirname(__DIR__, 2);
         $found = [];
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/src', RecursiveDirectoryIterator::SKIP_DOTS));
         foreach ($files as $file) {
@@ -93,6 +84,9 @@ final class ProjectScopeReadersTest extends TestCase
         $channels = array_merge(...array_values(self::readers()));
         sort($channels);
 
-        self::assertSame($channels, ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS);
+        $declared = ProjectScopeChannels::PROJECT_SCOPED_CHANNELS;
+        sort($declared);
+
+        self::assertSame($channels, $declared);
     }
 }
