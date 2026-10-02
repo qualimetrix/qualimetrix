@@ -52,21 +52,40 @@ final readonly class ReportingGitScopeQuery implements GitScopeQueryInterface
                 continue;
             }
 
-            $entry = @lstat($fullPath->value());
-            if ($entry !== false && ($entry['mode'] & 0o170000) === 0o100000) {
-                foreach ($this->extractNamespaces($fullPath) as $namespace) {
-                    // Add all parent namespaces
-                    $parts = explode('\\', $namespace);
-                    while ($parts !== []) {
-                        $ns = implode('\\', $parts);
-                        $namespaces[$ns] = true;
-                        array_pop($parts);
-                    }
-                }
-            }
+            $this->indexFileNamespaces($fullPath, $namespaces);
         }
 
         return new GitScopeResult(array_keys($paths), array_keys($namespaces));
+    }
+
+    /** @param array<string, true> $namespaces */
+    private function indexFileNamespaces(AbsolutePath $filePath, array &$namespaces): void
+    {
+        if (!self::isRegularFile($filePath)) {
+            return;
+        }
+
+        foreach ($this->extractNamespaces($filePath) as $namespace) {
+            self::indexNamespaceParents($namespace, $namespaces);
+        }
+    }
+
+    private static function isRegularFile(AbsolutePath $filePath): bool
+    {
+        $entry = @lstat($filePath->value());
+
+        return $entry !== false && ($entry['mode'] & 0o170000) === 0o100000;
+    }
+
+    /** @param array<string, true> $namespaces */
+    private static function indexNamespaceParents(string $namespace, array &$namespaces): void
+    {
+        $parts = explode('\\', $namespace);
+        while ($parts !== []) {
+            $ns = implode('\\', $parts);
+            $namespaces[$ns] = true;
+            array_pop($parts);
+        }
     }
 
     /**

@@ -148,17 +148,9 @@ final class GraphExportCommand extends Command
 
     private function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        // Every check in this method runs before `analyzeDependencyGraph()`:
-        // `--direction`/`--format`/`--output` refusals must
-        // not pay for a Discovery+Collection run that their own answer
-        // throws away. A bogus `--direction` or `--format` must reach the
-        // analyzer zero times.
         $format = self::resolveFormat(CommandLineSpelling::option($input, 'format') ?? '');
         $direction = self::resolveDirection(CommandLineSpelling::option($input, 'direction') ?? '');
-
-        $outputPath = CommandLineSpelling::option($input, 'output');
-        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
-        $outputFile?->refuseUnwritable();
+        $outputFile = self::prepareOutputFile($input);
 
         $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
         $request = $this->buildProjectionRequest($input, $format, $direction);
@@ -172,6 +164,30 @@ final class GraphExportCommand extends Command
             'count' => $result->coverage->discoveredFiles(),
         ]);
 
+        $coverageExit = $this->resolveCoverageExit($result, $output);
+        if ($coverageExit !== null) {
+            return $coverageExit;
+        }
+
+        $this->logGraphBuilt($result);
+        $this->assertIncludeNamespacesBind($result, $request);
+        $content = $this->projection->project($result->graph, $request);
+        self::publishGraph($output, $outputFile, $content, $format);
+
+        return self::SUCCESS;
+    }
+
+    private static function prepareOutputFile(InputInterface $input): ?ArtifactFile
+    {
+        $outputPath = CommandLineSpelling::option($input, 'output');
+        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
+        $outputFile?->refuseUnwritable();
+
+        return $outputFile;
+    }
+
+    private function resolveCoverageExit(DependencyGraphAnalysisResult $result, OutputInterface $output): ?int
+    {
         if (!$result->coverage->isComplete()) {
             $this->writeIncompleteAnalysis($output, new IncompleteAnalysisException($result->coverage));
 
@@ -196,6 +212,11 @@ final class GraphExportCommand extends Command
             )));
         }
 
+        return null;
+    }
+
+    private function logGraphBuilt(DependencyGraphAnalysisResult $result): void
+    {
         $this->logger->info('Dependency collection completed', [
             'processed' => $result->coverage->analyzedFilesCount(),
             'skipped' => $result->coverage->skippedFilesCount(),
@@ -207,17 +228,15 @@ final class GraphExportCommand extends Command
             'namespaces' => \count($result->graph->getAllNamespaces()),
             'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
+    }
 
-        $this->assertIncludeNamespacesBind($result, $request);
-        $content = $this->projection->project($result->graph, $request);
-
+    private static function publishGraph(OutputInterface $output, ?ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
+    {
         if ($outputFile !== null) {
             self::writeToFile($output, $outputFile, $content, $format);
         } else {
             OutputHelper::write($output, $content);
         }
-
-        return self::SUCCESS;
     }
 
     /**
