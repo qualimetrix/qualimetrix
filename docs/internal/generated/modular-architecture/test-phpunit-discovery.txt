@@ -8596,9 +8596,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itStillAnswersAnImpossiblePairAboutTheLevel
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DeclarationReachTest::itCoversTheWholeDeclarationOrOnlyTheCarriedLineRange
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DeclarationReachTest::itRejectsInvalidLineRanges"non-positive start"
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DeclarationReachTest::itRejectsInvalidLineRanges"reversed range"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive\DeclarationReachTest::itCoversTheWholeDeclarationOrOnlyTheCarriedLineRange
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive\DeclarationReachTest::itRejectsInvalidLineRanges"non-positive start"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive\DeclarationReachTest::itRejectsInvalidLineRanges"reversed range"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersAThresholdNamingAJudgedMetricWithTheChannelThatJudgesIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersForADeclarationFormWithNothingToBindTo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersForAKnownTagThatNamesNoTarget"declaration form"

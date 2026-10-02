@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive;
+namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;

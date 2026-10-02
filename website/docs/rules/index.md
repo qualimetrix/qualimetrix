@@ -158,7 +158,9 @@ These rules detect patterns that may introduce security vulnerabilities.
 
 ### Annotation Rules
 
-This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in your code, rather than the code itself. It reports through four channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` are configuration errors that fail the run unconditionally; `annotation.unused-directive` is ordinary debt with a configurable severity, and, like `duplication.clone`, cannot be addressed by `@qmx-ignore`.
+This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in your code, rather than the code itself. It reports through four channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` are configuration errors that fail the run unconditionally; `annotation.unused-directive` is ordinary debt with a configurable severity, and cannot be addressed by `@qmx-ignore`.
+
+The duplication channel `duplication.clone` also cannot be addressed by `@qmx-ignore`.
 
 | Rule                                  | ID                     | What it detects                                                                               |
 | ------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
