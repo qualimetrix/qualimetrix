@@ -23,22 +23,21 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * The one severity that is a real choice is the unused-directive channel's:
  * leftover suppressions are ordinary cleanup, and a project mid-cleanup may
- * legitimately want them louder or quieter. It defaults below `Warning` so
- * that adopting this release does not fail a build over annotations that were
- * merely stale.
+ * legitimately want them louder or quieter. It defaults to `Warning`, while
+ * an explicit `Info` keeps the quieter adoption path available.
  */
 final readonly class InlineDirectiveOptions implements RuleOptionsInterface
 {
     public function __construct(
         public bool $enabled = true,
-        public Severity $unusedDirectiveSeverity = Severity::Info,
+        public Severity $unusedDirectiveSeverity = Severity::Warning,
     ) {}
 
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
             enabled: $config->boolean('enabled', true),
-            unusedDirectiveSeverity: Severity::from(strtolower($config->text('unused-directive-severity', Severity::Info->value))),
+            unusedDirectiveSeverity: Severity::from(strtolower($config->text('unused-directive-severity', Severity::Warning->value))),
         );
     }
 

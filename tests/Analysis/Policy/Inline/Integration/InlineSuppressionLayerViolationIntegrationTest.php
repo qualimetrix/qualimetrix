@@ -19,7 +19,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
- * Verifies that {@code @qmx-ignore architecture.layer-violation} on a source
+ * Verifies that `@qmx-ignore architecture.layer-violation` on a source
  * declaration does not drop a finding attributed to an owned target through
  * the same {@see SuppressionFilter} that handles complexity / coupling rules.
  * Architecture findings retain the source use-site location and display,

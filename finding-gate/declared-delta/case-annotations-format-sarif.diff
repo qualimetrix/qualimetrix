@@ -1,0 +1,8 @@
+--- candidate
++++ reference (mapped)
+@@ -26,1 +26,1 @@
+-                                "level": "warning"
++                                "level": "note"
+@@ -67,1 +67,1 @@
+-                        "text": "Suppression \"code-smell.eval\" matched nothing in this run — the finding it silences is gone."
++                        "text": "Suppression \"code-smell.eval\" matched nothing in this run \u2014 the finding it silences is gone."

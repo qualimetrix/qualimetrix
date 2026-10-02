@@ -13,12 +13,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
@@ -27,20 +30,6 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  */
 final readonly class SourceControlExtractor implements SourceControlExtractorInterface
 {
-    /** @var array<string, true> */
-    private const array THRESHOLD_NODE_TYPES = [
-        'Stmt_Class' => true,
-        'Stmt_Interface' => true,
-        'Stmt_Trait' => true,
-        'Stmt_Enum' => true,
-        'Stmt_ClassMethod' => true,
-        'Stmt_Function' => true,
-        'Stmt_Property' => true,
-        'PropertyHook' => true,
-        'Expr_Closure' => true,
-        'Expr_ArrowFunction' => true,
-    ];
-
     public function __construct(
         private SuppressionExtractor $suppressionExtractor = new SuppressionExtractor(),
         private ThresholdOverrideExtractor $thresholdOverrideExtractor = new ThresholdOverrideExtractor(),
@@ -59,7 +48,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         array $classMetrics,
     ): SourceControls {
         $bindings = DeclarationControlBindings::from($ast, $file, $callableMetrics, $classMetrics);
-        $unattached = UnattachedComments::find($ast, $source, SuppressionExtractor::TAG_PREFIX);
+        $unattached = UnattachedComments::find($ast, $source);
         [$overrides, $diagnostics, $carriedTags] = self::extractThresholdOverrides($ast, $bindings, $unattached, $this->thresholdOverrideExtractor);
 
         return new SourceControls(
@@ -116,15 +105,27 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         );
         foreach ($nodes as $found) {
             $node = $unattached->withOwnedComments($found);
-            $nodeBindings = $bindings->bindingsFor($node);
+            $nodeBindings = $bindings->suppressionBindingsFor($node);
             if ($nodeBindings === []) {
-                array_push($suppressions, ...$extractor->extractPhysical($node, $thresholdRead));
+                array_push($suppressions, ...$extractor->extractPhysical(
+                    $node,
+                    $thresholdRead,
+                    DeclarationControlBindings::unboundReason($node),
+                ));
                 continue;
             }
 
+            $nodeSuppressions = [];
             foreach ($nodeBindings as $binding) {
-                array_push($suppressions, ...$extractor->extract($node, $binding['subject'], $binding['scope'], $thresholdRead));
+                array_push($nodeSuppressions, ...$extractor->extract(
+                    $node,
+                    $binding->subject,
+                    $binding->controlScope,
+                    $binding->reach,
+                    $thresholdRead,
+                ));
             }
+            array_push($suppressions, ...self::refuseUnreachableLevels($nodeSuppressions, $nodeBindings));
         }
 
         foreach ($unattached->unowned() as $comment) {
@@ -142,7 +143,51 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
     }
 
     /**
-     * A node is read when an author wrote a `@qmx-` tag on it.
+     * An authored level is valid only when at least one suppression binding of
+     * this carrier reaches it. Bare channels keep their existing semantics,
+     * and threshold bindings never enter this union.
+     *
+     * @param list<Suppression> $suppressions
+     * @param non-empty-list<\Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding> $bindings
+     *
+     * @return list<Suppression>
+     */
+    private static function refuseUnreachableLevels(array $suppressions, array $bindings): array
+    {
+        $groups = [];
+        foreach ($suppressions as $suppression) {
+            $groups[$suppression->authoredSite()][] = $suppression;
+        }
+
+        $reachable = DirectiveLevels::reachableByBindings($bindings);
+        $result = [];
+        foreach ($groups as $group) {
+            $directive = $group[0];
+            $requested = $directive->target()->selector()?->level();
+            if ($directive->type !== SuppressionType::Symbol
+                || $directive->refusal !== null
+                || $requested === null
+                || \in_array($requested, $reachable, true)
+            ) {
+                array_push($result, ...$group);
+                continue;
+            }
+
+            $result[] = new Suppression(
+                rule: $directive->rule,
+                reason: $directive->reason,
+                line: $directive->line,
+                type: $directive->type,
+                position: $directive->position,
+                refusal: DirectiveRefusal::levelNotReachableHere($bindings[0]->reach->standsOn),
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * A node is read when its comments may carry a directive or prefix typo.
      *
      * There is no list of node types here on purpose, and the list that used
      * to stand beside this condition is gone rather than extended. The
@@ -158,7 +203,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
     private static function canCarrySuppression(Node $node): bool
     {
         foreach ($node->getComments() as $comment) {
-            if (str_contains($comment->getText(), SuppressionExtractor::TAG_PREFIX)) {
+            if (SuppressionExtractor::mayCarryDirective($comment->getText())) {
                 return true;
             }
         }
@@ -190,8 +235,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
         $carriedTags = [];
         $nodes = (new NodeFinder())->find(
             $ast,
-            static fn(Node $node): bool => isset(self::THRESHOLD_NODE_TYPES[$node->getType()])
-                || $unattached->owns($node)
+            static fn(Node $node): bool => $unattached->owns($node)
                 || self::canCarrySuppression($node),
         );
 
@@ -231,9 +275,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
      */
     private static function thresholdBindingsFor(Node $node, DeclarationControlBindings $bindings): array
     {
-        return isset(self::THRESHOLD_NODE_TYPES[$node->getType()])
-            ? $bindings->bindingsFor($node)
-            : $bindings->callablesBeginningWith($node);
+        return $bindings->thresholdBindingsFor($node);
     }
 
     /**
@@ -249,7 +291,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
                 $suppression->authoredSite(),
                 $suppression->type->value,
                 $suppression->reason ?? '',
-                (string) ($suppression->binding->endLine ?? -1),
+                $suppression->binding?->reach->key() ?? '',
                 $suppression->binding?->subject->toCanonical() ?? '',
                 self::scopeKey($suppression->binding?->controlScope),
             ])] = $suppression;

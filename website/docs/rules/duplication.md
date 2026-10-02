@@ -152,9 +152,11 @@ this ownership change does not alter the rule id, options, algorithm or output.
     it decorates, which the project never is, and `@qmx-ignore-file` /
     `@qmx-ignore-next-line` would silence the one copy they are written beside
     while every other copy still reports the block — and a copy pasted
-    together with such a directive would pass a baseline unseen. All three
-    forms are refused (`annotation.unresolved-directive`) wherever they are
-    written. Disable the rule instead — `disabled_rules: [duplication.clone]`
+    together with such a directive would pass a baseline unseen. Explicit
+    selectors reaching this channel are refused after declaration/level
+    admission. Blanket `*` and bare file directives are judged effective/inert
+    over other channels and still cannot silence this one. Disable the rule
+    instead — `disabled_rules: [duplication.clone]`
     in the configuration, or `--disable-rule=duplication.clone` — or accept
     the block, all of its copies, into the baseline. `suppress_paths` silences
     only the copies inside its paths: the block's other copies are still

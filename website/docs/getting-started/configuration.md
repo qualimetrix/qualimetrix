@@ -526,14 +526,14 @@ Use `fail_on: none` to keep findings from failing the run. The former YAML
     `warning` and `error` are the only severities `fail_on` accepts — `fail_on: info` is
     rejected with an error naming the accepted values. Severity `info` means "observe, do not
     gate": an Info-only run always exits 0, whatever `fail_on` says. To gate on a diagnostic
-    that ships at `info`, raise that rule's own severity instead. For example,
-    `annotation.unused-directive` (a suppression that no longer suppresses anything) defaults
-    to `info` and is raised through its rule option:
+    configured at `info`, raise that rule's own severity instead.
+    `annotation.unused-directive` defaults to `warning`; explicitly set `info`
+    to preserve the former quiet cleanup severity:
 
     ```yaml
     rules:
       annotation.directive:
-        unused_directive_severity: warning
+        unused-directive-severity: info
     ```
 
 !!! warning "`fail_on` does not govern configuration errors"

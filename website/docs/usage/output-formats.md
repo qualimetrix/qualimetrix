@@ -1005,6 +1005,29 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 ---
 
+## Directive audit JSON
+
+`bin/qmx directives --format=json` publishes `meta`, `scope`,
+`selection`, `sweep`, `directives`, `summary` and `exit_code`.
+Each directive carries `file`, tag `line`, `form`, `target`, `effect`,
+`reason`, `masked_by`, `boundary_observable` and required `refusals`.
+Effects are `effective`, `overrun`, `inert`, `unmeasured` and `refused`;
+`reason` is for Unmeasured (disabled producer or masked threshold).
+A refused site has a nonempty `[{channel, message}]` list; every other effect
+has `[]`. Internal physical position and addressed producer are not published.
+Two identical comments on one line may therefore yield two equal public rows.
+Same-rule same-line threshold overrides still coalesce.
+
+`summary` counts all five effects, including `refused`. A refusal remains
+visible even when selection prevents its channel from moving `exit_code`.
+Incomplete analysis returns 4 before any refusal/inert decision; otherwise a
+publishable refusal or observable inert directive returns 2, and the remainder
+returns 0. See [the command reference](cli-options.md#directives).
+
+For `--format=suppressed`, Inline supplies the first directive that actually
+matched; Reporting does not infer placement again. The public `suppressor`
+is still `file:line`, so distinct physical sites on one line share that label.
+
 ## Documentation addresses in JSON reports {#documentation-addresses}
 
 Each JSON report in the table below names where its documentation lives, so a

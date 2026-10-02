@@ -813,29 +813,39 @@ that controls with different declaration scopes remain distinct.
 
 ### Suppression
 
-Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
+Inline-owned value object representing a suppression tag from a comment (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
 
 **Fields:**
 - `rule: string` — the authored text: a fully qualified `code`, `X.*`, or `*` for "no rule filter"
 - `reason: ?string` — optional reason for suppression
 - `line: int` — line number of the suppression tag
 - `type: SuppressionType` — scope of suppression
-- `endLine: ?int` — end line for scoped suppressions
+- `position: int` — required nonnegative byte position of the authored tag
+- `binding: ?DeclarationBinding` — Inline-owned subject, scope and required reach
+- `refusal: ?DirectiveRefusal` — the authored control could not bind or be admitted
+- `silencedLine: ?int` — required for a non-refused next-line control; separate from the tag line
 
 **Methods:**
 - `matches(string $code, ?SymbolLevel $level): bool` — checks if suppression applies to a finding on that channel at that level
 - `target(): SuppressionTarget` — what the directive filters on: a `ChannelLevelSelector`, or the
   explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
+Inline owns `DeclarationReach`, not Core: `whole(endLine, standsOn)` covers
+the bound declaration; `lines(start, end, standsOn)` requires the finding's
+location in the authored file and its line in that inclusive range. Member
+reach is Inline policy.
+`authoredSite()` includes physical position, form, argument and refusal,
+so identical comments on one line do not collapse.
+
 ### SuppressionType (Enum)
 
 Defines the scope of a suppression tag.
 
-| Value      | Description                                      |
-| ---------- | ------------------------------------------------ |
-| `Symbol`   | Suppress at symbol level (class/method docblock) |
-| `NextLine` | Suppress the next line only                      |
-| `File`     | Suppress all matching findings in entire file    |
+| Value      | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| `Symbol`   | Suppress through an Inline declaration binding and its reach |
+| `NextLine` | Suppress the next line only                                  |
+| `File`     | Suppress all matching findings in entire file                |
 
 ### ThresholdOverride
 

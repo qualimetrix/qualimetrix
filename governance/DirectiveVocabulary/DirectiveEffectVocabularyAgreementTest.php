@@ -62,7 +62,7 @@ final class DirectiveEffectVocabularyAgreementTest extends TestCase
     {
         foreach (DirectiveEffect::cases() as $effect) {
             self::assertSame(
-                $effect->value !== 'unmeasured',
+                !\in_array($effect, [DirectiveEffect::Unmeasured, DirectiveEffect::Refused], true),
                 MeasuredEffects::isMeasured($effect->value),
                 $effect->value,
             );

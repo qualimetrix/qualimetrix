@@ -14,10 +14,11 @@ Inline/
 │   │                            # the threshold audit's contract and input, the
 │   │                            # verdict vocabulary a report renders:
 │   │                            # DirectiveVerdict, DirectiveSite, DirectiveEffect
-│   │                            # (effective / overrun / inert / unmeasured) and
+│   │                            # (effective / overrun / inert / unmeasured / refused) and
 │   │                            # DirectiveUnmeasurableReason — and the two halves of
 │   │                            # what extraction could do with a tag: DeclarationBinding
-│   │                            # (bound here) and DirectiveRefusal (not carried out)
+│   │                            # (bound here), DeclarationReach (whole or lines),
+│   │                            # DirectiveRefusal (not carried out), and DirectiveVerdictRefusal
 │   ├── Suppression/             # suppression value and type
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
@@ -27,11 +28,14 @@ Inline/
 │   │                            # than write one; read by both extractors
 │   ├── SourceControlExtractorInterface.php
 │   ├── SourceControls.php       # immutable extraction result
+│   ├── SuppressionSyntax.php      # authored spelling and arguments without binding
 │   ├── SuppressionExtractor.php
 │   ├── ThresholdOverrideExtractor.php
 │   └── RuleValidatorMapFactory.php
 ├── Extraction/
 │   ├── DeclarationControlBindings.php
+│   ├── DeclarationRanges.php      # measured enclosing declaration ranges
+│   ├── DeclarationSource.php      # source carrier descriptions and direct anonymous values
 │   ├── SourceControlExtractor.php
 │   └── UnattachedComments.php
 ├── Directive/                      # the directive itself: store, addressing, validation
@@ -42,7 +46,7 @@ Inline/
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
-│   │   ├── ThresholdDirectiveEligibility.php # addressability and executed producer eligibility
+│   │   ├── ThresholdDirectiveEligibility.php # enabled and executed producer eligibility
 │   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveChannelBan.php     # the channels no directive may address or silence
@@ -50,6 +54,9 @@ Inline/
 │   ├── DirectiveNameHints.php      # "did you mean" by reverse query, incl. metric -> judging channel
 │   ├── DirectiveRejection.php
 │   ├── InlineDirectiveOptions.php
+│   ├── RefusedDirective.php        # one classified site and refusal details
+│   ├── RefusedDirectives.php       # shared validator/audit classifier
+│   ├── DirectiveRefusalChannel.php # unresolved / unsupported / invalid
 │   ├── InlineDirectivePolicy.php   # per-run directive store; delegates usage accounting
 │   ├── InlineDirectiveValidator.php # owns the three annotation.* directive errors
 │   └── UnusedDirectiveRule.php     # owns annotation.unused-directive; arms usage reporting
@@ -102,8 +109,9 @@ Inline/
   prepared run it needs to answer: the context the rules already ran against,
   the executor that ran them, and what they produced.
 
-ThresholdDirectiveEligibility judges addressability before checking a directly
-live producer and its executed declared levels. Counterfactual audits reuse
+ThresholdDirectiveAudit refuses unaddressable directives through RefusedDirectives
+before ThresholdDirectiveEligibility checks a directly live producer and its
+executed declared levels. Counterfactual audits reuse
 the prepared context without recollecting files.
 
 ThresholdOverrideValueParser constructs the Finding-owned typed request, and
@@ -112,252 +120,121 @@ The extractor retains diagnostic codes, first-refusal order, reason syntax and
 worker-safe output. An absent annotation creates no request; malformed authored
 text still reports its existing syntax or form diagnostic.
 
-## The directive report
+## Authored sites, binding and judgement
 
-Three of the four channels belong to `InlineDirectiveValidator`, a
-`ConfigurationValidatorInterface` rather than a rule — which is what makes them
-configuration errors: a name that
-addresses nothing (`annotation.unresolved-directive`), a threshold on a rule
-that declares no override support (`annotation.unsupported-threshold`), and
-values that do not parse or validate (`annotation.invalid-threshold`). None of
-them can be accepted by a baseline, and each fails the run without consulting
-`fail_on` — they say "I cannot do what you asked", not "your code is poor". The
-validator names `annotation.directive` as its producer, so those three are
-registered, addressed, excluded and switched off exactly as they were while the
-rule declared them, and it answers to that rule's `enabled` option.
+The canonical user grammar is
+[Inline suppression](../../../../website/docs/usage/baseline.md#inline-suppression).
+Both extractors read `DocumentationRegions`: an admitted tag starts its
+physical comment line after whitespace/decoration. Midline exact mentions are
+refused unless a same-line equal-delimiter backtick span quotes them with no
+prose before the tag inside the span. Closed backtick/tilde fences quote whole
+regions; unclosed fences preserve refused mentions. Typos at line start are
+carried, not silently discarded. Arguments cannot cross the tag's line or use
+the comment closer as a missing argument.
 
-**A directive that is read and refused is still carried.** Four mistakes are
-decided inside extraction, before any channel is consulted, each a
-`DirectiveRefusalReason`: a `@qmx-` tag name nobody reads (`@qmx-ignore-lines`);
-a tag this tool reads written without the argument it requires (`@qmx-ignore`
-or `@qmx-ignore-next-line` with no channel on its line, `@qmx-threshold` with no
-rule) — reported under the form it is, not as an unknown tag; a declaration form
-written where nothing it can act on is measured — above a statement, on a
-property without hooks; and a `@qmx-threshold` in a line or block comment, which
-only a docblock carries. Each used to be dropped where it was found, and a
-directive that never reaches the store is judged by nothing: not the
-configuration error `check` reports, not the verdict `directives` prints, not
-the stale-directive rule. So the extractor keeps them, marked with a
-`DirectiveRefusal`, which is the same move the channel grammars make when they
-admit `:` and `#` — capture, then refuse by name. A refused directive answers
-`false` to every channel, so it filters nothing; the refusal words itself,
-`DirectiveAddressability` routes it onto `annotation.unresolved-directive` at the
-line it was written on, and the audit reports it `unmeasured / already-refused`
-under its own form rather than judging it twice. The wording lives with the
-refusal and not with the addressability because these are the only directive
-mistakes decided against the grammar of the tag and the place it was written
-rather than against the channels a run resolved.
+`DeclarationControlBindings` has separate `suppressionBindingsFor()` and
+`thresholdBindingsFor()`. It accepts measured declarations and direct
+anonymous callable values (argument, array value, return, expression, ordinary
+assignment or coalesce assignment chains), but does not search wrappers for
+the first nested closure. `ClosureNotDirectValue` tells an author to move the
+docblock before `function`/`fn`; a construct containing no callable retains
+`NoDeclarationToBind`. `UnattachedComments` and the source extractor
+associate docblocks throughout the declaration header, including attribute
+gaps and the keyword/name gap, without modifying the cached AST.
 
-**One key names an authored directive.** `Suppression::authoredSite()` — line,
-form, authored argument and refusal reason — is what extraction deduplicates by
-(beside the binding), what the store keeps one of per site, and what the usage
-audit groups by. The three used to spell the key separately from the type
-rather than the form, and every refusal shares one type, so two different
-refused tags naming one channel on one line collapsed into one — or one refusal
-replaced another.
+`DeclarationBinding(subject, scope, reach)` requires Inline's
+`DeclarationReach`. `whole(endLine, standsOn)` covers the whole bound
+declaration; `lines(start, end, standsOn)` requires a finding location in
+the authored file and inside the inclusive line range. All bindings of one
+authored node describe the same source construct. A method has whole-callable and class-lines reach; a property
+has hook-whole and class-lines reach; a constant or enum case has class-lines
+reach. Parameters have callable-lines reach; promoted parameters additionally
+have class-lines and any hook-whole reach. A class-like annotation has whole
+reach over the class and its measured callable members.
 
-**A threshold tag is refused by the sweep only when its own reader did not
-answer for it.** `ThresholdOverrideExtractor` reports which docblock tags each
-override and each diagnostic came from, and the suppression sweep leaves exactly
-those to it; every other `@qmx-threshold` — in the wrong carrier, with no rule,
-over a node no threshold binds to — is refused there. The sweep asks what the
-reader did rather than a second copy of its node types and grammar, so the two
-cannot disagree about a tag and leave it to neither. A property without hooks is
-read for its diagnostics only: nothing measures it, so its override is not
-carried and is refused instead of vanishing.
+Explicit levels must be both declared by the channel and reachable here.
+Member class findings are silenced only inside the member's lines, never on
+the class line or a neighbour. Same-line parameters remain indistinguishable
+by column. Thresholds keep whole-only bindings: properties with hooks retune
+hooks, while plain properties, constants, enum cases and parameters do not
+retune their containing class/callable.
 
-**A threshold on a closure binds by position, as an ignore does.** php-parser
-gives a docblock to the outermost node starting at the next token, so the
-docblock of a closure or arrow function passed as an argument, written as an
-array element or as a statement of its own lands on the `Arg`, the `ArrayItem`
-or the `Stmt_Expression`, never on the function. Suppressions always bound such
-a comment to the callable beginning at the same position; the threshold reader
-visited only declaration node types, missed it, and the sweep refused the tag as
-written where nothing is measured — about a function that is measured, and that
-an `@qmx-ignore` in the same place did silence. The reader now visits the same
-nodes the sweep does, and a node that is not itself a declaration binds through
-`DeclarationControlBindings::callablesBeginningWith()` — the position half of
-the suppression binding only: the containment bindings a suppression also has
-(a parameter to its function, a constant to its class) are not followed, so a
-threshold there is still refused.
+`Suppression` requires nonnegative `position`; its `line` names the tag,
+and `silencedLine` exists exactly for an accepted next-line control, pointing
+after the comment end. `authoredSite()` includes position, form, authored
+argument and refusal reason, independent of declaration binding.
+`ThresholdDiagnostic` also requires position, and deduplication preserves it.
+`DirectiveSite` requires nullable position: suppressions/diagnostics have it,
+threshold overrides do not. Consequently identical comments on one line are
+separate sites, while same-rule same-line threshold overrides still coalesce.
 
-The declaration form on an unbound node used to throw instead, and the throw was
-not contained: the file failed to process, so one misplaced annotation cost every
-metric and every finding in it, and the run reported a coverage failure rather
-than an annotation mistake.
+### Refusals and publication
 
-**A comment's own punctuation is not an argument.** The channelless form was
-refused only in a line comment; in a block comment and a docblock the closing
-delimiter's `*` was read as the channel argument, and `*` is the one argument
-that names no channel at all. So `/** @qmx-ignore */` silenced every channel on
-the declaration it stood over, and said nothing: the tag parsed, so no refusal
-was reported, and it silenced something, so `annotation.unused-directive` stayed
-quiet too. The three grammars now require the argument on the tag's own line and
-refuse one that begins with the delimiter, which leaves the authored `*` — the
-documented "no rule filter" spelling — and a selector merely ending against the
-delimiter untouched. The threshold grammar carries the same two guards: its
-separator used to cross a line break, so `@qmx-threshold` with nothing after it
-was reported as a threshold on the rule `*`, which nobody wrote.
+One shared internal `RefusedDirectives` classifier supplies validator findings
+and policy verdicts. `RefusedDirective` and `DirectiveRefusalChannel` remain
+internal; `DirectiveVerdictRefusal(channel, message, addressedProducer)` is
+the outward carrier. Unknown/binding-refused suppressions and unknown threshold
+names are unresolved with no addressed producer. Known non-retunable rules
+are unsupported; threshold diagnostics are invalid. Unsupported/invalid
+refusals resolve their addressed producer once.
 
-**A carried-out declaration control travels with a `DeclarationBinding`.** The
-measured declaration, the control scope and the declaration's last line are one
-fact with one lifetime: a suppression either binds to a declaration or is a
-physical control or a refusal, and the three used to be optional arguments whose
-only legal combinations were all-or-nothing. The binding lives beside
-`DirectiveRefusal` because the two answer the same question either way — what
-extraction could and could not carry out.
+Every read tag yields one site, even when it has multiple bindings or refusal
+details. `DirectiveVerdict` permits a nonempty `refusals` list exactly for
+`DirectiveEffect::Refused`; every other effect carries an empty list.
+The public JSON publishes each refusal as `{channel, message}`, never the
+internal address. Refused sites do not also become Unmeasured or unused debt.
+Unresolved and unused channels are `Selectable`; unsupported/invalid
+threshold diagnostics are `FollowsAddressedRule`. No role fabricates findings
+for a producer that did not run.
 
-**Where a physical directive may be written is not a question about PHP.** The
-file and next-line forms are bound to a line and a file, so extraction reads them
-off every comment in the file rather than off a list of node types. The list that used to gate this named neither `if`, `foreach`, `return`,
-`namespace` nor `use`, and on each of those a docblock directive did nothing while
-the same directive in a line comment worked — the second condition that let
-unlisted nodes through excluded docblocks by construction. The declaration forms
-keep their binding requirement, which is theirs and not the grammar's:
-`@qmx-ignore` and `@qmx-threshold` name a measured declaration or they are
-refused, and `@qmx-threshold` is refused outside a docblock as well.
+Three channels belong to `InlineDirectiveValidator`, a
+`ConfigurationValidatorInterface`: `annotation.unresolved-directive`,
+`annotation.unsupported-threshold` and `annotation.invalid-threshold`.
+When published, these configuration errors end `check` regardless of
+`fail_on`, and baselines or source suppressions cannot accept them.
+Their producer is `annotation.directive`. `UnusedDirectiveRule` owns
+ordinary debt `annotation.unused-directive`, defaults to Warning, and arms
+usage accounting after rule execution. Explicit
+`unused-directive-severity: info` preserves Info.
+Top-level path suppression, baseline and git scope can narrow that debt;
+namespace suppression does not match its file subject, and the producer's
+closed exclusion ledger does not account for findings assembled afterwards.
 
-**A comment the AST does not carry is read from the source.** php-parser gives a
-comment to the node that starts at the next token, so a comment followed by a
-modifier, a keyword or a closing bracket reaches no node — among them the
-docblock between a declaration's attributes and the declaration (`#[Attr]`, then
-the docblock, then `public function`), which PHP's own reflection hands to the
-declaration. Read from the AST alone, a directive there was neither carried out
-nor refused. `Extraction\UnattachedComments` finds the `@qmx-` comments no node
-carries in the source tokens (only in a file that contains the prefix at all).
-One standing after a declaration's last attribute group and before the first
-node of its own belongs to that declaration and reads exactly as the same
-comment written above the attributes; any other is read as a comment on a
-statement — the physical forms work, the declaration forms are refused. The
-declaration is read through a copy carrying the extra comments, never by
-writing them into the tree, because a cache hit shares one tree.
+`DirectiveChannelBan` still forbids addressing `annotation.unused-directive`
+or `duplication.clone`. Reach and channel-level admission happen before the
+ban. Blanket `*` or a bare file directive is not refused: usage judges it
+Effective/Inert against the real produced findings, while matching continues
+to exclude those banned channels and configuration errors.
 
-A comment php-parser does attach, but to the wrong node, is not re-homed: a
-docblock between two attribute groups belongs to the second `AttributeGroup`
-and one between `function` and the name to the name `Identifier`. Both are
-refused as binding to nothing rather than read as the declaration's own.
+There are five effects: Effective, Overrun, Inert, Unmeasured and Refused.
+Unmeasured is restricted to a disabled producer or a masked threshold.
+`directives` exit 4 for incomplete analysis dominates exit 2 for a publishable
+refusal or an Inert verdict with an observable boundary; otherwise it returns 0.
+Sites remain visible when annotation publication is disabled; the exit reads
+the invocation's final `RuleEnablement` with channel, File level and internal
+address, exactly as publication does.
 
-**The run state and the usage accounting are two classes, not one.**
-`InlineDirectivePolicy` holds what the run carried — the suppressions,
-threshold overrides and diagnostics — and answers the authored views over them.
-`DirectiveUsage` turns prepared suppressions plus produced findings into
-**verdicts**, and the stale findings are one projection of those; it is a pure
-function with no run state, and it is injected into the policy rather than built
-by it, so the store keeps the three collaborators a store needs and none of the
-ones the accounting needs. The port is unchanged:
-Run still calls `prepare()`, `directiveVerdicts()` and `auditDirectiveUsage()`
-on `InlineDirectivePolicyInterface` — the last two now take the run's
-`LevelActivity` beside the findings, because whether a producer was switched
-off is a fact the execution recorded rather than one the audit may re-derive
-from configuration — and the policy forwards them —
-`auditDirectiveUsage()` under its own severity gate, which stays with the state
-the owning rule arms.
+### State and attribution
 
-There is no separate clearing operation. `prepare()` replaces the whole of the
-previous run's state, gate included, so a run that carries no directives
-prepares an empty set through the same call. The `reset()` that used to exist
-had one caller — Run clearing the store when the directive rule was disabled —
-and that call silenced something nobody asked to silence: with an empty store
-the audit's suppression half reports "this tree carries no annotations" beside
-real threshold verdicts. Switching the rule off still silences everything the
-rule emits, through the two gates that were always the real ones (the rule arms
-its own channel as it runs; the validator executes inside its producer's slot,
-which a disabled producer does not get).
+`InlineDirectivePolicy::prepare()` replaces the previous run's complete
+authored state and severity gate; no separate reset exists.
+`DirectiveUsage` is injected pure accounting over prepared suppressions,
+produced findings and the recorded `LevelActivity`. Usage judges what rules
+produced, before report exclusions and selection, rather than re-deriving
+producer activity from configuration.
 
-**A verdict is not a boolean, and the absence of an answer is not a verdict.**
-`DirectiveEffect` has four values. `Effective` and `Inert` are answers;
-`Overrun` belongs to the threshold half and is not produced here; `Unmeasured`
-means the question could not be asked, and `DirectiveUnmeasurableReason` says
-which of the four ways: the producer was switched off (by either mechanism), the
-directive was already refused elsewhere, it carries no rule filter, or another
-directive of the same rule covers the same subject. Reporting any of those as
-`Inert` would tell an author to delete an annotation on the strength of a
-question nobody asked — and for the "already refused" family it would answer one
-mistake twice, since `annotation.unresolved-directive` has already answered it.
+`AnnotationSuppressionResult` carries kept/suppressed findings and the first
+actually applied `DirectiveSite` for each suppressed finding in match order.
+`suppressorOf(Finding)` refuses a finding outside that suppressed set.
+Reporting receives that same result through `FindingProjectionResult`;
+`SuppressionCompositionBuilder` consumes it instead of running another
+directive matcher. Its public suppressor remains `file:line`, so two
+physical sites on one line share that label.
 
-**The verdict is judged on what the rules produced, not on what the report
-published.** The two differ by the per-rule exclusion ledger and the per-finding
-channel selection, and both are decisions about a *report*: a suppression that
-covered a finding the ledger would have dropped anyway did not silence nothing.
-`AnalysisPipeline::reportedFindings()` hands the audit `produced` for that
-reason.
-
-The fourth channel, `annotation.unused-directive`, stays with `UnusedDirectiveRule`
-because it is ordinary debt: a suppression that
-addressed something real and matched nothing this run. It defaults below
-`Warning`, and its accounting is deliberately narrow — only directives naming
-enabled rules, and only files this run analysed. The rule emits nothing itself;
-it arms the usage report, which can only be assembled after every rule has run.
-
-**The fourth channel is one of two channels a directive may not address.**
-`DirectiveChannelBan` refuses every directive whose target reaches
-`annotation.unused-directive` — the exact name, `annotation.*`, either of them
-with `:file`, under any of the three tags — with an
-`annotation.unresolved-directive` on the line it was written on, and the audit
-reports the same directive `unmeasured / already-refused` rather than judging it
-a second time. The ban is asked **after** the `channel:level` grammar, so
-`annotation.unused-directive:class` is still answered as the impossible pair it
-is. The form with no rule filter names no channel and is not refused; it simply
-no longer silences the channel, because `SuppressionFilter` applies no directive
-to it. Both questions read one object, so a form cannot be refused by `check`
-and still judged by `directives`.
-
-The ban is not an exemption from the report. Unlike the three configuration
-errors, a finding on this channel stays inside the pipeline: the top-level
-`suppress_paths` drops it, a baseline ceiling accepts it, a git scope narrows it,
-and the run's channel selection treats it as a directly selectable
-channel — `--disable-rule=annotation.unused-directive` silences it, an
-`--only-rule` that never names it does not report it, and both spellings reach
-it through `RuleExecutionInterface::publishable()`, which
-`AnalysisPipeline::reportedFindings()` asks at the point the channel is
-assembled. Three exclusions never reach it: the top-level `suppress_namespaces`
-matches on a namespace, and this finding's subject is the **file** the
-annotation sits in; and the producer's own `suppress_paths` /
-`suppress_namespaces` run inside `RuleExecution`, whose exclusion ledger is
-closed — its counters, its `--show-suppressed` retention and its attributions
-are read into the execution result before this channel exists, so applying it
-here would remove a finding that the run's own account of removals never
-mentions. What the ban removes is only the ability to hide the finding with the
-mechanism it exists to audit.
-
-**The second banned channel is `duplication.clone`, for a different
-reason** — every copy of a block is one project-level debt: a symbol directive
-never binds to the project, and a file or next-line directive would silence the
-copy it is written beside while the other copies still report the block; see
-the `DirectiveChannelBan` docblock for the mechanism.
-Every form is refused at the line it is written on, with the same
-`annotation.unresolved-directive` code and its own wording; the working path
-is channel-level (`disabled_rules` / `--disable-rule` / baseline), not a
-directive. A bare directive that named no channel and used to silence a
-duplication finding by covering everything no longer does — see
-`SuppressionFilter` above — and, if that directive silenced nothing else, it
-now surfaces as `annotation.unused-directive` where it previously produced no
-finding at all.
-
-**All four channels report once per authored annotation.** The extractor binds
-a class docblock to the class and to every declaration inside it, so a single
-typo on a forty-method class would otherwise print forty-one identical
-findings — and a configuration error ends the run past `fail_on`, which makes
-that exactly the report a reader learns to skip. The identity of a directive is
-its file, line, form and authored text; the finding's subject is the **file**,
-because that is where the annotation is written and because a declaration
-subject would carry a byte offset that moves on every unrelated edit above it.
-
-Validation happens **after configuration has resolved**, because a channel may
-exist only because the run defines a computed metric. Whether a rule is
-*enabled* is not part of that: enablement filters execution, it does not decide
-which names exist.
-
-`Extraction\\DeclarationControlBindings` is internal. It maps collected
-declaration facts onto AST nodes while extracting controls and never crosses
-the Run boundary or the serialized worker payload.
-`Extraction\\UnattachedComments` is internal: the comments php-parser attached to
-no node and the declaration each belongs to, for one file.
-`Extraction\\SourceControlExtractor` is the private implementation of the Run
-port and returns the immutable `SourceControls` result. Its class-level
-`health.cohesion` exception records metric inapplicability: the one public
-operation uses both collaborators, while its private static methods only
-decompose that operation; TCC therefore has no public method pair to compare.
+`RuleValidatorMapFactory` builds the same map for sequential and real worker
+collection and refuses a missing class with its FQCN; a real rule declaring no
+threshold support is still skipped normally.
+Extraction internals never cross Run or the serialized worker payload.
 
 ## Change recipe
 
@@ -387,9 +264,9 @@ RuleExecution applies the producer activity gate before invocation. Integer
 threshold boundaries refuse fractional overrides as annotation.invalid-threshold;
 non-integer owners keep their own numeric grammar.
 
-Channel roles govern publication after selection. Unresolved directive errors
-are filter-exempt; unsupported/invalid threshold diagnostics follow the addressed
-rule; unused-directive is directly selectable. An explicit annotation.directive
+Channel roles govern publication after selection. Unresolved and unused directives
+are directly selectable; unsupported/invalid threshold diagnostics follow the addressed
+rule. An explicit annotation.directive
 disable still stops the producer. These roles do not invent findings for a
 producer that never ran. Directive text/JSON retain every tied decisive disabling
 text in resolver order, deduplicate repeated cells and omit writes canceled by a
@@ -420,8 +297,7 @@ same verdicts. `full` is not a slower fallback — it is the control that
 measures, rather than assumes, that removing a directive of one rule cannot
 move another rule's findings: the two scopes are run over the same tree and
 compared verdict for verdict, and a disagreement between them is a defect in
-the narrowing. On this project's own `src`, narrowing is the difference between
-eight rule executions and thirty-three whole ones.
+the narrowing. Narrowing avoids re-executing unrelated enabled rules for each threshold site.
 
 That comparison is `composer directives:narrow-control`, and it runs three
 times. Over `tests/Analysis/Policy/Inline/Fixtures/NarrowControl`, whose
@@ -467,15 +343,14 @@ has no notion of which direction is stricter — instability is worse when highe
 cohesion when lower — so what the verdict states exactly is "applied, and
 nothing moved except the boundary it printed".
 
-**Where no boundary is published, the question cannot be asked.** Nine of the
-twenty-seven rule files put no boundary in their findings and four of those
-accept overrides. On those, a boundary the measured value had already passed
+**Where no boundary is published, the question cannot be asked.** Some rules accept overrides without publishing a boundary in their findings.
+On those, a boundary the measured value had already passed
 leaves the fingerprint unchanged, so the verdict is `Inert` and
 `DirectiveVerdict::$boundaryObservable` is false — read off the run's own
 findings rather than off a list of rule names, which would drift from the tree
 in silence.
 
-**Coalitions are refusals, not verdicts.** `DirectiveMaskingCoalition` answers
+**Coalitions withhold a measurement.** `DirectiveMaskingCoalition` answers
 which directives of one leave-one-out sweep hide one another; `ThresholdDirectiveAudit`
 is its only caller and is the one that owns the prepared run, so the
 counterfactual operation crosses that boundary as an injected closure rather
@@ -485,7 +360,8 @@ removing them all changes the run. Overlap only makes that possible, so the
 answer is bought with two more executions, and the question is differential —
 the run without this directive's maskers against the run without them and it.
 What the neighbours do cancels between the two sides, which is what keeps a dead
-annotation beside a live one from being refused on the live one's account. Where
+annotation beside a live one from being classified as masked on the live one's
+account. Where
 the rule reports on that subject under no directive at all, both sides agree and
 every directive there is inert for real.
 
@@ -507,11 +383,11 @@ reproduce the run exactly. A drift between them is shared state in the rules,
 which invalidates every verdict rather than any one directive, so the audit
 throws instead of answering, and it runs both controls through the same
 context-rebuilding path the counterfactuals use rather than against the original
-object. Measured on this project's own `src`: thirty-one authored directives,
-thirty-three executions, both controls reproducing.
+object. The control executions are part of the counterfactual operation, independent
+of the current number of directives.
 
-What the audit does **not** measure is a directive's effect on the parsing of
-itself. `InlineDirectiveValidator` reads the policy's own copy of the override
+What the counterfactual audit does **not** measure is a directive's effect on
+the parsing of itself. `InlineDirectiveValidator` reads the policy's own copy of the override
 map, which no counterfactual touches, so its diagnostics are identical on every
 pass — and the `annotation.*` channels have already answered for malformed,
 unresolvable and unsupported annotations.

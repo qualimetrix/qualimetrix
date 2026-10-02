@@ -6,6 +6,7 @@ Available tests:
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itFloorsNothingWhenNoThresholdSiteIsInScope
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itPropagatesARunThatWasAlreadyDisqualified
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itPropagatesTheCommandsOwnCodeThroughAnErrorEnvelope
+ - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllRefused
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itRefusesAReportWhoseThresholdVerdictsAreAllUnmeasured
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itRefusesAnAuditThatProducedNoJson
  - QmxDirectiveAudit\Tests\DirectiveAuditGateTest::itRefusesAnEnumerationThatWouldNotRun
@@ -32,7 +33,14 @@ Available tests:
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"effect null"
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"file missing"
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"form missing"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"inert with refusals"
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"line not a number"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"refusal missing channel"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"refusal missing message"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"refusals missing"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"refusals not a list"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"refusals null"
+ - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"refused without refusals"
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes"target missing"
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAnEntryWithoutAReasonKey
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAnEnumerationRowShortOfAColumn
@@ -41,26 +49,38 @@ Available tests:
  - QmxDirectiveAudit\Tests\DirectiveAuditReportReadingTest::itRefusesAnUnknownVerdictOnTheSuppressionHalf
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itNamesEveryFormTheFixtureDeclares
- - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"after a multiline backtick region"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"after a closed fence"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"backticked"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"capital"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"closed tilde fence"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"colon"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"comma"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"comment decoration"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"cut target then a second directive"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"digit"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"double backticks"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"glued to the docblock star"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"hash"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"hyphen"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"inline continuation"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"list item mention"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"missing target"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"outside a docblock"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"plain"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"plus"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"prose inside a code span"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"single-line docblock"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"slash"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"star"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"summary mention"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"tag with a suffix"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"target cut at a call"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"target wrapped in parens"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"two on one line"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"typed fraction"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"typed integer"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"typed negative"
+ - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"unclosed fence"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes"underscore"
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itRefusesToScanATreeItCannotRead
  - QmxDirectiveAudit\Tests\ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp
@@ -8467,6 +8487,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCallsASuppressionInertWhenNothingItCoversWasProduced
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itCarriesTheSiteTheDirectiveWasWrittenAt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itGroupsAuthoredSitesTheSameWayThePolicyDoes
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itJudgesADirectiveWithoutARuleFilterByWhatItSilenced
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itKeepsIdenticalSuppressionsFromTwoPositionsOnOneLineApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itKeepsTwoDirectiveFormsWrittenOnOneLineApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itProjectsExactlyTheInertVerdictsIntoStaleFindings
@@ -8475,7 +8497,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveTheExtractorRefused
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeADirectiveWithoutARuleFilter
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itRefusesToJudgeASelectorThatNamesNoChannelAtAll
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\DirectiveUsageTest::itReportsOneVerdictForAClassDocblockThatBoundSixDeclarations
@@ -8512,11 +8533,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesEveryVerdictWhenTheLastControlDoesNotReproduceTheRun
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesTheNarrowedSweepWhenARuleBehavesDifferentlyInIsolation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveMaskedOnlyByTwoNeighboursTogether
- - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveNamingNoRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveWhoseProducerIsOffThroughItsOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRefusesToJudgeEitherDirectiveOfAMaskingPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itRemovesEveryBindingOfOneAuthoredSite
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itSkipsAThresholdTheClassifierRefused
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itStillCallsADirectiveInertWhenItsOnlyNeighbourIsTheLiveOne
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itStillJudgesEachDirectiveOfAThreeWayCoalitionThatChangesNothingTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdDirectiveAuditTest::itStillJudgesTheOutcomeOfARuleThatPublishesNoBoundary
@@ -8547,7 +8568,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsTheGrammarWhenAFileFormCarriesABareReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itExplainsWhichFormMayOmitTheChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itHonoursAnExplicitInfoSeverityForUnusedDirectives
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itKeepsDistinctAuthoredDirectivesApart
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itKeepsIdenticalThresholdDiagnosticsFromTwoPositionsOnOneLineApart
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itNamesTheExactDeclarationReachOfAStaleSymbolDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesALevelOnAThresholdInsteadOfTruncatingIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRefusesALevelThatIsNotOne
@@ -8567,10 +8591,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itRejectsTheRetiredChannelPairSpellingAndSaysWhatToWrite
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsAnUnusedDirectiveAtWarningByDefault
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\UnusedDirectiveRuleTest::itStillAnswersAnImpossiblePairAboutTheLevel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive\DeclarationReachTest::itCoversTheWholeDeclarationOrOnlyTheCarriedLineRange
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive\DeclarationReachTest::itRejectsInvalidLineRanges"non-positive start"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Contract\Directive\DeclarationReachTest::itRejectsInvalidLineRanges"reversed range"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersAThresholdNamingAJudgedMetricWithTheChannelThatJudgesIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersForADeclarationFormWithNothingToBindTo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itAnswersForAKnownTagThatNamesNoTarget"declaration form"
@@ -8583,6 +8611,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itJudgesAnImpossiblePairBeforeTheBanOnAChannelBothReject
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdLevelDoesNotParse
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheBadHalfWhenTheThresholdRuleDoesNotExist
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itNamesTheCarrierWhoseReachCannotSupplyTheRequestedLevel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOffersNoPairForAMetricNoChannelDeclares
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itOnlyRecommendsRuleOptWhenBothHalvesOfTheThresholdPairAreValid
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveAddressabilityTest::itRefusesTheRetiredPairSpellingBeforeAskingAboutTheLevel
@@ -8593,9 +8622,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheMeasuredMaskerRatherThanTheFirstOfThree
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\DirectiveMaskingCoalitionTest::itNamesTheMeasuredMaskerRatherThanTheFirstOfTwo
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAValueWhoseCaseDiffersFromTheEnum
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAnExplicitInfoSeverity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsTheDocumentedSpelling
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itDefaultsToInfoWhenNoSeverityIsGiven
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itLeavesTheDefaultWhenSeverityIsWrittenNull
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itDefaultsToWarningWhenNoSeverityIsGiven
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itLeavesTheWarningDefaultWhenSeverityIsWrittenNull
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itRefusesANonStringValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itRefusesAValueItCannotHonour
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itResolvesAnAuthoredWordIntoTheTypedSeverity
@@ -8606,24 +8636,33 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByItsOwnOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleThisRunDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itNeverCallsAnImpossiblePairStale
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itNeverReportsTheNoRuleFilterForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itOnlySeesDirectivesFromTheAnalysedFileSet
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itPublishesOneRefusedVerdictPerAuthoredSite
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsASymbolDirectiveThatMatchedNothing
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsNothingUntilTheOwningRuleEnablesIt
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsTheNoRuleFilterFormWhenItSilencedNothing
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itStaysSilentWhenTheSymbolDirectiveActuallySuppressedSomething
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itStillAccountsForARuleLeftEnabledByItsOptions
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\RefusedDirectivesTest::itClassifiesUnresolvedUnsupportedAndInvalidDirectivesOnce
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\RefusedDirectivesTest::itProjectsTheSameRefusalsIntoFindingsAndVerdicts
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\RefusedDirectivesTest::itRequiresRefusalsExactlyForTheRefusedVerdict
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itBlanksAFencedBlockWholeAndItsDelimiters
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itBlanksAQuotedTagOnOneLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itBlanksATagInsideDoubleBacktickQuoting
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itDistinguishesCommentStartsFromQuotedAndUnquotedMentions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itKeepsABacktickInProseFromReachingTheNextLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itLeavesAnUnpairedBacktickAsAnOrdinaryCharacter
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itMasksATagWhoseOpeningBacktickFollowsAStrayOneOnTheSameLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itPreservesEveryOffsetAndLineBreak
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itQuotesATagWhoseOpeningBacktickFollowsAStrayOneOnTheSameLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itQuotesAnExampleStandingUnderAnUnpairedBacktick
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itReadsATagThatNoBacktickStandsDirectlyBefore
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itReadsATagWrittenAfterAFenceHasClosed
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itRefusesMidlineProseEvenInsideACodeSpan
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\DocumentationRegionsTest::itRequiresAFenceToCloseWithTheSameCharacterAndEnoughDelimiters
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itBindsAnAnonymousCallableUsedAsTheOwnersDirectValue
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itBindsNamedAndAnonymousCallablesToTheirDeclarationsAndLexicalOwners
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itFallsBackToTheNearestNamedClassOrFileForUnboundProperties
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itKeepsSuppressionAndThresholdBindingFamiliesSeparate
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsCallableMetadataThatOnlyDisagreesByOrdinalAtOneMethodPosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsClosureAndArrowMetadataAtOneClosurePosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsDifferentClassMetadataAtOneClassPosition
@@ -8633,10 +8672,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DuplicateClassControlBindingTest::itBindsEachClassDeclarationToItsOwnMethods
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAnswersForADirectiveWrittenAfterAnAttribute"a directive"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAnswersForADirectiveWrittenAfterAnAttribute"a misspelled tag"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as a keyed array value"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as a named argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as a return value"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as an argument"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function as an array element"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function through a chained assignment"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"arrow function through a coalesce assignment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"closure as an argument"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"closure as an expression statement"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesADocblockThresholdToTheAnonymousFunctionItStandsOn"closure through an assignment"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itBindsADirectiveGivenToADeclarationHeader"between the keyword and the name"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itBindsADirectiveGivenToADeclarationHeader"between two attribute groups"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itBindsBothDeclarationFormsToAKeyedArrayElementsDirectCallableValue"ignore"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itBindsBothDeclarationFormsToAKeyedArrayElementsDirectCallableValue"threshold"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itCollapsesOneRefusalBoundToEveryDeclarationOfAClass
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itExtractsSourceControlsWithoutRunDeclarationBindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itKeepsDistinctControlScopesWhileCollapsingTrueDuplicates
@@ -8654,6 +8703,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsACommentAfterTheAttributesAsItReadsOneBeforeThem"two attribute groups"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsACommentNoNodeCarries"a declaration form at the tail of a call"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsACommentNoNodeCarries"a next-line form closing an array"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"class constant"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"class"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"enum case"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"enum"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"function"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"interface"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"method threshold"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"method"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"parameter"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"promoted parameter"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"property"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment"trait"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAPhysicalDirectiveWhateverItIsWrittenOn"block comment above a foreach"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAPhysicalDirectiveWhateverItIsWrittenOn"docblock above a foreach"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAPhysicalDirectiveWhateverItIsWrittenOn"docblock above a return"
@@ -8661,6 +8722,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAPhysicalDirectiveWhateverItIsWrittenOn"file form in a docblock above namespace, after declare"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsAPhysicalDirectiveWhateverItIsWrittenOn"file form in a docblock above use"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsDocblocksOnBothSidesOfTheAttributes
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itReadsMisspelledPrefixesFromAttachedAndUnattachedCarriers
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAChannellessDirectiveInEveryCommentCarrier"block comment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAChannellessDirectiveInEveryCommentCarrier"docblock on its own line"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAChannellessDirectiveInEveryCommentCarrier"docblock on one line"
@@ -8668,22 +8730,31 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAChannellessDirectiveInEveryCommentCarrier"next-line form in a docblock"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAChannellessDirectiveInEveryCommentCarrier"next-line form in a line comment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesADeclarationFormWrittenWhereNothingBinds
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesADirectiveGivenToAPartOfTheDeclaration"between the keyword and the name"
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesADirectiveGivenToAPartOfTheDeclaration"between two attribute groups"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesADocblockThresholdWhereNothingIsMeasured"above a statement"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesADocblockThresholdWhereNothingIsMeasured"on a property without hooks"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite"adjacent argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite"conditional expression"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite"match arm"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite"nested call"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite"unrelated preceding statement"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite"yield"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdThatNamesNoRule"docblock on its own line"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdThatNamesNoRule"docblock on one line"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdWrittenOutsideADocblock"block comment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesAThresholdWrittenOutsideADocblock"line comment"
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesBothDeclarationFormsBeforeTheKeyOfAnArrayElement"ignore"
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesBothDeclarationFormsBeforeTheKeyOfAnArrayElement"threshold"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRefusesOnlyExplicitLevelsOutsideTheCarriersSuppressionReach
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRejectsSourceControlBindingWhenTwoOrdinalsClaimOnePhysicalPosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillAppliesADocblockThresholdOverAMeasuredMethod
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as a keyed array value"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as a named argument"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as a return value"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as an argument"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function as an array element"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function through a chained assignment"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"arrow function through a coalesce assignment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"closure as an argument"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"closure as an expression statement"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillBindsAnIgnoreToTheAnonymousFunctionItStandsOn"closure through an assignment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itStillRefusesAThresholdOverAStatementThatOnlyContainsAClosure
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsArbitraryOrdering
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsPartialAxesAndRefusesAnAbsentOverride
@@ -8697,6 +8768,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itIsASharedSingleton
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itRejectsNegativeValues
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\InvertedOverrideValidatorTest::itRejectsWarningBelowError
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\RuleValidatorMapFactoryTest::itRefusesAMissingRuleClassBeforeBuildingTheMap
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsNumericallyEqualShorthandValuesAcrossNumberKinds
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsPartialAxesAndRefusesAnAbsentOverride
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\StandardOverrideValidatorTest::itAcceptsWarningBelowError
@@ -8716,6 +8788,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itBacktickEscapedIgnoreFileNotExtractedAtFileLevel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itBacktickEscapedIgnoreIsNotExtracted
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itBacktickEscapedNextLineIsNotExtracted
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itCarriesUnclosedFenceRefusalsOnTheTagLineWithTheOpeningLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itDocCommentStillWorksAfterRefactor
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itDoesNotReadAChannelFromTheLineBelowTheTag
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itDoesNotReadATagInsideAFencedBlock
@@ -8746,6 +8819,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsATagVisibleAfterAnUnpairedBacktick
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsBothHalvesOfAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsTheLevelHalfOfAChannelLevelPair
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsTheSecondTagInTheFirstSuppressionsAuthoredReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsTheSeparatorOutOfTheReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itLeavesTheThresholdTagToItsOwnExtractor
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itLineCommentWithReason
@@ -8753,13 +8827,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itMixedDocblockAndLineComments
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itMixedRealAndBacktickEscapedTags
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNamesARefusedTagWithoutTheCommentTerminator
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNamesUnicodeSeparatorsAndRefusesTheirWiderFileSuppression
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNextLineFromMultiLineBlockComment
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNextLineSuppressionHasNoEndLine
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNextLineSuppressionInMultiLineDocblockUsesEndLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itProjectsFileAndNextLineControlsFromThePhysicalPathInFixedOrder
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReadsADirectiveInTheFirstOfTwoAdjacentDocblocks
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReadsAFileFormReasonIntroducedByTheSeparatorAsNoChannelFilter
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReadsARealDirectiveWrittenUnderAnUnpairedBacktick
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReadsDirectiveGrammarFromParsedCommentsWithInvalidUtf8Bytes
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReasonContainingAsteriskIsNotTruncated
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReasonTrailingDocblockClosingIsStripped
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itRefusesAChannellessDeclarationDirectiveInEveryCommentCarrier"block comment"
@@ -8774,7 +8849,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itRefusesAMisspelledThresholdTag
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itRefusesATagNoGrammarReadsAndNamesItAsWritten
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itRefusesAThresholdTagTheThresholdReaderDidNotCarry
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itRejectsADirectiveCommentWithoutAFilePosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReportsARefusedTagOnItsOwnLineRatherThanTheCommentsFirst
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReportsPrefixTyposOnlyAtPhysicalCommentLineStarts
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReturnsEmptyWhenNoCommentsAndNoDocblock
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReturnsEmptyWhenNoDocComment
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReturnsEmptyWhenNoSuppressionTags
@@ -8789,10 +8866,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itStillReadsAnAuthoredEveryChannelStar"docblock on one line"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itStillReadsAnAuthoredEveryChannelStar"line comment"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itSymbolSuppressionHasEndLineFromNode
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itUsesTheTagLineAndKeepsTheCommentEndAsTheNextLineAnchor
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itAppliesLineReachOnlyAtItsInclusiveBoundaries
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itCarriesTheFirstActuallyAppliedDirectiveForTheExactFindingIdentity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itClearSuppressionsResetsState
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itFileLevelSuppressesAllMatchingFindingsInFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itGetSuppressedFindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itHealthDimensionSuppressionLeavesSiblingChannelsActive
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itKeepsMemberLineReachInItsAuthoredFileForProjectedFindingsAndUsage
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"a group that covers it"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"no rule filter on the line above"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"no rule filter"
@@ -8806,6 +8887,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesNonSuppressedFinding
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesThroughWhenDifferentFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesThroughWhenNoSuppressions
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itRejectsUnequalSuppressionAttributionCounts
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itResolvesTargetControlsIndependentlyOfThePresentationFileAndRebuildsTheIndex
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itStillMatchesADirectiveAgainstANeighbouringAnnotationChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSuppressionMatchesCodeWithAGroupSelector
@@ -8828,7 +8910,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesExactRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesStrictDescendantsOfAGroupSelector
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itRejectsInvalidCoordinateCombinations"file with silenced line"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itRejectsInvalidCoordinateCombinations"negative position"
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itRejectsInvalidCoordinateCombinations"next-line without silenced line"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itReverseDoesNotMatch
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itUsesBytePositionInTheAuthoredSiteIdentity
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itWildcardMatchesAllRules
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterAsciiSeparator
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterExplicitSeparator
@@ -8863,7 +8949,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itMixedValidAndInvalidAnnotations
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itMultipleDiagnosticsCollected
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itReadsAThresholdInTheFirstOfTwoAdjacentDocblocks
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRefusesTheFullAuthoredTailWhenAnotherTagIsMasked
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsAFractionalIntegerBoundaryBeforeOptionsCanTruncateIt
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsAThresholdCommentWithoutAFilePosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsDottedOptionKeysAsWholeAnnotation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsMalformedValuePortionsAsWholeAnnotations
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itRejectsNegativeValuesAsWholeAnnotation
@@ -8889,6 +8977,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itKeepsBothQuestionsClosedForHiddenOutsideDenominatorButRetainsRemoved
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itUsesObservedOutsidePhpToClosePathsEvenWhenInitialTargetsLookCovered
  - Qualimetrix\Tests\Analysis\Run\Integration\Contract\Configuration\ProjectScopeDoorsTest::itWithholdsNamespaceClaimsForUnlistableRemovedCodeWithoutClosingSelectors
+ - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itMergesRefusedSitesOnceWithMeasuredVerdicts
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itReportsWhatTheRunMeasuredAlongsideTheVerdicts
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditPipelineTest::itSeparatesTheLiveDirectiveFromTheDeadOneOnOneAnchor
  - Qualimetrix\Tests\Analysis\Run\Integration\DirectiveAuditUniverseTest::itJudgesASuppressionByTheFindingsRulesProducedRatherThanThosePublished
@@ -9850,7 +9939,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective"an unparsable payload"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective"an unresolvable name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itDoesNotFailOnAnInertVerdictWhoseBoundaryWasNotObservable
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenEveryDirectiveStillDoesSomething
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree
@@ -9859,15 +9947,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesTheBannedChannelInsideEveryStageAfterSuppression
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLetsFinalSelectionDecideWhetherARefusalFails
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNamesTheFileThatWroteANonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itNoLongerLetsTheNonPrimaryCopyProduceAnUnusedDirectiveInstead
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itOmitsTheDocsPointerFromJsonOutput
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsARefusedTagWithoutATrailingSpace
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheDocsPointerInTextOutput
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheErrorEnvelopeInJson
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrioritizesFailureOverAnExcludedNamedPath
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPrioritizesIncompleteCoverageOverARefusedDirective
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itPublishesEveryInvalidThresholdAsOneRefusedSite
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesANonExistentPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesAnUnknownFormat
@@ -9895,8 +9987,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name at project level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnUnreadableConfigAsAConfigurationError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itSaysTheSameThingInBothFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamOwnershipTest::itDrawsTheFrameBelowEveryLineWrittenBeforeIt
@@ -10319,6 +10413,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPrintsOneTallyPerVerdictTheVocabularyDefinesInTheTextSummary
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesBothEqualRankDisableWritersInTheTextAndJsonSelection
  - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesOneSummaryKeyPerVerdictTheVocabularyDefines
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\DirectiveAuditSummaryProjectionTest::itPublishesRefusalDetailsWithoutTheInternalAddress
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--cache-dir"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--fail-on"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\EmptyCliValueReachesItsOwnerTest::itCarriesTheEmptyStringThroughToTheOwner"--format"

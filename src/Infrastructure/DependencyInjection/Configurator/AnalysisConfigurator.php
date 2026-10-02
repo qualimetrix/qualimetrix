@@ -62,6 +62,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string FILE_PROCESSOR = 'qmx.run.file_processor';
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
+    private const string INLINE_REFUSED_DIRECTIVES_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives';
+
     private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
     private const string INLINE_DIRECTIVE_USAGE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage';
     private const string INLINE_THRESHOLD_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit';
@@ -156,11 +158,14 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
      */
     private function registerInlineDirectivePolicy(ContainerBuilder $container): void
     {
+        $container->register(self::INLINE_REFUSED_DIRECTIVES_CLASS, self::INLINE_REFUSED_DIRECTIVES_CLASS)
+            ->setArguments([new Reference(ChannelIdentityInterface::class)]);
         $container->register(self::INLINE_DIRECTIVE_USAGE_CLASS, self::INLINE_DIRECTIVE_USAGE_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
                 new Reference(RuleConfigurationInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS),
             ]);
 
         // The threshold half is a service of its own rather than a method on
@@ -168,8 +173,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // context it already prepared — while the policy is exactly that state.
         $container->register(self::INLINE_THRESHOLD_AUDIT_CLASS, self::INLINE_THRESHOLD_AUDIT_CLASS)
             ->setArguments([
-                new Reference(ChannelIdentityInterface::class),
                 new Reference(RuleConfigurationInterface::class),
+                new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS),
             ]);
         $container->setAlias(ThresholdDirectiveAuditInterface::class, self::INLINE_THRESHOLD_AUDIT_CLASS);
 
@@ -177,7 +182,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // the policy is the run's directive store, and the collaborators the
         // accounting needs are not the store's.
         $container->register(self::INLINE_DIRECTIVE_POLICY_CLASS, self::INLINE_DIRECTIVE_POLICY_CLASS)
-            ->setArguments([new Reference(self::INLINE_DIRECTIVE_USAGE_CLASS)])
+            ->setArguments([new Reference(self::INLINE_DIRECTIVE_USAGE_CLASS), new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS)])
             ->setPublic(true);
         $container->setAlias(InlineDirectivePolicyInterface::class, self::INLINE_DIRECTIVE_POLICY_CLASS)
             ->setPublic(true);
@@ -190,7 +195,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::INLINE_DIRECTIVE_VALIDATOR_CLASS, self::INLINE_DIRECTIVE_VALIDATOR_CLASS)
             ->setArguments([
                 new Reference(self::INLINE_DIRECTIVE_POLICY_CLASS),
-                new Reference(ChannelIdentityInterface::class),
+                new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS),
             ])
             ->setAutoconfigured(true)
             ->setAutowired(false)

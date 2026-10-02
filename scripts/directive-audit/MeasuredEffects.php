@@ -15,9 +15,8 @@ namespace QmxDirectiveAudit;
  * here what it is worth.
  *
  * Two tests hold the table honest, and neither alone would: one demands the
- * keys match the enum in both directions, the other demands that on the four
- * values known today the table still says what `effect !== 'unmeasured'` used
- * to say. A table with a boolean flipped passes the first and fails only the
+ * keys match the enum in both directions, the other demands that effective, overrun and inert count as measurements,
+ * while unmeasured and refused do not. A table with a boolean flipped passes the first and fails only the
  * second.
  */
 final class MeasuredEffects
@@ -28,6 +27,7 @@ final class MeasuredEffects
         'overrun' => true,
         'inert' => true,
         'unmeasured' => false,
+        'refused' => false,
     ];
 
     /** @throws AuditReportError on a value this table does not name */

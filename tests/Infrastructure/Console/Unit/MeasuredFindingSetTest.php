@@ -60,7 +60,7 @@ final class MeasuredFindingSetTest extends TestCase
             [$ignored, $reported],
             [
                 'src/Legacy/Service.php' => [
-                    new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
+                    new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File, position: 0),
                 ],
             ],
         );
@@ -142,7 +142,7 @@ final class MeasuredFindingSetTest extends TestCase
             [$ignored, $reported],
             [
                 'src/Legacy/Service.php' => [
-                    new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
+                    new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File, position: 0),
                 ],
             ],
         );

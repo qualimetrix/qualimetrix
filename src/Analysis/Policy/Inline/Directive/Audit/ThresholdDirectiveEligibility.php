@@ -5,28 +5,20 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
-/** Decides whether an authored threshold has an addressable, executed producer. */
+/** Decides whether an authored threshold has an enabled, executed producer. */
 final readonly class ThresholdDirectiveEligibility
 {
-    private DirectiveAddressability $addressability;
-
     public function __construct(
-        ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
         private RuleConfigurationInterface $ruleConfiguration,
-    ) {
-        $this->addressability = new DirectiveAddressability($identity);
-    }
+    ) {}
 
     /**
      * A group can span levels; undeclared levels do not count as disablement.
@@ -36,10 +28,6 @@ final readonly class ThresholdDirectiveEligibility
     public function reason(array $bindings, LevelActivity $activity): ?DirectiveUnmeasurableReason
     {
         $override = $bindings[0];
-        if ($this->addressability->problemWithThreshold($override) !== null) {
-            return DirectiveUnmeasurableReason::AlreadyRefused;
-        }
-
         $enablement = $this->ruleConfiguration->enablement()
             ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
         $levels = self::levelsOf($bindings);

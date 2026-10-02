@@ -27,9 +27,9 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class InlineDirectiveOptionsTest extends TestCase
 {
     #[Test]
-    public function itDefaultsToInfoWhenNoSeverityIsGiven(): void
+    public function itDefaultsToWarningWhenNoSeverityIsGiven(): void
     {
-        self::assertSame(Severity::Info, InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, []))->unusedDirectiveSeverity);
+        self::assertSame(Severity::Warning, InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, []))->unusedDirectiveSeverity);
     }
 
     /**
@@ -37,11 +37,20 @@ final class InlineDirectiveOptionsTest extends TestCase
      * unwritten key — it is not a narrower declaration refusing a legal value.
      */
     #[Test]
-    public function itLeavesTheDefaultWhenSeverityIsWrittenNull(): void
+    public function itLeavesTheWarningDefaultWhenSeverityIsWrittenNull(): void
+    {
+        self::assertSame(
+            Severity::Warning,
+            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => null]))->unusedDirectiveSeverity,
+        );
+    }
+
+    #[Test]
+    public function itAcceptsAnExplicitInfoSeverity(): void
     {
         self::assertSame(
             Severity::Info,
-            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => null]))->unusedDirectiveSeverity,
+            InlineDirectiveOptions::fromResolved(ResolvedOptionsFixture::values(InlineDirectiveOptions::class, ['unused_directive_severity' => 'info']))->unusedDirectiveSeverity,
         );
     }
 

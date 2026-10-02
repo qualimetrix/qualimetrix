@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 
 final readonly class DirectiveAuditTextPresenter
@@ -92,11 +93,11 @@ final readonly class DirectiveAuditTextPresenter
     {
         return [
             \sprintf(
-                '  %s:%d  %s %s',
+                '  %s:%d  %s%s',
                 $verdict->site->file->value(),
                 $verdict->site->line,
                 self::tag($verdict->site->form),
-                $verdict->site->target,
+                $verdict->site->target === '' ? '' : ' ' . $verdict->site->target,
             ),
             ...array_map(static fn(string $sentence): string => '      ' . $sentence, $this->statement($verdict)),
         ];
@@ -148,6 +149,10 @@ final readonly class DirectiveAuditTextPresenter
             ],
             DirectiveEffect::Inert => $this->inertStatement($verdict),
             DirectiveEffect::Unmeasured => self::unmeasuredStatement($verdict),
+            DirectiveEffect::Refused => array_map(
+                static fn(DirectiveVerdictRefusal $refusal): string => 'refused: ' . $refusal->channel->code . ': ' . $refusal->message,
+                $verdict->refusals,
+            ),
         };
     }
 
@@ -176,11 +181,6 @@ final readonly class DirectiveAuditTextPresenter
         $reason = match ($verdict->reason) {
             DirectiveUnmeasurableReason::ProducerDisabled
                 => 'unmeasured: the producer of the addressed channel did not run.',
-            DirectiveUnmeasurableReason::AlreadyRefused
-                => 'unmeasured: the directive addresses nothing this run could apply it to, or a channel no '
-                    . 'directive may address; `annotation.unresolved-directive` answers it.',
-            DirectiveUnmeasurableReason::AddressesEveryChannel
-                => 'unmeasured: it carries no rule filter, so there is no producer to consult.',
             DirectiveUnmeasurableReason::Masked => self::maskedSentence($verdict->maskedBy),
             null => 'unmeasured.',
         };

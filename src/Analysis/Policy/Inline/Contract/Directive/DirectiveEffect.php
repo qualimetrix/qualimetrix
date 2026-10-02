@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 /**
  * What an authored inline directive did in one run.
  *
- * Three of the four are answers; `Unmeasured` is the absence of one, and
+ * Three effects are measurements; Refused is a rejected request, and `Unmeasured` is the absence of one, and
  * keeping it distinct from `Inert` is the whole reason this is an enum rather
  * than a boolean. A directive addressing a rule that never ran did not fail to
  * do anything — nobody asked it.
@@ -66,4 +66,7 @@ enum DirectiveEffect: string
 
     /** No answer is available; {@see DirectiveUnmeasurableReason} says why. */
     case Unmeasured = 'unmeasured';
+
+    /** Its reader refused to carry out the authored request. */
+    case Refused = 'refused';
 }

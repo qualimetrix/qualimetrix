@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
@@ -27,6 +28,28 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  */
 final readonly class DirectiveLevels
 {
+    /**
+     * The declaration levels a symbol directive can reach from one authored
+     * carrier. This deliberately ignores the level written in the selector:
+     * extraction compares that request with this union before the directive
+     * is admitted.
+     *
+     * @param non-empty-list<DeclarationBinding> $bindings
+     *
+     * @return list<SymbolLevel>
+     */
+    public static function reachableByBindings(array $bindings): array
+    {
+        $levels = [];
+
+        foreach ($bindings as $binding) {
+            $level = SymbolLevelProjection::ofDeclaration($binding->subject->toSymbolPath()->getType());
+            $levels[$level->value] = $level;
+        }
+
+        return array_values($levels);
+    }
+
     /**
      * The levels of a whole authored group, which is what a caller judging one
      * directive has: one authored site expands to a binding per applicable

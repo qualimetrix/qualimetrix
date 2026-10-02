@@ -37,17 +37,21 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtra
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
@@ -75,6 +79,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
@@ -679,6 +684,12 @@ namespace InlineWorkerFixture;
  */
 final class Controlled
 {
+    /** @qmx-ignore code-smell.unused-private -- Member line transport. */
+    private const FLAG = true;
+
+    /**
+     * @qmx-threshold complexity.ccn warning=25 error=15
+     */
     public function run(): void {}
 
     #[\Deprecated]
@@ -694,11 +705,38 @@ PHP);
 
             self::assertSame(SequentialStrategy::class, $sequential['strategy']);
             self::assertNotEmpty($sequential['suppressions']);
-            self::assertContains(15, array_map(
+            self::assertContains(21, array_map(
                 static fn($suppression): int => $suppression->line,
                 array_merge(...array_values($sequential['suppressions'])),
             ), 'the directive written after the attribute is read before the worker round trip is compared');
-            self::assertNotEmpty($sequential['thresholdOverrides']);
+
+            $memberSuppressions = array_values(array_filter(
+                array_merge(...array_values($sequential['suppressions'])),
+                static fn(Suppression $suppression): bool => $suppression->rule === 'code-smell.unused-private',
+            ));
+            self::assertCount(1, $memberSuppressions);
+            self::assertSame(12, $memberSuppressions[0]->line);
+            self::assertNotNull($memberSuppressions[0]->binding);
+            self::assertSame(ControlScope::Class_, $memberSuppressions[0]->binding->controlScope);
+            self::assertSame('lines:13:13', $memberSuppressions[0]->binding->reach->key());
+
+            $complexityOverrides = array_values(array_filter(
+                array_merge(...array_values($sequential['thresholdOverrides'])),
+                static fn(ThresholdOverride $override): bool => $override->rulePattern === ComplexityRule::NAME
+                    && $override->subject->toSymbolPath()->getType() === SymbolType::Class_,
+            ));
+            self::assertCount(1, $complexityOverrides);
+            self::assertSame(15, $complexityOverrides[0]->warning);
+            self::assertSame(25, $complexityOverrides[0]->error);
+            self::assertSame(ControlScope::Class_, $complexityOverrides[0]->controlScope);
+
+            $complexityDiagnostics = array_values(array_filter(
+                array_merge(...array_values($sequential['thresholdDiagnostics'])),
+                static fn(ThresholdDiagnostic $diagnostic): bool => $diagnostic->rulePattern === ComplexityRule::NAME,
+            ));
+            self::assertCount(1, $complexityDiagnostics);
+            self::assertSame(16, $complexityDiagnostics[0]->line);
+            self::assertSame('warning_exceeds_error', $complexityDiagnostics[0]->code);
             self::assertNotEmpty($sequential['thresholdDiagnostics']);
 
             $parallel = self::collectThroughProductionStrategy($files, $fixtureRoot, 2);
@@ -1060,7 +1098,7 @@ PHP);
         $fileProcessingTaskFactory = new FileProcessingTaskFactory(
             new LcomCollectionConfigurationStore(),
             DependencyVisitor::class,
-            [LocCollector::class],
+            [LocCollector::class, CyclomaticComplexityCollector::class],
             [],
             [ComplexityRule::class],
         );
@@ -1076,7 +1114,7 @@ PHP);
         );
 
         $compositeCollector = new CompositeCollector(
-            [new LocCollector()],
+            [new LocCollector(), new CyclomaticComplexityCollector()],
             new DeclarationRegistrarFactory(),
             [],
             new DependencyVisitor(new DependencyResolver()),

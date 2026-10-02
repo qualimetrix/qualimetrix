@@ -8,11 +8,13 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -102,6 +104,27 @@ final class DirectiveAuditSummaryProjectionTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itPublishesRefusalDetailsWithoutTheInternalAddress(): void
+    {
+        $refusal = new DirectiveVerdictRefusal(
+            new FindingChannel('annotation.invalid-threshold'),
+            'Invalid payload.',
+            'complexity.ccn',
+        );
+        $presenter = new DirectiveAuditPresenter(new DirectiveAuditReport([
+            new DirectiveVerdict(
+                new DirectiveSite(RelativePath::fromString('src/Example.php'), 4, 'threshold', 'complexity.ccn', 40),
+                DirectiveEffect::Refused,
+                refusals: [$refusal],
+            ),
+        ], new AnalysisCoverage([], [], []), 0), new RuleEnablement([], null));
+        $report = json_decode($presenter->json(0), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertCount(1, $report['directives']);
+        self::assertSame([['channel' => 'annotation.invalid-threshold', 'message' => 'Invalid payload.']], $report['directives'][0]['refusals']);
+        self::assertStringContainsString('refused: annotation.invalid-threshold: Invalid payload.', $presenter->text());
+    }
+
     /** One verdict per case, so a projection that forgets one prints a shorter list than the vocabulary. */
     private static function presenterOverEveryVerdict(): DirectiveAuditPresenter
     {
@@ -110,8 +133,15 @@ final class DirectiveAuditSummaryProjectionTest extends TestCase
 
         foreach (DirectiveEffect::cases() as $effect) {
             $verdicts[] = new DirectiveVerdict(
-                new DirectiveSite(RelativePath::fromString('src/Example.php'), ++$line, 'threshold', 'rule.name'),
+                new DirectiveSite(RelativePath::fromString('src/Example.php'), ++$line, 'threshold', 'rule.name', position: null),
                 $effect,
+                refusals: $effect === DirectiveEffect::Refused ? [
+                    new DirectiveVerdictRefusal(
+                        new FindingChannel('annotation.unresolved-directive'),
+                        'Unknown channel.',
+                        null,
+                    ),
+                ] : [],
             );
         }
 

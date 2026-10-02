@@ -6565,19 +6565,11 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability"
         },
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
         },
         {
           "owner": "Infrastructure.Console",
@@ -6609,7 +6601,7 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
         }
       ]
     },
@@ -6633,10 +6625,6 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability"
         },
         {
@@ -6648,10 +6636,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
         },
@@ -6661,7 +6645,7 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
         }
       ]
     },
@@ -7025,6 +7009,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges"
         }
       ]
     },
@@ -7406,10 +7394,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DirectiveSuppressorResolver"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
         },
         {
@@ -7479,6 +7463,14 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\GitScopeFindingFilter"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\AnnotationSuppressionResult"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DeclarationReach"
         }
       ]
     },
@@ -7543,6 +7535,14 @@
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveVerdictRefusal"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirective"
         }
       ]
     },
@@ -8144,6 +8144,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
         }
       ]
     },
@@ -8875,10 +8879,6 @@
       "owner": "Analysis.Finding",
       "visibility": "contract",
       "consumers": [
-        {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage"
-        },
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability"
@@ -11546,12 +11546,12 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy"
         },
         {
-          "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplanationRenderer"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
         }
       ]
     },
@@ -13147,8 +13147,19 @@
       "path": "src/Analysis/Policy/Inline/Contract/AnnotationSuppressionResult.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionResult"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\AnnotationSuppressionInterface"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DeclarationBinding": {
       "path": "src/Analysis/Policy/Inline/Contract/Directive/DeclarationBinding.php",
@@ -13206,6 +13217,18 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditTextPresenter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\AnnotationSuppressionResult"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionResult",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\AnnotationSuppressionResult"
         }
       ]
     },
@@ -15951,10 +15974,6 @@
         },
         {
           "owner": "Analysis.Policy.Inline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
-        },
-        {
-          "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationControlBindings"
         },
         {
@@ -16056,6 +16075,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\WalkedEntrySelection"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter"
         }
       ]
     },
@@ -16989,6 +17016,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges"
         }
       ]
     },
@@ -17697,6 +17728,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\GitScopeFindingFilter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
         }
       ]
     },
@@ -20937,13 +20972,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\FindingProjection\\DirectiveSuppressorResolver": {
-      "path": "src/Reporting/FindingProjection/DirectiveSuppressorResolver.php",
-      "kind": "class",
-      "owner": "Reporting",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions": {
       "path": "src/Reporting/FindingProjection/FindingProjectionOptions.php",
       "kind": "class",
@@ -21701,6 +21729,77 @@
       "path": "src/Infrastructure/Console/Command/Debug/LayerAssignmentTextPresenter.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DeclarationReach": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/DeclarationReach.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveVerdictRefusal": {
+      "path": "src/Analysis/Policy/Inline/Contract/Directive/DirectiveVerdictRefusal.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditTextPresenter"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun",
+          "relation": "contract_surface",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DirectiveVerdict"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveRefusalChannel": {
+      "path": "src/Analysis/Policy/Inline/Directive/DirectiveRefusalChannel.php",
+      "kind": "enum",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirective": {
+      "path": "src/Analysis/Policy/Inline/Directive/RefusedDirective.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives": {
+      "path": "src/Analysis/Policy/Inline/Directive/RefusedDirectives.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationSource": {
+      "path": "src/Analysis/Policy/Inline/Extraction/DeclarationSource.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\SuppressionSyntax": {
+      "path": "src/Analysis/Policy/Inline/Contract/SuppressionSyntax.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges": {
+      "path": "src/Analysis/Policy/Inline/Extraction/DeclarationRanges.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
       "visibility": "internal",
       "consumers": []
     }

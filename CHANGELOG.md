@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+**Inline directives are authored sites with bounded declaration reach.**
+Previously midline tags could become live controls, quote handling depended on
+a tick immediately before the tag, and binding followed the parser's outer
+node or broad containment. A tag must now start its physical comment line
+after decoration; quote documentation with equal paired backtick runs or a
+closed fence. Midline and unclosed-fence mentions are refused. Put a closure
+directive directly before `function`/`fn`, or on its direct argument, array
+value, return value or assignment chain; wrappers around a nested closure do
+not bind. Docblocks anywhere in a declaration header belong to that declaration.
+
+Member suppressions now reach only findings on the member's source lines in
+the containing class or callable. A method retains whole-callable reach;
+a hooked property also reaches its hooks, and a promoted parameter reaches
+both parameter and property findings. Move an intentional member exception
+onto that member. Explicit `:level` selectors must be reachable there.
+Threshold overrides retain whole declaration semantics and gain no containing
+member reach.
+
+Every read tag produces one audit site. Suppressions and diagnostics carry its
+byte position, and next-line sites name the tag line while targeting the line
+after the comment. Two identical comments on one line remain distinct;
+threshold overrides of the same rule on the same line still coalesce.
+Replace `unmeasured / already-refused` and `addresses-every-channel` handling
+with `refused` and required `refusals: [{channel, message}]` (empty for other
+verdicts). JSON does not publish the internal addressed producer. Audit exit
+`4` for incomplete analysis takes priority over `2` for a publishable refusal
+or observable inert directive, otherwise `0`. Blanket `*` and bare file
+controls are judged effective/inert while still unable to silence banned
+channels.
+
+Unused directives now default to Warning instead of Info. To keep the former
+severity, set `rules.annotation.directive.unused-directive-severity: info`
+(or the equivalent nested YAML key). Unresolved and unused channels are
+`Selectable`; unsupported and invalid thresholds are `FollowsAddressedRule`.
+
+PHP consumers must provide `DeclarationBinding(subject, scope, reach)` with
+Inline's `DeclarationReach`, and provide `Suppression`'s physical `position`
+and separate `silencedLine`. `ThresholdDiagnostic` requires `position`;
+`DirectiveSite` requires nullable `position`; `DirectiveVerdict` requires
+nonempty refusal details exactly when refused.
+Read the first actually applied site through
+`AnnotationSuppressionResult::suppressorOf(Finding)`; Reporting receives that
+result through `FindingProjectionResult` rather than repeating a matcher.
+Construct `AnnotationSuppressionResult(retained, suppressed, suppressors)`
+with one site per suppressed finding and supply that result as
+`FindingProjectionResult`'s required `annotationSuppression` argument.
+The suppressed formatter still publishes only `file:line`, so same-line
+sites share that public label. A missing rule class now refuses validator-map
+construction instead of silently being skipped.
+See [ADR 0095](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md)
+for ownership and rationale.
+
 - `ValueScopeJudgement` now requires its existing fifth constructor argument, the measured `ProjectScopeJudgement`; omitting it previously assumed both questions were open. Pass the pipeline judgement explicitly. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for the single measured authority.
 
 - Replace the nine-input `AnalysisResult` constructor with `AnalysisResult::fromRun(measured, directives, ruleExecution, latePublished)`. Read metrics as `measured.repository`; read coverage, namespaceTree, projectScope and duration under `measured`, and suppressions/thresholdOverrides under `directives`. Replace the findings property with `findings()` and filesAnalyzed/filesSkipped with measured coverage methods. Execution publication and late findings remain separate, and merge preserves their original order. See [ADR 0094](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0094-analysis-results-publish-subject-owned-values.md) for PHP-consumer migration.
@@ -107,7 +159,7 @@ diagnostics remain unchanged. See ADR 0092.
 
 32. **Directive selection lists only decisive disabling statements.** Text and JSON retain every tied decisive disabling text in resolver order and deduplicate repetitions across cells. A statement canceled by a later enable is absent. JSON selection.disabled remains a list of strings.
 
-33. **Directive diagnostics follow declared selection roles.** Some directive errors remain admitted for a selected addressed producer; unresolved errors can be filter-exempt. The unused-directive channel remains directly selectable. Disable annotation.directive explicitly to silence its producer rather than relying on a filter to hide a configuration mistake.
+33. **Directive diagnostics follow declared selection roles.** Unresolved and unused directives are directly selectable. Unsupported and invalid thresholds follow the addressed rule. Disable annotation.directive explicitly to silence its producer.
 
 34. **Retired option diagnostics name one replacement through the declared vocabulary.** Document advice uses canonical declared names; CLI advice keeps the authored spelling. Each refusal retains its own source and written position, so full diagnostic sentences are source-specific. Follow the named replacement; no deprecated aliases or second raw-name walk remain.
 
@@ -591,35 +643,9 @@ symbol, and a symbol that reaches such a key gets no value and is counted in
 the warning. A key read in the condition, or by both branches, is refused. A chain none of whose links the level carries is
 refused naming every link.
 
-**Inline-directive forms that used to be silent now fail the run.** Each is
-reported on `annotation.unresolved-directive` at the line it was written on.
-That channel is a configuration error, so the run exits 2 whatever `--fail-on`
-says — `--fail-on=none` included — and no baseline accepts it:
-
-- a declaration-form `@qmx-ignore` written where nothing is measured (above a
-  statement, on a property without hooks);
-- a docblock `@qmx-threshold` written where nothing it can retune is measured
-  (above a statement, on a property without hooks, a class constant or a
-  parameter);
-- `@qmx-threshold` in a `//` or `/* */` comment — a threshold is read only from
-  a docblock, and over a measured method this form used to retune nothing;
-- a `@qmx-` tag name this tool does not read (`@qmx-ignore-lines`);
-- `@qmx-ignore` or `@qmx-ignore-next-line` with no channel on the tag's line,
-  and `@qmx-threshold` with no rule — answered "names no channel" / "names no
-  rule". `/** @qmx-threshold */` used to be reported as an invalid threshold on
-  the rule `*`, which nobody wrote.
-
-The first was worse than silent: it threw out of extraction, so the whole file
-was dropped from the analysis — its metrics and findings simply absent — while
-the run still called itself complete. No new channel and no new option: correct
-the directive or remove it. Prose that mentions a tag in a `//` comment is read
-as the tag: quote it in backticks.
-
-**`bin/qmx directives --format=json` reports the form of a refused directive
-from its vocabulary.** A `@qmx-ignore` / `@qmx-ignore-next-line` refused for
-naming no channel appears under the form `symbol` / `next-line`, as every other
-directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
-`@qmx-threshold` appears under the form `threshold`.
+Inline declaration refusals now preserve the file's analysis instead of
+aborting extraction. The authored-site migration and audit shape are described
+in the inline-directive Breaking entry above.
 
 - **An option value that does not parse is refused instead of falling back to a
   default.** `--detail`, `--top`, `--group-by`, every `--format-opt` value
@@ -1176,9 +1202,9 @@ What changes for a configuration you already have:
   the last argument of a call, after the last element of an array) is now read:
   `@qmx-ignore-next-line` and `@qmx-ignore-file` work there, and a declaration
   form is refused instead of being dropped.
-- A backtick written directly before a tag always opens a quote, so a stray
-  backtick earlier on the same docblock line no longer turns a quoted example
-  such as `` `@qmx-ignore complexity.ccn` `` into a live suppression.
+- Quoting uses same-line equal backtick runs rather than a special tick
+  immediately before the tag; malformed examples receive a placement refusal.
+  Closed fences quote multiline examples; unclosed fences report refusals.
 - Two different refused tags naming one channel on one line are reported as two
   `annotation.unresolved-directive` findings and two audit verdicts; one used to
   replace the other.

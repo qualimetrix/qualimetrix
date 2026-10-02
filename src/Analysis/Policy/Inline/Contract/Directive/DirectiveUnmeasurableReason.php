@@ -23,22 +23,6 @@ enum DirectiveUnmeasurableReason: string
     case ProducerDisabled = 'producer-disabled';
 
     /**
-     * The directive was already refused elsewhere — an unaddressable
-     * `channel:level` pair, a selector that expands to no channel, a channel
-     * no producer owns, or a target reaching a channel no directive may
-     * address at all. `annotation.unresolved-directive` answers all four, and
-     * answering again would judge one mistake twice.
-     */
-    case AlreadyRefused = 'already-refused';
-
-    /**
-     * The directive carries no rule filter. It says "whatever is here", so
-     * there is no channel whose producer could be consulted, and calling it
-     * inert would report a file's cleanliness as a defect.
-     */
-    case AddressesEveryChannel = 'addresses-every-channel';
-
-    /**
      * Another directive of the same rule covers the same subject, so removing
      * this one alone changes nothing whether or not it does something.
      * Produced by the threshold half only.

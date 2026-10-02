@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
 use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
@@ -17,6 +15,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableR
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 
 /**
  * The threshold half of the inline-directive subject, answered by difference
@@ -66,7 +65,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
  * `@qmx-threshold`'s own rule name ({@see narrowedTo()}), and a classless
  * producer of the computed-metric family can never own one —
  * `ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE` is `false` for
- * all seven, refused earlier by {@see ThresholdDirectiveEligibility::reason()}
+ * all seven, refused earlier by {@see RefusedDirectives::threshold()}
  * before a name ever reaches `execute()`. The execution publication
  * projection's own half of the narrowed result — the per-channel filter — is
  * likewise never read here: {@see without()} reads only `->produced`. A second caller
@@ -77,10 +76,10 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
     private ThresholdDirectiveEligibility $eligibility;
 
     public function __construct(
-        ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
         RuleConfigurationInterface $ruleConfiguration,
+        private RefusedDirectives $refused,
     ) {
-        $this->eligibility = new ThresholdDirectiveEligibility($identity, $ruleConfiguration);
+        $this->eligibility = new ThresholdDirectiveEligibility($ruleConfiguration);
     }
 
     public function verdicts(ThresholdDirectiveAuditInput $input): array
@@ -91,6 +90,9 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $measurable = [];
 
         foreach ($groups as $group) {
+            if ($this->refused->threshold($group->file, $group->bindings[0]) !== null) {
+                continue;
+            }
             $reason = $this->eligibility->reason(
                 $group->bindings,
                 $input->baselineResult->levelActivity,

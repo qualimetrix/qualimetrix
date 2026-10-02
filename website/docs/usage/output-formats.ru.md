@@ -1009,6 +1009,31 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 ---
 
+## JSON аудита директив
+
+`bin/qmx directives --format=json` публикует `meta`, `scope`,
+`selection`, `sweep`, `directives`, `summary` и `exit_code`.
+У директивы есть `file`, строка тега `line`, `form`, `target`,
+`effect`, `reason`, `masked_by`, `boundary_observable` и обязательный
+`refusals`. Исходы — `effective`, `overrun`, `inert`, `unmeasured`
+и `refused`; `reason` описывает Unmeasured (выключенный producer или
+перекрытый threshold). Место отказа несёт непустой список
+`[{channel, message}]`; остальные исходы — `[]`. Внутренние физическая
+позиция и addressed producer не публикуются. Два одинаковых комментария на
+строке могут поэтому дать две одинаковые публичные записи.
+Threshold overrides одного правила на одной строке пока сливаются.
+
+`summary` считает все пять исходов, включая `refused`. Отказ виден и тогда,
+когда селекция не позволяет его каналу изменить `exit_code`.
+Неполный анализ возвращает 4 раньше решения по отказам/inert; иначе публикуемый
+отказ или наблюдаемый inert даёт 2, оставшиеся случаи — 0.
+См. [справочник команды](cli-options.ru.md#directives).
+
+Для `--format=suppressed` Inline передаёт первую реально применившуюся
+директиву; Reporting не выводит размещение повторно. Публичный `suppressor`
+по-прежнему равен `файл:строка`, поэтому разные физические места на строке
+имеют одну метку.
+
 ## Адреса документации в JSON-отчётах {#documentation-addresses}
 
 Каждый JSON-отчёт из таблицы ниже называет, где лежит документация, чтобы

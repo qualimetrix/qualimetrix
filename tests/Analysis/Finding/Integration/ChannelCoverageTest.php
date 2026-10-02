@@ -55,6 +55,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -347,7 +348,7 @@ final class ChannelCoverageTest extends TestCase
         $policy->prepare(
             [
                 $file => [
-                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File),
+                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File, position: 0),
                 ],
             ],
             [
@@ -369,13 +370,14 @@ final class ChannelCoverageTest extends TestCase
                         subject: $subject,
                         message: '@qmx-threshold complexity.ccn: warning (20) must not exceed error (10)',
                         rulePattern: 'complexity.ccn',
+                        position: 0,
                         code: 'warning_exceeds_error',
                     ),
                 ],
             ],
         );
 
-        $validator = new InlineDirectiveValidator($policy, self::channelIdentity());
+        $validator = new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity()));
         $findings = $validator->validate(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
 
         $emitted = array_map(static fn($finding): string => $finding->code, $findings);
@@ -404,7 +406,7 @@ final class ChannelCoverageTest extends TestCase
 
         $policy = self::directivePolicy();
         $policy->prepare(
-            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File)]],
+            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -412,7 +414,7 @@ final class ChannelCoverageTest extends TestCase
         $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
         $options = new InlineDirectiveOptions();
         self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
-        self::assertSame([], (new InlineDirectiveValidator($policy, self::channelIdentity()))->validate($context));
+        self::assertSame([], (new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity())))->validate($context));
 
         $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
         self::assertCount(1, $unused);
@@ -436,7 +438,9 @@ final class ChannelCoverageTest extends TestCase
         \assert($execution instanceof RuleExecutionInterface);
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules(), channels: $identity));
 
-        return new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity));
+        $refused = new RefusedDirectives($identity);
+
+        return new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity, $refused), $refused);
     }
 
     private static function channelIdentity(): ChannelUniverseInterface

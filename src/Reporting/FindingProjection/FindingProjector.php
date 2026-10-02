@@ -99,12 +99,13 @@ final readonly class FindingProjector
         }
 
         return new FindingProjectionResult(
-            array_values([...$findings, ...$unfilterable]),
-            array_values($measured),
-            array_map(array_values(...), $removed),
-            $stale,
-            $inert,
-            $baselineScope,
+            findings: array_values([...$findings, ...$unfilterable]),
+            annotationSuppression: $annotation,
+            measuredFindings: array_values($measured),
+            removedByStage: array_map(array_values(...), $removed),
+            staleEntries: $stale,
+            inertEntries: $inert,
+            baselineScope: $baselineScope,
         );
     }
 

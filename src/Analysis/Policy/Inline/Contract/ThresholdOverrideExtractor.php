@@ -166,20 +166,22 @@ final readonly class ThresholdOverrideExtractor
             return;
         }
 
-        foreach ($matches as $match) {
-            $rulePattern = $match[1][0];
-            if (!\is_string($rulePattern)) {
+        foreach ($matches as $candidate) {
+            $match = self::authoredMatch($docComment, $candidate[0][1]);
+            if ($match === null) {
                 continue;
             }
+            $rulePattern = $match['rule'];
 
-            $valueString = self::cleanTrailingDocblock($match[2][0] ?? '');
-            $line = self::lineAtOffset($text, $docComment->getStartLine(), $match[0][1]);
+            $valueString = self::cleanTrailingDocblock($match['values'] ?? '');
+            $line = self::lineAtOffset($text, $docComment->getStartLine(), $match['offset']);
+            $position = self::positionAtOffset($docComment, $match['offset']);
             $parsed = new ThresholdOverrideValueParser()->parse($valueString);
 
-            $problem = $this->problemWith($rulePattern, $valueString, $parsed, $line, $subject, $seenRules);
+            $problem = $this->problemWith($rulePattern, $valueString, $parsed, $line, $position, $subject, $seenRules);
             if ($problem !== null) {
                 $read['diagnostics'][] = $problem;
-                $read['diagnosticTags'][] = [$docComment, $match[0][1]];
+                $read['diagnosticTags'][] = [$docComment, $match['offset']];
 
                 continue;
             }
@@ -187,7 +189,7 @@ final readonly class ThresholdOverrideExtractor
             $seenRules[$rulePattern] = true;
             $request = $parsed ?? throw new LogicException('An admitted threshold annotation requires parsed values.');
 
-            $read['overrideTags'][] = [$docComment, $match[0][1]];
+            $read['overrideTags'][] = [$docComment, $match['offset']];
             $read['overrides'][] = new ThresholdOverride(
                 rulePattern: $rulePattern,
                 warning: $request->warning,
@@ -198,6 +200,23 @@ final readonly class ThresholdOverrideExtractor
                 endLine: $node->getEndLine() > 0 ? $node->getEndLine() : null,
             );
         }
+    }
+
+    /** @return array{offset: int, rule: string, values: ?string}|null */
+    private static function authoredMatch(Doc $docComment, int $offset): ?array
+    {
+        if (preg_match(self::PATTERN, $docComment->getText(), $match, \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL, $offset) !== 1) {
+            return null;
+        }
+        if ($match[0][1] !== $offset) {
+            return null;
+        }
+        $rulePattern = $match[1][0];
+        if (!\is_string($rulePattern)) {
+            return null;
+        }
+
+        return ['offset' => $offset, 'rule' => $rulePattern, 'values' => $match[2][0]];
     }
 
     /**
@@ -214,6 +233,7 @@ final readonly class ThresholdOverrideExtractor
         string $valueString,
         ?ThresholdOverrideRequest $parsed,
         int $line,
+        int $position,
         MetricSubject $subject,
         array $seenRules,
     ): ?ThresholdDiagnostic {
@@ -227,6 +247,7 @@ final readonly class ThresholdOverrideExtractor
                     $rulePattern,
                     $valueString,
                 ),
+                position: $position,
             );
         }
 
@@ -241,13 +262,14 @@ final readonly class ThresholdOverrideExtractor
                 subject: $subject,
                 rulePattern: $rulePattern,
                 message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
+                position: $position,
                 code: $failure->code,
                 hint: $failure->hint,
             );
         }
 
         if ($validator instanceof RuleOptionForms) {
-            $formProblem = new DeclaredOverrideForms($validator, $rulePattern, $line, $subject)->problem($parsed);
+            $formProblem = new DeclaredOverrideForms($validator, $rulePattern, $line, $position, $subject)->problem($parsed);
             if ($formProblem !== null) {
                 return $formProblem;
             }
@@ -266,6 +288,7 @@ final readonly class ThresholdOverrideExtractor
                 $rulePattern,
                 $rulePattern,
             ),
+            position: $position,
         );
     }
 
@@ -280,5 +303,15 @@ final readonly class ThresholdOverrideExtractor
     private static function lineAtOffset(string $text, int $startLine, int $offset): int
     {
         return $startLine + substr_count(substr($text, 0, $offset), "\n");
+    }
+
+    private static function positionAtOffset(Doc $comment, int $offset): int
+    {
+        $start = $comment->getStartFilePos();
+        if ($start < 0) {
+            throw new LogicException('A comment without a file position cannot name a directive site');
+        }
+
+        return $start + $offset;
     }
 }

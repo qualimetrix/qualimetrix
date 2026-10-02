@@ -12,8 +12,8 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * The declaration a symbol-form directive was bound to, and how far it reaches.
  *
  * The three facts are one fact. A declaration control silences findings on
- * exactly one measured declaration, over exactly the lines that declaration
- * occupies, at exactly one scope — so a {@see Suppression} either has all
+ * exactly one measured declaration, over exactly the reach authored there,
+ * at exactly one scope — so a {@see Suppression} either has all
  * three or is not a declaration control at all: the physical forms bind to a
  * line and a file instead, and a {@see DirectiveRefusal} binds to nothing.
  * Carried apart, the three were three optional constructor arguments whose
@@ -27,13 +27,9 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  */
 final readonly class DeclarationBinding
 {
-    /**
-     * @param ?int $endLine the last line of the bound declaration, absent when the
-     *                      parser reported no end position for it
-     */
     public function __construct(
         public MetricSubject $subject,
         public ControlScope $controlScope,
-        public ?int $endLine = null,
+        public DeclarationReach $reach,
     ) {}
 }

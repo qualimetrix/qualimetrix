@@ -150,9 +150,12 @@ See [ADR 0088](../../docs/adr/0088-atomic-section-declarations-and-format-vocabu
 facts the pipeline already computed: `FindingProjectionResult` for the five
 global `FindingFilterStage` cases, and `RuleExecutionResult`'s exclusion
 ledger (via `RuleExclusionLedgerAttributor`) for the two per-rule halves. It
-recomputes *which* pattern or directive removed a finding rather than reading
-a per-finding attribution the pipeline carries, because no stage records one;
-see the class docblock for why that narrow duplication was accepted. See
+reads Inline's first actually applied `DirectiveSite` from
+`FindingProjectionResult`'s `AnnotationSuppressionResult` for annotations.
+It does not repeat declaration placement or matching;
+`DirectiveSuppressorResolver` has been removed. Configured path and namespace
+patterns retain their own attribution. The public annotation suppressor is
+still `file:line`: two physical sites on one line have the same label. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md` for why this is a
 separate format rather than a `json` section.
 

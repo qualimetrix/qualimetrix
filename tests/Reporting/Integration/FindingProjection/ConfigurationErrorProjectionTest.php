@@ -102,7 +102,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
         $this->suppressions = [
             self::FILE => [
-                new Suppression(rule: '*', reason: 'Generated', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Generated', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -128,6 +128,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
                     reason: 'Silencing the diagnostic',
                     line: 1,
                     type: SuppressionType::File,
+                    position: 0,
                 ),
             ],
         ];

@@ -478,21 +478,28 @@ capability.
 - `FormatterCompilerPass` -> `FormatterRegistry`
 - `ConfigurationStageCompilerPass` -> `ConfigurationPipeline`
 
-### 8. Escape `@qmx-*` Tags in Docblocks
+### 8. Quote `@qmx-*` Tags in Documentation
 
-When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation (format descriptions, examples), wrap them in backticks. The parser strips backtick-delimited regions before matching, so unescaped tags in docblocks are interpreted as real suppressions/overrides.
+A directive starts its physical comment line after whitespace and comment
+decoration. An exact tag embedded in prose is refused as not at line start,
+unless it is quoted. On one line, use matching runs of backticks around the
+example; only whitespace, comment decoration and backticks may precede the
+tag inside that span. A lone tick or unequal delimiter lengths quote nothing.
+
+For a multiline example, use a fence of at least three backticks or tildes
+after decoration. A backtick opener's suffix may contain no backtick. Close it
+with the same character, at least the opener's length, and only whitespace or
+the comment closer afterwards. A fence left open refuses directive-shaped
+lines inside it rather than silently hiding them.
 
 ```php
-// Wrong: will be parsed as a real suppression tag
 /**
- * Use @qmx-ignore complexity to suppress this rule.
- */
-
-// Correct: backtick-escaped, ignored by the parser
-/**
- * Use `@qmx-ignore complexity` to suppress this rule.
+ * Write `@qmx-ignore complexity.ccn` for an intentional exception.
  */
 ```
+
+See [the canonical syntax reference](website/docs/usage/baseline.md#comment-line-grammar)
+for placement, quoting and declaration reach.
 
 ### 9. Test Method Naming: `itXxx` + `#[Test]`
 
@@ -596,7 +603,7 @@ composer gate -- --reference=<git-ref>           # compare findings; GREEN 0, PA
 composer gate:controls -- --reference=<git-ref>  # prove the gate is red under each planted breakage
 
 # What each inline @qmx directive in a tree still does (--sweep=narrow re-executes only the addressed rule; default)
-bin/qmx directives src/                          # 0 clean, 2 an inert directive, 3 bad config, 4 run incomplete
+bin/qmx directives src/                          # 0 clean, 2 observable inert/publishable refused, 3 bad config, 4 incomplete
 bin/qmx directives src/ --sweep=full             # same verdicts, every enabled rule re-executed instead of one
 composer directives:audit                        # bin/qmx directives over src/, part of check:self after selfcheck
 

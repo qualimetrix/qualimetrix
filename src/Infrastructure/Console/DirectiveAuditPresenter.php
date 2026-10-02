@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
@@ -124,7 +125,8 @@ final readonly class DirectiveAuditPresenter
     /**
      * @return array{
      *     file: string, line: int, form: string, target: string, effect: string,
-     *     reason: ?string, masked_by: ?array{file: string, line: int}, boundary_observable: bool
+     *     reason: ?string, masked_by: ?array{file: string, line: int}, boundary_observable: bool,
+     *     refusals: list<array{channel: string, message: string}>
      * }
      */
     private static function verdictToArray(DirectiveVerdict $verdict): array
@@ -142,6 +144,10 @@ final readonly class DirectiveAuditPresenter
                 ? null
                 : ['file' => $maskedBy->file->value(), 'line' => $maskedBy->line],
             'boundary_observable' => $verdict->boundaryObservable,
+            'refusals' => array_map(static fn(DirectiveVerdictRefusal $refusal): array => [
+                'channel' => $refusal->channel->code,
+                'message' => $refusal->message,
+            ], $verdict->refusals),
         ];
     }
 

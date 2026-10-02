@@ -808,6 +808,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason'
@@ -815,6 +816,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdictRefusal'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface'
@@ -823,6 +825,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionSyntax'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType'
@@ -840,12 +843,17 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveChannelBan'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRefusalChannel'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirective'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives'
         - 'Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
+        - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationRanges'
+        - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationSource'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\UnattachedComments'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
@@ -1237,7 +1245,6 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult'
         - 'Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope'
-        - 'Qualimetrix\Reporting\FindingProjection\DirectiveSuppressorResolver'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionResult'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjector'
@@ -1668,6 +1675,8 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # Authored directive values are shared contracts: inbound namespace union 17.
+        - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
         # Shared run policies and scope records: Ca=30, Ce=9, namespace CBO=16.
         - exact: 'Qualimetrix\Analysis\Run\Contract\Configuration'
         # The document schema is a shared authored-value vocabulary: 19 inbound namespaces, 35 classes.
@@ -1870,6 +1879,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # The same concrete authored directive contract has intentional distance 0.52.
+      - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
       # Five concrete scope conclusions are shared contracts: A=0, I=0.272727, D=0.727273.
       - exact: 'Qualimetrix\Analysis\Finding\Contract\ProjectScope'
       # Concrete readonly resolved values implement sibling-owned public ports; local A=0, I=0.5.
@@ -1959,6 +1970,8 @@ rules:
   coupling.instability:
     suppress_namespace_channels:
       coupling.instability:namespace:
+        # Only two orchestration/composition readers consume this directive policy leaf.
+        - exact: 'Qualimetrix\Analysis\Policy\Inline\Directive'
         # Ca=3 / Ce=62 (I=0.953846), ratcheted at 0.953125 when Ce was 61. The
         # one new efferent class is `Analysis\Finding\Contract\JudgedMetrics`,
         # which each judging rule in this package names in its own channel
@@ -1991,6 +2004,8 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # The policy composes ten dependencies for two run-level readers (Ca=2).
+      - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
       # These exact vocabulary, document, specificity and DI declarations have Ca=2.
       # Instability's small-population verdict is structural; other quality signals remain active.
       - exact: src/Analysis/Configuration/Document/LayerReading.php
@@ -2163,6 +2178,8 @@ rules:
     warning: 8
     error: 12
     suppress_paths:
+      # Eight immutable authored/control facts, with no injected services.
+      - exact: src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php
       - exact: src/Reporting/Report.php
       - exact: src/Reporting/FormatterContext.php
       - exact: src/Analysis/Evidence/DependencyModel/DependencyGraph.php
@@ -2174,6 +2191,8 @@ rules:
 
   code-smell.constructor-overinjection:
     suppress_paths:
+      # Eight immutable authored/control facts, with no injected services.
+      - exact: src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php
       - exact: src/Reporting/Report.php
       - exact: src/Reporting/FormatterContext.php
       - exact: src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php

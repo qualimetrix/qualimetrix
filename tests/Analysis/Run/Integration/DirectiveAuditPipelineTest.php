@@ -80,7 +80,25 @@ final class DirectiveAuditPipelineTest extends TestCase
         self::assertGreaterThan(0, $report->producedFindings);
     }
 
-    private static function audit(): DirectiveAuditReport
+    #[Test]
+    public function itMergesRefusedSitesOnceWithMeasuredVerdicts(): void
+    {
+        $report = self::audit(__DIR__ . '/../../Policy/Inline/Fixtures/NarrowControl');
+        $sites = array_map(static fn(DirectiveVerdict $verdict): string => $verdict->site->file->value() . ':' . $verdict->site->line . ':' . $verdict->site->form . ':' . $verdict->site->target, $report->verdicts);
+        self::assertSame(\count($sites), \count(array_unique($sites)));
+        $refused = array_values(array_filter($report->verdicts, static fn(DirectiveVerdict $verdict): bool => $verdict->effect === DirectiveEffect::Refused));
+        self::assertCount(1, $refused);
+        self::assertSame('narrow-control.no-such-channel', $refused[0]->site->target);
+        self::assertCount(1, $refused[0]->refusals);
+        self::assertSame('annotation.unresolved-directive', $refused[0]->refusals[0]->channel->code);
+        self::assertContains(DirectiveEffect::Effective, array_column($report->verdicts, 'effect'));
+        $files = array_map(static fn(DirectiveVerdict $verdict): string => $verdict->site->file->value(), $report->verdicts);
+        $sorted = $files;
+        sort($sorted);
+        self::assertSame($sorted, $files);
+    }
+
+    private static function audit(string $fixture = self::FIXTURE): DirectiveAuditReport
     {
         $container = (new ContainerFactory())->create();
 
@@ -105,9 +123,9 @@ final class DirectiveAuditPipelineTest extends TestCase
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
         self::assertInstanceOf(RuleChannelSnapshotFactoryInterface::class, $factory);
         $channels = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
-        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules(), channels: $channels));
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules(), channels: $channels, disabled: $fixture === self::FIXTURE ? [] : ['complexity.cognitive', 'coupling.distance']));
 
-        $root = AbsolutePath::fromString(self::FIXTURE);
+        $root = AbsolutePath::fromString($fixture);
 
         return $pipeline->auditDirectives(
             new RunConfiguration(

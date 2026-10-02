@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
@@ -14,7 +15,9 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -25,6 +28,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
+#[CoversClass(AnnotationSuppressionResult::class)]
 #[CoversClass(SuppressionFilter::class)]
 final class SuppressionFilterTest extends TestCase
 {
@@ -33,7 +37,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 1, SuppressionType::File),
+            new Suppression('complexity', null, 1, SuppressionType::File, position: 0),
         ]);
 
         $finding1 = $this->createFinding('src/Foo.php', 10, 'complexity');
@@ -50,7 +54,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $findingBefore = $this->createFinding('src/Foo.php', 5, 'complexity');
@@ -67,7 +71,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 20, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('complexity', null, 20, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $finding = $this->createFinding('src/Foo.php', 5, 'complexity');
@@ -80,7 +84,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::NextLine),
+            new Suppression('complexity', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1),
         ]);
 
         $findingOnNextLine = $this->createFinding('src/Foo.php', 11, 'complexity');
@@ -99,7 +103,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::NextLine),
+            new Suppression('complexity', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1),
         ]);
 
         $finding = $this->createFinding('src/Foo.php', 12, 'complexity');
@@ -112,7 +116,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('*', null, 1, SuppressionType::File),
+            new Suppression('*', null, 1, SuppressionType::File, position: 0),
         ]);
 
         $finding1 = $this->createFinding('src/Foo.php', 42, 'complexity');
@@ -150,14 +154,14 @@ final class SuppressionFilterTest extends TestCase
     /** @return iterable<string, array{Suppression}> */
     public static function provideDirectivesThatCannotSilenceTheBannedChannel(): iterable
     {
-        yield 'no rule filter' => [new Suppression('*', null, 1, SuppressionType::File)];
-        yield 'no rule filter on the line above' => [new Suppression('*', null, 10, SuppressionType::NextLine)];
+        yield 'no rule filter' => [new Suppression('*', null, 1, SuppressionType::File, position: 0)];
+        yield 'no rule filter on the line above' => [new Suppression('*', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1)];
         yield 'the exact name' => [
-            new Suppression('annotation.unused-directive', null, 1, SuppressionType::File),
+            new Suppression('annotation.unused-directive', null, 1, SuppressionType::File, position: 0),
         ];
-        yield 'a group that covers it' => [new Suppression('annotation.*', null, 1, SuppressionType::File)];
+        yield 'a group that covers it' => [new Suppression('annotation.*', null, 1, SuppressionType::File, position: 0)];
         yield 'the line above' => [
-            new Suppression('annotation.unused-directive', null, 10, SuppressionType::NextLine),
+            new Suppression('annotation.unused-directive', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1),
         ];
     }
 
@@ -172,7 +176,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('annotation.unresolved-directive', null, 1, SuppressionType::File),
+            new Suppression('annotation.unresolved-directive', null, 1, SuppressionType::File, position: 0),
         ]);
 
         self::assertFalse($filter->shouldInclude(
@@ -195,7 +199,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::File),
+            new Suppression('complexity', null, 10, SuppressionType::File, position: 0),
         ]);
 
         $finding = $this->createFinding('src/Bar.php', 42, 'complexity');
@@ -208,7 +212,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $finding1 = $this->createFinding('src/Foo.php', 42, 'complexity');
@@ -226,7 +230,7 @@ final class SuppressionFilterTest extends TestCase
         $filter = new SuppressionFilter();
         // Suppress 'complexity' — should match all complexity.* finding codes
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity.cyclomatic.*', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('complexity.cyclomatic.*', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $finding1 = new Finding(
@@ -258,7 +262,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('health.cohesion', 'Structurally inapplicable', 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, 50)),
+            new Suppression('health.cohesion', 'Structurally inapplicable', 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(50, 'test'))),
         ]);
 
         $cohesion = new Finding(
@@ -289,8 +293,8 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
-            new Suppression('coupling', null, 20, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
+            new Suppression('coupling', null, 20, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $finding1 = $this->createFinding('src/Foo.php', 42, 'complexity');
@@ -307,7 +311,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $finding = $this->createFinding('src/Foo.php', 42, 'coupling');
@@ -320,7 +324,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 1, SuppressionType::File),
+            new Suppression('complexity', null, 1, SuppressionType::File, position: 0),
         ]);
 
         $finding = $this->createFinding('src/Foo.php', 10, 'complexity');
@@ -338,7 +342,7 @@ final class SuppressionFilterTest extends TestCase
 
         // First load: suppress complexity in Foo.php
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 1, SuppressionType::File),
+            new Suppression('complexity', null, 1, SuppressionType::File, position: 0),
         ]);
 
         $fooFinding = $this->createFinding('src/Foo.php', 10, 'complexity');
@@ -347,7 +351,7 @@ final class SuppressionFilterTest extends TestCase
         // Second load: clear and load different suppressions
         $filter->clearSuppressions();
         $filter->setSuppressions('src/Bar.php', [
-            new Suppression('coupling', null, 1, SuppressionType::File),
+            new Suppression('coupling', null, 1, SuppressionType::File, position: 0),
         ]);
 
         // Old suppression from Foo.php should no longer apply
@@ -362,7 +366,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('coupling', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable)),
+            new Suppression('coupling', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         // Symbol suppression matches the exact bound subject independently of presentation line.
@@ -385,7 +389,7 @@ final class SuppressionFilterTest extends TestCase
         $filter = new SuppressionFilter();
         // Suppression on first class (lines 10-50), should NOT suppress second class (line 60)
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, 50)),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(50, 'test'))),
         ]);
 
         $findingInFirstClass = $this->createFinding('src/Foo.php', 30, 'complexity');
@@ -403,12 +407,147 @@ final class SuppressionFilterTest extends TestCase
         $filter = new SuppressionFilter();
         // Legacy behavior: no endLine means suppress until EOF
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, null)),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, position: 0, binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test'))),
         ]);
 
         $finding = $this->createFinding('src/Foo.php', 999, 'complexity');
 
         self::assertFalse($filter->shouldInclude($finding), 'Suppression without endLine should suppress until end of file');
+    }
+
+    #[Test]
+    public function itAppliesLineReachOnlyAtItsInclusiveBoundaries(): void
+    {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression(
+                'complexity',
+                null,
+                7,
+                SuppressionType::Symbol,
+                position: 0,
+                binding: new DeclarationBinding(
+                    $this->subject(),
+                    ControlScope::Class_,
+                    DeclarationReach::lines(10, 20, 'property $value'),
+                ),
+            ),
+        ]);
+
+        self::assertTrue($filter->shouldInclude($this->createFinding('src/Foo.php', 9, 'complexity')));
+        self::assertFalse($filter->shouldInclude($this->createFinding('src/Foo.php', 10, 'complexity')));
+        self::assertFalse($filter->shouldInclude($this->createFinding('src/Foo.php', 20, 'complexity')));
+        self::assertTrue($filter->shouldInclude($this->createFinding('src/Foo.php', 21, 'complexity')));
+        self::assertTrue($filter->shouldInclude(new Finding(
+            location: new Location(RelativePath::fromString('src/Foo.php'), null),
+            subject: $this->subject(),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity',
+            code: 'complexity',
+            message: 'Test message',
+            severity: Severity::Warning,
+        )));
+    }
+
+    #[Test]
+    public function itKeepsMemberLineReachInItsAuthoredFileForProjectedFindingsAndUsage(): void
+    {
+        $target = DeclarationPath::of(SymbolPath::forClass('App', 'B'), RelativePath::fromString('src/B.php'), DeclarationOrdinal::fromRank(0));
+        $subject = MetricSubject::declaration($target);
+        $projected = new Finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 8),
+            subject: $subject,
+            symbolPath: SymbolPath::forClass('App', 'A'),
+            ruleName: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
+            message: 'A forbidden dependency projected onto its target declaration',
+            severity: Severity::Warning,
+        );
+        $local = new Finding(
+            location: new Location(RelativePath::fromString('src/B.php'), 8),
+            subject: $subject,
+            symbolPath: $target->logical,
+            ruleName: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
+            message: 'A finding inside the annotated member',
+            severity: Severity::Warning,
+        );
+        $member = new Suppression(
+            'architecture.layer-violation',
+            null,
+            7,
+            SuppressionType::Symbol,
+            position: 70,
+            binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::lines(8, 8, 'property B::$value')),
+        );
+        $whole = new Suppression(
+            'architecture.layer-violation',
+            null,
+            3,
+            SuppressionType::Symbol,
+            position: 30,
+            binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(12, 'class B')),
+        );
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/B.php', [$member]);
+
+        self::assertTrue($filter->shouldInclude($projected));
+        self::assertFalse($filter->shouldInclude($local));
+        self::assertFalse(SuppressionFilter::suppressesAny('src/B.php', $member, [$projected]));
+        self::assertTrue(SuppressionFilter::suppressesAny('src/B.php', $member, [$local]));
+        $bounded = $filter->apply([$projected, $local], ['src/B.php' => [$member]]);
+        self::assertSame([$projected], $bounded->retained);
+        self::assertSame([$local], $bounded->suppressed);
+        self::assertSame('src/B.php', $bounded->suppressorOf($local)->file->value());
+        self::assertSame(70, $bounded->suppressorOf($local)->position);
+
+        $unbounded = $filter->apply([$projected], ['src/B.php' => [$member, $whole]]);
+        self::assertSame([], $unbounded->retained);
+        self::assertSame([$projected], $unbounded->suppressed);
+        self::assertSame('src/B.php', $unbounded->suppressorOf($projected)->file->value());
+        self::assertSame(30, $unbounded->suppressorOf($projected)->position);
+        self::assertTrue(SuppressionFilter::suppressesAny('src/B.php', $whole, [$projected]));
+    }
+
+    #[Test]
+    public function itCarriesTheFirstActuallyAppliedDirectiveForTheExactFindingIdentity(): void
+    {
+        $finding = $this->createFinding('src/Presented.php', 42, 'complexity');
+        $result = (new SuppressionFilter())->apply([$finding], [
+            'src/First.php' => [new Suppression(
+                'complexity',
+                null,
+                5,
+                SuppressionType::Symbol,
+                position: 10,
+                binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'method bar')),
+            )],
+            'src/Second.php' => [new Suppression(
+                'complexity',
+                null,
+                6,
+                SuppressionType::Symbol,
+                position: 20,
+                binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'method bar')),
+            )],
+        ]);
+
+        self::assertSame([], $result->retained);
+        self::assertSame([$finding], $result->suppressed);
+        self::assertSame('src/First.php', (string) $result->suppressorOf($finding)->file);
+        self::assertSame(5, $result->suppressorOf($finding)->line);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('No annotation suppressor was recorded for this finding identity');
+        $result->suppressorOf($this->createFinding('src/Presented.php', 42, 'complexity'));
+    }
+
+    #[Test]
+    public function itRejectsUnequalSuppressionAttributionCounts(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Suppressed findings and their directive sites must have equal counts');
+        new AnnotationSuppressionResult([], [$this->createFinding('src/Foo.php', 10, 'complexity')], []);
     }
 
     #[Test]
@@ -433,21 +572,23 @@ final class SuppressionFilterTest extends TestCase
             null,
             10,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding($targetSubject, ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($targetSubject, ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
         $sourceControl = new Suppression(
             'complexity.ccn',
             null,
             10,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding($sourceSubject, ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($sourceSubject, ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         $filter->setSuppressions('src/Target.php', [$targetControl]);
         $filter->setSuppressions('src/Source.php', [
             $sourceControl,
-            new Suppression('physical.file', null, 1, SuppressionType::File),
-            new Suppression('physical.next', null, 10, SuppressionType::NextLine),
+            new Suppression('physical.file', null, 1, SuppressionType::File, position: 0),
+            new Suppression('physical.next', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1),
         ]);
         self::assertFalse($filter->shouldInclude($targetFinding));
 
@@ -494,6 +635,7 @@ final class SuppressionFilterTest extends TestCase
                 null,
                 1,
                 SuppressionType::File,
+                position: 0,
                 refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
             ),
             new Suppression(
@@ -501,6 +643,7 @@ final class SuppressionFilterTest extends TestCase
                 null,
                 9,
                 SuppressionType::Symbol,
+                position: 0,
                 refusal: DirectiveRefusal::noDeclarationToBind(),
             ),
         ]);
@@ -551,9 +694,11 @@ PHP);
                     null,
                     5,
                     SuppressionType::Symbol,
+                    position: 0,
                     binding: new DeclarationBinding(
                         MetricSubject::declaration($declaration),
                         ControlScope::Class_,
+                        DeclarationReach::whole(null, 'test'),
                     ),
                 )];
             }

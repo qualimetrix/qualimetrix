@@ -158,7 +158,9 @@ Qualimetrix содержит набор встроенных правил для
 
 ### Правила аннотаций
 
-Это правило проверяет сами аннотации `@qmx-ignore` / `@qmx-threshold`, написанные в коде, а не код. Оно публикуется через четыре канала — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` являются ошибками конфигурации и валят прогон безусловно; `annotation.unused-directive` — обычный долг с настраиваемой severity и единственный канал, который нельзя адресовать `@qmx-ignore`.
+Это правило проверяет сами аннотации `@qmx-ignore` / `@qmx-threshold`, написанные в коде, а не код. Оно публикуется через четыре канала — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` являются ошибками конфигурации и валят прогон безусловно; `annotation.unused-directive` — обычный долг с настраиваемой severity и не адресуется через `@qmx-ignore`.
+
+Канал дублирования `duplication.clone` также не адресуется через `@qmx-ignore`.
 
 | Правило                                | ID                     | Что обнаруживает                                                                                            |
 | -------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |

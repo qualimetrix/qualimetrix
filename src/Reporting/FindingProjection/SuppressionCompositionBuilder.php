@@ -19,10 +19,10 @@ use Qualimetrix\Core\Pattern\PathMatcher;
  * (delegated to {@see RuleExclusionLedgerAttributor}) — without a second,
  * mutating pass over the run.
  *
- * **Why the five global stages recompute rather than read a per-finding
- * attribution the pipeline already carries.** It does not carry one.
- * {@see FindingFilterStageResult::$removed} is a plain list of {@see Finding}
- * — no stage records *which* configured pattern or directive removed a given
+ * Inline carries the first directive that actually matched each finding;
+ * Reporting reads that attribution instead of repeating declaration placement.
+ * The remaining global stages still recompute their configured suppressor.
+ * Their removed-finding lists do not record *which* configured pattern removed a given
  * finding, because nothing before this class ever needed to say. Recomputing
  * here (calling {@see PathMatcher::matches()}, {@see NamespaceMatcher::matches()}
  * against every configured pattern in turn — not stopping at the first hit,
@@ -45,25 +45,18 @@ final readonly class SuppressionCompositionBuilder
 {
     private RuleExclusionLedgerAttributor $ledgerAttributor;
 
-    private DirectiveSuppressorResolver $directiveSuppressorResolver;
-
     public function __construct()
     {
         $this->ledgerAttributor = new RuleExclusionLedgerAttributor();
-        $this->directiveSuppressorResolver = new DirectiveSuppressorResolver();
     }
 
-    /**
-     * @param array<string, list<mixed>> $suppressions Per-file `Suppression` VOs (see class docblock)
-     */
     public function build(
         FindingProjectionResult $filterResult,
         RuleExecutionResult $ruleExecution,
         RuleConfigurationInterface $ruleConfiguration,
         FindingProjectionOptions $options,
-        array $suppressions,
     ): SuppressionComposition {
-        $all = $this->stageSuppressedFindings($filterResult, $options, $suppressions);
+        $all = $this->stageSuppressedFindings($filterResult, $options);
         $inert = $this->globalInertPatterns($filterResult, $options);
 
         [$ledgerFindings, $ledgerInert] = $this->ledgerAttributor->attribute($ruleExecution, $ruleConfiguration);
@@ -85,11 +78,9 @@ final readonly class SuppressionCompositionBuilder
     }
 
     /**
-     * @param array<string, list<mixed>> $suppressions
-     *
      * @return list<SuppressedFinding>
      */
-    private function stageSuppressedFindings(FindingProjectionResult $filterResult, FindingProjectionOptions $options, array $suppressions): array
+    private function stageSuppressedFindings(FindingProjectionResult $filterResult, FindingProjectionOptions $options): array
     {
         $all = [];
 
@@ -97,24 +88,21 @@ final readonly class SuppressionCompositionBuilder
             $mechanism = SuppressionMechanism::fromStage($stage);
 
             foreach ($filterResult->removedBy($stage) as $finding) {
-                $all[] = new SuppressedFinding($finding, $mechanism, $this->stageSuppressor($mechanism, $finding, $options, $suppressions));
+                $all[] = new SuppressedFinding($finding, $mechanism, $this->stageSuppressor($mechanism, $finding, $filterResult, $options));
             }
         }
 
         return $all;
     }
 
-    /**
-     * @param array<string, list<mixed>> $suppressions Per-file `Suppression` VOs, read only through public fields (see class docblock)
-     */
     private function stageSuppressor(
         SuppressionMechanism $mechanism,
         Finding $finding,
+        FindingProjectionResult $filterResult,
         FindingProjectionOptions $options,
-        array $suppressions,
     ): string {
         return match ($mechanism) {
-            SuppressionMechanism::Suppression => $this->directiveSuppressorResolver->resolve($finding, $suppressions),
+            SuppressionMechanism::Suppression => self::directiveSuppressor($filterResult, $finding),
             SuppressionMechanism::PathSuppression => $this->pathExclusionSuppressor($finding, $options),
             SuppressionMechanism::NamespaceSuppression => $this->namespaceExclusionSuppressor($finding, $options),
             SuppressionMechanism::Baseline => $this->baselineSuppressor($finding),
@@ -122,6 +110,13 @@ final readonly class SuppressionCompositionBuilder
             SuppressionMechanism::RuleNamespaceSuppression, SuppressionMechanism::RulePathSuppression => $finding->ruleName,
             SuppressionMechanism::Selection => throw new LogicException('Selection suppressors are recorded by execution.'),
         };
+    }
+
+    private static function directiveSuppressor(FindingProjectionResult $filterResult, Finding $finding): string
+    {
+        $site = $filterResult->annotationSuppression->suppressorOf($finding);
+
+        return $site->file . ':' . $site->line;
     }
 
     private function pathExclusionSuppressor(Finding $finding, FindingProjectionOptions $options): string

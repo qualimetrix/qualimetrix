@@ -76,7 +76,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Legacy/Service.php' => [
-                new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -166,6 +166,8 @@ final class CaptureFromMeasuredSetTest extends TestCase
                     reason: 'Reviewed',
                     line: 39,
                     type: SuppressionType::NextLine,
+                    position: 0,
+                    silencedLine: 39 + 1,
                 ),
             ],
         ];

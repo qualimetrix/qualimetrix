@@ -849,9 +849,9 @@ producer rule, not a group or channel — a group or channel there is an error. 
 governs the `rules:` YAML section keys.
 
 !!! note "Selection roles are declared per channel"
-    `annotation.unused-directive` is directly selectable even though assembled
-    after execution. Other directive diagnostics may be filter-exempt or follow
-    the addressed producer. Explicitly disabling annotation.directive stops its
+    `annotation.unresolved-directive` and `annotation.unused-directive` are
+    directly selectable. Unsupported/invalid thresholds follow the addressed
+    producer. Explicitly disabling annotation.directive stops its
     producer. Root path exclusions and namespace exclusions retain their own
     subject-level applicability; they are not a second selection resolver.
 
@@ -1098,22 +1098,33 @@ The four selection options exist because a verdict is relative to the run that p
 
 A `@qmx-threshold` names exactly one rule, so under `--sweep=narrow` a counterfactual re-executes only that rule. `--sweep=full` re-executes every enabled rule for the same verdicts, at far higher cost — it is not a slower fallback but the control that measures, rather than assumes, that removing a directive of one rule cannot move another rule's findings: the two scopes are swept over the same tree and compared verdict for verdict. On this project's own `src/` the narrow sweep is several times cheaper and the two scopes agree on every verdict. Both the text report and `--format=json` state the sweep the verdicts were measured under.
 
-Exit codes: `0` no inert directive with an observable boundary, including a
-complete intentionally empty excluded set; `2` at least one such inert directive;
-`3` bad input/configuration, including truly undiscovered empty input;
-`4` incomplete input (read, parse, processing or skipped-entry failure);
-`1` unexpected command failure. Incompleteness takes priority. Text and JSON
-retain the diagnostic report; a measured coverage note appears in text and
-JSON `scope.note`.
+Exit codes: `0` no publishable refusal or observable inert directive, including
+a complete intentionally empty excluded set; `2` at least one publishable
+refusal or inert directive whose boundary is observable; `3` bad
+input/configuration, including truly undiscovered empty input; `4` incomplete
+input; `1` unexpected command failure. Incompleteness takes priority.
+Text and JSON retain all sites, including refusals whose channels the final
+selection does not publish. A measured scope note appears in text and JSON
+`scope.note`.
 
-Four verdicts, of which three are answers and one is the absence of one:
+There are five verdicts:
 
-| Verdict               | What it states                                                                                                                                                                                                    |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| effective             | Removing it changes what the rules produce.                                                                                                                                                                       |
-| applied-boundary-only | It applied, and nothing moved except the boundary the finding prints.                                                                                                                                             |
-| inert                 | Removing it changes nothing. This is the only verdict that moves the exit code.                                                                                                                                   |
-| unmeasured            | No answer is available, and the report says why: the producer did not run, the directive was already refused elsewhere, it carries no rule filter, or another directive of the same rule covers the same subject. |
+| Verdict               | What it states                                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------------- |
+| effective             | It silenced a produced finding or its removal changes the threshold result.                    |
+| applied-boundary-only | It applied; only the boundary printed by the finding moved (JSON: `overrun`).                  |
+| inert                 | It silenced nothing or its removal changes nothing; exit 2 only if the boundary is observable. |
+| unmeasured            | Its producer did not run, or another threshold directive masks it.                             |
+| refused               | It could not be admitted or applied, with a nonempty list of refusal details.                  |
+
+Every read tag has one site, independent of its declaration bindings.
+Suppression/diagnostic positions distinguish identical comments on one line;
+JSON still publishes `file`, `line`, `form` and `target`, not the internal
+position. For next-line controls, `line` is the tag line, not the target
+after the comment. Refused sites carry required
+`refusals: [{channel, message}]`; other effects carry an empty list.
+`reason` describes only Unmeasured, with `masked_by` when applicable.
+Neither refusal JSON nor site JSON publishes the internal addressed producer.
 
 !!! warning "A verdict is relative to the analysed scope"
 
@@ -1123,9 +1134,16 @@ Four verdicts, of which three are answers and one is the absence of one:
 
     `suppress_paths`, `suppress_namespaces` and `suppress_namespace_channels` suppress **publication**, not measurement. A directive that moved a finding inside an excluded namespace still did something, so the audit asks its question against every finding the rules produced, not against the report. The one channel outside that universe is `annotation.unused-directive`, which a run assembles after the rules have run — no directive may address it, so no verdict is judged against it.
 
-    The one thing a suppression is *not* credited with is silencing a configuration error (`annotation.unresolved-directive` and its two siblings). Those channels are exempt from annotation suppression by construction, not by configuration, so a directive aimed at one is reported inert however it is written.
+    Suppression receives no credit for silencing a configuration error
+    (`annotation.unresolved-directive` and its two siblings). Those channels
+    are exempt from annotation suppression by construction; admission and
+    reach can still refuse a directive before its effect is judged.
 
-    `annotation.unused-directive` is exempt in a louder way: a directive addressing it is **refused** rather than judged, and the audit reports it `unmeasured / already-refused` — the same answer `check` gives as an `annotation.unresolved-directive` on that line.
+    An explicit selector addressing `annotation.unused-directive` or
+    `duplication.clone` is **refused**, after reach/level admission. The audit
+    carries the same refusal details as `check`. Blanket `*` and bare file
+    directives remain effective/inert over other findings and cannot silence
+    either banned channel.
 
 The `applied-boundary-only` verdict deliberately makes no claim about direction. The rule layer has no notion of which way is stricter — `coupling.instability` is worse when higher, `cohesion.tcc` when lower — so a directive that tightens a boundary and one that raises a boundary the measured value had already passed are the same observable. In `--format=json` this verdict keeps the stable key `overrun`.
 
@@ -1302,8 +1320,8 @@ removes a lower filter, while empty maps never reset options.
 Most channels are directly selectable. Declared diagnostic roles admit filter-exempt
 channels or diagnostics that follow a selected addressed producer. These are not
 extra producer enable statements: explicitly disabling their producer still stops
-it. `annotation.unused-directive` remains directly selectable; unresolved directive
-errors are filter-exempt, and unsupported/invalid threshold errors follow the
+it. `annotation.unresolved-directive` and `annotation.unused-directive` are
+directly selectable; unsupported/invalid threshold errors follow the
 addressed producer. Fix the source input rather than hiding a configuration error
 with an unrelated only filter.
 

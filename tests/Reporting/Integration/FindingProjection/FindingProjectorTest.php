@@ -150,7 +150,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Service/UserService.php' => [
-                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -181,7 +181,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Service/UserService.php' => [
-                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -511,7 +511,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
         $this->suppressions = [
             'src/Service/UserService.php' => [
-                new Suppression(rule: '*', reason: 'Ignoring for now', line: 1, type: SuppressionType::File),
+                new Suppression(rule: '*', reason: 'Ignoring for now', line: 1, type: SuppressionType::File, position: 0),
             ],
         ];
 
@@ -519,6 +519,10 @@ final class FindingProjectorTest extends TestCase
 
         self::assertSame([], $result->findings);
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Suppression));
+        $site = $result->annotationSuppression->suppressorOf($finding);
+        self::assertSame('src/Service/UserService.php', (string) $site->file);
+        self::assertSame(1, $site->line);
+        self::assertSame(0, $site->position);
     }
 
     // -- `--no-suppression-annotations`: report-only, never a wider set --
@@ -997,7 +1001,7 @@ final class FindingProjectorTest extends TestCase
 
     private static function ignoreLine20(): Suppression
     {
-        return new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 20, type: SuppressionType::NextLine);
+        return new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 20, type: SuppressionType::NextLine, position: 0, silencedLine: 20 + 1);
     }
 
     /**

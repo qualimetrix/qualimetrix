@@ -374,23 +374,20 @@ final class FileProcessorTest extends TestCase
     {
         $file = new SplFileInfo($this->root . '/test.php');
 
-        // Build AST: a class with a method containing an Expression with a docblock
-        $docComment = new Doc(
-            "/** @qmx-ignore-next-line code-smell.exit */",
-            startLine: 10,
-            endLine: 10,
-        );
-
-        // Create an Expression node (e.g., exit(0);) with docblock
-        $exitCall = new Node\Expr\FuncCall(new Node\Name('exit'), [new Node\Arg(new Node\Scalar\Int_(0))]);
-        $expression = new Node\Stmt\Expression($exitCall, ['startLine' => 11, 'endLine' => 11]);
-        $expression->setDocComment($docComment);
-
-        $method = new Node\Stmt\ClassMethod('run', ['stmts' => [$expression]], ['startLine' => 8, 'endLine' => 12]);
-        $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], ['startLine' => 5, 'endLine' => 13]);
-        $namespace = new Node\Stmt\Namespace_(new Node\Name('App'), [$class], ['startLine' => 1, 'endLine' => 14]);
-
-        $this->parser->method('parseContent')->willReturn([$namespace]);
+        $source = <<<'PHP'
+            <?php
+            namespace App;
+            class MyClass
+            {
+                public function run(): void
+                {
+                    /** @qmx-ignore-next-line code-smell.exit */
+                    exit(0);
+                }
+            }
+            PHP;
+        file_put_contents($file->getPathname(), $source);
+        $this->parser->method('parseContent')->willReturn($this->parseLiteral($source));
 
         $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
@@ -412,42 +409,44 @@ final class FileProcessorTest extends TestCase
     {
         $file = new SplFileInfo($this->root . '/test.php');
 
-        $method = new Node\Stmt\ClassMethod('run', attributes: [
-            'startLine' => 10,
-            'endLine' => 15,
-            'startFilePos' => 100,
-            'endFilePos' => 180,
-        ]);
-        $method->setDocComment(new Doc(
-            '/** @qmx-threshold complexity.ccn warning=40 error=50 */',
-            startLine: 9,
-            endLine: 9,
-        ));
+        $source = <<<'PHP'
+            <?php
 
-        $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], [
-            'startLine' => 5,
-            'endLine' => 20,
-            'startFilePos' => 10,
-            'endFilePos' => 200,
-        ]);
-        $class->setDocComment(new Doc(
-            '/** @qmx-threshold complexity.ccn warning=20 error=30 */',
-            startLine: 4,
-            endLine: 4,
-        ));
 
-        $this->parser->method('parseContent')->willReturn([$class]);
+            /** @qmx-threshold complexity.ccn warning=20 error=30 */
+            class MyClass
+            {
+
+
+                /** @qmx-threshold complexity.ccn warning=40 error=50 */
+                public function run(): void
+                {
+
+
+
+                }
+
+
+
+
+            }
+            PHP;
+        file_put_contents($file->getPathname(), $source);
+        $ast = $this->parseLiteral($source);
+        $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
+        $class = $this->singleNode($ast, Node\Stmt\Class_::class);
+        $this->parser->method('parseContent')->willReturn($ast);
 
         $classPath = DeclarationPath::of(SymbolPath::forClass('', 'MyClass'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $class = new ClassWithMetrics(
             $classPath,
-            10,
+            $class->getStartFilePos(),
             5,
             new MetricBag(),
         );
         $methodMetric = new CallableWithMetrics(
             DeclarationPath::of(SymbolPath::forMethod('', 'MyClass', 'run'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
-            100,
+            $method->getStartFilePos(),
             CallableKind::Method,
             null,
             $classPath,
@@ -576,15 +575,18 @@ final class FileProcessorTest extends TestCase
             $result->suppressions(),
             static fn($suppression) => $suppression->type === SuppressionType::Symbol,
         ));
-        self::assertCount(4, $controls);
+        self::assertCount(5, $controls);
         self::assertSame(
-            [$classDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical()],
+            [$classDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $classDeclaration->toCanonical(), $constructorDeclaration->toCanonical()],
             array_map(static fn($control) => $control->binding?->subject->toCanonical(), $controls),
         );
-        self::assertSame([ControlScope::Class_, ControlScope::Class_, ControlScope::Callable, ControlScope::Callable], array_map(
+        self::assertSame([ControlScope::Class_, ControlScope::Class_, ControlScope::Callable, ControlScope::Class_, ControlScope::Callable], array_map(
             static fn($control) => $control->binding?->controlScope,
             $controls,
         ));
+        self::assertSame('lines:9:9', $controls[2]->binding?->reach->key());
+        self::assertSame('lines:9:9', $controls[3]->binding?->reach->key());
+        self::assertSame('lines:11:11', $controls[4]->binding?->reach->key());
     }
 
     #[Test]

@@ -72,6 +72,7 @@ final readonly class DirectiveVerdictTally
             DirectiveEffect::Overrun => 'applied-boundary-only',
             DirectiveEffect::Inert => 'inert',
             DirectiveEffect::Unmeasured => 'unmeasured',
+            DirectiveEffect::Refused => 'refused',
         };
     }
 }

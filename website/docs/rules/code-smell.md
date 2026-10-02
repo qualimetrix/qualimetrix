@@ -923,7 +923,7 @@ class OrderService
 
 - **Remove** the unused member if it is truly dead code.
 - **Change visibility** to `protected` or `public` if the member is used by subclasses or external code.
-- If the member is intentionally kept for future use, suppress the warning with `@qmx-ignore code-smell.unused-private`.
+- If the member is intentionally kept, place `@qmx-ignore code-smell.unused-private` on that member. It reaches findings on the member's lines only; a promoted parameter also reaches its corresponding property finding. See [member reach](../usage/baseline.md#declaration-binding-and-member-reach).
 
 ---
 

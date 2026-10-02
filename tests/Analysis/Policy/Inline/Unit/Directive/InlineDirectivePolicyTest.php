@@ -17,13 +17,19 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -75,7 +81,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -90,7 +96,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 10, SuppressionType::NextLine)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 10, SuppressionType::NextLine, position: 0, silencedLine: 10 + 1)]],
             [],
             [],
         );
@@ -116,7 +122,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $policy = self::policy($configuration, disabled: ['code-smell.goto']);
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -139,7 +145,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $policy = self::policy($configuration);
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -156,7 +162,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
         $policy = self::policy($configuration, rules: ['code-smell.goto' => ['enabled' => true]]);
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -176,7 +182,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -214,7 +220,7 @@ final class InlineDirectivePolicyTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('code-smell.goto:project', null, 1, SuppressionType::File)]],
+            [self::FILE => [new Suppression('code-smell.goto:project', null, 1, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -223,15 +229,15 @@ final class InlineDirectivePolicyTest extends TestCase
         self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
-    /** "Everything here" has no channel to check, so it is never stale. */
+    /** The bare file form is judged by the findings it actually silenced. */
     #[Test]
-    public function itNeverReportsTheNoRuleFilterForm(): void
+    public function itReportsTheNoRuleFilterFormWhenItSilencedNothing(): void
     {
         $policy = self::policy();
-        $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File)]], [], []);
+        $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File, position: 0)]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
     /** Without the owning rule having run, the post-execution half says nothing. */
@@ -261,6 +267,29 @@ final class InlineDirectivePolicyTest extends TestCase
         self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
     }
 
+    #[Test]
+    public function itPublishesOneRefusedVerdictPerAuthoredSite(): void
+    {
+        $policy = self::policy();
+        $suppression = new Suppression('missing.rule', null, 4, SuppressionType::File, position: 28);
+        $override = new ThresholdOverride('code-smell.goto', 10, 20, 8, self::declarationSubject(), ControlScope::Class_);
+        $diagnostic = new ThresholdDiagnostic(10, self::declarationSubject(), 'code-smell.goto', 'Invalid payload.', 160);
+        $otherReason = new ThresholdDiagnostic(10, self::declarationSubject(), 'code-smell.goto', 'Another invalid field.', 160);
+        $anotherTag = new ThresholdDiagnostic(10, self::declarationSubject(), 'code-smell.goto', 'Invalid payload.', 200);
+        $policy->prepare(
+            [self::FILE => [$suppression, $suppression]],
+            [self::FILE => [$override, $override]],
+            [self::FILE => [$diagnostic, $diagnostic, $otherReason, $anotherTag]],
+        );
+        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty());
+        self::assertCount(4, $verdicts);
+        self::assertSame([28, null, 160, 200], array_column(array_column($verdicts, 'site'), 'position'));
+        self::assertSame([1, 1, 2, 1], array_map(static fn(DirectiveVerdict $verdict): int => \count($verdict->refusals), $verdicts));
+        foreach ($verdicts as $verdict) {
+            self::assertSame(DirectiveEffect::Refused, $verdict->effect);
+        }
+    }
+
     /**
      * @param array<string, mixed> $rules
      * @param list<string> $disabled
@@ -283,7 +312,9 @@ final class InlineDirectivePolicyTest extends TestCase
             channels: $universe,
         ));
 
-        return new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe));
+        $refused = new RefusedDirectives($universe);
+
+        return new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe, $refused), $refused);
     }
 
     private static function symbolDirective(): Suppression
@@ -293,7 +324,8 @@ final class InlineDirectivePolicyTest extends TestCase
             'reason',
             10,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding(self::declarationSubject(), ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding(self::declarationSubject(), ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         );
     }
 

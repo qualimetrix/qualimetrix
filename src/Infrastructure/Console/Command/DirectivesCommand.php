@@ -8,11 +8,13 @@ use Exception;
 use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
@@ -113,10 +115,10 @@ final class DirectivesCommand extends Command
                 "another rule's findings is a claim this project measures rather than assumes,",
                 'and a difference between the two scopes is a defect, not a preference.',
                 '',
-                'Exit codes: <info>0</info> nothing inert, <info>2</info> at least one inert directive whose',
-                'boundary was observable, <info>3</info> bad input or configuration, <info>4</info> the run could',
-                'not parse part of the tree — which disqualifies it from calling anything',
-                'dead — and <info>1</info> if the command itself failed unexpectedly.',
+                'Exit codes: <info>0</info> no publishable refusal or observable inert directive,',
+                '<info>2</info> at least one publishable refusal or observable inert directive,',
+                '<info>3</info> bad input or configuration, <info>4</info> incomplete run takes precedence',
+                'over those findings, and <info>1</info> if the command itself failed unexpectedly.',
                 '',
                 'Examples:',
                 '  <info>bin/qmx directives src/</info>',
@@ -225,10 +227,10 @@ final class DirectivesCommand extends Command
             );
         }
 
-        $exitCode = self::exitCodeFor($report);
         $selection = ($prepared->findingConfiguration
             ?? throw new LogicException('Directive auditing requires a finding configuration.'))->enablement
             ?? throw new LogicException('Directive auditing requires final rule enablement.');
+        $exitCode = self::exitCodeFor($report, $selection);
         $presenter = new DirectiveAuditPresenter($report, $selection);
 
         if ($format === 'json') {
@@ -253,13 +255,18 @@ final class DirectivesCommand extends Command
      * proven debt. That is what `Unmeasured` exists to prevent, and the reason
      * does not change because the shape of the ignorance does.
      */
-    private static function exitCodeFor(DirectiveAuditReport $report): int
+    private static function exitCodeFor(DirectiveAuditReport $report, RuleEnablement $enablement): int
     {
         if (!$report->coverage->isComplete()) {
             return self::EXIT_INCOMPLETE_RUN;
         }
 
         foreach ($report->verdicts as $verdict) {
+            foreach ($verdict->refusals as $refusal) {
+                if ($enablement->publishes($refusal->channel, SymbolLevel::File, $refusal->addressedProducer)) {
+                    return self::EXIT_INERT_FOUND;
+                }
+            }
             if ($verdict->effect === DirectiveEffect::Inert && $verdict->boundaryObservable) {
                 return self::EXIT_INERT_FOUND;
             }

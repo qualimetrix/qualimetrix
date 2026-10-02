@@ -24,14 +24,17 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
+use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -54,10 +57,63 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
  * fails outright against a check written over the static declarations, and the
  * rejection cases fail if the directive is left inert.
  */
+#[CoversClass(StaleDirectiveFinding::class)]
 #[CoversClass(UnusedDirectiveRule::class)]
 final class UnusedDirectiveRuleTest extends TestCase
 {
     private const string FILE = 'src/Foo.php';
+
+    #[Test]
+    public function itNamesTheExactDeclarationReachOfAStaleSymbolDirective(): void
+    {
+        $finding = StaleDirectiveFinding::of(
+            RelativePath::fromString(self::FILE),
+            new Suppression(
+                'complexity.ccn',
+                null,
+                7,
+                SuppressionType::Symbol,
+                position: 12,
+                binding: new DeclarationBinding(
+                    self::subject(),
+                    ControlScope::Class_,
+                    DeclarationReach::lines(10, 14, 'property $value'),
+                ),
+            ),
+            Severity::Warning,
+        );
+
+        self::assertStringContainsString(
+            'Suppression "complexity.ccn" on property $value, lines 10–14 matched nothing',
+            $finding->message,
+        );
+    }
+
+    #[Test]
+    public function itReportsAnUnusedDirectiveAtWarningByDefault(): void
+    {
+        $findings = self::runWithSuppression('complexity.ccn', auditUsage: true);
+
+        self::assertCount(1, $findings);
+        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+    }
+
+    #[Test]
+    public function itHonoursAnExplicitInfoSeverityForUnusedDirectives(): void
+    {
+        $findings = self::runWithSuppression(
+            'complexity.ccn',
+            options: new InlineDirectiveOptions(unusedDirectiveSeverity: Severity::Info),
+            auditUsage: true,
+        );
+
+        self::assertCount(1, $findings);
+        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(Severity::Info, $findings[0]->severity);
+    }
 
     /**
      * A rule name is not a channel. A level is not part of a channel name, so
@@ -514,7 +570,7 @@ final class UnusedDirectiveRuleTest extends TestCase
     {
         $policy = self::policy();
         $policy->prepare(
-            [self::FILE => [new Suppression('nope.nothing', null, 10, SuppressionType::File)]],
+            [self::FILE => [new Suppression('nope.nothing', null, 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );
@@ -582,6 +638,33 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itKeepsIdenticalThresholdDiagnosticsFromTwoPositionsOnOneLineApart(): void
+    {
+        $identity = self::productionUniverse();
+        $policy = self::policy($identity);
+        $diagnostics = [];
+        foreach ([20, 80] as $position) {
+            foreach (self::boundSubjects() as $subject) {
+                $diagnostics[] = new ThresholdDiagnostic(
+                    line: 13,
+                    subject: $subject,
+                    message: '@qmx-threshold complexity.ccn: invalid syntax',
+                    position: $position,
+                    rulePattern: 'complexity.ccn',
+                );
+            }
+        }
+        $policy->prepare([], [], [self::FILE => $diagnostics]);
+        $findings = self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
+
+        self::assertCount(2, $findings);
+        self::assertSame(
+            [InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME, InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME],
+            array_map(static fn(Finding $finding): string => $finding->code, $findings),
+        );
+    }
+
     /** The same collapse for the two threshold channels. */
     #[Test]
     public function itReportsOneFindingPerAuthoredThresholdDirective(): void
@@ -604,6 +687,7 @@ final class UnusedDirectiveRuleTest extends TestCase
                 subject: $subject,
                 rulePattern: 'complexity.ccn',
                 message: '@qmx-threshold complexity.ccn: invalid syntax',
+                position: 0,
             );
         }
         $policy->prepare([], [self::FILE => $overrides], [self::FILE => $diagnostics]);
@@ -637,7 +721,8 @@ final class UnusedDirectiveRuleTest extends TestCase
                 'reason',
                 $line,
                 SuppressionType::Symbol,
-                binding: new DeclarationBinding($subject, ControlScope::Class_),
+                position: 0,
+                binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
             ),
             self::boundSubjects(),
         );
@@ -659,17 +744,25 @@ final class UnusedDirectiveRuleTest extends TestCase
     /**
      * @return list<Finding>
      */
-    private static function runWithSuppression(string $authored, ?ChannelUniverseInterface $identity = null): array
-    {
+    private static function runWithSuppression(
+        string $authored,
+        ?ChannelUniverseInterface $identity = null,
+        ?InlineDirectiveOptions $options = null,
+        bool $auditUsage = false,
+    ): array {
         $identity ??= self::productionUniverse();
         $policy = self::policy($identity);
         $policy->prepare(
-            [self::FILE => [new Suppression($authored, 'reason', 10, SuppressionType::File)]],
+            [self::FILE => [new Suppression($authored, 'reason', 10, SuppressionType::File, position: 0)]],
             [],
             [],
         );
 
-        return self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
+        $produced = self::analyzeFamily($options ?? new InlineDirectiveOptions(), $policy, $identity);
+
+        return $auditUsage
+            ? [...$produced, ...$policy->auditDirectiveUsage($produced, LevelActivity::empty())]
+            : $produced;
     }
 
     /**
@@ -701,7 +794,9 @@ final class UnusedDirectiveRuleTest extends TestCase
             channels: $universe,
         ));
 
-        return new InlineDirectivePolicy(new DirectiveUsage($universe, $registry, $universe));
+        $refused = new RefusedDirectives($universe);
+
+        return new InlineDirectivePolicy(new DirectiveUsage($universe, $registry, $universe, $refused), $refused);
     }
 
     private static function context(): AnalysisContext
@@ -776,7 +871,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $registry,
             configurationValidators: [[
                 'producer' => InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
-                'create' => static fn(): InlineDirectiveValidator => new InlineDirectiveValidator($policy, $identity),
+                'create' => static fn(): InlineDirectiveValidator => new InlineDirectiveValidator($policy, new RefusedDirectives($identity)),
             ]],
         );
 

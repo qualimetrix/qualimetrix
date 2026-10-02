@@ -260,7 +260,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         string $docblock,
     ): \Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult {
         $node = new Class_('TestClass');
-        $node->setDocComment(new Doc($docblock, 10));
+        $node->setDocComment(new Doc($docblock, 10, 0));
         $node->setAttribute('endLine', 50);
 
         $extractor = new ThresholdOverrideExtractor([$ruleName => $validator]);
