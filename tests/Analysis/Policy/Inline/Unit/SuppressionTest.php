@@ -23,6 +23,38 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class SuppressionTest extends TestCase
 {
     #[Test]
+    public function itUsesBytePositionInTheAuthoredSiteIdentity(): void
+    {
+        $first = new Suppression(
+            'complexity.ccn',
+            'reason',
+            10,
+            SuppressionType::Symbol,
+            20,
+            new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
+        );
+        $second = new Suppression(
+            'complexity.ccn',
+            'reason',
+            10,
+            SuppressionType::Symbol,
+            80,
+            new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
+        );
+        $fanout = new Suppression(
+            'complexity.ccn',
+            'reason',
+            10,
+            SuppressionType::Symbol,
+            20,
+            new DeclarationBinding($this->subject(), ControlScope::Class_, DeclarationReach::whole(null, 'other')),
+        );
+
+        self::assertNotSame($first->authoredSite(), $second->authoredSite());
+        self::assertSame($first->authoredSite(), $fanout->authoredSite());
+    }
+
+    #[Test]
     public function itMatchesExactRule(): void
     {
         $suppression = new Suppression(

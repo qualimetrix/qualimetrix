@@ -87,13 +87,15 @@ final readonly class Suppression
      * One authored directive, whatever it was bound to: the key every reader
      * that counts directives rather than bindings groups by.
      *
+     * Byte position keeps identical tags in separate comments on one line apart.
+     *
      * The refusal reason is part of it because one form can be refused for
      * two reasons on one line — an unbound declaration form and the same tag
      * with no channel — and each is a mistake of its own.
      */
     public function authoredSite(): string
     {
-        return implode("\0", [(string) $this->line, $this->form(), $this->rule, $this->refusal->reason->value ?? '']);
+        return implode("\0", [(string) $this->line, (string) $this->position, $this->form(), $this->rule, $this->refusal->reason->value ?? '']);
     }
 
     /** What this directive filters on — a channel selector, or nothing at all. */

@@ -290,6 +290,25 @@ final class DirectiveUsageTest extends TestCase
         return $verdicts[0];
     }
 
+    #[Test]
+    public function itKeepsIdenticalSuppressionsFromTwoPositionsOnOneLineApart(): void
+    {
+        $directives = [self::FILE => [
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 20),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 80),
+        ]];
+        $usage = self::usage();
+        $verdicts = $usage->verdicts($directives, [], LevelActivity::empty());
+        self::assertCount(2, $verdicts);
+        self::assertSame([20, 80], array_map(static fn(DirectiveVerdict $v): ?int => $v->site->position, $verdicts));
+
+        $policy = new InlineDirectivePolicy($usage);
+        $policy->prepare($directives, [], []);
+        $authored = $policy->authoredSuppressions();
+        self::assertArrayHasKey(self::FILE, $authored);
+        self::assertCount(2, $authored[self::FILE]);
+    }
+
     /** @return array<string, list<Suppression>> */
     /**
      * A directive the extractor refused is carried to the store so that it can

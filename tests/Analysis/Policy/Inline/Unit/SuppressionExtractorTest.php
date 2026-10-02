@@ -56,7 +56,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertNull($suppressions[0]->reason);
-        self::assertSame(10, $suppressions[0]->line);
+        self::assertSame(11, $suppressions[0]->line);
         self::assertSame(17, $suppressions[0]->position);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
@@ -462,7 +462,7 @@ final class SuppressionExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itNextLineSuppressionInMultiLineDocblockUsesEndLine(): void
+    public function itUsesTheTagLineAndKeepsTheCommentEndAsTheNextLineAnchor(): void
     {
         // Multi-line docblock: starts at line 10, ends at line 14
         $docComment = new Doc(
@@ -485,10 +485,21 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
-        // Suppression line should be endLine (14), not startLine (10)
-        // so that SuppressionFilter targets endLine + 1 = line 15 (the actual next line after the docblock)
-        self::assertSame(14, $suppressions[0]->line);
+        self::assertSame(13, $suppressions[0]->line);
         self::assertSame(15, $suppressions[0]->silencedLine);
+
+        foreach (['@qmx-ignore complexity.ccn', '@qmx-ignore-file complexity.ccn'] as $tag) {
+            $node->setDocComment(new Doc("/**\n * Description.\n *\n * " . $tag . "\n */", 10, 0, 14));
+            $read = $this->extract($node);
+            self::assertCount(1, $read);
+            self::assertSame(13, $read[0]->line);
+        }
+
+        $node->setDocComment(new Doc("/**\n * Description.\n *\n * @qmx-ignore complexity.ccn\n */", 10, 0, 14));
+        $refused = $this->extractor->extractPhysical($node, self::thresholdReadElsewhere(...));
+        self::assertCount(1, $refused);
+        self::assertSame(13, $refused[0]->line);
+        self::assertSame(DirectiveRefusalReason::NoDeclarationToBind, $refused[0]->refusal?->reason);
     }
 
     #[Test]
@@ -918,8 +929,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
-        // Line should be endLine (12) so that filter targets line 13
-        self::assertSame(12, $suppressions[0]->line);
+        self::assertSame(11, $suppressions[0]->line);
     }
 
     #[Test]
@@ -1090,7 +1100,7 @@ final class SuppressionExtractorTest extends TestCase
             static fn($suppression): SuppressionType => $suppression->type,
             $suppressions,
         ));
-        self::assertSame([10, 13], array_map(static fn($suppression): int => $suppression->line, $suppressions));
+        self::assertSame([12, 11], array_map(static fn($suppression): int => $suppression->line, $suppressions));
     }
 
     #[Test]

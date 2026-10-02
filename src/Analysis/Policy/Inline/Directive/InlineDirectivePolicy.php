@@ -61,7 +61,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     }
 
     /**
-     * The directives **as authored**, one entry per line of source, keyed by
+     * The directives **as authored**, one entry per source tag, keyed by
      * file.
      *
      * This is the only view the reporting side is ever given, and the reason
@@ -97,7 +97,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
     {
         return self::onePerAuthoredSite(
             $this->thresholdDiagnostics,
-            static fn(ThresholdDiagnostic $d): string => $d->line . "\0" . ($d->code ?? '') . "\0" . $d->message,
+            static fn(ThresholdDiagnostic $d): string => $d->line . "\0" . $d->position . "\0" . ($d->code ?? '') . "\0" . $d->message,
         );
     }
 
@@ -106,7 +106,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      *
      * Which binding survives does not matter: the reporting side never reads
      * a binding's subject, only the file and line the annotation was written
-     * at. It is the identity key — line, form, and authored text — that
+     * at. It is the identity key — position, line, form, and authored text — that
      * decides what counts as one directive.
      *
      * @template T of object

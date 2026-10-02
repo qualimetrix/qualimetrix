@@ -110,7 +110,7 @@ final class DirectiveAuditSummaryProjectionTest extends TestCase
 
         foreach (DirectiveEffect::cases() as $effect) {
             $verdicts[] = new DirectiveVerdict(
-                new DirectiveSite(RelativePath::fromString('src/Example.php'), ++$line, 'threshold', 'rule.name'),
+                new DirectiveSite(RelativePath::fromString('src/Example.php'), ++$line, 'threshold', 'rule.name', position: null),
                 $effect,
             );
         }

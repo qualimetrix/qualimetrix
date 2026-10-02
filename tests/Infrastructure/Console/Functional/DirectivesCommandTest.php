@@ -208,7 +208,7 @@ final class DirectivesCommandTest extends TestCase
     {
         $report = new DirectiveAuditReport(
             [new DirectiveVerdict(
-                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'design.god-class'),
+                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'design.god-class', position: null),
                 effect: DirectiveEffect::Inert,
                 boundaryObservable: false,
             )],
@@ -220,7 +220,7 @@ final class DirectivesCommandTest extends TestCase
 
         $observable = new DirectiveAuditReport(
             [new DirectiveVerdict(
-                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'complexity.ccn'),
+                site: new DirectiveSite(RelativePath::fromString('src/Foo.php'), 7, 'threshold', 'complexity.ccn', position: null),
                 effect: DirectiveEffect::Inert,
             )],
             new AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], []),
@@ -1318,6 +1318,25 @@ final class DirectivesCommandTest extends TestCase
         self::assertCount(1, $report['directives']);
         self::assertSame('symbol', $report['directives'][0]['form']);
         self::assertSame(['disabled_rules[0]: annotation.directive'], $report['selection']['disabled']);
+    }
+
+    #[Test]
+    public function itReportsIdenticalDirectivesFromTwoCommentsOnOneLineAsTwoSites(): void
+    {
+        $this->writeSource('Separate.php', <<<'SOURCE'
+            <?php
+            /* @qmx-ignore-next-line complexity.ccn -- reason */ // @qmx-ignore-next-line complexity.ccn -- reason
+            function trivial(): int { return 1; }
+            SOURCE);
+        $report = self::decode($this->audit([
+            'paths' => [$this->tempDir . '/src'],
+            '--config' => $this->writeConfig(self::WITHOUT_COUPLING),
+            '--format' => 'json',
+        ])->getDisplay());
+
+        self::assertCount(2, $report['directives']);
+        self::assertSame([2, 2], array_column($report['directives'], 'line'));
+        self::assertSame(['next-line', 'next-line'], array_column($report['directives'], 'form'));
     }
 
     /**

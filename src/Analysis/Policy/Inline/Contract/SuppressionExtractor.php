@@ -204,7 +204,7 @@ final readonly class SuppressionExtractor
                 $read[] = $match['offset'];
                 $suppression = $this->projectMatch(
                     $match,
-                    $comment->getStartLine(),
+                    self::lineAtOffset($comment->getText(), $comment->getStartLine(), $match['offset']),
                     $comment->getEndLine(),
                     self::positionAtOffset($comment, $match['offset']),
                     $reach,
@@ -499,7 +499,7 @@ final readonly class SuppressionExtractor
      */
     private function projectMatch(
         array $match,
-        int $startLine,
+        int $tagLine,
         int $endLine,
         int $position,
         ?DeclarationReach $reach,
@@ -516,7 +516,7 @@ final readonly class SuppressionExtractor
             return new Suppression(
                 rule: $match['rule'],
                 reason: $match['reason'],
-                line: $startLine,
+                line: $tagLine,
                 type: SuppressionType::Symbol,
                 position: $position,
                 refusal: $unboundReason === DirectiveRefusalReason::ClosureNotDirectValue
@@ -533,7 +533,7 @@ final readonly class SuppressionExtractor
             return new Suppression(
                 rule: $match['rule'],
                 reason: $match['reason'],
-                line: $startLine,
+                line: $tagLine,
                 type: SuppressionType::Symbol,
                 position: $position,
                 binding: new DeclarationBinding($subject, $controlScope, $reach),
@@ -543,7 +543,7 @@ final readonly class SuppressionExtractor
         return new Suppression(
             rule: $match['rule'],
             reason: $match['reason'],
-            line: $match['type'] === SuppressionType::File ? $startLine : $endLine,
+            line: $tagLine,
             type: $match['type'],
             position: $position,
             silencedLine: $match['type'] === SuppressionType::NextLine ? $endLine + 1 : null,

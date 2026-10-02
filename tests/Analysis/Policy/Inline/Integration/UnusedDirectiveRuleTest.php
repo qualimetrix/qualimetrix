@@ -583,6 +583,33 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itKeepsIdenticalThresholdDiagnosticsFromTwoPositionsOnOneLineApart(): void
+    {
+        $identity = self::productionUniverse();
+        $policy = self::policy($identity);
+        $diagnostics = [];
+        foreach ([20, 80] as $position) {
+            foreach (self::boundSubjects() as $subject) {
+                $diagnostics[] = new ThresholdDiagnostic(
+                    line: 13,
+                    subject: $subject,
+                    message: '@qmx-threshold complexity.ccn: invalid syntax',
+                    position: $position,
+                    rulePattern: 'complexity.ccn',
+                );
+            }
+        }
+        $policy->prepare([], [], [self::FILE => $diagnostics]);
+        $findings = self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
+
+        self::assertCount(2, $findings);
+        self::assertSame(
+            [InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME, InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME],
+            array_map(static fn(Finding $finding): string => $finding->code, $findings),
+        );
+    }
+
     /** The same collapse for the two threshold channels. */
     #[Test]
     public function itReportsOneFindingPerAuthoredThresholdDirective(): void

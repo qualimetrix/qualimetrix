@@ -209,6 +209,7 @@ final class DirectiveUsage
                             line: $directive->line,
                             form: $directive->form(),
                             target: (string) $directive->target(),
+                            position: $directive->position,
                         ),
                         effect: $effect,
                         reason: $reason,
