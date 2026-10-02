@@ -323,6 +323,9 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
             }
         }
 
+        $canonicalRoot = realpath($root);
+        $root = $canonicalRoot === false ? throw new RuntimeException('Cannot resolve the fold fixture root') : $canonicalRoot;
+
         self::write($root . '/Own.php', <<<'PHP'
             <?php
 
@@ -438,11 +441,11 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
 
         $result = $pipeline->analyze(new RunConfiguration(
             pathExcludes: [],
-            projectRoot: AbsolutePath::fromString((string) getcwd()),
+            projectRoot: AbsolutePath::fromString($root),
             generatedFilePolicy: GeneratedFilePolicy::Include,
             projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
                 universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
-                    projectRoot: AbsolutePath::fromString((string) getcwd()),
+                    projectRoot: AbsolutePath::fromString($root),
                     pathsAuthored: true,
                     denominator: [],
                     prunedTargets: [],
@@ -459,9 +462,9 @@ final class NamespaceFoldCountsEachDeclarationOnceTest extends TestCase
         ));
 
         self::removeDirectory($root);
-        self::$runs[$variant] = $result->metrics;
+        self::$runs[$variant] = $result->measured->repository;
 
-        return $result->metrics;
+        return $result->measured->repository;
     }
 
     private static function write(string $path, string $contents): void

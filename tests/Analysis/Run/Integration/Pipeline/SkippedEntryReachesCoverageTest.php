@@ -79,14 +79,14 @@ final class SkippedEntryReachesCoverageTest extends TestCase
             ),
         ]);
 
-        self::assertFalse($result->coverage->isComplete());
-        self::assertSame(2, $result->coverage->discoveredFiles());
-        self::assertSame(1, $result->coverage->analyzedFilesCount());
+        self::assertFalse($result->measured->coverage->isComplete());
+        self::assertSame(2, $result->measured->coverage->discoveredFiles());
+        self::assertSame(1, $result->measured->coverage->analyzedFilesCount());
         self::assertSame(
             [['src/linked', AnalysisFailureKind::DirectorySymlink]],
             array_map(
                 static fn($failure): array => [$failure->path->value(), $failure->kind],
-                $result->coverage->failures,
+                $result->measured->coverage->failures,
             ),
         );
     }
@@ -96,8 +96,8 @@ final class SkippedEntryReachesCoverageTest extends TestCase
     {
         $result = $this->analyze([]);
 
-        self::assertTrue($result->coverage->isComplete());
-        self::assertSame(1, $result->coverage->discoveredFiles());
+        self::assertTrue($result->measured->coverage->isComplete());
+        self::assertSame(1, $result->measured->coverage->discoveredFiles());
     }
 
     /** @param list<SkippedEntry> $skips */

@@ -85,11 +85,11 @@ final readonly class BaselineRun implements BaselineRunInterface
         // lifecycle command interpret, report candidates from, or mutate a
         // baseline. --force only overrides the recorded-scope guard; it must
         // never turn analysis failure into accepted state.
-        if (!$run->result->coverage->isComplete()) {
-            throw new IncompleteAnalysisException($run->result->coverage);
+        if (!$run->result->measured->coverage->isComplete()) {
+            throw new IncompleteAnalysisException($run->result->measured->coverage);
         }
 
-        $coverage = $run->result->coverage;
+        $coverage = $run->result->measured->coverage;
         if ($coverage->isIntentionallyEmpty()) {
             $this->errorStream->write($output, CoverageNarrator::describe(new ReportCoverage(
                 $coverage->discoveredFiles(),

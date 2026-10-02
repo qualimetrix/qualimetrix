@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
@@ -60,7 +59,7 @@ final readonly class BoundaryExplanationService
      *                                                                         `@qmx-threshold`
      *                                                                         overrides — read
      *                                                                         straight off
-     *                                                                         `AnalysisResult::$thresholdOverrides`
+     *                                                                         `DirectiveObservations::$thresholdOverrides`
      * @param array<string, array<string, int|float>> $configuredThresholds the rule's `qmx.yaml`-configured
      *                                                                      boundary, keyed by channel name;
      *                                                                      a channel absent from this map

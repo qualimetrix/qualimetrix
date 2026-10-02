@@ -54,7 +54,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
-        $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $findings = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         $sourceFqns = $this->collectSourceFqns($findings);
 
         // UserService sits in `service` and depends on Marker — finding
@@ -80,7 +80,7 @@ final class LayerExcludeIntegrationTest extends TestCase
     {
         $analysis = $this->runPipelineWithConfig($this->baseConfig());
 
-        $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+        $findings = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
         $sourceFqns = $this->collectSourceFqns($findings);
 
         // Order and Stock are in `module-Order` and `module-Inventory` —
@@ -124,7 +124,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         $cacheProxyFqn = self::FIXTURE_NAMESPACE . '\\Module\\Cache\\Domain\\Generated\\CacheProxy';
         $sourceFqns = $this->collectSourceFqns(
-            $this->filterByRule($analysis->findings, LayerViolationRule::NAME),
+            $this->filterByRule($analysis->findings(), LayerViolationRule::NAME),
         );
 
         self::assertNotContains(
@@ -135,7 +135,7 @@ final class LayerExcludeIntegrationTest extends TestCase
 
         $unreachableMessages = array_map(
             static fn(Finding $v): string => $v->message,
-            $this->filterByRule($analysis->findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+            $this->filterByRule($analysis->findings(), LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
         );
         foreach ($unreachableMessages as $message) {
             self::assertStringNotContainsString(
@@ -178,7 +178,7 @@ final class LayerExcludeIntegrationTest extends TestCase
             $loaded = WrittenFile::compose($yamlPath);
             $analysis = $this->runPipelineWithConfig($loaded);
 
-            $findings = $this->filterByRule($analysis->findings, LayerViolationRule::NAME);
+            $findings = $this->filterByRule($analysis->findings(), LayerViolationRule::NAME);
             $sourceFqns = $this->collectSourceFqns($findings);
 
             // Assigned classes still produce findings.

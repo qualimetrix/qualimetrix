@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -22,6 +23,7 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -148,7 +150,7 @@ final class MeasuredFindingSetTest extends TestCase
         $run = $set->run($this->configuration());
 
         self::assertSame([$reported], $run->findings);
-        self::assertSame([$ignored, $reported], $run->result->findings);
+        self::assertSame([$ignored, $reported], $run->result->findings());
     }
 
     #[Test]
@@ -212,12 +214,20 @@ final class MeasuredFindingSetTest extends TestCase
      */
     private static function analysisResult(array $findings, array $suppressions = []): AnalysisResult
     {
-        return new AnalysisResult(
-            findings: $findings,
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
-            suppressions: $suppressions,
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: self::createStub(MetricRepositoryInterface::class),
+                coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+                namespaceTree: null,
+                projectScope: null,
+                duration: 0.1,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: $suppressions,
+                thresholdOverrides: [],
+            ),
+            ruleExecution: null,
+            latePublished: $findings,
         );
     }
 

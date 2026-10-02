@@ -82,8 +82,8 @@ final class AnalysisPipelineTest extends TestCase
 
         $result = $pipeline->analyze($configuration);
 
-        self::assertSame([$relative], $result->coverage->analyzedFiles);
-        self::assertSame([], $result->findings);
+        self::assertSame([$relative], $result->measured->coverage->analyzedFiles);
+        self::assertSame([], $result->findings());
     }
 
     #[Test]
@@ -105,7 +105,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $result = $this->pipeline($projectFiles, $collection)->analyze($configuration);
 
-        self::assertSame([], $result->coverage->analyzedFiles);
+        self::assertSame([], $result->measured->coverage->analyzedFiles);
     }
 
     #[Test]
@@ -194,7 +194,7 @@ final class AnalysisPipelineTest extends TestCase
                 ),
             );
 
-            self::assertSame(5.0, $result->duration);
+            self::assertSame(5.0, $result->measured->duration);
         } finally {
             unlink($prefix);
         }

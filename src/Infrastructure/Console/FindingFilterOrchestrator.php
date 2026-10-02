@@ -92,8 +92,8 @@ final readonly class FindingFilterOrchestrator
         $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
-            [...$result->findings, ...$this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope))],
-            $result->suppressions,
+            [...$result->findings(), ...$this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope))],
+            $result->directives->suppressions,
             $options,
         );
 
@@ -122,7 +122,7 @@ final readonly class FindingFilterOrchestrator
     private function valueScope(AnalysisResult $result, ResolvedCheckScope $resolvedScope): ValueScopeJudgement
     {
         $scope = $resolvedScope->scope;
-        $measurement = $result->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
 
         return new ValueScopeJudgement(
             $scope->projectRoot->value(),
@@ -144,11 +144,11 @@ final readonly class FindingFilterOrchestrator
         FindingProjectionOptions $options,
     ): ReportProjectScope {
         $valueScope = $this->valueScope($result, $resolvedScope);
-        $measurement = $result->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
         $judgement = $measurement->judgement();
         $source = $this->composerReader->read($measurement->universe->projectRoot)->source();
         $reasons = $this->observedProjectScopeReasons->forMainSource($source);
-        $namespaces = $result->namespaceTree?->getAllNamespaces();
+        $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
         $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
@@ -207,8 +207,8 @@ final readonly class FindingFilterOrchestrator
         return $this->unboundSuppressionAudit->findings(
             $options->suppressPaths,
             $options->suppressNamespaces,
-            $result->coverage->analyzedFiles,
-            $result->namespaceTree?->getAllNamespaces(),
+            $result->measured->coverage->analyzedFiles,
+            $result->measured->namespaceTree?->getAllNamespaces(),
             $valueScope,
         );
     }

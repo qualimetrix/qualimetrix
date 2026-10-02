@@ -20,9 +20,11 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -502,13 +504,20 @@ final class FindingFilterOrchestratorTest extends TestCase
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
-        return new AnalysisResult(
-            findings: $findings,
-            duration: 0.1,
-            metrics: $repository,
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $repository,
+                coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+                namespaceTree: null,
+                projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString(sys_get_temp_dir()), true, [], [], [], true, []), [AbsolutePath::fromString(sys_get_temp_dir())], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+                duration: 0.1,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
             ruleExecution: new RuleExecutionResult($findings, $findings, $stats, LevelActivity::empty()),
-            projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString(sys_get_temp_dir()), true, [], [], [], true, []), [AbsolutePath::fromString(sys_get_temp_dir())], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+            latePublished: [],
         );
     }
 

@@ -108,15 +108,15 @@ final class ResultPresenter
         $filteredFindings = $this->findingFilter->filterFindings($findings, $context);
 
         // Build and output report with filtered findings
-        $coverage = ReportCoverageProjection::of($analysisResult->coverage, $projectRoot);
+        $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);
 
         $reportBuilder = ReportBuilder::create()
             ->addFindings($filteredFindings)
-            ->filesAnalyzed($analysisResult->filesAnalyzed)
-            ->filesSkipped($analysisResult->filesSkipped)
-            ->duration($analysisResult->duration)
-            ->metrics($analysisResult->metrics)
-            ->namespaceTree($analysisResult->namespaceTree)
+            ->filesAnalyzed($analysisResult->measured->coverage->analyzedFilesCount())
+            ->filesSkipped($analysisResult->measured->coverage->skippedFilesCount())
+            ->duration($analysisResult->measured->duration)
+            ->metrics($analysisResult->measured->repository)
+            ->namespaceTree($analysisResult->measured->namespaceTree)
             ->coverage($coverage)
             ->configurationDiagnostics($configurationDiagnostics);
 
@@ -165,7 +165,7 @@ final class ResultPresenter
                 $analysisResult->ruleExecution,
                 $this->ruleConfiguration,
                 $projectionOptions,
-                $analysisResult->suppressions,
+                $analysisResult->directives->suppressions,
             ));
         }
     }
@@ -205,16 +205,16 @@ final class ResultPresenter
     private function assertDrillDownBinds(FormatterContext $context, AnalysisResult $analysisResult): void
     {
         $binding = new DrillDownBinding();
-        $metrics = $analysisResult->metrics;
+        $metrics = $analysisResult->measured->repository;
 
         if ($context->namespace !== null
-            && $binding->namespaceBindings($context->namespace, $metrics, $analysisResult->namespaceTree) === 0
+            && $binding->namespaceBindings($context->namespace, $metrics, $analysisResult->measured->namespaceTree) === 0
         ) {
             throw ConfigurationRefusal::aboutCommandLineInput('--namespace', \sprintf(
                 'Namespace "%s" matched none of the %d analyzed namespaces and symbol names it is compared against. '
                 . 'The report would be empty because nothing was selected, not because nothing was found.',
                 $context->namespace->definition->display(),
-                $binding->namespaceUniverseSize($metrics, $analysisResult->namespaceTree),
+                $binding->namespaceUniverseSize($metrics, $analysisResult->measured->namespaceTree),
             ));
         }
 

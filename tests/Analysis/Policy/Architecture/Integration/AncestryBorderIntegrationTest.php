@@ -406,7 +406,7 @@ final class AncestryBorderIntegrationTest extends TestCase
         $prepared = $holder->getPreparedConfiguration();
         self::assertNotNull($prepared, 'The pipeline must have prepared the architecture policy.');
 
-        return [$prepared, array_values($result->findings)];
+        return [$prepared, array_values($result->findings())];
     }
 
     /**

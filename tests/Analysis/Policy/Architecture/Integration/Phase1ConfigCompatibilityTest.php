@@ -82,7 +82,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
         } finally {
             $fixture->close();
         }
-        $actual = ArchitectureViolationProjector::project($analysis->findings);
+        $actual = ArchitectureViolationProjector::project($analysis->findings());
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {
             $payload = [

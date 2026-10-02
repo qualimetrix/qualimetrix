@@ -28,8 +28,8 @@ final readonly class MeasuredFindingSet
     {
         $result = $this->analyzer->analyze($configuration);
         $projection = $this->projector->project(
-            $result->findings,
-            $result->suppressions,
+            $result->findings(),
+            $result->directives->suppressions,
             $options,
         );
         return new MeasuredAnalysisRun($result, $projection->measuredFindings);

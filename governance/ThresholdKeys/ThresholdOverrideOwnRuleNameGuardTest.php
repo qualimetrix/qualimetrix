@@ -78,7 +78,7 @@ use RuntimeException;
  *   `?->thresholdOverrides`, not followed by `(`) on a recognized context,
  *   outside {@see LEGITIMATE_DIRECT_READERS}, is a violation. Receiver
  *   recognition is what keeps the check honest in both directions: five other
- *   types in `src/` carry a field of the same name (`AnalysisResult`,
+ *   types in `src/` carry a field of the same name (`DirectiveObservations`,
  *   `CollectionPhaseOutput`, `SourceControls`, `SuccessfulFileProcessing`,
  *   `InlineDirectivePolicy`), and reading *those* is not this invariant's
  *   business.
@@ -444,7 +444,7 @@ final class ThresholdOverrideOwnRuleNameGuardTest extends TestCase
             <?php
             final class Merge
             {
-                public function of(AnalysisResult $other): array
+                public function of(DirectiveObservations $other): array
                 {
                     return $other->thresholdOverrides;
                 }

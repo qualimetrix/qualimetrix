@@ -300,7 +300,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // Assert: should find circular dependency findings
         $circularFindings = array_filter(
-            $result->findings,
+            $result->findings(),
             static fn(Finding $v): bool => $v->ruleName === CircularDependencyRule::NAME,
         );
 
@@ -397,20 +397,20 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         try {
             [$first] = $run($cyclicRoot, $architectureDocument);
-            self::assertNotEmpty(self::findingsNamed($first->findings, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::findingsNamed($first->findings, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings(), LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($first->findings(), CircularDependencyRule::NAME));
 
             [$second] = $run($cleanRoot, LayeredDocument::of([], AbsolutePath::fromString($fixtureRoot), ...$pipelineSections));
-            self::assertSame([], self::findingsNamed($second->findings, LayerViolationRule::NAME));
-            self::assertSame([], self::findingsNamed($second->findings, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings(), LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($second->findings(), CircularDependencyRule::NAME));
 
             [$withoutCycles, $cycleDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
                 CircularDependencyRule::NAME,
             );
-            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings, LayerViolationRule::NAME));
-            self::assertSame([], self::findingsNamed($withoutCycles->findings, CircularDependencyRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutCycles->findings(), LayerViolationRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutCycles->findings(), CircularDependencyRule::NAME));
             self::assertArrayHasKey('architecture-prepare', $cycleDisabledSpans);
             self::assertArrayNotHasKey('cycles', $cycleDisabledSpans);
 
@@ -422,8 +422,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 $architectureDocument,
                 ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
             );
-            self::assertSame([], self::findingsNamed($withoutLayers->findings, LayerViolationRule::NAME));
-            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings, CircularDependencyRule::NAME));
+            self::assertSame([], self::findingsNamed($withoutLayers->findings(), LayerViolationRule::NAME));
+            self::assertNotEmpty(self::findingsNamed($withoutLayers->findings(), CircularDependencyRule::NAME));
             self::assertArrayNotHasKey('architecture-prepare', $architectureDisabledSpans);
             self::assertArrayHasKey('cycles', $architectureDisabledSpans);
         } finally {
@@ -510,7 +510,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $result = $pipeline->analyze(self::runConfiguration(AbsolutePath::fromString(sys_get_temp_dir())));
 
         // Verify class-level CBO was computed (sanity check)
-        $orderServiceBag = $result->metrics->get(
+        $orderServiceBag = $result->measured->repository->get(
             SymbolPath::forClass('App\Service', 'OrderService'),
         );
         self::assertNotNull(
@@ -519,7 +519,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Now check namespace-level aggregated CBO
-        $namespaceBag = $result->metrics->get(SymbolPath::forNamespace('App\Service'));
+        $namespaceBag = $result->measured->repository->get(SymbolPath::forNamespace('App\Service'));
 
         // The CouplingCollector defines cbo aggregation at namespace level
         // with Sum, Average, Max strategies. These should produce cbo.sum, cbo.avg, cbo.max.

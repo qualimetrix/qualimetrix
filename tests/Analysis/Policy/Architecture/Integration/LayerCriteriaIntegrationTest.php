@@ -58,7 +58,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             'coverage-gap' => 'warn',
         ]);
 
-        $layerOf = $this->buildPerSourceLayerMap($result->findings);
+        $layerOf = $this->buildPerSourceLayerMap($result->findings());
 
         // Each expected source class shows up at least once as the source
         // of a finding under the expected layer label.
@@ -106,7 +106,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
         ]);
 
         $layerSources = $this->collectSourceFqns(
-            $this->filterByRule($result->findings, LayerViolationRule::NAME),
+            $this->filterByRule($result->findings(), LayerViolationRule::NAME),
         );
 
         self::assertNotContains(
@@ -145,7 +145,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
         ]);
 
         $layerSources = $this->collectSourceFqns(
-            $this->filterByRule($result->findings, LayerViolationRule::NAME),
+            $this->filterByRule($result->findings(), LayerViolationRule::NAME),
         );
 
         self::assertContains(
@@ -191,7 +191,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             ],
             'coverage-gap' => 'ignore',
         ]);
-        $findings = $this->filterByRule($result->findings, LayerViolationRule::NAME);
+        $findings = $this->filterByRule($result->findings(), LayerViolationRule::NAME);
 
         $expectedTrailers = [
             self::FIXTURE_NAMESPACE . '\\Suffixed\\OrderRepository' => 'source matched by suffix "Repository"',

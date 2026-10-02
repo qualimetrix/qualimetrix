@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -31,6 +32,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
@@ -81,26 +83,30 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     {
         $startTime = hrtime(true);
         [$prepared, $measuredScope] = $this->preparedRun($configuration);
-        $findings = $this->reportedFindings($prepared);
+        $latePublished = $this->latePublishedFindings($prepared);
         $duration = (hrtime(true) - $startTime) / 1e9;
 
         $this->logger->info('Analysis complete', [
             'total_duration' => \sprintf('%.2fs', $duration),
-            'violations' => \count($findings),
+            'violations' => \count($prepared->ruleExecution->published) + \count($latePublished),
             'files_analyzed' => $prepared->collection->filesAnalyzed,
             'files_skipped' => $prepared->coverage->skippedFilesCount(),
         ]);
 
-        return new AnalysisResult(
-            findings: $findings,
-            duration: $duration,
-            metrics: $prepared->context->metrics,
-            coverage: $prepared->coverage,
-            suppressions: $prepared->collection->suppressions,
-            namespaceTree: $prepared->namespaceTree,
-            thresholdOverrides: $prepared->collection->thresholdOverrides,
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $prepared->context->metrics,
+                coverage: $prepared->coverage,
+                namespaceTree: $prepared->namespaceTree,
+                projectScope: $measuredScope,
+                duration: $duration,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: $prepared->collection->suppressions,
+                thresholdOverrides: $prepared->collection->thresholdOverrides,
+            ),
             ruleExecution: $prepared->ruleExecution,
-            projectScope: $measuredScope,
+            latePublished: $latePublished,
         );
     }
 
@@ -338,11 +344,11 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      *
      * @return list<Finding>
      */
-    private function reportedFindings(PreparedRun $prepared): array
+    private function latePublishedFindings(PreparedRun $prepared): array
     {
         $ruleExecution = $prepared->ruleExecution;
 
-        $late = $this->ruleExecutor->publishable([
+        return $this->ruleExecutor->publishable([
             ...$this->inlineDirectiveRun->usageFindings(
                 $ruleExecution->produced,
                 $ruleExecution->levelActivity,
@@ -356,7 +362,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             ...$prepared->unmatchedExcludeFindings,
         ]);
 
-        return $late === [] ? $ruleExecution->published : array_merge($ruleExecution->published, $late);
     }
 
     /** @return list<LogicalClassPath> */
