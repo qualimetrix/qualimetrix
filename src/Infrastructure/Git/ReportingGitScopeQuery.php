@@ -48,7 +48,12 @@ final readonly class ReportingGitScopeQuery implements GitScopeQueryInterface
             // against the explicit project root (NOT git top-level — the two
             // differ when the project sits in a git subdirectory).
             $fullPath = $request->projectRoot->joinRelative($file->path);
-            if ($request->includeParentNamespaces && $fullPath->isFile()) {
+            if (!$request->includeParentNamespaces) {
+                continue;
+            }
+
+            $entry = @lstat($fullPath->value());
+            if ($entry !== false && ($entry['mode'] & 0o170000) === 0o100000) {
                 foreach ($this->extractNamespaces($fullPath) as $namespace) {
                     // Add all parent namespaces
                     $parts = explode('\\', $namespace);
