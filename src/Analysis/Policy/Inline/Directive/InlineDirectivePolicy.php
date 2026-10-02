@@ -7,6 +7,8 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -50,7 +52,10 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      */
     private ?Severity $usageReportingSeverity = null;
 
-    public function __construct(private readonly DirectiveUsage $usage) {}
+    public function __construct(
+        private readonly DirectiveUsage $usage,
+        private readonly RefusedDirectives $refused,
+    ) {}
 
     public function prepare(array $suppressions, array $thresholdOverrides, array $thresholdDiagnostics): void
     {
@@ -147,7 +152,28 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
 
     public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
     {
-        return $this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity);
+        $groups = [];
+        foreach ($this->refusedDirectives() as $refusal) {
+            $site = $refusal->site;
+            $key = implode("\0", [$site->file->value(), (string) $site->line, (string) $site->position, $site->form, $site->target]);
+            $groups[$key] ??= ['site' => $site, 'refusals' => []];
+            $groups[$key]['refusals'][] = $refusal->publicRefusal();
+        }
+
+        return [
+            ...array_map(static fn(array $group): DirectiveVerdict => new DirectiveVerdict(
+                $group['site'],
+                DirectiveEffect::Refused,
+                refusals: $group['refusals'],
+            ), array_values($groups)),
+            ...$this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity),
+        ];
+    }
+
+    /** @return list<RefusedDirective> */
+    private function refusedDirectives(): array
+    {
+        return $this->refused->all($this->authoredSuppressions(), $this->authoredThresholdOverrides(), $this->authoredThresholdDiagnostics());
     }
 
     public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity): array

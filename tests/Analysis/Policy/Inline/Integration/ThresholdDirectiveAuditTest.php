@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveAudit;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\ThresholdDirectiveEligibility;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -118,17 +119,18 @@ final class ThresholdDirectiveAuditTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesToJudgeADirectiveNamingNoRule(): void
+    public function itSkipsAThresholdTheClassifierRefused(): void
     {
         $subject = self::subject('Widget', 'render');
-        $executor = self::executor([['subject' => $subject, 'value' => 25]]);
+        foreach (['nowhere.at-all', 'annotation.directive'] as $target) {
+            $executor = self::executor([['subject' => $subject, 'value' => 25]]);
+            $verdicts = self::audit($executor, [
+                new ThresholdOverride($target, 30, 40, 10, $subject, ControlScope::Callable),
+            ]);
 
-        $verdicts = self::audit($executor, [
-            new ThresholdOverride('nowhere.at-all', 30, 40, 10, $subject, ControlScope::Callable),
-        ]);
-
-        self::assertSame(DirectiveEffect::Unmeasured, $verdicts[0]->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, $verdicts[0]->reason);
+            self::assertSame([], $verdicts, $target);
+            self::assertSame(1, $executor->executions, $target);
+        }
     }
 
     /**
@@ -528,10 +530,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $registry = new RuleOptionsRegistry();
         self::productionUniverse();
         $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
-        $audit = new ThresholdDirectiveAudit(
-            self::productionUniverse(),
-            $registry,
-        );
+        $audit = new ThresholdDirectiveAudit($registry, new RefusedDirectives(self::productionUniverse()));
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('before the sweep');
@@ -599,10 +598,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $registry = new RuleOptionsRegistry();
         self::productionUniverse();
         $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
-        $audit = new ThresholdDirectiveAudit(
-            self::productionUniverse(),
-            $registry,
-        );
+        $audit = new ThresholdDirectiveAudit($registry, new RefusedDirectives(self::productionUniverse()));
 
         $verdicts = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline));
 
@@ -653,10 +649,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
         $registry = new RuleOptionsRegistry();
         self::productionUniverse();
         $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), self::$metadata, channels: self::$scriptedUniverse));
-        $audit = new ThresholdDirectiveAudit(
-            self::productionUniverse(),
-            $registry,
-        );
+        $audit = new ThresholdDirectiveAudit($registry, new RefusedDirectives(self::productionUniverse()));
 
         $narrow = $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline, DirectiveSweepScope::Narrow));
 
@@ -729,10 +722,7 @@ final class ThresholdDirectiveAuditTest extends TestCase
 
         $context = self::context($overrides);
 
-        $audit = new ThresholdDirectiveAudit(
-            self::productionUniverse(),
-            $registry,
-        );
+        $audit = new ThresholdDirectiveAudit($registry, new RefusedDirectives(self::productionUniverse()));
 
         return $audit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $executor->execute($context)));
     }

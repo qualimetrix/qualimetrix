@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 
+use InvalidArgumentException;
+
 /**
  * One authored directive and what it did.
  *
@@ -31,6 +33,7 @@ final readonly class DirectiveVerdict
      *                                 a promise nothing tested was not broken. Produced by the
      *                                 threshold half only; the suppression half leaves it true,
      *                                 having no boundary to speak of.
+     * @param list<DirectiveVerdictRefusal> $refusals nonempty exactly for a refused directive
      */
     public function __construct(
         public DirectiveSite $site,
@@ -38,5 +41,10 @@ final readonly class DirectiveVerdict
         public ?DirectiveUnmeasurableReason $reason = null,
         public ?DirectiveSite $maskedBy = null,
         public bool $boundaryObservable = true,
-    ) {}
+        public array $refusals = [],
+    ) {
+        if (($effect === DirectiveEffect::Refused) !== ($refusals !== [])) {
+            throw new InvalidArgumentException('Refused directives require refusals, and no other effect may carry them');
+        }
+    }
 }

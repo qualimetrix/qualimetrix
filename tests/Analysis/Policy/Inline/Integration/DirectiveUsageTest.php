@@ -30,6 +30,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -78,12 +79,13 @@ final class DirectiveUsageTest extends TestCase
      * `@qmx-ignore-file` is desugared to the same token by the extractor.
      */
     #[Test]
-    public function itRefusesToJudgeADirectiveWithoutARuleFilter(): void
+    public function itJudgesADirectiveWithoutARuleFilterByWhatItSilenced(): void
     {
         $verdicts = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AddressesEveryChannel, self::single($verdicts)->reason);
+        self::assertSame(DirectiveEffect::Inert, self::single($verdicts)->effect);
+        $effective = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [self::finding()], LevelActivity::empty());
+        self::assertSame(DirectiveEffect::Effective, self::single($effective)->effect);
     }
 
     /**
@@ -96,8 +98,7 @@ final class DirectiveUsageTest extends TestCase
     {
         $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL . ':project'), [], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+        self::assertSame([], $verdicts);
     }
 
     /**
@@ -112,8 +113,7 @@ final class DirectiveUsageTest extends TestCase
         foreach ([InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, 'annotation.*'] as $target) {
             $verdicts = self::usage()->verdicts(self::fileDirective($target), [], LevelActivity::empty());
 
-            self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect, $target);
-            self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason, $target);
+            self::assertSame([], $verdicts, $target);
         }
     }
 
@@ -122,8 +122,7 @@ final class DirectiveUsageTest extends TestCase
     {
         $verdicts = self::usage()->verdicts(self::fileDirective('coupling.instabilty'), [], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+        self::assertSame([], $verdicts);
     }
 
     #[Test]
@@ -237,7 +236,7 @@ final class DirectiveUsageTest extends TestCase
             new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine, position: 0, silencedLine: 7 + 1),
         ]];
 
-        $policy = new InlineDirectivePolicy(self::usage());
+        $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
         $policy->prepare($directives, [], []);
         $authored = array_map(
             static fn(Suppression $suppression): string => $suppression->line . '/' . $suppression->type->value,
@@ -302,7 +301,7 @@ final class DirectiveUsageTest extends TestCase
         self::assertCount(2, $verdicts);
         self::assertSame([20, 80], array_map(static fn(DirectiveVerdict $v): ?int => $v->site->position, $verdicts));
 
-        $policy = new InlineDirectivePolicy($usage);
+        $policy = new InlineDirectivePolicy($usage, new RefusedDirectives(self::productionUniverse()));
         $policy->prepare($directives, [], []);
         $authored = $policy->authoredSuppressions();
         self::assertArrayHasKey(self::FILE, $authored);
@@ -330,8 +329,7 @@ final class DirectiveUsageTest extends TestCase
 
         $verdicts = self::usage()->verdicts($refused, [self::finding()], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+        self::assertSame([], $verdicts);
     }
 
     /** A report that named an unreadable tag as one of the four real ones would send its author to the wrong line. */
@@ -347,10 +345,12 @@ final class DirectiveUsageTest extends TestCase
             refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
         )]];
 
-        $verdicts = self::usage()->verdicts($refused, [], LevelActivity::empty());
+        $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
+        $policy->prepare($refused, [], []);
+        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty());
 
         self::assertSame('ignore-lines', self::single($verdicts)->site->form);
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
+        self::assertSame(DirectiveEffect::Refused, self::single($verdicts)->effect);
     }
 
     /**
@@ -368,11 +368,11 @@ final class DirectiveUsageTest extends TestCase
             new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::noDeclarationToBind()),
         ]];
 
-        $policy = new InlineDirectivePolicy(self::usage());
+        $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
         $policy->prepare($directives, [], []);
         $judged = array_map(
             static fn(DirectiveVerdict $verdict): string => $verdict->site->form,
-            self::usage()->verdicts($directives, [], LevelActivity::empty()),
+            $policy->directiveVerdicts([], LevelActivity::empty()),
         );
         sort($judged);
 
@@ -449,7 +449,7 @@ final class DirectiveUsageTest extends TestCase
             disabled: $disabled,
         ));
 
-        return new DirectiveUsage($universe, $registry, $universe);
+        return new DirectiveUsage($universe, $registry, $universe, new RefusedDirectives($universe));
     }
 
     /** @var list<RuleMetadata> */

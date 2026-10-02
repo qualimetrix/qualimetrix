@@ -55,6 +55,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -376,7 +377,7 @@ final class ChannelCoverageTest extends TestCase
             ],
         );
 
-        $validator = new InlineDirectiveValidator($policy, self::channelIdentity());
+        $validator = new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity()));
         $findings = $validator->validate(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
 
         $emitted = array_map(static fn($finding): string => $finding->code, $findings);
@@ -413,7 +414,7 @@ final class ChannelCoverageTest extends TestCase
         $context = new AnalysisContext(self::createStub(MetricRepositoryInterface::class));
         $options = new InlineDirectiveOptions();
         self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
-        self::assertSame([], (new InlineDirectiveValidator($policy, self::channelIdentity()))->validate($context));
+        self::assertSame([], (new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity())))->validate($context));
 
         $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
         self::assertCount(1, $unused);
@@ -437,7 +438,9 @@ final class ChannelCoverageTest extends TestCase
         \assert($execution instanceof RuleExecutionInterface);
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules(), channels: $identity));
 
-        return new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity));
+        $refused = new RefusedDirectives($identity);
+
+        return new InlineDirectivePolicy(new DirectiveUsage($identity, $configuration, $identity, $refused), $refused);
     }
 
     private static function channelIdentity(): ChannelUniverseInterface

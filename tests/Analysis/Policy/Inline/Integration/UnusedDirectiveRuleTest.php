@@ -34,6 +34,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\StaleDirectiveFinding;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -759,7 +760,9 @@ final class UnusedDirectiveRuleTest extends TestCase
             channels: $universe,
         ));
 
-        return new InlineDirectivePolicy(new DirectiveUsage($universe, $registry, $universe));
+        $refused = new RefusedDirectives($universe);
+
+        return new InlineDirectivePolicy(new DirectiveUsage($universe, $registry, $universe, $refused), $refused);
     }
 
     private static function context(): AnalysisContext
@@ -834,7 +837,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $registry,
             configurationValidators: [[
                 'producer' => InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
-                'create' => static fn(): InlineDirectiveValidator => new InlineDirectiveValidator($policy, $identity),
+                'create' => static fn(): InlineDirectiveValidator => new InlineDirectiveValidator($policy, new RefusedDirectives($identity)),
             ]],
         );
 

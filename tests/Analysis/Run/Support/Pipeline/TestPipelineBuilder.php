@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAudi
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
@@ -247,11 +248,9 @@ final class TestPipelineBuilder
     {
         $universe = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
 
-        return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(new DirectiveUsage(
-            $universe,
-            $configuration,
-            $universe,
-        ));
+        $refused = new RefusedDirectives($universe);
+
+        return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe, $refused), $refused);
     }
 
     public function build(): AnalysisPipeline

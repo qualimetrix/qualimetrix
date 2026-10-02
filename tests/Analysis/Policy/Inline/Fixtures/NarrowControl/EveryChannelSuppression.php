@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Fixtures\NarrowControl;
 
 /**
- * A suppression that names no rule, which is the one directive the audit
- * refuses to judge for having nothing to consult.
+ * A wildcard suppression judged by the findings it actually silenced.
  *
  * Alone in its file on purpose. It is the only seeded directive carrying no
  * `@qmx-threshold`, so it is the only one the threshold enumeration cannot see
@@ -15,7 +14,7 @@ namespace Fixtures\NarrowControl;
  * in `check`, in the suppression snapshot and in the ratchet at once, which is
  * why the barrier that covers it is a whole-file one.
  *
- * @qmx-ignore * -- addresses-every-channel: no rule filter, so no producer to ask.
+ * @qmx-ignore * -- Covers every suppressible finding on this class.
  */
 final class EveryChannelSuppression
 {

@@ -32,6 +32,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -114,7 +115,7 @@ final class DirectiveAuditUniverseTest extends TestCase
         self::assertInstanceOf(RuleExecutionInterface::class, $metadata);
         $configuration = new RuleOptionsRegistry();
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata->allRules(), channels: $universe));
-        $policy = new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe));
+        $policy = new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe, new RefusedDirectives($universe)), new RefusedDirectives($universe));
 
         $discovery = self::createStub(ProjectFilesInterface::class);
         $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(

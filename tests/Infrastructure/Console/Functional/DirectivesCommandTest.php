@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
@@ -151,7 +152,7 @@ final class DirectivesCommandTest extends TestCase
 
     /** The absence of an answer is not a debt, and must not be reported as one. */
     #[Test]
-    public function itExitsCleanWhenADirectiveCouldNotBeMeasured(): void
+    public function itReportsAnEmptyWildcardSuppressionAsInert(): void
     {
         $this->writeSource('Unmeasured.php', <<<'SOURCE'
             <?php
@@ -171,9 +172,9 @@ final class DirectivesCommandTest extends TestCase
         $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'json']);
 
         $report = self::decode($tester->getDisplay());
-        self::assertSame(1, $report['summary']['unmeasured']);
-        self::assertSame('addresses-every-channel', $report['directives'][0]['reason']);
-        self::assertSame(Command::SUCCESS, $tester->getStatusCode());
+        self::assertSame(1, $report['summary']['inert']);
+        self::assertNull($report['directives'][0]['reason']);
+        self::assertSame(2, $tester->getStatusCode());
     }
 
     /**
@@ -354,9 +355,11 @@ final class DirectivesCommandTest extends TestCase
         $verdicts = self::decode($audit->getDisplay())['directives'];
 
         self::assertCount(1, $verdicts);
-        self::assertSame('unmeasured', $verdicts[0]['effect']);
-        self::assertSame('already-refused', $verdicts[0]['reason']);
-        self::assertSame(Command::SUCCESS, $audit->getStatusCode(), $audit->getDisplay());
+        self::assertSame('refused', $verdicts[0]['effect']);
+        self::assertNull($verdicts[0]['reason']);
+        self::assertCount(1, $verdicts[0]['refusals']);
+        self::assertSame('annotation.unresolved-directive', $verdicts[0]['refusals'][0]['channel']);
+        self::assertSame(2, $audit->getStatusCode(), $audit->getDisplay());
     }
 
     /** @return iterable<string, array{string, string, ?string}> */
@@ -428,9 +431,9 @@ final class DirectivesCommandTest extends TestCase
 
     /**
      * A directive with no rule filter names no channel, so there is nothing to
-     * refuse — and it no longer silences the banned channel either. Its verdict
-     * does not move; what moves is the finding, which comes back into the
-     * report and is not counted as suppressed.
+     * refuse — and it no longer silences the banned channel either. The bare
+     * file tag and the stale tag below it are both inert; each returns its
+     * own unused-directive finding, and neither is counted as suppressed.
      */
     #[Test]
     public function itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel(): void
@@ -451,7 +454,8 @@ final class DirectivesCommandTest extends TestCase
             }
             SOURCE);
 
-        $config = $this->writeConfig(self::WITHOUT_COUPLING);
+        $config = $this->writeConfig(self::WITHOUT_COUPLING
+            . "rules:\n  annotation.directive:\n    unused-directive-severity: info\n");
 
         $report = self::decode($this->runCheck([
             'paths' => [$this->tempDir . '/src'],
@@ -459,12 +463,17 @@ final class DirectivesCommandTest extends TestCase
             '--format' => 'json',
         ])->getDisplay());
 
-        self::assertCount(1, $report['violations']);
-        self::assertSame('annotation.unused-directive', $report['violations'][0]['channel']);
-        self::assertSame(8, $report['violations'][0]['line']);
-        // The severity is what keeps the returning finding out of the exit
-        // code: it comes back as the ordinary debt it always was.
-        self::assertSame('info', $report['violations'][0]['severity']);
+        self::assertCount(2, $report['violations']);
+        $byLine = [];
+        foreach ($report['violations'] as $violation) {
+            $byLine[$violation['line']] = $violation;
+        }
+        self::assertSame([2, 8], array_keys($byLine));
+        self::assertSame('annotation.unused-directive', $byLine[2]['channel']);
+        self::assertSame('info', $byLine[2]['severity']);
+        self::assertSame('annotation.unused-directive', $byLine[8]['channel']);
+        self::assertSame(8, $byLine[8]['line']);
+        self::assertSame('info', $byLine[8]['severity']);
 
         $suppressed = self::decode($this->runCheck([
             'paths' => [$this->tempDir . '/src'],
@@ -488,7 +497,7 @@ final class DirectivesCommandTest extends TestCase
         }
 
         self::assertSame(
-            [2 => 'unmeasured / addresses-every-channel', 8 => 'inert / '],
+            [2 => 'inert / ', 8 => 'inert / '],
             $byLine,
         );
     }
@@ -557,7 +566,7 @@ final class DirectivesCommandTest extends TestCase
         }
 
         self::assertSame(
-            [2 => 'unmeasured / already-refused', 8 => 'inert / '],
+            [2 => 'refused / ', 8 => 'inert / '],
             $byVerdictLine,
         );
         self::assertSame(2, $audit->getStatusCode(), $audit->getDisplay());
@@ -730,9 +739,11 @@ final class DirectivesCommandTest extends TestCase
         $verdicts = self::decode($audit->getDisplay())['directives'];
 
         self::assertCount(1, $verdicts);
-        self::assertSame('unmeasured', $verdicts[0]['effect']);
-        self::assertSame('already-refused', $verdicts[0]['reason']);
-        self::assertSame(Command::SUCCESS, $audit->getStatusCode(), $audit->getDisplay());
+        self::assertSame('refused', $verdicts[0]['effect']);
+        self::assertNull($verdicts[0]['reason']);
+        self::assertCount(1, $verdicts[0]['refusals']);
+        self::assertSame('annotation.unresolved-directive', $verdicts[0]['refusals'][0]['channel']);
+        self::assertSame(2, $audit->getStatusCode(), $audit->getDisplay());
     }
 
     /** @return iterable<string, array{string, string, ?string}> */
@@ -1256,7 +1267,7 @@ final class DirectivesCommandTest extends TestCase
         self::assertSame(2, $json['summary']['total']);
         self::assertSame(1, $json['summary']['effective']);
         self::assertSame(1, $json['summary']['inert']);
-        self::assertStringContainsString('2 directive(s): 1 effective, 0 applied-boundary-only, 1 inert, 0 unmeasured', $text);
+        self::assertStringContainsString('2 directive(s): 1 effective, 0 applied-boundary-only, 1 inert, 0 unmeasured, 0 refused', $text);
         foreach ($json['directives'] as $directive) {
             self::assertStringContainsString(
                 \sprintf('%s:%d', $directive['file'], $directive['line']),
@@ -1363,6 +1374,76 @@ final class DirectivesCommandTest extends TestCase
         self::assertSame(['next-line', 'next-line'], array_column($report['directives'], 'form'));
     }
 
+    #[Test]
+    public function itPublishesEveryInvalidThresholdAsOneRefusedSite(): void
+    {
+        foreach ([
+            '@qmx-threshold complexity.ccn',
+            '@qmx-threshold complexity.ccn warning=-5 error=10',
+            '@qmx-threshold maintainability.mi warning=20 error=40',
+            '@qmx-threshold complexity.ccn -- reason only',
+            "@qmx-threshold complexity.ccn 10\n * @qmx-threshold complexity.ccn 20",
+        ] as $annotation) {
+            $this->writeSource('Invalid.php', self::sevenParameterMethod($annotation));
+            $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'json']);
+            $report = self::decode($tester->getDisplay());
+            $refused = array_values(array_filter($report['directives'], static fn(array $row): bool => $row['effect'] === 'refused'));
+            self::assertCount(1, $refused, $annotation);
+            self::assertCount(1, $refused[0]['refusals'], $annotation);
+            self::assertSame('annotation.invalid-threshold', $refused[0]['refusals'][0]['channel'], $annotation);
+            self::assertNotSame('', $refused[0]['refusals'][0]['message']);
+            self::assertSame(2, $tester->getStatusCode(), $annotation);
+        }
+    }
+
+    #[Test]
+    public function itLetsFinalSelectionDecideWhetherARefusalFails(): void
+    {
+        foreach ([
+            ['@qmx-ignore no.such.channel -- typo', 'annotation.unresolved-directive', 'complexity.ccn', 0],
+            ['@qmx-ignore no.such.channel -- typo', 'annotation.unresolved-directive', 'annotation.unresolved-directive', 2],
+            ['@qmx-threshold annotation.directive warning=1', 'annotation.unsupported-threshold', 'complexity.ccn', 0],
+            ['@qmx-threshold annotation.directive warning=1', 'annotation.unsupported-threshold', 'annotation.directive', 2],
+            ['@qmx-threshold complexity.ccn warning=-5', 'annotation.invalid-threshold', 'code-smell.long-parameter-list', 0],
+            ['@qmx-threshold complexity.ccn warning=-5', 'annotation.invalid-threshold', 'complexity.ccn', 2],
+        ] as [$annotation, $channel, $selected, $exit]) {
+            $this->writeSource('Selected.php', self::sevenParameterMethod($annotation));
+            $tester = $this->audit([
+                'paths' => [$this->tempDir . '/src'], '--format' => 'json', '--only-rule' => [$selected],
+            ]);
+            $report = self::decode($tester->getDisplay());
+            self::assertCount(1, $report['directives'], $annotation . '/' . $selected);
+            self::assertSame('refused', $report['directives'][0]['effect']);
+            self::assertSame($channel, $report['directives'][0]['refusals'][0]['channel']);
+            self::assertSame($exit, $tester->getStatusCode(), $annotation . '/' . $selected);
+            self::assertSame($exit, $report['exit_code']);
+        }
+    }
+
+    #[Test]
+    public function itPrioritizesIncompleteCoverageOverARefusedDirective(): void
+    {
+        $this->writeSource('Refused.php', self::sevenParameterMethod('@qmx-ignore no.such.channel -- typo'));
+        $this->writeSource('Broken.php', "<?php\nclass {{{ Broken\n");
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'json']);
+        $report = self::decode($tester->getDisplay());
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame(4, $report['exit_code']);
+        self::assertCount(1, $report['directives']);
+        self::assertSame('refused', $report['directives'][0]['effect']);
+    }
+
+    #[Test]
+    public function itPrintsARefusedTagWithoutATrailingSpace(): void
+    {
+        $this->writeSource('Empty.php', self::sevenParameterMethod('@qmx-threshold'));
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
+        $lines = array_values(array_filter(explode("\n", $tester->getDisplay()), static fn(string $line): bool => str_contains($line, '  @qmx-threshold')));
+        self::assertCount(1, $lines);
+        self::assertStringEndsWith('  @qmx-threshold', $lines[0]);
+        self::assertStringContainsString('refused: annotation.unresolved-directive:', $tester->getDisplay());
+    }
+
     /**
      * Every run gets an explicit configuration document, and that is not
      * tidiness: without `--config` the resolver picks up the repository's own
@@ -1401,7 +1482,7 @@ final class DirectivesCommandTest extends TestCase
     {
         $method = new ReflectionMethod(DirectivesCommand::class, 'exitCodeFor');
 
-        $exitCode = $method->invoke(null, $report);
+        $exitCode = $method->invoke(null, $report, new RuleEnablement([], null));
         self::assertIsInt($exitCode);
 
         return $exitCode;
