@@ -33,10 +33,11 @@ Parsing PHP into AST is the most expensive operation. Caching avoids repeated pa
 
 ### CacheKeyGenerator
 
-Generates cache key for a file.
+Generates the key from the caller-owned source snapshot without source IO.
+Hashing and parsing consume the same bytes.
 
 **Methods:**
-- `generate(SplFileInfo $file): string`
+- `generateForContent(string $content): string`
 - `getCacheVersion(): string`
 
 **Key components:**

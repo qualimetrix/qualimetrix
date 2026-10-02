@@ -144,7 +144,7 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
+    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit using the final measured judgement — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
     ├── RuntimeConfigurator.php        # Closed-profile runtime composition; graph consumes no Finding or analysis format
     ├── AnalysisPreflightProfile.php   # Positive CLI and consumer profiles for analysis and graph
     ├── RunConfigurationPreparation.php # Resolves run/cache/parallel before runtime stores commit
@@ -160,7 +160,7 @@ Infrastructure/
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
     ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections
-    ├── ScopeWarningChecker.php        # Renders the incomplete-scope and pruned-target warnings from Run's ProjectScopeCoverage answer
+    ├── ScopeWarningChecker.php        # Renders named reasons from the final Run scope measurement
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
@@ -401,11 +401,15 @@ Decorator for `FileParserInterface`.
 - `CacheInterface $cache`
 - `CacheKeyGenerator $keyGenerator`
 
-**Algorithm of parse():**
-1. Read source bytes once from the original file.
-2. Generate the cache key from those bytes.
+**Algorithm of `parseContent()`:**
+1. Receive caller-owned bytes and the original absolute file identity.
+2. Generate the key from those bytes with `generateForContent()`.
 3. Cache hit -> return from cache.
-4. Cache miss -> parse those same bytes via `$inner` while retaining the original file for diagnostics, save.
+4. Cache miss -> parse those bytes via `$inner`, preserving file identity for diagnostics, and save.
+
+Source IO belongs to Run's private `SourceReader`. Parser/cache adapters neither
+reopen source nor infer cwd. Generated-header inspection and Duplication retain
+separate reads. See [Run](../Analysis/Run/README.md).
 
 ### FileParserFactory
 

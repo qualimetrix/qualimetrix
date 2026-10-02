@@ -25,6 +25,8 @@ Console/
 ├── RuleListingPresenter.php        # producer rows, computed footer and selection sources
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
+├── BaselineFilterReporter.php     # Private stale, inert and scope-mismatch wording with the selected error writer
+├── DirectiveAuditTextPresenter.php # Private text wording; the facade owns shared text/JSON values
 ├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
 ├── MemoryLimitSection.php           # every writing layer's memory_limit syntax, using RuntimeLimits
 ├── RuntimeConfigurator.php
@@ -69,7 +71,8 @@ Console/
     ├── HookStatusCommand.php        # Check hook status
     ├── HookUninstallCommand.php     # Remove pre-commit hook
     └── Debug/
-        └── LayerAssignmentCommand.php # Validate input, configure runtime, and render layer matches
+        ├── LayerAssignmentCommand.php # Validate input, configure runtime, and publish JSON
+        └── LayerAssignmentTextPresenter.php # Render measured layer assignments as text
 ```
 
 `ExitPolicySection` and `MemoryLimitSection` declare the Console-owned
@@ -80,6 +83,13 @@ those owner roots; `ConfigSchema` retains the flat ingress mappings.
 Whether PHP can apply a valid memory limit depends on the running process and
 is judged only when configuring that runtime. `fail_on: false` is refused;
 `fail_on: none` selects the policy that does not fail for findings.
+
+The pipeline result exposes `measured` for repository, coverage, namespace tree,
+final project scope and duration, and `directives` for observed suppression and
+threshold-override maps. Console reads `findings()` for execution publication
+plus late findings. Baseline's `MeasuredAnalysisRun.findings` remains its
+post-suppression set; it is not the pipeline's late-published list. Hand-built
+fixtures without rule execution explicitly pass null and their findings as late.
 
 ## Commands
 
@@ -92,24 +102,37 @@ and report adapters. `ConfigurationInputAdapter` and
 `CheckConfigurationResolvers` prepare its inputs through `RunConfigurationPreparation`; the command does not perform
 another manifest read.
 
-`RunConfigurationResolver` creates one initial `ProjectScopeMeasurement`.
-`CheckScopeResolver` resolves Git first, then transfers that captured evidence
-with pure `ProjectScopeMeasurement::narrowTo()` and renders its warnings. Git
-currently preserves analysis paths; `reportScope` limits finding publication.
-`reportScope` can create a derived measurement even when analysis paths are
-unchanged; the captured `ProjectScopeUniverse` retains identity.
-Coverage is derived from that measurement rather than supplied independently
-as a boolean. `Covered` and `Unknown` permit whole-project judgement;
-`Narrowed` and `Unmeasured` withhold the registered whole-project channels.
+`RunConfigurationResolver` captures the invocation's universe and input evidence.
+`CheckScopeResolver` resolves Git publication scope without widening analysis paths
+or rereading the manifest. The pipeline adds final filesystem facts once and
+publishes the final `ProjectScopeMeasurement`; initial target state alone is not
+the report. A complete file roster can cover PHP paths, and an omitted empty
+directory alone is not missing PHP evidence.
 
-`FindingFilterOrchestrator` creates Finding's per-value suppression judgement
-from this same evidence. Accepted PSR-4 facts place namespaces independently
-of the scope enum. Reporting names every unjudged value and preserves the
-typed source reasons, including missing/pruned targets, manifest issues and
-observed install-root omissions. Auxiliary ancestry issues add reasons without
-closing main-project coverage. `AnalysisInputPathValidator` refuses missing
-paths and explicit non-PHP regular files before discovery; diagnostics remain
-on stderr and structured stdout contains the report.
+Finding's single `ProjectScopeJudgement` travels in the result/context and copied
+threshold contexts. Declaration absence and exclude-selector completeness are
+separate questions; Console does not synthesize another coverage boolean.
+`FindingFilterOrchestrator` uses that judgement for per-value suppression binding.
+Reports preserve reasons and each skipped `{channel, option, pattern}` value.
+`AnalysisInputPathValidator` still refuses missing paths and explicitly named
+non-PHP regular files before discovery.
+
+Authored excludes remove named entries. If `analyzed=0`, `failed=0` and
+`excluded + generatedExcluded > 0`, the complete intentionally empty result
+succeeds with measured counts and an explanation; an empty unrelated named root
+is not described as excluded. Any incomplete input takes priority with exit 4.
+`check`/`directives` retain diagnostic reports; baseline commands do not mutate,
+and graph does not publish an authoritative artifact. Truly undiscovered empty
+input retains each command's existing outcome.
+
+`DirectiveAuditPresenter` owns shared text/JSON values and JSON serialization;
+private `DirectiveAuditTextPresenter` renders human wording from those values. For intentionally
+empty coverage it builds `ReportCoverage` from its report and asks
+`CoverageNarrator` for the note, rendered as text and `scope.note` in JSON beside
+the existing verdict/selection/sweep fields. The command passes no separate note
+parameter. `ReportCoverageProjection` transfers named `excluded` independently
+of `discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
+terminal entries. Diagnostics remain on stderr and structured stdout retains its format.
 
 The Console package is an adapter. It imports Run, Configuration, Finding, and
 Reporting contracts, parses options, configures one run, and renders
@@ -146,6 +169,11 @@ filtering, collection, dependency-graph and class-set preparation needed to
 query `LayerAssignmentInspectorInterface`; the command retains input validation, runtime
 configuration, error mapping and rendering. This keeps both declarations below
 their constructor-dependency thresholds without introducing a public port.
+
+`LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath)` receives the captured
+configuration directly and delegates to `ProjectFilesInterface` with its universe,
+aliases and generated policy. It does not reconstruct config from paths/excludes/root
+or expose `resolveIncludingGenerated()`.
 
 The resolver also owns the answer to "was this class analysed at all": an FQN
 that names no analysed declaration raises `ConfigurationRefusal` (exit 3)

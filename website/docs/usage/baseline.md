@@ -79,7 +79,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the run measured the entry's channel at the level of its subject and reported nothing; `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the channel was active at the subject level and reported nothing; this does not yet prove an excluded subject was measured (see the metadata-coverage limitation below); `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
 ### Carry a baseline onto renamed channels
 
@@ -161,7 +161,7 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=c
 
 `baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
 
-A symbol absent from both the current analysis and the baseline is invalid input,
+Except for a complete intentionally empty excluded set, a symbol absent from both the current analysis and the baseline is invalid input,
 not a clean result. A baseline-only symbol remains explainable and is labelled as
 absent from the current scope or result.
 
@@ -184,10 +184,29 @@ A `--baseline` file (for `check` and `baseline:explain`) or a `<baseline>` argum
 refused with exit 3 before any analysis runs. `baseline:generate --force` refuses a destination
 it cannot read, or one that is not a regular file, the same way.
 
-All lifecycle commands require complete analysis. A parse or processing failure
+All measuring lifecycle commands require complete analysis. Any failure, including unreadable source and skipped filesystem entries,
 returns exit 4 before any baseline is interpreted, classified, created, or
 mutated. `--force` does not override this invariant; existing destinations remain
 byte-identical.
+
+### Intentionally empty excluded input
+
+Authored `exclude` applies to explicitly named files and directories. A complete
+run with `analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0` is
+intentionally empty: `baseline:generate` writes an empty baseline and returns 0
+with its measured scope explanation on stderr. Update/cleanup retain their
+existing complete-run and recorded-scope checks; `--force` has no new meaning.
+Explain returns 0 after observing this scope without claiming the requested
+subject was remediated. Any incomplete input has priority: exit 4 with no baseline
+creation or mutation. Truly undiscovered empty input retains existing input and
+scope checks.
+
+!!! warning "Exclusion is not remediation"
+    Until lifecycle consumers use the full-universe metadata query, cleanup may
+    label an unmeasured excluded entry stale. Partial explain has no per-entry
+    `outsideCoverage`: absence is qualified by measured coverage. Check a full
+    run without the relevant exclusion before removing an entry; unknown metadata
+    does not mean the file is absent.
 
 ## Stale, inert, and resolved entries
 

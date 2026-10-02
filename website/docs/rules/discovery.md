@@ -10,62 +10,49 @@ Discovery rules report on the run's own file selection rather than on the code i
 
 ### What it measures
 
-Every `--exclude` value and every `exclude:` entry in `qmx.yaml` is checked against the directories the run actually walked. A value that removed no directory is reported.
+Every effective authored `exact`, `subtree` or `regex` selector is checked against
+observed entries: files, directories, links and special entries. All matching
+selectors bind before an entry is pruned. Equal writes from file, CLI and presets
+are grouped by canonical display with their full origin history.
 
-The channel carries **two findings**, because a selector has three possible fates and only one of them is silence:
-
-| Fate of the selector                                     | What the run says                                                |
-| -------------------------------------------------------- | ---------------------------------------------------------------- |
-| It removed a directory                                   | nothing — the configuration works                                |
-| It removed nothing, anywhere in the project              | the selector is stale                                            |
-| The walk could not look everywhere it might have matched | the selector was not judged, and the blocking directory is named |
-
-The third case exists because a directory this process may not list hides whatever it holds, so a selector that could have matched inside it is not called stale. Reporting nothing for it would make "your configuration is fine" and "nobody checked your configuration" the same output.
-
-### Why it matters
-
-Without this channel, a missed exclusion and no exclusion at all produce byte-identical output. There is nothing in a report to tell an author that `--exclude=subtree:vendor` never fired because the run was rooted below `vendor/` already, or that `exclude: [{subtree: tests}]` stopped matching when the directory was renamed to `test/`. The excluded files are analysed, they contribute findings, and the exclusion sits in the configuration looking like it works.
+| Measured outcome                                                     | What the run says                                                              |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| The selector bound                                                   | `Removed`, with no unmatched warning                                           |
+| Nothing bound and no possible hidden location exists                 | An unmatched-selector warning                                                  |
+| A match could lie under a directory removed by its own source        | A qualified warning about matches outside the hider's removal                  |
+| A possible hider has an origin absent from the selector's source set | An unjudged value with a scope reason naming the hider and its foreign origins |
+| A possible location cannot be listed                                 | The inaccessible directory is named; absolute absence is not claimed           |
+| PHP paths are incomplete or the universe is uncertain                | The unsettled selector is not judged                                           |
 
 ### Scope and severity
 
-The channel reports at **project level**, at severity `warning`.
+The channel reports at project level with severity `warning` under final producer
+selection. It asks PHP-path completeness and universe certainty separately from
+declaration absence: authored PHP removal and generated files alone do not close
+this question. A bound selector remains `Removed` on a narrow run. Git `--report`
+limits publication, not analysis, and retains this channel even in strict mode.
+See [Project scope](../usage/output-formats.md#project-scope-in-every-format).
 
-It is only judged on a run whose paths cover everything the project's `composer.json` declares under `autoload` — `psr-4` and `psr-0` roots, `classmap` and `files` entries alike — and, with [`--include-autoload-dev`](../usage/cli-options.md#--include-autoload-dev), everything under `autoload-dev` as well. On a narrower run — a single subdirectory, a git-scoped run — a pattern binds nothing simply because the code it names lies outside the slice. That is the caller's choice, not the author's mistake, so the rule stays silent rather than reporting the caller's own narrowing back at them. The report's [project scope](../usage/output-formats.md#project-scope-in-every-format) names the rule among those a narrowed run did not judge. A project whose manifest declares nothing in the sections the run counts — no `composer.json`, one that does not parse, or one with no such section — has no project beyond the paths you name, so the rule judges those paths as the whole project.
+The audit does not descend into removed directories. Possible hiders are physical
+directories, including accepted named directory-alias targets, not walked links
+or individual files. Regex might match in any such directory; exact/subtree uses
+literal containment. Any hider origin absent from the queried selector's sources
+makes it other-source. Intersecting sets are valid and other-source takes priority;
+equal sets give same-source.
 
-A selector is judged against the **whole project tree**, not against the analysed paths. `exclude: [{subtree: tests}]` written for `qmx check .` removes nothing under `qmx check src/`, but the directory it names is right there, so the rule says nothing. Only a selector that would remove no directory anywhere in the project is reported. Discovery uses the same full-subject `exact | subtree | regex` path language as suppression and prunes a matching directory before descending into it.
+An excluded directory outside selected paths has unseen descendants: it records
+named universe uncertainty without listing or PHP search there. Its selector
+remains bound while other unsettled selectors may be withheld. An inaccessible
+entry inside the selected run makes coverage incomplete with exit 4; a warning
+alone does not make that result authoritative.
 
-Both findings answer to the gates above and to the same `enabled` option, but they are separate baseline identities: accepting a stale selector is not accepting an unjudged one, and a project that has accepted the first still hears about the second.
+### How to settle the answer
 
-| Rule              | ID                            | What it detects                                                              |
-| ----------------- | ----------------------------- | ---------------------------------------------------------------------------- |
-| Unmatched exclude | `discovery.unmatched-exclude` | An exclude pattern that removed no directory, or one the run could not check |
-
-### Example
-
-```bash
-bin/qmx check src/ --exclude=subtree:Generated
-```
-
-When no directory named `Generated` exists anywhere in the project:
-
-```
-[project] discovery.unmatched-exclude
-  The exclude pattern "Generated" matched no directory anywhere in the project,
-  so nothing was left out for it. Every file it was written to skip was
-  measured, and this report covers them.
-```
-
-When a directory the pattern might have matched inside could not be listed — an unreadable mount, a directory whose permissions deny this process — the same channel reports that the pattern was not judged instead:
-
-```
-[project] discovery.unmatched-exclude
-  The exclude pattern "Generated" could not be checked: the directory
-  "vendor/private" could not be listed, and a directory the pattern would have
-  matched may sit inside it. This report says nothing about whether that
-  pattern is still needed.
-```
-
-This is a `warning`, so `--fail-on=warning` turns it into a non-zero exit. That is deliberate: a CI job that mounts a directory it cannot read is measuring a tree it cannot see all of, and a green build would say otherwise. Give the process permission to list the directory, or exclude it so the walk stops asking.
+Rerun the full project without the named CLI/preset exclusion. A same-source
+warning does not prove the selector is unnecessary everywhere; an other-source
+skip does not mean it is stale. Correct a typo or remove the selector after
+checking. Existing unmatched and inaccessible-location occurrence identities
+remain distinct: accepting one in a baseline does not accept the other.
 
 ### Options
 
@@ -88,4 +75,4 @@ bin/qmx check src/ --disable-rule=discovery.unmatched-exclude
 
 ## Selection does not create coverage
 
-Discovery audit runs only when its producer is active under final selection. enabled:true is an exact authored enable, not a reset; it can cancel a lower disable. The existing mandatory projectScope measurement still determines whether whole-project absence can be judged. An only filter does not turn partial paths into full coverage. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).
+Discovery audit runs only when its producer is active under final selection. enabled:true is an exact authored enable, not a reset; it can cancel a lower disable. Final projectScope judgement asks selector/path completeness separately from declaration absence. An only filter does not turn partial paths into full coverage. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

@@ -22,6 +22,7 @@ Inline/
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
 │   ├── AnnotationSuppressionResult.php
+│   ├── DirectiveObservations.php # run-level suppression and threshold-override maps
 │   ├── DocumentationRegions.php # which parts of a comment quote a tag rather
 │   │                            # than write one; read by both extractors
 │   ├── SourceControlExtractorInterface.php
@@ -72,6 +73,11 @@ Inline/
   threshold overrides, and threshold diagnostics. Suppression and diagnostic
   values stay with Inline; Finding owns the shared `ControlScope` and
   `ThresholdOverride` vocabulary that Inline produces and Run transports.
+- `DirectiveObservations` carries the two observed per-file maps in Run's
+  outward result, with ordered concatenation when results merge. It contains no
+  fabricated diagnostics and does not replace the three-list `SourceControls`
+  extraction contract. Run constructs it and Console reads it through
+  `AnalysisResult.directives`.
 - `SuppressionExtractor` and `ThresholdOverrideExtractor` preserve the exact
   physical and declaration annotation syntax. `RuleValidatorMapFactory`
   supplies rule-specific threshold validation to sequential and worker paths.

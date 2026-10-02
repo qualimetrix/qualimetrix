@@ -1,5 +1,7 @@
 # 0078. An Entry the Run Did Not Read Makes It Incomplete
 
+> **Amendment:** [ADR 0093](0093-measured-run-scope-and-project-tree-queries.md) adds `unreadable-file` and authored exclusion of any matching entry, including named roots. Named directory aliases require a canonical target inside the captured root; walked directory links remain failures. The five-kind and directory-only descriptions below record the original decision.
+
 **Date:** 2026-09-22
 **Status:** Accepted
 

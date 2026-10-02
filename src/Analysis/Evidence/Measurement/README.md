@@ -33,6 +33,13 @@ include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,
 `MetricCollectorInterface`, `FileMeasurementCollectorInterface`,
 `MeasurementAggregationInterface`, `ProjectNamespaceResolverInterface`, and
 `ProjectNamespaceSourceControlInterface`.
+
+`SourceMeasuringCollectorInterface` is the narrow byte-handoff contract for
+`LocCollector`. Run reads the private source snapshot and supplies the same
+bytes to parsing, LOC and Inline extraction. `CompositeCollector` resets before
+handoff and AST traversal; the general collector contract does not receive a
+source API.
+
 Consumers must not import repository indexes, visitor state, aggregation helpers,
 or collector implementations.
 

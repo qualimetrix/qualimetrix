@@ -86,10 +86,14 @@ per-container store.
 `Analysis\ProjectManifest` owns the analysed Composer source facts and their
 typed integrity issues. Its Infrastructure adapter provides one canonical-root
 snapshot per invocation, shared by discovery, Run scope, namespace attribution,
-external ancestry and HTML metadata. Run derives paths and coverage from one
-mandatory measurement over an immutable captured universe. Pure narrowing keeps
-that universe and can only close the current verdict; Reporting preserves four
-states and their source reasons.
+external ancestry and HTML metadata. Run captures an immutable universe, then combines it with final filesystem
+selection once. Finding's measured ProjectScopeJudgement asks declaration absence
+and selector/path completeness separately; Reporting preserves four states and
+named reasons rather than deriving a second authority from the enum. A complete
+named PHP roster can cover paths; omitted empty target directories alone are not
+missing PHP. Pure narrowing retains captured evidence without another IO read.
+The opt-in ProjectTree query supplies full regular-PHP metadata without source
+reads; ordinary analysis does not request this extra snapshot.
 Console's command profiles restrict consumers without hiding context-free
 document invalidity. See [ADR 0089](adr/0089-composer-manifest-facts-and-project-scope-reasons.md).
 
@@ -110,6 +114,13 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 | Reporting     | <1%       | No                   |
 
 **Collection** — the only parallelizable phase (AST parsing is the bottleneck).
+
+Run's outward `AnalysisResult` composes a Run-owned `MeasuredRunResult`, an
+Inline-owned `DirectiveObservations`, rule execution and late publication.
+Measurement and source observations retain their owners. Execution publication
+is stored once; late Inline and authored-exclude findings remain separate, and
+`findings()` preserves original run order through merge. See
+[ADR 0094](adr/0094-analysis-results-publish-subject-owned-values.md).
 
 ### 3. Collector/Rule Separation
 
@@ -167,15 +178,19 @@ For full details (CompilerPasses, exclude patterns, autowiring constraints for r
 
 ### 7. Analysis Coverage and Verdict
 
-Every discovered PHP file ends in exactly one state: analyzed, intentionally
-excluded as generated, or failed during parsing/processing. Generated exclusions
-keep a run complete; failures make it incomplete. `check` still renders the
-selected report for diagnosis but exits 4 and marks policy results as
-non-authoritative. Artifact-producing consumers such as baseline lifecycle
-commands and `graph:export` refuse incomplete input. See
-[ADR 0018](adr/0018-analysis-coverage-verdict-and-output-projection.md).
-
----
+Every selected entry reaches a terminal result: analyzed, intentionally excluded
+by authored selection or generated policy, or failed. Named exclusions count
+entries separately. `discovered` is analyzed PHP plus generated-excluded PHP
+plus selected failed terminal entries; it excludes named authored exclusions.
+Failures can name directories, links or special entries as well as PHP files.
+Skipped filesystem entries and source-read refusals make the run incomplete. `check` and `directives`
+retain diagnostic output with exit 4; baseline lifecycle commands and
+`graph:export` refuse incomplete input before mutation or authoritative output.
+A complete intentionally excluded empty set succeeds with a measured explanation,
+including empty baseline generation. See
+[ADR 0018](adr/0018-analysis-coverage-verdict-and-output-projection.md),
+[ADR 0078](adr/0078-an-entry-the-run-did-not-read-makes-it-incomplete.md), and
+[ADR 0093](adr/0093-measured-run-scope-and-project-tree-queries.md).
 
 ## Architectural Invariants
 

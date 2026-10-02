@@ -893,13 +893,20 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 
 ---
 
+## File publication
+
+`PathFactory::published(AbsolutePath file, AbsolutePath canonicalRoot)` publishes
+canonical parent plus lexical final basename. Outside or unresolvable parents
+throw `LogicException`; `bestEffortRelative()` and `structurePreservingFallback()`
+are removed. POSIX backslashes remain literal characters. Run owns input-directory
+preflight and captured aliases; Core publication does not reclassify input policy.
+
 ## Other Contracts
 
 ### FileParserInterface
 
 **Methods:**
-- `parse(SplFileInfo $file): array<Node>` — parse PHP file into AST
-- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse an already-read source snapshot while retaining the original file for diagnostics
+- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse caller-supplied bytes with original absolute file identity for diagnostics; no source IO
 - Throws: `ParseException`
 
 ### NamespaceDetectorInterface

@@ -271,6 +271,10 @@ themselves classify.
 
 ### When it stays silent
 
+- **Declaration evidence is incomplete.** Missing PHP, authored PHP removal,
+  generated exclusions or an uncertain universe withhold namespace-absence
+  claims; a `covered` report state alone does not authorize them.
+
 - **No `framework-namespaces` configured.** Nothing was claimed, so nothing
   failed.
 - **The selector matched.** Including a selector that only matches your own
