@@ -1431,6 +1431,11 @@ final class DirectivesCommandTest extends TestCase
         self::assertSame(4, $report['exit_code']);
         self::assertCount(1, $report['directives']);
         self::assertSame('refused', $report['directives'][0]['effect']);
+
+        $command = (new ContainerFactory())->create()->get(DirectivesCommand::class);
+        self::assertInstanceOf(DirectivesCommand::class, $command);
+        self::assertStringContainsString('<info>2</info> at least one publishable refusal or observable inert directive', $command->getHelp());
+        self::assertStringContainsString('<info>4</info> incomplete run takes precedence', $command->getHelp());
     }
 
     #[Test]
