@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\FindingProjection;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
-use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
@@ -18,7 +16,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\PathMatcher;
-use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
@@ -90,43 +87,12 @@ final readonly class FindingProjector
             $namespaceSet = array_fill_keys($git->namespaces, true);
             // The same scope the exclusion stages read — see exclusionStages().
             $fileScope = DeclaredChannelFileScope::create();
-            $filter = new class (
+            $filter = new GitScopeFindingFilter(
                 $pathSet,
                 $namespaceSet,
                 $options->gitScope->includeParentNamespaces,
                 $fileScope,
-            ) implements FindingFilterInterface {
-                /**
-                 * @param array<string, true> $paths
-                 * @param array<string, true> $namespaces
-                 */
-                public function __construct(
-                    private array $paths,
-                    private array $namespaces,
-                    private bool $includeAggregates,
-                    private ChannelFileScope $fileScope,
-                ) {}
-                public function shouldInclude(Finding $finding): bool
-                {
-                    if (!$this->fileScope->isFileScoped($finding->channel())) {
-                        return true;
-                    }
-
-                    if ($finding->location->file !== null && isset($this->paths[$finding->location->file->value()])) {
-                        return true;
-                    }
-
-                    if (!$this->includeAggregates) {
-                        return false;
-                    }
-
-                    return match ($finding->level()) {
-                        SymbolLevel::Namespace_ => isset($this->namespaces[$finding->subject->toSymbolPath()->namespace ?? '']),
-                        SymbolLevel::Project => $finding->location->isNone() && $this->paths !== [],
-                        default => false,
-                    };
-                }
-            };
+            );
             $outcome = (new PredicateFilterStage(FindingFilterStage::GitScope, $filter))->apply(array_values($findings));
             $findings = $outcome->findings;
             $removed[FindingFilterStage::GitScope->value] = $outcome->removed;
