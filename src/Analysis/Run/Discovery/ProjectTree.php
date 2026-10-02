@@ -56,9 +56,7 @@ final readonly class ProjectTree implements ProjectTreeQueryInterface
                 continue;
             }
 
-            return $kind === EntryKind::RegularFile && str_ends_with($segment, '.php')
-                ? ProjectEntryPresence::Present
-                : ProjectEntryPresence::Absent;
+            return self::filePresence($kind, $segment);
         }
 
         return ProjectEntryPresence::Unknown;
@@ -76,28 +74,49 @@ final readonly class ProjectTree implements ProjectTreeQueryInterface
         }
         $kind = $this->inspector->inspect($path->value());
         if ($kind === EntryKind::StatFailed) {
-            if ($relative !== null) {
-                $unknown[$relative->value()] = $relative;
-            }
-            return false;
+            return self::unavailable($relative, $unknown);
         }
         if ($kind === EntryKind::Directory) {
-            $children = $this->inspector->list($path->value());
-            if ($children === null) {
-                if ($relative !== null) {
-                    $unknown[$relative->value()] = $relative;
-                }
-                return false;
-            }
-            foreach ($children as $name) {
-                $this->visit(AbsolutePath::fromString($path->value() . '/' . $name), $root, $files, $unknown);
-            }
-            return true;
+            return $this->visitDirectory($path, $root, $relative, $files, $unknown);
         }
         if ($kind === EntryKind::RegularFile && $relative !== null && str_ends_with($path->value(), '.php')) {
             $files[$relative->value()] = $relative;
         }
         return true;
+    }
+
+    /**
+     * @param array<string, RelativePath> $files
+     * @param array<string, RelativePath> $unknown
+     */
+    private function visitDirectory(AbsolutePath $path, AbsolutePath $root, ?RelativePath $relative, array &$files, array &$unknown): bool
+    {
+        $children = $this->inspector->list($path->value());
+        if ($children === null) {
+            return self::unavailable($relative, $unknown);
+        }
+        foreach ($children as $name) {
+            $this->visit(AbsolutePath::fromString($path->value() . '/' . $name), $root, $files, $unknown);
+        }
+
+        return true;
+    }
+
+    /** @param array<string, RelativePath> $unknown */
+    private static function unavailable(?RelativePath $relative, array &$unknown): bool
+    {
+        if ($relative !== null) {
+            $unknown[$relative->value()] = $relative;
+        }
+
+        return false;
+    }
+
+    private static function filePresence(EntryKind $kind, string $name): ProjectEntryPresence
+    {
+        return $kind === EntryKind::RegularFile && str_ends_with($name, '.php')
+            ? ProjectEntryPresence::Present
+            : ProjectEntryPresence::Absent;
     }
 
     private function relative(AbsolutePath $path, AbsolutePath $root): ?RelativePath

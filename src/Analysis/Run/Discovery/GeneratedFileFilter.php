@@ -67,6 +67,7 @@ final class GeneratedFileFilter implements GeneratedFileFilterInterface
             return null;
         }
 
+        // @qmx-ignore-next-line code-smell.error-suppression -- A failed header read remains null and becomes UnreadableFile; interpreter notices must not precede the report document.
         $header = @fread($handle, self::HEADER_BYTES);
         fclose($handle);
 

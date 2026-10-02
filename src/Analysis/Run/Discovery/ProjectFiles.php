@@ -28,53 +28,8 @@ final readonly class ProjectFiles implements ProjectFilesInterface
     {
         $walked = $this->walk->walk(new WalkRequest($run));
         $root = $run->projectScope->universe->projectRoot;
-        $regularTargets = [];
-        foreach ($walked->candidates as $file) {
-            if (!$file->isLink() && $file->isFile()) {
-                $target = realpath($file->getPathname());
-                if ($target !== false) {
-                    $regularTargets[$target] = true;
-                }
-            }
-        }
-
-        $files = [];
-        $linkTargets = [];
-        foreach ($walked->candidates as $file) {
-            if ($file->isLink()) {
-                $target = realpath($file->getPathname());
-                if ($target !== false) {
-                    if (isset($regularTargets[$target]) || isset($linkTargets[$target])) {
-                        continue;
-                    }
-                    $linkTargets[$target] = true;
-                }
-            }
-            $relative = self::relative($file, $root);
-            $files[$relative->value()] ??= $file;
-        }
-
-        $eligible = [];
-        $generated = [];
-        $skipped = $walked->skipped;
-        foreach ($files as $relative => $file) {
-            if ($run->generatedFilePolicy === GeneratedFilePolicy::Include) {
-                $eligible[] = $file;
-                continue;
-            }
-            $classification = $this->generatedFilter->isGenerated($file);
-            if ($classification === null) {
-                $skipped[] = new SkippedEntry(
-                    AbsolutePath::fromString($file->getPathname()),
-                    AnalysisFailureKind::UnreadableFile,
-                    'File header cannot be read',
-                );
-            } elseif ($classification) {
-                $generated[] = RelativePath::fromString($relative);
-            } else {
-                $eligible[] = $file;
-            }
-        }
+        $files = self::selectCandidates($walked->candidates, $root);
+        [$eligible, $generated, $skipped] = $this->applyGeneratedPolicy($files, $walked->skipped, $run->generatedFilePolicy);
 
         $facts = new ScopeFacts(
             $walked->facts->missingByPaths,
@@ -94,6 +49,86 @@ final readonly class ProjectFiles implements ProjectFilesInterface
             $facts,
             \count($files),
         );
+    }
+
+    /**
+     * @param list<SplFileInfo> $candidates
+     *
+     * @return array<string, SplFileInfo>
+     */
+    private static function selectCandidates(array $candidates, AbsolutePath $root): array
+    {
+        $regularTargets = self::regularTargets($candidates);
+        $files = [];
+        $linkTargets = [];
+        foreach ($candidates as $file) {
+            if ($file->isLink()) {
+                $target = realpath($file->getPathname());
+                if ($target !== false) {
+                    if (isset($regularTargets[$target]) || isset($linkTargets[$target])) {
+                        continue;
+                    }
+                    $linkTargets[$target] = true;
+                }
+            }
+            $relative = self::relative($file, $root);
+            $files[$relative->value()] ??= $file;
+        }
+
+        return $files;
+    }
+
+    /**
+     * @param list<SplFileInfo> $candidates
+     *
+     * @return array<string, true>
+     */
+    private static function regularTargets(array $candidates): array
+    {
+        $targets = [];
+        foreach ($candidates as $file) {
+            if ($file->isLink() || !$file->isFile()) {
+                continue;
+            }
+            $target = realpath($file->getPathname());
+            if ($target !== false) {
+                $targets[$target] = true;
+            }
+        }
+
+        return $targets;
+    }
+
+    /**
+     * @param array<string, SplFileInfo> $files
+     * @param list<SkippedEntry> $skipped
+     *
+     * @return array{list<SplFileInfo>, list<RelativePath>, list<SkippedEntry>}
+     */
+    private function applyGeneratedPolicy(array $files, array $skipped, GeneratedFilePolicy $policy): array
+    {
+        $eligible = [];
+        $generated = [];
+        foreach ($files as $relative => $file) {
+            if ($policy === GeneratedFilePolicy::Include) {
+                $eligible[] = $file;
+                continue;
+            }
+            $classification = $this->generatedFilter->isGenerated($file);
+            if ($classification === null) {
+                $skipped[] = new SkippedEntry(
+                    AbsolutePath::fromString($file->getPathname()),
+                    AnalysisFailureKind::UnreadableFile,
+                    'File header cannot be read',
+                );
+            } elseif ($classification) {
+                $generated[] = RelativePath::fromString($relative);
+            } else {
+                $eligible[] = $file;
+            }
+        }
+
+        return [$eligible, $generated, $skipped];
     }
 
     private static function relative(SplFileInfo $file, AbsolutePath $root): RelativePath

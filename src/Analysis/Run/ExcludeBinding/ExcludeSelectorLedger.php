@@ -107,7 +107,11 @@ final class ExcludeSelectorLedger
         return false;
     }
 
-    /** @return list<ExcludeSelectorVerdict> */
+    /**
+     * @return list<ExcludeSelectorVerdict>
+     *
+     * @qmx-ignore code-smell.boolean-argument -- knownUniverse is the measured denominator fact passed into each selector verdict, not a behavior option.
+     */
     public function verdicts(bool $knownUniverse): array
     {
         $verdicts = [];
