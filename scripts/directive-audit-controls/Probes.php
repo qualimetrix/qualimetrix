@@ -749,13 +749,15 @@ final class Probes
                     '            if (self::quotedMention($line, $position)) {'
                     => '            if (false) {',
                 ],
-                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "backticked"'],
+                [
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "backticked"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "closed tilde fence"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "double backticks"',
+                ],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
-                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "closed tilde fence"',
-                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "double backticks"',
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"',
                 ],
             ),
@@ -857,12 +859,14 @@ final class Probes
                 'a tag followed by something no channel starts with is admitted as a site addressing nothing',
                 self::SCAN,
                 ["        if (\$target === '' || (\$stars > 0 && (\$line[\$afterSeparators + \$stars] ?? null) === '/')) {" => '        if (false) {'],
-                ['QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target wrapped in parens"'],
+                [
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "target wrapped in parens"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "missing target"',
+                ],
             )->alsoReddens(
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
-                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "missing target"',
                 ],
             ),
             Probe::breaking(
