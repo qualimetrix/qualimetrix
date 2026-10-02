@@ -648,7 +648,7 @@ final class Probes
             )->alsoReddens(
                 'a summary key named by hand is missing for the verdict the clean-exit case counts',
                 [
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert',
                 ],
             ),
             Probe::breaking(
@@ -987,7 +987,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenEveryDirectiveStillDoesSomething',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsTwoOnAnInertDirective',
@@ -1470,20 +1470,18 @@ final class Probes
                 'usage-reporting-gate-silences-verdicts',
                 'the audit\'s own suppression verdicts are gated by the rule\'s post-execution reporting flag, so disabling the directive rule silences them too',
                 self::PRODUCER_RULE,
+                ['    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
+    {
+        $groups = [];' => '    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
+    {
+        if ($this->usageReportingSeverity === null) {
+            return [];
+        }
+
+        $groups = [];'],
                 [
-                    "    public function directiveVerdicts(array \$producedFindings, LevelActivity \$levelActivity): array\n"
-                    . "    {\n"
-                    . "        return \$this->usage->verdicts(\$this->suppressions, \$producedFindings, \$levelActivity);\n"
-                    . '    }'
-                    => "    public function directiveVerdicts(array \$producedFindings, LevelActivity \$levelActivity): array\n"
-                    . "    {\n"
-                    . "        if (\$this->usageReportingSeverity === null) {\n"
-                    . "            return [];\n"
-                    . "        }\n\n"
-                    . "        return \$this->usage->verdicts(\$this->suppressions, \$producedFindings, \$levelActivity);\n"
-                    . '    }',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled',
                 ],
-                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itStillJudgesSuppressionsWhenTheDirectiveRuleIsDisabled'],
             ),
             Probe::breaking(
                 'exit-on-an-unaskable-inert',
@@ -1583,8 +1581,10 @@ final class Probes
                 'usage-judges-a-refused-directive',
                 'a directive the extractor refused is judged as though it filtered something',
                 self::USAGE,
-                ['        if ($suppression->refusal !== null) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveTheExtractorRefused'],
+                ['                if ($this->refused->suppression(RelativePath::fromString($file), $directive) !== null) {' => '                if ($directive->refusal === null && $this->refused->suppression(RelativePath::fromString($file), $directive) !== null) {'],
+                [
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveTheExtractorRefused',
+                ],
             )->alsoReddens(
                 'the unreadable-tag case asserts the refused directive stays unmeasured before it reads the form',
                 ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs'],
@@ -1592,9 +1592,11 @@ final class Probes
             Probe::breaking(
                 'verdict-names-the-type-not-the-form',
                 'a refused tag is reported under the type every refusal shares rather than the form it was written as',
-                self::USAGE,
-                ['                            form: $directive->form(),' => '                            form: $directive->type->value,'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs'],
+                'src/Analysis/Policy/Inline/Directive/RefusedDirectives.php',
+                ['            new DirectiveSite($file, $suppression->line, $suppression->form(), $suppression->rule, $suppression->position),' => '            new DirectiveSite($file, $suppression->line, $suppression->type->value, $suppression->rule, $suppression->position),'],
+                [
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs',
+                ],
             )->alsoReddens(
                 'the two-refusals case tells its verdicts apart by the form each one prints',
                 ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart'],
@@ -1602,17 +1604,27 @@ final class Probes
             Probe::breaking(
                 'suppression-judges-the-unaddressable-pair',
                 'a channel:level pair addressability already refused is judged again',
-                self::USAGE,
-                ['        if ($this->levels->problemWith((string) $target) !== null) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused'],
+                self::ADDRESSABILITY,
+                ['        $pairProblem = $this->levels->problemWith($raw, \\sprintf(\'Suppression "%s"\', $raw));
+        if ($pairProblem !== null) {' => '        $pairProblem = $this->levels->problemWith($raw, \\sprintf(\'Suppression "%s"\', $raw));
+        if (false) {'],
+                [
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused',
+                ],
             ),
             Probe::breaking(
                 'suppression-judges-every-channel',
-                'a suppression with no rule filter is judged as though it named one',
+                'a suppression with no rule filter is left unmeasured because a named producer cannot be consulted',
                 self::USAGE,
-                ['        if ($target->appliesToEveryChannel()) {' => '        if (false) {'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveWithoutARuleFilter',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured'],
+                ['        if ($suppression->target()->appliesToEveryChannel()) {
+            return null;
+        }' => '        if (false) {
+            return null;
+        }'],
+                [
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itJudgesADirectiveWithoutARuleFilterByWhatItSilenced',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert',
+                ],
             )->alsoReddens(
                 'a suppression judged without its rule filter reaches the banned channel and the unmeasured verdict alike',
                 [
@@ -1623,14 +1635,7 @@ final class Probes
                 'suppression-ignores-a-disabled-producer',
                 'a suppression addressing a switched-off producer is judged anyway',
                 self::USAGE,
-                ["        return \$sawDisabledProducer
-"
-                    . "            ? DirectiveUnmeasurableReason::ProducerDisabled
-"
-                    . '            : DirectiveUnmeasurableReason::AlreadyRefused;' => '        return null;'],
-                // The same return decides the third case: a selector that
-                // expands to no channel leaves the loop untouched and leaves
-                // through this line, not through the pair check above.
+                ['        return DirectiveUnmeasurableReason::ProducerDisabled;' => '        return null;'],
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeADirectiveWhoseProducerOptionsSwitchedOff',
@@ -1969,7 +1974,7 @@ final class Probes
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unparsable payload"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
-                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itExitsCleanWhenADirectiveCouldNotBeMeasured',
+                    'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel with data set "file, a group that covers it"',
@@ -2009,8 +2014,10 @@ final class Probes
                 'judge-the-unaskable',
                 'a directive the addressability check already refused is judged anyway',
                 self::ELIGIBILITY,
-                ['if ($this->addressability->problemWithThreshold($override) !== null) {' => 'if (false) {'],
-                ['Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itRefusesToJudgeADirectiveNamingNoRule'],
+                ['        return $this->refused->threshold($group->file, $group->bindings[0]) !== null;' => '        return false;'],
+                [
+                    'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itSkipsAThresholdTheClassifierRefused',
+                ],
             ),
             Probe::breaking(
                 'ignore-disabled-producer',
