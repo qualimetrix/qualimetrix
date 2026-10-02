@@ -832,7 +832,8 @@ Inline-owned value object representing a suppression tag from a comment (e.g., `
 
 Inline owns `DeclarationReach`, not Core: `whole(endLine, standsOn)` covers
 the bound declaration; `lines(start, end, standsOn)` requires the finding's
-location line in that inclusive range. Member reach is Inline policy.
+location in the authored file and its line in that inclusive range. Member
+reach is Inline policy.
 `authoredSite()` includes physical position, form, argument and refusal,
 so identical comments on one line do not collapse.
 

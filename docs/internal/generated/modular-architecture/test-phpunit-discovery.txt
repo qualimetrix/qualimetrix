@@ -8873,6 +8873,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itFileLevelSuppressesAllMatchingFindingsInFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itGetSuppressedFindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itHealthDimensionSuppressionLeavesSiblingChannelsActive
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itKeepsMemberLineReachInItsAuthoredFileForProjectedFindingsAndUsage
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"a group that covers it"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"no rule filter on the line above"
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itLetsNoDirectiveSilenceTheChannelThatReportsWhatDirectivesDid"no rule filter"

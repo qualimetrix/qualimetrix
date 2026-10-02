@@ -7,7 +7,7 @@ architecture.circular-dependency	channel	?		13	52	0	2	2	39	0	4	1	1	0	0
 architecture.coverage-gap	channel	?		28	79	0	0	0	49	0	1	0	0	0	0
 architecture.doubted-assignment	channel	?		22	12	0	0	0	26	0	4	0	0	0	0
 architecture.empty-template	channel	?		11	18	0	0	0	34	0	2	0	0	0	0
-architecture.layer-violation	channel	?		30	138	0	3	0	83	0	9	1	1	0	0
+architecture.layer-violation	channel	?		30	144	0	3	0	83	0	9	1	1	0	0
 architecture.pending-layer-matched	channel	?		8	14	0	0	0	25	0	2	0	0	0	0
 architecture.potential-shadow	channel	?		21	18	0	0	0	45	0	3	0	0	0	0
 architecture.unassigned-class	channel	?		28	52	0	0	0	24	0	4	0	0	0	0
@@ -150,7 +150,7 @@ size.symbol-method-count	metric-key	?		12	11	0	0	0	2	0	0	0	0	0	0
 size.trait-count	metric-key	?		11	15	0	0	0	0	0	0	0	0	0	0
 annotation.directive	producer	?		6	11	0	0	0	33	0	11	0	0	0	0
 architecture.circular-dependency	producer	?		13	52	0	2	2	39	0	4	0	0	0	0
-architecture.layer-violation	producer	?		30	138	0	3	0	83	0	9	0	0	0	0
+architecture.layer-violation	producer	?		30	144	0	3	0	83	0	9	0	0	0	0
 architecture.unassigned-class	producer	?		28	52	0	0	0	24	0	4	0	0	0	0
 code-smell.boolean-argument	producer	?		15	45	1	2	25	37	0	5	0	0	0	0
 code-smell.constructor-overinjection	producer	?		12	10	2	2	5	32	0	4	0	0	0	0

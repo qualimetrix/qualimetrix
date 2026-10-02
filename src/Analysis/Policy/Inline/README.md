@@ -144,9 +144,9 @@ gaps and the keyword/name gap, without modifying the cached AST.
 
 `DeclarationBinding(subject, scope, reach)` requires Inline's
 `DeclarationReach`. `whole(endLine, standsOn)` covers the whole bound
-declaration; `lines(start, end, standsOn)` requires a finding location inside
-the inclusive line range. All bindings of one authored node describe the same
-source construct. A method has whole-callable and class-lines reach; a property
+declaration; `lines(start, end, standsOn)` requires a finding location in
+the authored file and inside the inclusive line range. All bindings of one
+authored node describe the same source construct. A method has whole-callable and class-lines reach; a property
 has hook-whole and class-lines reach; a constant or enum case has class-lines
 reach. Parameters have callable-lines reach; promoted parameters additionally
 have class-lines and any hook-whole reach. A class-like annotation has whole

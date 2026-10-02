@@ -450,6 +450,66 @@ final class SuppressionFilterTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsMemberLineReachInItsAuthoredFileForProjectedFindingsAndUsage(): void
+    {
+        $target = DeclarationPath::of(SymbolPath::forClass('App', 'B'), RelativePath::fromString('src/B.php'), DeclarationOrdinal::fromRank(0));
+        $subject = MetricSubject::declaration($target);
+        $projected = new Finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 8),
+            subject: $subject,
+            symbolPath: SymbolPath::forClass('App', 'A'),
+            ruleName: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
+            message: 'A forbidden dependency projected onto its target declaration',
+            severity: Severity::Warning,
+        );
+        $local = new Finding(
+            location: new Location(RelativePath::fromString('src/B.php'), 8),
+            subject: $subject,
+            symbolPath: $target->logical,
+            ruleName: 'architecture.layer-violation',
+            code: 'architecture.layer-violation',
+            message: 'A finding inside the annotated member',
+            severity: Severity::Warning,
+        );
+        $member = new Suppression(
+            'architecture.layer-violation',
+            null,
+            7,
+            SuppressionType::Symbol,
+            position: 70,
+            binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::lines(8, 8, 'property B::$value')),
+        );
+        $whole = new Suppression(
+            'architecture.layer-violation',
+            null,
+            3,
+            SuppressionType::Symbol,
+            position: 30,
+            binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(12, 'class B')),
+        );
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/B.php', [$member]);
+
+        self::assertTrue($filter->shouldInclude($projected));
+        self::assertFalse($filter->shouldInclude($local));
+        self::assertFalse(SuppressionFilter::suppressesAny('src/B.php', $member, [$projected]));
+        self::assertTrue(SuppressionFilter::suppressesAny('src/B.php', $member, [$local]));
+        $bounded = $filter->apply([$projected, $local], ['src/B.php' => [$member]]);
+        self::assertSame([$projected], $bounded->retained);
+        self::assertSame([$local], $bounded->suppressed);
+        self::assertSame('src/B.php', $bounded->suppressorOf($local)->file->value());
+        self::assertSame(70, $bounded->suppressorOf($local)->position);
+
+        $unbounded = $filter->apply([$projected], ['src/B.php' => [$member, $whole]]);
+        self::assertSame([], $unbounded->retained);
+        self::assertSame([$projected], $unbounded->suppressed);
+        self::assertSame('src/B.php', $unbounded->suppressorOf($projected)->file->value());
+        self::assertSame(30, $unbounded->suppressorOf($projected)->position);
+        self::assertTrue(SuppressionFilter::suppressesAny('src/B.php', $whole, [$projected]));
+    }
+
+    #[Test]
     public function itCarriesTheFirstActuallyAppliedDirectiveForTheExactFindingIdentity(): void
     {
         $finding = $this->createFinding('src/Presented.php', 42, 'complexity');

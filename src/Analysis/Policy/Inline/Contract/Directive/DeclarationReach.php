@@ -31,7 +31,7 @@ final readonly class DeclarationReach
         return new self($start, $end, $standsOn);
     }
 
-    public function covers(Finding $finding): bool
+    public function covers(Finding $finding, string $authoredIn): bool
     {
         if ($this->startLine === null) {
             return true;
@@ -39,7 +39,8 @@ final readonly class DeclarationReach
 
         $line = $finding->location->line;
 
-        return $line !== null && $line >= $this->startLine && $line <= $this->lineEnd();
+        return $finding->location->pathString() === $authoredIn
+            && $line !== null && $line >= $this->startLine && $line <= $this->lineEnd();
     }
 
     /** Stable grouping key; the human-readable declaration label is deliberately excluded. */

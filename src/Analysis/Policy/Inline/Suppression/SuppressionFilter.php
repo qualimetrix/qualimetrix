@@ -98,7 +98,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
 
         foreach ($this->symbolSuppressionsBySubject[$finding->subject->toCanonical()] ?? [] as $authoredIn => $symbolSuppressions) {
             foreach ($symbolSuppressions as $suppression) {
-                if (self::applies($file, $suppression, $finding)) {
+                if (self::applies($authoredIn, $suppression, $finding)) {
                     return self::site($authoredIn, $suppression);
                 }
             }
@@ -141,11 +141,11 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
      * One directive against one finding: the channel selector first, then the
      * placement the directive's form implies.
      *
-     * A symbol directive is bound to its declaration subject and ignores the
-     * file entirely — the finding it silences is reported wherever that
-     * declaration is presented. The two physical forms are bound to the file
-     * they were written in, and the next-line form additionally to the line
-     * after it.
+     * A symbol directive is bound to its declaration subject. Whole reach
+     * follows that declaration wherever a finding is presented; bounded reach
+     * also requires the finding's location to be in the authored file and line
+     * range. The two physical forms are bound to the file they were written in,
+     * and the next-line form additionally to the line after it.
      *
      * A directive the extractor refused reaches this method like any other —
      * the report and the filter read one list — and is stopped by the selector
@@ -173,7 +173,7 @@ final class SuppressionFilter implements FindingFilterInterface, AnnotationSuppr
 
         if ($suppression->type === SuppressionType::Symbol) {
             return $suppression->binding?->subject->toCanonical() === $finding->subject->toCanonical()
-                && $suppression->binding->reach->covers($finding);
+                && $suppression->binding->reach->covers($finding, $file);
         }
 
         if ($finding->location->pathString() !== $file) {

@@ -27,16 +27,18 @@ final class DeclarationReachTest extends TestCase
         $renamedWhole = DeclarationReach::whole(40, 'class Renamed');
         $lines = DeclarationReach::lines(12, 14, 'method Example::run');
 
-        self::assertTrue($whole->covers(self::finding(null)));
-        self::assertTrue($whole->covers(self::finding(100)));
+        self::assertTrue($whole->covers(self::finding(null), 'src/Example.php'));
+        self::assertTrue($whole->covers(self::finding(100), 'src/Example.php'));
+        self::assertTrue($whole->covers(self::finding(12), 'src/Other.php'));
         self::assertSame($whole->key(), $renamedWhole->key());
         self::assertSame('whole:40', $whole->key());
         self::assertSame('class Example', $whole->describe());
 
-        self::assertTrue($lines->covers(self::finding(12)));
-        self::assertTrue($lines->covers(self::finding(14)));
-        self::assertFalse($lines->covers(self::finding(11)));
-        self::assertFalse($lines->covers(self::finding(null)));
+        self::assertTrue($lines->covers(self::finding(12), 'src/Example.php'));
+        self::assertTrue($lines->covers(self::finding(14), 'src/Example.php'));
+        self::assertFalse($lines->covers(self::finding(12), 'src/Other.php'));
+        self::assertFalse($lines->covers(self::finding(11), 'src/Example.php'));
+        self::assertFalse($lines->covers(self::finding(null), 'src/Example.php'));
         self::assertSame('lines:12:14', $lines->key());
         self::assertSame('method Example::run, lines 12–14', $lines->describe());
     }
