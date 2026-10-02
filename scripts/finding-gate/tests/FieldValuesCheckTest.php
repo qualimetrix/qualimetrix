@@ -219,7 +219,7 @@ final class FieldValuesCheckTest extends TestCase
     {
         SyntheticTree::remove($this->root);
         $tree = SyntheticTree::clean();
-        $base = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true];
+        $base = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true, 'refusals' => []];
         $record = $base + ['probe' => 1];
         $tree['candidateAnswers']['case:alpha|directives'] = ['stdout' => json_encode(['directives' => [$record], 'exit_code' => 0], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
         $tree['declarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [['added', 'directives', 'directives', 'probe', 'a new observation']]);
@@ -397,7 +397,7 @@ final class FieldValuesCheckTest extends TestCase
         }
         if ($mode === 'exact') {
             $metric = ['type' => 'method', 'name' => 'Replay\\Alpha::run', 'file' => 'src/Alpha.php', 'line' => 1, 'metrics' => ['ccn' => 1]];
-            $directive = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true];
+            $directive = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true, 'refusals' => []];
             $tree['candidateAnswers']['case:alpha|format:metrics'] = ['stdout' => $encode(['symbols' => [$metric + ['probe' => 3]]])];
             $tree['candidateAnswers']['case:alpha|directives'] = ['stdout' => $encode(['directives' => [$directive + ['probe' => 4]], 'exit_code' => 0])];
             $intents[] = ['added', 'metrics', 'format:metrics', 'probe', 'the metric field publication'];

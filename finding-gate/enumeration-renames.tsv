@@ -1,6 +1,6 @@
 old	kind	new	step	src	tests	presets	config	baseline	website_docs	benchmarks	finding_gate	frozen_kind	frozen_pin	leaf_const	leaf_pin
 annotation.invalid-threshold	channel	?		4	16	0	0	0	21	0	4	0	0	0	0
-annotation.unresolved-directive	channel	?		5	37	0	0	0	50	0	38	0	0	0	0
+annotation.unresolved-directive	channel	?		5	38	0	0	0	50	0	38	0	0	0	0
 annotation.unsupported-threshold	channel	?		5	9	0	0	0	19	0	3	0	0	0	0
 annotation.unused-directive	channel	?		20	29	0	0	0	48	0	12	0	0	0	0
 architecture.circular-dependency	channel	?		13	52	0	2	2	39	0	4	1	1	0	0

@@ -404,7 +404,7 @@ final class SyntheticTree
         $answers[Surfaces::key($scope, 'show-suppressed')] = $answers[Surfaces::key($scope, 'format:text')];
         $json = $answers[Surfaces::key($scope, 'format:json')]['stdout'];
         $answers[Surfaces::key($scope, 'format:metrics')] = ['stdout' => self::json(['symbols' => [['type' => 'method', 'name' => 'Replay\\' . ucfirst($id) . '::run', 'file' => 'src/' . ucfirst($id) . '.php', 'line' => 1, 'metrics' => ['ccn' => 1]]]])];
-        $answers[Surfaces::key($scope, 'directives')] = ['stdout' => self::json(['directives' => [['file' => 'src/' . ucfirst($id) . '.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true]], 'exit_code' => 0])];
+        $answers[Surfaces::key($scope, 'directives')] = ['stdout' => self::json(['directives' => [['file' => 'src/' . ucfirst($id) . '.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true, 'refusals' => []]], 'exit_code' => 0])];
         $answers[Surfaces::key($scope, 'graph:export')] = ['stdout' => "digraph replay { A -> B; }\n"];
         $answers[Surfaces::key($scope, 'rules')] = ['stdout' => "replayed rules\n"];
         $baselineEntries = [];
