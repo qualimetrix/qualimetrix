@@ -233,6 +233,95 @@ Use an inline suppression for an intentional exception rather than silently acce
 | `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`    |
 | `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`    |
 
+### Comment-line grammar
+
+A tag starts its **physical comment line**, after whitespace and comment
+decoration (`//`, `/*`, `*`, `#`). A one-line `/** @qmx-ignore ... */`
+is valid: PHP source may precede the comment, but prose inside the comment may
+not precede the tag. A later exact tag in prose is refused as
+`annotation.unresolved-directive`; write separate comment lines for separate
+tags. Arguments must stay on the tag's own line, and a closing `*/` is never
+an argument.
+
+The tag spellings `@qmx-ignore`, `@qmx-ignore-next-line`,
+`@qmx-ignore-file` and `@qmx-threshold` are exact. Near spellings at line start,
+including case changes, underscores, spaces or a missing separator/`@`,
+are reported as typos rather than silently ignored. Ordinary prose such as
+`qmx ignores` is not a directive.
+
+### Quote examples without addressing them
+
+On a single line, surround an example with matching runs of one or more
+backticks. They must have equal lengths; between the opening run and the tag
+there may be only whitespace, comment decoration or backticks. A lone tick,
+unequal lengths, or prose before the tag inside the span do not quote it.
+For example, `` Write `@qmx-ignore complexity.ccn` `` documents a tag,
+while `` `example @qmx-ignore complexity.ccn` `` is refused.
+
+For multiline examples, open a fence after whitespace/decoration with at least
+three backticks or tildes. The opener may carry an info suffix, but a backtick
+opener's suffix cannot contain a backtick. A closer uses the same character
+with at least the opening length, followed only by whitespace and an optional
+comment closer. A shorter or mixed closer does not close it. A closed fence
+quotes its contents; an unclosed fence reports directive-shaped lines inside
+it as refusals and names the opening line.
+
+### Declaration binding and member reach
+
+A declaration-form suppression binds to the measured declaration it stands
+on. Docblocks anywhere in a declaration header, including between attribute
+groups or between `function` and its name, belong to that declaration.
+Extraction reads the original source without modifying the cached AST.
+
+A closure or arrow function binds when it is the direct value of an argument,
+array element, return statement, expression statement or assignment chain
+(`=` or `??=`). A named argument or array key before that value is allowed.
+A call, ternary, array wrapper or other expression merely containing a closure
+does not bind to it: move the comment directly before `function` or `fn`.
+A statement containing no measured declaration is refused; use the physical
+next-line form when that is the intended scope.
+
+| Location of `@qmx-ignore`                           | Suppression reach                                                                |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Class, interface, trait or enum                     | Whole class-like declaration and its measured callable members                   |
+| Method                                              | Whole method; class findings located on that method's lines                      |
+| Function, closure, arrow function or property hook  | Whole callable                                                                   |
+| Property with hooks                                 | Whole hooks; class findings on the property's lines                              |
+| Property without hooks, class constant or enum case | Class findings on that member's lines                                            |
+| Parameter                                           | Callable findings on that parameter's lines                                      |
+| Promoted parameter                                  | Parameter lines in callable and class findings; whole property hooks, if present |
+
+A member annotation cannot suppress a whole-class finding located on the class
+line or a finding on a neighbouring member. Reach uses inclusive **line**
+ranges, so parameters sharing a line cannot be distinguished by column.
+An explicit `:level` must be declared by the channel and reachable at this
+location: `:class` on a method or promoted parameter is lawful;
+`:callable` on a constant or property without hooks is refused.
+A bare channel selector covers the reachable levels without inventing another
+level check.
+
+`@qmx-threshold` does **not** gain member containment: class-like declarations
+retune themselves and their measured callables; methods/functions/closures/
+arrows/hooks retune themselves; a hooked property retunes its hooks.
+A plain property, constant, enum case or parameter has no threshold binding.
+
+### Physical sites and blanket controls
+
+Every read tag is one authored site even if it creates several declaration
+bindings. Suppressions and threshold diagnostics retain the tag's byte
+position: identical tags in two comments on one line remain separate sites.
+A next-line site's reported line is the tag line; its target is the line
+after the end of the comment, including for multiline comments.
+Threshold overrides do not carry a position, so overrides of the same rule on
+the same line still coalesce.
+
+`@qmx-ignore *` and a bare `@qmx-ignore-file` are judged effective when they
+silence a produced finding and inert when they do not. They cannot silence
+`annotation.unused-directive` or `duplication.clone`, and configuration-error
+findings remain exempt from annotation suppression. An explicit selector
+addressing either banned channel is refused; declaration/level reach is checked
+before the ban.
+
 ### Reason separator
 
 The channel argument and the reason are both bare words, so `--` is how you
@@ -292,11 +381,9 @@ A directive that names something invalid, or that no longer fires, is not silent
 | `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                                                                                                                                                                       |
 | `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                                                                                                                                                                 |
 
-Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. It is the one channel no `@qmx-ignore` can silence — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
+Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Warning`, its severity is configurable via the `unused-directive-severity` rule option (set `info` explicitly for the former severity), and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. Like `duplication.clone`, no `@qmx-ignore` can silence it — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
 
-An inline same-line comment is not supported.
-
-A tag that is misspelled, and a `@qmx-ignore` written above a statement or on a property, used to do nothing quietly; both are now `annotation.unresolved-directive` errors. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
+A tag with a typo, wrong line placement or no valid declaration binding is refused; a property suppression now has bounded member reach. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
 
 ### View what annotations hide
 
