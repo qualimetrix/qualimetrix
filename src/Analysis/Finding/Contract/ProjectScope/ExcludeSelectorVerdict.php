@@ -17,6 +17,11 @@ final readonly class ExcludeSelectorVerdict
      * @param non-empty-list<ConfigurationOrigin> $sources
      * @param list<string> $removedEntries
      * @param list<ConfigurationOrigin> $coveredBySources Sources of the chosen hider absent from this selector
+     *
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=12 -- One immutable selector
+     *                conclusion carries measured observations, not injected collaborators.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=12 -- These fields describe one
+     *                selector conclusion and have no independent lifecycle.
      */
     private function __construct(
         public string $display,
@@ -34,6 +39,12 @@ final readonly class ExcludeSelectorVerdict
      * @param list<string> $boundEntries Entries observed to bind before pruning
      * @param list<string> $removedRunEntries Bound entries removed from this run
      * @param list<array{directory: string, selector: string, sources: non-empty-list<ConfigurationOrigin>}> $hiddenDirectories
+     *
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=12 -- Independent measured facts
+     *                must be compared before deriving one selector conclusion.
+     *
+     * @qmx-ignore code-smell.boolean-argument -- knownUniverse is a measured denominator fact,
+     *             not a switch enabling another operation.
      */
     public static function fromMeasuredFacts(
         PathPattern $pattern,
@@ -46,15 +57,8 @@ final readonly class ExcludeSelectorVerdict
         bool $knownUniverse,
     ): self {
         $display = $pattern->definition->display();
-        if ($sources === [] || self::distinct($sources) !== $sources) {
-            throw new InvalidArgumentException('Selector sources must be nonempty and distinct');
-        }
-        if (array_diff($removedRunEntries, $boundEntries) !== []) {
-            throw new LogicException('Removed run entries must be observed bindings');
-        }
-        if ($phpEvidence !== null && ($removedRunEntries === [] || !\in_array($phpEvidence, ['php-file', 'unlistable'], true))) {
-            throw new LogicException('PHP search evidence requires a removed run entry');
-        }
+        self::assertSources($sources, 'Selector');
+        self::assertRemovedEvidence($boundEntries, $removedRunEntries, $phpEvidence);
         if ($boundEntries !== []) {
             return new self($display, $sources, ExcludeSelectorOutcome::Removed, array_values(array_unique($boundEntries)), $phpEvidence);
         }
@@ -65,38 +69,88 @@ final readonly class ExcludeSelectorVerdict
             return new self($display, $sources, ExcludeSelectorOutcome::NotJudged);
         }
 
-        $same = $other = null;
-        $otherSources = [];
+        return self::coveringVerdict($pattern, $sources, $hiddenDirectories);
+    }
+
+    /** @param non-empty-list<ConfigurationOrigin> $sources */
+    private static function assertSources(array $sources, string $subject): void
+    {
+        if ($sources === [] || self::distinct($sources) !== $sources) {
+            throw new InvalidArgumentException($subject . ' sources must be nonempty and distinct');
+        }
+    }
+
+    /**
+     * @param list<string> $boundEntries
+     * @param list<string> $removedRunEntries
+     */
+    private static function assertRemovedEvidence(array $boundEntries, array $removedRunEntries, ?string $phpEvidence): void
+    {
+        if (array_diff($removedRunEntries, $boundEntries) !== []) {
+            throw new LogicException('Removed run entries must be observed bindings');
+        }
+        if ($phpEvidence !== null && ($removedRunEntries === [] || !\in_array($phpEvidence, ['php-file', 'unlistable'], true))) {
+            throw new LogicException('PHP search evidence requires a removed run entry');
+        }
+    }
+
+    /**
+     * @param non-empty-list<ConfigurationOrigin> $sources
+     * @param list<array{directory: string, selector: string, sources: non-empty-list<ConfigurationOrigin>}> $hiddenDirectories
+     */
+    private static function coveringVerdict(PathPattern $pattern, array $sources, array $hiddenDirectories): self
+    {
+        $display = $pattern->definition->display();
+        $hiders = self::eligibleHiders($pattern, $hiddenDirectories);
+        $same = null;
         $querySources = array_map(serialize(...), $sources);
-        foreach ($hiddenDirectories as $hidden) {
-            if ($hidden['selector'] === $display || !self::couldHide($pattern, $hidden['directory'])) {
-                continue;
-            }
-            if ($hidden['sources'] === [] || self::distinct($hidden['sources']) !== $hidden['sources']) {
-                throw new InvalidArgumentException('Hider sources must be nonempty and distinct');
-            }
+        foreach ($hiders as $hidden) {
             $hiderSources = array_map(serialize(...), $hidden['sources']);
             if (array_diff($hiderSources, $querySources) !== []) {
-                if ($other === null) {
-                    $other = $hidden['selector'];
-                    $otherSources = array_values(array_filter(
-                        $hidden['sources'],
-                        static fn(ConfigurationOrigin $source): bool => !\in_array(serialize($source), $querySources, true),
-                    ));
-                }
-            } elseif (array_intersect($hiderSources, $querySources) !== []) {
+                return new self($display, $sources, ExcludeSelectorOutcome::CoveredByOtherSource, coveredBy: $hidden['selector'], coveredBySources: self::foreignSources($hidden['sources'], $querySources));
+            }
+            if (array_intersect($hiderSources, $querySources) !== []) {
                 $same ??= $hidden['selector'];
             }
-        }
-
-        if ($other !== null) {
-            return new self($display, $sources, ExcludeSelectorOutcome::CoveredByOtherSource, coveredBy: $other, coveredBySources: $otherSources);
         }
         if ($same !== null) {
             return new self($display, $sources, ExcludeSelectorOutcome::CoveredBySameSource, coveredBy: $same);
         }
 
         return new self($display, $sources, ExcludeSelectorOutcome::Unmatched);
+    }
+
+    /**
+     * @param list<array{directory: string, selector: string, sources: non-empty-list<ConfigurationOrigin>}> $hiddenDirectories
+     *
+     * @return list<array{directory: string, selector: string, sources: non-empty-list<ConfigurationOrigin>}>
+     */
+    private static function eligibleHiders(PathPattern $pattern, array $hiddenDirectories): array
+    {
+        $hiders = [];
+        foreach ($hiddenDirectories as $hidden) {
+            if ($hidden['selector'] === $pattern->definition->display() || !self::couldHide($pattern, $hidden['directory'])) {
+                continue;
+            }
+            self::assertSources($hidden['sources'], 'Hider');
+            $hiders[] = $hidden;
+        }
+
+        return $hiders;
+    }
+
+    /**
+     * @param non-empty-list<ConfigurationOrigin> $sources
+     * @param list<string> $querySources
+     *
+     * @return list<ConfigurationOrigin>
+     */
+    private static function foreignSources(array $sources, array $querySources): array
+    {
+        return array_values(array_filter(
+            $sources,
+            static fn(ConfigurationOrigin $source): bool => !\in_array(serialize($source), $querySources, true),
+        ));
     }
 
     /** A closed selector question withholds only an unsettled conclusion. */

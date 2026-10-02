@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Configuration;
 
-use InvalidArgumentException;
 use LogicException;
-use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
@@ -14,27 +12,16 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedWriteHistoryInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\SelectorYamlDecoder;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 
-/**
- * @qmx-threshold coupling.cbo warning=21 -- Raw CBO 20 (Ce=19, Ca=1). Initial
- * path pruning belongs to ProjectScopePaths; this resolver still needs
- * ProjectScopeCoverage for the measured verdict. Extracting the shared
- * operation adds one named dependency without adding a policy or read.
- * The inclusive warning bound reports the next distinct coupling; the
- * configured error bound remains unchanged.
- */
 final class RunConfigurationResolver implements RunConfigurationResolverInterface
 {
     public function __construct(
@@ -49,15 +36,12 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
         $autoloadDev = self::flag($resolved->get(ConfigurationRoot::IncludeAutoloadDev->value))
             ? AutoloadDevPolicy::Include
             : AutoloadDevPolicy::Exclude;
-        $writtenPaths = self::list($resolved->get(ConfigSchema::PATHS));
-        $pathList = $writtenPaths === null
-            ? $this->defaultPathList($document, $autoloadDev)
-            : self::writtenPathList($root, $writtenPaths);
+        [$pathList, $pathsAuthorship] = RunPathSelection::select($document, $autoloadDev);
 
         $excludes = self::list($resolved->get(ConfigurationRoot::Exclude->value));
         $authoredExcludes = $excludes === null ? [] : $this->pathPatterns($excludes);
 
-        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $writtenPaths !== null ? PathsAuthorship::Authored : PathsAuthorship::Inferred);
+        $scope = $this->projectScopeCoverage->measure($root, $pathList, $autoloadDev, $pathsAuthorship);
 
         return new RunConfiguration(
             projectScope: $scope,
@@ -69,50 +53,6 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
                 : GeneratedFilePolicy::Exclude,
             autoloadDevPolicy: $autoloadDev,
         );
-    }
-
-    /**
-     * When no layer wrote `paths`: the roots composer discovery found, or the
-     * working directory when it found none.
-     *
-     * @param list<string> $discovered
-     *
-     * @return non-empty-list<string>
-     */
-    private static function defaultPaths(array $discovered): array
-    {
-        return $discovered !== [] ? $discovered : ['.'];
-    }
-
-    /** @return list<AbsolutePath> */
-    private function defaultPathList(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
-    {
-        $root = $document->workingDirectory();
-        try {
-            return PathsNormalizer::normalize($root, self::defaultPaths($this->discoveredPaths($document, $autoloadDev)));
-        } catch (InvalidArgumentException $error) {
-            throw ConfigurationRefusal::aboutInput(
-                ConfigurationOrigin::of(ConfigurationSource::ComposerJson, $root->value() . '/composer.json'),
-                $error->getMessage(),
-                $error,
-            );
-        }
-    }
-
-    /** @return list<AbsolutePath> */
-    private static function writtenPathList(AbsolutePath $root, ResolvedListInterface $writtenPaths): array
-    {
-        PathsSection::read($writtenPaths);
-        $paths = [];
-        foreach ($writtenPaths->items() as $item) {
-            try {
-                $paths[] = PathsNormalizer::normalize($root, [$item->plain()])[0];
-            } catch (InvalidArgumentException $error) {
-                $item->refuse($error->getMessage());
-            }
-        }
-
-        return $paths;
     }
 
     /**
@@ -145,6 +85,27 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             throw new LogicException('Exclude list lost its authored write history');
         }
 
+        $sources = $this->selectorSources($excludes, $patterns);
+
+        $authored = [];
+        foreach ($patterns as $display => $pattern) {
+            $originList = array_values($sources[$display] ?? []);
+            if ($originList === []) {
+                throw new LogicException('Effective exclude has no authored source');
+            }
+            $authored[] = new AuthoredExclude($pattern, $originList);
+        }
+
+        return $authored;
+    }
+
+    /**
+     * @param array<string, PathPattern> $patterns
+     *
+     * @return array<string, array<string, ConfigurationOrigin>>
+     */
+    private function selectorSources(ResolvedWriteHistoryInterface $excludes, array $patterns): array
+    {
         $sources = [];
         foreach ($excludes->writes() as $write) {
             foreach ($write['value'] as $index => $raw) {
@@ -159,16 +120,7 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
             }
         }
 
-        $authored = [];
-        foreach ($patterns as $display => $pattern) {
-            $originList = array_values($sources[$display] ?? []);
-            if ($originList === []) {
-                throw new LogicException('Effective exclude has no authored source');
-            }
-            $authored[] = new AuthoredExclude($pattern, $originList);
-        }
-
-        return $authored;
+        return $sources;
     }
 
     /** @return list<PathPattern> */
@@ -180,26 +132,6 @@ final class RunConfigurationResolver implements RunConfigurationResolverInterfac
                 '(?:[^/]+/)*' . preg_quote($name, '~'),
             )),
             ['vendor', 'node_modules', '.git'],
-        );
-    }
-
-    /**
-     * The targets composer discovery contributed, taken under the run's
-     * policy and kept to the ones a walk of the project reaches, through the
-     * same two questions {@see ProjectScopePaths} asks of the
-     * denominator. They are only the default — a `paths` any source wrote
-     * replaces them, flag or no flag, and is never pruned here.
-     *
-     * @return list<string>
-     */
-    private function discoveredPaths(ConfigurationDocument $document, AutoloadDevPolicy $autoloadDev): array
-    {
-        return ProjectScopePaths::reachableTargets(
-            $document->workingDirectory(),
-            $autoloadDev->projectTargets(
-                $document->discoveredProductionAutoloadTargets(),
-                $document->discoveredDevelopmentAutoloadTargets(),
-            ) ?? [],
         );
     }
 

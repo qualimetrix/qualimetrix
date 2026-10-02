@@ -48,9 +48,9 @@ final readonly class AnalysisResult
      *                run, carrying three subjects with no value of their own yet: what the run measured
      *                (metrics, coverage, namespaceTree, duration), what controls were in force going in
      *                (suppressions, thresholdOverrides), and what rules said coming out (findings,
-     *                ruleExecution) — the last pair already overlaps, since `findings` is exactly
-     *                `ruleExecution`'s published half plus the directive-usage audit. The eight-parameter
-     *                count is the cost of that unsplit shape, not eight independent facts; splitting by
+     *                ruleExecution), plus the measured project scope — the last pair already overlaps, since `findings` is exactly
+     *                `ruleExecution`'s published half plus the directive-usage audit. The nine-parameter
+     *                count is the cost of that unsplit shape, not nine independent facts; splitting by
      *                subject is the real fix and is out of scope here because it moves every consumer that
      *                reaches this VO, not only this constructor.
      * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Same VO, same unsplit shape; see the
@@ -111,37 +111,49 @@ final readonly class AnalysisResult
     public function merge(self $other): self
     {
         $mergedMetrics = $this->metrics->mergedWith($other->metrics) ?? $this->metrics;
-
-        $mergedSuppressions = $this->suppressions;
-        foreach ($other->suppressions as $file => $list) {
-            $mergedSuppressions[$file] = array_merge($mergedSuppressions[$file] ?? [], $list);
-        }
-
-        $mergedThresholdOverrides = $this->thresholdOverrides;
-        foreach ($other->thresholdOverrides as $file => $list) {
-            $mergedThresholdOverrides[$file] = array_merge($mergedThresholdOverrides[$file] ?? [], $list);
-        }
-
-        // Neither side's rule execution is dropped when both are present: a
-        // silent "take the first" would leave $findings as the union of both
-        // runs while $ruleExecution answered for only one of them.
-        $mergedRuleExecution = match (true) {
-            $this->ruleExecution === null => $other->ruleExecution,
-            $other->ruleExecution === null => $this->ruleExecution,
-            default => $this->ruleExecution->merge($other->ruleExecution),
-        };
+        $mergedRuleExecution = $this->mergedRuleExecution($other);
 
         return new self(
             findings: [...$this->findings, ...$other->findings],
             duration: max($this->duration, $other->duration),
             metrics: $mergedMetrics,
             coverage: $this->coverage->merge($other->coverage),
-            suppressions: $mergedSuppressions,
+            suppressions: self::mergedFileLists($this->suppressions, $other->suppressions),
             namespaceTree: $this->namespaceTree ?? $other->namespaceTree,
-            thresholdOverrides: $mergedThresholdOverrides,
+            thresholdOverrides: self::mergedFileLists($this->thresholdOverrides, $other->thresholdOverrides),
             ruleExecution: $mergedRuleExecution,
             projectScope: $this->projectScope ?? $other->projectScope,
         );
+    }
+
+    /**
+     * @template T of Suppression|ThresholdOverride
+     *
+     * @param array<string, list<T>> $left
+     * @param array<string, list<T>> $right
+     *
+     * @return array<string, list<T>>
+     */
+    private static function mergedFileLists(array $left, array $right): array
+    {
+        foreach ($right as $file => $list) {
+            $left[$file] = array_merge($left[$file] ?? [], $list);
+        }
+
+        return $left;
+    }
+
+    private function mergedRuleExecution(self $other): ?RuleExecutionResult
+    {
+        // Neither side's rule execution is dropped when both are present: a
+        // silent "take the first" would leave $findings as the union of both
+        // runs while $ruleExecution answered for only one of them.
+        return match (true) {
+            $this->ruleExecution === null => $other->ruleExecution,
+            $other->ruleExecution === null => $this->ruleExecution,
+            default => $this->ruleExecution->merge($other->ruleExecution),
+        };
+
     }
 
     /**

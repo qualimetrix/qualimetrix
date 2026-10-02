@@ -19,32 +19,56 @@ final readonly class ProjectScopeJudgement
         private array $selectorsWithheldBy = [],
         private array $excludeSelectors = [],
     ) {
-        if (\count($namespaceWithheldBy) !== \count(array_unique(array_map(static fn(ProjectScopeDoor $door): string => $door->value, $namespaceWithheldBy)))
-            || \count($selectorsWithheldBy) !== \count(array_unique(array_map(static fn(ProjectScopeDoor $door): string => $door->value, $selectorsWithheldBy)))) {
+        self::assertDistinctDoors($namespaceWithheldBy);
+        self::assertDistinctDoors($selectorsWithheldBy);
+        self::assertSelectorDoors($selectorsWithheldBy);
+        foreach ($excludeSelectors as $selector) {
+            self::assertSelector($selector, $selectorsWithheldBy);
+        }
+    }
+
+    /** @param list<ProjectScopeDoor> $doors */
+    private static function assertDistinctDoors(array $doors): void
+    {
+        if (\count($doors) !== \count(array_unique(array_map(static fn(ProjectScopeDoor $door): string => $door->value, $doors)))) {
             throw new LogicException('Project scope doors must be distinct');
         }
-        foreach ($selectorsWithheldBy as $door) {
+    }
+
+    /** @param list<ProjectScopeDoor> $doors */
+    private static function assertSelectorDoors(array $doors): void
+    {
+        foreach ($doors as $door) {
             if ($door !== ProjectScopeDoor::Paths && $door !== ProjectScopeDoor::UnknownUniverse) {
                 throw new LogicException('Exclude selector judgement accepts only path and universe doors');
             }
         }
-        foreach ($excludeSelectors as $selector) {
-            $sourceKeys = array_map(serialize(...), $selector->sources);
-            if (\count($sourceKeys) !== \count(array_unique($sourceKeys))) {
-                throw new LogicException('Selector sources must be distinct');
-            }
-            if ($selector->outcome === ExcludeSelectorOutcome::NotJudged && $selectorsWithheldBy === []) {
-                throw new LogicException('An open selector question cannot contain NotJudged');
-            }
-            if ($selector->outcome === ExcludeSelectorOutcome::NotJudged && $selector->removedEntries !== []) {
-                throw new LogicException('A bound selector remains Removed on a partial run');
-            }
-            if ($selectorsWithheldBy !== [] && \in_array($selector->outcome, [ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource, ExcludeSelectorOutcome::CoveredByOtherSource], true)) {
-                throw new LogicException('A closed selector question cannot conclude an unsettled selector is unmatched');
-            }
-            if ($selector->phpEvidence !== null && $selector->outcome !== ExcludeSelectorOutcome::Removed) {
-                throw new LogicException('PHP evidence belongs to a removed run entry');
-            }
+    }
+
+    /** @param list<ProjectScopeDoor> $selectorsWithheldBy */
+    private static function assertSelector(ExcludeSelectorVerdict $selector, array $selectorsWithheldBy): void
+    {
+        $sourceKeys = array_map(serialize(...), $selector->sources);
+        if (\count($sourceKeys) !== \count(array_unique($sourceKeys))) {
+            throw new LogicException('Selector sources must be distinct');
+        }
+        self::assertNotJudgedSelector($selector, $selectorsWithheldBy);
+        if ($selectorsWithheldBy !== [] && \in_array($selector->outcome, [ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource, ExcludeSelectorOutcome::CoveredByOtherSource], true)) {
+            throw new LogicException('A closed selector question cannot conclude an unsettled selector is unmatched');
+        }
+        if ($selector->phpEvidence !== null && $selector->outcome !== ExcludeSelectorOutcome::Removed) {
+            throw new LogicException('PHP evidence belongs to a removed run entry');
+        }
+    }
+
+    /** @param list<ProjectScopeDoor> $selectorsWithheldBy */
+    private static function assertNotJudgedSelector(ExcludeSelectorVerdict $selector, array $selectorsWithheldBy): void
+    {
+        if ($selector->outcome === ExcludeSelectorOutcome::NotJudged && $selectorsWithheldBy === []) {
+            throw new LogicException('An open selector question cannot contain NotJudged');
+        }
+        if ($selector->outcome === ExcludeSelectorOutcome::NotJudged && $selector->removedEntries !== []) {
+            throw new LogicException('A bound selector remains Removed on a partial run');
         }
     }
 

@@ -142,23 +142,36 @@ final readonly class ValueScopeJudgement
             return $this->coversCompleteUniverse() && !$this->hasAuthoredRemoval();
         }
 
-        $head = trim($pattern->definition->value, '\\');
+        return !$this->hasUnanalysedNamespaceRoot(trim($pattern->definition->value, '\\'), $this->projectRoot, $this->psr4Roots);
+    }
 
-        foreach ($this->psr4Roots as $prefix => $paths) {
+    /** @param array<string, list<string>> $psr4Roots */
+    private function hasUnanalysedNamespaceRoot(string $head, string $projectRoot, array $psr4Roots): bool
+    {
+        foreach ($psr4Roots as $prefix => $paths) {
             if (!self::compatible($head, trim($prefix, '\\'))) {
                 continue;
             }
 
-            foreach ($paths as $path) {
-                $directory = self::normalize($this->projectRoot) . '/' . trim($path, '/');
-
-                if (file_exists($directory) && !$this->isWithinAnalysed($directory)) {
-                    return false;
-                }
+            if ($this->hasUnanalysedDirectory($paths, $projectRoot)) {
+                return true;
             }
         }
 
-        return true;
+        return false;
+    }
+
+    /** @param list<string> $paths */
+    private function hasUnanalysedDirectory(array $paths, string $projectRoot): bool
+    {
+        foreach ($paths as $path) {
+            $directory = self::normalize($projectRoot) . '/' . trim($path, '/');
+            if (file_exists($directory) && !$this->isWithinAnalysed($directory)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function hasAuthoredRemoval(): bool
