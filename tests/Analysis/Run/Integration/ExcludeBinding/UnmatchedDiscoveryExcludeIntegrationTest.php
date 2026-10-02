@@ -361,6 +361,36 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itExplainsTheForeignExcludeThatWithheldASelector(): void
+    {
+        $yaml = "exclude:\n  - {regex: Legacy}\n";
+        $options = ['--exclude' => ['subtree:src/Legacy']];
+        $tester = $this->check($yaml, options: $options);
+        $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+
+        self::assertContains(
+            ['channel' => 'discovery.unmatched-exclude', 'option' => 'exclude', 'pattern' => 'regex:Legacy'],
+            $payload['projectScope']['unjudgedValues'],
+        );
+        self::assertContains(
+            [
+                'kind' => 'exclude',
+                'selector' => 'regex:Legacy',
+                'coveredBy' => 'subtree:src/Legacy',
+                'sources' => ['option --exclude'],
+                'rerun' => 'Rerun without the exclude from option --exclude to judge this selector.',
+            ],
+            $payload['projectScope']['reasons'],
+        );
+
+        $human = $this->check($yaml, options: [...$options, '--format' => 'text']);
+        self::assertStringContainsString('subtree:src/Legacy', $human->getDisplay());
+        self::assertStringContainsString('option --exclude', $human->getDisplay());
+        self::assertStringContainsString('Rerun without the exclude', $human->getDisplay());
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

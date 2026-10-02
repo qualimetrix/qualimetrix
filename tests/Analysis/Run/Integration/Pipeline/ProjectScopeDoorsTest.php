@@ -42,6 +42,22 @@ final class ProjectScopeDoorsTest extends TestCase
     }
 
     #[Test]
+    public function itWithholdsNamespaceClaimsForUnlistableRemovedCodeWithoutClosingSelectors(): void
+    {
+        $source = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $removed = ExcludeSelectorVerdict::fromMeasuredFacts(self::pattern(SelectorKind::Subtree, 'src/Legacy'), [$source], ['src/Legacy'], ['src/Legacy'], 'unlistable', null, [], true);
+        $measurement = self::initial()->withDiscoveredFiles(self::files(new ScopeFacts([], [], [], false), [$removed]));
+
+        self::assertSame([ProjectScopeDoor::Exclude], $measurement->judgement()->withheldBy());
+        self::assertTrue($measurement->judgement()->judgesExcludeSelectors());
+        self::assertSame(ExcludeSelectorOutcome::Removed, $measurement->judgement()->excludeSelectors()[0]->outcome);
+        self::assertContains(
+            ['kind' => 'exclude', 'selector' => 'subtree:src/Legacy', 'removedEntries' => 1, 'evidence' => 'unlistable'],
+            array_map(static fn($reason): array => $reason->toArray(), $measurement->reasons()),
+        );
+    }
+
+    #[Test]
     public function itKeepsBothQuestionsClosedForHiddenOutsideDenominatorButRetainsRemoved(): void
     {
         $source = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');

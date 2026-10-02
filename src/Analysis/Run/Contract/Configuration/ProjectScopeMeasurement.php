@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Contract\Configuration;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
@@ -73,7 +74,7 @@ final readonly class ProjectScopeMeasurement
         $reasons = [];
         $selectors = [];
         foreach ($files->selectorVerdicts as $selector) {
-            if ($selector->phpEvidence === 'php-file') {
+            if ($selector->phpEvidence !== null) {
                 $namespaceDoors[] = ProjectScopeDoor::Exclude;
                 $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::Exclude, [
                     'selector' => $selector->display,
@@ -83,6 +84,15 @@ final readonly class ProjectScopeMeasurement
             }
             if ($selectorDoors !== []) {
                 $selector = $selector->withoutSelectorJudgement();
+            }
+            if ($selector->outcome === ExcludeSelectorOutcome::CoveredByOtherSource) {
+                $sources = array_map(static fn($source): string => $source->describe(), $selector->coveredBySources);
+                $reasons[] = new ProjectScopeReason(ProjectScopeReasonKind::Exclude, [
+                    'selector' => $selector->display,
+                    'coveredBy' => $selector->coveredBy ?? throw new LogicException('Other-source verdict requires a hider'),
+                    'sources' => $sources,
+                    'rerun' => 'Rerun without the exclude from ' . implode(', ', $sources) . ' to judge this selector.',
+                ]);
             }
             $selectors[] = $selector;
         }

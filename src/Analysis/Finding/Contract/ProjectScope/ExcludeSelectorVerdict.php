@@ -16,6 +16,7 @@ final readonly class ExcludeSelectorVerdict
     /**
      * @param non-empty-list<ConfigurationOrigin> $sources
      * @param list<string> $removedEntries
+     * @param list<ConfigurationOrigin> $coveredBySources Sources of the chosen hider absent from this selector
      */
     private function __construct(
         public string $display,
@@ -25,6 +26,7 @@ final readonly class ExcludeSelectorVerdict
         public ?string $phpEvidence = null,
         public ?string $coveredBy = null,
         public ?string $blockedAt = null,
+        public array $coveredBySources = [],
     ) {}
 
     /**
@@ -64,6 +66,7 @@ final readonly class ExcludeSelectorVerdict
         }
 
         $same = $other = null;
+        $otherSources = [];
         $querySources = array_map(serialize(...), $sources);
         foreach ($hiddenDirectories as $hidden) {
             if ($hidden['selector'] === $display || !self::couldHide($pattern, $hidden['directory'])) {
@@ -74,14 +77,20 @@ final readonly class ExcludeSelectorVerdict
             }
             $hiderSources = array_map(serialize(...), $hidden['sources']);
             if (array_diff($hiderSources, $querySources) !== []) {
-                $other ??= $hidden['selector'];
+                if ($other === null) {
+                    $other = $hidden['selector'];
+                    $otherSources = array_values(array_filter(
+                        $hidden['sources'],
+                        static fn(ConfigurationOrigin $source): bool => !\in_array(serialize($source), $querySources, true),
+                    ));
+                }
             } elseif (array_intersect($hiderSources, $querySources) !== []) {
                 $same ??= $hidden['selector'];
             }
         }
 
         if ($other !== null) {
-            return new self($display, $sources, ExcludeSelectorOutcome::CoveredByOtherSource, coveredBy: $other);
+            return new self($display, $sources, ExcludeSelectorOutcome::CoveredByOtherSource, coveredBy: $other, coveredBySources: $otherSources);
         }
         if ($same !== null) {
             return new self($display, $sources, ExcludeSelectorOutcome::CoveredBySameSource, coveredBy: $same);

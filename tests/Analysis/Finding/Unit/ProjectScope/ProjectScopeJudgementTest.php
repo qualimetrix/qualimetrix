@@ -68,6 +68,7 @@ final class ProjectScopeJudgementTest extends TestCase
 
         self::assertSame(ExcludeSelectorOutcome::CoveredBySameSource, $same->outcome);
         self::assertSame(ExcludeSelectorOutcome::CoveredByOtherSource, $mixed->outcome);
+        self::assertSame([$cli], $mixed->coveredBySources);
     }
 
     #[Test]

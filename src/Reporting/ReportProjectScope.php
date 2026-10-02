@@ -139,12 +139,12 @@ final readonly class ReportProjectScope
     }
 
     /**
-     * This scope with the values a judging run skipped, each under the
-     * channel that would have reported it; the channel list becomes the
-     * distinct channels of those values.
+     * Legacy manual projection of skipped values, with no separate list of
+     * judged channels from which to derive partial-channel coverage.
      *
-     * Refused on `narrowed`: that run judges no value, its channel list
-     * already says so, and a value list beside it could only contradict it.
+     * Refused on `narrowed` and `unmeasured` because this helper has no
+     * evidence about which values those runs judged. Final measured runs use
+     * {@see measured()} with that evidence instead.
      *
      * @param list<array{channel: string, option: string, pattern: string}> $values
      */
