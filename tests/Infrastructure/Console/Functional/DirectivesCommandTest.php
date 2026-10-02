@@ -317,12 +317,12 @@ final class DirectivesCommandTest extends TestCase
      * the case rather than a convenience: a form `check` refuses and
      * `directives` still judges would print two complaints about one authored
      * line, which is the shape this ban was written to avoid. The refusal
-     * naming the **channel** matters for the group form, whose text does not
+     * naming the **channel** matters for a reachable group form, whose text does not
      * contain it.
      */
     #[Test]
     #[DataProvider('provideFormsThatReachTheBannedChannel')]
-    public function itRefusesEveryDirectiveFormThatReachesTheBannedChannel(string $tag, string $target): void
+    public function itRefusesEveryDirectiveFormThatReachesTheBannedChannel(string $tag, string $target, ?string $reachRefusal): void
     {
         [$source, $line] = self::directiveFixture($tag, $target);
         $this->writeSource('Banned.php', $source);
@@ -339,8 +339,12 @@ final class DirectivesCommandTest extends TestCase
         self::assertCount(1, $report['violations']);
         self::assertSame('annotation.unresolved-directive', $report['violations'][0]['channel']);
         self::assertSame($line, $report['violations'][0]['line']);
-        self::assertStringContainsString('annotation.unused-directive', $report['violations'][0]['message']);
-        self::assertStringContainsString('which no directive may silence', $report['violations'][0]['message']);
+        if ($reachRefusal !== null) {
+            self::assertSame($reachRefusal, $report['violations'][0]['message']);
+        } else {
+            self::assertStringContainsString('annotation.unused-directive', $report['violations'][0]['message']);
+            self::assertStringContainsString('which no directive may silence', $report['violations'][0]['message']);
+        }
 
         $audit = $this->audit([
             'paths' => [$this->tempDir . '/src'],
@@ -355,7 +359,7 @@ final class DirectivesCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $audit->getStatusCode(), $audit->getDisplay());
     }
 
-    /** @return iterable<string, array{string, string}> */
+    /** @return iterable<string, array{string, string, ?string}> */
     public static function provideFormsThatReachTheBannedChannel(): iterable
     {
         foreach (['file', 'next-line', 'symbol'] as $tag) {
@@ -365,7 +369,15 @@ final class DirectivesCommandTest extends TestCase
                 'a group that covers it' => 'annotation.*',
                 'that group at file level' => 'annotation.*:file',
             ] as $shape => $target) {
-                yield $tag . ', ' . $shape => [$tag, $target];
+                $reachRefusal = $tag === 'symbol' && str_ends_with($target, ':file')
+                    ? \sprintf(
+                        'Suppression "%s" asks for a level that is not reachable from method trivial;'
+                        . ' move it to a declaration at that level or remove the level suffix.',
+                        $target,
+                    )
+                    : null;
+
+                yield $tag . ', ' . $shape => [$tag, $target, $reachRefusal];
             }
         }
     }
@@ -655,8 +667,8 @@ final class DirectivesCommandTest extends TestCase
      * nothing else). A symbol directive binds to the declaration it
      * decorates, never the project; a file or next-line directive would
      * silence the copy it is written beside while the other copy still
-     * reports the block. {@see DirectiveChannelBan} refuses every form where
-     * it is written, and `check` and `directives` are asked about the same
+     * reports the block. {@see DirectiveChannelBan} refuses every reachable form where
+     * it is written; an unreachable explicit symbol level is refused earlier. Both `check` and `directives` are asked about the same
      * fixture so a form one command refused and the other still judged would
      * be caught here.
      *
@@ -666,7 +678,7 @@ final class DirectivesCommandTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideFormsThatReachTheDuplicationBan')]
-    public function itRefusesEveryDirectiveFormThatReachesTheDuplicationBan(string $tag, string $target): void
+    public function itRefusesEveryDirectiveFormThatReachesTheDuplicationBan(string $tag, string $target, ?string $reachRefusal): void
     {
         [$sourceA, $sourceB, $line] = self::duplicationDirectiveFixture($tag, $target);
         $this->writeSource('DupA.php', $sourceA);
@@ -701,10 +713,14 @@ final class DirectivesCommandTest extends TestCase
             'duplication.clone',
             $byChannel['annotation.unresolved-directive']['message'],
         );
-        self::assertStringContainsString(
-            'Disable the rule instead',
-            $byChannel['annotation.unresolved-directive']['message'],
-        );
+        if ($reachRefusal !== null) {
+            self::assertSame($reachRefusal, $byChannel['annotation.unresolved-directive']['message']);
+        } else {
+            self::assertStringContainsString(
+                'Disable the rule instead',
+                $byChannel['annotation.unresolved-directive']['message'],
+            );
+        }
 
         $audit = $this->audit([
             'paths' => [$this->tempDir . '/src'],
@@ -719,7 +735,7 @@ final class DirectivesCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $audit->getStatusCode(), $audit->getDisplay());
     }
 
-    /** @return iterable<string, array{string, string}> */
+    /** @return iterable<string, array{string, string, ?string}> */
     public static function provideFormsThatReachTheDuplicationBan(): iterable
     {
         foreach (['file', 'next-line', 'symbol'] as $tag) {
@@ -728,7 +744,15 @@ final class DirectivesCommandTest extends TestCase
                 'the exact name at project level' => 'duplication.clone:project',
                 'a group that covers it' => 'duplication.*',
             ] as $shape => $target) {
-                yield $tag . ', ' . $shape => [$tag, $target];
+                $reachRefusal = $tag === 'symbol' && $target === 'duplication.clone:project'
+                    ? \sprintf(
+                        'Suppression "%s" asks for a level that is not reachable from method work;'
+                        . ' move it to a declaration at that level or remove the level suffix.',
+                        $target,
+                    )
+                    : null;
+
+                yield $tag . ', ' . $shape => [$tag, $target, $reachRefusal];
             }
         }
     }
