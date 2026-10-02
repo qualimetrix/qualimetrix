@@ -165,6 +165,15 @@ final class Probes
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "comma"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "comment decoration"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "inline continuation"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "list item mention"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "prose inside a code span"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "summary mention"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "typed fraction"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "typed integer"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "typed negative"',
+                'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "unclosed fence"',
                 'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp',
             ],
         ],
@@ -745,6 +754,9 @@ final class Probes
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "closed tilde fence"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "double backticks"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "two on one line"',
                 ],
             ),
             Probe::breaking(
@@ -760,6 +772,7 @@ final class Probes
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "unclosed fence"',
                 ],
             ),
             Probe::breaking(
@@ -780,6 +793,10 @@ final class Probes
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "single-line docblock"',
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "summary mention"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "typed fraction"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "typed integer"',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "typed negative"',
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itScansATreeAndSkipsWhatIsNotPhp',
                 ],
             ),
@@ -788,9 +805,8 @@ final class Probes
                 'a second directive behind a target the product cut short is dropped',
                 self::SCAN,
                 [
-                    "            \$cursor = \$address['end'];"
-                    => "            if (!\$address['carriesValues']) { return \$addresses; }
-            \$cursor = \$address['end'];",
+                    "            // Values belong to the first tag, but later tags are separately refused mentions.\n            \$cursor = \$address['end'];"
+                    => "            if (!\$address['carriesValues']) { return \$addresses; }\n            \$cursor = \$address['end'];",
                 ],
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "cut target then a second directive"',
@@ -846,6 +862,7 @@ final class Probes
                 'the whole-fixture agreement reads the same scan as the per-form case, so any misread form moves it too',
                 [
                     'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itMeasuresTheSamePopulationOverTheWholeFixture',
+                    'QmxDirectiveAudit.Tests.ThresholdPopulationAgreementTest::itReadsAnAuthoredFormTheWayTheProductDoes with data set "missing target"',
                 ],
             ),
             Probe::breaking(
