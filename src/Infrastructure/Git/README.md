@@ -111,7 +111,7 @@ The Infrastructure adapter for Reporting's
 - Uses `lstat` and does not read namespace source through file links
 - `--report-strict` requests no namespace/project widening of code findings
 - Keeps all nine project-scoped configuration channels independently of changed files, including strict mode
-- In non-strict mode keeps namespace findings in changed namespaces and ancestors, and location-free project findings when changed PHP files are nonempty; a code finding's file location always controls its eligibility
+- Keeps code findings located in changed files. In non-strict mode also keeps namespace findings in changed namespaces and ancestors even when their location names another file, and location-free project findings when changed PHP files are nonempty.
 
 Diff paths use `--no-relative` from the captured repository context. Empty range
 endpoints become `HEAD` before reference validation. A refusal of this flag names
