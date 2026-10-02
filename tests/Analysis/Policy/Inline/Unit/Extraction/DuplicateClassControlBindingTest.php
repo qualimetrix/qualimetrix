@@ -92,12 +92,12 @@ final class DuplicateClassControlBindingTest extends TestCase
             ],
             array_map(
                 static fn(array $binding): string => $binding['subject']->toCanonical(),
-                $bindings->bindingsFor($classes[1]),
+                $bindings->suppressionBindingsFor($classes[1]),
             ),
         );
         self::assertSame(
             [ControlScope::Class_, ControlScope::Class_],
-            array_map(static fn(array $binding): ControlScope => $binding['scope'], $bindings->bindingsFor($classes[1])),
+            array_map(static fn(array $binding): ControlScope => $binding['scope'], $bindings->suppressionBindingsFor($classes[1])),
         );
     }
 

@@ -140,6 +140,13 @@ final readonly class DirectiveRefusal
         return new self(DirectiveRefusalReason::NoDeclarationToBind, self::THRESHOLD_FORM, self::tagOf(self::THRESHOLD_FORM));
     }
 
+    public static function closureNotDirectValue(bool $threshold): self
+    {
+        $form = $threshold ? self::THRESHOLD_FORM : SuppressionType::Symbol->value;
+
+        return new self(DirectiveRefusalReason::ClosureNotDirectValue, $form, self::tagOf($form));
+    }
+
     public static function thresholdOutsideDocblock(): self
     {
         return new self(DirectiveRefusalReason::ThresholdOutsideDocblock, self::THRESHOLD_FORM, self::tagOf(self::THRESHOLD_FORM));
@@ -206,6 +213,10 @@ final readonly class DirectiveRefusal
                     . ' method or function it is about.',
                     $authored,
                 ),
+            DirectiveRefusalReason::ClosureNotDirectValue => \sprintf(
+                'Directive "%s" stands on an expression that contains an anonymous callable but does not declare it directly; move the tag immediately before the function or fn it is about.',
+                $authored,
+            ),
             DirectiveRefusalReason::ThresholdOutsideDocblock => \sprintf(
                 'Threshold "%s" is written in a line or block comment, and a threshold is read only from a'
                 . ' docblock. Write it in the /** */ docblock of the class, method or function it retunes.',

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -151,9 +152,12 @@ final readonly class SuppressionExtractor
      *
      * @return list<Suppression>
      */
-    public function extractPhysical(Node $node, Closure $thresholdRead): array
-    {
-        return $this->extractNode($node, null, null, null, self::MODE_PHYSICAL, $thresholdRead);
+    public function extractPhysical(
+        Node $node,
+        Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason = DirectiveRefusalReason::NoDeclarationToBind,
+    ): array {
+        return $this->extractNode($node, null, null, null, self::MODE_PHYSICAL, $thresholdRead, $unboundReason);
     }
 
     /**
@@ -181,6 +185,7 @@ final readonly class SuppressionExtractor
         ?DeclarationReach $reach,
         string $mode,
         Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason = DirectiveRefusalReason::NoDeclarationToBind,
     ): array {
         $suppressions = [];
 
@@ -206,6 +211,7 @@ final readonly class SuppressionExtractor
                     $subject,
                     $controlScope,
                     $mode,
+                    $unboundReason,
                 );
 
                 if ($suppression !== null) {
@@ -214,7 +220,7 @@ final readonly class SuppressionExtractor
             }
 
             if ($mode !== self::MODE_FILE_ONLY) {
-                array_push($suppressions, ...$typos, ...self::unreadableForms($comment, $text, $read, $thresholdRead));
+                array_push($suppressions, ...$typos, ...self::unreadableForms($comment, $text, $read, $thresholdRead, $unboundReason));
                 foreach (DocumentationRegions::mentions($comment->getText()) as $mention) {
                     $refusal = $mention['fenceLine'] === null
                         ? DirectiveRefusal::notAtLineStart($mention['tag'])
@@ -313,8 +319,13 @@ final readonly class SuppressionExtractor
      *
      * @return list<Suppression>
      */
-    private static function unreadableForms(Comment $comment, string $text, array $read, Closure $thresholdRead): array
-    {
+    private static function unreadableForms(
+        Comment $comment,
+        string $text,
+        array $read,
+        Closure $thresholdRead,
+        DirectiveRefusalReason $unboundReason,
+    ): array {
         if (preg_match_all(self::PATTERN_ANY_TAG, $text, $matches, \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE) <= 0) {
             return [];
         }
@@ -341,15 +352,21 @@ final readonly class SuppressionExtractor
                 continue;
             }
 
+            $refusal = $isThreshold && !$comment instanceof Doc
+                ? DirectiveRefusal::thresholdOutsideDocblock()
+                : DirectiveRefusal::ofUnreadTag($tag, $argument);
+            if ($unboundReason === DirectiveRefusalReason::ClosureNotDirectValue
+                && $refusal->reason === DirectiveRefusalReason::NoDeclarationToBind) {
+                $refusal = DirectiveRefusal::closureNotDirectValue($isThreshold);
+            }
+
             $refused[] = new Suppression(
                 rule: $argument,
                 reason: null,
                 line: self::lineAtOffset($text, $comment->getStartLine(), $offset),
                 type: SuppressionType::Symbol,
                 position: self::positionAtOffset($comment, $offset),
-                refusal: $isThreshold && !$comment instanceof Doc
-                    ? DirectiveRefusal::thresholdOutsideDocblock()
-                    : DirectiveRefusal::ofUnreadTag($tag, $argument),
+                refusal: $refusal,
             );
         }
 
@@ -489,6 +506,7 @@ final readonly class SuppressionExtractor
         ?MetricSubject $subject,
         ?ControlScope $controlScope,
         string $mode,
+        DirectiveRefusalReason $unboundReason,
     ): ?Suppression {
         if ($mode === self::MODE_FILE_ONLY && $match['type'] !== SuppressionType::File) {
             return null;
@@ -501,7 +519,9 @@ final readonly class SuppressionExtractor
                 line: $startLine,
                 type: SuppressionType::Symbol,
                 position: $position,
-                refusal: DirectiveRefusal::noDeclarationToBind(),
+                refusal: $unboundReason === DirectiveRefusalReason::ClosureNotDirectValue
+                    ? DirectiveRefusal::closureNotDirectValue(false)
+                    : DirectiveRefusal::noDeclarationToBind(),
             );
         }
 

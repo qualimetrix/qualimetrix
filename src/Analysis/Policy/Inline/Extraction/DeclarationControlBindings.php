@@ -9,6 +9,7 @@ use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -148,7 +149,7 @@ final readonly class DeclarationControlBindings
     /**
      * @return list<array{subject: MetricSubject, scope: ControlScope}>
      */
-    public function bindingsFor(Node $node): array
+    public function suppressionBindingsFor(Node $node): array
     {
         if ($node->getType() === 'Stmt_Property') {
             return $this->propertyHookBindings($node);
@@ -156,6 +157,10 @@ final readonly class DeclarationControlBindings
 
         if (self::isClassLike($node)) {
             return $this->classBindings($node);
+        }
+
+        if (\in_array($node->getType(), self::CALLABLE_TYPES, true)) {
+            return $this->callablesBeginningWith($node);
         }
 
         $start = $node->getStartFilePos();
@@ -168,7 +173,43 @@ final readonly class DeclarationControlBindings
             return $this->containingBinding($this->classRanges, $start);
         }
 
-        return $this->callablesBeginningWith($node);
+        return $this->directCallableBindings($node);
+    }
+
+    /**
+     * Thresholds bind only to the declarations they retune. They keep whole
+     * declaration reach, and no containing class or callable is inferred.
+     *
+     * @return list<array{subject: MetricSubject, scope: ControlScope}>
+     */
+    public function thresholdBindingsFor(Node $node): array
+    {
+        if ($node->getType() === 'Stmt_Property') {
+            return $this->propertyHookBindings($node);
+        }
+
+        if (self::isClassLike($node)) {
+            return $this->classBindings($node);
+        }
+
+        if (\in_array($node->getType(), self::CALLABLE_TYPES, true)) {
+            return $this->callablesBeginningWith($node);
+        }
+
+        return $this->directCallableBindings($node);
+    }
+
+    public static function unboundReason(Node $node): DirectiveRefusalReason
+    {
+        $callable = (new NodeFinder())->findFirst(
+            $node,
+            static fn(Node $candidate): bool => $candidate instanceof Node\Expr\Closure
+                || $candidate instanceof Node\Expr\ArrowFunction,
+        );
+
+        return $callable === null
+            ? DirectiveRefusalReason::NoDeclarationToBind
+            : DirectiveRefusalReason::ClosureNotDirectValue;
     }
 
     /** Human-readable source construct on which an authored directive stands. */
@@ -220,6 +261,14 @@ final readonly class DeclarationControlBindings
             ],
             $this->subjectsAtStart($start, ...self::CALLABLE_SUBJECT_TYPES),
         );
+    }
+
+    /** @return list<array{subject: MetricSubject, scope: ControlScope}> */
+    private function directCallableBindings(Node $node): array
+    {
+        $callable = self::directAnonymousCallable($node);
+
+        return $callable === null ? [] : $this->callablesBeginningWith($callable);
     }
 
     /**
@@ -387,8 +436,21 @@ final readonly class DeclarationControlBindings
 
     private static function directAnonymousCallable(Node $node): Node\Expr\Closure|Node\Expr\ArrowFunction|null
     {
-        if ($node instanceof Node\Expr\Closure || $node instanceof Node\Expr\ArrowFunction) {
-            return $node;
+        $value = match (true) {
+            $node instanceof Node\Stmt\Expression => $node->expr,
+            $node instanceof Node\Stmt\Return_ => $node->expr,
+            $node instanceof Node\Arg => $node->value,
+            $node instanceof Node\ArrayItem => $node->value,
+            default => $node,
+        };
+
+        while ($value instanceof Node\Expr\Assign
+            || $value instanceof Node\Expr\AssignOp\Coalesce) {
+            $value = $value->expr;
+        }
+
+        if ($value instanceof Node\Expr\Closure || $value instanceof Node\Expr\ArrowFunction) {
+            return $value;
         }
 
         $start = $node->getStartFilePos();

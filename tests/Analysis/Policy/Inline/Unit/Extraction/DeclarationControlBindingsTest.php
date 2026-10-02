@@ -93,14 +93,14 @@ final class DeclarationControlBindingsTest extends TestCase
             ],
         ]);
 
-        self::assertSame($class->toCanonical(), $bindings->bindingsFor($namedClass)[0]['subject']->toCanonical());
-        self::assertCount(6, $bindings->bindingsFor($namedClass));
-        self::assertSame([], $bindings->bindingsFor($anonymousClass));
-        self::assertSame(ControlScope::Property, $bindings->bindingsFor($property)[0]['scope']);
-        self::assertSame(ControlScope::Hook, $bindings->bindingsFor($hooks[0])[0]['scope']);
-        self::assertSame(ControlScope::Callable, $bindings->bindingsFor($method->params[0])[0]['scope']);
-        self::assertSame($metrics[0]->declarationPath->toCanonical(), $bindings->bindingsFor($method->params[0])[0]['subject']->toCanonical());
-        self::assertSame($metrics[5]->declarationPath->toCanonical(), $bindings->bindingsFor($hooks[1]->params[0])[0]['subject']->toCanonical());
+        self::assertSame($class->toCanonical(), $bindings->suppressionBindingsFor($namedClass)[0]['subject']->toCanonical());
+        self::assertCount(6, $bindings->suppressionBindingsFor($namedClass));
+        self::assertSame([], $bindings->suppressionBindingsFor($anonymousClass));
+        self::assertSame(ControlScope::Property, $bindings->suppressionBindingsFor($property)[0]['scope']);
+        self::assertSame(ControlScope::Hook, $bindings->suppressionBindingsFor($hooks[0])[0]['scope']);
+        self::assertSame(ControlScope::Callable, $bindings->suppressionBindingsFor($method->params[0])[0]['scope']);
+        self::assertSame($metrics[0]->declarationPath->toCanonical(), $bindings->suppressionBindingsFor($method->params[0])[0]['subject']->toCanonical());
+        self::assertSame($metrics[5]->declarationPath->toCanonical(), $bindings->suppressionBindingsFor($hooks[1]->params[0])[0]['subject']->toCanonical());
     }
 
     #[Test]
@@ -127,6 +127,113 @@ final class DeclarationControlBindingsTest extends TestCase
 
         self::assertSame($declaration->toCanonical(), $bindings->fallbackBindingsForProperty($property)[0]['subject']->toCanonical());
         self::assertSame(ControlScope::Class_, $bindings->fallbackBindingsForProperty($property)[0]['scope']);
+    }
+
+    #[Test]
+    public function itKeepsSuppressionAndThresholdBindingFamiliesSeparate(): void
+    {
+        $ast = $this->parse(<<<'PHP'
+            <?php
+            class Named
+            {
+                public const VALUE = 1;
+                public int $plain;
+                public int $hooked { get => 1; set (int $value) {} }
+                public function run(int $parameter): void {}
+                public function __construct(private int $promoted) {}
+            }
+            function globalFunction(): void {}
+            enum State { case Ready; }
+            PHP);
+        $nodes = new NodeFinder();
+        $class = $nodes->findFirstInstanceOf($ast, Node\Stmt\Class_::class);
+        $methods = $nodes->findInstanceOf($ast, Node\Stmt\ClassMethod::class);
+        $function = $nodes->findFirstInstanceOf($ast, Node\Stmt\Function_::class);
+        $properties = $nodes->findInstanceOf($ast, Node\Stmt\Property::class);
+        $hooks = $nodes->findInstanceOf($ast, Node\PropertyHook::class);
+        $constant = $nodes->findFirstInstanceOf($ast, Node\Stmt\ClassConst::class);
+        $enum = $nodes->findFirstInstanceOf($ast, Node\Stmt\Enum_::class);
+        $enumCase = $nodes->findFirstInstanceOf($ast, Node\Stmt\EnumCase::class);
+        self::assertInstanceOf(Node\Stmt\Class_::class, $class);
+        self::assertCount(2, $methods);
+        self::assertInstanceOf(Node\Stmt\Function_::class, $function);
+        self::assertCount(2, $properties);
+        self::assertCount(2, $hooks);
+        self::assertInstanceOf(Node\Stmt\ClassConst::class, $constant);
+        self::assertInstanceOf(Node\Stmt\Enum_::class, $enum);
+        self::assertInstanceOf(Node\Stmt\EnumCase::class, $enumCase);
+
+        $file = RelativePath::fromString('src/Example.php');
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
+        $enumDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'State'), $file, DeclarationOrdinal::fromRank(0));
+        $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Named'));
+        $callables = [
+            $this->callable($methods[0], SymbolPath::forMethod('App', 'Named', 'run'), CallableKind::Method, null, $classDeclaration, $owner),
+            $this->callable($methods[1], SymbolPath::forMethod('App', 'Named', '__construct'), CallableKind::Method, null, $classDeclaration, $owner),
+            $this->callable($function, SymbolPath::forGlobalFunction('App', 'globalFunction'), CallableKind::Function),
+            $this->callable($hooks[0], SymbolPath::forMethod('App', 'Named', 'hooked::get'), CallableKind::PropertyHook, null, $classDeclaration, $owner),
+            $this->callable($hooks[1], SymbolPath::forMethod('App', 'Named', 'hooked::set'), CallableKind::PropertyHook, null, $classDeclaration, $owner),
+        ];
+        $bindings = DeclarationControlBindings::from(
+            $ast,
+            $file,
+            $callables,
+            [
+                ...$this->classMetricsAt($class->getStartFilePos(), $classDeclaration),
+                ...$this->classMetricsAt($enum->getStartFilePos(), $enumDeclaration),
+            ],
+        );
+
+        self::assertCount(5, $bindings->suppressionBindingsFor($class));
+        self::assertCount(5, $bindings->thresholdBindingsFor($class));
+        self::assertCount(1, $bindings->suppressionBindingsFor($methods[0]));
+        self::assertCount(1, $bindings->thresholdBindingsFor($methods[0]));
+        self::assertCount(1, $bindings->suppressionBindingsFor($function));
+        self::assertCount(1, $bindings->thresholdBindingsFor($function));
+        self::assertSame([], $bindings->suppressionBindingsFor($properties[0]));
+        self::assertSame([], $bindings->thresholdBindingsFor($properties[0]));
+        self::assertCount(2, $bindings->suppressionBindingsFor($properties[1]));
+        self::assertCount(2, $bindings->thresholdBindingsFor($properties[1]));
+        self::assertCount(1, $bindings->suppressionBindingsFor($constant));
+        self::assertSame([], $bindings->thresholdBindingsFor($constant));
+        self::assertCount(1, $bindings->suppressionBindingsFor($enumCase));
+        self::assertSame([], $bindings->thresholdBindingsFor($enumCase));
+        self::assertCount(1, $bindings->suppressionBindingsFor($methods[0]->params[0]));
+        self::assertSame([], $bindings->thresholdBindingsFor($methods[0]->params[0]));
+        self::assertCount(1, $bindings->suppressionBindingsFor($methods[1]->params[0]));
+        self::assertSame([], $bindings->thresholdBindingsFor($methods[1]->params[0]));
+    }
+
+    #[Test]
+    public function itBindsAnAnonymousCallableUsedAsTheOwnersDirectValue(): void
+    {
+        $ast = $this->parse('<?php $callback = function (): void {};');
+        $nodes = new NodeFinder();
+        $owner = $nodes->findFirstInstanceOf($ast, Node\Stmt\Expression::class);
+        $closure = $nodes->findFirstInstanceOf($ast, Node\Expr\Closure::class);
+        self::assertInstanceOf(Node\Stmt\Expression::class, $owner);
+        self::assertInstanceOf(Node\Expr\Closure::class, $closure);
+        $file = RelativePath::fromString('src/Example.php');
+        $callable = $this->callable(
+            $closure,
+            SymbolPath::forGlobalFunction('App', '{closure#1}'),
+            CallableKind::AnonymousCallable,
+            'closure',
+        );
+        $bindings = DeclarationControlBindings::from($ast, $file, [$callable], []);
+        $suppressionBindings = $bindings->suppressionBindingsFor($owner);
+        $thresholdBindings = $bindings->thresholdBindingsFor($owner);
+
+        self::assertCount(1, $suppressionBindings);
+        self::assertCount(1, $thresholdBindings);
+        self::assertSame(
+            $callable->declarationPath->toCanonical(),
+            $suppressionBindings[0]['subject']->toCanonical(),
+        );
+        self::assertSame(
+            $callable->declarationPath->toCanonical(),
+            $thresholdBindings[0]['subject']->toCanonical(),
+        );
     }
 
     /**

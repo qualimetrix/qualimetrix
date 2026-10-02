@@ -551,20 +551,16 @@ final class SourceControlExtractorTest extends TestCase
         ];
     }
 
-    /**
-     * php-parser gives these two comments to a part of the declaration — the
-     * second attribute group, the name — rather than to nothing, so they are
-     * not re-homed; they are refused, which is still an answer.
-     *
-     * @param non-empty-string $method
-     */
+    /** @param non-empty-string $method */
     #[Test]
     #[DataProvider('provideCommentsGivenToAPartOfTheDeclaration')]
-    public function itRefusesADirectiveGivenToAPartOfTheDeclaration(string $method): void
+    public function itBindsADirectiveGivenToADeclarationHeader(string $method): void
     {
         $controls = self::measuredControls("<?php\nnamespace App;\nclass Named\n{\n{$method}\n}\n");
 
-        self::assertSame(['symbol|complexity.ccn|refused:no-declaration-to-bind'], self::readable($controls));
+        self::assertCount(1, $controls->suppressions);
+        self::assertNull($controls->suppressions[0]->refusal);
+        self::assertStringContainsString('Named::run', $controls->suppressions[0]->binding?->subject->toCanonical() ?? '');
     }
 
     /** @return iterable<string, array{non-empty-string}> */
@@ -575,21 +571,56 @@ final class SourceControlExtractorTest extends TestCase
     }
 
     /**
+     * @param non-empty-string $before
+     * @param non-empty-string $inside
+     */
+    #[Test]
+    #[DataProvider('provideDeclarationHeaderGaps')]
+    public function itReadsAHeaderGapAsTheOwningDeclarationsLeadingComment(string $before, string $inside): void
+    {
+        $expected = self::readable(self::measuredControls($before));
+
+        self::assertNotSame([], $expected);
+        self::assertSame($expected, self::readable(self::measuredControls($inside)));
+    }
+
+    /** @return iterable<string, array{non-empty-string, non-empty-string}> */
+    public static function provideDeclarationHeaderGaps(): iterable
+    {
+        $tag = '/** @qmx-ignore complexity.ccn */';
+
+        yield 'class' => ["<?php\nnamespace App;\n{$tag}\nclass Named { public function run(): void {} }", "<?php\nnamespace App;\nclass {$tag} Named { public function run(): void {} }"];
+        yield 'interface' => ["<?php\nnamespace App;\n{$tag}\ninterface Named {}", "<?php\nnamespace App;\ninterface {$tag} Named {}"];
+        yield 'trait' => ["<?php\nnamespace App;\n{$tag}\ntrait Named {}", "<?php\nnamespace App;\ntrait {$tag} Named {}"];
+        yield 'enum' => ["<?php\nnamespace App;\n{$tag}\nenum Named { case Ready; }", "<?php\nnamespace App;\nenum {$tag} Named { case Ready; }"];
+        yield 'method' => ["<?php\nnamespace App;\nclass Named { {$tag} public function run(): void {} }", "<?php\nnamespace App;\nclass Named { public function {$tag} run(): void {} }"];
+        yield 'method threshold' => ["<?php\nnamespace App;\nclass Named { /** @qmx-threshold complexity.ccn 5 */ public function run(): void {} }", "<?php\nnamespace App;\nclass Named { public function /** @qmx-threshold complexity.ccn 5 */ run(): void {} }"];
+        yield 'function' => ["<?php\nnamespace App;\n{$tag}\nfunction run(): void {}", "<?php\nnamespace App;\nfunction {$tag} run(): void {}"];
+        yield 'property' => ["<?php\nnamespace App;\nclass Named { {$tag} public int \$value; }", "<?php\nnamespace App;\nclass Named { public int {$tag} \$value; }"];
+        yield 'class constant' => ["<?php\nnamespace App;\nclass Named { {$tag} public const VALUE = 1; }", "<?php\nnamespace App;\nclass Named { public const {$tag} VALUE = 1; }"];
+        yield 'enum case' => ["<?php\nnamespace App;\nenum Named { {$tag} case Ready; }", "<?php\nnamespace App;\nenum Named { case {$tag} Ready; }"];
+        yield 'parameter' => ["<?php\nnamespace App;\nclass Named { public function run({$tag} int \$value): void {} }", "<?php\nnamespace App;\nclass Named { public function run(int {$tag} \$value): void {} }"];
+        yield 'promoted parameter' => ["<?php\nnamespace App;\nclass Named { public function __construct({$tag} private int \$value) {} }", "<?php\nnamespace App;\nclass Named { public function __construct(private int {$tag} \$value) {} }"];
+    }
+
+    /**
      * A cache hit hands one tree to whoever asks, so extraction reads a
      * comment into the declaration without writing it there.
      */
     #[Test]
     public function itLeavesTheTreeItReadsUnchanged(): void
     {
-        $source = "<?php\n#[\\Deprecated]\n/** @qmx-ignorr complexity.ccn */\nfunction run(): void {}\n";
+        $source = "<?php\n#[\\Deprecated] function /** @qmx-ignorr complexity.ccn */ run(): void {}\n";
         $ast = $this->parse($source);
         $function = (new NodeFinder())->findFirstInstanceOf($ast, Node\Stmt\Function_::class);
         self::assertInstanceOf(Node\Stmt\Function_::class, $function);
+        self::assertCount(1, $function->name->getComments());
         $extract = static fn(): SourceControls => (new SourceControlExtractor())->extract($ast, $source, RelativePath::fromString('src/Example.php'), [], []);
 
         $first = $extract();
 
         self::assertSame([], $function->getComments());
+        self::assertCount(1, $function->name->getComments());
         self::assertCount(1, $first->suppressions);
         self::assertEquals($first, $extract());
     }
@@ -613,8 +644,8 @@ final class SourceControlExtractorTest extends TestCase
     }
 
     /**
-     * A comment php-parser attaches to no node outside an attribute gap has
-     * no declaration either. It is read for what it can still mean — a
+     * A comment php-parser attaches to no node outside a declaration header
+     * has no declaration either. It is read for what it can still mean — a
      * physical form works, a declaration form is refused — instead of being
      * dropped.
      *
@@ -690,6 +721,12 @@ final class SourceControlExtractorTest extends TestCase
         yield 'closure as an argument' => ["        return array_map(/** @qmx-X */ function (int \$x): int { return \$x; }, \$a);"];
         yield 'arrow function as an array element' => ["        return [/** @qmx-X */ fn(int \$x): int => \$x];"];
         yield 'closure as an expression statement' => ["        /** @qmx-X */\n        static function (): int { return 1; };\n        return \$a;"];
+        yield 'arrow function as a return value' => ["        /** @qmx-X */\n        return fn(int \$x): int => \$x;"];
+        yield 'closure through an assignment' => ["        /** @qmx-X */\n        \$callback = function (int \$x): int { return \$x; };\n        return [\$callback];"];
+        yield 'arrow function through a chained assignment' => ["        /** @qmx-X */\n        \$first = \$second = fn(int \$x): int => \$x;\n        return [\$first, \$second];"];
+        yield 'arrow function through a coalesce assignment' => ["        /** @qmx-X */\n        \$callback ??= fn(int \$x): int => \$x;\n        return [\$callback];"];
+        yield 'arrow function as a named argument' => ["        return array_map(/** @qmx-X */ callback: fn(int \$x): int => \$x, array: \$a);"];
+        yield 'arrow function as a keyed array value' => ["        return [/** @qmx-X */ 'callback' => fn(int \$x): int => \$x];"];
     }
 
     /**
@@ -703,24 +740,78 @@ final class SourceControlExtractorTest extends TestCase
         $controls = self::measuredControls(self::methodBody("        /** @qmx-threshold complexity.ccn 5 */\n        \$b = array_map(fn(int \$x): int => \$x, \$a);\n        return \$b;"));
 
         self::assertSame([], $controls->thresholdOverrides);
-        self::assertSame(['symbol|complexity.ccn|refused:no-declaration-to-bind'], self::readable($controls));
+        self::assertSame(['symbol|complexity.ccn|refused:closure-not-direct-value'], self::readable($controls));
     }
 
     /**
-     * Before the key of an array element the docblock belongs to the element,
-     * which begins at the key, not at the function; both declaration forms
-     * are refused there alike rather than one binding and the other not.
+     * @param non-empty-string $rejected
+     * @param non-empty-string $rewrite
+     */
+    #[Test]
+    #[DataProvider('provideNonDirectCallableValues')]
+    public function itRefusesANonDirectCallableAndAcceptsItsFunctionOrFnRewrite(
+        string $rejected,
+        string $rewrite,
+        DirectiveRefusalReason $reason = DirectiveRefusalReason::ClosureNotDirectValue,
+    ): void {
+        foreach (['@qmx-ignore complexity.ccn generated', '@qmx-threshold complexity.ccn 5'] as $tag) {
+            $refused = self::measuredControls(self::methodBody(str_replace('@qmx-X', $tag, $rejected)));
+            self::assertSame(['symbol|complexity.ccn|refused:' . $reason->value], self::readable($refused));
+
+            $accepted = self::readable(self::measuredControls(self::methodBody(str_replace('@qmx-X', $tag, $rewrite))));
+            self::assertCount(1, $accepted);
+            self::assertStringContainsString('{closure#1}', $accepted[0]);
+        }
+    }
+
+    /** @return iterable<string, array{non-empty-string, non-empty-string, 2?: DirectiveRefusalReason}> */
+    public static function provideNonDirectCallableValues(): iterable
+    {
+        $arrow = "        return /** @qmx-X */ fn(int \$x): int => \$x;";
+        $closure = "        return /** @qmx-X */ function (int \$x): int { return \$x; };";
+
+        yield 'nested call' => ["        /** @qmx-X */\n        \$callbacks = array_map(fn(int \$x): int => \$x, \$a);\n        return \$callbacks;", $arrow];
+        yield 'adjacent argument' => ["        /** @qmx-X */\n        return array_map(fn(int \$x): int => \$x, \$a);", $closure];
+        yield 'yield' => ["        /** @qmx-X */\n        yield fn(int \$x): int => \$x;", $arrow];
+        yield 'match arm' => ["        /** @qmx-X */\n        \$callback = match (\$a[0] ?? null) { default => fn(int \$x): int => \$x };\n        return [\$callback];", $closure];
+        yield 'conditional expression' => ["        /** @qmx-X */\n        \$callback = \$a === [] ? fn(int \$x): int => \$x : fn(int \$x): int => 0;\n        return [\$callback];", $arrow];
+        yield 'unrelated preceding statement' => ["        /** @qmx-X */\n        \$unrelated = 1;\n        \$callback = fn(int \$x): int => \$x;\n        return [\$unrelated, \$callback];", $closure, DirectiveRefusalReason::NoDeclarationToBind];
+    }
+
+    #[Test]
+    public function itReadsMisspelledPrefixesFromAttachedAndUnattachedCarriers(): void
+    {
+        foreach (['ignore', 'threshold'] as $family) {
+            foreach (['@qmx_' . $family, '@QMX-' . $family, '@qmx ' . $family, '@qmx' . $family, 'qmx-' . $family] as $written) {
+                $attached = self::measuredControls("<?php\nnamespace App;\nclass Named { /** {$written} complexity.ccn 20 */ public function run(): void {} }");
+                $unattached = self::measuredControls(self::methodBody("        return [\$a, /* {$written} complexity.ccn 20 */];"));
+
+                foreach ([$attached, $unattached] as $controls) {
+                    self::assertCount(1, $controls->suppressions, $written);
+                    self::assertSame(DirectiveRefusalReason::MisspelledPrefix, $controls->suppressions[0]->refusal?->reason, $written);
+                }
+            }
+        }
+
+        $invalidBytes = self::measuredControls("<?php\nnamespace App;\nclass Named { /** @qmx_ignore complexity.ccn 20 \xFF */ public function run(): void {} }");
+        self::assertCount(1, $invalidBytes->suppressions);
+        self::assertSame(DirectiveRefusalReason::MisspelledPrefix, $invalidBytes->suppressions[0]->refusal?->reason);
+    }
+
+    /**
+     * A keyed element still owns its value. Both declaration forms therefore
+     * bind to the callable used directly as that value.
      *
      * @param non-empty-string $tag
      */
     #[Test]
     #[DataProvider('provideDeclarationFormsBeforeAnArrayKey')]
-    public function itRefusesBothDeclarationFormsBeforeTheKeyOfAnArrayElement(string $tag): void
+    public function itBindsBothDeclarationFormsToAKeyedArrayElementsDirectCallableValue(string $tag): void
     {
         $controls = self::measuredControls(self::methodBody("        return ['k' => \$a, /** {$tag} */ 'f' => fn(int \$x): int => \$x];"));
 
-        self::assertSame([], $controls->thresholdOverrides);
-        self::assertSame(['symbol|complexity.ccn|refused:no-declaration-to-bind'], self::readable($controls));
+        self::assertCount(1, str_contains($tag, 'threshold') ? $controls->thresholdOverrides : $controls->suppressions);
+        self::assertStringContainsString('{closure#1}', self::readable($controls)[0]);
     }
 
     /** @return iterable<string, array{non-empty-string}> */
@@ -788,7 +879,7 @@ final class SourceControlExtractorTest extends TestCase
         $classes = [];
         $callables = [];
 
-        foreach ($nodes->findInstanceOf($ast, Node\Stmt\Class_::class) as $class) {
+        foreach ($nodes->findInstanceOf($ast, Node\Stmt\ClassLike::class) as $class) {
             $className = $class->name?->toString() ?? throw new LogicException('Expected a named class');
             $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', $className), $file, DeclarationOrdinal::fromRank(0));
             $classMetrics = new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag());
@@ -823,6 +914,18 @@ final class SourceControlExtractorTest extends TestCase
                     new MetricBag(),
                 );
             }
+        }
+
+        foreach ($nodes->findInstanceOf($ast, Node\Stmt\Function_::class) as $function) {
+            $callables[] = new CallableWithMetrics(
+                DeclarationPath::of(SymbolPath::forGlobalFunction('App', $function->name->toString()), $file, DeclarationOrdinal::fromRank(0)),
+                $function->getStartFilePos(),
+                CallableKind::Function,
+                null,
+                null,
+                null,
+                new MetricBag(),
+            );
         }
 
         return (new SourceControlExtractor())->extract(array_values($ast), $source, $file, $callables, $classes);

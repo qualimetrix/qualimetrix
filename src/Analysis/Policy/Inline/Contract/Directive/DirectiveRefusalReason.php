@@ -40,6 +40,9 @@ enum DirectiveRefusalReason: string
      */
     case NoDeclarationToBind = 'no-declaration-to-bind';
 
+    /** A callable exists below the carrier, but is not its direct declaration value. */
+    case ClosureNotDirectValue = 'closure-not-direct-value';
+
     /** `@qmx-threshold` written in a line or block comment; only a docblock carries it. */
     case ThresholdOutsideDocblock = 'threshold-outside-docblock';
 }

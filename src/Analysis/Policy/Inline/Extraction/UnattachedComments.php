@@ -7,49 +7,64 @@ namespace Qualimetrix\Analysis\Policy\Inline\Extraction;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
-use PhpParser\Node\AttributeGroup;
 use PhpParser\NodeFinder;
 use PhpToken;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 
 /**
  * The directive comments of a file that php-parser attached to no node, and
  * the declaration each one belongs to.
  *
- * php-parser hands a comment to the node that starts at the next token, so a
- * comment followed by a modifier, a keyword or a closing bracket reaches no
- * node at all. The one such place an author writes on purpose is between the
- * attributes of a declaration and the declaration itself, and PHP's own
- * reflection gives that docblock to the declaration: it is owned here by that
- * declaration, so it reads exactly as the same comment written above the
- * attributes. A comment anywhere else has no declaration and stays unowned;
- * it is read the way a comment on a statement is.
+ * php-parser hands a comment to the node that starts at the next token. Inside
+ * a declaration header that may be an attribute group, identifier, property
+ * item, constant or parameter variable, or no node at all. The comment is
+ * owned here by the innermost declaration whose header contains it, so it
+ * reads like the same comment above that declaration. A comment outside every
+ * declaration header stays unowned and is read as a comment on a statement.
  */
 final readonly class UnattachedComments
 {
     /**
      * @param array<int, list<Comment>> $owned keyed by the owning node's object id
+     * @param array<int, int> $rehomed comment start => owning node object id
      * @param list<Comment> $unowned
      */
     private function __construct(
         private array $owned,
+        private array $rehomed,
         private array $unowned,
     ) {}
 
     /**
      * @param array<Node> $ast parsed from exactly `$source`
-     * @param non-empty-string $tagPrefix what makes a comment a directive comment
      */
-    public static function find(array $ast, string $source, string $tagPrefix): self
+    public static function find(array $ast, string $source): self
     {
-        if (!str_contains($source, $tagPrefix)) {
-            return new self([], []);
+        if (!SuppressionExtractor::mayCarryDirective($source)) {
+            return new self([], [], []);
         }
 
-        [$carried, $gaps] = self::carriedCommentsAndAttributeGaps($ast);
+        [$carried, $gaps, $nodes] = self::carriedCommentsAndHeaderGaps($ast);
 
         $owned = [];
+        $rehomed = [];
+        foreach ($nodes as $node) {
+            foreach ($node->getComments() as $comment) {
+                if (!SuppressionExtractor::mayCarryDirective($comment->getText())) {
+                    continue;
+                }
+                $owner = self::ownerOf($gaps, $comment->getStartFilePos());
+                if ($owner === null || $owner === $node) {
+                    continue;
+                }
+                $ownerId = spl_object_id($owner);
+                $owned[$ownerId][] = $comment;
+                $rehomed[$comment->getStartFilePos()] = $ownerId;
+            }
+        }
+
         $unowned = [];
-        foreach (self::uncarriedTagComments($source, $tagPrefix, $carried) as $comment) {
+        foreach (self::uncarriedTagComments($source, $carried) as $comment) {
             $owner = self::ownerOf($gaps, $comment->getStartFilePos());
             if ($owner === null) {
                 $unowned[] = $comment;
@@ -58,7 +73,7 @@ final readonly class UnattachedComments
             }
         }
 
-        return new self($owned, $unowned);
+        return new self($owned, $rehomed, $unowned);
     }
 
     public function owns(Node $node): bool
@@ -75,13 +90,21 @@ final readonly class UnattachedComments
      */
     public function withOwnedComments(Node $node): Node
     {
-        $owned = $this->owned[spl_object_id($node)] ?? [];
-        if ($owned === []) {
+        $nodeId = spl_object_id($node);
+        $owned = $this->owned[$nodeId] ?? [];
+        $comments = array_values(array_filter(
+            $node->getComments(),
+            fn(Comment $comment): bool => !isset($this->rehomed[$comment->getStartFilePos()])
+                || $this->rehomed[$comment->getStartFilePos()] === $nodeId,
+        ));
+        if ($owned === [] && $comments === $node->getComments()) {
             return $node;
         }
 
+        array_push($comments, ...$owned);
+        usort($comments, static fn(Comment $left, Comment $right): int => $left->getStartFilePos() <=> $right->getStartFilePos());
         $copy = clone $node;
-        $copy->setAttribute('comments', [...$node->getComments(), ...$owned]);
+        $copy->setAttribute('comments', $comments);
 
         return $copy;
     }
@@ -95,24 +118,25 @@ final readonly class UnattachedComments
     /**
      * @param array<Node> $ast
      *
-     * @return array{array<int, true>, list<array{node: Node, from: int, to: int}>}
+     * @return array{array<int, true>, list<array{node: Node, from: int, to: int}>, list<Node>}
      */
-    private static function carriedCommentsAndAttributeGaps(array $ast): array
+    private static function carriedCommentsAndHeaderGaps(array $ast): array
     {
         $carried = [];
         $gaps = [];
-        foreach ((new NodeFinder())->find($ast, static fn(): bool => true) as $node) {
+        $nodes = array_values((new NodeFinder())->find($ast, static fn(): bool => true));
+        foreach ($nodes as $node) {
             foreach ($node->getComments() as $comment) {
                 $carried[$comment->getStartFilePos()] = true;
             }
 
-            $gap = self::attributeGap($node);
+            $gap = self::headerGap($node);
             if ($gap !== null) {
                 $gaps[] = $gap;
             }
         }
 
-        return [$carried, $gaps];
+        return [$carried, $gaps, $nodes];
     }
 
     /**
@@ -120,12 +144,12 @@ final readonly class UnattachedComments
      *
      * @return list<Comment>
      */
-    private static function uncarriedTagComments(string $source, string $tagPrefix, array $carried): array
+    private static function uncarriedTagComments(string $source, array $carried): array
     {
         $comments = [];
         foreach (PhpToken::tokenize($source) as $token) {
             if ($token->is([\T_COMMENT, \T_DOC_COMMENT])
-                && str_contains($token->text, $tagPrefix)
+                && SuppressionExtractor::mayCarryDirective($token->text)
                 && !isset($carried[$token->pos])
             ) {
                 $comments[] = self::commentOf($token);
@@ -142,35 +166,29 @@ final readonly class UnattachedComments
      *
      * @return ?array{node: Node, from: int, to: int}
      */
-    private static function attributeGap(Node $node): ?array
+    private static function headerGap(Node $node): ?array
     {
-        $groups = property_exists($node, 'attrGroups') ? $node->attrGroups : [];
-        if (!\is_array($groups) || $groups === []) {
+        $name = match (true) {
+            $node instanceof Node\Stmt\ClassLike => $node->name,
+            $node instanceof Node\Stmt\ClassMethod => $node->name,
+            $node instanceof Node\Stmt\Function_ => $node->name,
+            $node instanceof Node\Stmt\Property => $node->props[0] ?? null,
+            $node instanceof Node\Stmt\ClassConst => $node->consts[0] ?? null,
+            $node instanceof Node\Stmt\EnumCase => $node->name,
+            $node instanceof Node\Param => $node->var,
+            default => null,
+        };
+        if (!$name instanceof Node) {
             return null;
         }
 
-        $last = end($groups);
-        if (!$last instanceof AttributeGroup) {
+        $from = $node->getStartFilePos();
+        $to = $name->getStartFilePos();
+        if ($from < 0 || $to <= $from) {
             return null;
         }
 
-        return ['node' => $node, 'from' => $last->getEndFilePos(), 'to' => self::firstOwnPartStart($node)];
-    }
-
-    private static function firstOwnPartStart(Node $node): int
-    {
-        $start = $node->getEndFilePos();
-        $subNodes = get_object_vars($node);
-        foreach ($node->getSubNodeNames() as $name) {
-            $subNode = $name === 'attrGroups' ? null : $subNodes[$name] ?? null;
-            foreach (\is_array($subNode) ? $subNode : [$subNode] as $child) {
-                if ($child instanceof Node && $child->getStartFilePos() >= 0) {
-                    $start = min($start, $child->getStartFilePos());
-                }
-            }
-        }
-
-        return $start;
+        return ['node' => $node, 'from' => $from, 'to' => $to];
     }
 
     /**
