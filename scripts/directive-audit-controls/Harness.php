@@ -27,8 +27,8 @@ use Throwable;
  *
  * 1. every probe reddens the cases it declares — a claim with no case behind it
  *    is a claim nobody checks;
- * 2. every case is reddened by at least one probe — a case nothing can break is
- *    not evidence about anything;
+ * 2. every case in the declared permanent coverage population is reddened
+ *    by a probe; exact one-time proof limitations remain visible in the report;
  * 3. no probe reddens every case — a breakage that fails the whole suite says
  *    nothing about which claim it broke;
  * 4. a mutation that no longer applies is a refusal, not a skip. `Mutation`

@@ -34,3 +34,21 @@ composer directives:controls -- --only=<probe-id>
 `directives:narrow-control` compares narrow and full sweeps over a heterogeneous
 fixture before it measures `src/`; equal answers over a uniform population are
 not sufficient evidence.
+
+## Permanent mutation coverage limitations
+
+The stand still executes every case in its suite and compares every actual red
+set with its declaration. Equality, stale names and blanket-mutation refusal
+remain strict. Five exact cases retain product regressions and one-time defect
+proofs, but have no permanent own-probe coverage:
+
+- `Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itIgnoresTheInternalAddressedProducer`: Internal selection-address invariance has a separate one-time product mutation proof; this stand does not repeat that probe.
+- `Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries`: Run-entry count publication has its own regression and one-time proof, outside permanent directive-decision mutation coverage.
+- `Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesTheFileThatWroteANonExistentPath`: Configuration refusal-origin publication has its own regression and one-time proof, outside permanent directive-decision mutation coverage.
+- `Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope`: Generated-only run outcome has its own regression and one-time proof, outside permanent directive-decision mutation coverage.
+- `Qualimetrix.Tests.Infrastructure.Console.Unit.DirectiveAuditSummaryProjectionTest::itPublishesBothEqualRankDisableWritersInTheTextAndJsonSelection`: Configuration writer provenance has its own regression and one-time proof, outside permanent directive-decision mutation coverage.
+
+The report prints each applicable limitation. Other cases still need a declared
+own probe; future cases do not inherit these exceptions. The coverage arithmetic
+control uses the same restricted population while its real execution universe
+and stale-declaration check remain complete.
