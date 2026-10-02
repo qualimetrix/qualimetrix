@@ -77,18 +77,14 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' cured — a definition cannot reference itself.';
 
     /**
-     * Why `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` spells five names by
-     * hand: the report names them as not judged on a narrowed run, and their
-     * owners declare them on internal classes Run may not import.
+     * The Finding-owned question roster names channels whose executable
+     * declarations belong to other subjects and are not approved imports here.
      */
-    private const string WHOLE_PROJECT_CHANNELS_REASON =
-        'The list a narrowed run\'s report names as not judged. The cohesion, coupling and'
-        . ' suppression owners declare these names on internal classes Run may not'
-        . ' import; the Architecture names in the same list come from their'
-        . ' contract\'s constants and Discovery\'s is Run\'s own. ProjectScopeReadersTest compares'
-        . ' every entry with its owner\'s constant and every reader of the predicate'
-        . ' with the list, so the copy cannot drift silently.';
-
+    private const string PROJECT_SCOPE_CHANNELS_REASON =
+        'The shared measured-question roster names channels declared by other subjects.'
+        . ' Finding owns the question contract, not their executable producers.'
+        . ' ProjectScopeReadersTest compares its exact set with the registered readers;'
+        . ' the allowed pair does not exempt any other literal or file.';
     /**
      * Why `JsonFormatter`'s `coupling.class-rank` output key is exempt: it is
      * the published JSON key carrying $issue->classRank, sibling to authored
@@ -181,12 +177,13 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 . ' (InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME); this one has no owner inside'
                 . ' Inline to borrow a constant from.',
         ],
-        'src/Analysis/Run/Configuration/ProjectScopeCoverage.php' => [
-            'cohesion.unmatched-exclude-method' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'coupling.unmatched-framework-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'suppression.unmatched-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'suppression.unmatched-path' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'suppression.unmatched-rule-ledger' => self::WHOLE_PROJECT_CHANNELS_REASON,
+        'src/Analysis/Finding/Contract/ProjectScope/ProjectScopeChannels.php' => [
+            'architecture.empty-template' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'architecture.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'architecture.unreachable-layer' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'cohesion.unmatched-exclude-method' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'coupling.unmatched-framework-namespace' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'discovery.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
         ],
         'src/Reporting/Formatter/Json/JsonFormatter.php' => [
             'coupling.class-rank' => self::JSON_FORMATTER_CLASS_RANK_REASON,

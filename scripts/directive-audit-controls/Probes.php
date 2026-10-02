@@ -56,9 +56,9 @@ final class Probes
 
     private const string COMMAND = 'src/Infrastructure/Console/Command/DirectivesCommand.php';
 
-    private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditPresenter.php';
+    private const string PRESENTER = 'src/Infrastructure/Console/DirectiveAuditTextPresenter.php';
 
-    private const string DISCOVERY = 'src/Analysis/Run/Discovery/FinderFileDiscovery.php';
+    private const string DISCOVERY = 'src/Analysis/Run/Discovery/WalkedEntrySelection.php';
 
     private const string CONFIG_FILE_STAGE = 'src/Analysis/Configuration/Pipeline/Stage/ConfigFileStage.php';
 
@@ -1392,7 +1392,7 @@ final class Probes
                 'sweep-line-dropped-from-text',
                 'the text report stops printing which sweep scope measured it',
                 self::PRESENTER,
-                ["        \$lines[] = \\sprintf('  Sweep        %s', self::sweepLine(\$report->sweep));\n" => ''],
+                ["            \\sprintf('  Sweep        %s', self::sweepLine(\$this->report->sweep)),\n" => ''],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPrintsTheSweepScopeInBothFormats'],
             ),
             Probe::breaking(
@@ -1755,14 +1755,6 @@ final class Probes
                 ],
             ),
             Probe::breaking(
-                'guard-counts-discovered-not-analysed',
-                'a scope of nothing but skipped files counts as a scope that was read',
-                self::COMMAND,
-                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
-                    => 'if ($report->coverage->discoveredFiles() === 0) {'],
-                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles'],
-            ),
-            Probe::breaking(
                 'command-accepts-any-format',
                 'the command renders an unrecognised --format instead of refusing it',
                 self::COMMAND,
@@ -1839,9 +1831,9 @@ final class Probes
                 'scope-that-read-nothing-is-clean',
                 'a run that discovered no file at all reports the tree clean',
                 self::COMMAND,
-                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete()) {'
+                ['if ($report->coverage->analyzedFilesCount() === 0 && $report->coverage->isComplete() && !$report->coverage->isIntentionallyEmpty()) {'
                     => 'if (false) {'],
-                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles', 'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeOfNothingButGeneratedFiles'],
+                ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesAScopeThatAnalysedNoFiles'],
             ),
             ...self::command(),
         ];
@@ -1864,9 +1856,8 @@ final class Probes
             Probe::breaking(
                 'missing-path-not-refused',
                 'a path that does not exist is not refused by name before the run',
-                self::COMMAND,
-                ['        $missing = AnalysisPreflight::missingPaths($prepared->runConfiguration);'
-                    => '        $missing = [];'],
+                'src/Infrastructure/Console/AnalysisPreflight.php',
+                ['        $this->pathValidator->validate($runConfiguration->paths, $document);' => ''],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itRefusesANonExistentPath'],
             ),
             Probe::breaking(
@@ -1886,13 +1877,7 @@ final class Probes
                 'a directory discovery cannot list is left out of the run without being recorded as unread',
                 self::DISCOVERY,
                 [
-                    "        if (!is_readable(\$entry->getPathname()) || !is_executable(\$entry->getPathname())) {\n"
-                    . "            \$this->record(\n"
-                    . "                \$path,\n"
-                    . "                AnalysisFailureKind::UnreadableDirectory,\n"
-                    . "                'Directory cannot be listed',\n"
-                    . "            );\n"
-                    => "        if (!is_readable(\$entry->getPathname()) || !is_executable(\$entry->getPathname())) {\n",
+                    '            $this->outcome->unlistable($path, $relative, $zone, EntryKind::Directory);' => '',
                 ],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitFourWhenAScannedDirectoryCannotBeRead'],
             ),
