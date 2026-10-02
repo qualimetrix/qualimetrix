@@ -1,0 +1,228 @@
+--- candidate
++++ reference (mapped)
+@@ -4,0 +4,12 @@
++        "description": "CorpusHttp\\Client: health.complexity = 89.0 (error threshold: below 100.0)",
++        "check_name": "health.complexity",
++        "fingerprint": "health.complexity:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/http/Client.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
+@@ -34,12 +46,0 @@
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusHttp\\Client: health.complexity = 89.0 (error threshold: below 100.0)",
+-        "check_name": "health.complexity",
+-        "fingerprint": "health.complexity:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/http/Client.php",
+@@ -292,0 +292,24 @@
++        "description": "CorpusHttp\\Client: health.typing = 50.0 (error threshold: below 100.0)",
++        "check_name": "health.typing",
++        "fingerprint": "health.typing:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/http/Client.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
++        "description": "CorpusStore\\FileStore: health.typing = 50.0 (error threshold: below 100.0)",
++        "check_name": "health.typing",
++        "fingerprint": "health.typing:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/store/FileStore.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
+@@ -346,24 +370,0 @@
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusHttp\\Client: health.typing = 50.0 (error threshold: below 100.0)",
+-        "check_name": "health.typing",
+-        "fingerprint": "health.typing:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/http/Client.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusStore\\FileStore: health.typing = 50.0 (error threshold: below 100.0)",
+-        "check_name": "health.typing",
+-        "fingerprint": "health.typing:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/store/FileStore.php",
+@@ -460,0 +460,24 @@
++        "description": "CorpusHttp\\Client: health.maintainability = 81.6 (error threshold: below 100.0)",
++        "check_name": "health.maintainability",
++        "fingerprint": "health.maintainability:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/http/Client.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
++        "description": "CorpusStore\\FileStore: health.maintainability = 95.7 (error threshold: below 100.0)",
++        "check_name": "health.maintainability",
++        "fingerprint": "health.maintainability:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/store/FileStore.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
+@@ -514,24 +538,0 @@
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusHttp\\Client: health.maintainability = 81.6 (error threshold: below 100.0)",
+-        "check_name": "health.maintainability",
+-        "fingerprint": "health.maintainability:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/http/Client.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusStore\\FileStore: health.maintainability = 95.7 (error threshold: below 100.0)",
+-        "check_name": "health.maintainability",
+-        "fingerprint": "health.maintainability:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/store/FileStore.php",
+@@ -628,0 +628,24 @@
++        "description": "CorpusHttp\\Client: health.overall = 88.7 (error threshold: below 100.0)",
++        "check_name": "health.overall",
++        "fingerprint": "health.overall:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/http/Client.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
++        "description": "CorpusStore\\FileStore: health.overall = 92.5 (error threshold: below 100.0)",
++        "check_name": "health.overall",
++        "fingerprint": "health.overall:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
++        "severity": "critical",
++        "location": {
++            "path": "lib/store/FileStore.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
+@@ -682,24 +706,0 @@
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusHttp\\Client: health.overall = 88.7 (error threshold: below 100.0)",
+-        "check_name": "health.overall",
+-        "fingerprint": "health.overall:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/http/Client.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusStore\\FileStore: health.overall = 92.5 (error threshold: below 100.0)",
+-        "check_name": "health.overall",
+-        "fingerprint": "health.overall:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
+-        "severity": "critical",
+-        "location": {
+-            "path": "lib/store/FileStore.php",
+@@ -796,0 +796,24 @@
++        "description": "CorpusHttp\\Client: computed.branch-load = 45.0 (warning threshold: above 0.0)",
++        "check_name": "computed.branch-load",
++        "fingerprint": "computed.branch-load:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
++        "severity": "major",
++        "location": {
++            "path": "lib/http/Client.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
++        "description": "CorpusStore\\FileStore: computed.branch-load = 15.0 (warning threshold: above 0.0)",
++        "check_name": "computed.branch-load",
++        "fingerprint": "computed.branch-load:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
++        "severity": "major",
++        "location": {
++            "path": "lib/store/FileStore.php",
++            "lines": {
++                "begin": 5
++            }
++        }
++    },
++    {
+@@ -850,24 +874,0 @@
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusHttp\\Client: computed.branch-load = 45.0 (warning threshold: above 0.0)",
+-        "check_name": "computed.branch-load",
+-        "fingerprint": "computed.branch-load:declaration:class:CorpusHttp\\Client@lib\/http\/Client.php",
+-        "severity": "major",
+-        "location": {
+-            "path": "lib/http/Client.php",
+-            "lines": {
+-                "begin": 5
+-            }
+-        }
+-    },
+-    {
+-        "description": "CorpusStore\\FileStore: computed.branch-load = 15.0 (warning threshold: above 0.0)",
+-        "check_name": "computed.branch-load",
+-        "fingerprint": "computed.branch-load:declaration:class:CorpusStore\\FileStore@lib\/store\/FileStore.php",
+-        "severity": "major",
+-        "location": {
+-            "path": "lib/store/FileStore.php",

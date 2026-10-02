@@ -1,4 +1,16 @@
 --- candidate
 +++ reference (mapped)
-@@ -38,1 +38,0 @@
--            "cohesion.unmatched-exclude-method",
+@@ -27,1 +27,0 @@
+-        "excluded": 0,
+@@ -33,1 +32,1 @@
+-            "src/Other.php"
++            "src"
+@@ -47,7 +46,1 @@
+-        "reasons": [
+-            {
+-                "kind": "explicit-files",
+-                "namedFiles": 1,
+-                "missingFiles": 1
+-            }
+-        ]
++        "reasons": []

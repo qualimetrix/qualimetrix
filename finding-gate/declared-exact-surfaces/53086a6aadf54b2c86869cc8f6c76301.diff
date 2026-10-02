@@ -1,0 +1,32 @@
+--- candidate
++++ reference (mapped)
+@@ -4,0 +4,7 @@
++  <file name="lib/http/Client.php">
++    <error line="5" severity="error" message="CorpusHttp\Client: health.complexity = 89.0 (error threshold: below 100.0)" source="qmx.health.complexity"/>
++    <error line="5" severity="error" message="CorpusHttp\Client: health.typing = 50.0 (error threshold: below 100.0)" source="qmx.health.typing"/>
++    <error line="5" severity="error" message="CorpusHttp\Client: health.maintainability = 81.6 (error threshold: below 100.0)" source="qmx.health.maintainability"/>
++    <error line="5" severity="error" message="CorpusHttp\Client: health.overall = 88.7 (error threshold: below 100.0)" source="qmx.health.overall"/>
++    <error line="5" severity="warning" message="CorpusHttp\Client: computed.branch-load = 45.0 (warning threshold: above 0.0)" source="qmx.computed.branch-load"/>
++  </file>
+@@ -27,7 +34,0 @@
+-  </file>
+-  <file name="lib/http/Client.php">
+-    <error line="5" severity="error" message="CorpusHttp\Client: health.complexity = 89.0 (error threshold: below 100.0)" source="qmx.health.complexity"/>
+-    <error line="5" severity="error" message="CorpusHttp\Client: health.typing = 50.0 (error threshold: below 100.0)" source="qmx.health.typing"/>
+-    <error line="5" severity="error" message="CorpusHttp\Client: health.maintainability = 81.6 (error threshold: below 100.0)" source="qmx.health.maintainability"/>
+-    <error line="5" severity="error" message="CorpusHttp\Client: health.overall = 88.7 (error threshold: below 100.0)" source="qmx.health.overall"/>
+-    <error line="5" severity="warning" message="CorpusHttp\Client: computed.branch-load = 45.0 (warning threshold: above 0.0)" source="qmx.computed.branch-load"/>
+@@ -88,0 +88,6 @@
++  <file name="lib/store/FileStore.php">
++    <error line="5" severity="error" message="CorpusStore\FileStore: health.typing = 50.0 (error threshold: below 100.0)" source="qmx.health.typing"/>
++    <error line="5" severity="error" message="CorpusStore\FileStore: health.maintainability = 95.7 (error threshold: below 100.0)" source="qmx.health.maintainability"/>
++    <error line="5" severity="error" message="CorpusStore\FileStore: health.overall = 92.5 (error threshold: below 100.0)" source="qmx.health.overall"/>
++    <error line="5" severity="warning" message="CorpusStore\FileStore: computed.branch-load = 15.0 (warning threshold: above 0.0)" source="qmx.computed.branch-load"/>
++  </file>
+@@ -93,6 +99,0 @@
+-  </file>
+-  <file name="lib/store/FileStore.php">
+-    <error line="5" severity="error" message="CorpusStore\FileStore: health.typing = 50.0 (error threshold: below 100.0)" source="qmx.health.typing"/>
+-    <error line="5" severity="error" message="CorpusStore\FileStore: health.maintainability = 95.7 (error threshold: below 100.0)" source="qmx.health.maintainability"/>
+-    <error line="5" severity="error" message="CorpusStore\FileStore: health.overall = 92.5 (error threshold: below 100.0)" source="qmx.health.overall"/>
+-    <error line="5" severity="warning" message="CorpusStore\FileStore: computed.branch-load = 15.0 (warning threshold: above 0.0)" source="qmx.computed.branch-load"/>

@@ -1,0 +1,35 @@
+--- candidate
++++ reference (mapped)
+@@ -2,4 +2,4 @@
+-::error file=src/Engine/Dispatcher.php,line=11,title=health.complexity::Corpus\Health\Engine\Dispatcher: health.complexity = 69.5 (error threshold: below 100.0)
+-::error file=src/Engine/Pipeline.php,line=10,title=health.complexity::Corpus\Health\Engine\Pipeline: health.complexity = 87.0 (error threshold: below 100.0)
+-::error file=src/Support/Formatter.php,line=5,title=health.complexity::Corpus\Health\Support\Formatter: health.complexity = 89.0 (error threshold: below 100.0)
+-::error file=lib/http/Client.php,line=5,title=health.complexity::CorpusHttp\Client: health.complexity = 89.0 (error threshold: below 100.0)
++::error file=lib/http/Client.php,line=5,title=health.complexity::CorpusHttp\Client: health.complexity = 89.0 (error threshold: below 100.0)
++::error file=src/Engine/Dispatcher.php,line=11,title=health.complexity::Corpus\Health\Engine\Dispatcher: health.complexity = 69.5 (error threshold: below 100.0)
++::error file=src/Engine/Pipeline.php,line=10,title=health.complexity::Corpus\Health\Engine\Pipeline: health.complexity = 87.0 (error threshold: below 100.0)
++::error file=src/Support/Formatter.php,line=5,title=health.complexity::Corpus\Health\Support\Formatter: health.complexity = 89.0 (error threshold: below 100.0)
+@@ -26,0 +26,2 @@
++::error file=lib/http/Client.php,line=5,title=health.typing::CorpusHttp\Client: health.typing = 50.0 (error threshold: below 100.0)
++::error file=lib/store/FileStore.php,line=5,title=health.typing::CorpusStore\FileStore: health.typing = 50.0 (error threshold: below 100.0)
+@@ -31,2 +33,0 @@
+-::error file=lib/http/Client.php,line=5,title=health.typing::CorpusHttp\Client: health.typing = 50.0 (error threshold: below 100.0)
+-::error file=lib/store/FileStore.php,line=5,title=health.typing::CorpusStore\FileStore: health.typing = 50.0 (error threshold: below 100.0)
+@@ -40,0 +40,2 @@
++::error file=lib/http/Client.php,line=5,title=health.maintainability::CorpusHttp\Client: health.maintainability = 81.6 (error threshold: below 100.0)
++::error file=lib/store/FileStore.php,line=5,title=health.maintainability::CorpusStore\FileStore: health.maintainability = 95.7 (error threshold: below 100.0)
+@@ -45,2 +47,0 @@
+-::error file=lib/http/Client.php,line=5,title=health.maintainability::CorpusHttp\Client: health.maintainability = 81.6 (error threshold: below 100.0)
+-::error file=lib/store/FileStore.php,line=5,title=health.maintainability::CorpusStore\FileStore: health.maintainability = 95.7 (error threshold: below 100.0)
+@@ -54,0 +54,2 @@
++::error file=lib/http/Client.php,line=5,title=health.overall::CorpusHttp\Client: health.overall = 88.7 (error threshold: below 100.0)
++::error file=lib/store/FileStore.php,line=5,title=health.overall::CorpusStore\FileStore: health.overall = 92.5 (error threshold: below 100.0)
+@@ -59,2 +61,0 @@
+-::error file=lib/http/Client.php,line=5,title=health.overall::CorpusHttp\Client: health.overall = 88.7 (error threshold: below 100.0)
+-::error file=lib/store/FileStore.php,line=5,title=health.overall::CorpusStore\FileStore: health.overall = 92.5 (error threshold: below 100.0)
+@@ -68,0 +68,2 @@
++::warning file=lib/http/Client.php,line=5,title=computed.branch-load::CorpusHttp\Client: computed.branch-load = 45.0 (warning threshold: above 0.0)
++::warning file=lib/store/FileStore.php,line=5,title=computed.branch-load::CorpusStore\FileStore: computed.branch-load = 15.0 (warning threshold: above 0.0)
+@@ -73,2 +75,0 @@
+-::warning file=lib/http/Client.php,line=5,title=computed.branch-load::CorpusHttp\Client: computed.branch-load = 45.0 (warning threshold: above 0.0)
+-::warning file=lib/store/FileStore.php,line=5,title=computed.branch-load::CorpusStore\FileStore: computed.branch-load = 15.0 (warning threshold: above 0.0)
