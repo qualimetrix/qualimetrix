@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
@@ -90,6 +91,9 @@ final class ClassProducerOrdinalTest extends TestCase
             self::deliverIndex($visitor, $registrar->index());
             $traverser->addVisitor($visitor);
             $traverser->traverse($ast);
+            if ($collector instanceof SourceMeasuringCollectorInterface) {
+                $collector->measureSource($source);
+            }
             $collector->collect(new SplFileInfo($file), $ast);
 
             $classes = $collector->getClassesWithMetrics(RelativePath::fromString('src/Dup.php'));

@@ -11,6 +11,7 @@ use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -18,16 +19,27 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class CheckCommandTest extends TestCase
 {
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
         // Create temporary directory for test files
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0777, true);
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         // Clean up temporary directory
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);

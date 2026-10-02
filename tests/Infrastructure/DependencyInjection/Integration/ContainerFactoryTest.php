@@ -487,11 +487,11 @@ PHP;
         self::assertNotNull($baselineRunConstructor);
         self::assertNotNull($measuredFindingSetConstructor);
         self::assertCount(9, $checkConstructor->getParameters());
-        self::assertCount(6, $baselineRunConstructor->getParameters());
-        self::assertCount(3, $measuredFindingSetConstructor->getParameters());
+        self::assertCount(7, $baselineRunConstructor->getParameters());
+        self::assertCount(2, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
-        self::assertCount(11, $pipelineConstructor->getParameters());
+        self::assertCount(12, $pipelineConstructor->getParameters());
 
         $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
         self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);

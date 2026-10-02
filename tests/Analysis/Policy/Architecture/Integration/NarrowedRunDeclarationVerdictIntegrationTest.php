@@ -90,7 +90,7 @@ final class NarrowedRunDeclarationVerdictIntegrationTest extends TestCase
         $scope = $this->projectScope($this->check(self::CONFIG, ['src/Web']));
 
         self::assertSame('narrowed', $scope['state'] ?? null);
-        self::assertSame(['src'], $scope['uncoveredAutoloadTargets'] ?? null);
+        self::assertSame(['src/Module/Billing/Domain/Invoice.php', 'src/Shared/Clock.php'], $scope['uncoveredAutoloadTargets'] ?? null);
         self::assertIsList($scope['unjudgedChannels'] ?? null);
         self::assertContains(LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, $scope['unjudgedChannels']);
         self::assertContains(LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, $scope['unjudgedChannels']);

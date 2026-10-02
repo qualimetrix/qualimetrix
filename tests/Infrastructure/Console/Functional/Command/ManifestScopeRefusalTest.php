@@ -20,7 +20,7 @@ final class ManifestScopeRefusalTest extends TestCase
         yield 'invalid defaults refuse' => ['{invalid', [], 3, null];
         yield 'array root defaults refuse' => ['[]', [], 3, null];
         yield 'all records rejected defaults refuse' => ['{"autoload":{"files":[false]}}', [], 3, null];
-        yield 'partial inferred root withholds' => ['{"autoload":{"classmap":["",false]}}', [], 0, 'unmeasured'];
+        yield 'partial inferred root judges measured files' => ['{"autoload":{"classmap":["",false]}}', [], 0, 'unknown'];
         yield 'same partial authored root judges' => ['{"autoload":{"classmap":["",false]}}', ['.'], 0, 'unknown'];
         yield 'invalid authored subset withholds' => ['{invalid', ['src'], 0, 'unmeasured'];
         yield 'invalid authored root judges' => ['{invalid', ['.'], 0, 'unknown'];
