@@ -270,19 +270,28 @@ final class DirectiveUsage
                 continue;
             }
 
-            $enablement = $this->ruleConfiguration->enablement()
-                ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
-            $levels = DirectiveLevels::ofGroup($group);
-            foreach ($levels === [] ? [null] : $levels as $level) {
-                if ($enablement->publishes(new FindingChannel($code), $level)
-                    && $activity->ranAtAnyOf($producer, $level === null ? [] : [$level])) {
-                    return null;
-                }
+            if ($this->producerRan($code, $producer, $group, $activity)) {
+                return null;
             }
 
         }
 
         return DirectiveUnmeasurableReason::ProducerDisabled;
+    }
+
+    /** @param non-empty-list<Suppression> $group */
+    private function producerRan(string $code, string $producer, array $group, LevelActivity $activity): bool
+    {
+        $enablement = $this->ruleConfiguration->enablement()
+            ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
+        $levels = DirectiveLevels::ofGroup($group);
+        foreach ($levels === [] ? [null] : $levels as $level) {
+            if ($enablement->publishes(new FindingChannel($code), $level)
+                && $activity->ranAtAnyOf($producer, $level === null ? [] : [$level])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

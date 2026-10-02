@@ -1774,6 +1774,8 @@ Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings	Analysi
 Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings	Analysis.Policy.Inline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationRanges	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationRanges	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor	Analysis.Policy.Inline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface	Analysis.Finding	contract

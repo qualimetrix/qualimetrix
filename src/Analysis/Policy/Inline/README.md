@@ -28,11 +28,14 @@ Inline/
 │   │                            # than write one; read by both extractors
 │   ├── SourceControlExtractorInterface.php
 │   ├── SourceControls.php       # immutable extraction result
+│   ├── SuppressionSyntax.php      # authored spelling and arguments without binding
 │   ├── SuppressionExtractor.php
 │   ├── ThresholdOverrideExtractor.php
 │   └── RuleValidatorMapFactory.php
 ├── Extraction/
 │   ├── DeclarationControlBindings.php
+│   ├── DeclarationRanges.php      # measured enclosing declaration ranges
+│   ├── DeclarationSource.php      # source carrier descriptions and direct anonymous values
 │   ├── SourceControlExtractor.php
 │   └── UnattachedComments.php
 ├── Directive/                      # the directive itself: store, addressing, validation
@@ -43,7 +46,7 @@ Inline/
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
-│   │   ├── ThresholdDirectiveEligibility.php # addressability and executed producer eligibility
+│   │   ├── ThresholdDirectiveEligibility.php # enabled and executed producer eligibility
 │   │   └── ThresholdDirectiveAudit.php # what each authored @qmx-threshold did
 │   ├── DirectiveAddressability.php # is this directive able to do anything?
 │   ├── DirectiveChannelBan.php     # the channels no directive may address or silence
@@ -106,8 +109,9 @@ Inline/
   prepared run it needs to answer: the context the rules already ran against,
   the executor that ran them, and what they produced.
 
-ThresholdDirectiveEligibility judges addressability before checking a directly
-live producer and its executed declared levels. Counterfactual audits reuse
+ThresholdDirectiveAudit refuses unaddressable directives through RefusedDirectives
+before ThresholdDirectiveEligibility checks a directly live producer and its
+executed declared levels. Counterfactual audits reuse
 the prepared context without recollecting files.
 
 ThresholdOverrideValueParser constructs the Finding-owned typed request, and

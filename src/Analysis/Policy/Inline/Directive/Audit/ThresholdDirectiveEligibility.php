@@ -10,22 +10,15 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
-use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
-/** Decides whether an authored threshold has an addressable, executed producer. */
+/** Decides whether an authored threshold has an enabled, executed producer. */
 final readonly class ThresholdDirectiveEligibility
 {
     public function __construct(
         private RuleConfigurationInterface $ruleConfiguration,
-        private RefusedDirectives $refused,
     ) {}
-
-    public function refuses(AuthoredDirectiveGroup $group): bool
-    {
-        return $this->refused->threshold($group->file, $group->bindings[0]) !== null;
-    }
 
     /**
      * A group can span levels; undeclared levels do not count as disablement.

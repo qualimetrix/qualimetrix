@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Contract\Directive;
 use LogicException;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use UnhandledMatchError;
 
 /**
  * An authored directive the extractor read and refused to carry out.
@@ -50,6 +51,27 @@ final readonly class DirectiveRefusal
         'ignore-next-line' => 'next-line',
         'ignore-file' => 'file',
         'threshold' => self::THRESHOLD_FORM,
+    ];
+
+    private const array DESCRIPTION = [
+        'not-at-line-start' => '"%1$s" stands mid-line, so it is not a directive; move it to the start of its own comment line, or quote a mention as inline code',
+        'inside-unclosed-fence' => '"%1$s" stands inside a code fence opened on line %7$d that is never closed in this comment, so it is read as quoted text and does nothing; close the fence with the same character, at least as long',
+        'misspelled-prefix' => '"%1$s" looks like the directive @qmx-%2$s but is not spelled as one, so it does nothing. Write @qmx-%2$s.%3$s',
+        'form-not-recognised' => 'Directive "%4$s" is not a tag this tool reads. The tags are @qmx-ignore, @qmx-ignore-next-line,'
+            . ' @qmx-ignore-file and @qmx-threshold; the first two name a channel before the reason.',
+        'names-no-target/threshold' => 'Directive "%4$s" names no rule. Write the rule and its values on the tag\'s own line:'
+                . ' @qmx-threshold <rule> <value>, or warning=<n> error=<n>.',
+        'names-no-target/symbol' => 'Directive "%4$s" names no channel. Write the channel on the tag\'s own line, before the'
+                . ' reason — or "*" for every channel.',
+        'no-declaration-to-bind/threshold' => 'Threshold "%4$s" is written where no declaration it can retune is measured, so it retunes'
+                . ' nothing. Move it into the docblock of the class, method or function it is about.',
+        'no-declaration-to-bind/symbol' => 'Suppression "%4$s" is written where no declaration is measured, so it binds to nothing.'
+                . ' Write @qmx-ignore-next-line to silence the line below it, or move the tag onto the class,'
+                . ' method or function it is about.',
+        'closure-not-direct-value' => 'Directive "%4$s" stands on an expression that contains an anonymous callable but does not declare it directly; move the tag immediately before the function or fn it is about.',
+        'level-not-reachable-here' => 'Suppression "%5$s" asks for a level that is not reachable from %6$s; move it to a declaration at that level or remove the level suffix.',
+        'threshold-outside-docblock' => 'Threshold "%4$s" is written in a line or block comment, and a threshold is read only from a'
+            . ' docblock. Write it in the /** */ docblock of the class, method or function it retunes.',
     ];
 
     private function __construct(
@@ -141,10 +163,8 @@ final readonly class DirectiveRefusal
         return new self(DirectiveRefusalReason::NoDeclarationToBind, self::THRESHOLD_FORM, self::tagOf(self::THRESHOLD_FORM));
     }
 
-    public static function closureNotDirectValue(bool $threshold): self
+    public static function closureNotDirectValue(string $form): self
     {
-        $form = $threshold ? self::THRESHOLD_FORM : SuppressionType::Symbol->value;
-
         return new self(DirectiveRefusalReason::ClosureNotDirectValue, $form, self::tagOf($form));
     }
 
@@ -176,69 +196,26 @@ final readonly class DirectiveRefusal
      */
     public function describe(string $argument): string
     {
-        $authored = trim($this->tag . ' ' . $argument);
-        $isThreshold = $this->form === self::THRESHOLD_FORM;
+        $reason = $this->reason->value;
+        if ($this->reason === DirectiveRefusalReason::NamesNoTarget
+            || $this->reason === DirectiveRefusalReason::NoDeclarationToBind) {
+            $reason .= '/' . ($this->form === self::THRESHOLD_FORM ? self::THRESHOLD_FORM : SuppressionType::Symbol->value);
+        }
+        $template = self::DESCRIPTION[$reason] ?? throw new UnhandledMatchError();
+        if ($this->reason === DirectiveRefusalReason::LevelNotReachableHere && $this->standsOn === null) {
+            throw new LogicException('A placement refusal requires the declaration it stands on');
+        }
 
-        return match ($this->reason) {
-            DirectiveRefusalReason::NotAtLineStart => \sprintf(
-                '"%s" stands mid-line, so it is not a directive; move it to the start of its own comment line, or quote a mention as inline code',
-                $this->tag,
-            ),
-            DirectiveRefusalReason::InsideUnclosedFence => \sprintf(
-                '"%s" stands inside a code fence opened on line %d that is never closed in this comment, so it is read as quoted text and does nothing; close the fence with the same character, at least as long',
-                $this->tag,
-                $this->fenceLine,
-            ),
-            DirectiveRefusalReason::MisspelledPrefix => \sprintf(
-                '"%s" looks like the directive @qmx-%s but is not spelled as one, so it does nothing. Write @qmx-%s.%s',
-                $this->tag,
-                $this->intended,
-                $this->intended,
-                $this->spaceName === null ? '' : ' Replace ' . $this->spaceName . ' with an ordinary space.',
-            ),
-            DirectiveRefusalReason::FormNotRecognised => \sprintf(
-                'Directive "%s" is not a tag this tool reads. The tags are @qmx-ignore, @qmx-ignore-next-line,'
-                . ' @qmx-ignore-file and @qmx-threshold; the first two name a channel before the reason.',
-                $authored,
-            ),
-            DirectiveRefusalReason::NamesNoTarget => $isThreshold
-                ? \sprintf(
-                    'Directive "%s" names no rule. Write the rule and its values on the tag\'s own line:'
-                    . ' @qmx-threshold <rule> <value>, or warning=<n> error=<n>.',
-                    $authored,
-                )
-                : \sprintf(
-                    'Directive "%s" names no channel. Write the channel on the tag\'s own line, before the'
-                    . ' reason — or "*" for every channel.',
-                    $authored,
-                ),
-            DirectiveRefusalReason::NoDeclarationToBind => $isThreshold
-                ? \sprintf(
-                    'Threshold "%s" is written where no declaration it can retune is measured, so it retunes'
-                    . ' nothing. Move it into the docblock of the class, method or function it is about.',
-                    $authored,
-                )
-                : \sprintf(
-                    'Suppression "%s" is written where no declaration is measured, so it binds to nothing.'
-                    . ' Write @qmx-ignore-next-line to silence the line below it, or move the tag onto the class,'
-                    . ' method or function it is about.',
-                    $authored,
-                ),
-            DirectiveRefusalReason::ClosureNotDirectValue => \sprintf(
-                'Directive "%s" stands on an expression that contains an anonymous callable but does not declare it directly; move the tag immediately before the function or fn it is about.',
-                $authored,
-            ),
-            DirectiveRefusalReason::LevelNotReachableHere => \sprintf(
-                'Suppression "%s" asks for a level that is not reachable from %s; move it to a declaration at that level or remove the level suffix.',
-                $argument,
-                $this->standsOn ?? throw new LogicException('A placement refusal requires the declaration it stands on'),
-            ),
-            DirectiveRefusalReason::ThresholdOutsideDocblock => \sprintf(
-                'Threshold "%s" is written in a line or block comment, and a threshold is read only from a'
-                . ' docblock. Write it in the /** */ docblock of the class, method or function it retunes.',
-                $authored,
-            ),
-        };
+        return \sprintf(
+            $template,
+            $this->tag,
+            $this->intended,
+            $this->spaceName === null ? '' : ' Replace ' . $this->spaceName . ' with an ordinary space.',
+            trim($this->tag . ' ' . $argument),
+            $argument,
+            $this->standsOn,
+            $this->fenceLine,
+        );
     }
 
     /** @return non-empty-string */

@@ -47,15 +47,12 @@ final readonly class DeclarationControlBindings
     /**
      * @param array<int, list<MetricSubject>> $byStart
      * @param list<array{start: int, subject: MetricSubject, lexicalClassContext: ?string}> $callableStarts
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $classRanges
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $callableRanges
      */
     private function __construct(
         private MetricSubject $file,
         private array $byStart,
         private array $callableStarts,
-        private array $classRanges,
-        private array $callableRanges,
+        private DeclarationRanges $ranges,
     ) {}
 
     /**
@@ -85,16 +82,13 @@ final readonly class DeclarationControlBindings
             }
         }
 
-        $finder = new NodeFinder();
-        $classRanges = self::classRanges($finder, $ast, $byStart);
-        $callableRanges = self::callableRanges($finder, $ast, $byStart);
+        $ranges = DeclarationRanges::from($ast, $byStart);
 
         return new self(
             MetricSubject::aggregate(SymbolPath::forFile($file)),
             $byStart,
             $callableStarts,
-            $classRanges,
-            $callableRanges,
+            $ranges,
         );
     }
 
@@ -158,7 +152,7 @@ final readonly class DeclarationControlBindings
         if ($node->getType() === 'Stmt_Property') {
             return [
                 ...self::wholeReach($this->propertyHookBindings($node), $node, $standsOn),
-                ...self::lineReach($this->containingBinding($this->classRanges, $node->getStartFilePos()), $node, $standsOn),
+                ...self::lineReach($this->ranges->classAt($node->getStartFilePos()), $node, $standsOn),
             ];
         }
 
@@ -172,7 +166,7 @@ final readonly class DeclarationControlBindings
             return $node->getType() === 'Stmt_ClassMethod'
                 ? [
                     ...$own,
-                    ...self::lineReach($this->containingBinding($this->classRanges, $node->getStartFilePos()), $node, $standsOn),
+                    ...self::lineReach($this->ranges->classAt($node->getStartFilePos()), $node, $standsOn),
                 ]
                 : $own;
         }
@@ -180,20 +174,20 @@ final readonly class DeclarationControlBindings
         $start = $node->getStartFilePos();
 
         if ($node instanceof Node\Param) {
-            $bindings = self::lineReach($this->containingBinding($this->callableRanges, $start), $node, $standsOn);
+            $bindings = self::lineReach($this->ranges->callableAt($start), $node, $standsOn);
             if (!$node->isPromoted()) {
                 return $bindings;
             }
 
             return [
                 ...$bindings,
-                ...self::lineReach($this->containingBinding($this->classRanges, $start), $node, $standsOn),
+                ...self::lineReach($this->ranges->classAt($start), $node, $standsOn),
                 ...self::wholeReach($this->propertyHookBindings($node), $node, $standsOn),
             ];
         }
 
         if ($node->getType() === 'Stmt_EnumCase' || $node->getType() === 'Stmt_ClassConst') {
-            return self::lineReach($this->containingBinding($this->classRanges, $start), $node, $standsOn);
+            return self::lineReach($this->ranges->classAt($start), $node, $standsOn);
         }
 
         return self::wholeReach($this->directCallableBindings($node), $node, $standsOn);
@@ -238,25 +232,7 @@ final readonly class DeclarationControlBindings
     /** Human-readable source construct on which an authored directive stands. */
     public static function describe(Node $node): string
     {
-        $directCallable = self::directAnonymousCallable($node);
-        if ($directCallable !== null) {
-            return 'closure at line ' . $directCallable->getStartLine();
-        }
-
-        return match (true) {
-            $node instanceof Node\Stmt\Class_ => 'class ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
-            $node instanceof Node\Stmt\Interface_ => 'interface ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
-            $node instanceof Node\Stmt\Trait_ => 'trait ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
-            $node instanceof Node\Stmt\Enum_ => 'enum ' . ($node->name?->toString() ?? 'at line ' . $node->getStartLine()),
-            $node instanceof Node\Stmt\ClassMethod => 'method ' . $node->name->toString(),
-            $node instanceof Node\Stmt\Function_ => 'function ' . $node->name->toString(),
-            $node instanceof Node\PropertyHook => 'hook ' . $node->name->toString(),
-            $node instanceof Node\Stmt\Property => self::propertyDescription($node),
-            $node instanceof Node\Stmt\ClassConst => self::constantDescription($node),
-            $node instanceof Node\Stmt\EnumCase => 'case ' . $node->name->toString(),
-            $node instanceof Node\Param => self::parameterDescription($node),
-            default => 'source construct at line ' . $node->getStartLine(),
-        };
+        return DeclarationSource::describe($node);
     }
 
     /**
@@ -289,7 +265,7 @@ final readonly class DeclarationControlBindings
     /** @return list<array{subject: MetricSubject, scope: ControlScope}> */
     private function directCallableBindings(Node $node): array
     {
-        $callable = self::directAnonymousCallable($node);
+        $callable = DeclarationSource::anonymousCallable($node);
 
         return $callable === null ? [] : $this->callablesBeginningWith($callable);
     }
@@ -299,59 +275,9 @@ final readonly class DeclarationControlBindings
      */
     public function fallbackBindingsForProperty(Node $property): array
     {
-        $binding = $this->containingBinding($this->classRanges, $property->getStartFilePos());
+        $binding = $this->ranges->classAt($property->getStartFilePos());
 
         return $binding !== [] ? $binding : [['subject' => $this->file, 'scope' => ControlScope::Class_]];
-    }
-
-    /**
-     * @param array<Node> $ast
-     * @param array<int, list<MetricSubject>> $byStart
-     *
-     * @return list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}>
-     */
-    private static function classRanges(NodeFinder $finder, array $ast, array $byStart): array
-    {
-        $ranges = [];
-        foreach ($finder->find($ast, self::isClassLike(...)) as $classLike) {
-            $start = $classLike->getStartFilePos();
-            $end = $classLike->getEndFilePos();
-            if ($start >= 0 && $end >= $start) {
-                foreach (self::subjectsAt($byStart, $start, ...self::CLASS_SUBJECT_TYPES) as $subject) {
-                    $ranges[] = ['start' => $start, 'end' => $end, 'subject' => $subject, 'scope' => ControlScope::Class_];
-                }
-            }
-        }
-
-        return $ranges;
-    }
-
-    /**
-     * @param array<Node> $ast
-     * @param array<int, list<MetricSubject>> $byStart
-     *
-     * @return list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}>
-     */
-    private static function callableRanges(NodeFinder $finder, array $ast, array $byStart): array
-    {
-        $ranges = [];
-        $callables = $finder->find($ast, static fn(Node $node): bool => \in_array($node->getType(), self::CALLABLE_TYPES, true));
-        foreach ($callables as $callable) {
-            $start = $callable->getStartFilePos();
-            $end = $callable->getEndFilePos();
-            if ($start >= 0 && $end >= $start) {
-                foreach (self::subjectsAt($byStart, $start, ...self::CALLABLE_SUBJECT_TYPES) as $subject) {
-                    $ranges[] = [
-                        'start' => $start,
-                        'end' => $end,
-                        'subject' => $subject,
-                        'scope' => $callable->getType() === 'PropertyHook' ? ControlScope::Hook : ControlScope::Callable,
-                    ];
-                }
-            }
-        }
-
-        return $ranges;
     }
 
     /**
@@ -393,37 +319,6 @@ final readonly class DeclarationControlBindings
                 if ($callable['lexicalClassContext'] === $subject->toCanonical()) {
                     $bindings[] = ['subject' => $callable['subject'], 'scope' => ControlScope::Class_];
                 }
-            }
-        }
-
-        return $bindings;
-    }
-
-    /**
-     * @param list<array{start: int, end: int, subject: MetricSubject, scope: ControlScope}> $ranges
-     *
-     * @return list<array{subject: MetricSubject, scope: ControlScope}>
-     */
-    private function containingBinding(array $ranges, int $start): array
-    {
-        $bestSpan = null;
-        $bindings = [];
-        foreach ($ranges as $range) {
-            if ($start < $range['start'] || $start > $range['end']) {
-                continue;
-            }
-
-            $span = $range['end'] - $range['start'];
-            if ($bestSpan === null || $span < $bestSpan) {
-                $bestSpan = $span;
-                $bindings = [];
-            }
-
-            if ($span === $bestSpan) {
-                $bindings[] = [
-                    'subject' => $range['subject'],
-                    'scope' => $range['scope'],
-                ];
             }
         }
 
@@ -493,64 +388,6 @@ final readonly class DeclarationControlBindings
     private static function isClassLike(Node $node): bool
     {
         return \in_array($node->getType(), self::CLASS_LIKE_TYPES, true);
-    }
-
-    private static function directAnonymousCallable(Node $node): Node\Expr\Closure|Node\Expr\ArrowFunction|null
-    {
-        $value = match (true) {
-            $node instanceof Node\Stmt\Expression => $node->expr,
-            $node instanceof Node\Stmt\Return_ => $node->expr,
-            $node instanceof Node\Arg => $node->value,
-            $node instanceof Node\ArrayItem => $node->value,
-            default => $node,
-        };
-
-        while ($value instanceof Node\Expr\Assign
-            || $value instanceof Node\Expr\AssignOp\Coalesce) {
-            $value = $value->expr;
-        }
-
-        if ($value instanceof Node\Expr\Closure || $value instanceof Node\Expr\ArrowFunction) {
-            return $value;
-        }
-
-        $start = $node->getStartFilePos();
-        if ($start < 0) {
-            return null;
-        }
-
-        $callable = (new NodeFinder())->findFirst(
-            $node,
-            static fn(Node $candidate): bool => ($candidate instanceof Node\Expr\Closure || $candidate instanceof Node\Expr\ArrowFunction)
-                && $candidate->getStartFilePos() === $start,
-        );
-
-        return $callable instanceof Node\Expr\Closure || $callable instanceof Node\Expr\ArrowFunction
-            ? $callable
-            : null;
-    }
-
-    private static function propertyDescription(Node\Stmt\Property $property): string
-    {
-        $name = $property->props[0]->name->toString();
-
-        return 'property $' . $name;
-    }
-
-    private static function constantDescription(Node\Stmt\ClassConst $constant): string
-    {
-        $name = $constant->consts[0]->name->toString();
-
-        return 'constant ' . $name;
-    }
-
-    private static function parameterDescription(Node\Param $parameter): string
-    {
-        $name = $parameter->var instanceof Node\Expr\Variable && \is_string($parameter->var->name)
-            ? $parameter->var->name
-            : '';
-
-        return 'parameter $' . $name;
     }
 
 }

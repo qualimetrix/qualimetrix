@@ -115,7 +115,7 @@ Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	
 Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	7	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild	Analysis.Finding	2	2
-Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	5	1
+Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	6	1
 Qualimetrix\Analysis\Finding\Contract\EnablementDecision	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface	Analysis.Finding	2	2
@@ -301,7 +301,7 @@ Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1
 Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	8	3
 Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
-Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	53	17
+Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	54	17
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	2	1
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3

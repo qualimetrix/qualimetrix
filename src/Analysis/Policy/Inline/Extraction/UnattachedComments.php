@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Extraction;
 
+use Generator;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
@@ -46,22 +47,7 @@ final readonly class UnattachedComments
 
         [$carried, $gaps, $nodes] = self::carriedCommentsAndHeaderGaps($ast);
 
-        $owned = [];
-        $rehomed = [];
-        foreach ($nodes as $node) {
-            foreach ($node->getComments() as $comment) {
-                if (!SuppressionExtractor::mayCarryDirective($comment->getText())) {
-                    continue;
-                }
-                $owner = self::ownerOf($gaps, $comment->getStartFilePos());
-                if ($owner === null || $owner === $node) {
-                    continue;
-                }
-                $ownerId = spl_object_id($owner);
-                $owned[$ownerId][] = $comment;
-                $rehomed[$comment->getStartFilePos()] = $ownerId;
-            }
-        }
+        [$owned, $rehomed] = self::rehomedComments($nodes, $gaps);
 
         $unowned = [];
         foreach (self::uncarriedTagComments($source, $carried) as $comment) {
@@ -74,6 +60,46 @@ final readonly class UnattachedComments
         }
 
         return new self($owned, $rehomed, $unowned);
+    }
+
+    /**
+     * @param list<Node> $nodes
+     * @param list<array{node: Node, from: int, to: int}> $gaps
+     *
+     * @return array{array<int, list<Comment>>, array<int, int>}
+     */
+    private static function rehomedComments(array $nodes, array $gaps): array
+    {
+        $owned = [];
+        $rehomed = [];
+        foreach (self::carriedDirectiveComments($nodes) as [$node, $comment]) {
+            $owner = self::ownerOf($gaps, $comment->getStartFilePos());
+            if (\in_array($owner, [null, $node], true)) {
+                continue;
+            }
+
+            $ownerId = spl_object_id($owner);
+            $owned[$ownerId][] = $comment;
+            $rehomed[$comment->getStartFilePos()] = $ownerId;
+        }
+
+        return [$owned, $rehomed];
+    }
+
+    /**
+     * @param list<Node> $nodes
+     *
+     * @return Generator<int, array{Node, Comment}>
+     */
+    private static function carriedDirectiveComments(array $nodes): Generator
+    {
+        foreach ($nodes as $node) {
+            foreach ($node->getComments() as $comment) {
+                if (SuppressionExtractor::mayCarryDirective($comment->getText())) {
+                    yield [$node, $comment];
+                }
+            }
+        }
     }
 
     public function owns(Node $node): bool
@@ -168,16 +194,7 @@ final readonly class UnattachedComments
      */
     private static function headerGap(Node $node): ?array
     {
-        $name = match (true) {
-            $node instanceof Node\Stmt\ClassLike => $node->name,
-            $node instanceof Node\Stmt\ClassMethod => $node->name,
-            $node instanceof Node\Stmt\Function_ => $node->name,
-            $node instanceof Node\Stmt\Property => $node->props[0] ?? null,
-            $node instanceof Node\Stmt\ClassConst => $node->consts[0] ?? null,
-            $node instanceof Node\Stmt\EnumCase => $node->name,
-            $node instanceof Node\Param => $node->var,
-            default => null,
-        };
+        $name = self::headerName($node);
         if (!$name instanceof Node) {
             return null;
         }
@@ -189,6 +206,32 @@ final readonly class UnattachedComments
         }
 
         return ['node' => $node, 'from' => $from, 'to' => $to];
+    }
+
+    private static function namedHeader(Node $node): ?Node
+    {
+        return $node instanceof Node\Stmt\ClassLike
+            || $node instanceof Node\Stmt\ClassMethod
+            || $node instanceof Node\Stmt\Function_
+            || $node instanceof Node\Stmt\EnumCase
+            ? $node->name
+            : null;
+    }
+
+    private static function headerName(Node $node): ?Node
+    {
+        $name = self::namedHeader($node);
+        if ($name !== null) {
+            return $name;
+        }
+
+        $members = match (true) {
+            $node instanceof Node\Stmt\Property => $node->props,
+            $node instanceof Node\Stmt\ClassConst => $node->consts,
+            default => [],
+        };
+
+        return $members[0] ?? ($node instanceof Node\Param ? $node->var : null);
     }
 
     /**

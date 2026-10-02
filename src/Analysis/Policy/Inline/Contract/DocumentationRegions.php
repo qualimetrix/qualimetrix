@@ -46,33 +46,54 @@ final readonly class DocumentationRegions
                     $fence = null;
                     $fencedTags = [];
                 } else {
-                    foreach (self::tags($line) as [$tag, $position]) {
-                        if (self::isExact($tag) && self::atStart(substr($line, 0, $position))) {
-                            $fencedTags[] = ['offset' => $offset + $position, 'tag' => $tag,
-                                'reason' => DirectiveRefusalReason::InsideUnclosedFence, 'fenceLine' => $fence['line']];
-                        }
-                    }
+                    array_push($fencedTags, ...self::unclosedFenceTags($line, $offset, $fence['line']));
                 }
                 $lines[$index] = self::blank($line);
             } elseif (($opening = self::openingFence($line)) !== null) {
                 $fence = [...$opening, 'line' => $index + 1];
                 $lines[$index] = self::blank($line);
             } else {
-                foreach (self::tags($line) as [$tag, $position]) {
-                    if (self::atStart(substr($line, 0, $position))) {
-                        continue;
-                    }
-                    $lines[$index] = substr_replace($lines[$index], str_repeat(' ', \strlen($tag)), $position, \strlen($tag));
-                    if (self::isExact($tag) && !self::quoted($line, $position)) {
-                        $mentions[] = ['offset' => $offset + $position, 'tag' => $tag,
-                            'reason' => DirectiveRefusalReason::NotAtLineStart, 'fenceLine' => null];
-                    }
-                }
+                $inline = self::readInline($line, $offset);
+                $lines[$index] = $inline['mask'];
+                array_push($mentions, ...$inline['mentions']);
             }
             $offset += \strlen($line) + 1;
         }
 
         return ['mask' => implode("\n", $lines), 'mentions' => [...$mentions, ...$fencedTags]];
+    }
+
+    /** @return list<array{offset: int, tag: string, reason: DirectiveRefusalReason, fenceLine: ?int}> */
+    private static function unclosedFenceTags(string $line, int $offset, int $fenceLine): array
+    {
+        $mentions = [];
+        foreach (self::tags($line) as [$tag, $position]) {
+            if (self::isExact($tag) && self::atStart(substr($line, 0, $position))) {
+                $mentions[] = ['offset' => $offset + $position, 'tag' => $tag,
+                    'reason' => DirectiveRefusalReason::InsideUnclosedFence, 'fenceLine' => $fenceLine];
+            }
+        }
+
+        return $mentions;
+    }
+
+    /** @return array{mask: string, mentions: list<array{offset: int, tag: string, reason: DirectiveRefusalReason, fenceLine: ?int}>} */
+    private static function readInline(string $line, int $offset): array
+    {
+        $mask = $line;
+        $mentions = [];
+        foreach (self::tags($line) as [$tag, $position]) {
+            if (self::atStart(substr($line, 0, $position))) {
+                continue;
+            }
+            $mask = substr_replace($mask, str_repeat(' ', \strlen($tag)), $position, \strlen($tag));
+            if (self::isExact($tag) && !self::quoted($line, $position)) {
+                $mentions[] = ['offset' => $offset + $position, 'tag' => $tag,
+                    'reason' => DirectiveRefusalReason::NotAtLineStart, 'fenceLine' => null];
+            }
+        }
+
+        return ['mask' => $mask, 'mentions' => $mentions];
     }
 
     /** @return list<array{string, int}> */

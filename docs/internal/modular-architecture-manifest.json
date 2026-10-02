@@ -7009,6 +7009,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges"
         }
       ]
     },
@@ -17012,6 +17016,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges"
         }
       ]
     },
@@ -21769,6 +21777,27 @@
     },
     "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives": {
       "path": "src/Analysis/Policy/Inline/Directive/RefusedDirectives.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationSource": {
+      "path": "src/Analysis/Policy/Inline/Extraction/DeclarationSource.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\SuppressionSyntax": {
+      "path": "src/Analysis/Policy/Inline/Contract/SuppressionSyntax.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Inline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges": {
+      "path": "src/Analysis/Policy/Inline/Extraction/DeclarationRanges.php",
       "kind": "class",
       "owner": "Analysis.Policy.Inline",
       "visibility": "internal",

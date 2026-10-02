@@ -65,7 +65,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
  * `@qmx-threshold`'s own rule name ({@see narrowedTo()}), and a classless
  * producer of the computed-metric family can never own one —
  * `ComputedMetricChannelFamily::SUPPORTS_THRESHOLD_OVERRIDE` is `false` for
- * all seven, refused earlier by {@see ThresholdDirectiveEligibility::refuses()}
+ * all seven, refused earlier by {@see RefusedDirectives::threshold()}
  * before a name ever reaches `execute()`. The execution publication
  * projection's own half of the narrowed result — the per-channel filter — is
  * likewise never read here: {@see without()} reads only `->produced`. A second caller
@@ -77,9 +77,9 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
 
     public function __construct(
         RuleConfigurationInterface $ruleConfiguration,
-        RefusedDirectives $refused,
+        private RefusedDirectives $refused,
     ) {
-        $this->eligibility = new ThresholdDirectiveEligibility($ruleConfiguration, $refused);
+        $this->eligibility = new ThresholdDirectiveEligibility($ruleConfiguration);
     }
 
     public function verdicts(ThresholdDirectiveAuditInput $input): array
@@ -90,7 +90,7 @@ final readonly class ThresholdDirectiveAudit implements ThresholdDirectiveAuditI
         $measurable = [];
 
         foreach ($groups as $group) {
-            if ($this->eligibility->refuses($group)) {
+            if ($this->refused->threshold($group->file, $group->bindings[0]) !== null) {
                 continue;
             }
             $reason = $this->eligibility->reason(

@@ -69,6 +69,8 @@ Finding owns threshold requests and channel admission, and CLI publication
 remains in Infrastructure. Regression tests exercise these product boundaries;
 no additional permanent control of those tests is introduced.
 
+Source carrier recognition and description live in the Inline extraction subject, separately from measured declaration bindings and their reach. Comment readers pass a complete declaration binding rather than nullable fragments. The threshold audit refuses a site before asking whether its producer ran; producer eligibility does not classify refusals. Immutable suppression records carry authored and control facts, rather than injected services. Suppression syntax remains separate from declaration binding, and measured enclosing ranges remain separate from authored reach projection.
+
 ## References
 
 - [Inline policy](../../src/Analysis/Policy/Inline/README.md)

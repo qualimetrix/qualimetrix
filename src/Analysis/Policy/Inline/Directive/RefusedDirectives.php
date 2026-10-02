@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use Closure;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
@@ -31,26 +32,30 @@ final readonly class RefusedDirectives
      */
     public function all(array $suppressionsByFile, array $overridesByFile, array $diagnosticsByFile): array
     {
+        return [
+            ...$this->classifyByFile($suppressionsByFile, $this->suppression(...)),
+            ...$this->classifyByFile($overridesByFile, $this->threshold(...)),
+            ...$this->classifyByFile($diagnosticsByFile, $this->diagnostic(...)),
+        ];
+    }
+
+    /**
+     * @template T
+     *
+     * @param array<string, list<T>> $byFile
+     * @param Closure(RelativePath, T): ?RefusedDirective $classify
+     *
+     * @return list<RefusedDirective>
+     */
+    private function classifyByFile(array $byFile, Closure $classify): array
+    {
         $refused = [];
-        foreach ($suppressionsByFile as $file => $suppressions) {
-            foreach ($suppressions as $suppression) {
-                $refusal = $this->suppression(RelativePath::fromString($file), $suppression);
+        foreach ($byFile as $file => $directives) {
+            foreach ($directives as $directive) {
+                $refusal = $classify(RelativePath::fromString($file), $directive);
                 if ($refusal !== null) {
                     $refused[] = $refusal;
                 }
-            }
-        }
-        foreach ($overridesByFile as $file => $overrides) {
-            foreach ($overrides as $override) {
-                $refusal = $this->threshold(RelativePath::fromString($file), $override);
-                if ($refusal !== null) {
-                    $refused[] = $refusal;
-                }
-            }
-        }
-        foreach ($diagnosticsByFile as $file => $diagnostics) {
-            foreach ($diagnostics as $diagnostic) {
-                $refused[] = $this->diagnostic(RelativePath::fromString($file), $diagnostic);
             }
         }
 

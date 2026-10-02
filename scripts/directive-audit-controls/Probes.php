@@ -2082,8 +2082,8 @@ final class Probes
             Probe::breaking(
                 'judge-the-unaskable',
                 'a directive the addressability check already refused is judged anyway',
-                self::ELIGIBILITY,
-                ['        return $this->refused->threshold($group->file, $group->bindings[0]) !== null;' => '        return false;'],
+                self::AUDIT,
+                ['            if ($this->refused->threshold($group->file, $group->bindings[0]) !== null) {' => '            if (false) {'],
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.ThresholdDirectiveAuditTest::itSkipsAThresholdTheClassifierRefused',
                     'Qualimetrix.Tests.Analysis.Run.Integration.DirectiveAuditPipelineTest::itMergesRefusedSitesOnceWithMeasuredVerdicts',

@@ -167,26 +167,21 @@ final readonly class ThresholdOverrideExtractor
         }
 
         foreach ($matches as $candidate) {
-            if (preg_match(self::PATTERN, $docComment->getText(), $match, \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL, $candidate[0][1]) !== 1) {
+            $match = self::authoredMatch($docComment, $candidate[0][1]);
+            if ($match === null) {
                 continue;
             }
-            if ($match[0][1] !== $candidate[0][1]) {
-                continue;
-            }
-            $rulePattern = $match[1][0];
-            if (!\is_string($rulePattern)) {
-                continue;
-            }
+            $rulePattern = $match['rule'];
 
-            $valueString = self::cleanTrailingDocblock($match[2][0] ?? '');
-            $line = self::lineAtOffset($text, $docComment->getStartLine(), $match[0][1]);
-            $position = self::positionAtOffset($docComment, $match[0][1]);
+            $valueString = self::cleanTrailingDocblock($match['values'] ?? '');
+            $line = self::lineAtOffset($text, $docComment->getStartLine(), $match['offset']);
+            $position = self::positionAtOffset($docComment, $match['offset']);
             $parsed = new ThresholdOverrideValueParser()->parse($valueString);
 
             $problem = $this->problemWith($rulePattern, $valueString, $parsed, $line, $position, $subject, $seenRules);
             if ($problem !== null) {
                 $read['diagnostics'][] = $problem;
-                $read['diagnosticTags'][] = [$docComment, $match[0][1]];
+                $read['diagnosticTags'][] = [$docComment, $match['offset']];
 
                 continue;
             }
@@ -194,7 +189,7 @@ final readonly class ThresholdOverrideExtractor
             $seenRules[$rulePattern] = true;
             $request = $parsed ?? throw new LogicException('An admitted threshold annotation requires parsed values.');
 
-            $read['overrideTags'][] = [$docComment, $match[0][1]];
+            $read['overrideTags'][] = [$docComment, $match['offset']];
             $read['overrides'][] = new ThresholdOverride(
                 rulePattern: $rulePattern,
                 warning: $request->warning,
@@ -205,6 +200,23 @@ final readonly class ThresholdOverrideExtractor
                 endLine: $node->getEndLine() > 0 ? $node->getEndLine() : null,
             );
         }
+    }
+
+    /** @return array{offset: int, rule: string, values: ?string}|null */
+    private static function authoredMatch(Doc $docComment, int $offset): ?array
+    {
+        if (preg_match(self::PATTERN, $docComment->getText(), $match, \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL, $offset) !== 1) {
+            return null;
+        }
+        if ($match[0][1] !== $offset) {
+            return null;
+        }
+        $rulePattern = $match[1][0];
+        if (!\is_string($rulePattern)) {
+            return null;
+        }
+
+        return ['offset' => $offset, 'rule' => $rulePattern, 'values' => $match[2][0]];
     }
 
     /**
