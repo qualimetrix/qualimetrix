@@ -16,7 +16,7 @@ final class ReportRecords
         'json' => ['file', 'line', 'subject', 'symbol', 'channel', 'occurrence', 'edge', 'namespace', 'rule', 'code', 'severity', 'message', 'recommendation', 'metricValue', 'threshold', 'techDebtMinutes', 'acceptedLevel'],
         'suppressed' => ['mechanism', 'suppressor', 'rule', 'channel', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
         'metrics' => ['type', 'name', 'file', 'line', 'metrics'],
-        'directives' => ['file', 'line', 'form', 'target', 'effect', 'reason', 'masked_by', 'boundary_observable'],
+        'directives' => ['file', 'line', 'form', 'target', 'effect', 'reason', 'masked_by', 'boundary_observable', 'refusals'],
     ];
     public const array ARRAYS = ['json' => 'violations', 'suppressed' => 'suppressed', 'metrics' => 'symbols', 'directives' => 'directives'];
 

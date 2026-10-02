@@ -57,7 +57,46 @@ final class ReportRecordsTest extends TestCase
         yield 'json' => ['json', self::finding()];
         yield 'suppressed' => ['suppressed', ['mechanism' => 'inline', 'suppressor' => 'src/A.php:1', 'rule' => 'a.b', 'channel' => 'a.b', 'subject' => 'class:App\\A', 'occurrence' => null, 'edge' => null, 'file' => 'src/A.php', 'line' => 1, 'symbol' => 'App\\A', 'severity' => 'error', 'message' => 'M', 'recommendation' => null]];
         yield 'metrics' => ['metrics', ['type' => 'class', 'name' => 'App\\A', 'file' => 'src/A.php', 'line' => 1, 'metrics' => ['ccn' => 2]]];
-        yield 'directives' => ['directives', ['file' => 'src/A.php', 'line' => 1, 'form' => 'ignore', 'target' => 'a.b', 'effect' => 'applied', 'reason' => null, 'masked_by' => null, 'boundary_observable' => true]];
+        yield 'directives' => ['directives', ['file' => 'src/A.php', 'line' => 1, 'form' => 'ignore', 'target' => 'a.b', 'effect' => 'applied', 'reason' => null, 'masked_by' => null, 'boundary_observable' => true, 'refusals' => []]];
+    }
+
+    #[Test]
+    public function itReadsCurrentDirectiveRecordsOnBothIdentitySidesAndKeepsTheDeclaredLegacyReference(): void
+    {
+        $record = [
+            'file' => 'src/Alpha.php',
+            'line' => 1,
+            'form' => 'symbol',
+            'target' => 'replay.alpha',
+            'effect' => 'refused',
+            'reason' => null,
+            'masked_by' => null,
+            'boundary_observable' => true,
+            'refusals' => [['channel' => 'annotation.unresolved-directive', 'message' => 'Unknown channel.']],
+        ];
+        $run = $this->context();
+        self::assertSame(0, $run->declarations->fields->count());
+        $check = RecordCheck::create($run);
+        foreach (['candidate', 'reference'] as $side) {
+            $fields = $check->fields('directives', 'directives', $side);
+            self::assertSame(array_keys($record), $fields);
+            self::assertSame([$record], ReportRecords::extract('directives', ValueCheck::value(['directives' => [$record]]), $fields));
+            $accepted = $record;
+            $accepted['effect'] = 'effective';
+            $accepted['refusals'] = [];
+            self::assertSame([$accepted], ReportRecords::extract('directives', ValueCheck::value(['directives' => [$accepted]]), $fields));
+        }
+
+        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
+            ['added', 'directives', 'directives', 'refusals', 'Publish explicit refusal details.'],
+        ]));
+        $check = RecordCheck::create($this->context());
+        $legacy = $record;
+        unset($legacy['refusals']);
+        self::assertSame(array_keys($record), $check->fields('directives', 'directives', 'candidate'));
+        self::assertSame(array_keys($legacy), $check->fields('directives', 'directives', 'reference'));
+        self::assertSame([$record], ReportRecords::extract('directives', ValueCheck::value(['directives' => [$record]]), $check->fields('directives', 'directives', 'candidate')));
+        self::assertSame([$legacy], ReportRecords::extract('directives', ValueCheck::value(['directives' => [$legacy]]), $check->fields('directives', 'directives', 'reference')));
     }
 
     #[Test]

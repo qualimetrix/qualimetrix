@@ -212,7 +212,7 @@ final class SelfTestFindingShape extends SelfTestGroup
             'field-values-publication',
             CheckWitnesses::WHOLE_RUN,
             static function (array $tree): array {
-                $record = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true];
+                $record = ['file' => 'src/Alpha.php', 'line' => 1, 'form' => 'symbol', 'target' => 'replay.alpha', 'effect' => 'applied', 'reason' => 'replayed', 'masked_by' => null, 'boundary_observable' => true, 'refusals' => []];
                 $base = json_encode($record, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
                 $record['probe'] = 1;
                 $tree['candidateAnswers']['case:alpha|directives'] = ['stdout' => json_encode(['directives' => [$record], 'exit_code' => 0], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n"];
