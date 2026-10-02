@@ -53,10 +53,10 @@ final readonly class RuleValidatorMapFactory
 
         foreach ($ruleClasses as $ruleClass) {
             if (!class_exists($ruleClass)) {
-                // Defensive symmetry with WorkerBootstrap::canInstantiate() — a
-                // misconfigured rule class string would otherwise surface as
-                // a low-level ReflectionException inside a worker task.
-                continue;
+                throw new LogicException(\sprintf(
+                    'Rule class %s does not exist or cannot be autoloaded while building the threshold validator map.',
+                    $ruleClass,
+                ));
             }
 
             $ruleName = RuleNameReader::read($ruleClass);

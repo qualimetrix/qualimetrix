@@ -89,6 +89,32 @@ final class UnusedDirectiveRuleTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itReportsAnUnusedDirectiveAtWarningByDefault(): void
+    {
+        $findings = self::runWithSuppression('complexity.ccn', auditUsage: true);
+
+        self::assertCount(1, $findings);
+        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+    }
+
+    #[Test]
+    public function itHonoursAnExplicitInfoSeverityForUnusedDirectives(): void
+    {
+        $findings = self::runWithSuppression(
+            'complexity.ccn',
+            options: new InlineDirectiveOptions(unusedDirectiveSeverity: Severity::Info),
+            auditUsage: true,
+        );
+
+        self::assertCount(1, $findings);
+        self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
+        self::assertSame(10, $findings[0]->location->line);
+        self::assertSame(Severity::Info, $findings[0]->severity);
+    }
+
     /**
      * A rule name is not a channel. A level is not part of a channel name, so
      * the rules whose name is not also a channel are the ones emitting several
@@ -718,8 +744,12 @@ final class UnusedDirectiveRuleTest extends TestCase
     /**
      * @return list<Finding>
      */
-    private static function runWithSuppression(string $authored, ?ChannelUniverseInterface $identity = null): array
-    {
+    private static function runWithSuppression(
+        string $authored,
+        ?ChannelUniverseInterface $identity = null,
+        ?InlineDirectiveOptions $options = null,
+        bool $auditUsage = false,
+    ): array {
         $identity ??= self::productionUniverse();
         $policy = self::policy($identity);
         $policy->prepare(
@@ -728,7 +758,11 @@ final class UnusedDirectiveRuleTest extends TestCase
             [],
         );
 
-        return self::analyzeFamily(new InlineDirectiveOptions(), $policy, $identity);
+        $produced = self::analyzeFamily($options ?? new InlineDirectiveOptions(), $policy, $identity);
+
+        return $auditUsage
+            ? [...$produced, ...$policy->auditDirectiveUsage($produced, LevelActivity::empty())]
+            : $produced;
     }
 
     /**
