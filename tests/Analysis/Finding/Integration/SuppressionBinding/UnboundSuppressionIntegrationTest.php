@@ -439,9 +439,9 @@ final class UnboundSuppressionIntegrationTest extends TestCase
 
     /**
      * A regex broad enough to match `(project)` removed the project finding
-     * the same way. It still removes every finding whose namespace it names;
-     * the run does not cover the project root, so the regex itself is not
-     * judged, and the report says so rather than calling it bound.
+     * the same way. It still removes every finding whose namespace it names.
+     * The omitted development tree contains no PHP, so the measured scope
+     * remains complete and the regex is judged as bound.
      */
     #[Test]
     public function itKeepsAProjectFindingUnderABroadPerRuleRegex(): void
@@ -454,8 +454,8 @@ final class UnboundSuppressionIntegrationTest extends TestCase
         self::assertSame(['(project)'], $this->symbolsOn($tester, 'health.typing'));
         self::assertSame([], $this->onChannel($tester, UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER));
         self::assertSame(
-            [['channel' => UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER, 'option' => 'rules.health.typing.suppress_namespaces', 'pattern' => 'regex:.*']],
-            $this->projectScope($tester)['unjudgedValues'] ?? null,
+            ['state' => 'covered', 'uncoveredAutoloadTargets' => [], 'unjudgedChannels' => [], 'unjudgedValues' => [], 'reasons' => []],
+            $this->projectScope($tester),
         );
     }
 
