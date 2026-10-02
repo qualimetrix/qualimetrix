@@ -52,6 +52,7 @@ final class AnalysisFileDiscoveryTest extends TestCase
     public function itUsesCapturedRunPathsForSelection(): void
     {
         file_put_contents($this->root . '/src/A.php', '<?php');
+        file_put_contents($this->root . '/Other.php', '<?php');
         $result = $this->discover([$this->root . '/src'], GeneratedFilePolicy::Include);
 
         self::assertSame(['A.php'], $this->names($result));

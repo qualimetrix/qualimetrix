@@ -7,6 +7,11 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -37,7 +42,7 @@ final class ValueScopeJudgementTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/src', '/tests', '/{legacy}'] as $directory) {
+        foreach (['/src/dir', '/src\\dir', '/src', '/tests', '/{legacy}'] as $directory) {
             @rmdir($this->root . $directory);
         }
         @rmdir($this->root);
@@ -51,9 +56,10 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itJudgesRegexOnlyWhenTheWholeProjectIsAnalysed(): void
     {
-        $judgement = $this->judgement(['src', 'tests']);
+        $judgement = $this->judgement(['src']);
 
         self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+        self::assertTrue($this->judgement(['src', 'tests'])->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
         self::assertTrue($this->judgement([''])->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
     }
 
@@ -84,10 +90,46 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itAnswersTheSameForRegexPathValue(): void
     {
-        $judgement = $this->judgement(['src', 'tests']);
+        $judgement = $this->judgement(['src']);
 
         self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone\\.php')));
+        self::assertTrue($this->judgement(['src', 'tests'])->judgesPathValue($this->regexPath('.*Gone\\.php')));
         self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
+    }
+
+    #[Test]
+    public function itKeepsALiteralBackslashDirectoryDistinctFromASlashDirectory(): void
+    {
+        mkdir($this->root . '/src\\dir');
+        mkdir($this->root . '/src/dir');
+
+        $value = $this->subtreePath('src/dir/Gone');
+
+        self::assertFalse($this->judgement(['src\\dir'])->judgesPathValue($value));
+        self::assertTrue($this->judgement(['src/dir'])->judgesPathValue($value));
+    }
+
+    #[Test]
+    public function itWithholdsALiteralUnderRemovedCodeButJudgesItsNeighbour(): void
+    {
+        $source = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $removed = ExcludeSelectorVerdict::fromMeasuredFacts(
+            $this->subtreePath('src/Legacy'),
+            [$source],
+            ['src/Legacy'],
+            ['src/Legacy'],
+            'php-file',
+            null,
+            [],
+            true,
+        );
+        $scope = new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$removed]);
+        $judgement = new ValueScopeJudgement($this->root, ['Acme\\' => ['src']], [$this->root . '/src'], true, $scope);
+
+        self::assertFalse($judgement->judgesPathValue($this->subtreePath('src/Legacy/Gone')));
+        self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
+        self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
     }
 
     /**

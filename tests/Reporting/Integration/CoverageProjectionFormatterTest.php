@@ -26,6 +26,7 @@ final class CoverageProjectionFormatterTest extends TestCase
             'empty' => new ReportCoverage(0, 0, 0, 0),
             'complete' => new ReportCoverage(1, 1, 0, 0),
             'generated-only' => new ReportCoverage(1, 0, 1, 0),
+            'named-excluded' => new ReportCoverage(0, 0, 0, 0, excluded: 1),
             'partial-failure' => self::failedCoverage(2, 1),
             'all-failed' => self::failedCoverage(1, 0),
         ];
@@ -62,9 +63,11 @@ final class CoverageProjectionFormatterTest extends TestCase
             'github' => self::assertGithubCoverage($output, $coverage),
             'html' => self::assertHtmlCoverage($output, $coverage),
             default => self::assertStringContainsString(
-                $coverage->discovered === 0
+                $coverage->excluded > 0
+                    ? 'Nothing analysed: 1 named path(s) left out by exclude patterns.'
+                    : ($coverage->discovered === 0
                     ? 'No PHP files were discovered.'
-                    : 'Analysis ' . ($coverage->isComplete() ? 'complete' : 'incomplete'),
+                    : 'Analysis ' . ($coverage->isComplete() ? 'complete' : 'incomplete')),
                 $output,
             ),
         };

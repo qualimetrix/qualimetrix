@@ -52,6 +52,14 @@ final readonly class CoverageNarrator
             );
         }
 
+        if ($coverage->analyzed === 0 && $coverage->excluded > 0) {
+            return \sprintf(
+                'Nothing analysed: %d named path(s) left out by exclude patterns%s.',
+                $coverage->excluded,
+                $coverage->generatedExcluded > 0 ? \sprintf(', %d PHP file(s) excluded as generated', $coverage->generatedExcluded) : '',
+            );
+        }
+
         if ($coverage->discovered === 0) {
             return 'No PHP files were discovered.';
         }
@@ -64,9 +72,10 @@ final readonly class CoverageNarrator
         }
 
         return \sprintf(
-            'Analysis complete: %d analyzed, %d generated file(s) excluded.',
+            'Analysis complete: %d analyzed, %d generated file(s) excluded%s.',
             $coverage->analyzed,
             $coverage->generatedExcluded,
+            $coverage->excluded > 0 ? \sprintf(', %d named path(s) left out by exclude patterns', $coverage->excluded) : '',
         );
     }
 }

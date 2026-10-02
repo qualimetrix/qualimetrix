@@ -9,23 +9,24 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
- * A directory the author named as a path and removed with their own `exclude:`
- * used to be skipped by discovery without a word: `check legacy` reported
- * success over zero files. Discovery cannot tell a written root from a composer
- * default, so the refusal is made where the provenance is still known.
+ * A written path excluded by the author remains a measured run with a named
+ * exclusion, regardless of which configuration source supplied its paths.
  */
 #[CoversClass(RunConfigurationResolver::class)]
-final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
+final class WrittenRootExcludedMeasurementTest extends TestCase
 {
     private string $root;
 
@@ -47,84 +48,65 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAWrittenRootTheAuthorsExcludeRemoves(): void
+    public function itMeasuresAWrittenRootTheAuthorsExcludeRemoves(): void
     {
-        $refusal = $this->refusalFor(['legacy'], ['subtree' => 'legacy']);
-
-        self::assertStringContainsString('"legacy"', $refusal->getMessage());
-        self::assertStringContainsString('subtree:legacy', $refusal->getMessage());
+        $this->assertExcluded(['legacy'], ['subtree' => 'legacy'], 'legacy');
     }
 
     #[Test]
-    public function itRefusesTheExcludedRootAmongLawfulOnesAndNamesOnlyIt(): void
+    public function itMeasuresTheExcludedRootAmongLawfulOnesAndNamesOnlyIt(): void
     {
-        $refusal = $this->refusalFor(['src', 'legacy'], ['subtree' => 'legacy']);
-
-        self::assertStringContainsString('"legacy"', $refusal->getMessage());
-        self::assertStringNotContainsString('"src"', $refusal->getMessage());
+        $this->assertExcluded(['src', 'legacy'], ['subtree' => 'legacy'], 'legacy');
     }
 
     #[Test]
-    public function itRefusesAWrittenRootInsideASubtreeTheAuthorExcluded(): void
+    public function itMeasuresAWrittenRootInsideASubtreeTheAuthorExcluded(): void
     {
-        $refusal = $this->refusalFor(['legacy/old'], ['subtree' => 'legacy']);
-
-        self::assertStringContainsString('"legacy/old"', $refusal->getMessage());
+        $this->assertExcluded(['legacy/old'], ['subtree' => 'legacy'], 'legacy/old');
     }
 
     #[Test]
-    public function itRefusesARootWrittenInTheDocumentToo(): void
+    public function itMeasuresARootWrittenInTheDocumentToo(): void
     {
-        $this->expectException(ConfigurationRefusal::class);
-
-        $this->resolve([
+        $configuration = $this->resolve([
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['legacy'], ConfigSchema::EXCLUDES => [['regex' => 'leg.*']]]],
         ]);
+        $files = $this->discover($configuration);
+        self::assertSame(['legacy'], array_map(static fn($path): string => $path->value(), $files->namedExcluded));
+        self::assertSame(ExcludeSelectorOutcome::Removed, $files->selectorVerdicts[0]->outcome);
     }
 
-    /** @return iterable<string, array{list<array{source: string, values: array<string, mixed>}>, list<string>, ?list<string>}> */
+    /** @return iterable<string, array{list<array{source: string, values: array<string, mixed>}>, string}> */
     public static function provideConflictingLayers(): iterable
     {
         yield 'CLI exclude over file paths' => [[
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src']]],
             ['source' => 'cli', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
-        ], ['qmx.yaml', 'cli'], null];
+        ], 'src'];
         yield 'CLI paths over file exclude' => [[
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
             ['source' => 'cli', 'values' => [ConfigSchema::PATHS => ['src']]],
-        ], ['qmx.yaml', 'cli'], null];
+        ], 'src'];
         yield 'later preset excludes earlier paths' => [[
             ['source' => 'preset-first', 'values' => [ConfigSchema::PATHS => ['src']]],
             ['source' => 'preset-second', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
-        ], ['preset-first', 'preset-second'], ['exclude']];
+        ], 'src'];
         yield 'later preset paths over earlier exclusion' => [[
             ['source' => 'preset-first', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
             ['source' => 'preset-second', 'values' => [ConfigSchema::PATHS => ['src']]],
-        ], ['preset-first', 'preset-second'], ['paths']];
+        ], 'src'];
     }
 
     /**
      * @param list<array{source: string, values: array<string, mixed>}> $sources
-     * @param list<string> $expectedSources
-     * @param ?list<string> $expectedPosition
      */
     #[Test]
     #[DataProvider('provideConflictingLayers')]
-    public function itOrdersConflictingSourcesByDocumentPrecedenceAndUsesTheLastPosition(array $sources, array $expectedSources, ?array $expectedPosition): void
+    public function itMeasuresExcludedPathsAcrossConfigurationOrigins(array $sources, string $excludedPath): void
     {
-        try {
-            $this->resolve($sources);
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertSame($expectedSources, array_map(
-                static fn(ConfigurationOrigin $origin): string => $origin->locator() ?? 'cli',
-                $refusal->sources(),
-            ));
-            self::assertSame($expectedPosition, $refusal->position()?->segments);
-
-            return;
-        }
-
-        self::fail('Expected a refusal of the excluded root.');
+        $files = $this->discover($this->resolve($sources));
+        self::assertSame([$excludedPath], array_map(static fn($path): string => $path->value(), $files->namedExcluded));
+        self::assertSame(ExcludeSelectorOutcome::Removed, $files->selectorVerdicts[0]->outcome);
     }
 
     #[Test]
@@ -169,15 +151,11 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
      * @param list<string> $paths
      * @param array<string, string> $exclude
      */
-    private function refusalFor(array $paths, array $exclude): ConfigurationRefusal
+    private function assertExcluded(array $paths, array $exclude, string $expected): void
     {
-        try {
-            $this->resolveWritten($paths, $exclude);
-        } catch (ConfigurationRefusal $refusal) {
-            return $refusal;
-        }
-
-        self::fail('A written root the author excluded was accepted.');
+        $files = $this->discover($this->resolveWritten($paths, $exclude));
+        self::assertSame([$expected], array_map(static fn($path): string => $path->value(), $files->namedExcluded));
+        self::assertSame(ExcludeSelectorOutcome::Removed, $files->selectorVerdicts[0]->outcome);
     }
 
     /**
@@ -197,5 +175,10 @@ final class WrittenRootRemovedByExcludeRefusalTest extends TestCase
     {
         return (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))
             ->resolve(LayeredDocument::of($sources, AbsolutePath::fromString($this->root)));
+    }
+
+    private function discover(RunConfiguration $run): \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles
+    {
+        return (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))->discover($run);
     }
 }

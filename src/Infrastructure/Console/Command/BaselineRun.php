@@ -8,12 +8,15 @@ use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\Formatter\CoverageNarrator;
+use Qualimetrix\Reporting\ReportCoverage;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -43,6 +46,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         private ConfigurationInputAdapter $configurationInputAdapter,
         private RunConfigurationPreparation $runConfigurationPreparation,
         private ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
+        private ErrorStream $errorStream = new ErrorStream(),
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
@@ -70,7 +74,6 @@ final readonly class BaselineRun implements BaselineRunInterface
 
         $run = $this->measuredFindingSet->run(
             $configuration,
-            null,
             new FindingProjectionOptions(
                 suppressPaths: $exclusions->suppressPaths,
                 suppressNamespaces: $exclusions->suppressNamespaces,
@@ -84,6 +87,17 @@ final readonly class BaselineRun implements BaselineRunInterface
         // never turn analysis failure into accepted state.
         if (!$run->result->coverage->isComplete()) {
             throw new IncompleteAnalysisException($run->result->coverage);
+        }
+
+        $coverage = $run->result->coverage;
+        if ($coverage->isIntentionallyEmpty()) {
+            $this->errorStream->write($output, CoverageNarrator::describe(new ReportCoverage(
+                $coverage->discoveredFiles(),
+                $coverage->analyzedFilesCount(),
+                $coverage->generatedExcludedFilesCount(),
+                $coverage->failedFilesCount(),
+                excluded: $coverage->excludedCount(),
+            )));
         }
 
         $projectRoot = $configuration->projectRoot;

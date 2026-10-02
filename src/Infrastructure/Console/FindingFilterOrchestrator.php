@@ -7,6 +7,8 @@ namespace Qualimetrix\Infrastructure\Console;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
@@ -90,7 +92,7 @@ final readonly class FindingFilterOrchestrator
         $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
-            [...$result->findings, ...$this->unboundSuppressions($result, $options, $this->valueScope($resolvedScope))],
+            [...$result->findings, ...$this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope))],
             $result->suppressions,
             $options,
         );
@@ -117,19 +119,17 @@ final readonly class FindingFilterOrchestrator
      * judged exactly by a run that analysed it. Without accepted PSR-4 roots
      * there is no declared map to locate namespace values, so none is judged.
      */
-    private function valueScope(ResolvedCheckScope $resolvedScope): ?ValueScopeJudgement
+    private function valueScope(AnalysisResult $result, ResolvedCheckScope $resolvedScope): ValueScopeJudgement
     {
-        if (!$resolvedScope->coversProjectScope) {
-            return null;
-        }
-
         $scope = $resolvedScope->scope;
+        $measurement = $result->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
 
         return new ValueScopeJudgement(
             $scope->projectRoot->value(),
             $this->composerReader->read($scope->projectRoot)->psr4Roots(),
             array_map(static fn(AbsolutePath $path): string => $path->value(), $scope->paths),
-            projectDeclared: $resolvedScope->measurement->universe->namespaceMapUsable,
+            projectDeclared: $measurement->universe->namespaceMapUsable,
+            scope: $measurement->judgement(),
         );
     }
 
@@ -143,21 +143,41 @@ final readonly class FindingFilterOrchestrator
         AnalysisResult $result,
         FindingProjectionOptions $options,
     ): ReportProjectScope {
-        $valueScope = $this->valueScope($resolvedScope);
-        $source = $this->composerReader->read($resolvedScope->measurement->universe->projectRoot)->source();
+        $valueScope = $this->valueScope($result, $resolvedScope);
+        $measurement = $result->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $judgement = $measurement->judgement();
+        $source = $this->composerReader->read($measurement->universe->projectRoot)->source();
         $reasons = $this->observedProjectScopeReasons->forMainSource($source);
-        $report = $resolvedScope->projectScope->withReasons($reasons);
-
-        if ($valueScope === null) {
-            return $report;
-        }
-
-        return $report->withUnjudgedValues($this->unboundSuppressionAudit->unjudgedValues(
+        $namespaces = $result->namespaceTree?->getAllNamespaces();
+        $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
-            $result->namespaceTree?->getAllNamespaces(),
+            $namespaces,
             $valueScope,
-        ));
+        );
+        foreach ($judgement->excludeSelectors() as $selector) {
+            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::NotJudged, ExcludeSelectorOutcome::CoveredByOtherSource], true)) {
+                $unjudged[] = [
+                    'channel' => ProjectScopeChannels::WALK_CHANNEL,
+                    'option' => 'exclude',
+                    'pattern' => $selector->display,
+                ];
+            }
+        }
+        $judgedChannels = $this->unboundSuppressionAudit->judgedChannels(
+            $options->suppressPaths,
+            $options->suppressNamespaces,
+            $namespaces,
+            $valueScope,
+        );
+        foreach ($judgement->excludeSelectors() as $selector) {
+            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource], true)) {
+                $judgedChannels[] = ProjectScopeChannels::WALK_CHANNEL;
+                break;
+            }
+        }
+
+        return ReportProjectScope::measured($measurement, $unjudged, $judgedChannels)->withReasons($reasons);
     }
 
     /**
@@ -182,12 +202,8 @@ final readonly class FindingFilterOrchestrator
     private function unboundSuppressions(
         AnalysisResult $result,
         FindingProjectionOptions $options,
-        ?ValueScopeJudgement $valueScope,
+        ValueScopeJudgement $valueScope,
     ): array {
-        if ($valueScope === null) {
-            return [];
-        }
-
         return $this->unboundSuppressionAudit->findings(
             $options->suppressPaths,
             $options->suppressNamespaces,

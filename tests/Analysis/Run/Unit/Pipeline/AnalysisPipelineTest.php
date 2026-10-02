@@ -99,7 +99,7 @@ final class AnalysisPipelineTest extends TestCase
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
         $projectFiles = $this->createMock(ProjectFilesInterface::class);
-        $projectFiles->expects(self::once())->method('discover')->with($configuration)->willReturn(self::discovered([]));
+        $projectFiles->expects(self::once())->method('discover')->with(self::identicalTo($configuration))->willReturn(self::discovered([]));
         $collection = self::createStub(CollectionOrchestratorInterface::class);
         $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 

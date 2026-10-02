@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorKind;
@@ -31,12 +32,12 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * PSR-4 map, the paths and whether the manifest declares the project at all as
  * plain data. Reading the manifest here instead
  * would parse it once per configured value and give this class a second
- * opinion about what the run analysed. Measured on a plain repository
- * whose `composer.json` autoloads `src/` for production and `tests/` for dev:
- * `qmx check src/` is a whole-project run by the first question, so
- * `suppress_paths: [tests/Legacy]` — written for `qmx check .` and perfectly
- * correct — was reported as binding to nothing, three channels at once,
- * accusing the author of the caller's choice of path.
+ * opinion about what the run analysed. In a repository with production
+ * `src/` and development `tests/`, a source-only projection could treat
+ * `qmx check src/` as covered while `suppress_paths: [tests/Legacy]` named
+ * code outside that run. The final measurement can instead observe PHP under
+ * `tests/` and report a narrowed path denominator; the value still needs its
+ * own location judgement before "matched nothing" can be claimed.
  *
  * **The question asked here is where the value's own subject lives.** A value
  * names a place; if that place can lie outside the analysed paths, this run
@@ -60,15 +61,17 @@ use Qualimetrix\Core\Pattern\SelectorKind;
  * head — either is a prefix of the other on `\` boundaries — is served from a
  * directory this run did not analyse. `Acme\Tests\Unit` against
  * `"Acme\\Tests\\": "tests/"` on `qmx check src/` is therefore silent, while
- * `Acme\Gone`, compatible with no unanalysed root, is judged.
+ * `Acme\Gone`, compatible with no unanalysed root, is judged when namespace
+ * claims remain open.
  *
- * **Regex definitions are judged only on a complete universe.** Their fragment
- * does not promise a locatable subject, so a partial run stays silent rather
- * than guessing where a match might have existed.
+ * **Regex definitions are judged only on a complete universe without authored
+ * removal.** Their fragment does not promise a locatable subject, so a partial
+ * run stays silent rather than guessing where a match might have existed.
  *
  * **Without a declared production autoload no namespace value is judged.** The
- * PSR-4 map is the only thing that locates a namespace, and a project whose
- * manifest declares no readable production autoload has none for its own code:
+ * PSR-4 map is the only thing that locates a namespace; development roots can
+ * exist without a readable production autoload, but they cannot certify
+ * absence across the project's own code:
  * `suppress_namespaces: [{subtree: Tests}]` on `qmx check src` may name code
  * under a directory the run never read, and "matched nothing" would be a
  * guess. A path value keeps its on-disk anchor and is judged as above. The
@@ -91,6 +94,7 @@ final readonly class ValueScopeJudgement
         private array $psr4Roots,
         private array $analyzedPaths,
         private bool $projectDeclared,
+        private ProjectScopeJudgement $scope = new ProjectScopeJudgement(),
     ) {}
 
     /**
@@ -100,10 +104,13 @@ final readonly class ValueScopeJudgement
     public function judgesPathValue(PathPattern $pattern): bool
     {
         if ($pattern->definition->kind === SelectorKind::Regex) {
-            return $this->coversCompleteUniverse();
+            return $this->coversCompleteUniverse() && !$this->hasAuthoredRemoval();
         }
 
         $anchor = $pattern->definition->value;
+        if ($this->underRemovedEntry($anchor)) {
+            return false;
+        }
 
         $root = self::normalize($this->projectRoot);
         $candidate = $root . '/' . trim($anchor, '/');
@@ -127,12 +134,12 @@ final readonly class ValueScopeJudgement
     {
         // Before the regex branch: a whole-tree run would otherwise judge a
         // regex namespace value here while refusing every literal one.
-        if (!$this->projectDeclared) {
+        if (!$this->projectDeclared || !$this->scope->judgesNamespaceClaims()) {
             return false;
         }
 
         if ($pattern->definition->kind === SelectorKind::Regex) {
-            return $this->coversCompleteUniverse();
+            return $this->coversCompleteUniverse() && !$this->hasAuthoredRemoval();
         }
 
         $head = trim($pattern->definition->value, '\\');
@@ -154,13 +161,48 @@ final readonly class ValueScopeJudgement
         return true;
     }
 
+    private function hasAuthoredRemoval(): bool
+    {
+        foreach ($this->scope->excludeSelectors() as $selector) {
+            if ($selector->removedEntries !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function coversCompleteUniverse(): bool
     {
-        $root = self::resolve($this->projectRoot);
-
-        foreach ($this->analyzedPaths as $analyzedPath) {
-            if (self::resolve($analyzedPath) === $root) {
+        if (!$this->scope->judgesExcludeSelectors()) {
+            return false;
+        }
+        foreach ($this->analyzedPaths as $path) {
+            if (self::resolve($path) === self::resolve($this->projectRoot)) {
                 return true;
+            }
+        }
+        if ($this->psr4Roots === []) {
+            return false;
+        }
+        foreach ($this->psr4Roots as $roots) {
+            foreach ($roots as $root) {
+                if (!$this->isWithinAnalysed(self::normalize($this->projectRoot) . '/' . trim($root, '/'))) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function underRemovedEntry(string $path): bool
+    {
+        foreach ($this->scope->excludeSelectors() as $selector) {
+            foreach ($selector->removedEntries as $removed) {
+                if ($path === $removed || str_starts_with($path, rtrim($removed, '/') . '/')) {
+                    return true;
+                }
             }
         }
 
@@ -213,8 +255,7 @@ final readonly class ValueScopeJudgement
 
     private static function normalize(string $path): string
     {
-        $slashed = str_replace('\\', '/', $path);
-        $trimmed = rtrim($slashed, '/');
+        $trimmed = rtrim($path, '/');
 
         return $trimmed === '' ? '/' : $trimmed;
     }

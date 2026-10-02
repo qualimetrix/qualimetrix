@@ -436,7 +436,7 @@ final class LcomRuleTest extends TestCase
         $repository->method('allCallables')->willReturn([$method, $function, $hook]);
         $rule = new LcomRule(new LcomOptions(excludeMethods: ['BRIDGE', 'brigde', 'BRIGDE', 'helper', 'hookOnly']));
 
-        $findings = $rule->analyze(new AnalysisContext($repository, coversProjectScope: true));
+        $findings = $rule->analyze(new AnalysisContext($repository));
         self::assertCount(3, $findings);
         self::assertSame('cohesion.unmatched-exclude-method', $findings[0]->ruleName);
         self::assertSame('cohesion.unmatched-exclude-method', $findings[0]->code);
@@ -460,7 +460,7 @@ final class LcomRuleTest extends TestCase
         self::assertNotNull($uppercase[0]->occurrenceKey);
         self::assertSame($findings[0]->occurrenceKey->value, $uppercase[0]->occurrenceKey->value);
         self::assertStringContainsString('"BRIGDE"', $uppercase[0]->message);
-        self::assertSame([], $rule->analyze(new AnalysisContext($repository, coversProjectScope: false)));
+        self::assertSame([], $rule->analyze(new AnalysisContext($repository, projectScope: new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement([\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Paths]))));
         self::assertSame([], (new LcomRule(new LcomOptions(enabled: false, excludeMethods: ['missing'])))
             ->analyze(new AnalysisContext($repository)));
 

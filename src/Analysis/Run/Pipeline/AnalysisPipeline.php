@@ -80,7 +80,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     public function analyze(RunConfiguration $configuration): AnalysisResult
     {
         $startTime = hrtime(true);
-        $prepared = $this->preparedRun($configuration);
+        [$prepared, $measuredScope] = $this->preparedRun($configuration);
         $findings = $this->reportedFindings($prepared);
         $duration = (hrtime(true) - $startTime) / 1e9;
 
@@ -100,6 +100,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             namespaceTree: $prepared->namespaceTree,
             thresholdOverrides: $prepared->collection->thresholdOverrides,
             ruleExecution: $prepared->ruleExecution,
+            projectScope: $measuredScope,
         );
     }
 
@@ -115,7 +116,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         RunConfiguration $configuration,
         DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ): DirectiveAuditReport {
-        $prepared = $this->preparedRun($configuration);
+        [$prepared] = $this->preparedRun($configuration);
 
         // What the rules produced, and nothing assembled after them. The
         // channel a run assembles late — `annotation.unused-directive` — used
@@ -153,7 +154,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * would measure a second world, and a difference between two worlds says
      * nothing about a directive.
      */
-    private function preparedRun(RunConfiguration $configuration): PreparedRun
+    /** @return array{PreparedRun, \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement} */
+    private function preparedRun(RunConfiguration $configuration): array
     {
         $profiler = $this->profiler;
 
@@ -169,6 +171,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
         $discoveredFiles = $this->projectFiles->discover($configuration);
+        $measuredScope = $configuration->projectScope->withDiscoveredFiles($discoveredFiles);
         $files = $discoveredFiles->eligibleFiles;
         $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
 
@@ -254,7 +257,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
-            coversProjectScope: $configuration->coversProjectScope,
+            projectScope: $measuredScope->judgement(),
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
         $profiler->stop('rules');
@@ -275,7 +278,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
 
         $profiler->stop('analysis');
 
-        return new PreparedRun(
+        return [new PreparedRun(
             namespaceTree: $namespaceTree,
             collection: $collectionResult,
             context: $context,
@@ -288,8 +291,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                 $discoveredFiles->namedExcluded,
                 $configuration->projectRoot,
             ),
-            unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($discoveredFiles->selectorVerdicts, $configuration->projectRoot),
-        );
+            unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
+        ), $measuredScope];
     }
 
     /** @param list<Dependency> $dependencies */

@@ -5,36 +5,34 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting;
 
 use LogicException;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
 
 /**
- * What the run's paths were, measured against the project's `composer.json`
- * autoload, as every format publishes it.
+ * What the captured project paths and discovered PHP showed about this run's
+ * scope, as the supported formats publish it.
  *
- * Some channels speak only on a run that covers the whole project — a layer
- * that matched nothing, an `exclude:` that removed nothing — and fall silent on
- * a run over a slice of it. The console says so on stderr, which neither `-q`
- * nor a machine format keeps; without this a CI pipeline could not tell "no
- * stale configuration" from "not judged on this run".
+ * Some channels cannot judge absent code on a partial or uncertain run. The
+ * console says so on stderr, which neither `-q` nor a machine format keeps;
+ * without this a CI pipeline could not tell "no stale configuration" from
+ * "not judged on this run".
  *
- * Four states: `covered` (the paths reach every declared autoload target),
- * `narrowed` (they miss some; the channels judged only on a whole-project run
- * were not judged) and `unknown` (the manifest declares no readable production
- * autoload universe, but the whole root permits judgement).
- * `unmeasured` has an incomplete or undeclared universe over a subset, or
- * inferred partial defaults; whole-project channels are withheld.
+ * Four states describe the measured path denominator: `covered` has no known
+ * PHP outside the selected paths, `narrowed` has observed PHP outside them,
+ * `unknown` cannot establish that denominator, and `unmeasured` has an
+ * incomplete source universe over a subset. State alone does not say which
+ * claims were judged. Namespace absence (Q1) closes for missing paths,
+ * unknown universe, generated files or excluded PHP; exclude selectors (Q2)
+ * close only for missing paths or unknown universe. Excluded and generated
+ * code cannot by themselves close Q2.
  *
- * **A run that judges is not a run that judged every value.** On `covered` and
- * `unknown` the suppression channels still ask each configured value whether
- * this run reaches the place it names, and skip one it does not:
- * `suppress_paths: [tests/Legacy]` on `qmx check src/`, with `tests/` declared
- * only for development, or a namespace value with no accepted PSR-4 map
- * locating it. Namespace-map usability is separate from the scope state.
- * `unjudgedValues` names every such
- * value and `unjudgedChannels` the channels they belong to — derived from the
- * values, so the channel list cannot claim a silence no value suffered. On
- * `narrowed` and `unmeasured` the channel list is the whole family: no value
- * of those channels was judged.
+ * **A run can judge one configured value while withholding another in the
+ * same channel.** A literal path under removed code or a namespace with no
+ * usable PSR-4 location can remain unjudged while a neighbouring value is
+ * judged. `unjudgedValues` names each skipped channel, option and pattern;
+ * `unjudgedChannels` names a channel only when no value in it was judged.
+ * This applies even when the final state is `narrowed` or `unknown`.
  *
  * A structured format publishes it where it says something about the report
  * itself: a document under a key of its own, in every state; `sarif` as a
@@ -59,7 +57,7 @@ final readonly class ReportProjectScope
      * @param list<string> $uncoveredAutoloadTargets
      * @param list<string> $unjudgedChannels
      * @param list<ProjectScopeReason> $reasons
-     * @param list<array{option: string, pattern: string}> $unjudgedValues
+     * @param list<array{channel: string, option: string, pattern: string}> $unjudgedValues
      */
     private function __construct(
         public string $state,
@@ -77,6 +75,41 @@ final readonly class ReportProjectScope
     public static function unknown(): self
     {
         return new self(self::UNKNOWN, [], []);
+    }
+
+    /**
+     * @param list<array{channel: string, option: string, pattern: string}> $unjudgedValues
+     * @param list<string> $judgedValueChannels
+     */
+    public static function measured(ProjectScopeMeasurement $measurement, array $unjudgedValues, array $judgedValueChannels): self
+    {
+        $judgement = $measurement->judgement();
+        $withheld = [];
+        if (!$judgement->judgesNamespaceClaims()) {
+            $withheld = ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS;
+        }
+        foreach ($unjudgedValues as $value) {
+            if (!\in_array($value['channel'], $judgedValueChannels, true)) {
+                $withheld[] = $value['channel'];
+            }
+        }
+        if (!$judgement->judgesExcludeSelectors()) {
+            foreach ([...ProjectScopeChannels::VALUE_CHANNELS, ProjectScopeChannels::WALK_CHANNEL] as $channel) {
+                if (!\in_array($channel, $judgedValueChannels, true)) {
+                    $withheld[] = $channel;
+                }
+            }
+        }
+        $withheld = array_values(array_unique($withheld));
+        sort($withheld);
+
+        return new self(
+            $measurement->state()->value,
+            $measurement->uncoveredRoots,
+            $withheld,
+            $unjudgedValues,
+            $measurement->reasons(),
+        );
     }
 
     /**
@@ -128,7 +161,7 @@ final readonly class ReportProjectScope
             $this->state,
             $this->uncoveredAutoloadTargets,
             $channels,
-            array_map(static fn(array $value): array => ['option' => $value['option'], 'pattern' => $value['pattern']], $values),
+            $values,
             $this->reasons,
         );
     }
@@ -157,17 +190,16 @@ final readonly class ReportProjectScope
     public function describe(): ?string
     {
         $description = match ($this->state) {
-            self::UNMEASURED => 'Project scope unmeasured: the selected autoload universe is incomplete or undeclared and these paths do not establish the whole project; whole-project channels were not judged: ' . implode(', ', $this->unjudgedChannels) . '.',
+            self::UNMEASURED => 'Project scope unmeasured: the selected autoload universe is incomplete or undeclared; channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.' . $this->describeUnjudgedValues(),
             self::NARROWED => \sprintf(
-                'Project scope narrowed: the analysed paths do not cover autoload target(s) %s, so these channels,'
-                . ' judged only on a whole-project run, were not judged: %s.',
+                'Project scope narrowed: the analysed paths do not cover %s; channels with no judged value: %s.%s',
                 implode(', ', $this->uncoveredAutoloadTargets),
                 implode(', ', $this->unjudgedChannels),
+                $this->describeUnjudgedValues(),
             ),
-            self::UNKNOWN => 'Project scope unknown: composer.json does not establish a complete production autoload universe,'
-                . ' so the selected whole project root is judged from the analysed paths.'
-                . ($this->unjudgedValues === [] ? '' : ' Some configured values have no analysed location.'
-                    . $this->describeUnjudgedValues()),
+            self::UNKNOWN => 'Project scope unknown: the project universe cannot be established completely.'
+                . ($this->unjudgedChannels === [] ? '' : ' Channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.')
+                . $this->describeUnjudgedValues(),
             default => $this->unjudgedValues === []
                 ? null
                 : 'Project scope covered: the analysed paths cover every autoload target.' . $this->describeUnjudgedValues(),
@@ -181,13 +213,13 @@ final readonly class ReportProjectScope
 
     private function describeUnjudgedValues(): string
     {
-        return \sprintf(
-            ' These configured suppression values name a place this run did not analyse or cannot locate, and were'
-            . ' not judged: %s.',
-            implode(', ', array_map(
-                static fn(array $value): string => \sprintf('%s "%s"', $value['option'], $value['pattern']),
-                $this->unjudgedValues,
-            )),
-        );
+        if ($this->unjudgedValues === []) {
+            return '';
+        }
+
+        return ' Values not judged: ' . implode(', ', array_map(
+            static fn(array $value): string => \sprintf('%s %s "%s"', $value['channel'], $value['option'], $value['pattern']),
+            $this->unjudgedValues,
+        )) . '.';
     }
 }

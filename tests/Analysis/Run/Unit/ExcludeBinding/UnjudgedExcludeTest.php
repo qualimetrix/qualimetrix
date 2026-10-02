@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -95,7 +96,7 @@ final class UnjudgedExcludeTest extends TestCase
         $walked = $this->walk([$this->selector(SelectorKind::Regex, '(?:[^/]+/)*Kept')]);
 
         self::assertSame(ExcludeSelectorOutcome::Removed, $walked->verdicts[0]->outcome);
-        self::assertSame([], (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()))->findings($walked->verdicts, AbsolutePath::fromString($this->root)));
+        self::assertSame([], (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()))->findings(new ProjectScopeJudgement([], [], $walked->verdicts), AbsolutePath::fromString($this->root)));
     }
 
     #[Test]
@@ -126,7 +127,7 @@ final class UnjudgedExcludeTest extends TestCase
         $walked = $this->walk([$selector]);
 
         return (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()))->findings(
-            $walked->verdicts,
+            new ProjectScopeJudgement([], [], $walked->verdicts),
             AbsolutePath::fromString($this->root),
         );
     }

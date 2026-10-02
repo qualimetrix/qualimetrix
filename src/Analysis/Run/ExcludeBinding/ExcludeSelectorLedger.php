@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\ExcludeBinding;
 
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
 use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
 use Qualimetrix\Core\Path\RelativePath;
@@ -114,68 +113,28 @@ final class ExcludeSelectorLedger
         $verdicts = [];
         foreach ($this->selectors as $selector) {
             $display = $selector->display();
-            $bound = $this->bound[$display] ?? [];
-            if ($bound !== []) {
-                $verdicts[] = new ExcludeSelectorVerdict(
-                    $display,
-                    $selector->sources,
-                    ExcludeSelectorOutcome::Removed,
-                    $this->removed[$display] ?? $bound,
-                    $this->phpEvidence[$display] ?? null,
-                );
-                continue;
+            $hidden = [];
+            foreach ($this->removedSubtrees as $subtree) {
+                foreach ($subtree['selectors'] as $covering) {
+                    $hider = $this->selector($covering);
+                    if ($hider !== null) {
+                        $hidden[] = ['directory' => $subtree['directory'], 'selector' => $covering, 'sources' => $hider->sources];
+                    }
+                }
             }
-            if (!$knownUniverse) {
-                $verdicts[] = new ExcludeSelectorVerdict($display, $selector->sources, ExcludeSelectorOutcome::NotJudged);
-                continue;
-            }
-            if (isset($this->unjudgeable[$display])) {
-                $verdicts[] = new ExcludeSelectorVerdict(
-                    $display,
-                    $selector->sources,
-                    ExcludeSelectorOutcome::Unjudgeable,
-                    blockedAt: $this->unjudgeable[$display],
-                );
-                continue;
-            }
-            $verdicts[] = $this->coveredOrUnmatched($selector);
+            $verdicts[] = ExcludeSelectorVerdict::fromMeasuredFacts(
+                $selector->pattern,
+                $selector->sources,
+                $this->bound[$display] ?? [],
+                $this->removed[$display] ?? [],
+                $this->phpEvidence[$display] ?? null,
+                $this->unjudgeable[$display] ?? null,
+                $hidden,
+                $knownUniverse,
+            );
         }
 
         return $verdicts;
-    }
-
-    private function coveredOrUnmatched(AuthoredExclude $selector): ExcludeSelectorVerdict
-    {
-        $same = null;
-        $other = null;
-        foreach ($this->removedSubtrees as $subtree) {
-            if (!$this->couldHide($selector, $subtree['directory'])) {
-                continue;
-            }
-            foreach ($subtree['selectors'] as $covering) {
-                if ($covering === $selector->display()) {
-                    continue;
-                }
-                $coveringSelector = $this->selector($covering);
-                if ($coveringSelector === null) {
-                    continue;
-                }
-                if ($this->hasOtherSource($selector, $coveringSelector)) {
-                    $other ??= $covering;
-                } else {
-                    $same ??= $covering;
-                }
-            }
-        }
-        $outcome = $other !== null ? ExcludeSelectorOutcome::CoveredByOtherSource
-            : ($same !== null ? ExcludeSelectorOutcome::CoveredBySameSource : ExcludeSelectorOutcome::Unmatched);
-
-        return new ExcludeSelectorVerdict(
-            $selector->display(),
-            $selector->sources,
-            $outcome,
-            coveredBy: $other ?? $same,
-        );
     }
 
     private function couldHide(AuthoredExclude $selector, string $directory): bool
@@ -195,15 +154,4 @@ final class ExcludeSelectorLedger
         return null;
     }
 
-    private function hasOtherSource(AuthoredExclude $query, AuthoredExclude $hider): bool
-    {
-        $querySources = array_map(serialize(...), $query->sources);
-        foreach ($hider->sources as $source) {
-            if (!\in_array(serialize($source), $querySources, true)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

@@ -21,7 +21,7 @@ final class LcomExcludedMethods
      */
     public static function findings(AnalysisContext $context, LcomOptions $options): array
     {
-        if (!$context->coversProjectScope || $options->excludeMethods === null || $options->excludeMethods === []) {
+        if (!$context->projectScope->judgesNamespaceClaims() || $options->excludeMethods === null || $options->excludeMethods === []) {
             return [];
         }
 

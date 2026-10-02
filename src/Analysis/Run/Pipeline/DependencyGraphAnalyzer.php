@@ -77,7 +77,7 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             }
         }
 
-        $coverage = new AnalysisCoverage($analyzedFiles, $discovery->generatedExcludedFiles, $failures);
+        $coverage = new AnalysisCoverage($analyzedFiles, $discovery->generatedExcludedFiles, $failures, $discovery->namedExcluded);
 
         // The graph export answers the same question about its own input as a
         // check run does: an entry discovery refused is a hole in the graph,

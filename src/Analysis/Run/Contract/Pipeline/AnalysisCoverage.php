@@ -107,6 +107,12 @@ final readonly class AnalysisCoverage
         return $this->failures === [];
     }
 
+    public function isIntentionallyEmpty(): bool
+    {
+        return $this->analyzedFiles === [] && $this->isComplete()
+            && ($this->excluded !== [] || $this->generatedExcludedFiles !== []);
+    }
+
     /**
      * Records an entry that never became a unit of analysis — a directory
      * symlink, a non-regular file, a directory that could not be listed.

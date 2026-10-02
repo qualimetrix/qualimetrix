@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Configuration;
 
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState;
@@ -20,29 +19,6 @@ use Qualimetrix\Core\Path\AbsolutePath;
 /** Measures the selected code universe once; subsequent Git narrowing uses its captured denominator. */
 final readonly class ProjectScopeCoverage
 {
-    /**
-     * Every channel that is silent on a `Narrowed` run because it reads a
-     * {@see ProjectScopeMeasurement::state()} answer, directly or through the
-     * answer a run configuration or rule context carries — a report names them as not
-     * judged. Only the Architecture names come from their owner's contract:
-     * the others are declared on classes internal to their capability, and
-     * importing Discovery's own would tie this namespace to the one it gates.
-     * A reader added without its channels here reddens `ProjectScopeReadersTest`.
-     *
-     * @var list<string>
-     */
-    public const array WHOLE_PROJECT_CHANNELS = [
-        LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-        LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
-        LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-        'cohesion.unmatched-exclude-method',
-        'coupling.unmatched-framework-namespace',
-        'discovery.unmatched-exclude',
-        'suppression.unmatched-namespace',
-        'suppression.unmatched-path',
-        'suppression.unmatched-rule-ledger',
-    ];
-
     public function __construct(private ComposerManifestReaderInterface $composerReader) {}
 
     /** @param list<AbsolutePath> $analyzedPaths */

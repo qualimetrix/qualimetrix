@@ -847,12 +847,12 @@ final class DirectivesCommandTest extends TestCase
     }
 
     /**
-     * `@generated` files are discovered and then skipped, so a scope of nothing
-     * else discovers files while measuring none — the fourth way to read zero,
-     * and the one a guard on the discovered count lets through.
+     * `@generated` files are discovered and then skipped. With no failures, a
+     * generated-only run is an intentionally empty measurement: the audit
+     * succeeds and explains why no directive was judged.
      */
     #[Test]
-    public function itRefusesAScopeOfNothingButGeneratedFiles(): void
+    public function itReportsAnIntentionallyEmptyGeneratedScope(): void
     {
         $this->writeSource('Generated.php', <<<'SOURCE'
             <?php
@@ -872,8 +872,49 @@ final class DirectivesCommandTest extends TestCase
 
         $tester = $this->audit(['paths' => [$this->tempDir . '/src']]);
 
-        self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('analysed no PHP files', $tester->getErrorOutput());
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('intentionally excluded as generated', $tester->getDisplay());
+
+        $json = self::decode($this->audit(['paths' => [$this->tempDir . '/src'], '--format' => 'json'])->getDisplay());
+        self::assertSame(0, $json['exit_code']);
+        self::assertStringContainsString('intentionally excluded as generated', $json['scope']['note']);
+    }
+
+    #[Test]
+    public function itPrioritizesFailureOverAnExcludedNamedPath(): void
+    {
+        $this->writeSource('Legacy.php', '<?php final class Legacy {}');
+        $this->writeSource('Broken.php', '<?php final class Broken {');
+        $config = $this->writeConfig("exclude:\n  - exact: src/Legacy.php\n");
+
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src'], '--config' => $config, '--format' => 'json']);
+        $payload = self::decode($tester->getDisplay());
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame(4, $payload['exit_code']);
+        self::assertFalse($payload['scope']['complete']);
+        self::assertSame(0, $payload['scope']['analyzed_files']);
+        self::assertSame(1, $payload['scope']['failed_files']);
+
+        $check = $this->runCheck(['paths' => [$this->tempDir . '/src'], '--config' => $config, '--format' => 'json']);
+        self::assertSame(4, $check->getStatusCode());
+        self::assertFalse(self::decode($check->getDisplay())['coverage']['complete']);
+    }
+
+    #[Test]
+    public function itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries(): void
+    {
+        $this->writeSource('Legacy.php', '<?php final class Legacy {}');
+        $this->writeSource('Generated.php', "<?php\n/** @generated */\nfinal class Generated {}\n");
+        mkdir($this->tempDir . '/src/Empty');
+        $config = $this->writeConfig("exclude:\n  - exact: src/Legacy.php\n");
+
+        $tester = $this->audit(['paths' => [$this->tempDir . '/src/Legacy.php', $this->tempDir . '/src/Generated.php', $this->tempDir . '/src/Empty'], '--config' => $config, '--format' => 'json']);
+        $payload = self::decode($tester->getDisplay());
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns, 1 PHP file(s) excluded as generated', $payload['scope']['note']);
+        self::assertStringNotContainsString('every named path', $payload['scope']['note']);
     }
 
     /** A run that measured nothing has no standing to call a tree clean. */

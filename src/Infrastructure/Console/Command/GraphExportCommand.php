@@ -172,11 +172,28 @@ final class GraphExportCommand extends Command
             'count' => $result->coverage->discoveredFiles(),
         ]);
 
-        if ($result->coverage->discoveredFiles() === 0) {
+        if (!$result->coverage->isComplete()) {
+            $this->writeIncompleteAnalysis($output, new IncompleteAnalysisException($result->coverage));
+
+            return self::EXIT_ANALYSIS_INCOMPLETE;
+        }
+
+        if ($result->coverage->discoveredFiles() === 0 && !$result->coverage->isIntentionallyEmpty()) {
             // An analysis outcome, not an input refusal.
             $output->writeln('<error>No files found to analyze</error>');
 
             return self::FAILURE;
+        }
+
+        if ($result->coverage->isIntentionallyEmpty()) {
+            $coverage = $result->coverage;
+            $this->errorStream->write($output, \Qualimetrix\Reporting\Formatter\CoverageNarrator::describe(new \Qualimetrix\Reporting\ReportCoverage(
+                $coverage->discoveredFiles(),
+                $coverage->analyzedFilesCount(),
+                $coverage->generatedExcludedFilesCount(),
+                $coverage->failedFilesCount(),
+                excluded: $coverage->excludedCount(),
+            )));
         }
 
         $this->logger->info('Dependency collection completed', [
@@ -184,12 +201,6 @@ final class GraphExportCommand extends Command
             'skipped' => $result->coverage->skippedFilesCount(),
             'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
-
-        if (!$result->coverage->isComplete()) {
-            $this->writeIncompleteAnalysis($output, new IncompleteAnalysisException($result->coverage));
-
-            return self::EXIT_ANALYSIS_INCOMPLETE;
-        }
 
         $this->logger->info('Dependency graph built', [
             'classes' => \count($result->graph->getAllClasses()),

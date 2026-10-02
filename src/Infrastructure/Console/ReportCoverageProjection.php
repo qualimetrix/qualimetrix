@@ -23,6 +23,7 @@ final class ReportCoverageProjection
             analyzed: $coverage->analyzedFilesCount(),
             generatedExcluded: $coverage->generatedExcludedFilesCount(),
             failed: $coverage->failedFilesCount(),
+            excluded: $coverage->excludedCount(),
             failures: array_map(
                 static fn(AnalysisFailure $failure): CoverageFailure => new CoverageFailure(
                     $failure->path->value(),

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 
 final readonly class AnalysisResult
 {
@@ -64,6 +65,7 @@ final readonly class AnalysisResult
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
         public ?RuleExecutionResult $ruleExecution = null,
+        public ?ProjectScopeMeasurement $projectScope = null,
     ) {
         $this->coverage = $coverage;
         $this->filesAnalyzed = $this->coverage->analyzedFilesCount();
@@ -138,6 +140,7 @@ final readonly class AnalysisResult
             namespaceTree: $this->namespaceTree ?? $other->namespaceTree,
             thresholdOverrides: $mergedThresholdOverrides,
             ruleExecution: $mergedRuleExecution,
+            projectScope: $this->projectScope ?? $other->projectScope,
         );
     }
 

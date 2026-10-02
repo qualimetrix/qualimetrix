@@ -10,10 +10,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
@@ -22,6 +27,7 @@ use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ResolvedCheckScope;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
+use Qualimetrix\Reporting\ReportProjectScope;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -106,7 +112,7 @@ final class CheckScopeResolverTest extends TestCase
                     . ' and discovery skips them unless a path you name lies inside that directory: lib/vendor.'],
                 $result->warnings,
             );
-            self::assertTrue($result->coversProjectScope);
+            self::assertTrue($result->measurement->state()->coversProjectScope());
         } finally {
             unlink($projectRoot . '/composer.json');
             rmdir($projectRoot . '/lib/vendor');
@@ -125,7 +131,7 @@ final class CheckScopeResolverTest extends TestCase
      *
      * @param ?list<string> $targets what the manifest declares, or null for none readable
      * @param list<string> $paths
-     * @param array{state: string, uncoveredAutoloadTargets: list<string>, unjudgedChannels: list<string>, unjudgedValues: list<array{option: string, pattern: string}>} $expected
+     * @param array{state: string, uncoveredAutoloadTargets: list<string>, unjudgedChannels: list<string>, unjudgedValues: list<array{channel: string, option: string, pattern: string}>} $expected
      */
     #[Test]
     #[DataProvider('provideProjectScopes')]
@@ -134,22 +140,34 @@ final class CheckScopeResolverTest extends TestCase
         $projectRoot = sys_get_temp_dir() . '/qmx_check_scope_' . bin2hex(random_bytes(6));
         mkdir($projectRoot . '/src', 0o755, true);
         mkdir($projectRoot . '/lib', 0o755, true);
+        file_put_contents($projectRoot . '/src/A.php', '<?php final class A {}');
+        file_put_contents($projectRoot . '/lib/Other.php', '<?php final class Other {}');
         $reader = self::createStub(ComposerManifestReaderInterface::class);
         $reader->method('read')->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, json_encode(['autoload' => ['classmap' => $targets ?? []]], \JSON_THROW_ON_ERROR)));
+        $resolver = $this->resolver($reader);
 
         try {
-            $result = $this->resolver($reader)->resolve(
+            $configuration = $this->configuration(AbsolutePath::fromString($projectRoot), array_map(
+                static fn(string $path): string => $projectRoot . '/' . $path,
+                $paths,
+            ));
+            $result = $resolver->resolve(
                 $this->input(),
-                $this->configuration(AbsolutePath::fromString($projectRoot), array_map(
-                    static fn(string $path): string => $projectRoot . '/' . $path,
-                    $paths,
-                )),
+                $configuration,
             );
 
-            self::assertSame($covers, $result->coversProjectScope);
-            self::assertSame($expected, array_diff_key($result->projectScope->toArray(), ['reasons' => true]));
-            self::assertSame($result->measurement->universe->reasons, $result->projectScope->reasons);
+            self::assertSame($covers, $result->measurement->state()->coversProjectScope());
+            self::assertSame($covers ? [] : ($targets === null ? [] : ['lib']), $result->measurement->uncoveredRoots);
+            self::assertSame($configuration->projectScope->universe->reasons, $result->measurement->reasons());
+
+            $discovery = (new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()))->discover($configuration);
+            $final = $result->measurement->withDiscoveredFiles($discovery);
+            $report = ReportProjectScope::measured($final, [], []);
+            self::assertSame($expected, array_diff_key($report->toArray(), ['reasons' => true]));
+            self::assertSame($final->reasons(), $report->reasons);
         } finally {
+            unlink($projectRoot . '/src/A.php');
+            unlink($projectRoot . '/lib/Other.php');
             rmdir($projectRoot . '/src');
             rmdir($projectRoot . '/lib');
             rmdir($projectRoot);
@@ -164,16 +182,25 @@ final class CheckScopeResolverTest extends TestCase
         ]];
         yield 'narrowed' => [['src', 'lib'], ['src'], false, [
             'state' => 'narrowed',
-            'uncoveredAutoloadTargets' => ['lib'],
-            'unjudgedChannels' => ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS,
+            'uncoveredAutoloadTargets' => ['lib/Other.php'],
+            'unjudgedChannels' => self::sortedProjectChannels(),
             'unjudgedValues' => [],
         ]];
         yield 'undeclared subset is unmeasured' => [null, ['src'], false, [
             'state' => 'unmeasured',
             'uncoveredAutoloadTargets' => [],
-            'unjudgedChannels' => ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS,
+            'unjudgedChannels' => self::sortedProjectChannels(),
             'unjudgedValues' => [],
         ]];
+    }
+
+    /** @return list<string> */
+    private static function sortedProjectChannels(): array
+    {
+        $channels = ProjectScopeChannels::PROJECT_SCOPED_CHANNELS;
+        sort($channels);
+
+        return $channels;
     }
 
     #[Test]

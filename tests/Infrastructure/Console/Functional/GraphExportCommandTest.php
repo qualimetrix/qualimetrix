@@ -341,6 +341,39 @@ final class GraphExportCommandTest extends TestCase
     }
 
     #[Test]
+    public function itExportsAnEmptyGraphForACompleteNamedExclusion(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace App; final class Legacy {}');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src}]\ncache: {enabled: false}\n");
+
+        $tester = new CommandTester($this->containerCommand());
+        $tester->execute(['--config' => $this->tempDir . '/qmx.yaml'], ['capture_stderr_separately' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringStartsWith('digraph', $tester->getDisplay());
+        self::assertStringContainsString('1 named path(s) left out by exclude patterns', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itLeavesTheGraphArtifactUntouchedWhenAnotherNamedPathFails(): void
+    {
+        mkdir($this->tempDir . '/src');
+        file_put_contents($this->tempDir . '/src/Legacy.php', '<?php namespace App; final class Legacy {}');
+        file_put_contents($this->tempDir . '/src/Broken.php', '<?php final class Broken {');
+        file_put_contents($this->tempDir . '/qmx.yaml', "paths: [src]\nexclude: [{exact: src/Legacy.php}]\ncache: {enabled: false}\n");
+        $destination = $this->tempDir . '/graph.dot';
+        file_put_contents($destination, 'sentinel');
+
+        $tester = new CommandTester($this->containerCommand());
+        $tester->execute(['--config' => $this->tempDir . '/qmx.yaml', '--output' => $destination], ['capture_stderr_separately' => true]);
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame('sentinel', file_get_contents($destination));
+        self::assertStringContainsString('Analysis incomplete', $tester->getErrorOutput());
+    }
+
+    #[Test]
     public function itUsesConfiguredDefaultsAndExclusionsWithoutReadingTheReportFormat(): void
     {
         mkdir($this->tempDir . '/src/Legacy', 0o755, true);

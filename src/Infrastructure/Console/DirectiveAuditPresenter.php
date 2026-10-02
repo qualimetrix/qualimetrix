@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableR
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Reporting\Formatter\CoverageNarrator;
+use Qualimetrix\Reporting\ReportCoverage;
 
 /**
  * The two projections of one directive audit.
@@ -67,6 +69,9 @@ final readonly class DirectiveAuditPresenter
                 $report->coverage->failedFilesCount(),
             );
         }
+        if ($this->coverageNote() !== null) {
+            $lines[] = '  Note         ' . $this->coverageNote();
+        }
         $lines[] = \sprintf('  Sweep        %s', self::sweepLine($report->sweep));
         foreach ($this->selectionLines() as $line) {
             $lines[] = $line;
@@ -105,21 +110,42 @@ final readonly class DirectiveAuditPresenter
         $report = $this->report;
         $filter = $this->selection->filter();
 
+        $scope = [
+            'analyzed_files' => $report->coverage->analyzedFilesCount(),
+            'generated_excluded_files' => $report->coverage->generatedExcludedFilesCount(),
+            'failed_files' => $report->coverage->failedFilesCount(),
+            'complete' => $report->coverage->isComplete(),
+            'produced_findings' => $report->producedFindings,
+        ];
+        if ($this->coverageNote() !== null) {
+            $scope['note'] = $this->coverageNote();
+        }
+
         return self::encode([
             'meta' => ProductIdentity::meta(gmdate('c')),
-            'scope' => [
-                'analyzed_files' => $report->coverage->analyzedFilesCount(),
-                'generated_excluded_files' => $report->coverage->generatedExcludedFilesCount(),
-                'failed_files' => $report->coverage->failedFilesCount(),
-                'complete' => $report->coverage->isComplete(),
-                'produced_findings' => $report->producedFindings,
-            ],
+            'scope' => $scope,
             'selection' => ['only' => $filter === null ? [] : $filter->selectors, 'disabled' => $this->disabledStatements()],
             'sweep' => $report->sweep->value,
             'directives' => array_map(self::verdictToArray(...), $report->verdicts),
             'summary' => DirectiveVerdictTally::of($report->verdicts)->summary(),
             'exit_code' => $exitCode,
         ]);
+    }
+
+    private function coverageNote(): ?string
+    {
+        $coverage = $this->report->coverage;
+        if (!$coverage->isIntentionallyEmpty()) {
+            return null;
+        }
+
+        return CoverageNarrator::describe(new ReportCoverage(
+            $coverage->discoveredFiles(),
+            $coverage->analyzedFilesCount(),
+            $coverage->generatedExcludedFilesCount(),
+            $coverage->failedFilesCount(),
+            excluded: $coverage->excludedCount(),
+        ));
     }
 
     /**

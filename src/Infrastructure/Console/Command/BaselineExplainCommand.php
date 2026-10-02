@@ -105,6 +105,9 @@ final class BaselineExplainCommand extends BaselineCommand
         }
 
         $context = $this->baselineRun->measure($input, $output);
+        if ($context->result()->coverage->isIntentionallyEmpty()) {
+            return self::SUCCESS;
+        }
         $baseline = $baselinePath !== null ? $this->loader->load($baselinePath) : null;
 
         // Addressability is checked here, not in readChannel(): the registry

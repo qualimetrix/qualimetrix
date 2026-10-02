@@ -8,6 +8,7 @@ use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 
@@ -18,17 +19,15 @@ final readonly class UnmatchedExcludeAudit
         private RuleOptionsInterface $options,
     ) {}
 
-    /** @param list<ExcludeSelectorVerdict> $verdicts
-     * @return list<Finding>
-     */
-    public function findings(array $verdicts, AbsolutePath $projectRoot): array
+    /** @return list<Finding> */
+    public function findings(ProjectScopeJudgement $scope, AbsolutePath $projectRoot): array
     {
         if (!$this->options->isEnabled()) {
             return [];
         }
 
         $findings = [];
-        foreach ($verdicts as $verdict) {
+        foreach ($scope->excludeSelectors() as $verdict) {
             if (!$verdict instanceof ExcludeSelectorVerdict) {
                 throw new LogicException('Expected measured exclude selector verdict');
             }
@@ -47,5 +46,18 @@ final readonly class UnmatchedExcludeAudit
         }
 
         return $findings;
+    }
+
+    /** @return list<array{channel: string, option: string, pattern: string}> */
+    public function unjudgedValues(ProjectScopeJudgement $scope): array
+    {
+        $values = [];
+        foreach ($scope->excludeSelectors() as $verdict) {
+            if ($verdict->outcome === ExcludeSelectorOutcome::NotJudged || $verdict->outcome === ExcludeSelectorOutcome::CoveredByOtherSource) {
+                $values[] = ['channel' => 'discovery.unmatched-exclude', 'option' => 'exclude', 'pattern' => $verdict->display];
+            }
+        }
+
+        return $values;
     }
 }

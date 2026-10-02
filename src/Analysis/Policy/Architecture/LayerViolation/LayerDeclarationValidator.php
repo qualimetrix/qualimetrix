@@ -132,7 +132,7 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
         }
 
         $definitions = $evidence->architecture->registry()->definitions();
-        $judgesAbsence = $context->coversProjectScope;
+        $judgesAbsence = $context->projectScope->judgesNamespaceClaims();
 
         return [
             ...DeclaredLayerReachability::coverage($evidence->architecture->coverage(), $evidence->coverageState),

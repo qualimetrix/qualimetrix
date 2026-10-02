@@ -12,4 +12,8 @@ enum ProjectScopeReasonKind: string
     case PrunedTarget = 'pruned-target';
     case MissingTarget = 'missing-target';
     case OmittedComposerRoot = 'omitted-composer-root';
+    case Exclude = 'exclude';
+    case Generated = 'generated';
+    case ExplicitFiles = 'explicit-files';
+    case UnlistableOutsidePaths = 'unlistable-outside-paths';
 }
