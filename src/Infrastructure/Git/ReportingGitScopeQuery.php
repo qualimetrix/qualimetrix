@@ -72,6 +72,7 @@ final readonly class ReportingGitScopeQuery implements GitScopeQueryInterface
 
     private static function isRegularFile(AbsolutePath $filePath): bool
     {
+        // @qmx-ignore-next-line code-smell.error-suppression -- A missing local entry omits optional namespaces while its changed PHP path remains reportable.
         $entry = @lstat($filePath->value());
 
         return $entry !== false && ($entry['mode'] & 0o170000) === 0o100000;
