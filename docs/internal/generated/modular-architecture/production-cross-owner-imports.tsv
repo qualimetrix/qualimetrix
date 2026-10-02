@@ -1980,10 +1980,10 @@ Qualimetrix\Core\Exception\ParseException	Core.Neutral	Qualimetrix\Core\Path\Abs
 Qualimetrix\Core\FileTarget\FileReplacement	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	contract
 Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
-Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Core\FileTarget\PathWalk	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
-Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Core\FileTarget\TargetClaim	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	Qualimetrix\Core\Path\RelativePath	Core.Path	contract

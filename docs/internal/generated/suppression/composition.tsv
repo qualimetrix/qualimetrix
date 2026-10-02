@@ -90,6 +90,7 @@ rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysi
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php	Qualimetrix\Infrastructure\DependencyInjection\Configurator	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	health.cohesion	health.cohesion	(no file)	Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion	warning	1
+rule-namespace-suppression	size.class-count	size.class-count	src/Core/FileTarget/DirectoryFacts.php	Qualimetrix\Core\FileTarget	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php	Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression::__construct	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php	Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing::__construct	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/FormatterContext.php	Qualimetrix\Reporting\FormatterContext::__construct	warning	1

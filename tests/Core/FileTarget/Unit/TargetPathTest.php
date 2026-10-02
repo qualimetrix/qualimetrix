@@ -11,6 +11,9 @@ use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(TargetPath::class)]
 final class TargetPathTest extends TestCase
@@ -132,5 +135,100 @@ final class TargetPathTest extends TestCase
             unlink($base . '/target');
             rmdir($base);
         }
+    }
+
+    #[Test]
+    public function itKeepsTheNativeWarningReasonAndRestoresThePreviousHandler(): void
+    {
+        $script = <<<'PHP'
+namespace Qualimetrix\Core\FileTarget {
+    function lstat(string $path): array|false
+    {
+        if ($path === $GLOBALS['probe_target']) {
+            \trigger_error('Permission denied by qmx probe', \E_USER_WARNING);
+
+            return false;
+        }
+
+        return \lstat($path);
+    }
+}
+
+namespace {
+    require $argv[1];
+    $GLOBALS['probe_target'] = $argv[2];
+    $seen = [];
+    \set_error_handler(static function (int $severity, string $message) use (&$seen): bool {
+        $seen[] = $message;
+
+        return true;
+    });
+    $kind = null;
+    $detail = null;
+    try {
+        \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]);
+    } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
+        $kind = $failure->kind->name;
+        $detail = $failure->detail;
+    }
+    \trigger_error('after native call', \E_USER_WARNING);
+    \restore_error_handler();
+    echo \json_encode(['kind' => $kind, 'detail' => $detail, 'seen' => $seen]);
+}
+PHP;
+
+        $target = realpath(sys_get_temp_dir()) . '/qmx-warning-' . bin2hex(random_bytes(6));
+        $root = \dirname(__DIR__, 4);
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $target]);
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(FileTargetFailureKind::Unopenable->name, $result['kind']);
+        self::assertStringContainsString('Permission denied by qmx probe', $result['detail']);
+        self::assertSame(['after native call'], $result['seen']);
+    }
+
+    #[Test]
+    public function itRestoresThePreviousHandlerWhenANativeCallThrows(): void
+    {
+        $script = <<<'PHP'
+namespace Qualimetrix\Core\FileTarget {
+    function lstat(string $path): array|false
+    {
+        if ($path === $GLOBALS['probe_target']) {
+            throw new \RuntimeException('native probe threw');
+        }
+
+        return \lstat($path);
+    }
+}
+
+namespace {
+    require $argv[1];
+    $GLOBALS['probe_target'] = $argv[2];
+    $seen = [];
+    \set_error_handler(static function (int $severity, string $message) use (&$seen): bool {
+        $seen[] = $message;
+
+        return true;
+    });
+    $thrown = null;
+    try {
+        \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]);
+    } catch (\RuntimeException $failure) {
+        $thrown = $failure->getMessage();
+    }
+    \trigger_error('after native exception', \E_USER_WARNING);
+    \restore_error_handler();
+    echo \json_encode(['thrown' => $thrown, 'seen' => $seen]);
+}
+PHP;
+
+        $target = realpath(sys_get_temp_dir()) . '/qmx-warning-' . bin2hex(random_bytes(6));
+        $root = \dirname(__DIR__, 4);
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $target]);
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame('native probe threw', $result['thrown']);
+        self::assertSame(['after native exception'], $result['seen']);
     }
 }

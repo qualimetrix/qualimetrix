@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\FileTarget;
 
 use LogicException;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Throwable;
 
 final class HeldTarget
 {
@@ -22,68 +20,11 @@ final class HeldTarget
         $this->handle = $handle;
     }
 
-    public static function claim(ResolvedTarget $judged, ClaimMode $mode): self
+    public static function claim(ResolvedTarget $judged): self
     {
-        $now = TargetPath::resolve($judged->spelling);
-        if (!$judged->sameAs($now)) {
-            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $judged->spelling, 'target changed before it could be claimed');
-        }
+        [$target, $handle, $created] = TargetClaim::open($judged);
 
-        if ($now->kind === TargetKind::Absent) {
-            $path = $now->path?->value() ?? throw new LogicException('Absent target has no path');
-            $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
-            try {
-                if (!@link($temporary->path()->value(), $path)) {
-                    self::linkFailure($path);
-                }
-                clearstatcache(true, $path);
-                $named = @lstat($path);
-                $opened = fstat($temporary->handle());
-                if ($named === false || $opened === false || !FileIdentity::fromStat($named)->sameAs(FileIdentity::fromStat($opened))) {
-                    $temporary->cleanupLinkedReferent($path);
-                    throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $judged->spelling, 'new target identity changed after linking');
-                }
-                $temporaryPath = $temporary->path()->value();
-                if (!@unlink($temporaryPath)) {
-                    throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $judged->spelling, 'cannot remove temporary link', error_get_last()['message'] ?? 'unknown error');
-                }
-                $handle = $temporary->takeHandle();
-
-                return new self($now, $handle, true);
-            } finally {
-                $temporary->discard();
-            }
-        }
-
-        if ($now->kind === TargetKind::Stream && $now->streamExposed) {
-            throw new FileTargetFailure(FileTargetFailureKind::ExposedStream, $judged->spelling, 'stream path can be changed by another user');
-        }
-
-        $path = $now->kind === TargetKind::Descriptor ? 'php://fd/' . $now->descriptor : $now->path?->value();
-        $opening = $now->kind === TargetKind::Regular ? 'r+e' : 'we';
-        $handle = @fopen($path ?? '', $opening);
-        if ($handle === false) {
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $judged->spelling, 'cannot open target', error_get_last()['message'] ?? 'unknown error');
-        }
-
-        try {
-            if ($now->kind !== TargetKind::Descriptor) {
-                clearstatcache(true, $path);
-                $named = @lstat($path);
-                $opened = fstat($handle);
-                if ($named === false || $opened === false || $now->identity === null
-                    || !FileIdentity::fromStat($opened)->sameAs($now->identity)
-                    || !FileIdentity::fromStat($named)->sameAs(FileIdentity::fromStat($opened))
-                    || !self::directoriesStillMatch($now)) {
-                    throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $judged->spelling, 'target identity changed while opening');
-                }
-            }
-
-            return new self($now, $handle, false);
-        } catch (Throwable $error) {
-            fclose($handle);
-            throw $error;
-        }
+        return new self($target, $handle, $created);
     }
 
     public function identity(): FileIdentity
@@ -145,9 +86,12 @@ final class HeldTarget
             if ($this->created) {
                 $path = $this->target->path?->value() ?? throw new LogicException('Created target has no path');
                 clearstatcache(true, $path);
-                $named = @lstat($path);
-                if ($named !== false && FileIdentity::fromStat($named)->sameAs($this->identity()) && !@unlink($path)) {
-                    throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot remove unwritten target', error_get_last()['message'] ?? 'unknown error');
+                [$named] = NativeCall::attempt(static fn() => lstat($path));
+                if ($named !== false && FileIdentity::fromStat($named)->sameAs($this->identity())) {
+                    [$removed, $warning] = NativeCall::attempt(static fn() => unlink($path));
+                    if (!$removed) {
+                        throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot remove unwritten target', $warning ?? 'unknown error');
+                    }
                 }
             }
         } finally {
@@ -180,14 +124,15 @@ final class HeldTarget
         $total = \strlen($bytes);
         $offset = 0;
         while ($offset < $total) {
-            $written = @fwrite($handle, substr($bytes, $offset));
+            [$written, $warning] = NativeCall::attempt(static fn() => fwrite($handle, substr($bytes, $offset)));
             if ($written === false || $written === 0) {
-                throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $this->target->spelling, \sprintf('wrote %d of %d bytes', $offset, $total), error_get_last()['message'] ?? 'write returned no bytes');
+                throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $this->target->spelling, \sprintf('wrote %d of %d bytes', $offset, $total), $warning ?? 'write returned no bytes');
             }
             $offset += $written;
         }
-        if (!@fflush($handle)) {
-            throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $this->target->spelling, \sprintf('wrote %d of %d bytes but flush failed', $offset, $total), error_get_last()['message'] ?? 'unknown error');
+        [$flushed, $warning] = NativeCall::attempt(static fn() => fflush($handle));
+        if (!$flushed) {
+            throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $this->target->spelling, \sprintf('wrote %d of %d bytes but flush failed', $offset, $total), $warning ?? 'unknown error');
         }
     }
 
@@ -200,28 +145,4 @@ final class HeldTarget
 
         return $this->handle;
     }
-
-    private static function directoriesStillMatch(ResolvedTarget $target): bool
-    {
-        foreach ($target->directories as $directory) {
-            clearstatcache(true, $directory['path']);
-            $now = @lstat($directory['path']);
-            if ($now === false || !$directory['identity']->sameAs(FileIdentity::fromStat($now))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static function linkFailure(string $path): never
-    {
-        clearstatcache(true, $path);
-        if (@lstat($path) !== false) {
-            throw new FileTargetFailure(FileTargetFailureKind::Appeared, $path, 'target appeared before exclusive creation');
-        }
-
-        throw new FileTargetFailure(FileTargetFailureKind::NoHardLinks, $path, 'filesystem cannot create a hard link', error_get_last()['message'] ?? 'unknown error');
-    }
-
 }

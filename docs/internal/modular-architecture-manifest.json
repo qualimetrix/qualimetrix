@@ -15648,10 +15648,6 @@
         },
         {
           "owner": "Core.FileTarget",
-          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\HeldTarget"
-        },
-        {
-          "owner": "Core.FileTarget",
           "source_fqcn": "Qualimetrix\\Core\\FileTarget\\ProcessOwner"
         },
         {
@@ -15660,11 +15656,15 @@
         },
         {
           "owner": "Core.FileTarget",
-          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TargetPath"
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TemporarySibling"
         },
         {
           "owner": "Core.FileTarget",
-          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TemporarySibling"
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\PathWalk"
+        },
+        {
+          "owner": "Core.FileTarget",
+          "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TargetClaim"
         }
       ]
     },
@@ -21845,13 +21845,6 @@
         }
       ]
     },
-    "Qualimetrix\\Core\\FileTarget\\ClaimMode": {
-      "path": "src/Core/FileTarget/ClaimMode.php",
-      "kind": "enum",
-      "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Core\\FileTarget\\DirectoryFacts": {
       "path": "src/Core/FileTarget/DirectoryFacts.php",
       "kind": "class",
@@ -21959,6 +21952,34 @@
     },
     "Qualimetrix\\Core\\FileTarget\\TemporarySibling": {
       "path": "src/Core/FileTarget/TemporarySibling.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\NativeCall": {
+      "path": "src/Core/FileTarget/NativeCall.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\PathInspection": {
+      "path": "src/Core/FileTarget/PathInspection.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\PathWalk": {
+      "path": "src/Core/FileTarget/PathWalk.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\TargetClaim": {
+      "path": "src/Core/FileTarget/TargetClaim.php",
       "kind": "class",
       "owner": "Core.FileTarget",
       "visibility": "internal",

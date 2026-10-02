@@ -29,7 +29,6 @@ Core/
 ├── Environment/
 │   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
 ├── FileTarget/
-│   ├── ClaimMode.php
 │   ├── DirectoryFacts.php
 │   ├── EntryControl.php
 │   ├── EntryFacts.php
@@ -39,10 +38,14 @@ Core/
 │   ├── FileTargetFailureKind.php
 │   ├── HeldLock.php
 │   ├── HeldTarget.php
+│   ├── NativeCall.php
 │   ├── NewName.php
 │   ├── PathExposure.php
+│   ├── PathInspection.php
+│   ├── PathWalk.php
 │   ├── ProcessOwner.php
 │   ├── ResolvedTarget.php
+│   ├── TargetClaim.php
 │   ├── TargetKind.php
 │   ├── TargetPath.php
 │   └── TemporarySibling.php
@@ -932,16 +935,19 @@ publication; `Core\\Path` only represents paths and its lexical normalization
 is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
 marks storage or delivery failures with complete user-facing messages.
 
-`TargetPath::resolve()` returns a `ResolvedTarget` with target kind, resolved
-path or process descriptor, inode identity, directory identities and exposure
-facts. `EntryControl` judges placement and replacement from directory and entry
-facts. `HeldTarget::claim()` holds an unchanged regular file, an exclusively
-created name or a supplied stream; `write()`, `append()` and `release()` own the
+`TargetPath::resolve()` delegates component inspection to internal `PathWalk`.
+`PathInspection` preserves directory identities and exposure facts in each
+`ResolvedTarget`, alongside target kind, resolved path or process descriptor
+and inode identity. `EntryControl` judges placement and replacement from directory and entry
+facts. `HeldTarget::claim(ResolvedTarget)` uses internal `TargetClaim` to hold
+an unchanged regular file, an exclusively created name or a supplied stream; `write()`, `append()` and `release()` own the
 resource lifecycle. `FileReplacement::replace()` publishes a complete sibling,
 and `HeldLock::acquire()` holds a named lock without truncating it, using a
 monotonic acquisition deadline.
 `TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
-support these operations. `FileTargetFailure` carries an explicit kind, path,
+support these operations. `NativeCall` captures the warning of one filesystem
+call and restores the previous PHP error handler even when the call throws.
+`FileTargetFailure` carries an explicit kind, path,
 reason and optional detail. Consumer policy remains with its subject.
 
 Existing regular files open without truncation and are checked against their

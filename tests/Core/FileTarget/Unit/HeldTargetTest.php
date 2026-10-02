@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Core\FileTarget\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\FileTarget\ClaimMode;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\HeldTarget;
@@ -27,7 +26,7 @@ final class HeldTargetTest extends TestCase
         file_put_contents($path, 'before');
 
         try {
-            $held = HeldTarget::claim(TargetPath::resolve($path), ClaimMode::Replace);
+            $held = HeldTarget::claim(TargetPath::resolve($path));
             self::assertSame('before', file_get_contents($path));
             $held->write('after');
             $held->release();
@@ -49,7 +48,7 @@ final class HeldTargetTest extends TestCase
 
         try {
             try {
-                HeldTarget::claim($judged, ClaimMode::Replace);
+                HeldTarget::claim($judged);
                 self::fail('Changed identity must be refused');
             } catch (FileTargetFailure $failure) {
                 self::assertSame(FileTargetFailureKind::IdentityChanged, $failure->kind);
@@ -88,7 +87,7 @@ namespace {
     $judged = \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]);
     $kind = null;
     try {
-        $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim($judged, \Qualimetrix\Core\FileTarget\ClaimMode::Replace);
+        $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim($judged);
         $held->write('WRITTEN');
         $held->release();
     } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
@@ -128,7 +127,7 @@ PHP;
         $path = $base . '/new';
 
         try {
-            $held = HeldTarget::claim(TargetPath::resolve($path), ClaimMode::Replace);
+            $held = HeldTarget::claim(TargetPath::resolve($path));
             self::assertSame('', file_get_contents($path));
             $held->release();
             self::assertFileDoesNotExist($path);
@@ -151,7 +150,7 @@ PHP;
 
         try {
             try {
-                HeldTarget::claim($judged, ClaimMode::Replace);
+                HeldTarget::claim($judged);
                 self::fail('A dangling link must not be followed during exclusive creation');
             } catch (FileTargetFailure $failure) {
                 self::assertSame(FileTargetFailureKind::IdentityChanged, $failure->kind);
@@ -171,7 +170,7 @@ PHP;
         $path = $base . '/new';
 
         try {
-            $held = HeldTarget::claim(TargetPath::resolve($path), ClaimMode::Replace);
+            $held = HeldTarget::claim(TargetPath::resolve($path));
             unlink($path);
             file_put_contents($path, 'other writer');
             $held->release();
@@ -190,7 +189,7 @@ PHP;
         file_put_contents($path, "one\n");
 
         try {
-            $held = HeldTarget::claim(TargetPath::resolve($path), ClaimMode::Append);
+            $held = HeldTarget::claim(TargetPath::resolve($path));
             $held->append("two\n");
             $held->release();
             self::assertSame("one\ntwo\n", file_get_contents($path));
@@ -209,7 +208,7 @@ PHP;
         $script = <<<'PHP'
 require $argv[1];
 $target = \Qualimetrix\Core\FileTarget\TargetPath::resolve('php://stdout');
-$held = \Qualimetrix\Core\FileTarget\HeldTarget::claim($target, \Qualimetrix\Core\FileTarget\ClaimMode::Replace);
+$held = \Qualimetrix\Core\FileTarget\HeldTarget::claim($target);
 $held->write('after');
 $held->release();
 PHP;
@@ -299,10 +298,7 @@ namespace {
     $GLOBALS['qmx_probe_mode'] = $argv[3];
     $GLOBALS['qmx_probe_writes'] = 0;
     $target = \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]);
-    $claimMode = $argv[4] === 'write'
-        ? \Qualimetrix\Core\FileTarget\ClaimMode::Replace
-        : \Qualimetrix\Core\FileTarget\ClaimMode::Append;
-    $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim($target, $claimMode);
+    $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim($target);
     $kind = null;
     $message = null;
     try {

@@ -95,6 +95,7 @@ src/Analysis/Run/Discovery/WalkedEntrySelection.php	Qualimetrix\Analysis\Run\Dis
 src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger	Analysis.Run	"request scratch or mutable internal value"	-	bound,phpEvidence,removed,removedSubtrees,unjudgeable	bind
 src/Core/FileTarget/HeldLock.php	Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	"request scratch or mutable internal value"	-	handle	-
 src/Core/FileTarget/HeldTarget.php	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	"request scratch or mutable internal value"	-	created,handle	-
+src/Core/FileTarget/PathWalk.php	Qualimetrix\Core\FileTarget\PathWalk	Core.FileTarget	"request scratch or mutable internal value"	-	hops,inspection,parts,todo	-
 src/Core/FileTarget/ProcessOwner.php	Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	"process-wide static"	byDevice	-	-
 src/Core/FileTarget/TemporarySibling.php	Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	"request scratch or mutable internal value"	-	handle,path	-
 src/Core/Symbol/FileDeclarationIndex.php	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	"request scratch or mutable internal value"	-	positions	register

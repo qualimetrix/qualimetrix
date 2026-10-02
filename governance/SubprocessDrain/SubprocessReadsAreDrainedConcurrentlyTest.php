@@ -208,7 +208,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
-        'tests/Core/FileTarget/Unit/HeldTargetTest.php:218' => 'The descriptor regression binds stdout directly to '
+        'tests/Core/FileTarget/Unit/HeldTargetTest.php:217' => 'The descriptor regression binds stdout directly to '
             . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
             . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
             . 'read stream can be left unserviced.',

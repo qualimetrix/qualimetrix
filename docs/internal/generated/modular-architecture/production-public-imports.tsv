@@ -2035,10 +2035,10 @@ Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\RuleProduc
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\Exception\ParseException	Core.Neutral	src/Core/Exception/ParseException.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\FileReplacement	Core.FileTarget	src/Core/FileTarget/FileReplacement.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	src/Core/FileTarget/HeldLock.php	ast-name
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	src/Core/FileTarget/HeldTarget.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\PathWalk	Core.FileTarget	src/Core/FileTarget/PathWalk.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	src/Core/FileTarget/ProcessOwner.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	src/Core/FileTarget/ResolvedTarget.php	ast-name
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	src/Core/FileTarget/TargetPath.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\TargetClaim	Core.FileTarget	src/Core/FileTarget/TargetClaim.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	src/Core/FileTarget/TemporarySibling.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Ast\PhpFileParser	Infrastructure.Ast	src/Infrastructure/Ast/PhpFileParser.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Ast\WorkerParserFactory	Infrastructure.Ast	src/Infrastructure/Ast/WorkerParserFactory.php	ast-name

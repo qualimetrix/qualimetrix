@@ -28,12 +28,12 @@ final class TemporarySibling
                 throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'cannot name a temporary file', $error->getMessage());
             }
             $path = AbsolutePath::fromString(rtrim($directory->value(), '/') . '/' . $name);
-            $handle = @fopen($path->value(), 'x+e');
+            [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
             if ($handle !== false) {
                 $temporary = new self($path, $handle);
                 $opened = fstat($handle);
                 clearstatcache(true, $path->value());
-                $named = @lstat($path->value());
+                [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
                 if ($opened === false || $named === false || !FileIdentity::fromStat($opened)->sameAs(FileIdentity::fromStat($named))) {
                     try {
                         $temporary->cleanupLinkedReferent($path->value());
@@ -46,8 +46,9 @@ final class TemporarySibling
                 return $temporary;
             }
             clearstatcache(true, $path->value());
-            if (@lstat($path->value()) === false) {
-                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path->value(), 'cannot create a temporary file', error_get_last()['message'] ?? 'unknown error');
+            [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
+            if ($named === false) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path->value(), 'cannot create a temporary file', $openWarning ?? 'unknown error');
             }
         }
 
@@ -85,15 +86,18 @@ final class TemporarySibling
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $linkedName, 'cannot inspect linked file for cleanup');
         }
         clearstatcache(true, $linkedName);
-        $link = @readlink($linkedName);
+        [$link] = NativeCall::attempt(static fn() => readlink($linkedName));
         if ($link === false) {
             return;
         }
         $referent = str_starts_with($link, '/') ? $link : \dirname($linkedName) . '/' . $link;
         clearstatcache(true, $referent);
-        $named = @lstat($referent);
-        if ($named !== false && FileIdentity::fromStat($named)->sameAs(FileIdentity::fromStat($opened)) && !@unlink($referent)) {
-            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $linkedName, 'cannot remove a referent created through a symbolic link', error_get_last()['message'] ?? 'unknown error');
+        [$named] = NativeCall::attempt(static fn() => lstat($referent));
+        if ($named !== false && FileIdentity::fromStat($named)->sameAs(FileIdentity::fromStat($opened))) {
+            [$removed, $warning] = NativeCall::attempt(static fn() => unlink($referent));
+            if (!$removed) {
+                throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $linkedName, 'cannot remove a referent created through a symbolic link', $warning ?? 'unknown error');
+            }
         }
     }
 
@@ -105,12 +109,13 @@ final class TemporarySibling
 
         $opened = fstat($this->handle);
         clearstatcache(true, $this->path->value());
-        $named = @lstat($this->path->value());
+        [$named] = NativeCall::attempt(fn() => lstat($this->path->value()));
         if ($named !== false && $opened !== false && FileIdentity::fromStat($opened)->sameAs(FileIdentity::fromStat($named))) {
-            if (!@unlink($this->path->value())) {
+            [$removed, $warning] = NativeCall::attempt(fn() => unlink($this->path->value()));
+            if (!$removed) {
                 fclose($this->handle);
                 $this->handle = null;
-                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->path->value(), 'cannot remove the temporary file', error_get_last()['message'] ?? 'unknown error');
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->path->value(), 'cannot remove the temporary file', $warning ?? 'unknown error');
             }
         }
         fclose($this->handle);

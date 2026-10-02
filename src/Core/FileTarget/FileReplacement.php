@@ -18,59 +18,90 @@ final class FileReplacement
         $path = $target->path?->value() ?? throw new LogicException('Replacement path is missing');
         $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
         try {
-            $handle = $temporary->handle();
-            $total = \strlen($bytes);
-            $offset = 0;
-            while ($offset < $total) {
-                $written = @fwrite($handle, substr($bytes, $offset));
-                if ($written === false || $written === 0) {
-                    throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $target->spelling, \sprintf('wrote %d of %d bytes', $offset, $total), error_get_last()['message'] ?? 'write returned no bytes');
-                }
-                $offset += $written;
-            }
-            if (!@fflush($handle)) {
-                throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $target->spelling, \sprintf('wrote %d of %d bytes but flush failed', $offset, $total), error_get_last()['message'] ?? 'unknown error');
-            }
-
+            self::writeAll($target, $temporary, $bytes);
             $now = TargetPath::resolve($target->spelling);
             if (!$target->sameAs($now)) {
                 throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'target changed before replacement');
             }
 
-            if ($mode === null && $now->kind === TargetKind::Regular) {
-                $old = @lstat($path);
-                if ($old === false) {
-                    throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'target disappeared before replacement');
-                }
-                $mode = $old['mode'] & 07777;
-            }
-            if ($mode === null) {
-                $mode = 0666 & ~umask();
-            }
-            if (!@chmod($temporary->path()->value(), $mode)) {
-                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot set replacement mode', error_get_last()['message'] ?? 'unknown error');
+            $replacementMode = self::replacementMode($target, $now, $path, $mode);
+            [$changed, $warning] = NativeCall::attempt(static fn() => chmod($temporary->path()->value(), $replacementMode));
+            if (!$changed) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot set replacement mode', $warning ?? 'unknown error');
             }
 
-            if ($now->kind === TargetKind::Absent && $newName === NewName::Exclusive) {
-                if (!@link($temporary->path()->value(), $path)) {
-                    clearstatcache(true, $path);
-                    if (@lstat($path) !== false) {
-                        throw new FileTargetFailure(FileTargetFailureKind::Appeared, $target->spelling, 'target appeared before exclusive replacement');
-                    }
-                    throw new FileTargetFailure(FileTargetFailureKind::NoHardLinks, $target->spelling, 'filesystem cannot create a hard link', error_get_last()['message'] ?? 'unknown error');
-                }
-                clearstatcache(true, $path);
-                $named = @lstat($path);
-                $opened = fstat($handle);
-                if ($named === false || $opened === false || !FileIdentity::fromStat($named)->sameAs(FileIdentity::fromStat($opened))) {
-                    $temporary->cleanupLinkedReferent($path);
-                    throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'exclusive replacement identity changed');
-                }
-            } elseif (!@rename($temporary->path()->value(), $path)) {
-                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot publish replacement', error_get_last()['message'] ?? 'unknown error');
-            }
+            self::publish($target, $now, $temporary, $path, $newName);
         } finally {
             $temporary->discard();
+        }
+    }
+
+    private static function writeAll(ResolvedTarget $target, TemporarySibling $temporary, string $bytes): void
+    {
+        $handle = $temporary->handle();
+        $total = \strlen($bytes);
+        $offset = 0;
+        while ($offset < $total) {
+            [$written, $warning] = NativeCall::attempt(static fn() => fwrite($handle, substr($bytes, $offset)));
+            if ($written === false || $written === 0) {
+                throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $target->spelling, \sprintf('wrote %d of %d bytes', $offset, $total), $warning ?? 'write returned no bytes');
+            }
+            $offset += $written;
+        }
+        [$flushed, $warning] = NativeCall::attempt(static fn() => fflush($handle));
+        if (!$flushed) {
+            throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $target->spelling, \sprintf('wrote %d of %d bytes but flush failed', $offset, $total), $warning ?? 'unknown error');
+        }
+    }
+
+    private static function replacementMode(ResolvedTarget $target, ResolvedTarget $now, string $path, ?int $mode): int
+    {
+        if ($mode !== null) {
+            return $mode;
+        }
+        if ($now->kind === TargetKind::Regular) {
+            [$old] = NativeCall::attempt(static fn() => lstat($path));
+            if ($old === false) {
+                throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'target disappeared before replacement');
+            }
+
+            return $old['mode'] & 07777;
+        }
+
+        return 0666 & ~umask();
+    }
+
+    private static function publish(ResolvedTarget $target, ResolvedTarget $now, TemporarySibling $temporary, string $path, NewName $newName): void
+    {
+        if ($now->kind === TargetKind::Absent && $newName === NewName::Exclusive) {
+            self::publishExclusive($target, $temporary, $path);
+
+            return;
+        }
+
+        [$renamed, $warning] = NativeCall::attempt(static fn() => rename($temporary->path()->value(), $path));
+        if (!$renamed) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot publish replacement', $warning ?? 'unknown error');
+        }
+    }
+
+    private static function publishExclusive(ResolvedTarget $target, TemporarySibling $temporary, string $path): void
+    {
+        [$linked, $warning] = NativeCall::attempt(static fn() => link($temporary->path()->value(), $path));
+        if (!$linked) {
+            clearstatcache(true, $path);
+            [$appeared] = NativeCall::attempt(static fn() => lstat($path));
+            if ($appeared !== false) {
+                throw new FileTargetFailure(FileTargetFailureKind::Appeared, $target->spelling, 'target appeared before exclusive replacement');
+            }
+            throw new FileTargetFailure(FileTargetFailureKind::NoHardLinks, $target->spelling, 'filesystem cannot create a hard link', $warning ?? 'unknown error');
+        }
+        clearstatcache(true, $path);
+        [$named] = NativeCall::attempt(static fn() => lstat($path));
+        $opened = fstat($temporary->handle());
+        if ($named === false || $opened === false || !FileIdentity::fromStat($named)->sameAs(FileIdentity::fromStat($opened))) {
+            $temporary->cleanupLinkedReferent($path);
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'exclusive replacement identity changed');
         }
     }
 }

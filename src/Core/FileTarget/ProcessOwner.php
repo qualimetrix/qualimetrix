@@ -18,7 +18,12 @@ final class ProcessOwner
             return posix_geteuid();
         }
 
-        $directory = @stat($nearDirectory);
+        return self::probeUid($nearDirectory);
+    }
+
+    private static function probeUid(string $nearDirectory): int
+    {
+        [$directory] = NativeCall::attempt(static fn() => stat($nearDirectory));
         if ($directory === false) {
             throw new FileTargetFailure(FileTargetFailureKind::OwnerUnknown, $nearDirectory, 'cannot inspect the directory for an owner probe');
         }
@@ -27,21 +32,7 @@ final class ProcessOwner
             return self::$byDevice[$directory['dev']];
         }
 
-        $temporary = null;
-        foreach (array_unique([$nearDirectory, sys_get_temp_dir()]) as $probeDirectory) {
-            try {
-                $temporary = TemporarySibling::create(AbsolutePath::fromString($probeDirectory));
-                break;
-            } catch (FileTargetFailure $failure) {
-                if ($failure->kind !== FileTargetFailureKind::Unopenable) {
-                    throw new FileTargetFailure(FileTargetFailureKind::OwnerUnknown, $nearDirectory, 'owner probe identity was unsafe', $failure->getMessage());
-                }
-            }
-        }
-        if ($temporary === null) {
-            throw new FileTargetFailure(FileTargetFailureKind::OwnerUnknown, $nearDirectory, 'cannot create an owner probe');
-        }
-
+        $temporary = self::createProbe($nearDirectory);
         try {
             try {
                 $opened = fstat($temporary->handle());
@@ -57,5 +48,20 @@ final class ProcessOwner
         } catch (Throwable $error) {
             throw new FileTargetFailure(FileTargetFailureKind::OwnerUnknown, $nearDirectory, 'cannot safely complete the owner probe', $error->getMessage());
         }
+    }
+
+    private static function createProbe(string $nearDirectory): TemporarySibling
+    {
+        foreach (array_unique([$nearDirectory, sys_get_temp_dir()]) as $probeDirectory) {
+            try {
+                return TemporarySibling::create(AbsolutePath::fromString($probeDirectory));
+            } catch (FileTargetFailure $failure) {
+                if ($failure->kind !== FileTargetFailureKind::Unopenable) {
+                    throw new FileTargetFailure(FileTargetFailureKind::OwnerUnknown, $nearDirectory, 'owner probe identity was unsafe', $failure->getMessage());
+                }
+            }
+        }
+
+        throw new FileTargetFailure(FileTargetFailureKind::OwnerUnknown, $nearDirectory, 'cannot create an owner probe');
     }
 }

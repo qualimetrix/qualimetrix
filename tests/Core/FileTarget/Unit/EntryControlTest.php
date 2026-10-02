@@ -41,7 +41,7 @@ final class EntryControlTest extends TestCase
 
         self::assertTrue($group->placeableByOthers);
         self::assertTrue($foreign->placeableByOthers);
-        self::assertNull($foreign->forTrace('/foreign', true));
+        self::assertNull($foreign->forTrace('/foreign', 0));
     }
 
     #[Test]

@@ -9418,9 +9418,11 @@ Available tests:
  - Qualimetrix\Tests\Core\FileTarget\Unit\ProcessOwnerTest::itUsesTheEffectiveUidWhenPosixIsAvailable
  - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itAcceptsAbsoluteFileUrlsAndRefusesOverlongNamesBeforeCreation
  - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itFollowsRelativeLinksBeforeApplyingParentComponents
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itKeepsTheNativeWarningReasonAndRestoresThePreviousHandler
  - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRecognizesDescriptorsBeforeFollowingProcLinks
  - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRefusesAPlaceableLinkEvenWhenTheLinkIsOwned
  - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRefusesUnknownSchemesAndRelativeFileUrls
+ - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itRestoresThePreviousHandlerWhenANativeCallThrows
  - Qualimetrix\Tests\Core\FileTarget\Unit\TargetPathTest::itStopsAtFortySymbolicLinkHops
  - Qualimetrix\Tests\Core\Symbol\Integration\BuiltinNameCaseRunTest::itCountsNoBuiltinAsAnEfferentDependencyInEitherSpelling
  - Qualimetrix\Tests\Core\Symbol\Integration\BuiltinNameCaseRunTest::itMeasuresTheFoldedSpellingAsTheCanonicalOne"Failure coupling.cbo"
