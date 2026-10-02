@@ -14,8 +14,6 @@ use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterfac
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
@@ -39,14 +37,6 @@ final class CheckScopeResolverTest extends TestCase
     public function itUsesTheInitialMeasurementWithoutReadingAfterGitResolution(): void
     {
         $events = [];
-        $factory = $this->createMock(FileDiscoveryFactoryInterface::class);
-        $factory->expects(self::once())->method('create')->willReturnCallback(
-            function () use (&$events): FileDiscoveryInterface {
-                $events[] = 'scope';
-
-                return self::createStub(FileDiscoveryInterface::class);
-            },
-        );
         $reader = $this->createMock(ComposerManifestReaderInterface::class);
         $reader->expects(self::once())->method('read')->willReturnCallback(
             function (AbsolutePath $root) use (&$events): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts {
@@ -56,12 +46,12 @@ final class CheckScopeResolverTest extends TestCase
             },
         );
 
-        $resolver = $this->resolver($factory, $reader);
+        $resolver = $this->resolver($reader);
         $configuration = $this->configuration();
         $result = $resolver->resolve($this->input(), $configuration);
 
         self::assertSame($configuration->projectScope, $result->measurement);
-        self::assertSame(['warnings', 'scope'], $events);
+        self::assertSame(['warnings'], $events);
     }
 
     #[Test]
@@ -71,29 +61,20 @@ final class CheckScopeResolverTest extends TestCase
         mkdir($projectRoot . '/src', 0o755, true);
         mkdir($projectRoot . '/lib', 0o755, true);
         file_put_contents($projectRoot . '/composer.json', '{}');
-        $factory = $this->createMock(FileDiscoveryFactoryInterface::class);
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $factory->expects(self::once())->method('create')->with(
-            self::callback(static fn(AbsolutePath $root): bool => $root->value() === $projectRoot),
-            self::callback(static fn(array $patterns): bool => array_map(
-                static fn(PathPattern $pattern): string => $pattern->definition->display(),
-                $patterns,
-            ) === ['subtree:vendor']),
-        )->willReturn($discovery);
         $reader = $this->createMock(ComposerManifestReaderInterface::class);
         $reader->expects(self::once())->method('read')->with(
             self::callback(static fn(AbsolutePath $path): bool => $path->value() === $projectRoot),
         )->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, json_encode(['autoload' => ['classmap' => ['src', 'lib']]], \JSON_THROW_ON_ERROR)));
 
         try {
-            $result = $this->resolver($factory, $reader)->resolve(
+            $result = $this->resolver($reader)->resolve(
                 $this->input(),
                 $this->configuration(AbsolutePath::fromString($projectRoot), [$projectRoot . '/src']),
             );
 
-            self::assertSame($discovery, $result->scope->fileDiscovery);
             self::assertTrue($result->scope->projectRoot->equals(AbsolutePath::fromString($projectRoot)));
             self::assertCount(1, $result->scope->paths);
+            self::assertSame($projectRoot . '/src', $result->scope->paths[0]->value());
             self::assertCount(1, $result->warnings);
             self::assertStringContainsString('lib', $result->warnings[0]);
         } finally {
@@ -111,13 +92,11 @@ final class CheckScopeResolverTest extends TestCase
         mkdir($projectRoot . '/src', 0o755, true);
         mkdir($projectRoot . '/lib/vendor', 0o755, true);
         file_put_contents($projectRoot . '/composer.json', '{}');
-        $factory = self::createStub(FileDiscoveryFactoryInterface::class);
-        $factory->method('create')->willReturn(self::createStub(FileDiscoveryInterface::class));
         $reader = self::createStub(ComposerManifestReaderInterface::class);
         $reader->method('read')->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, json_encode(['autoload' => ['classmap' => ['src', 'lib/vendor']]], \JSON_THROW_ON_ERROR)));
 
         try {
-            $result = $this->resolver($factory, $reader)->resolve(
+            $result = $this->resolver($reader)->resolve(
                 $this->input(),
                 $this->configuration(AbsolutePath::fromString($projectRoot), [$projectRoot]),
             );
@@ -155,13 +134,11 @@ final class CheckScopeResolverTest extends TestCase
         $projectRoot = sys_get_temp_dir() . '/qmx_check_scope_' . bin2hex(random_bytes(6));
         mkdir($projectRoot . '/src', 0o755, true);
         mkdir($projectRoot . '/lib', 0o755, true);
-        $factory = self::createStub(FileDiscoveryFactoryInterface::class);
-        $factory->method('create')->willReturn(self::createStub(FileDiscoveryInterface::class));
         $reader = self::createStub(ComposerManifestReaderInterface::class);
         $reader->method('read')->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, json_encode(['autoload' => ['classmap' => $targets ?? []]], \JSON_THROW_ON_ERROR)));
 
         try {
-            $result = $this->resolver($factory, $reader)->resolve(
+            $result = $this->resolver($reader)->resolve(
                 $this->input(),
                 $this->configuration(AbsolutePath::fromString($projectRoot), array_map(
                     static fn(string $path): string => $projectRoot . '/' . $path,
@@ -202,14 +179,12 @@ final class CheckScopeResolverTest extends TestCase
     #[Test]
     public function itDoesNotComputeWarningsWhenGitScopeResolutionFails(): void
     {
-        $factory = $this->createMock(FileDiscoveryFactoryInterface::class);
-        $factory->expects(self::never())->method('create');
         $reader = $this->createMock(ComposerManifestReaderInterface::class);
         $reader->expects(self::once())->method('read')->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, '{}'));
 
         $this->expectException(InvalidArgumentException::class);
 
-        $this->resolver($factory, $reader)->resolve($this->input('invalid'), $this->configuration());
+        $this->resolver($reader)->resolve($this->input('invalid'), $this->configuration());
     }
 
     /**
@@ -230,25 +205,21 @@ final class CheckScopeResolverTest extends TestCase
     #[DataProvider('provideReportValuesNoCommandLineSpells')]
     public function itRefusesAReportValueItCannotReadAsWritten(mixed $report, string $refusal, string $message): void
     {
-        $factory = $this->createMock(FileDiscoveryFactoryInterface::class);
-        $factory->expects(self::never())->method('create');
         $reader = $this->createMock(ComposerManifestReaderInterface::class);
         $reader->expects(self::once())->method('read')->willReturnCallback(static fn(AbsolutePath $root): \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts => (new \Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder())->decode($root, '{}'));
 
         $this->expectException($refusal);
         $this->expectExceptionMessage($message);
 
-        $this->resolver($factory, $reader)->resolve($this->input($report), $this->configuration());
+        $this->resolver($reader)->resolve($this->input($report), $this->configuration());
     }
 
-    private function resolver(
-        FileDiscoveryFactoryInterface $factory,
-        ComposerManifestReaderInterface $reader,
-    ): CheckScopeResolver {
+    private function resolver(ComposerManifestReaderInterface $reader): CheckScopeResolver
+    {
         $this->reader = $reader;
 
         return new CheckScopeResolver(
-            new GitScopeResolver($factory),
+            new GitScopeResolver(),
             new ScopeWarningChecker(),
         );
     }

@@ -8,7 +8,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -27,24 +26,20 @@ final readonly class UnmatchedExcludeFinding
      */
     private const string OCCURRENCE_KIND = 'unmatched-exclude-pattern';
 
-    public static function forPattern(PathPattern $pattern): Finding
+    public static function forPattern(string $display, ?string $coveredBy = null): Finding
     {
-        $display = $pattern->definition->display();
-
         return new Finding(
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: UnmatchedExcludeOptions::CHANNEL,
             code: UnmatchedExcludeOptions::CHANNEL,
-            message: \sprintf(
-                'The exclude pattern "%s" matched no directory anywhere in the project, so nothing was left out'
-                . ' for it. Every file it was written to skip was measured, and this report covers them.',
-                $display,
-            ),
+            message: $coveredBy === null
+                ? \sprintf('The exclude pattern "%s" matched no entry in the project, so it leaves nothing out.', $display)
+                : \sprintf('The exclude pattern "%s" matched no entry outside what "%s" already removes.', $display, $coveredBy),
             severity: Severity::Warning,
             recommendation: \sprintf(
-                'Check "%s" against project-relative directory paths. Exact selectors name one directory,'
+                'Check "%s" against project-relative entry paths. Exact selectors name one entry,'
                 . ' subtree selectors include descendants, and regex selectors match the full path. Drop the'
                 . ' entry if its target is gone.',
                 $display,

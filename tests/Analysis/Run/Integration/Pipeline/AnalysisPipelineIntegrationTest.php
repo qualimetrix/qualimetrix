@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 
-use ArrayIterator;
 use PHPUnit\Framework\Attributes\Group;
 
 use PHPUnit\Framework\Attributes\Test;
@@ -58,8 +57,10 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -780,10 +781,16 @@ PHP);
         ?InMemoryMetricRepository $existingRepository = null,
         ?CircularDependencyAnalysis $circularDependencyAnalysis = null,
     ): AnalysisPipeline {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo(sys_get_temp_dir() . '/dummy.php'),
-        ]));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(sys_get_temp_dir() . '/dummy.php')],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
@@ -808,7 +815,7 @@ PHP);
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
 
         return TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)
@@ -835,10 +842,16 @@ PHP);
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,
     ): AnalysisPipeline {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([
-            new SplFileInfo(sys_get_temp_dir() . '/dummy.php'),
-        ]));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(sys_get_temp_dir() . '/dummy.php')],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $orchestrator->method('collect')->willReturnCallback(
@@ -861,7 +874,7 @@ PHP);
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $ruleExecutor->allRules()));
 
         return TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)

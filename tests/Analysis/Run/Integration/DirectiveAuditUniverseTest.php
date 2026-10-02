@@ -36,7 +36,9 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -114,8 +116,16 @@ final class DirectiveAuditUniverseTest extends TestCase
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata->allRules(), channels: $universe));
         $policy = new InlineDirectivePolicy(new DirectiveUsage($universe, $configuration, $universe));
 
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn([new SplFileInfo(__FILE__)]);
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo(__FILE__)],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
 
         $collection = self::createStub(CollectionOrchestratorInterface::class);
         $collection->method('collect')->willReturn(new CollectionPhaseOutput(
@@ -155,7 +165,7 @@ final class DirectiveAuditUniverseTest extends TestCase
         $repositoryFactory->method('create')->willReturn(new InMemoryMetricRepository());
 
         $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($collection)
             ->withRuleExecution($rules)
             ->withRuleConfiguration($configuration)

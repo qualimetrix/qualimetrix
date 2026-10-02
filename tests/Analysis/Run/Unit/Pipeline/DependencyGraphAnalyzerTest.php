@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Unit\Pipeline;
 
-use ArrayIterator;
 use PhpParser\Node;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -15,15 +14,12 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
-use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
-use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
@@ -66,7 +62,6 @@ final class DependencyGraphAnalyzerTest extends TestCase
 
         $result = $this->createAnalyzer($this->parser())->analyze(
             $this->configuration(),
-            new FinderFileDiscovery(),
         );
 
         self::assertTrue($result->coverage->isComplete());
@@ -97,7 +92,6 @@ PHP);
 
         $result = $this->createAnalyzer($this->parser())->analyze(
             $this->configuration(),
-            new FinderFileDiscovery(),
         );
         $classes = array_map(
             static fn($path): string => $path->toCanonical(),
@@ -155,7 +149,6 @@ PHP);
 
         $result = $this->createAnalyzer($parser)->analyze(
             $this->configuration(),
-            new FinderFileDiscovery(),
         );
 
         self::assertFalse($result->coverage->isComplete());
@@ -177,14 +170,13 @@ PHP);
     }
 
     #[Test]
-    public function itKeepsSharedDiscoveryRefusalsWhenThePortYieldsADirectory(): void
+    public function itKeepsRealDirectoryLinkRefusalsBeforeParsing(): void
     {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([new SplFileInfo($this->tempDir)]));
+        symlink($this->tempDir, $this->tempDir . '/Link.php');
         $parser = $this->createMock(FileParserInterface::class);
         $parser->expects(self::never())->method('parse');
 
-        $result = $this->createAnalyzer($parser)->analyze($this->configuration(), $discovery);
+        $result = $this->createAnalyzer($parser)->analyze($this->configuration());
 
         self::assertFalse($result->coverage->isComplete());
         self::assertSame(0, $result->coverage->analyzedFilesCount());
@@ -195,7 +187,7 @@ PHP);
     private function createAnalyzer(FileParserInterface $parser): DependencyGraphAnalyzer
     {
         return new DependencyGraphAnalyzer(
-            $this->analysisFileDiscovery(),
+            new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()),
             $parser,
             new DependencyVisitor(new DependencyResolver()),
             AdjacencyGraphBuilder::builder(),
@@ -207,15 +199,6 @@ PHP);
     {
         $root = AbsolutePath::fromString($this->tempDir);
         return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
-    }
-
-    private function analysisFileDiscovery(): AnalysisFileDiscovery
-    {
-        return new AnalysisFileDiscovery(
-            new FinderFileDiscovery(),
-            new GeneratedFileFilter(),
-            new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()),
-        );
     }
 
     private function parser(): FileParserInterface

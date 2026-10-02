@@ -8,10 +8,6 @@ use SplFileInfo;
 
 interface GeneratedFileFilterInterface
 {
-    /**
-     * @param list<SplFileInfo> $files
-     *
-     * @return list<SplFileInfo>
-     */
-    public function filter(array $files): array;
+    /** True for generated, false for ordinary, null when the header cannot be read. */
+    public function isGenerated(SplFileInfo $file): ?bool;
 }

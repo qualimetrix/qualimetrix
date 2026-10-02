@@ -11,11 +11,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -33,42 +31,21 @@ final readonly class LayerAssignmentResolver
         private DependencyGraphBuilderInterface $graphBuilder,
         private LayerAssignmentInspectorInterface $layerAssignmentInspector,
         private MetricRepositoryFactoryInterface $repositoryFactory,
-        private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
-        private GeneratedFileFilterInterface $generatedFileFilter,
+        private ProjectFilesInterface $projectFiles,
     ) {}
 
     /**
-     * @param list<string> $paths
-     * @param list<PathPattern> $pathExcludes
-     *
      * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
      */
     public function resolve(
-        array $paths,
-        array $pathExcludes,
-        AbsolutePath $projectRoot,
+        RunConfiguration $configuration,
         SymbolPath $symbol,
     ): array {
         return $this->resolveFiles(
-            $this->generatedFileFilter->filter($this->discoverFiles($paths, $pathExcludes, $projectRoot)),
-            $projectRoot,
+            $this->projectFiles->discover($configuration)->eligibleFiles,
+            $configuration->projectRoot,
             $symbol,
         );
-    }
-
-    /**
-     * @param list<string> $paths
-     * @param list<PathPattern> $pathExcludes
-     *
-     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
-     */
-    public function resolveIncludingGenerated(
-        array $paths,
-        array $pathExcludes,
-        AbsolutePath $projectRoot,
-        SymbolPath $symbol,
-    ): array {
-        return $this->resolveFiles($this->discoverFiles($paths, $pathExcludes, $projectRoot), $projectRoot, $symbol);
     }
 
     /**
@@ -110,23 +87,6 @@ final readonly class LayerAssignmentResolver
             'firstEstablished' => $assignment->firstEstablished,
             'reportedShadows' => $assignment->reportedShadows,
         ];
-    }
-
-    /**
-     * @param list<string> $paths
-     * @param list<PathPattern> $pathExcludes
-     *
-     * @return list<SplFileInfo>
-     */
-    private function discoverFiles(array $paths, array $pathExcludes, AbsolutePath $projectRoot): array
-    {
-        $fileDiscovery = $this->fileDiscoveryFactory->create($projectRoot, $pathExcludes);
-        $absolutePaths = array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $projectRoot),
-            $paths,
-        );
-
-        return array_values(iterator_to_array($fileDiscovery->discover($absolutePaths), false));
     }
 
     /**

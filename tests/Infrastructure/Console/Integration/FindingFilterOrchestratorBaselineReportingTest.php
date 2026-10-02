@@ -21,7 +21,6 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -221,7 +220,6 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
             self::diagnosticConsole($output),
             new GitScopeResolution(
                 paths: [$projectRoot],
-                fileDiscovery: self::createStub(FileDiscoveryInterface::class),
                 gitClient: null,
                 reportScope: null,
                 projectRoot: $projectRoot,
@@ -402,7 +400,6 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
                 static fn(string $path): AbsolutePath => AbsolutePath::fromString($projectRoot->value() . '/' . $path),
                 $paths,
             ),
-            fileDiscovery: self::createStub(FileDiscoveryInterface::class),
             gitClient: null,
             reportScope: null,
             projectRoot: $projectRoot,

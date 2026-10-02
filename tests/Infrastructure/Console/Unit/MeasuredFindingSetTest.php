@@ -19,8 +19,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -58,7 +56,6 @@ final class MeasuredFindingSetTest extends TestCase
 
         $set = $this->createSet(
             [$ignored, $reported],
-            new FindingProjectionOptions(),
             [
                 'src/Legacy/Service.php' => [
                     new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
@@ -82,7 +79,6 @@ final class MeasuredFindingSetTest extends TestCase
         );
         $set = $this->createSet(
             [$excludedByPath, $excludedByNamespace, $reported],
-            $options,
         );
 
         self::assertSame([$reported], $set->forRun(
@@ -103,7 +99,7 @@ final class MeasuredFindingSetTest extends TestCase
     {
         $onlyExcludedByAFlag = self::finding('vendor/library/SomeClass.php', 'App\\Vendor', 'SomeClass');
 
-        $set = $this->createSet([$onlyExcludedByAFlag], new FindingProjectionOptions());
+        $set = $this->createSet([$onlyExcludedByAFlag]);
 
         self::assertSame(
             [$onlyExcludedByAFlag],
@@ -121,10 +117,7 @@ final class MeasuredFindingSetTest extends TestCase
     #[Test]
     public function itListsOnlyStagesThatDefineTheMeasuredSet(): void
     {
-        $set = $this->createSet([], new FindingProjectionOptions(
-            suppressPaths: [self::path('generated')],
-            suppressNamespaces: [self::namespace('App\\Vendor')],
-        ));
+        $set = $this->createSet([]);
 
         foreach ([FindingFilterStage::Suppression, FindingFilterStage::PathExclusion, FindingFilterStage::NamespaceExclusion] as $stage) {
             self::assertTrue($stage->definesMeasuredSet());
@@ -145,7 +138,6 @@ final class MeasuredFindingSetTest extends TestCase
 
         $set = $this->createSet(
             [$ignored, $reported],
-            new FindingProjectionOptions(),
             [
                 'src/Legacy/Service.php' => [
                     new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
@@ -160,7 +152,7 @@ final class MeasuredFindingSetTest extends TestCase
     }
 
     #[Test]
-    public function itBuildsDefaultDiscoveryFromTheRunPathExcludes(): void
+    public function itPassesTheCapturedRunConfigurationToAnalysisOnce(): void
     {
         $root = AbsolutePath::fromString(sys_get_temp_dir());
         $configuration = new RunConfiguration(
@@ -174,37 +166,14 @@ final class MeasuredFindingSetTest extends TestCase
             authoredPathExcludes: [],
             autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
         );
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $factory = self::createMock(FileDiscoveryFactoryInterface::class);
-        $factory->expects(self::once())
-            ->method('create')
-            ->with($configuration->projectRoot, $configuration->pathExcludes)
-            ->willReturn($discovery);
         $analyzer = self::createMock(AnalysisPipelineInterface::class);
         $analyzer->expects(self::once())
             ->method('analyze')
-            ->with($configuration, $discovery)
+            ->with(self::identicalTo($configuration))
             ->willReturn(self::analysisResult([]));
 
-        $this->createSet([], new FindingProjectionOptions(), analyzer: $analyzer, discoveryFactory: $factory)
+        $this->createSet([], analyzer: $analyzer)
             ->run($configuration);
-    }
-
-    #[Test]
-    public function itUsesExplicitDiscoveryWithoutCallingTheFactory(): void
-    {
-        $configuration = $this->configuration();
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $factory = self::createMock(FileDiscoveryFactoryInterface::class);
-        $factory->expects(self::never())->method('create');
-        $analyzer = self::createMock(AnalysisPipelineInterface::class);
-        $analyzer->expects(self::once())
-            ->method('analyze')
-            ->with($configuration, $discovery)
-            ->willReturn(self::analysisResult([]));
-
-        $this->createSet([], new FindingProjectionOptions(), analyzer: $analyzer, discoveryFactory: $factory)
-            ->run($configuration, $discovery);
     }
 
     /**
@@ -213,18 +182,12 @@ final class MeasuredFindingSetTest extends TestCase
      */
     private function createSet(
         array $findings,
-        FindingProjectionOptions $configuration,
         array $suppressions = [],
         ?AnalysisPipelineInterface $analyzer = null,
-        ?FileDiscoveryFactoryInterface $discoveryFactory = null,
     ): MeasuredFindingSet {
         if ($analyzer === null) {
             $analyzer = self::createStub(AnalysisPipelineInterface::class);
             $analyzer->method('analyze')->willReturn(self::analysisResult($findings, $suppressions));
-        }
-        if ($discoveryFactory === null) {
-            $discoveryFactory = self::createStub(FileDiscoveryFactoryInterface::class);
-            $discoveryFactory->method('create')->willReturn(self::createStub(FileDiscoveryInterface::class));
         }
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
@@ -240,7 +203,7 @@ final class MeasuredFindingSetTest extends TestCase
             },
         );
 
-        return new MeasuredFindingSet($analyzer, $projector, $discoveryFactory);
+        return new MeasuredFindingSet($analyzer, $projector);
     }
 
     /**

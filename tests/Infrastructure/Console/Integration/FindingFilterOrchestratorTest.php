@@ -21,7 +21,6 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -87,7 +86,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             $anchor->pointAt($root, ['/qmx-missing-' . bin2hex(random_bytes(6)) . '/src']);
             $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage($reader))->measure(AbsolutePath::fromString($root), [AbsolutePath::fromString($root . '/dependency')], \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
             $reader->read(AbsolutePath::fromString($root . '/dependency'));
-            $scope = new GitScopeResolution($measurement->paths, self::createStub(FileDiscoveryInterface::class), null, null, AbsolutePath::fromString($root));
+            $scope = new GitScopeResolution($measurement->paths, null, null, AbsolutePath::fromString($root));
             $report = $this->createOrchestrator($reader, $anchor)->projectScope(new ResolvedCheckScope($scope, [], $measurement, ReportProjectScope::narrowed(['src/A.php'], \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS)), $this->createAnalysisResult(), new FindingProjectionOptions());
             self::assertSame('narrowed', $report->state);
             self::assertCount(9, $report->unjudgedChannels);
@@ -516,7 +515,6 @@ final class FindingFilterOrchestratorTest extends TestCase
     {
         return new GitScopeResolution(
             paths: [],
-            fileDiscovery: self::createStub(FileDiscoveryInterface::class),
             gitClient: null,
             reportScope: null,
             projectRoot: AbsolutePath::fromString(sys_get_temp_dir()),

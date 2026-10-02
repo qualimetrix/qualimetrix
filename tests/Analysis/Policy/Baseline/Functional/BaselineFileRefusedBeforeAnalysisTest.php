@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -263,11 +262,11 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
 
             public function __construct(private readonly AnalysisPipelineInterface $delegate) {}
 
-            public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult
+            public function analyze(RunConfiguration $configuration): AnalysisResult
             {
                 ++$this->calls;
 
-                return $this->delegate->analyze($configuration, $customFileDiscovery);
+                return $this->delegate->analyze($configuration);
             }
         };
 

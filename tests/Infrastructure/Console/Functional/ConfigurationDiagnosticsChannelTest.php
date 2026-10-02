@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -114,13 +114,13 @@ final class ConfigurationDiagnosticsChannelTest extends TestCase
     public function itRefusesAnUnknownSelectorBeforeDiscoveryAndThroughTheRealCli(): void
     {
         file_put_contents($this->directory . '/qmx.yaml', "paths: [src]\nonly_rules: [nosuch.channel]\ncache: {enabled: false}\nparallel: {workers: 0}\n");
-        $discovery = self::createMock(FileDiscoveryFactoryInterface::class);
-        $discovery->expects(self::never())->method('create');
+        $discovery = self::createMock(ProjectFilesInterface::class);
+        $discovery->expects(self::never())->method('discover');
         $container = (new ContainerFactory())->configure();
-        $container->removeAlias(FileDiscoveryFactoryInterface::class);
-        $container->register(FileDiscoveryFactoryInterface::class)->setSynthetic(true)->setPublic(true);
+        $container->removeAlias(ProjectFilesInterface::class);
+        $container->register(ProjectFilesInterface::class)->setSynthetic(true)->setPublic(true);
         $container->compile();
-        $container->set(FileDiscoveryFactoryInterface::class, $discovery);
+        $container->set(ProjectFilesInterface::class, $discovery);
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $tester = new CommandTester($command);

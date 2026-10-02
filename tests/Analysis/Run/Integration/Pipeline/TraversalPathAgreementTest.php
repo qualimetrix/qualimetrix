@@ -14,12 +14,10 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
-use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -111,13 +109,13 @@ final class TraversalPathAgreementTest extends TestCase
         };
 
         $analyzer = new DependencyGraphAnalyzer(
-            $this->analysisFileDiscovery(),
+            new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()),
             new PhpFileParser(),
             new DependencyVisitor(),
             $builder,
             new DeclarationRegistrarFactory(),
         );
-        $result = $analyzer->analyze($this->configuration(), $this->fileDiscovery());
+        $result = $analyzer->analyze($this->configuration());
 
         self::assertSame([], $result->coverage->failures);
 
@@ -128,29 +126,6 @@ final class TraversalPathAgreementTest extends TestCase
     {
         $root = $this->projectRoot();
         return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
-    }
-
-    private function analysisFileDiscovery(): AnalysisFileDiscovery
-    {
-        return new AnalysisFileDiscovery(
-            $this->fileDiscovery(),
-            new GeneratedFileFilter(),
-            new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()),
-        );
-    }
-
-    private function fileDiscovery(): FileDiscoveryInterface
-    {
-        $file = new SplFileInfo($this->root . '/src/Dup.php');
-
-        return new class ($file) implements FileDiscoveryInterface {
-            public function __construct(private readonly SplFileInfo $file) {}
-
-            public function discover(AbsolutePath|array $paths): iterable
-            {
-                yield AbsolutePath::fromString($this->file->getPathname()) => $this->file;
-            }
-        };
     }
 
     private function projectRoot(): AbsolutePath

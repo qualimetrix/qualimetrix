@@ -22,7 +22,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
@@ -31,7 +31,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\InlineDirectiveRun;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -61,7 +61,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     private readonly DependencyGraphBuilderInterface $graphBuilder;
 
     public function __construct(
-        private readonly AnalysisFileDiscovery $analysisFileDiscovery,
+        private readonly ProjectFilesInterface $projectFiles,
+        private readonly UnmatchedExcludeAudit $unmatchedExcludeAudit,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly RuleExecutionInterface $ruleExecutor,
         private readonly RuleProducerPreparation $ruleProducerPreparation,
@@ -76,10 +77,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $this->graphBuilder = $graphBuilder;
     }
 
-    public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery = null): AnalysisResult
+    public function analyze(RunConfiguration $configuration): AnalysisResult
     {
         $startTime = hrtime(true);
-        $prepared = $this->preparedRun($configuration, $discovery);
+        $prepared = $this->preparedRun($configuration);
         $findings = $this->reportedFindings($prepared);
         $duration = (hrtime(true) - $startTime) / 1e9;
 
@@ -112,10 +113,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      */
     public function auditDirectives(
         RunConfiguration $configuration,
-        ?FileDiscoveryInterface $discovery = null,
         DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ): DirectiveAuditReport {
-        $prepared = $this->preparedRun($configuration, $discovery);
+        $prepared = $this->preparedRun($configuration);
 
         // What the rules produced, and nothing assembled after them. The
         // channel a run assembles late — `annotation.unused-directive` — used
@@ -153,7 +153,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * would measure a second world, and a difference between two worlds says
      * nothing about a directive.
      */
-    private function preparedRun(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery): PreparedRun
+    private function preparedRun(RunConfiguration $configuration): PreparedRun
     {
         $profiler = $this->profiler;
 
@@ -168,7 +168,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $repository = $this->repositoryFactory->create();
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
-        $discoveredFiles = $this->analysisFileDiscovery->discover($configuration, $discovery);
+        $discoveredFiles = $this->projectFiles->discover($configuration);
         $files = $discoveredFiles->eligibleFiles;
         $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
 
@@ -285,9 +285,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                 $generatedExcludedFiles,
                 $collectionResult,
                 $discoveredFiles->skippedEntries,
+                $discoveredFiles->namedExcluded,
                 $configuration->projectRoot,
             ),
-            unmatchedExcludeFindings: $discoveredFiles->unmatchedExcludeFindings,
+            unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($discoveredFiles->selectorVerdicts, $configuration->projectRoot),
         );
     }
 
@@ -373,12 +374,14 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
      * @param list<RelativePath> $eligiblePaths
      * @param list<RelativePath> $generatedExcludedFiles
      * @param list<SkippedEntry> $skippedEntries
+     * @param list<RelativePath> $namedExcluded
      */
     private static function buildCoverage(
         array $eligiblePaths,
         array $generatedExcludedFiles,
         CollectionPhaseOutput $collectionResult,
         array $skippedEntries,
+        array $namedExcluded,
         AbsolutePath $projectRoot,
     ): AnalysisCoverage {
         $failures = array_map(
@@ -399,6 +402,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             $collectionResult->analyzedFiles,
             $generatedExcludedFiles,
             $failures,
+            $namedExcluded,
         );
 
         // A skipped entry is a discovered path with a terminal state, so it

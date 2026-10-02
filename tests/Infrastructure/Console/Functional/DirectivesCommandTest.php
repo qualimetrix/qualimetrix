@@ -596,7 +596,7 @@ final class DirectivesCommandTest extends TestCase
         self::assertInstanceOf(BaselineGenerateCommand::class, $generate);
 
         $generator = new CommandTester($generate);
-        $generator->execute([
+        $this->executeInFixture($generator, [
             'baseline' => $baseline,
             'paths' => [$this->tempDir . '/src'],
             '--config' => $config,
@@ -1009,7 +1009,8 @@ final class DirectivesCommandTest extends TestCase
             ->willThrowException(new RuntimeException('the audit collaborator failed in a way nobody named'));
 
         $tester = new CommandTester($this->commandWithAudit($audit));
-        $tester->execute(
+        $this->executeInFixture(
+            $tester,
             ['paths' => [$this->tempDir . '/src'], '--config' => $this->writeConfig("{}\n")],
             ['capture_stderr_separately' => true],
         );
@@ -1301,7 +1302,7 @@ final class DirectivesCommandTest extends TestCase
         // stderr — separately captured so a
         // human-format assertion can read it from `getErrorOutput()` rather
         // than the now-empty `getDisplay()`.
-        $tester->execute($input, ['capture_stderr_separately' => true]);
+        $this->executeInFixture($tester, $input, ['capture_stderr_separately' => true]);
 
         return $tester;
     }
@@ -1332,9 +1333,24 @@ final class DirectivesCommandTest extends TestCase
         self::assertInstanceOf(CheckCommand::class, $command);
 
         $tester = new CommandTester($command);
-        $tester->execute($input);
+        $this->executeInFixture($tester, $input);
 
         return $tester;
+    }
+
+    /** @param array<string, mixed> $input
+     * @param array<string, mixed> $options
+     */
+    private function executeInFixture(CommandTester $tester, array $input, array $options = []): int
+    {
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($this->tempDir);
+        try {
+            return $tester->execute($input, $options);
+        } finally {
+            chdir($previous);
+        }
     }
 
     private function writeSource(string $name, string $source): void

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -46,16 +46,16 @@ final class RuleOptionsPreflightWiringTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesAnInvalidDisabledProducerBeforeTheDiscoveryFactoryIsCalled(): void
+    public function itRefusesAnInvalidDisabledProducerBeforeProjectFilesDiscovery(): void
     {
-        $discovery = self::createMock(FileDiscoveryFactoryInterface::class);
-        $discovery->expects(self::never())->method('create');
+        $discovery = self::createMock(ProjectFilesInterface::class);
+        $discovery->expects(self::never())->method('discover');
         $container = (new ContainerFactory())->configure();
-        $container->removeAlias(FileDiscoveryFactoryInterface::class);
-        $container->register(FileDiscoveryFactoryInterface::class)->setSynthetic(true)->setPublic(true);
+        $container->removeAlias(ProjectFilesInterface::class);
+        $container->register(ProjectFilesInterface::class)->setSynthetic(true)->setPublic(true);
         $container->getDefinition(AnalysisPreflight::class)->setPublic(true);
         $container->compile();
-        $container->set(FileDiscoveryFactoryInterface::class, $discovery);
+        $container->set(ProjectFilesInterface::class, $discovery);
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $tester = new CommandTester($command);

@@ -25,14 +25,10 @@ use Qualimetrix\Analysis\Run\Configuration\PathsSection;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
@@ -353,7 +349,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             'Qualimetrix\\Infrastructure\\Git\\GitScopeResolver',
         )
             ->setArguments([
-                new Reference(FileDiscoveryFactoryInterface::class),
                 new Reference(DelegatingLogger::class),
             ]);
         $container->register(
@@ -452,15 +447,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ])
             ->setPublic(true);
 
-        $container->register(AnalysisFileDiscovery::class)
-            ->setArguments([
-                new Reference(FileDiscoveryInterface::class),
-                new Reference(GeneratedFileFilterInterface::class),
-                new Reference(UnmatchedExcludeAudit::class),
-            ]);
         $container->register(self::DEPENDENCY_GRAPH_ANALYZER, self::DEPENDENCY_GRAPH_ANALYZER_CLASS)
             ->setArguments([
-                new Reference(AnalysisFileDiscovery::class),
+                new Reference(ProjectFilesInterface::class),
                 new Reference(FileParserInterface::class),
                 new Reference(DependencyTraversalParticipantInterface::class),
                 new Reference(DependencyGraphBuilderInterface::class),

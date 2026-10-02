@@ -24,18 +24,24 @@ final readonly class AnalysisCoverage
     /** @var list<AnalysisFailure> */
     public array $failures;
 
+    /** @var list<RelativePath> */
+    public array $excluded;
+
     /**
      * @param list<RelativePath> $analyzedFiles
      * @param list<RelativePath> $generatedExcludedFiles
      * @param list<AnalysisFailure> $failures
+     * @param list<RelativePath> $excluded Named entries intentionally removed by authored excludes
      */
     public function __construct(
         array $analyzedFiles,
         array $generatedExcludedFiles,
         array $failures,
+        array $excluded = [],
     ) {
         usort($analyzedFiles, self::comparePaths(...));
         usort($generatedExcludedFiles, self::comparePaths(...));
+        usort($excluded, self::comparePaths(...));
         usort(
             $failures,
             static fn(AnalysisFailure $left, AnalysisFailure $right): int => strcmp(
@@ -47,6 +53,7 @@ final readonly class AnalysisCoverage
         $this->analyzedFiles = $analyzedFiles;
         $this->generatedExcludedFiles = $generatedExcludedFiles;
         $this->failures = $failures;
+        $this->excluded = $excluded;
 
         $terminalPaths = [];
         foreach ($this->analyzedFiles as $path) {
@@ -57,6 +64,9 @@ final readonly class AnalysisCoverage
         }
         foreach ($this->failures as $failure) {
             self::claimPath($terminalPaths, $failure->path, 'failure');
+        }
+        foreach ($this->excluded as $path) {
+            self::claimPath($terminalPaths, $path, 'excluded');
         }
     }
 
@@ -80,6 +90,11 @@ final readonly class AnalysisCoverage
     public function failedFilesCount(): int
     {
         return \count($this->failures);
+    }
+
+    public function excludedCount(): int
+    {
+        return \count($this->excluded);
     }
 
     public function skippedFilesCount(): int
@@ -107,6 +122,7 @@ final readonly class AnalysisCoverage
             $this->analyzedFiles,
             $this->generatedExcludedFiles,
             [...$this->failures, new AnalysisFailure($path, $reason, $detail)],
+            $this->excluded,
         );
     }
 
@@ -116,6 +132,7 @@ final readonly class AnalysisCoverage
             [...$this->analyzedFiles, ...$other->analyzedFiles],
             [...$this->generatedExcludedFiles, ...$other->generatedExcludedFiles],
             [...$this->failures, ...$other->failures],
+            [...$this->excluded, ...$other->excluded],
         );
     }
 

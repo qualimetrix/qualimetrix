@@ -14,13 +14,12 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalPa
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
-use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\PathFactory;
@@ -37,17 +36,17 @@ use Throwable;
 final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerInterface
 {
     public function __construct(
-        private AnalysisFileDiscovery $analysisFileDiscovery,
+        private ProjectFilesInterface $projectFiles,
         private FileParserInterface $fileParser,
         private DependencyTraversalParticipantInterface $dependencyVisitor,
         private DependencyGraphBuilderInterface $graphBuilder,
         private DeclarationRegistrarFactory $declarationRegistrarFactory,
     ) {}
 
-    public function analyze(RunConfiguration $configuration, FileDiscoveryInterface $fileDiscovery): DependencyGraphAnalysisResult
+    public function analyze(RunConfiguration $configuration): DependencyGraphAnalysisResult
     {
         $projectRoot = $configuration->projectRoot->canonicalize();
-        $discovery = $this->analysisFileDiscovery->discoverEligible($configuration, $fileDiscovery);
+        $discovery = $this->projectFiles->discover($configuration);
         $files = $discovery->eligibleFiles;
         $analyzedFiles = [];
         $failures = [];

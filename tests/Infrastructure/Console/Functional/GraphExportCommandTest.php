@@ -874,10 +874,9 @@ final class CountingDependencyGraphAnalyzer implements DependencyGraphAnalyzerIn
 
     public function analyze(
         \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
-        \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery,
     ): DependencyGraphAnalysisResult {
         ++$this->calls;
 
-        return $this->delegate->analyze($configuration, $fileDiscovery);
+        return $this->delegate->analyze($configuration);
     }
 }

@@ -8,7 +8,6 @@ use Exception;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
@@ -172,20 +171,7 @@ final class LayerAssignmentCommand extends Command
         try {
             $prepared = $this->preflight->resolve($input, $output, $this->preflightProfile);
             $configuration = $prepared->runConfiguration;
-            $paths = array_map(static fn($path): string => $path->value(), $configuration->paths);
-            $resolution = $configuration->generatedFilePolicy === GeneratedFilePolicy::Include
-                ? $this->layerAssignmentResolver->resolveIncludingGenerated(
-                    $paths,
-                    $configuration->pathExcludes,
-                    $configuration->projectRoot,
-                    $symbol,
-                )
-                : $this->layerAssignmentResolver->resolve(
-                    $paths,
-                    $configuration->pathExcludes,
-                    $configuration->projectRoot,
-                    $symbol,
-                );
+            $resolution = $this->layerAssignmentResolver->resolve($configuration, $symbol);
         } catch (ConfigurationRefusal $refusal) {
             // First clause: the carrier is a RuntimeException, and the
             // `catch (Exception)` below would otherwise catch it and answer

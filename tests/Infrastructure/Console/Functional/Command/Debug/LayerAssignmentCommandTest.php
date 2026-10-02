@@ -48,16 +48,23 @@ final class LayerAssignmentCommandTest extends TestCase
 
     private string $originalMemoryLimit = '';
 
+    private string $originalWorkingDirectory = '';
+
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx-debug-layer-test-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir, 0o755, true);
+        $workingDirectory = getcwd();
+        self::assertNotFalse($workingDirectory);
+        $this->originalWorkingDirectory = $workingDirectory;
+        chdir($this->tempDir);
         $current = \ini_get('memory_limit');
         $this->originalMemoryLimit = $current !== false ? $current : '-1';
     }
 
     protected function tearDown(): void
     {
+        chdir($this->originalWorkingDirectory);
         if (is_dir($this->tempDir)) {
             $this->removeDirectory($this->tempDir);
         }
@@ -520,7 +527,7 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertNotNull($commandConstructor);
         self::assertNotNull($resolverConstructor);
         self::assertCount(4, $commandConstructor->getParameters());
-        self::assertCount(6, $resolverConstructor->getParameters());
+        self::assertCount(5, $resolverConstructor->getParameters());
     }
 
     /**

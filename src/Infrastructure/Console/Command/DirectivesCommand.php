@@ -211,12 +211,8 @@ final class DirectivesCommand extends Command
 
         $prepared = $this->preflight->resolve($input, $output);
 
-        // The discovery the preflight resolved, not the pipeline's default: the
-        // default knows nothing of the user's `exclude`, and a verdict is
-        // relative to the file set that was measured.
         $report = $this->directiveAudit->auditDirectives(
             $prepared->runConfiguration,
-            $prepared->fileDiscovery,
             $sweep,
         );
 

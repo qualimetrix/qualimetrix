@@ -8,11 +8,21 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
-use Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeBindingProbe;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Analysis\Run\Discovery\WalkedProject;
+use Qualimetrix\Analysis\Run\Discovery\WalkRequest;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -22,13 +32,7 @@ use Qualimetrix\Core\Pattern\SelectorKind;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
-/**
- * A directory the walk cannot list stops the probe from judging a selector
- * that could have matched inside it. Not calling that selector stale is right;
- * answering it exactly as a selector that bound is what left the reader with
- * no way to tell "checked" from "could not check".
- */
-#[CoversClass(ExcludeBindingProbe::class)]
+#[CoversClass(ProjectWalk::class)]
 #[CoversClass(UnmatchedExcludeAudit::class)]
 final class UnjudgedExcludeTest extends TestCase
 {
@@ -39,7 +43,6 @@ final class UnjudgedExcludeTest extends TestCase
         if (posix_getuid() === 0) {
             self::markTestSkipped('Root ignores directory permission bits.');
         }
-
         $this->root = sys_get_temp_dir() . '/qmx-unjudged-' . bin2hex(random_bytes(6));
         mkdir($this->root . '/blocked/Inner', 0o755, true);
         mkdir($this->root . '/Kept', 0o755, true);
@@ -52,7 +55,6 @@ final class UnjudgedExcludeTest extends TestCase
         if ($this->root === '' || !is_dir($this->root)) {
             return;
         }
-
         chmod($this->root . '/blocked', 0o755);
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($this->root, FilesystemIterator::SKIP_DOTS),
@@ -67,52 +69,39 @@ final class UnjudgedExcludeTest extends TestCase
     #[Test]
     public function itNamesTheSelectorItCouldNotJudgeAndTheDirectoryThatStoppedIt(): void
     {
-        $verdict = (new ExcludeBindingProbe())->judge(
-            [AbsolutePath::fromString($this->root)],
-            [$this->pattern(SelectorKind::Exact, 'blocked/Inner')],
-            $this->pruner([]),
-        );
+        $walked = $this->walk([$this->selector(SelectorKind::Exact, 'blocked/Inner')]);
 
-        self::assertSame([], $verdict->unbound);
-        self::assertSame(['exact:blocked/Inner'], array_keys($verdict->unlistable));
-        self::assertSame($this->root . '/blocked', $verdict->unlistable['exact:blocked/Inner']->value());
+        self::assertCount(1, $walked->verdicts);
+        self::assertSame('exact:blocked/Inner', $walked->verdicts[0]->display);
+        self::assertSame(ExcludeSelectorOutcome::Unjudgeable, $walked->verdicts[0]->outcome);
+        self::assertSame('blocked', $walked->verdicts[0]->blockedAt);
     }
 
-    /**
-     * A selector another exclude deliberately hid is unjudgeable too, and must
-     * not be reported: the author asked for that subtree to go.
-     */
     #[Test]
-    public function itSaysNothingAboutASelectorHiddenByAnotherExclude(): void
+    public function itNamesASelectorHiddenByAnotherExclude(): void
     {
-        $verdict = (new ExcludeBindingProbe())->judge(
-            [AbsolutePath::fromString($this->root)],
-            [$this->pattern(SelectorKind::Exact, 'Kept/Gone')],
-            $this->pruner([$this->pattern(SelectorKind::Subtree, 'Kept')]),
-        );
+        $walked = $this->walk([
+            $this->selector(SelectorKind::Exact, 'Kept/Gone'),
+            $this->selector(SelectorKind::Subtree, 'Kept'),
+        ]);
 
-        self::assertSame([], $verdict->unbound);
-        self::assertSame([], $verdict->unlistable);
+        self::assertSame(ExcludeSelectorOutcome::CoveredBySameSource, $walked->verdicts[0]->outcome);
+        self::assertSame('subtree:Kept', $walked->verdicts[0]->coveredBy);
     }
 
-    /** A selector that bound is settled, whatever else the walk could not see. */
     #[Test]
     public function itSaysNothingAboutASelectorThatBound(): void
     {
-        $verdict = (new ExcludeBindingProbe())->judge(
-            [AbsolutePath::fromString($this->root)],
-            [$this->pattern(SelectorKind::Regex, '(?:[^/]+/)*Kept')],
-            $this->pruner([]),
-        );
+        $walked = $this->walk([$this->selector(SelectorKind::Regex, '(?:[^/]+/)*Kept')]);
 
-        self::assertSame([], $verdict->unbound);
-        self::assertSame([], $verdict->unlistable);
+        self::assertSame(ExcludeSelectorOutcome::Removed, $walked->verdicts[0]->outcome);
+        self::assertSame([], (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()))->findings($walked->verdicts, AbsolutePath::fromString($this->root)));
     }
 
     #[Test]
     public function itReportsTheUnjudgedSelectorAsItsOwnFinding(): void
     {
-        $findings = $this->findings($this->pattern(SelectorKind::Exact, 'blocked/Inner'));
+        $findings = $this->findings($this->selector(SelectorKind::Exact, 'blocked/Inner'));
 
         self::assertCount(1, $findings);
         self::assertStringContainsString('could not be checked', $findings[0]->message);
@@ -120,49 +109,50 @@ final class UnjudgedExcludeTest extends TestCase
         self::assertStringContainsString('blocked', $findings[0]->message);
     }
 
-    /**
-     * Two verdicts about one pattern are two facts, so accepting one must not
-     * accept the other.
-     */
     #[Test]
     public function itGivesTheUnjudgedVerdictAnIdentityOfItsOwn(): void
     {
-        $unjudged = $this->findings($this->pattern(SelectorKind::Exact, 'blocked/Inner'));
-        $stale = $this->findings($this->pattern(SelectorKind::Exact, 'NoSuchDir'));
+        $unjudged = $this->findings($this->selector(SelectorKind::Exact, 'blocked/Inner'));
+        $stale = $this->findings($this->selector(SelectorKind::Exact, 'NoSuchDir'));
 
         self::assertCount(1, $unjudged);
         self::assertCount(1, $stale);
-        self::assertNotSame(
-            $unjudged[0]->occurrenceKey?->value,
-            $stale[0]->occurrenceKey?->value,
-        );
+        self::assertNotSame($unjudged[0]->occurrenceKey?->value, $stale[0]->occurrenceKey?->value);
     }
 
     /** @return list<Finding> */
-    private function findings(PathPattern $authored): array
+    private function findings(AuthoredExclude $selector): array
     {
-        $root = AbsolutePath::fromString($this->root);
+        $walked = $this->walk([$selector]);
 
-        return (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions(), new ExcludeBindingProbe()))->findings(
-            new RunConfiguration(
-                pathExcludes: [$authored],
-                projectRoot: $root,
-                generatedFilePolicy: GeneratedFilePolicy::Include,
-                projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
-                authoredPathExcludes: [$authored],
-                autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
-            ),
+        return (new UnmatchedExcludeAudit(new UnmatchedExcludeOptions()))->findings(
+            $walked->verdicts,
+            AbsolutePath::fromString($this->root),
         );
     }
 
-    /** @param list<PathPattern> $patterns */
-    private function pruner(array $patterns): DirectoryPruner
+    /** @param list<AuthoredExclude> $selectors */
+    private function walk(array $selectors): WalkedProject
     {
-        return new DirectoryPruner(AbsolutePath::fromString($this->root), $patterns);
+        $root = AbsolutePath::fromString($this->root);
+        $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
+        $run = new RunConfiguration(
+            pathExcludes: array_map(static fn(AuthoredExclude $selector): PathPattern => $selector->pattern, $selectors),
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, []),
+            authoredPathExcludes: $selectors,
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
+
+        return (new ProjectWalk(new EntryInspector()))->walk(new WalkRequest($run));
     }
 
-    private function pattern(SelectorKind $kind, string $value): PathPattern
+    private function selector(SelectorKind $kind, string $value): AuthoredExclude
     {
-        return new PathPattern(new SelectorDefinition($kind, $value));
+        return new AuthoredExclude(
+            new PathPattern(new SelectorDefinition($kind, $value)),
+            [ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml')],
+        );
     }
 }

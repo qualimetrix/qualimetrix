@@ -24,11 +24,12 @@ use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
-use Qualimetrix\Analysis\Run\Contract\Discovery\SkipReportingDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
@@ -104,22 +105,21 @@ final class SkippedEntryReachesCoverageTest extends TestCase
     {
         $analyzed = new SplFileInfo($this->root . '/src/Analyzed.php');
 
-        $discovery = new class ($analyzed, $skips) implements FileDiscoveryInterface, SkipReportingDiscoveryInterface {
+        $discovery = new class ($analyzed, $skips) implements ProjectFilesInterface {
             /** @param list<SkippedEntry> $skips */
-            public function __construct(
-                private readonly SplFileInfo $file,
-                private readonly array $skips,
-            ) {}
+            public function __construct(private readonly SplFileInfo $file, private readonly array $skips) {}
 
-            /** @return iterable<AbsolutePath, SplFileInfo> */
-            public function discover(AbsolutePath|array $paths): iterable
+            public function discover(RunConfiguration $configuration): DiscoveredProjectFiles
             {
-                yield AbsolutePath::fromString($this->file->getPathname()) => $this->file;
-            }
-
-            public function skippedEntries(): array
-            {
-                return $this->skips;
+                return new DiscoveredProjectFiles(
+                    [$this->file],
+                    [],
+                    [],
+                    $this->skips,
+                    [],
+                    new ScopeFacts([], [], [], false),
+                    1,
+                );
             }
         };
 
@@ -144,7 +144,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $configuration->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
 
         $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
+            ->withProjectFiles($discovery)
             ->withCollectionOrchestrator($orchestrator)
             ->withRuleExecution($ruleExecutor)
             ->withRuleConfiguration($configuration)

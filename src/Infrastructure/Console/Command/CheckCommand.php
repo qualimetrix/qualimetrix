@@ -255,7 +255,7 @@ final class CheckCommand extends Command
         // configuration after the call site was written, silently and once per
         // field.
         $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement);
-        $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
+        $result = $this->runAnalysis($scopedRunConfiguration);
 
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
             $result,
@@ -308,9 +308,9 @@ final class CheckCommand extends Command
     /**
      * Runs the analysis on specified paths.
      */
-    private function runAnalysis(RunConfiguration $configuration, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
+    private function runAnalysis(RunConfiguration $configuration): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        return $this->analyzer->analyze($configuration, $fileDiscovery);
+        return $this->analyzer->analyze($configuration);
     }
 
     /**

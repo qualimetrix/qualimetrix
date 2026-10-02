@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Run\Configuration;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason;
 use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind;
-use Qualimetrix\Analysis\Run\Discovery\DirectoryPruner;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use RuntimeException;
@@ -36,16 +35,10 @@ final class ProjectScopePaths
      */
     public static function partition(AbsolutePath $projectRoot, array $targets): array
     {
-        $pruner = new DirectoryPruner($projectRoot, DirectoryPruner::builtInPatterns());
-
         $reachable = [];
         $pruned = [];
         foreach ($targets as $target) {
-            // The empty path is refused where paths are accepted; judging it
-            // here would only throw in a different vocabulary.
-            $directory = $target === ''
-                ? null
-                : $pruner->prunedAncestor(PathFactory::fromCliArgument($target, $projectRoot));
+            $directory = $target === '' ? null : self::builtInAncestor(PathFactory::fromCliArgument($target, $projectRoot), $projectRoot);
 
             if ($directory === null) {
                 $reachable[] = $target;
@@ -92,11 +85,37 @@ final class ProjectScopePaths
     {
         $resolutions = [['written' => $writtenRoot, 'path' => $root]];
         foreach ($paths as $path) {
-            $resolutions[] = ['written' => $path, 'path' => self::tryResolve(static fn(): AbsolutePath => $path->canonicalize()) ?? $path];
+            if ($path->isDirectory()) {
+                $resolved = self::tryResolve(static fn(): AbsolutePath => $path->canonicalize()) ?? $path;
+            } else {
+                $parent = self::tryResolve(static fn(): AbsolutePath => AbsolutePath::fromString(\dirname($path->value()))->canonicalize());
+                $resolved = $parent === null ? $path : AbsolutePath::fromString($parent->value() . '/' . basename($path->value()));
+            }
+            $resolutions[] = ['written' => $path, 'path' => $resolved];
         }
         usort($resolutions, static fn(array $a, array $b): int => \strlen($b['written']->value()) <=> \strlen($a['written']->value()));
 
         return $resolutions;
+    }
+
+    private static function builtInAncestor(AbsolutePath $path, AbsolutePath $root): ?string
+    {
+        $walkedDirectory = $path->isDirectory()
+            ? $path
+            : AbsolutePath::fromString(\dirname($path->value()));
+        $relative = $walkedDirectory->tryRelativizeTo($root);
+        if ($relative === null) {
+            return null;
+        }
+        $prefix = [];
+        foreach ($relative->segments() as $segment) {
+            $prefix[] = $segment;
+            if (\in_array($segment, ['vendor', 'node_modules', '.git'], true)) {
+                return implode('/', $prefix);
+            }
+        }
+
+        return null;
     }
 
     /**

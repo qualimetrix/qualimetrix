@@ -10,8 +10,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -71,8 +70,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(LayerAssignmentInspectorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
-                new Reference(FileDiscoveryFactoryInterface::class),
-                new Reference(GeneratedFileFilterInterface::class),
+                new Reference(ProjectFilesInterface::class),
             ]);
         $container->register(AnalysisPreflightProfile::class)
             ->setFactory([AnalysisPreflightProfile::class, 'analysis']);

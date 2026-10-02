@@ -167,10 +167,7 @@ final class GraphExportCommand extends Command
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $prepared->runConfiguration->paths),
         ]);
 
-        $result = $this->analyzeDependencyGraph(
-            $prepared->runConfiguration,
-            $prepared->fileDiscovery,
-        );
+        $result = $this->analyzeDependencyGraph($prepared->runConfiguration);
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);
@@ -309,9 +306,8 @@ final class GraphExportCommand extends Command
 
     private function analyzeDependencyGraph(
         \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
-        \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery,
     ): DependencyGraphAnalysisResult {
-        return $this->analyzer->analyze($configuration, $fileDiscovery);
+        return $this->analyzer->analyze($configuration);
     }
 
     private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void
