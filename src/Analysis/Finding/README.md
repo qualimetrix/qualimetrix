@@ -104,9 +104,11 @@ without a usable map namespace values remain unjudged.
 
 `ValueScopeJudgement` also checks each location. A literal under a removed-entry
 anchor is not judged. Path/ledger regex is unjudged when path completeness is
-withheld or authored removal could hide a match; namespace regex also needs
-complete declaration evidence. This conservative rule may leave an unrelated
-stale regex unjudged; rerun without the exclusion to settle it. The audit opens
+withheld or authored removal could hide a match; a complete named PHP roster
+can satisfy that measured path question just as a directory selection can.
+Namespace regex also needs complete declaration evidence. Generated removal
+withholds that namespace question while leaving path completeness open. This
+conservative rule may leave an unrelated stale regex unjudged; rerun without the exclusion to settle it. The audit opens
 no source or manifest. Reports publish skipped `{channel, option, pattern}`
 values even on a `covered` run.
 
