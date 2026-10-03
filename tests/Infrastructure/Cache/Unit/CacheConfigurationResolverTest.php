@@ -69,12 +69,106 @@ final class CacheConfigurationResolverTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesAMissingCacheDirectory(): void
+    public function itLeavesAMissingCacheDirectoryForTheFirstWrite(): void
     {
         $configuration = $this->resolve('nested/cache', enabled: true);
 
         self::assertSame($this->root . '/nested/cache', $configuration->directory->value());
-        self::assertDirectoryExists($this->root . '/nested/cache');
+        self::assertDirectoryDoesNotExist($this->root . '/nested/cache');
+    }
+
+    #[Test]
+    public function itDoesNotCreateTheDefaultDirectoryWhileResolvingConfiguration(): void
+    {
+        $root = AbsolutePath::fromString($this->root);
+        $configuration = (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $root), $root);
+
+        self::assertTrue($configuration->enabled);
+        self::assertSame($this->root . '/.qmx-cache', $configuration->directory->value());
+        self::assertDirectoryDoesNotExist($this->root . '/.qmx-cache');
+    }
+
+    #[Test]
+    public function itDisablesAnUnusableDefaultDirectoryWithAReason(): void
+    {
+        $projectFile = $this->root . '/not-a-directory';
+        touch($projectFile);
+        $projectRoot = AbsolutePath::fromString($projectFile);
+
+        try {
+            $configuration = (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $projectRoot), $projectRoot);
+        } catch (ConfigurationRefusal $failure) {
+            self::fail('An unusable default cache directory should disable caching: ' . $failure->summary());
+        }
+
+        self::assertFalse($configuration->enabled);
+        self::assertNotEmpty($configuration->disabledBecause);
+        self::assertDirectoryDoesNotExist($projectFile . '/.qmx-cache');
+    }
+
+    #[Test]
+    public function itDisablesADefaultCacheDirectoryWithoutParentSearchPermission(): void
+    {
+        chmod($this->root, 0600);
+
+        try {
+            if (is_executable($this->root)) {
+                self::markTestSkipped('Permission bits do not block directory search in this process');
+            }
+
+            $root = AbsolutePath::fromString($this->root);
+            $configuration = (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $root), $root);
+
+            self::assertFalse($configuration->enabled);
+            self::assertStringContainsString($this->root, $configuration->disabledBecause ?? '');
+            self::assertDirectoryDoesNotExist($this->root . '/.qmx-cache');
+        } finally {
+            chmod($this->root, 0700);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnExplicitCacheDirectoryWithoutParentSearchPermission(): void
+    {
+        chmod($this->root, 0600);
+
+        try {
+            if (is_executable($this->root)) {
+                self::markTestSkipped('Permission bits do not block directory search in this process');
+            }
+
+            try {
+                $this->resolve('cache', enabled: true);
+                self::fail('An explicit cache directory without parent search permission was accepted.');
+            } catch (ConfigurationRefusal $failure) {
+                self::assertSame(ConfigurationSource::ConfigFile, $failure->sources()[0]->source());
+                self::assertSame(['cache', 'dir'], $failure->position()?->segments);
+                self::assertStringContainsString($this->root, $failure->summary());
+            }
+            self::assertDirectoryDoesNotExist($this->root . '/cache');
+        } finally {
+            chmod($this->root, 0700);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnExplicitCacheDirectoryThroughAPlaceableLink(): void
+    {
+        $swappable = $this->root . '/swappable';
+        $actual = $this->root . '/actual';
+        mkdir($swappable, 0777);
+        chmod($swappable, 0777);
+        mkdir($actual);
+        symlink($actual, $swappable . '/link');
+
+        try {
+            $this->resolve('swappable/link', enabled: true);
+            self::fail('An explicit cache path through a placeable link was accepted.');
+        } catch (ConfigurationRefusal $failure) {
+            self::assertSame(ConfigurationSource::ConfigFile, $failure->sources()[0]->source());
+            self::assertSame(['cache', 'dir'], $failure->position()?->segments);
+            self::assertStringContainsString('symbolic link', $failure->summary());
+        }
     }
 
     /** A cache nobody will write to is entitled to a path nobody can write to. */
@@ -135,20 +229,16 @@ final class CacheConfigurationResolverTest extends TestCase
     }
 
     #[Test]
-    public function itAttributesAnUnwritableDefaultDirectoryToDefaults(): void
+    public function itKeepsAnUnusableDefaultDirectoryInTheDisabledReason(): void
     {
         $projectFile = $this->root . '/not-a-directory';
         touch($projectFile);
         $projectRoot = AbsolutePath::fromString($projectFile);
 
-        try {
-            (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $projectRoot), $projectRoot);
-            self::fail('The default cache directory beneath a file cannot be created.');
-        } catch (ConfigurationRefusal $refusal) {
-            self::assertCount(1, $refusal->sources());
-            self::assertSame(ConfigurationSource::Defaults, $refusal->sources()[0]->source());
-            self::assertNull($refusal->position());
-        }
+        $configuration = (new CacheConfigurationResolver())->resolve(LayeredDocument::of([], $projectRoot), $projectRoot);
+
+        self::assertFalse($configuration->enabled);
+        self::assertStringContainsString($projectFile, $configuration->disabledBecause ?? '');
     }
 
     protected function setUp(): void
