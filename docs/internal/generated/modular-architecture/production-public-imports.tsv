@@ -2002,6 +2002,7 @@ Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\In
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	src/Infrastructure/Console/RunTarget/TargetAccess.php	ast-name
 Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/BaselineDocumentWriter.php	ast-name
 Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/BaselineDocumentWriter.php	ast-name
+Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	Qualimetrix\Infrastructure\Console\OutputHelper	Infrastructure.Console	src/Infrastructure/Console/OutputHelper.php	ast-name
 Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	src/Infrastructure/Console/RunTarget/RunTargets.php	ast-name
 Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface	Infrastructure.Logging	src/Infrastructure/Logging/Contract/LoggerFactoryInterface.php	ast-name
 Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	src/Infrastructure/Logging/FileLogger.php	ast-name

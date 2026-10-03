@@ -10083,6 +10083,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureBeforeCheckReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itKeepsAnExplicitStandardOutputGraphAsOneJsonDocumentWhenCleanupFails
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itLeavesOutputLogAndCacheUntouchedWhenTheLateScopeIsInvalid
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"check log"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"check output"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"check profile"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsEachExposedTargetBeforeAnalysis"graph output"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsProfileExportAndCleanupFailuresAfterOneJsonReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtApplicationExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtLayerAssignmentExit
@@ -10593,6 +10597,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itListsOnlyStagesThatDefineTheMeasuredSet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itPassesTheCapturedRunConfigurationToAnalysisOnce
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"quiet"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"silent"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itRefusesAReadOnlyBorrowedStreamWithoutChangingOrClosingIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfilePresenterTest::itRefusesAnExportWhoseWriteFails
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfilePresenterTest::itWritesAnExportItCanWrite
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itNamesSpansThatWereNotTimed

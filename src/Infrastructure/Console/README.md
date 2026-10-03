@@ -221,6 +221,13 @@ them. Descriptor existence is checked on both platforms; Linux fdinfo also
 identifies descriptors opened only for reading. On macOS an unknown original
 access mode is left to the actual write and its typed environment refusal.
 
+Check and Graph report every judged directory exposure on stderr before claiming
+targets or entering analysis, naming the option, target, directory and actor.
+`OutputHelper` checks complete writes and flush for the actual borrowed
+`StreamOutput` resource and preserves raw bytes and the NORMAL verbosity
+threshold, including SILENT and QUIET. Other `OutputInterface` implementations
+retain their own write contract.
+
 Claims happen after configuration, scope, selector and baseline input checks,
 before cache clearing or analysis. An existing file is held without truncation
 until report delivery, preserving inode, ownership, mode and hard links. A new

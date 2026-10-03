@@ -941,7 +941,9 @@ marks storage or delivery failures with complete user-facing messages.
 and inode identity. `EntryControl` judges placement and replacement from directory and entry
 facts. `HeldTarget::claim(ResolvedTarget)` uses internal `TargetClaim` to hold
 an unchanged regular file, an exclusively created name or a supplied stream; `write()`, `append()` and `release()` own the
-resource lifecycle. `FileReplacement::replace()` publishes a complete sibling,
+resource lifecycle. `HeldTarget::writeToStream()` borrows an already opened
+stream and checks complete writes and flush without closing, seeking or truncating
+it; a successful write advances its existing offset. `FileReplacement::replace()` publishes a complete sibling,
 and `HeldLock::acquire()` holds a named lock without truncating it, using a
 monotonic acquisition deadline.
 `TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values

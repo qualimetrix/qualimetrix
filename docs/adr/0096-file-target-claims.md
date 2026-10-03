@@ -69,7 +69,7 @@ a FIFO opened with we can be replaced by another process of the same effective
 uid before open, causing truncation before the subsequent identity refusal.
 No guarantee of zero filesystem effects is made for these residual races.
 
-Baseline prepares both absent and existing destinations before analysis and
+The baseline:generate command prepares both absent and existing destinations before analysis and
 requires an existing writable/searchable parent. Its writer receives that
 `ResolvedTarget`, keeps the loaded content hash for compare-and-swap and holds
 a judged sibling lock across validation and replacement. Closed links retain

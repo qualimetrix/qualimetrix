@@ -20,7 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `assertOutputIsWritable()`, and `ProfilePresenter::present()`, require explicit
   run targets. Report/profile/log aliases of one ordinary inode or absent name
   now refuse, including collisions with implicit report stdout. Graph status
-  moves to stderr. See ADR 0096 for filesystem guarantees and platform limits.
+  moves to stderr. Directory exposure warnings precede analysis on stderr.
+  Implicit report and graph streams now refuse failed writes with environment
+  exit 3, using the supplied console resource and respecting SILENT and QUIET.
+  See ADR 0096 for filesystem guarantees and platform limits.
   A cleanup failure after a completed report is also diagnosed on stderr,
   alongside the primary failure, without appending another JSON document.
 - `FileLogger` no longer opens a file or creates its parent in its constructor.
@@ -32,8 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   leaves the requested log untouched. File failures use environment exit 3.
 - Baseline writers now require a prepared `ResolvedTarget` instead of a string
   destination. `destinationSnapshot()` returns `{target, hash}` for both absent
-  and existing targets. Prepare the destination before analysis and pass the
-  returned target to `BaselineWriter::write()`. Create parent directories
+  and existing targets. Pass that prepared target to `BaselineWriter::write()`;
+  `baseline:generate` prepares its destination before analysis. Create parent directories
   explicitly: baseline publication no longer creates them. Existing modes are
   preserved. Closed, Core-judged symbolic links write their resolved referents;
   exposed links refuse. `--force` still authorizes replacing occupied names.
