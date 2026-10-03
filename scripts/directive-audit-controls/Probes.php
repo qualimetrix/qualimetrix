@@ -2000,7 +2000,7 @@ final class Probes
                 'unrecognised-failure-read-as-bad-input',
                 'an exception nothing recognised is answered as the caller\'s mistake rather than as an internal failure',
                 self::COMMAND,
-                ['            return $this->refusalPresenter->internalError($output, $format, $failure);'
+                ['            return $this->refusalPresenter->unhandled($output, $format, $failure);'
                     => '            return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);'],
                 ['Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itAnswersExitOneForAnUnrecognisedExceptionFromTheAudit'],
             ),

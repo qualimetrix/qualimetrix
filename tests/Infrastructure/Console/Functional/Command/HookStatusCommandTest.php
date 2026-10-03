@@ -59,7 +59,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itReportsHookNotInstalled(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);
@@ -82,7 +82,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itPrintsTheDocsPointerAfterTheReport(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
 
@@ -92,7 +92,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itSuppressesTheDocsPointerUnderQuiet(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
         $commandTester = new CommandTester($command);
         $commandTester->execute([], ['verbosity' => OutputInterface::VERBOSITY_QUIET]);
 
@@ -114,7 +114,7 @@ final class HookStatusCommandTest extends TestCase
         symlink($tempScript, $hookPath);
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);
@@ -138,7 +138,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);
@@ -162,7 +162,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);
@@ -186,7 +186,7 @@ final class HookStatusCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'test'\n");
         chmod($hookPath, 0644); // Not executable
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);
@@ -214,7 +214,7 @@ final class HookStatusCommandTest extends TestCase
 
         file_put_contents($backupPath, "#!/bin/bash\necho 'backup'\n");
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);
@@ -235,7 +235,7 @@ final class HookStatusCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $commandTester = self::throughLadder($command);
 
@@ -256,7 +256,7 @@ final class HookStatusCommandTest extends TestCase
     {
         symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $this->gitDir . '/hooks/pre-commit');
 
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         $application = new Application();
         $application->addCommand($command);

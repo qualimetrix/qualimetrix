@@ -123,6 +123,106 @@ final class BaselineGenerateCommandTest extends TestCase
         self::assertSame([1], self::countsOf(self::entriesOf($this->baselinePath)));
     }
 
+    #[Test]
+    public function itPreservesTheDestinationModeUnderForce(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->baselinePath, 0o600);
+
+        $tester = $this->execute(['--force' => true]);
+
+        clearstatcache(true, $this->baselinePath);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame(0o600, fileperms($this->baselinePath) & 0o7777);
+    }
+
+    #[Test]
+    public function itRefusesAMissingDestinationParentBeforeAnalysis(): void
+    {
+        $this->baselinePath = $this->tempDir . '/missing/baseline.json';
+        $measured = false;
+
+        $tester = $this->execute([], null, static function () use (&$measured): void {
+            $measured = true;
+        });
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertFalse($measured);
+        self::assertDirectoryDoesNotExist($this->tempDir . '/missing');
+        self::assertStringContainsString('parent directory is missing', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itRefusesToForceOverAReadOnlyFileBeforeAnalysis(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->baselinePath, 0o444);
+        clearstatcache(true, $this->baselinePath);
+        if (is_writable($this->baselinePath)) {
+            chmod($this->baselinePath, 0o644);
+            self::markTestSkipped('The process writes a file with no write permission (running as root).');
+        }
+
+        $measured = false;
+        try {
+            $tester = $this->execute(['--force' => true], null, static function () use (&$measured): void {
+                $measured = true;
+            });
+        } finally {
+            chmod($this->baselinePath, 0o644);
+        }
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertFalse($measured);
+        self::assertSame('do not touch', file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesToForceInAReadOnlyParentBeforeAnalysis(): void
+    {
+        $parent = $this->tempDir . '/destination';
+        mkdir($parent);
+        $this->baselinePath = $parent . '/baseline.json';
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($parent, 0o555);
+        clearstatcache(true, $parent);
+        if (is_writable($parent)) {
+            chmod($parent, 0o755);
+            self::markTestSkipped('The process writes a directory with no write permission (running as root).');
+        }
+
+        $measured = false;
+        try {
+            $tester = $this->execute(['--force' => true], null, static function () use (&$measured): void {
+                $measured = true;
+            });
+        } finally {
+            chmod($parent, 0o755);
+        }
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertFalse($measured);
+        self::assertSame('do not touch', file_get_contents($this->baselinePath));
+        self::assertFileDoesNotExist($this->baselinePath . '.lock');
+    }
+
+    #[Test]
+    public function itReportsAnExposedWritableDestinationBeforeAnalysis(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+        chmod($this->tempDir, 0o777);
+
+        try {
+            $tester = $this->execute(['--force' => true]);
+        } finally {
+            chmod($this->tempDir, 0o700);
+        }
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString($this->tempDir, $tester->getErrorOutput());
+        self::assertStringContainsString('changed by others', $tester->getErrorOutput());
+    }
+
     /**
      * Every one of the five `baseline:*` commands prints this through the
      * shared `BaselineCommand` ladder rather than from its own body, so this
@@ -176,36 +276,36 @@ final class BaselineGenerateCommandTest extends TestCase
     }
 
     #[Test]
-    public function itRefusesToForceOverADanglingSymlinkWithoutAnUnsafeFallback(): void
+    public function itWritesThroughAClosedDanglingSymlinkUnderForce(): void
     {
         $target = $this->tempDir . '/missing-target.json';
         symlink($target, $this->baselinePath);
 
         $tester = $this->execute(['--force' => true]);
 
-        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
+        self::assertSame([1], self::countsOf(self::entriesOf($target)));
     }
 
     #[Test]
-    public function itRefusesToForceOverASymlinkToARegularFileWithoutTouchingEither(): void
+    public function itWritesThroughAClosedSymlinkUnderForceAndPreservesTheReferentMode(): void
     {
         $target = $this->tempDir . '/target.json';
         $contents = '{"owned": "by another process"}';
         file_put_contents($target, $contents);
+        chmod($target, 0o600);
         symlink($target, $this->baselinePath);
 
         $tester = $this->execute(['--force' => true]);
 
-        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        clearstatcache(true, $target);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertTrue(is_link($this->baselinePath));
         self::assertSame($target, readlink($this->baselinePath));
-        self::assertSame($contents, file_get_contents($target));
+        self::assertSame([1], self::countsOf(self::entriesOf($target)));
+        self::assertSame(0o600, fileperms($target) & 0o7777);
     }
 
     /**
@@ -236,7 +336,7 @@ final class BaselineGenerateCommandTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('cannot be read', $tester->getErrorOutput());
+        self::assertStringContainsString('cannot open target', $tester->getErrorOutput());
         self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
         self::assertFalse($measured, 'The run was measured before the unreadable destination was refused.');
         self::assertSame('do not touch', file_get_contents($this->baselinePath));
@@ -251,7 +351,7 @@ final class BaselineGenerateCommandTest extends TestCase
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame('', $tester->getDisplay());
-        self::assertStringContainsString('not a regular file', $tester->getErrorOutput());
+        self::assertStringContainsString('target is a directory', $tester->getErrorOutput());
         self::assertDirectoryExists($this->baselinePath);
     }
 
@@ -346,6 +446,7 @@ final class BaselineGenerateCommandTest extends TestCase
     private function execute(array $options, ?array $findings = null, ?Closure $duringAnalysis = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $errorStream = new ErrorStream();
 
         $command = new BaselineGenerateCommand(
             new StubBaselineRun(
@@ -356,8 +457,9 @@ final class BaselineGenerateCommandTest extends TestCase
             ),
             new BaselineGenerator($declarations, new FixedClock()),
             new BaselineWriter(),
+            $errorStream,
         );
-        $command->setRefusalPresenter(new RefusalPresenter(new ErrorStream()));
+        $command->setRefusalPresenter(new RefusalPresenter($errorStream));
 
         $tester = new CommandTester($command);
         $tester->execute(

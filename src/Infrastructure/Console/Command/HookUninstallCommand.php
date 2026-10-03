@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
+use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -38,10 +43,22 @@ final class HookUninstallCommand extends AbstractHookCommand
             return self::SUCCESS;
         }
 
+        $backupPath = $hookPath . '.backup';
+        $restore = $input->getOption('restore-backup') === true;
+        $backupTarget = null;
+        $backupEntry = null;
+        if ($restore && self::hookExists($backupPath)) {
+            $backupTarget = $this->judge($backupPath, $output);
+            if (is_link($backupPath) || $backupTarget->kind !== TargetKind::Regular || $backupTarget->path?->value() !== $backupPath) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $backupPath, 'backup must be a regular file in the hooks directory');
+            }
+            $backupEntry = self::entry($backupPath);
+        }
+
         $this->removeHookFile($hookPath, $output);
 
-        if ($input->getOption('restore-backup') === true) {
-            $this->restoreBackup($hookPath, $output);
+        if ($restore) {
+            $this->restoreBackup($hookPath, $output, $backupTarget, $backupEntry);
 
             return self::SUCCESS;
         }
@@ -58,7 +75,7 @@ final class HookUninstallCommand extends AbstractHookCommand
         // would mean carrying a rule about where a past release pointed it;
         // saying so and letting the user decide costs nothing and is never
         // wrong about someone else's hook.
-        if (is_link($hookPath) && !file_exists($hookPath)) {
+        if ($this->danglingLink($hookPath, $output)) {
             throw $this->refusal(\sprintf(
                 'Pre-commit hook %s is a symlink that leads nowhere. Nothing identifies it, so it is left alone. '
                 . 'Replace it with a working hook: %s hook:install --force. Or remove it by hand: rm %s',
@@ -68,10 +85,9 @@ final class HookUninstallCommand extends AbstractHookCommand
             ));
         }
 
-        $content = @file_get_contents($hookPath);
-        if ($content === false) {
-            throw $this->refusal(\sprintf('Failed to read hook file: %s', $hookPath));
-        }
+        $target = $this->judge($hookPath, $output);
+        $original = self::entry($hookPath);
+        $content = self::read($hookPath);
 
         if (!PreCommitHook::isOurs($content)) {
             throw $this->refusal(\sprintf(
@@ -80,35 +96,57 @@ final class HookUninstallCommand extends AbstractHookCommand
             ));
         }
 
+        self::assertSameEntry($hookPath, $original);
+        if (!$target->sameAs($this->judge($hookPath, $output))) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $hookPath, 'hook changed before removal');
+        }
         [$removed, $reason] = self::attempt(static fn(): bool => unlink($hookPath));
         if (!$removed) {
-            throw $this->refusal(\sprintf('Failed to remove hook file: %s: %s', $hookPath, $reason));
+            throw EnvironmentRefusal::aboutFile($hookPath, 'remove', $reason);
         }
 
         $output->writeln('<info>✓ Pre-commit hook removed</info>');
     }
 
-    private function restoreBackup(string $hookPath, OutputInterface $output): void
+    /** @param ?array<string|int, int> $backupEntry */
+    private function restoreBackup(string $hookPath, OutputInterface $output, ?ResolvedTarget $backupTarget, ?array $backupEntry): void
     {
         $backupPath = $hookPath . '.backup';
 
-        if (!file_exists($backupPath)) {
+        if ($backupTarget === null || $backupEntry === null) {
             $output->writeln('<comment>No backup found to restore</comment>');
 
             return;
         }
 
-        [$copied, $reason] = self::attempt(static fn(): bool => copy($backupPath, $hookPath));
-        if (!$copied) {
-            throw $this->refusal(\sprintf('Failed to restore backup %s to %s: %s', $backupPath, $hookPath, $reason));
-        }
-
-        [$executable, $reason] = self::attempt(static fn(): bool => chmod($hookPath, 0755));
-        if (!$executable) {
-            throw $this->refusal(\sprintf('Failed to make restored hook executable: %s: %s', $hookPath, $reason));
+        $this->assertReadyToRestore($hookPath, $backupPath, $backupTarget, $backupEntry, $output);
+        [$restored, $reason] = self::attempt(static fn(): bool => rename($backupPath, $hookPath));
+        if (!$restored) {
+            throw EnvironmentRefusal::aboutFile($backupPath, 'restore backup', $reason);
         }
 
         $output->writeln('<info>✓ Backup restored</info>');
+    }
+
+    /** @param array<string|int, int> $backupEntry */
+    private function assertReadyToRestore(string $hookPath, string $backupPath, ResolvedTarget $backupTarget, array $backupEntry, OutputInterface $output): void
+    {
+        $destination = $this->judge($hookPath, $output);
+        if ($destination->kind !== TargetKind::Absent || $destination->path?->value() !== $hookPath) {
+            throw new FileTargetFailure(FileTargetFailureKind::Appeared, $hookPath, 'hook name appeared before backup restoration');
+        }
+        self::assertSameEntry($backupPath, $backupEntry);
+        if (!$backupTarget->sameAs($this->judge($backupPath, $output))) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $backupPath, 'backup changed before restoration');
+        }
+        clearstatcache(true, $hookPath);
+        [$current] = self::attempt(static fn() => lstat($hookPath));
+        if ($current !== false) {
+            throw new FileTargetFailure(FileTargetFailureKind::Appeared, $hookPath, 'hook name appeared before backup restoration');
+        }
+        if (!$destination->sameAs($this->judge($hookPath, $output))) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $hookPath, 'hook destination changed before restoration');
+        }
     }
 
     private function notifyBackupExists(string $hookPath, OutputInterface $output): void

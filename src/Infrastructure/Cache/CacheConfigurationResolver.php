@@ -8,9 +8,6 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\ConfigurationRoot;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
@@ -37,22 +34,28 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
             }
         }
 
-        $configuration = new CacheConfiguration(PathFactory::fromCliArgument($directory, $projectRoot), $enabled);
+        $path = PathFactory::fromCliArgument($directory, $projectRoot);
 
-        // A cache that cannot be written is a cache that silently does nothing.
-        // Only an enabled one makes a promise: `--no-cache` and
-        // `cache.enabled: false` are entitled to an unusable path.
-        //
-        // Measured, because the two refusals below differ on it: `--no-cache`
-        // DOES carry a run past this check (exit 2 where the same directory
-        // without the flag exits 3), and does NOT carry one past the
-        // empty-value refusal above, which runs before `enabled` is consulted
-        // at all. Only the refusal the flag can actually answer may name it.
-        if ($configuration->enabled) {
-            $this->assertUsable($configuration, $configuredDirectory);
+        if (!$enabled) {
+            return new CacheConfiguration($path, false);
         }
 
-        return $configuration;
+        $reason = CacheDirectoryEligibility::unusableReason($path);
+        if ($reason === null) {
+            return new CacheConfiguration($path);
+        }
+
+        $summary = \sprintf(
+            'Cache directory "%s" is not writable or cannot be created: %s Point cache.dir (or --cache-dir)'
+            . ' at a writable path, or disable the cache with --no-cache.',
+            $path->value(),
+            $reason,
+        );
+        if ($configuredDirectory !== null) {
+            $configuredDirectory->refuse($summary);
+        }
+
+        return new CacheConfiguration($path, false, $summary);
     }
 
     /**
@@ -87,29 +90,4 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
         return $candidate;
     }
 
-    /**
-     * A missing directory is not a miss — it is created here, the same way the
-     * store would create it on first write. A path that cannot become a
-     * writable directory is.
-     */
-    private function assertUsable(CacheConfiguration $configuration, ?ResolvedValueInterface $configuredDirectory): void
-    {
-        $path = $configuration->directory->value();
-
-        if ((is_dir($path) || @mkdir($path, 0755, true) || is_dir($path)) && is_writable($path)) {
-            return;
-        }
-
-        $summary = \sprintf(
-            'Cache directory "%s" is not writable. Point cache.dir (or --cache-dir) at a writable path,'
-            . ' or disable the cache with --no-cache.',
-            $path,
-        );
-
-        if ($configuredDirectory !== null) {
-            $configuredDirectory->refuse($summary);
-        }
-
-        throw ConfigurationRefusal::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Defaults), $summary);
-    }
 }

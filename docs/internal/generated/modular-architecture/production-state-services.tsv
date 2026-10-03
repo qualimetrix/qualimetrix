@@ -93,6 +93,11 @@ src/Analysis/Run/Collection/FileProcessor.php	Qualimetrix\Analysis\Run\Collectio
 src/Analysis/Run/Discovery/WalkedEntryOutcome.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntryOutcome	Analysis.Run	"request scratch or mutable internal value"	-	candidates,hiddenOutside,missing,namedExcluded,skipped,unlistableOutside,unlistableOutsideRoot	-
 src/Analysis/Run/Discovery/WalkedEntrySelection.php	Qualimetrix\Analysis\Run\Discovery\WalkedEntrySelection	Analysis.Run	"request scratch or mutable internal value"	-	visited	-
 src/Analysis/Run/ExcludeBinding/ExcludeSelectorLedger.php	Qualimetrix\Analysis\Run\ExcludeBinding\ExcludeSelectorLedger	Analysis.Run	"request scratch or mutable internal value"	-	bound,phpEvidence,removed,removedSubtrees,unjudgeable	bind
+src/Core/FileTarget/HeldLock.php	Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	"request scratch or mutable internal value"	-	handle	-
+src/Core/FileTarget/HeldTarget.php	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	"request scratch or mutable internal value"	-	created,handle	-
+src/Core/FileTarget/PathWalk.php	Qualimetrix\Core\FileTarget\PathWalk	Core.FileTarget	"request scratch or mutable internal value"	-	hops,inspection,parts,todo	-
+src/Core/FileTarget/ProcessOwner.php	Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	"process-wide static"	byDevice	-	-
+src/Core/FileTarget/TemporarySibling.php	Qualimetrix\Core\FileTarget\TemporarySibling	Core.FileTarget	"request scratch or mutable internal value"	-	handle,path	-
 src/Core/Symbol/FileDeclarationIndex.php	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	"request scratch or mutable internal value"	-	positions	register
 src/Core/Symbol/PhpBuiltinClassRegistry.php	Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	"process-wide static"	byFoldedName	-	-
 src/Infrastructure/Ast/CachedFileParser.php	Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	"adapter session or cache"	-	resolvedCache	-
@@ -102,15 +107,19 @@ src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCach
 src/Infrastructure/Composer/ComposerAutoloadMap.php	Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap	Infrastructure.Composer	"adapter session or cache"	-	classmap,loaded,omissions,psr4,roots	addPsr4
 src/Infrastructure/Composer/ComposerManifestReader.php	Qualimetrix\Infrastructure\Composer\ComposerManifestReader	Infrastructure.Composer	"invocation snapshot cache"	-	snapshots	beginInvocation
 src/Infrastructure/Composer/DeclaredParentReader.php	Qualimetrix\Infrastructure\Composer\DeclaredParentReader	Infrastructure.Composer	"adapter session or cache"	-	answers	-
+src/Infrastructure/Console/Command/AbstractHookCommand.php	Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	"adapter session or cache"	-	reportedExposure	configure,execute
 src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	configure,execute
 src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	"adapter session or cache"	-	delegate	reset,setMessage
+src/Infrastructure/Console/RunTarget/RunTargetSession.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	"adapter session or cache"	-	outputPublished	-
+src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	held,judged,reportOnStandardOutput	settle
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	-
 src/Infrastructure/Git/NameStatusListing.php	Qualimetrix\Infrastructure\Git\NameStatusListing	Infrastructure.Git	"adapter session or cache"	-	skipped	-
-src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	handle	-
+src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	failure,lostRecords,pending,target	settle
+src/Infrastructure/Logging/LoggerFactory.php	Qualimetrix\Infrastructure\Logging\LoggerFactory	Infrastructure.Logging	"adapter session or cache"	-	fileLogger	reset,settle
 src/Infrastructure/Logging/LoggerHolder.php	Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	"runtime holder"	-	logger	reset,setLogger
 src/Infrastructure/Parallel/Runtime/ParallelConfigurationStore.php	Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore	Infrastructure.Parallel	"adapter session or cache"	-	configuration	reset
 src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy	Infrastructure.Parallel	"adapter session or cache"	-	cacheDir,minFilesForParallel,projectRoot,workerCount	execute,executeParallel,executeSequential,setCacheDir,setMinFilesForParallel,setProjectRoot,setWorkerCount

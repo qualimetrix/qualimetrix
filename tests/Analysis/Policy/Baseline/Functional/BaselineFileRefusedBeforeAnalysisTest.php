@@ -279,7 +279,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         $tester = new CommandTester($command);
@@ -295,7 +295,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
     {
         (new BaselineWriter())->write(
             new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: []),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
     }

@@ -39,7 +39,10 @@ use Qualimetrix\Infrastructure\Console\ExitPolicy;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
@@ -48,12 +51,15 @@ use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Subprocess\ChildProcess;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(ResultPresenter::class)]
 #[CoversClass(OutputHelper::class)]
@@ -108,6 +114,7 @@ final class ResultPresenterTest extends TestCase
             $this->input(['--format' => 'text']),
             $output,
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             outputFormat: new OutputFormat('json'),
             exitPolicy: new ExitPolicy(),
         );
@@ -132,6 +139,7 @@ final class ResultPresenterTest extends TestCase
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             outputFormat: new OutputFormat(),
             exitPolicy: new ExitPolicy(Severity::Warning),
         );
@@ -155,6 +163,7 @@ final class ResultPresenterTest extends TestCase
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             new OutputFormat(),
             new ExitPolicy(),
         ));
@@ -190,14 +199,14 @@ final class ResultPresenterTest extends TestCase
             $this->input(),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             new OutputFormat(),
             new ExitPolicy(),
         );
     }
 
     /**
-     * An unwritable `--output` target is
-     * refused before analysis runs, not discovered afterward. The counter
+     * An unwritable `--output` target is refused before analysis runs. The counter
      * evidence that no analysis ran lives in {@see \Qualimetrix\Infrastructure\Console\Command\CheckCommand::doExecute()},
      * which calls this precheck before `runAnalysis()` — this test pins the
      * precheck itself, in isolation from that ordering.
@@ -211,10 +220,11 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
             self::fail('An unwritable --output directory must be refused before analysis runs.');
-        } catch (ConfigurationRefusal $refusal) {
+        } catch (EnvironmentRefusal $refusal) {
             self::assertStringContainsString($dir, $refusal->summary());
+            self::assertFileDoesNotExist($dir . '/report.json');
         } finally {
             chmod($dir, 0o755);
             rmdir($dir);
@@ -233,7 +243,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir]));
+                ->assertOutputIsWritable($this->input(['--output' => $dir]), $this->targets());
             self::fail('A directory named by --output must be refused before analysis runs.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('is a directory', $refusal->summary());
@@ -259,7 +269,7 @@ final class ResultPresenterTest extends TestCase
 
         try {
             $this->presenter(self::createStub(FormatterRegistryInterface::class))
-                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']));
+                ->assertOutputIsWritable($this->input(['--output' => $dir . '/report.json']), $this->targets());
         } finally {
             chmod($dir, 0o755);
             unlink($dir . '/report.json');
@@ -276,42 +286,75 @@ final class ResultPresenterTest extends TestCase
         $writableTarget = sys_get_temp_dir() . '/qmx-result-presenter-writable-' . bin2hex(random_bytes(6)) . '.json';
 
         // Neither call may throw — the assertion is that execution reaches the end.
-        $presenter->assertOutputIsWritable($this->input());
-        $presenter->assertOutputIsWritable($this->input(['--output' => $writableTarget]));
+        $presenter->assertOutputIsWritable($this->input(), $this->targets());
+        $presenter->assertOutputIsWritable($this->input(['--output' => $writableTarget]), $this->targets());
     }
 
     /**
-     * The second mechanism the precheck above cannot cover: a target that was
-     * writable when checked and stops being writable before the write
-     * happens, or a directory that never existed because the precheck was
-     * bypassed (as here, calling {@see ResultPresenter::presentResults()}
-     * directly). `writeOutput()` throws rather than reporting the findings'
-     * own exit code — the refusal beats the outcome, because a report that
-     * never reached disk cannot honestly be exit code 2.
+     * A target may fail after it passes judgement and claim. The refusal beats
+     * the findings' exit code because the report never reached disk.
      */
     #[Test]
     public function itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode(): void
     {
-        $formatter = self::createStub(FormatterInterface::class);
-        $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('rendered');
-        $registry = self::createStub(FormatterRegistryInterface::class);
-        $registry->method('get')->willReturn($formatter);
-        $finding = $this->finding(Severity::Error);
-        $missingDirectoryTarget = sys_get_temp_dir() . '/qmx-result-presenter-missing-'
-            . bin2hex(random_bytes(6)) . '/report.json';
+        $target = sys_get_temp_dir() . '/qmx-result-presenter-fault-' . bin2hex(random_bytes(6)) . '.json';
+        file_put_contents($target, 'old');
+        $script = <<<'PHP'
+            namespace Qualimetrix\Core\FileTarget {
+                function fwrite($stream, string $bytes): int|false
+                {
+                    ++$GLOBALS['qmx_report_hit'];
+                    return 0;
+                }
+            }
+            namespace {
+                require $argv[1];
+                require $argv[2];
+                $GLOBALS['qmx_report_hit'] = 0;
+                $fixture = new \Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest('itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode');
+                $stub = new \ReflectionMethod(\PHPUnit\Framework\TestCase::class, 'createStub');
+                $formatter = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterInterface::class);
+                $formatter->method('getDefaultGroupBy')->willReturn(\Qualimetrix\Reporting\GroupBy::None);
+                $formatter->method('format')->willReturn('rendered');
+                $registry = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterRegistryInterface::class);
+                $registry->method('get')->willReturn($formatter);
+                $method = static fn (string $name, ...$args) => (new \ReflectionMethod($fixture, $name))->invoke($fixture, ...$args);
+                $finding = $method('finding', \Qualimetrix\Analysis\Finding\Contract\Severity::Error);
+                $targets = $method('targets');
+                $targets->judge('--output', $argv[3]);
+                $targets->claim();
+                try {
+                    $exit = $method('presenter', $registry)->presentResults(
+                        [$finding],
+                        $method('analysisResult', [$finding]),
+                        $method('input', ['--output' => $argv[3]]),
+                        new \Symfony\Component\Console\Output\BufferedOutput(),
+                        \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'),
+                        $targets,
+                        new \Qualimetrix\Reporting\Contract\OutputFormat(),
+                        new \Qualimetrix\Infrastructure\Console\ExitPolicy(),
+                    );
+                    $failure = null;
+                } catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $caught) {
+                    $exit = null;
+                    $failure = $caught->summary();
+                }
+                $targets->abandon();
+                echo json_encode(['hit' => $GLOBALS['qmx_report_hit'], 'exit' => $exit, 'failure' => $failure, 'content' => file_get_contents($argv[3])]);
+            }
+            PHP;
 
-        $this->expectException(ConfigurationRefusal::class);
-
-        $this->presenter($registry)->presentResults(
-            [$finding],
-            $this->analysisResult([$finding]),
-            $this->input(['--output' => $missingDirectoryTarget]),
-            new BufferedOutput(),
-            AbsolutePath::fromString('/project'),
-            new OutputFormat(),
-            new ExitPolicy(),
-        );
+        try {
+            $run = ChildProcess::run([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', __FILE__, $target]);
+            self::assertSame(0, $run['exitCode'], $run['stderr']);
+            $result = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+            self::assertGreaterThan(0, $result['hit']);
+            self::assertNull($result['exit']);
+            self::assertStringContainsString('--output', $result['failure']);
+            self::assertSame('', $result['content']);
+        } finally {
+            unlink($target);
+        }
     }
 
     /**
@@ -401,6 +444,7 @@ final class ResultPresenterTest extends TestCase
                 $this->input(['--namespace' => 'Zzz\\Nope', '--class' => 'Zzz\\Nope\\Thing']),
                 new BufferedOutput(),
                 AbsolutePath::fromString('/project'),
+                $this->targets(),
                 new OutputFormat(),
                 new ExitPolicy(),
             );
@@ -408,6 +452,11 @@ final class ResultPresenterTest extends TestCase
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('mutually exclusive', $refusal->summary());
         }
+    }
+
+    private function targets(): RunTargets
+    {
+        return new RunTargets(new LoggerFactory());
     }
 
     private function presenter(FormatterRegistryInterface $registry): ResultPresenter
@@ -506,6 +555,7 @@ final class ResultPresenterTest extends TestCase
             $this->input([$option => $option === '--namespace' ? 'subtree:' . $value : $value]),
             new BufferedOutput(),
             AbsolutePath::fromString('/project'),
+            $this->targets(),
             new OutputFormat(),
             new ExitPolicy(),
         );

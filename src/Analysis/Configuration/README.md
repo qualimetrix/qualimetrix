@@ -35,7 +35,8 @@ Configuration/
 │   │       ├── IntegerJudgement.php # pure integer grammar
 │   │       └── SectionDeclaration.php # atomic canonical key and node schema
 │   ├── Pipeline/                 # resolution request and pipeline contracts
-│   └── Refusal/                  # ConfigurationRefusal — the one carrier for a configuration
+│   └── Refusal/                  # RefusalInterface — shared summary, position and source metadata;
+│                                  # ConfigurationRefusal carries a configuration
 │                                  # refusal by user input, and its origin/position vocabulary;
 │                                  # per-source shorthands (atResolvedKey, aboutCommandLineInput, …)
 │                                  # let a throw site name its source without importing the vocabulary
@@ -197,6 +198,9 @@ precedence index within this composed document).
   several presets of the same source kind. Their default position belongs to
   the last writer; an explicit null preserves a positionless refusal.
   Provenance from different composed documents is not combined.
+  Both configuration and environment refusals implement the shared
+  `RefusalInterface`; only configuration refusals carry authored sources.
+  Console owns environment wording and terminal stream selection.
 - Diagnostics — warnings about accepted configuration — travel with the
   resolved document (`ConfigurationDocument::diagnostics()`). Every command
   that resolves the document prints them on stderr, and `check`'s JSON report

@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 use Exception;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -159,7 +160,7 @@ final class LayerAssignmentCommand extends Command
         // are the same one every other command's refusal gets.
         try {
             [$format, $rawFqn] = $this->request($input);
-        } catch (ConfigurationRefusal $refusal) {
+        } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $failure) {
             return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);
@@ -170,10 +171,7 @@ final class LayerAssignmentCommand extends Command
 
         try {
             $resolution = $this->resolveAssignment($input, $output, $symbol);
-        } catch (ConfigurationRefusal $refusal) {
-            // First clause: the carrier is a RuntimeException, and the
-            // `catch (Exception)` below would otherwise catch it and answer
-            // with FAILURE (1) instead of the shared refusal code.
+        } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $e) {
             // Named secondary signal for code 3: an
@@ -182,14 +180,9 @@ final class LayerAssignmentCommand extends Command
             // `Exception` branch below and answering with 1.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Exception $e) {
-            // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
-            // so genuine programming bugs in the pipeline surface in CI rather than
-            // being silently reported as exit code 1. Configuration failures the
-            // user can fix are refused above as `ConfigurationRefusal`; anything
-            // still reaching here is not one, so it goes through the presenter's
-            // `internalError()` — the same envelope and `-q`/`--silent` survival
-            // every other command's internal error gets, not a local `reportError()`.
-            return $this->refusalPresenter->internalError($output, $format, $e);
+            // Core failures can arrive from collection or inspection without
+            // an intermediate Console translation.
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         }
 
         if ($format === 'json') {

@@ -131,6 +131,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0095 — Inline Directives Are Authored Sites with Bounded Reach](0095-inline-directives-are-authored-sites-with-bounded-reach.md) — Inline owns physical admission, declaration reach, shared refusals and actual suppression attribution; Reporting consumes the measured site.
 
+- [0096 — File Target Claims](0096-file-target-claims.md) — neutral filesystem judgement, held writes, publication and explicit descriptor/race limits.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

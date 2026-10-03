@@ -208,6 +208,11 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
+        'tests/Core/FileTarget/Unit/HeldTargetTest.php:217' => 'The descriptor regression binds stdout directly to '
+            . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
+            . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
+            . 'read stream can be left unserviced.',
+
         'scripts/finding-gate-controls/Shell.php:89' => 'The finding-gate controls supervisor: a global '
             . '`stream_select` across every live child, plus process-group isolation, descendant termination and a '
             . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
@@ -277,7 +282,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '
             . 'match back to case-sensitive and this entry refuses as stale.',
 
-        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:636' => 'The parent holds the '
+        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:635' => 'The parent holds the '
             . 'lock the child blocks on, so the window opens before the parent is free to read anything and no read '
             . 'discipline closes it. Stderr goes to a file the failure message reads back, leaving stdout the only '
             . 'blocking stream.',
@@ -293,10 +298,6 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'reports EOF, which is a different read discipline rather than a caller of this one. Both streams are '
             . 'drained from one `stream_select` loop.',
 
-        'tests/Infrastructure/Console/Unit/ArtifactFileTest.php:550' => 'PHP source handed to `php -r`, so a '
-            . 'literal here and a real call in the parent it describes. That parent hands its own non-blocking '
-            . 'STDOUT to the child as a descriptor and opens no pipe, so it reads nothing; the test itself runs '
-            . 'the pipeline through the shared subprocess module.',
     ];
 
     /** @var list<array{path: string, line: int, name: string, spelled: string, kind: string}>|null */

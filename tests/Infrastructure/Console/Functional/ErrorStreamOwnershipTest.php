@@ -11,6 +11,7 @@ use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
@@ -51,7 +52,8 @@ final class ErrorStreamOwnershipTest extends TestCase
         $errorStream = new ErrorStream();
         $frame = self::frameOn($errorStream, $output);
 
-        $logger = (new RuntimeLoggerConfigurator(new LoggerFactory(), new LoggerHolder(), $errorStream))
+        $factory = new LoggerFactory();
+        $logger = (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), $errorStream, new RunTargets($factory)))
             ->configure(self::input(), $output);
         $logger->debug('a line from the collection phase');
 
@@ -68,15 +70,20 @@ final class ErrorStreamOwnershipTest extends TestCase
         $report = self::createStub(ProfileReportInterface::class);
         $report->method('isEnabled')->willReturn(true);
         $target = sys_get_temp_dir() . '/qmx-profile-frame-' . bin2hex(random_bytes(6)) . '.json';
+        $targets = new RunTargets(new LoggerFactory());
+        $targets->judge('--profile', $target);
+        $targets->claim();
 
         try {
             (new ProfilePresenter($report, errorStream: $errorStream))->present(
                 self::input(['profile-format' => 'json'], ['profile' => $target]),
                 $output,
+                $targets,
             );
 
             self::assertSurvivesAboveFrame($output, $frame, 'Profile exported to');
         } finally {
+            $targets->abandon();
             @unlink($target);
         }
     }

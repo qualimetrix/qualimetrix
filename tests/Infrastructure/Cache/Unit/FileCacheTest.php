@@ -12,9 +12,12 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\FileCache;
 use Qualimetrix\Infrastructure\Serializer\PhpSerializer;
 use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
+use Qualimetrix\Subprocess\ChildProcess;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use stdClass;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(FileCache::class)]
 final class FileCacheTest extends TestCase
@@ -79,11 +82,72 @@ final class FileCacheTest extends TestCase
         $this->cache->set('key2', 'value2');
         $this->cache->set('key3', 'value3');
 
-        $this->cache->clear();
+        $outcome = $this->cache->clear();
 
+        self::assertTrue($outcome->complete);
+        self::assertSame(0, $outcome->remaining);
         self::assertFalse($this->cache->has('key1'));
         self::assertFalse($this->cache->has('key2'));
         self::assertFalse($this->cache->has('key3'));
+    }
+
+    #[Test]
+    public function itReportsAnOwnedEntryLeftBehindByAClearFailure(): void
+    {
+        $result = $this->runClearFault('entry');
+
+        self::assertGreaterThan(0, $result['hookCalls']);
+        self::assertTrue($result['entryExists']);
+        self::assertFalse($result['outcome']['complete'] ?? null);
+        self::assertSame(1, $result['outcome']['remaining'] ?? null);
+        self::assertSame($this->cacheDir, $result['outcome']['directory'] ?? null);
+        self::assertNotEmpty($result['outcome']['reason'] ?? null);
+    }
+
+    #[Test]
+    public function itDoesNotCountForeignResidueAsAnOwnedEntry(): void
+    {
+        $result = $this->runClearFault('foreign');
+
+        self::assertGreaterThan(0, $result['hookCalls']);
+        self::assertFalse($result['entryExists']);
+        self::assertTrue($result['foreignExists']);
+        self::assertTrue($result['outcome']['complete'] ?? false);
+        self::assertSame(0, $result['outcome']['remaining'] ?? null);
+    }
+
+    #[Test]
+    public function itDoesNotClaimCompletionWhenALinkedShardCanHideCacheEntries(): void
+    {
+        $outside = $this->cacheDir . '-outside';
+        mkdir($this->cacheDir);
+        mkdir($outside);
+        file_put_contents($outside . '/ab-key.cache', 'old bytes');
+        symlink($outside, $this->cacheDir . '/ab');
+
+        try {
+            $outcome = $this->cache->clear();
+
+            self::assertFalse($outcome->complete);
+            self::assertNotEmpty($outcome->reason);
+            self::assertSame('old bytes', file_get_contents($outside . '/ab-key.cache'));
+        } finally {
+            unlink($this->cacheDir . '/ab');
+            unlink($outside . '/ab-key.cache');
+            rmdir($outside);
+        }
+    }
+
+    #[Test]
+    public function itPreservesAnEntryAndRemovesTheTemporaryFileAfterAShortWrite(): void
+    {
+        $this->assertFailedReplacementLeavesOriginal('short');
+    }
+
+    #[Test]
+    public function itPreservesAnEntryAndRemovesTheTemporaryFileAfterAWriteReturnsFalse(): void
+    {
+        $this->assertFailedReplacementLeavesOriginal('false');
     }
 
     #[Test]
@@ -154,11 +218,10 @@ final class FileCacheTest extends TestCase
     {
         $cache = new FileCache(AbsolutePath::fromString('/non/existent/directory'));
 
-        // Should not throw
-        $cache->clear();
+        $outcome = $cache->clear();
 
-        // If we get here, the test passed (no exception thrown)
-        $this->addToAssertionCount(1);
+        self::assertTrue($outcome->complete);
+        self::assertSame(0, $outcome->remaining);
     }
 
     #[Test]
@@ -393,6 +456,126 @@ final class FileCacheTest extends TestCase
                 return $this->inner->unserialize($data);
             }
         };
+    }
+
+    /** @return array<string, mixed> */
+    private function runClearFault(string $blocked): array
+    {
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+namespace Qualimetrix\Infrastructure\Cache {
+    function unlink(string $path): bool {
+        if (($GLOBALS['qmx_blocked'] ?? null) === 'entry' && str_ends_with($path, '.cache')) {
+            ++$GLOBALS['qmx_hook_calls'];
+            return false;
+        }
+        if (($GLOBALS['qmx_blocked'] ?? null) === 'foreign' && str_ends_with($path, '/foreign.txt')) {
+            ++$GLOBALS['qmx_hook_calls'];
+            return false;
+        }
+        return \unlink($path);
+    }
+}
+namespace {
+    require $argv[1];
+    $directory = $argv[2];
+    $cache = new \Qualimetrix\Infrastructure\Cache\FileCache(
+        \Qualimetrix\Core\Path\AbsolutePath::fromString($directory),
+    );
+    $cache->set('ab-key', 'value');
+    \file_put_contents($directory . '/foreign.txt', 'foreign');
+    $GLOBALS['qmx_hook_calls'] = 0;
+    $GLOBALS['qmx_blocked'] = $argv[3];
+    $outcome = $cache->clear();
+    echo \json_encode([
+        'hookCalls' => $GLOBALS['qmx_hook_calls'],
+        'entryExists' => \file_exists($directory . '/ab/ab-key.cache'),
+        'foreignExists' => \file_exists($directory . '/foreign.txt'),
+        'outcome' => \is_object($outcome) ? [
+            'complete' => $outcome->complete,
+            'remaining' => $outcome->remaining,
+            'directory' => $outcome->directory,
+            'reason' => $outcome->reason,
+        ] : null,
+    ], \JSON_THROW_ON_ERROR);
+}
+PHP;
+
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $this->cacheDir, $blocked]);
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+
+        return json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+    }
+
+    private function assertFailedReplacementLeavesOriginal(string $fault): void
+    {
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+namespace Qualimetrix\Infrastructure\Cache {
+    function file_put_contents(string $path, string $data): int|false {
+        if (($GLOBALS['qmx_fault'] ?? null) !== null && str_contains($path, '.cache.tmp.')) {
+            ++$GLOBALS['qmx_old_hits'];
+            \file_put_contents($path, substr($data, 0, 2));
+            return $GLOBALS['qmx_fault'] === 'short' ? 2 : false;
+        }
+        return \file_put_contents($path, $data);
+    }
+}
+namespace Qualimetrix\Core\FileTarget {
+    function fwrite($handle, string $data): int|false {
+        $uri = \stream_get_meta_data($handle)['uri'] ?? '';
+        if (($GLOBALS['qmx_fault'] ?? null) !== null && str_starts_with($uri, $GLOBALS['qmx_shard_real'] . '/.qmx-')) {
+            ++$GLOBALS['qmx_new_hits'];
+            if ($GLOBALS['qmx_new_hits'] === 1) {
+                return \fwrite($handle, substr($data, 0, 2));
+            }
+            return $GLOBALS['qmx_fault'] === 'short' ? 0 : false;
+        }
+        return \fwrite($handle, $data);
+    }
+}
+namespace {
+    require $argv[1];
+    $directory = $argv[2];
+    $cache = new \Qualimetrix\Infrastructure\Cache\FileCache(
+        \Qualimetrix\Core\Path\AbsolutePath::fromString($directory),
+    );
+    $cache->set('ab-key', 'before');
+    $GLOBALS['qmx_shard'] = $directory . '/ab';
+    $GLOBALS['qmx_shard_real'] = \realpath($GLOBALS['qmx_shard']);
+    $entry = $GLOBALS['qmx_shard'] . '/ab-key.cache';
+    $original = \file_get_contents($entry);
+    $GLOBALS['qmx_old_hits'] = 0;
+    $GLOBALS['qmx_new_hits'] = 0;
+    $GLOBALS['qmx_fault'] = $argv[3];
+    $caught = false;
+    try {
+        $cache->set('ab-key', 'after');
+    } catch (\Qualimetrix\Infrastructure\Cache\CacheWriteException) {
+        $caught = true;
+    }
+    $names = \scandir($GLOBALS['qmx_shard']);
+    if ($names === false) throw new \RuntimeException('Cannot inspect cache shard');
+    echo \json_encode([
+        'oldHits' => $GLOBALS['qmx_old_hits'],
+        'newHits' => $GLOBALS['qmx_new_hits'],
+        'caught' => $caught,
+        'original' => \base64_encode($original),
+        'after' => \base64_encode(\file_get_contents($entry)),
+        'residue' => \array_values(\array_filter($names, static fn(string $name): bool =>
+            str_contains($name, '.tmp.') || str_starts_with($name, '.qmx-'))),
+    ], \JSON_THROW_ON_ERROR);
+}
+PHP;
+
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $this->cacheDir, $fault]);
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertGreaterThan(0, $result['oldHits'] + $result['newHits'], 'Neither native write path was exercised.');
+        self::assertTrue($result['caught']);
+        self::assertSame($result['original'], $result['after']);
+        self::assertSame([], $result['residue']);
     }
 
     private function removeDirectory(string $dir): void

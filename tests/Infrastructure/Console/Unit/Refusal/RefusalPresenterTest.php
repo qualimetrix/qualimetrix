@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -12,13 +13,17 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Tests\Infrastructure\Console\Support\SplitStreamConsoleOutput;
 use RuntimeException;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Output\StreamOutput;
 
 /**
  * The three outcomes a run can end on, and where each one is written.
@@ -46,6 +51,48 @@ final class RefusalPresenterTest extends TestCase
         self::assertSame(3, $exit);
         self::assertSame('', $output->standardOutputContent());
         self::assertStringContainsString('Configuration error: unknown group "bogus"', $output->errorOutputContent());
+    }
+
+    #[Test]
+    public function itClassifiesEveryFileTargetFailureKindIntoItsRefusalFamily(): void
+    {
+        $configurationKinds = [
+            FileTargetFailureKind::UnsupportedScheme,
+            FileTargetFailureKind::Directory,
+            FileTargetFailureKind::DirectoryMissing,
+            FileTargetFailureKind::ForeignDescriptor,
+        ];
+
+        foreach (FileTargetFailureKind::cases() as $kind) {
+            $output = self::terminalOutput();
+            $exit = $this->presenter()->unhandled($output, 'json', new FileTargetFailure($kind, '/tmp/target', 'failed'));
+            $envelope = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+
+            self::assertSame(3, $exit, $kind->name);
+            self::assertSame('', $output->errorOutputContent(), $kind->name);
+            self::assertStringContainsString('/tmp/target', $envelope['error'], $kind->name);
+            self::assertStringStartsWith(
+                \in_array($kind, $configurationKinds, true) ? 'Configuration error:' : 'Environment error:',
+                $envelope['error'],
+                $kind->name,
+            );
+            self::assertSame(\in_array($kind, $configurationKinds, true) ? 'resolved' : null, $envelope['source'][0]['kind'] ?? null, $kind->name);
+        }
+    }
+
+    #[Test]
+    public function itKeepsAnEnvironmentFailureAfterPublishedReportOnStderr(): void
+    {
+        $output = self::terminalOutput();
+        $exit = $this->presenter()->unhandledAfterPublishedReport(
+            $output,
+            new FileTargetFailure(FileTargetFailureKind::PartialWrite, '/tmp/profile.json', 'wrote 4 of 8 bytes'),
+        );
+
+        self::assertSame(3, $exit);
+        self::assertSame('', $output->standardOutputContent());
+        self::assertStringContainsString('Environment error:', $output->errorOutputContent());
+        self::assertStringContainsString('/tmp/profile.json', $output->errorOutputContent());
     }
 
     #[Test]
@@ -168,7 +215,7 @@ final class RefusalPresenterTest extends TestCase
     {
         $output = self::terminalOutput();
 
-        $exit = $this->presenter()->internalError($output, null, new RuntimeException('boom'));
+        $exit = $this->presenter()->unhandled($output, null, new RuntimeException('boom'));
 
         self::assertSame(1, $exit);
         self::assertStringContainsString('Internal error: boom', $output->errorOutputContent());
@@ -179,7 +226,7 @@ final class RefusalPresenterTest extends TestCase
     {
         $output = self::terminalOutput();
 
-        $exit = $this->presenter()->internalError($output, 'json', new RuntimeException('boom'));
+        $exit = $this->presenter()->unhandled($output, 'json', new RuntimeException('boom'));
 
         self::assertSame(1, $exit);
         self::assertSame(
@@ -193,7 +240,7 @@ final class RefusalPresenterTest extends TestCase
     {
         $output = self::terminalOutput(OutputInterface::VERBOSITY_NORMAL);
 
-        $this->presenter()->internalError($output, null, new RuntimeException('boom'));
+        $this->presenter()->unhandled($output, null, new RuntimeException('boom'));
 
         self::assertStringNotContainsString('Stack trace', $output->errorOutputContent());
     }
@@ -203,7 +250,7 @@ final class RefusalPresenterTest extends TestCase
     {
         $output = self::terminalOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $this->presenter()->internalError($output, null, new RuntimeException('boom'));
+        $this->presenter()->unhandled($output, null, new RuntimeException('boom'));
 
         self::assertStringContainsString('Stack trace', $output->errorOutputContent());
     }
@@ -358,7 +405,7 @@ final class RefusalPresenterTest extends TestCase
     {
         $output = self::terminalOutput();
 
-        $this->presenter()->internalError($output, null, new RuntimeException('boom'));
+        $this->presenter()->unhandled($output, null, new RuntimeException('boom'));
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output->errorOutputContent());
     }
@@ -415,7 +462,7 @@ final class RefusalPresenterTest extends TestCase
 
         $presenter->refusal($outputs[0], 'json', ConfigurationRefusal::aboutResolvedInput('no position', 'paths'));
         $presenter->fallbackRefusal($outputs[1], 'json', new RuntimeException('fallback'));
-        $presenter->internalError($outputs[2], 'json', new RuntimeException('defect'));
+        $presenter->unhandled($outputs[2], 'json', new RuntimeException('defect'));
 
         foreach ($outputs as $output) {
             $envelope = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
@@ -443,7 +490,7 @@ final class RefusalPresenterTest extends TestCase
             'cycle',
         ));
         $presenter->fallbackRefusal($outputs[1], 'json', new RuntimeException('fallback'));
-        $presenter->internalError($outputs[2], 'json', new RuntimeException('defect'));
+        $presenter->unhandled($outputs[2], 'json', new RuntimeException('defect'));
 
         $sources = array_map(
             static fn(SplitStreamConsoleOutput $output): mixed => json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR)['source'],
@@ -497,7 +544,7 @@ final class RefusalPresenterTest extends TestCase
             $refused,
             ConfigurationRefusal::aboutCommandLineInput('--profile', 'Failed to write the export'),
         );
-        $failureExit = $this->presenter()->internalErrorAfterPublishedReport($failed, new RuntimeException('boom'));
+        $failureExit = $this->presenter()->unhandledAfterPublishedReport($failed, new RuntimeException('boom'));
 
         self::assertSame(3, $refusalExit);
         self::assertSame('', $refused->standardOutputContent());
@@ -508,6 +555,74 @@ final class RefusalPresenterTest extends TestCase
     }
 
     #[Test]
+    public function itReportsAJsonRefusalOnStderrWhenStdoutCannotBeWritten(): void
+    {
+        $readOnly = fopen('php://temp', 'rb');
+        $stderr = fopen('php://temp', 'w+b');
+        self::assertIsResource($readOnly);
+        self::assertIsResource($stderr);
+
+        $output = new class ($readOnly, $stderr) extends StreamOutput implements ConsoleOutputInterface {
+            /** @var array<int, ConsoleSectionOutput> */
+            private array $sections = [];
+
+            private OutputInterface $errorOutput;
+
+            /**
+             * @param resource $stdout
+             * @param resource $stderr
+             */
+            public function __construct($stdout, $stderr)
+            {
+                parent::__construct($stdout);
+                $this->errorOutput = new StreamOutput($stderr);
+            }
+
+            public function getErrorOutput(): OutputInterface
+            {
+                return $this->errorOutput;
+            }
+
+            public function setErrorOutput(OutputInterface $error): void
+            {
+                $this->errorOutput = $error;
+            }
+
+            public function section(): ConsoleSectionOutput
+            {
+                if (!$this->errorOutput instanceof StreamOutput) {
+                    throw new LogicException('Error output has no stream');
+                }
+
+                return new ConsoleSectionOutput($this->errorOutput->getStream(), $this->sections, $this->getVerbosity(), false, $this->getFormatter());
+            }
+        };
+
+        $previousHandler = static fn(int $severity, string $message): bool => true;
+        set_error_handler($previousHandler);
+        $activeHandler = null;
+        try {
+            $exit = $this->presenter()->refusal($output, 'json', ConfigurationRefusal::aboutCommandLineInput('--output', 'cannot publish report'));
+            $activeHandler = set_error_handler($previousHandler);
+            restore_error_handler();
+            rewind($stderr);
+            $diagnostic = stream_get_contents($stderr);
+
+            self::assertSame($previousHandler, $activeHandler);
+            self::assertSame(3, $exit);
+            self::assertIsString($diagnostic);
+            self::assertStringContainsString('Configuration error: cannot publish report', $diagnostic);
+        } finally {
+            if ($activeHandler !== null && $activeHandler !== $previousHandler) {
+                restore_error_handler();
+            }
+            restore_error_handler();
+            fclose($readOnly);
+            fclose($stderr);
+        }
+    }
+
+    #[Test]
     public function itStopsALiveProgressFrameBeforePresenting(): void
     {
         $output = self::terminalOutput();
@@ -515,7 +630,7 @@ final class RefusalPresenterTest extends TestCase
         $before = $errorStream->progressSection($output);
         self::assertInstanceOf(ConsoleSectionOutput::class, $before);
 
-        (new RefusalPresenter($errorStream))->internalError($output, null, new RuntimeException('boom'));
+        (new RefusalPresenter($errorStream))->unhandled($output, null, new RuntimeException('boom'));
 
         // stopProgress() forgets the section; asking again draws a fresh one
         // rather than handing back the frame that was live during the write.

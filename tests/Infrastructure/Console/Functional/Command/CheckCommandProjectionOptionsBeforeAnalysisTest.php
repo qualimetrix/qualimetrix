@@ -209,7 +209,7 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         return [$command, $pipeline];

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -16,12 +15,11 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
-use Qualimetrix\Infrastructure\Console\ArtifactFile;
 use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
@@ -32,7 +30,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
 #[AsCommand(
     name: 'graph:export',
@@ -47,7 +44,7 @@ final class GraphExportCommand extends Command
         private readonly DependencyGraphProjectionInterface $projection,
         private readonly AnalysisPreflight $preflight,
         private readonly ErrorStream $errorStream,
-        private readonly RefusalPresenter $refusalPresenter,
+        private readonly RunTargetSession $runTargetSession,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {
@@ -132,28 +129,28 @@ final class GraphExportCommand extends Command
         $rawFormat = $input->getOption('format');
         $envelopeFormat = \is_string($rawFormat) ? $rawFormat : null;
 
-        try {
-            return $this->doExecute($input, $output);
-        } catch (ConfigurationRefusal $refusal) {
-            return $this->refusalPresenter->refusal($output, $envelopeFormat, $refusal);
-        } catch (InvalidArgumentException $failure) {
-            // Named secondary signal for code 3: an
-            // `InvalidArgumentException` that never became a
-            // carrier — e.g. from the path value objects below.
-            return $this->refusalPresenter->fallbackRefusal($output, $envelopeFormat, $failure);
-        } catch (Throwable $failure) {
-            return $this->refusalPresenter->internalError($output, $envelopeFormat, $failure);
-        }
+        return $this->runTargetSession->run($output, $envelopeFormat, fn(): int => $this->doExecute($input, $output));
     }
 
     private function doExecute(InputInterface $input, OutputInterface $output): int
     {
         $format = self::resolveFormat(CommandLineSpelling::option($input, 'format') ?? '');
         $direction = self::resolveDirection(CommandLineSpelling::option($input, 'direction') ?? '');
-        $outputFile = self::prepareOutputFile($input);
+        $outputFile = CommandLineSpelling::option($input, 'output');
+        if ($outputFile !== null) {
+            $this->runTargetSession->targets()->judge('--output', $outputFile);
+        } else {
+            $this->runTargetSession->targets()->reportOnStandardOutput();
+        }
 
         $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
         $request = $this->buildProjectionRequest($input, $format, $direction);
+        foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
+            $this->errorStream->write($output, '<comment>Warning: '
+                . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning) . '</comment>');
+        }
+
+        $this->runTargetSession->targets()->claim();
 
         $this->logger->info('Starting dependency graph export', [
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $prepared->runConfiguration->paths),
@@ -172,18 +169,10 @@ final class GraphExportCommand extends Command
         $this->logGraphBuilt($result);
         $this->assertIncludeNamespacesBind($result, $request);
         $content = $this->projection->project($result->graph, $request);
-        self::publishGraph($output, $outputFile, $content, $format);
+        $this->publishGraph($output, $outputFile, $content, $format);
+        $this->runTargetSession->markOutputPublished();
 
         return self::SUCCESS;
-    }
-
-    private static function prepareOutputFile(InputInterface $input): ?ArtifactFile
-    {
-        $outputPath = CommandLineSpelling::option($input, 'output');
-        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
-        $outputFile?->refuseUnwritable();
-
-        return $outputFile;
     }
 
     private function resolveCoverageExit(DependencyGraphAnalysisResult $result, OutputInterface $output): ?int
@@ -230,10 +219,10 @@ final class GraphExportCommand extends Command
         ]);
     }
 
-    private static function publishGraph(OutputInterface $output, ?ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
+    private function publishGraph(OutputInterface $output, ?string $outputFile, string $content, GraphExportFormat $format): void
     {
         if ($outputFile !== null) {
-            self::writeToFile($output, $outputFile, $content, $format);
+            $this->writeToFile($output, $outputFile, $content, $format);
         } else {
             OutputHelper::write($output, $content);
         }
@@ -323,14 +312,14 @@ final class GraphExportCommand extends Command
     }
 
     /** @throws ConfigurationRefusal */
-    private static function writeToFile(OutputInterface $output, ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
+    private function writeToFile(OutputInterface $output, string $outputFile, string $content, GraphExportFormat $format): void
     {
-        $outputFile->write($content);
+        $this->runTargetSession->targets()->write('--output', $content);
 
-        $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile->path));
+        $this->errorStream->write($output, \sprintf('<info>Graph exported to %s</info>', $outputFile));
 
         if ($format === GraphExportFormat::Dot) {
-            $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile->path));
+            $this->errorStream->write($output, \sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
         }
     }
 

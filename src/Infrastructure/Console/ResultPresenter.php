@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\DrillDown\DrillDownBinding;
@@ -70,6 +71,7 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
         AbsolutePath $projectRoot,
+        RunTargets $runTargets,
         OutputFormat $outputFormat,
         ExitPolicy $exitPolicy,
         ?GitScope $reportScope = null,
@@ -133,7 +135,7 @@ final class ResultPresenter
         $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
 
-        $this->writeOutput($formattedOutput, $format, $input, $output);
+        $this->writeOutput($formattedOutput, $format, $input, $output, $runTargets);
 
         $profiler->stop('reporting');
 
@@ -230,9 +232,9 @@ final class ResultPresenter
     /**
      * Outputs profiling results if profiling was enabled.
      */
-    public function presentProfile(InputInterface $input, OutputInterface $output): void
+    public function presentProfile(InputInterface $input, OutputInterface $output, RunTargets $runTargets): void
     {
-        $this->profilePresenter->present($input, $output);
+        $this->profilePresenter->present($input, $output, $runTargets);
     }
 
     public function writeDiagnostic(OutputInterface $output, string $message): void
@@ -242,27 +244,21 @@ final class ResultPresenter
 
     /**
      * Refuses an `--output` target the report cannot be written to, before
-     * analysis runs; {@see ArtifactFile} judges it by the write it makes.
+     * analysis runs. The run target judgement checks access without writing.
      */
-    public function assertOutputIsWritable(InputInterface $input): void
+    public function assertOutputIsWritable(InputInterface $input, RunTargets $runTargets): void
     {
-        self::outputTarget($input)?->refuseUnwritable();
-    }
-
-    private static function outputTarget(InputInterface $input): ?ArtifactFile
-    {
-        // `--output=` never reaches here: the configuration adapter refuses
-        // an option written empty before the command reads this one.
         $path = CommandLineSpelling::option($input, 'output');
-
-        return $path === null ? null : new ArtifactFile($path, '--output');
+        if ($path !== null) {
+            $runTargets->judge('--output', $path);
+        }
     }
 
     /**
      * Writes formatted output to file (--output) or stdout.
      *
      * A write that fails here, after the precheck passed, carries a
-     * {@see ConfigurationRefusal} rather than reporting success with an
+     * typed environment refusal rather than reporting success with an
      * undelivered report: the refusal beats whatever exit code the findings
      * would have produced, which is why this throws instead of returning a
      * status for the caller to reconcile with `ExitCodeResolver`.
@@ -272,15 +268,16 @@ final class ResultPresenter
         string $format,
         InputInterface $input,
         OutputInterface $output,
+        RunTargets $runTargets,
     ): void {
-        $target = self::outputTarget($input);
+        $target = CommandLineSpelling::option($input, 'output');
 
         if ($target !== null) {
-            $target->write($formattedOutput);
+            $runTargets->write('--output', $formattedOutput);
 
             $this->errorStream->write(
                 $output,
-                \sprintf('<info>Report written to %s</info>', $target->path),
+                \sprintf('<info>Report written to %s</info>', $target),
             );
 
             return;

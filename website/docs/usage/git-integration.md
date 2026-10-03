@@ -66,6 +66,12 @@ Qualimetrix's, an occupied backup slot — it exits with code `3` and prints the
 stderr, like every other refused input. `--working-dir` works with all three commands, also
 when the binary was started by a relative path (`php vendor/bin/qmx hook:install -d ../app`).
 
+Backups keep the original hook's mode. `--restore-backup` moves the backup
+inode to the hook name and consumes the backup slot. An unreadable hook or a
+failed filesystem operation refuses with environment exit 3; it is never
+reported as a healthy hook. Targets and backups use the same judged link
+policy as file output, and writable exposure is reported once per target.
+
 ---
 
 ## PR workflow with --report

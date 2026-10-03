@@ -69,6 +69,8 @@ use Qualimetrix\Infrastructure\Console\RuleListingPresenter;
 use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
@@ -282,7 +284,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         $container->register(RuntimeLoggerConfigurator::class)
             ->setAutowired(true)
-            ->setArgument('$loggerHolder', new Reference(LoggerHolder::class));
+            ->setArgument('$loggerHolder', new Reference(LoggerHolder::class))
+            ->setArgument('$runTargets', new Reference(RunTargets::class));
 
         $container->register(ProjectSourceConfigurator::class)
             ->setAutowired(true);
@@ -311,6 +314,12 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(RefusalPresenter::class)
             ->setAutowired(true)
             ->setPublic(true);
+
+        $container->register(RunTargetSession::class)
+            ->setArguments([
+                new Reference(RunTargets::class),
+                new Reference(RefusalPresenter::class),
+            ]);
 
         $container->register(ProgressConfigurator::class)
             ->setAutowired(true);
@@ -376,7 +385,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
                 new Reference(ConfigurationInputAdapter::class),
                 new Reference(CheckConfigurationResolvers::class),
-                new Reference(RefusalPresenter::class),
+                new Reference(RunTargetSession::class),
             ])
             ->setPublic(true);
     }
@@ -396,6 +405,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
 
@@ -404,6 +414,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
 
@@ -412,6 +423,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
     }
@@ -464,7 +476,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
                 new Reference(AnalysisPreflight::class),
                 new Reference(ErrorStream::class),
-                new Reference(RefusalPresenter::class),
+                new Reference(RunTargetSession::class),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
@@ -505,6 +517,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineRun::class),
                 new Reference(BaselineGenerator::class),
                 new Reference(BaselineWriter::class),
+                new Reference(ErrorStream::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);

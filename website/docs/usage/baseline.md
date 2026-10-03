@@ -56,6 +56,15 @@ bin/qmx baseline:generate baseline.json src/ --mode=suppress --force
 
 `baseline:generate <baseline> [<paths>...]` captures every currently measured finding. Its default `--mode=ratchet` records a ceiling; `--mode=suppress` accepts each captured identity regardless of later count or magnitude. `--force` overwrites an existing baseline file and discards its recorded acceptances.
 
+The destination parent must already exist and permit writing and searching.
+Create it explicitly before generating: the command no longer creates missing
+parents. The destination is checked before analysis and existing file modes are
+preserved. With `--force`, a closed symbolic link retains the link and writes its
+resolved target, including an absent referent. Links through directories whose
+entries others can replace refuse. Without `--force`, any occupied name,
+including a dangling link, still refuses. Storage or lock contention returns
+exit 3; failed publication does not install a partial baseline.
+
 ### Replace an older baseline
 
 ```bash

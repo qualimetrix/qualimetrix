@@ -5,8 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Core\FileTarget\FileIdentity;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
+use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\TargetKind;
+use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Command\Command;
@@ -31,9 +39,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class AbstractHookCommand extends Command
 {
+    /** @var array<string, true> */
+    private array $reportedExposure = [];
+
     public function __construct(
         private readonly GitRepositoryLocatorInterface $gitRepositoryLocator,
         protected readonly RunningBinaryLocatorInterface $runningBinaryLocator,
+        private readonly ErrorStream $errorStream,
     ) {
         parent::__construct();
     }
@@ -54,6 +66,7 @@ abstract class AbstractHookCommand extends Command
      */
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->reportedExposure = [];
         $exitCode = $this->doExecute($input, $output);
 
         $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
@@ -142,5 +155,70 @@ abstract class AbstractHookCommand extends Command
     final protected static function hookExists(string $hookPath): bool
     {
         return is_link($hookPath) || file_exists($hookPath);
+    }
+
+    final protected function danglingLink(string $path, OutputInterface $output): bool
+    {
+        if (!is_link($path) || file_exists($path)) {
+            return false;
+        }
+        try {
+            $target = $this->judge($path, $output);
+        } catch (FileTargetFailure $failure) {
+            if ($failure->kind === FileTargetFailureKind::DirectoryMissing) {
+                return true;
+            }
+
+            throw $failure;
+        }
+        if ($target->kind === TargetKind::Absent) {
+            return true;
+        }
+
+        throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $path, 'hook link changed during inspection');
+    }
+
+    final protected function judge(string $path, OutputInterface $output): ResolvedTarget
+    {
+        $target = TargetPath::resolve($path);
+        if ($target->exposure !== [] && !isset($this->reportedExposure[$path])) {
+            $exposure = $target->exposure[0];
+            $this->errorStream->write($output, \sprintf('Warning: Hook target %s can be changed through %s by %s.', $path, $exposure->directory, $exposure->changedBy));
+            $this->reportedExposure[$path] = true;
+        }
+
+        return $target;
+    }
+
+    final protected static function read(string $path): string
+    {
+        [$contents, $reason] = self::attempt(static fn() => file_get_contents($path));
+        if ($contents === false) {
+            throw EnvironmentRefusal::aboutFile($path, 'read', $reason);
+        }
+
+        return $contents;
+    }
+
+    /** @return array<string|int, int> */
+    final protected static function entry(string $path): array
+    {
+        clearstatcache(true, $path);
+        [$entry, $reason] = self::attempt(static fn() => lstat($path));
+        if ($entry === false) {
+            throw EnvironmentRefusal::aboutFile($path, 'inspect', $reason);
+        }
+
+        return $entry;
+    }
+
+    /** @param array<string|int, int> $original */
+    final protected static function assertSameEntry(string $path, array $original): void
+    {
+        clearstatcache(true, $path);
+        [$now] = self::attempt(static fn() => lstat($path));
+        if ($now === false || !FileIdentity::fromStat($original)->sameAs(FileIdentity::fromStat($now))) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $path, 'hook entry changed before operation');
+        }
     }
 }

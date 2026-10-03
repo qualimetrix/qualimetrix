@@ -9,8 +9,6 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -26,6 +24,8 @@ use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
@@ -182,7 +182,7 @@ final class BaselineWriterTest extends TestCase
         file_put_contents($path . '/keep-me', 'x');
 
         try {
-            $this->writer->write($this->baseline(), $path, $this->projectRoot);
+            $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
             self::fail('Expected the write to fail.');
         } catch (RuntimeException) {
             // expected
@@ -207,13 +207,8 @@ final class BaselineWriterTest extends TestCase
 
         $refusal = $this->refusalWithoutDiagnostics($path);
 
-        self::assertCount(1, $refusal->sources());
-        self::assertSame(ConfigurationSource::BaselineFile, $refusal->sources()[0]->source());
-        self::assertSame($path, $refusal->sources()[0]->locator());
-        self::assertSame(
-            \sprintf('Cannot create the baseline directory %s: Not a directory', $this->tempDir . '/file/sub'),
-            $refusal->summary(),
-        );
+        self::assertSame(FileTargetFailureKind::DirectoryMissing, $refusal->kind);
+        self::assertStringContainsString('path component is not a directory', $refusal->getMessage());
     }
 
     #[Test]
@@ -224,10 +219,8 @@ final class BaselineWriterTest extends TestCase
 
         $refusal = $this->refusalWithoutDiagnostics($path);
 
-        self::assertSame(
-            \sprintf('Cannot open the baseline lock file %s: Failed to open stream: Is a directory', $path . '.lock'),
-            $refusal->summary(),
-        );
+        self::assertSame(FileTargetFailureKind::Directory, $refusal->kind);
+        self::assertStringContainsString('target is a directory', $refusal->getMessage());
     }
 
     #[Test]
@@ -243,7 +236,8 @@ final class BaselineWriterTest extends TestCase
             chmod($directory, 0755);
         }
 
-        self::assertStringEndsWith(': Failed to open stream: Permission denied', $refusal->summary());
+        self::assertSame(FileTargetFailureKind::Unopenable, $refusal->kind);
+        self::assertStringContainsString('Permission denied', $refusal->getMessage());
     }
 
     #[Test]
@@ -255,7 +249,8 @@ final class BaselineWriterTest extends TestCase
 
         $refusal = $this->refusalWithoutDiagnostics($path);
 
-        self::assertStringStartsWith(\sprintf('Cannot move the baseline into place at %s: ', $path), $refusal->summary());
+        self::assertSame(FileTargetFailureKind::Directory, $refusal->kind);
+        self::assertStringContainsString('target is a directory', $refusal->getMessage());
         self::assertFileExists($path . '/keep-me');
     }
 
@@ -281,38 +276,49 @@ final class BaselineWriterTest extends TestCase
         $readByBoth = $this->loader->load($path);
 
         // Writer A lands.
-        $this->writer->write($readByBoth, $path, $this->projectRoot);
+        $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
         file_put_contents($path, (string) file_get_contents($path) . "\n");
 
         // Writer B still holds the reading from before A.
         $this->expectException(BaselineConflictException::class);
-        $this->writer->write($readByBoth, $path, $this->projectRoot);
+        $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
     }
 
     #[Test]
-    public function itRefusesToReplaceASymlinkEvenWhenItsReferentMatchesTheExpectedHash(): void
+    public function itWritesThroughAClosedSymlinkWhenItsReferentMatchesTheExpectedHash(): void
     {
         $referent = $this->tempDir . '/referent.json';
         $contents = '{"owned": "by another process"}';
         file_put_contents($referent, $contents);
+        chmod($referent, 0o600);
 
         $path = $this->tempDir . '/baseline-link.json';
         symlink($referent, $path);
 
-        try {
-            $this->writer->write(
-                $this->baseline()->withSourceContentHash(hash('sha256', $contents)),
-                $path,
-                $this->projectRoot,
-            );
-            self::fail('Expected the write to be refused.');
-        } catch (BaselineConflictException $e) {
-            self::assertStringContainsString('is a symbolic link', $e->getMessage());
-        }
+        $this->writer->write(
+            $this->baseline()->withSourceContentHash(hash('sha256', $contents)),
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
+            $this->projectRoot,
+        );
 
+        clearstatcache(true, $referent);
         self::assertTrue(is_link($path));
         self::assertSame($referent, readlink($path));
-        self::assertSame($contents, file_get_contents($referent));
+        self::assertNotSame($contents, file_get_contents($referent));
+        self::assertSame(3, $this->loader->load($referent)->count());
+        self::assertSame(0o600, fileperms($referent) & 0o7777);
+
+        $loaded = $this->loader->load($referent);
+        $prepared = \Qualimetrix\Core\FileTarget\TargetPath::resolve($path);
+        file_put_contents($referent, 'concurrent replacement');
+
+        try {
+            $this->writer->write($loaded, $prepared, $this->projectRoot);
+            self::fail('Expected the stale symlink-referent write to be refused.');
+        } catch (BaselineConflictException) {
+            self::assertSame('concurrent replacement', file_get_contents($referent));
+            self::assertTrue(is_link($path));
+        }
     }
 
     #[Test]
@@ -322,7 +328,7 @@ final class BaselineWriterTest extends TestCase
 
         $this->writer->write(
             $this->baseline()->withExpectedSourceAbsence(),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             $this->projectRoot,
         );
 
@@ -339,7 +345,7 @@ final class BaselineWriterTest extends TestCase
         try {
             $this->writer->write(
                 $this->baseline()->withExpectedSourceAbsence(),
-                $path,
+                \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
                 $this->projectRoot,
             );
             self::fail('Expected the write to be refused.');
@@ -396,7 +402,7 @@ final class BaselineWriterTest extends TestCase
             $impatient = new BaselineWriter(lockTimeoutSeconds: 0.2);
 
             try {
-                $impatient->write($this->baseline(), $path, $this->projectRoot);
+                $impatient->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
                 self::fail('The write must not proceed while another holder has the lock.');
             } catch (RuntimeException $e) {
                 self::assertStringContainsString($path . '.lock', $e->getMessage());
@@ -422,7 +428,7 @@ final class BaselineWriterTest extends TestCase
         unlink($path);
 
         try {
-            $this->writer->write($loaded, $path, $this->projectRoot);
+            $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
             self::fail('Expected the write to be refused.');
         } catch (BaselineConflictException $e) {
             self::assertStringContainsString('no longer exists', $e->getMessage());
@@ -443,10 +449,10 @@ final class BaselineWriterTest extends TestCase
 
         // Each step drops an entry, so each write really changes the file and
         // the previous reading genuinely goes out of date.
-        $token = $this->writer->write($this->without($loaded, 2), $path, $this->projectRoot);
+        $token = $this->writer->write($this->without($loaded, 2), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
         $this->writer->write(
             $this->without($loaded, 1)->withSourceContentHash($token),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             $this->projectRoot,
         );
 
@@ -454,7 +460,7 @@ final class BaselineWriterTest extends TestCase
 
         self::assertSame($current, $this->writer->write(
             $this->without($loaded, 1)->withSourceContentHash($current),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             $this->projectRoot,
         ));
     }
@@ -504,7 +510,7 @@ final class BaselineWriterTest extends TestCase
         $loaded = $this->loader->load($path);
         self::assertCount(4, $loaded->inertEntries, 'Both duplicates and both unreadable lines are inert.');
 
-        $this->writer->write($loaded, $path, $this->projectRoot);
+        $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
@@ -572,7 +578,7 @@ final class BaselineWriterTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
 
-        $this->writer->write($this->loader->load($path), $path, $this->projectRoot);
+        $this->writer->write($this->loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
@@ -593,7 +599,7 @@ final class BaselineWriterTest extends TestCase
         $path = $this->write($this->baseline());
         $loaded = $this->loader->load($path);
 
-        $hash = $this->writer->write($loaded, $path, $this->projectRoot);
+        $hash = $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertSame(hash_file('sha256', $path), $hash);
     }
@@ -605,7 +611,7 @@ final class BaselineWriterTest extends TestCase
         file_put_contents($path, 'whatever was here before');
 
         // No source hash: nothing was read, so there is nothing to conflict with.
-        $this->writer->write($this->baseline(), $path, $this->projectRoot);
+        $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertStringContainsString('"version": 13', (string) file_get_contents($path));
     }
@@ -684,7 +690,7 @@ final class BaselineWriterTest extends TestCase
                 scope: RunScope::record([$projectRoot], $projectRoot)->paths(),
                 entries: [],
             ),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             $projectRoot,
         );
 
@@ -743,12 +749,12 @@ final class BaselineWriterTest extends TestCase
         $path = $this->write($this->baseline());
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load($path), $path, $this->projectRoot);
+        $this->writer->write($this->loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertSame($first, (string) file_get_contents($path));
     }
 
-    private function refusalWithoutDiagnostics(string $path): ConfigurationRefusal
+    private function refusalWithoutDiagnostics(string $path): FileTargetFailure
     {
         $diagnostics = [];
         // What `display_errors` would print: a diagnostic the code silenced
@@ -766,8 +772,8 @@ final class BaselineWriterTest extends TestCase
         });
 
         try {
-            $this->writer->write($this->baseline(), $path, $this->projectRoot);
-        } catch (ConfigurationRefusal $refusal) {
+            $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        } catch (FileTargetFailure $refusal) {
             return $refusal;
         } finally {
             restore_error_handler();
@@ -788,7 +794,7 @@ final class BaselineWriterTest extends TestCase
     private function write(Baseline $baseline, string $name = 'baseline.json'): string
     {
         $path = $this->tempDir . '/' . $name;
-        $this->writer->write($baseline, $path, $this->projectRoot);
+        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         return $path;
     }

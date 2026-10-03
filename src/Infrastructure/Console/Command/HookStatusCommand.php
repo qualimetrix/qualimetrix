@@ -61,7 +61,7 @@ final class HookStatusCommand extends AbstractHookCommand
         $target = readlink($hookPath);
         $output->writeln(\sprintf('Type: <info>Symlink</info> → %s', $target === false ? 'unknown' : $target));
 
-        if (!file_exists($hookPath)) {
+        if ($this->danglingLink($hookPath, $output)) {
             $output->writeln('');
             $output->writeln('<error>Warning: the symlink leads nowhere, so this hook does nothing.</error>');
             $output->writeln('Earlier releases installed a symlink into a script this package no longer ships.');
@@ -76,33 +76,18 @@ final class HookStatusCommand extends AbstractHookCommand
         return $this->contentsOf($hookPath, $output);
     }
 
-    /** @return string|null null when the file cannot be read */
-    private function reportFile(string $hookPath, OutputInterface $output): ?string
+    private function reportFile(string $hookPath, OutputInterface $output): string
     {
         $output->writeln('Type: <info>File</info>');
 
         return $this->contentsOf($hookPath, $output);
     }
 
-    /**
-     * @return string|null null when the file is there and unreadable
-     */
-    private function contentsOf(string $hookPath, OutputInterface $output): ?string
+    private function contentsOf(string $hookPath, OutputInterface $output): string
     {
-        // Silenced, and reported instead: an unreadable path makes
-        // `file_get_contents` raise a warning, and PHPUnit's error handler
-        // turns that into a stack trace longer than the command's own output.
-        $contents = @file_get_contents($hookPath);
+        $this->judge($hookPath, $output);
 
-        if ($contents === false) {
-            $output->writeln('');
-            $output->writeln('<error>Warning: the hook exists but cannot be read, so it cannot be identified.</error>');
-            $output->writeln(\sprintf('Check its permissions: ls -l %s', $hookPath));
-
-            return null;
-        }
-
-        return $contents;
+        return self::read($hookPath);
     }
 
     private function reportOwnership(string $contents, OutputInterface $output): void

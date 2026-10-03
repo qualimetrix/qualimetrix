@@ -26,6 +26,29 @@ Core/
 │   └── FileParserInterface.php            # AST parsing contract
 ├── Exception/
 │   └── ParseException.php                 # Parse error value
+├── Environment/
+│   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
+├── FileTarget/
+│   ├── DirectoryFacts.php
+│   ├── EntryControl.php
+│   ├── EntryFacts.php
+│   ├── FileIdentity.php
+│   ├── FileReplacement.php
+│   ├── FileTargetFailure.php
+│   ├── FileTargetFailureKind.php
+│   ├── HeldLock.php
+│   ├── HeldTarget.php
+│   ├── NativeCall.php
+│   ├── NewName.php
+│   ├── PathExposure.php
+│   ├── PathInspection.php
+│   ├── PathWalk.php
+│   ├── ProcessOwner.php
+│   ├── ResolvedTarget.php
+│   ├── TargetClaim.php
+│   ├── TargetKind.php
+│   ├── TargetPath.php
+│   └── TemporarySibling.php
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Path/
@@ -902,6 +925,50 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 `morePermissive()`'s result type does not depend on argument order, even when the two boundaries are numerically equal but differ in `int`/`float` type: the result is written to the baseline file (ADR 0017), whose byte-stability contract leaves no room for `morePermissive(10, 10.0)` and `morePermissive(10.0, 10)` to disagree. A tie normalizes to `int` only when both inputs are `int`, and to `float` the moment either one is.
 
 ---
+
+
+## File targets
+
+`Core\\FileTarget` is the first filesystem writer in Core. It owns target
+resolution, entry-control judgement, held descriptors, temporary siblings and
+publication; `Core\\Path` only represents paths and its lexical normalization
+is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
+marks storage or delivery failures with complete user-facing messages.
+
+`TargetPath::resolve()` delegates component inspection to internal `PathWalk`.
+`PathInspection` preserves directory identities and exposure facts in each
+`ResolvedTarget`, alongside target kind, resolved path or process descriptor
+and inode identity. `EntryControl` judges placement and replacement from directory and entry
+facts. `HeldTarget::claim(ResolvedTarget)` uses internal `TargetClaim` to hold
+an unchanged regular file, an exclusively created name or a supplied stream; `write()`, `append()` and `release()` own the
+resource lifecycle. `HeldTarget::writeToStream()` borrows an already opened
+stream and checks complete writes and flush without closing, seeking or truncating
+it; a successful write advances its existing offset. `FileReplacement::replace()` publishes a complete sibling,
+and `HeldLock::acquire()` holds a named lock without truncating it, using a
+monotonic acquisition deadline.
+`TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
+support these operations. `NativeCall` captures the warning of one filesystem
+call and restores the previous PHP error handler even when the call throws.
+`FileTargetFailure` carries an explicit kind, path,
+reason and optional detail. Its failure carrier and kind vocabulary are public
+only to declared exact consumers; publication and lifecycle policy remain
+with each consuming subject. A failed temporary-sibling preparation retains the
+requested destination and the native temporary-path cause. An inaccessible
+existing parent cannot establish that the final name is absent.
+
+Existing regular files open without truncation and are checked against their
+judged inode before a write. An unwritten exclusive name is removed on release
+only if it still identifies the held file. Sticky directory mode protects
+existing owned entries from replacement but does not make a link trustworthy.
+Without POSIX, effective-uid discovery uses an empty diagnostic temporary file
+that must be removed immediately; unsafe cleanup refuses the operation.
+
+A duplicated `php://fd/N` preserves stream offset but may survive `proc_open`;
+descriptor and stream handles use blocking writes to complete delivery to a slow
+reader. Path-held handles opened with `e` are close-on-exec. Mode-bit judgement does not
+cover ACLs, authorized hard-link placement or all component-swap races. A
+same-uid swap before FIFO `we` can truncate a replacement before identity
+refusal. [ADR 0096](../../docs/adr/0096-file-target-claims.md) records these limits.
 
 ## File publication
 

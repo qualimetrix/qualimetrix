@@ -1,7 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -935,2 +935,2 @@
--        "warnings": 1,
--        "info": 0
-+        "warnings": 0,
-+        "info": 1

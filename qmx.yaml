@@ -83,6 +83,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
         - 'Qualimetrix\Analysis\Configuration\DocumentRoots'
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredLayer'
@@ -951,6 +952,31 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
         - 'Qualimetrix\Analysis\Run\Pipeline\PreparedRun'
         - 'Qualimetrix\Analysis\Run\RuleProducerPreparation'
+    - name: core-environment
+      patterns:
+        - 'Qualimetrix\Core\Environment\EnvironmentFailureInterface'
+    - name: core-filetarget
+      patterns:
+        - 'Qualimetrix\Core\FileTarget\DirectoryFacts'
+        - 'Qualimetrix\Core\FileTarget\EntryControl'
+        - 'Qualimetrix\Core\FileTarget\EntryFacts'
+        - 'Qualimetrix\Core\FileTarget\FileIdentity'
+        - 'Qualimetrix\Core\FileTarget\FileReplacement'
+        - 'Qualimetrix\Core\FileTarget\FileTargetFailure'
+        - 'Qualimetrix\Core\FileTarget\FileTargetFailureKind'
+        - 'Qualimetrix\Core\FileTarget\HeldLock'
+        - 'Qualimetrix\Core\FileTarget\HeldTarget'
+        - 'Qualimetrix\Core\FileTarget\NativeCall'
+        - 'Qualimetrix\Core\FileTarget\NewName'
+        - 'Qualimetrix\Core\FileTarget\PathExposure'
+        - 'Qualimetrix\Core\FileTarget\PathInspection'
+        - 'Qualimetrix\Core\FileTarget\PathWalk'
+        - 'Qualimetrix\Core\FileTarget\ProcessOwner'
+        - 'Qualimetrix\Core\FileTarget\ResolvedTarget'
+        - 'Qualimetrix\Core\FileTarget\TargetClaim'
+        - 'Qualimetrix\Core\FileTarget\TargetKind'
+        - 'Qualimetrix\Core\FileTarget\TargetPath'
+        - 'Qualimetrix\Core\FileTarget\TemporarySibling'
     - name: core-neutral
       patterns:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
@@ -1003,8 +1029,11 @@ architecture:
         - 'Qualimetrix\Infrastructure\Ast\WorkerParserFactory'
     - name: infrastructure-cache
       patterns:
+        - 'Qualimetrix\Infrastructure\Cache\CacheClearOutcome'
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver'
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationStore'
+        - 'Qualimetrix\Infrastructure\Cache\CacheDirectoryContents'
+        - 'Qualimetrix\Infrastructure\Cache\CacheDirectoryEligibility'
         - 'Qualimetrix\Infrastructure\Cache\CacheFactory'
         - 'Qualimetrix\Infrastructure\Cache\CacheInterface'
         - 'Qualimetrix\Infrastructure\Cache\CacheKeyGenerator'
@@ -1032,7 +1061,6 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
-        - 'Qualimetrix\Infrastructure\Console\ArtifactFile'
         - 'Qualimetrix\Infrastructure\Console\AuthoredRuleOptionWrites'
         - 'Qualimetrix\Infrastructure\Console\BaselineFilterReporter'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
@@ -1097,6 +1125,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter'
         - 'Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
@@ -1107,6 +1137,11 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleOptionArgv'
         - 'Qualimetrix\Infrastructure\Console\RunConfigurationPreparation'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\ProcessStreams'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\RunTargets'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocator'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
@@ -1453,6 +1488,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding
+      - core-filetarget
       - core-neutral
       - core-path
       - core-symbol
@@ -1482,6 +1518,12 @@ architecture:
       - core-profiler
       - core-symbol
       - external
+    core-environment:
+      - external
+    core-filetarget:
+      - core-environment
+      - core-path
+      - external
     core-neutral:
       - core-path
       - external
@@ -1499,6 +1541,7 @@ architecture:
       - external
     infrastructure-cache:
       - analysis-configuration
+      - core-filetarget
       - core-path
       - infrastructure-serializer
       - external
@@ -1520,6 +1563,8 @@ architecture:
       - analysis-policy-inline
       - analysis-projectmanifest
       - analysis-run
+      - core-environment
+      - core-filetarget
       - core-neutral
       - core-path
       - core-profiler
@@ -1569,6 +1614,7 @@ architecture:
       - reporting
       - external
     infrastructure-logging:
+      - core-filetarget
       - external
     infrastructure-parallel:
       - analysis-configuration
@@ -1630,6 +1676,14 @@ rules:
   # reports as code debt still have a severity to choose.
   architecture.layer-violation:
     severity: error
+
+  size.class-count:
+    suppress_namespace_channels:
+      size.class-count:
+        # Seventeen internal facts and operations share one file-target lifecycle.
+        # Extracting the path walk, claim and warning capture removes complexity;
+        # splitting their namespace changes the leaf count without a new subject.
+        - exact: 'Qualimetrix\Core\FileTarget'
 
   # --- Coupling ---
 
@@ -1809,6 +1863,8 @@ rules:
       # RunConfiguration is the shared run-policy carrier: inbound Ca=17, CBO=21.
       # Its exact declaration deliberately serves those named run consumers.
       - exact: src/Analysis/Run/Contract/Configuration/RunConfiguration.php
+      # The file-failure carrier has Ca=19/Ce=2: one typed cause shared by its readers.
+      - exact: src/Core/FileTarget/FileTargetFailure.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.
@@ -1857,6 +1913,9 @@ rules:
       # The shared read port has 29 inbound readers; ClassRank 0.00624447
       # against 0.00607457 measures that intended contract popularity.
       - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
+      # Refusal position metadata has 17 inbound classes; ClassRank 0.00584299
+      # against 0.00572598 measures intended shared contract popularity.
+      - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now
@@ -1879,6 +1938,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Five concrete refusal adapters intentionally share framing: A=0, Ca=14/Ce=13, D=0.518519.
+      - exact: 'Qualimetrix\Infrastructure\Console\Refusal'
       # The same concrete authored directive contract has intentional distance 0.52.
       - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
       # Five concrete scope conclusions are shared contracts: A=0, I=0.272727, D=0.727273.
@@ -2004,6 +2065,12 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # Two cache readers consume this storage adapter (Ca=2, Ce=11).
+      # Instability reflects the reader population after separating directory operations.
+      - exact: src/Infrastructure/Cache/FileCache.php
+      # Two Baseline writers consume this document guard (Ca=2, Ce=10).
+      # Instability reflects the small reader population; other signals remain active.
+      - exact: src/Analysis/Policy/Baseline/BaselineDocumentWriter.php
       # The policy composes ten dependencies for two run-level readers (Ca=2).
       - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
       # These exact vocabulary, document, specificity and DI declarations have Ca=2.
@@ -2296,6 +2363,10 @@ rules:
       - exact: src/Infrastructure/Console/Application.php
       - exact: src/Infrastructure/Console/Command/GraphExportCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
+      # Private extraction takes these commands from five methods to six: TCC is
+      # absent and LCOM stays 2, so the formula alone drops health from 75.36 to 40.
+      - exact: src/Infrastructure/Console/Command/HookInstallCommand.php
+      - exact: src/Infrastructure/Console/Command/HookUninstallCommand.php
       # TCC=0/LCOM=3 measure three independent refusal facts, not its static
       # factories; health 30 stays unchanged when those factories are moved.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php

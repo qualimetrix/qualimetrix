@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
@@ -23,6 +24,7 @@ final readonly class RuntimeLoggerConfigurator
         private LoggerFactoryInterface $loggerFactory,
         private LoggerHolder $loggerHolder,
         private ErrorStream $errorStream,
+        private RunTargets $runTargets,
     ) {}
 
     public function configure(InputInterface $input, OutputInterface $output): LoggerInterface
@@ -43,6 +45,9 @@ final readonly class RuntimeLoggerConfigurator
                 $unavailable,
             );
         }
+        if ($logFile !== null) {
+            $this->runTargets->judge('--log-file', $logFile);
+        }
         $this->loggerHolder->setLogger($logger);
 
         return $logger;
@@ -51,6 +56,7 @@ final readonly class RuntimeLoggerConfigurator
     /** Puts back the logger a container starts with, so a run whose configuration is refused early cannot keep the last run's. */
     public function reset(): void
     {
+        $this->loggerFactory->reset();
         $this->loggerHolder->reset();
     }
 

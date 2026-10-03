@@ -164,7 +164,12 @@ Infrastructure/
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
-    ├── ArtifactFile.php               # A file an option names for an artifact: written in place when it exists, created when it does not
+    ├── RunTarget/
+    │   ├── RunTargets.php             # Shared report/profile/log judgement, claims and teardown
+    │   ├── RunTargetSession.php       # Command outcome, cleanup and terminal classification
+    │   ├── TargetAccess.php           # Pure CLI target-access judgement
+    │   ├── TargetCollisions.php       # Target identity/name conflicts before and after claim
+    │   └── ProcessStreams.php         # Process descriptor identity and Linux access-mode inspection
     ├── CommandLineSpelling.php        # An option or argument value as argv would spell it; other shapes refused with exit 3
     ├── CheckCommandDefinition.php     # Command option definitions
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help

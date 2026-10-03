@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -242,6 +244,22 @@ final class ApplicationTest extends TestCase
         );
 
         self::assertSame(ConsoleExitCode::InternalError->value, $exitCode);
+    }
+
+    #[Test]
+    public function itClassifiesRawFileTargetFailureAtTheApplicationExit(): void
+    {
+        $app = self::application();
+        $app->setAutoExit(false);
+        $app->addCommand(self::commandThatThrows(new FileTargetFailure(
+            FileTargetFailureKind::Unopenable,
+            '/tmp/refusal-target',
+            'permission denied',
+        )));
+
+        $exitCode = $app->doRun(new ArrayInput(['command' => 'throws']), new NullOutput());
+
+        self::assertSame(ConsoleExitCode::Refusal->value, $exitCode);
     }
 
     /**

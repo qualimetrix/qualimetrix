@@ -170,7 +170,7 @@ final class CheckCommandDrillDownFormatTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         return [new CommandTester($command), $pipeline];

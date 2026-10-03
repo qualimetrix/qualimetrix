@@ -128,7 +128,7 @@ final class CheckCommandDefinition
                 'fail-on',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = config/input error',
+                'Minimum severity to trigger non-zero exit code (none, warning, error). Default: error. Exit codes: 0 = clean, 1 = warnings, 2 = errors, 3 = input/configuration/environment refusal',
             )
             ->addOption(
                 'namespace',
@@ -240,7 +240,7 @@ final class CheckCommandDefinition
                 'log-file',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Write debug log to file',
+                'Write run log to file (default level: info)',
             )
             ->addOption(
                 'log-level',

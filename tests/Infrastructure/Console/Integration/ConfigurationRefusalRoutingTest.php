@@ -40,6 +40,8 @@ use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -64,8 +66,9 @@ use Throwable;
  *
  * - **Wiring** ({@see itWiresThePresenterIntoEveryCommandTheRealContainerBuilds}):
  *   the real production container, unmodified, builds every one of the eight
- *   commands with a presenter in place. `CheckCommand`, `DirectivesCommand`
- *   and `LayerAssignmentCommand` take it as a constructor argument, so a
+ *   commands with a presenter in place. `CheckCommand` receives it through
+ *   its mandatory run-target session; `DirectivesCommand` and
+ *   `LayerAssignmentCommand` take it as a constructor argument, so a
  *   missed DI registration would fail loudly at construction; the five
  *   `baseline:*` commands take it through
  *   {@see BaselineCommand::setRefusalPresenter()} instead — a missed
@@ -239,16 +242,22 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInCheck(): void
     {
+        $container = (new ContainerFactory())->create();
+        /** @var RuntimeConfigurator $runtime */
+        $runtime = $container->get(RuntimeConfigurator::class);
+        /** @var RunTargets $targets */
+        $targets = $container->get(RunTargets::class);
+
         $command = new CheckCommand(
             $this->inert(AnalysisPipelineInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
-            $this->realRuntimeConfigurator(),
+            $runtime,
             $this->realResultPresenter(),
             $this->realRuleInputValidator(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
             $this->throwingConfigurationInputAdapter(),
             $this->inert(CheckConfigurationResolvers::class),
-            $this->freshPresenter(),
+            new RunTargetSession($targets, $this->freshPresenter()),
         );
 
         $tester = new CommandTester($command);
@@ -304,12 +313,14 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInBaselineGenerate(): void
     {
+        $errorStream = new ErrorStream();
         $command = new BaselineGenerateCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineGenerator'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
+            $errorStream,
         );
-        $command->setRefusalPresenter($this->freshPresenter());
+        $command->setRefusalPresenter(new RefusalPresenter($errorStream));
 
         $tester = new CommandTester($command);
         $code = $tester->execute(
@@ -431,10 +442,16 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itLeavesConflictingCliAliasAtExitOneAsAnInternalError(): void
     {
+        $container = (new ContainerFactory())->create();
+        /** @var RuntimeConfigurator $runtime */
+        $runtime = $container->get(RuntimeConfigurator::class);
+        /** @var RunTargets $targets */
+        $targets = $container->get(RunTargets::class);
+
         $command = new CheckCommand(
             $this->inert(AnalysisPipelineInterface::class),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator'),
-            $this->realRuntimeConfigurator(),
+            $runtime,
             $this->realResultPresenter(),
             $this->realRuleInputValidator(),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\CheckScopeResolver'),
@@ -444,7 +461,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
                 '--strict',
             )),
             $this->inert(CheckConfigurationResolvers::class),
-            $this->freshPresenter(),
+            new RunTargetSession($targets, $this->freshPresenter()),
         );
 
         $tester = new CommandTester($command);

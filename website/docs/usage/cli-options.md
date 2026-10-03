@@ -202,32 +202,39 @@ Write the report to a file instead of stdout:
 bin/qmx check src/ --format=html --output=report.html
 ```
 
-An existing file is written in place, as `>` in a shell does: it keeps its
-inode, owner, permissions and hard links, and a file mounted into a container
-on its own works too. A symbolic link is followed to the file it names, and
-the link stays; so do `/dev/null`, a named pipe and a process substitution such
-as `>(gzip > report.json.gz)`. A name nothing stands at yet is created, through
-a dangling symbolic link too; if the write then fails, the file it created is
-removed (one created through a link stays). A write that fails midway through
-an existing file leaves that file partly written. The kernel decides which
-links are followed: on Linux with `fs.protected_symlinks`, a link another user
-left in a shared directory such as `/tmp` is refused, as `>` refuses it. On a
-thread-safe (ZTS) PHP build, such a link to an existing file is still followed.
+An existing regular file is written in place: its inode, owner, permissions
+and hard links remain. A new name is claimed only after configuration, scope,
+selector and baseline-input refusals; a failed write attempts to remove the new
+file the run still owns. If removal fails, qmx names the cleanup failure and the
+file can remain. An existing file can retain partial bytes after a write failure.
+Create the destination's parent directory before running qmx.
 
-`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, spelled
-exactly so, are written through the stream itself, whether it is a terminal, a
-pipe or a file. Another spelling of the same stream, such as
-`/proc/thread-self/fd/1` or a symbolic link to `/dev/stdout`, is opened by its
-path, which on Linux fails when the stream is a pipe: use one of the four.
+A symbolic link is followed only when another user cannot place that directory
+entry; accepted links remain intact and write their resolved referents. This
+also applies to a dangling link into an existing parent. A placeable link
+refuses on both ordinary and thread-safe PHP. Writable exposure elsewhere in
+the path is reported on stderr before analysis. Component swaps, ACLs,
+hard-link provenance and non-local filesystems retain their platform limits.
 
-qmx checks what it can before the run; the write itself is the final judge. A
-directory or a name ending in `/`, an existing file that is not writable, a new
-name in a directory that does not exist or does not allow creating a file, a
-descriptor the process does not hold, and on Linux one it holds only for
-reading, are refused with exit code 3 before analysis starts. A symbolic link
-that leads to no file qmx can create (dangling into a missing directory, a
-loop, a link the kernel refuses to follow) is refused by the write, with exit
-code 3 after the run, as is any write that still fails then.
+`/dev/stdout`, `/dev/stderr`, `/dev/fd/N`, `/proc/self/fd/N`,
+`/proc/thread-self/fd/N`, `php://stdout`, `php://stderr` and `php://fd/N`
+address an existing process stream; `/proc` spellings require procfs.
+`file:///absolute/path` addresses a file.
+Other URI schemes refuse. A named pipe opens only after input refusals and
+needs its reader; `/dev/null` remains supported.
+
+Descriptor existence is checked before analysis. Linux fdinfo also permits an
+early refusal of a descriptor opened only for reading. On macOS PHP does not
+expose that original access flag, so an unknown mode is left to the actual write
+and its environment refusal. Descriptor and stream writes use blocking mode.
+
+Report, profile and log targets are judged together. Two targets for one
+ordinary inode, or one absent name, refuse before analysis, including a target
+that aliases the report's stdout. Character devices such as a terminal or
+`/dev/null` may coincide. Missing parents, directories, inaccessible paths,
+closed descriptors and write failures exit 3; the reason distinguishes
+configuration input from an environment failure. A report write failure with
+unwritable stdout sends its refusal to stderr.
 
 ### `--group-by`
 
@@ -467,10 +474,10 @@ Set a custom cache directory. Default: `.qmx-cache`.
 bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 ```
 
-The directory is created when missing. A path that cannot be created or is not
-writable is refused with exit 3 rather than silently disabling the cache, and
-the door closes the same way on every command that resolves a cache directory,
-not only on `check`.
+The path is judged without creating directories. An explicitly configured path
+that cannot provide a writable, searchable directory is refused with exit 3.
+An unusable implicit default disables caching and produces one warning.
+An eligible directory is created only after the remaining input checks succeed.
 
 ### `--clear-cache`
 
@@ -479,6 +486,11 @@ Clear the cache before running analysis:
 ```bash
 bin/qmx check src/ --clear-cache
 ```
+
+Clearing starts after input checks and file-target claims. A cache entry that
+cannot be removed produces an environment error (exit 3), naming the directory,
+the remaining entry count and the reason. An incomplete clear never prints
+"Cache cleared.".
 
 ---
 
@@ -659,13 +671,18 @@ Write the run's log to a file, one JSON record per line:
 bin/qmx check src/ --log-file=qmx.log
 ```
 
-The file is appended to, and a missing directory is created. A path that cannot
-be written — a directory that cannot be created, a file that cannot be opened for
-appending — is refused with exit code 3 before analysis starts, and the message
-quotes the reason the system gave. An empty or blank value — `--log-file=`, as an
-unset variable in `--log-file=$LOG` writes it — is refused with exit code 3 too,
-rather than read as "no log file": leave the option out to write none. Only
-`check` takes the option.
+The file is appended to; its parent directory must already exist. Log records
+produced during input checks are buffered. The target is claimed together with
+the report and profile targets after input checks, then buffered records are
+appended. Invalid input leaves the log file untouched.
+
+The same link, descriptor and collision rules as `--output` apply. An unwritable
+target is refused with exit code 3. If writing fails during analysis, the logger
+remembers the first cause and counts lost records; the command reports an
+environment error before publishing the report. A partial line can remain.
+An empty or blank value, including `--log-file=$LOG` with an unset variable, is
+refused with exit code 3. Leave the option out to write no file log. Only `check`
+takes the option.
 
 ### `--log-level`
 
@@ -768,6 +785,10 @@ write that still fails after the run also exits with code 3, never reported
 beside a finished run. The report is already published by then, so the reason
 goes to stderr and stdout keeps the report as its only document, even under
 `--format=json`.
+
+If cleanup also fails after that completed report, both causes are printed on
+stderr and stdout retains one report. An internal failure keeps exit 1; an
+environment cleanup failure takes exit 3 over the findings exit code.
 
 ### `--profile-format`
 

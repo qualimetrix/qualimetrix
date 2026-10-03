@@ -1,10 +1,1 @@
 kind	key	subject	from	to
-exit	directives	case:directive-placement|directives	0	2
-field	effect	case:annotations|directives|record:{"file":"src/Directives.php","line":15,"form":"threshold","target":"annotation.directive"}	"unmeasured"	"refused"
-field	effect	case:directive-placement|directives|record:{"file":"src/Placed.php","line":42,"form":"threshold","target":"complexity.ccn"}	"unmeasured"	"refused"
-field	line	case:annotations|format:json|record:{"channel":"annotation.unused-directive","subject":"file:src/Directives.php","occurrence":null,"edge":null}	28	29
-field	message	case:annotations|format:json|record:{"channel":"annotation.unused-directive","subject":"file:src/Directives.php","occurrence":null,"edge":null}	"Suppression \"code-smell.eval\" matched nothing in this run — the finding it silences is gone."	"Suppression \"code-smell.eval\" on method unused matched nothing in this run — the finding it silences is gone."
-field	ranking.impactScore	case:annotations|format:json|record:{"channel":"annotation.unused-directive","subject":"file:src/Directives.php","occurrence":null,"edge":null}	0	15
-field	reason	case:annotations|directives|record:{"file":"src/Directives.php","line":15,"form":"threshold","target":"annotation.directive"}	"already-refused"	null
-field	reason	case:directive-placement|directives|record:{"file":"src/Placed.php","line":42,"form":"threshold","target":"complexity.ccn"}	"already-refused"	null
-field	severity	case:annotations|format:json|record:{"channel":"annotation.unused-directive","subject":"file:src/Directives.php","occurrence":null,"edge":null}	"info"	"warning"
