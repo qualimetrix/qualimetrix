@@ -71,4 +71,36 @@ final class FileReplacementTest extends TestCase
             rmdir($base);
         }
     }
+
+    #[Test]
+    public function itNamesTheRequestedTargetWhenTheReadOnlyParentRefusesATemporarySibling(): void
+    {
+        if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            self::markTestSkipped('Permission bits do not refuse root');
+        }
+
+        $base = realpath(sys_get_temp_dir()) . '/qmx-replace-' . bin2hex(random_bytes(6));
+        mkdir($base);
+        $path = $base . '/report.json';
+        $target = TargetPath::resolve($path);
+        chmod($base, 0500);
+
+        try {
+            try {
+                FileReplacement::replace($target, 'report', null, NewName::Exclusive);
+                self::fail('A read-only parent accepted a temporary sibling.');
+            } catch (FileTargetFailure $failure) {
+                self::assertSame(FileTargetFailureKind::Unopenable, $failure->kind);
+                self::assertSame($path, $failure->spelling);
+                self::assertStringContainsString('Permission denied', $failure->detail);
+                self::assertStringContainsString('.qmx-', $failure->detail);
+            }
+
+            self::assertFileDoesNotExist($path);
+            self::assertSame(['.', '..'], scandir($base));
+        } finally {
+            chmod($base, 0700);
+            rmdir($base);
+        }
+    }
 }

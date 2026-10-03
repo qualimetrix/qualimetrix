@@ -16,7 +16,7 @@ final class FileReplacement
         }
 
         $path = $target->path?->value() ?? throw new LogicException('Replacement path is missing');
-        $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+        $temporary = self::prepareTemporary($target, $path);
         try {
             self::writeAll($target, $temporary, $bytes);
             $now = TargetPath::resolve($target->spelling);
@@ -25,14 +25,33 @@ final class FileReplacement
             }
 
             $replacementMode = self::replacementMode($target, $now, $path, $mode);
-            [$changed, $warning] = NativeCall::attempt(static fn() => chmod($temporary->path()->value(), $replacementMode));
-            if (!$changed) {
-                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot set replacement mode', $warning ?? 'unknown error');
-            }
+            self::setMode($target, $temporary, $replacementMode);
 
             self::publish($target, $now, $temporary, $path, $newName);
         } finally {
             $temporary->discard();
+        }
+    }
+
+    private static function prepareTemporary(ResolvedTarget $target, string $path): TemporarySibling
+    {
+        try {
+            return TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+        } catch (FileTargetFailure $failure) {
+            throw new FileTargetFailure(
+                $failure->kind,
+                $target->spelling,
+                $failure->reason,
+                $failure->spelling . ($failure->detail === '' ? '' : ': ' . $failure->detail),
+            );
+        }
+    }
+
+    private static function setMode(ResolvedTarget $target, TemporarySibling $temporary, int $replacementMode): void
+    {
+        [$changed, $warning] = NativeCall::attempt(static fn() => chmod($temporary->path()->value(), $replacementMode));
+        if (!$changed) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot set replacement mode', $warning ?? 'unknown error');
         }
     }
 
