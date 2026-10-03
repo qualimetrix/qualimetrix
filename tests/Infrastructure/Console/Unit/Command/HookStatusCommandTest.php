@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\RunningBinaryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
@@ -26,7 +27,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itIsAddressedAsHookStatus(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         self::assertSame('hook:status', $command->getName());
     }
@@ -34,7 +35,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itDefinesNoCustomOptions(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
         $definition = $command->getDefinition();
 
         // HookStatusCommand defines no custom options (only inherited --help, etc.)
@@ -44,7 +45,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itDefinesNoArguments(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
         $definition = $command->getDefinition();
 
         self::assertSame([], $definition->getArguments());
@@ -58,7 +59,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itAdvertisesTheDocsAddressInItsHelp(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
 
         self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
