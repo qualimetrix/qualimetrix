@@ -27,6 +27,17 @@ final class HeldTarget
         return new self($target, $handle, $created);
     }
 
+    /** @param resource $stream */
+    public static function writeToStream(mixed $stream, string $bytes, string $spelling): void
+    {
+        [$blocking, $warning] = NativeCall::attempt(static fn() => stream_set_blocking($stream, true));
+        if (!$blocking) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $spelling, 'cannot enable blocking writes', $warning ?? 'unknown error');
+        }
+
+        self::writeAllTo($stream, $bytes, $spelling);
+    }
+
     public function identity(): FileIdentity
     {
         $stat = $this->stat();
@@ -120,19 +131,24 @@ final class HeldTarget
 
     private function writeAll(string $bytes): void
     {
-        $handle = $this->openedHandle();
+        self::writeAllTo($this->openedHandle(), $bytes, $this->target->spelling);
+    }
+
+    /** @param resource $handle */
+    private static function writeAllTo(mixed $handle, string $bytes, string $spelling): void
+    {
         $total = \strlen($bytes);
         $offset = 0;
         while ($offset < $total) {
             [$written, $warning] = NativeCall::attempt(static fn() => fwrite($handle, substr($bytes, $offset)));
             if ($written === false || $written === 0) {
-                throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $this->target->spelling, \sprintf('wrote %d of %d bytes', $offset, $total), $warning ?? 'write returned no bytes');
+                throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $spelling, \sprintf('wrote %d of %d bytes', $offset, $total), $warning ?? 'write returned no bytes');
             }
             $offset += $written;
         }
         [$flushed, $warning] = NativeCall::attempt(static fn() => fflush($handle));
         if (!$flushed) {
-            throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $this->target->spelling, \sprintf('wrote %d of %d bytes but flush failed', $offset, $total), $warning ?? 'unknown error');
+            throw new FileTargetFailure(FileTargetFailureKind::PartialWrite, $spelling, \sprintf('wrote %d of %d bytes but flush failed', $offset, $total), $warning ?? 'unknown error');
         }
     }
 
