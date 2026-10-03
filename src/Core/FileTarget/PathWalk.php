@@ -108,6 +108,15 @@ final class PathWalk
         if ($isDirectory !== true) {
             throw new FileTargetFailure(FileTargetFailureKind::DirectoryMissing, $this->spelling, 'the parent directory is missing', $parent);
         }
+        [$searchable, $searchWarning] = NativeCall::attempt(static fn() => is_executable($parent));
+        if ($searchable !== true) {
+            $detail = $parent . ($warning === '' ? '' : ': ' . $warning);
+            if ($searchWarning !== null) {
+                $detail .= '; ' . $searchWarning;
+            }
+
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target through a non-searchable parent', $detail);
+        }
 
         return new ResolvedTarget($this->spelling, TargetKind::Absent, AbsolutePath::fromString($candidate), null, null, $this->inspection);
     }
@@ -190,7 +199,7 @@ final class PathWalk
         if ($type === 0040000) {
             throw new FileTargetFailure(FileTargetFailureKind::Directory, $this->spelling, 'target is a directory', $candidate);
         }
-        if ($type !== 0100000 && $type !== 0010000 && $type !== 0020000 && $type !== 0060000) {
+        if (!\in_array($type, [0100000, 0010000, 0020000, 0060000], true)) {
             throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'unsupported filesystem entry', $candidate);
         }
 

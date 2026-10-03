@@ -138,6 +138,18 @@ final class TargetPathTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotMistakeAnInaccessibleExistingFileForAnAbsentTarget(): void
+    {
+        $this->assertRefusesEntryBehindNonSearchableParent('file');
+    }
+
+    #[Test]
+    public function itDoesNotMistakeAnInaccessibleOwnedLinkForAnAbsentTarget(): void
+    {
+        $this->assertRefusesEntryBehindNonSearchableParent('link');
+    }
+
+    #[Test]
     public function itKeepsTheNativeWarningReasonAndRestoresThePreviousHandler(): void
     {
         $script = <<<'PHP'
@@ -230,5 +242,55 @@ PHP;
         $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
         self::assertSame('native probe threw', $result['thrown']);
         self::assertSame(['after native exception'], $result['seen']);
+    }
+
+    private function assertRefusesEntryBehindNonSearchableParent(string $entry): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-target-' . bin2hex(random_bytes(6));
+        $sealed = $base . '/sealed';
+        mkdir($base);
+        mkdir($sealed);
+        file_put_contents($sealed . '/file', 'KEEP');
+        symlink('file', $sealed . '/link');
+        chmod($sealed, 0000);
+
+        try {
+            if (is_executable($sealed)) {
+                self::markTestSkipped('Permission bits do not block directory search in this process');
+            }
+
+            $path = $sealed . '/' . $entry;
+            $nativeWarning = null;
+            set_error_handler(static function (int $severity, string $message) use (&$nativeWarning): bool {
+                $nativeWarning = $message;
+
+                return true;
+            });
+            try {
+                $nativeEntry = lstat($path);
+            } finally {
+                restore_error_handler();
+            }
+            self::assertFalse($nativeEntry);
+            try {
+                $resolved = TargetPath::resolve($path);
+                self::fail('An inaccessible existing ' . $entry . ' was classified as ' . $resolved->kind->name);
+            } catch (FileTargetFailure $failure) {
+                self::assertSame(FileTargetFailureKind::Unopenable, $failure->kind);
+                self::assertSame($path, $failure->spelling);
+                self::assertStringContainsString($sealed, $failure->detail);
+                if ($nativeWarning !== null) {
+                    self::assertStringContainsString($nativeWarning, $failure->detail);
+                }
+            }
+        } finally {
+            chmod($sealed, 0700);
+            self::assertSame('KEEP', file_get_contents($sealed . '/file'));
+            self::assertTrue(is_link($sealed . '/link'));
+            unlink($sealed . '/link');
+            unlink($sealed . '/file');
+            rmdir($sealed);
+            rmdir($base);
+        }
     }
 }
