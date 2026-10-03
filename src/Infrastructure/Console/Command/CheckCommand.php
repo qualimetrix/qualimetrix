@@ -230,7 +230,7 @@ final class CheckCommand extends Command
             BaselineLoader::assertReadable($projectionOptions->baselinePath);
         }
 
-        $this->claimRunTargets($input);
+        $this->claimRunTargets($input, $output);
 
         if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
             $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
@@ -278,7 +278,7 @@ final class CheckCommand extends Command
         return $this->presentProfile($input, $output, $exitCode);
     }
 
-    private function claimRunTargets(InputInterface $input): void
+    private function claimRunTargets(InputInterface $input, OutputInterface $output): void
     {
         $profile = $input->hasOption('profile') ? $input->getOption('profile') : false;
         if ($profile !== false && $profile !== null && $profile !== true) {
@@ -287,6 +287,10 @@ final class CheckCommand extends Command
         if (CommandLineSpelling::option($input, 'output') === null) {
             $this->runTargetSession->targets()->reportOnStandardOutput();
         }
+        foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
+            $this->writeWarning($output, 'Warning: ' . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning));
+        }
+
         $this->runTargetSession->targets()->claim();
     }
 

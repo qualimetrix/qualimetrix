@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use Exception;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -27,7 +29,10 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use Qualimetrix\Subprocess\ChildProcess;
+use ReflectionClass;
+use ReflectionParameter;
 use ReflectionProperty;
+use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
@@ -55,6 +60,70 @@ final class FileTargetExitRoutingTest extends TestCase
     {
         chdir($this->originalCwd);
         self::remove($this->directory);
+    }
+
+    /** @return iterable<string, array{class-string<CheckCommand|GraphExportCommand>, string}> */
+    public static function provideExposedTargets(): iterable
+    {
+        yield 'check output' => [CheckCommand::class, '--output'];
+        yield 'check profile' => [CheckCommand::class, '--profile'];
+        yield 'check log' => [CheckCommand::class, '--log-file'];
+        yield 'graph output' => [GraphExportCommand::class, '--output'];
+    }
+
+    /** @param class-string<CheckCommand|GraphExportCommand> $commandClass */
+    #[Test]
+    #[DataProvider('provideExposedTargets')]
+    public function itReportsEachExposedTargetBeforeAnalysis(string $commandClass, string $option): void
+    {
+        $parent = $this->directory . '/open<tag>';
+        mkdir($parent, 0o755);
+        chmod($parent, 0o777);
+        $target = $parent . '/target.json';
+        file_put_contents($target, 'KEEP');
+        $observer = new class {
+            public ?CommandTester $tester = null;
+            public ?string $warnings = null;
+        };
+        $contract = $commandClass === CheckCommand::class
+            ? AnalysisPipelineInterface::class
+            : DependencyGraphAnalyzerInterface::class;
+        $analyzer = self::createStub($contract);
+        $analyzer->method('analyze')->willReturnCallback(static function () use ($observer): never {
+            if ($observer->tester === null) {
+                throw new LogicException('Tester must be ready before analysis.');
+            }
+            $observer->warnings = $observer->tester->getErrorOutput();
+            throw new RuntimeException('Stop after observing pre-analysis diagnostics.');
+        });
+        $original = (new ContainerFactory())->create()->get($commandClass);
+        self::assertInstanceOf($commandClass, $original);
+        $reflection = new ReflectionClass($original);
+        $constructor = $reflection->getConstructor();
+        self::assertNotNull($constructor);
+        $arguments = array_map(
+            static fn(ReflectionParameter $parameter): mixed => $parameter->getName() === 'analyzer'
+                ? $analyzer
+                : $reflection->getProperty($parameter->getName())->getValue($original),
+            $constructor->getParameters(),
+        );
+        $command = $reflection->newInstanceArgs($arguments);
+        $tester = new CommandTester($command);
+        $observer->tester = $tester;
+        $tester->execute([
+            'paths' => [$this->directory . '/Source.php'],
+            '--workers' => '0', '--no-cache' => true, '--format' => 'json',
+            $option => $target,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        $observed = $observer->warnings;
+        self::assertIsString($observed);
+        self::assertStringContainsString('Warning:', $observed);
+        self::assertStringContainsString($option, $observed);
+        self::assertStringContainsString($target, $observed);
+        self::assertStringContainsString('open<tag>', $observed);
+        self::assertStringContainsString('others', $observed);
     }
 
     #[Test]

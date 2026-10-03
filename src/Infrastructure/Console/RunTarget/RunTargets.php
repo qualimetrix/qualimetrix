@@ -46,6 +46,25 @@ final class RunTargets
         $this->reportOnStandardOutput = true;
     }
 
+    /** @return list<string> */
+    public function exposureWarnings(): array
+    {
+        $warnings = [];
+        foreach ($this->judged as $subject => $target) {
+            foreach ($target->exposure as $exposure) {
+                $warnings[] = \sprintf(
+                    'File target %s (%s) passes through %s, which can be changed by %s.',
+                    $target->spelling,
+                    $subject,
+                    $exposure->directory,
+                    $exposure->changedBy,
+                );
+            }
+        }
+
+        return $warnings;
+    }
+
     public function claim(): void
     {
         TargetCollisions::assertBeforeClaim(

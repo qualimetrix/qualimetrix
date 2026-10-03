@@ -145,6 +145,11 @@ final class GraphExportCommand extends Command
 
         $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
         $request = $this->buildProjectionRequest($input, $format, $direction);
+        foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
+            $this->errorStream->write($output, '<comment>Warning: '
+                . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning) . '</comment>');
+        }
+
         $this->runTargetSession->targets()->claim();
 
         $this->logger->info('Starting dependency graph export', [
