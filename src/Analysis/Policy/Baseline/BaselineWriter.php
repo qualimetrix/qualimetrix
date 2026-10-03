@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use RuntimeException;
@@ -50,19 +52,30 @@ final readonly class BaselineWriter
      * @throws BaselineConflictException if the target changed or vanished since it was read
      * @throws RuntimeException if the write fails
      */
-    public function write(Baseline $baseline, string $path, AbsolutePath $projectRoot): string
+    public function write(Baseline $baseline, ResolvedTarget $target, AbsolutePath $projectRoot): string
     {
+        if ($baseline->expectsSourceAbsence && $target->kind !== TargetKind::Absent) {
+            throw new BaselineConflictException(\sprintf(
+                'Baseline file %s appeared since it was read as absent; refusing to overwrite. '
+                . 'Re-run the command to pick up the current file.',
+                $target->spelling,
+            ));
+        }
+        if ($baseline->sourceContentHash !== null && $target->kind !== TargetKind::Regular) {
+            throw new BaselineConflictException(\sprintf(
+                'Baseline file %s no longer exists; refusing to recreate it from a stale reading. '
+                . 'Regenerate the baseline if its removal was intended.',
+                $target->spelling,
+            ));
+        }
+
         $serialized = $this->serializeBaseline($baseline, $projectRoot);
         $entries = $serialized['entries'];
         unset($serialized['entries']);
 
         $json = BaselineDocumentLayout::render($serialized, $entries);
 
-        if ($baseline->expectsSourceAbsence) {
-            $this->documents->create($path, $json);
-        } else {
-            $this->documents->replace($path, $json, $baseline->sourceContentHash);
-        }
+        $this->documents->replace($target, $json, $baseline->sourceContentHash);
 
         return hash('sha256', $json);
     }
@@ -73,9 +86,11 @@ final readonly class BaselineWriter
      *
      * Answered by {@see BaselineDocumentWriter::snapshot()}, which owns the guard the token feeds.
      *
-     * @throws \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal if the destination is not a readable regular file
+     * @throws \Qualimetrix\Core\FileTarget\FileTargetFailure if the destination cannot be prepared safely
+     *
+     * @return array{target: ResolvedTarget, hash: ?string}
      */
-    public function destinationSnapshot(string $path): string
+    public function destinationSnapshot(string $path): array
     {
         return BaselineDocumentWriter::snapshot($path);
     }

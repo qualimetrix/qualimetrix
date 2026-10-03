@@ -638,7 +638,7 @@ final class BaselineExplainCommandTest extends TestCase
     {
         (new BaselineWriter())->write(
             new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: $entries),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }

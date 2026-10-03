@@ -103,7 +103,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
         yield 'a defect in the tool itself' => [
             new LogicException('the invariant nobody expected to break'),
-            'Unexpected error: the invariant nobody expected to break',
+            'Internal error: the invariant nobody expected to break',
         ];
     }
 
@@ -117,8 +117,9 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $tester = self::execute($thrown, verbose: false);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString($expected, $tester->getDisplay());
-        self::assertStringNotContainsString('Stack trace:', $tester->getDisplay());
+        $reported = $tester->getDisplay() . $tester->getErrorOutput();
+        self::assertStringContainsString($expected, $reported);
+        self::assertStringNotContainsString('Stack trace:', $reported);
     }
 
     /**
@@ -131,9 +132,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $tester = self::execute($thrown, verbose: true);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString($expected, $tester->getDisplay());
-        self::assertStringContainsString('Stack trace:', $tester->getDisplay());
-        self::assertStringContainsString(self::class, $tester->getDisplay());
+        $reported = $tester->getDisplay() . $tester->getErrorOutput();
+        self::assertStringContainsString($expected, $reported);
+        self::assertStringContainsString('Stack trace:', $reported);
+        self::assertStringContainsString(self::class, $reported);
     }
 
     /**

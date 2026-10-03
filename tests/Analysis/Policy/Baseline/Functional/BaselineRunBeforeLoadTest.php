@@ -310,7 +310,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
                     1,
                 )],
             ),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }
