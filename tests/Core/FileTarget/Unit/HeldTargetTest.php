@@ -43,7 +43,7 @@ final class HeldTargetTest extends TestCase
         self::assertIsString($path);
         file_put_contents($path, 'original');
         $judged = TargetPath::resolve($path);
-        unlink($path);
+        rename($path, $path . '.original');
         file_put_contents($path, 'replacement');
 
         try {
@@ -54,7 +54,9 @@ final class HeldTargetTest extends TestCase
                 self::assertSame(FileTargetFailureKind::IdentityChanged, $failure->kind);
             }
             self::assertSame('replacement', file_get_contents($path));
+            self::assertSame('original', file_get_contents($path . '.original'));
         } finally {
+            unlink($path . '.original');
             unlink($path);
         }
     }
