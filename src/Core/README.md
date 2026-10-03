@@ -962,7 +962,8 @@ Without POSIX, effective-uid discovery uses an empty diagnostic temporary file
 that must be removed immediately; unsafe cleanup refuses the operation.
 
 A duplicated `php://fd/N` preserves stream offset but may survive `proc_open`;
-path-held handles opened with `e` are close-on-exec. Mode-bit judgement does not
+descriptor and stream handles use blocking writes to complete delivery to a slow
+reader. Path-held handles opened with `e` are close-on-exec. Mode-bit judgement does not
 cover ACLs, authorized hard-link placement or all component-swap races. A
 same-uid swap before FIFO `we` can truncate a replacement before identity
 refusal. [ADR 0096](../../docs/adr/0096-file-target-claims.md) records these limits.

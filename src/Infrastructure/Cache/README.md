@@ -107,7 +107,8 @@ admits threads, and two threads writing one key would agree on a pid and
 disagree on bytes.
 
 `CacheClearOutcome` reports `complete`, `remaining`, `directory` and nullable
-`reason`. A second inspection counts recognizable cache entries after the
+`reason`. Console's `RuntimeConfigurator` consumes this Cache-owned result to
+refuse an incomplete CLI clear. A second inspection counts recognizable cache entries after the
 removal walk; unreadable or linked shards make completion unknown and therefore
 incomplete. Unrelated residue does not falsely report surviving cache entries.
 The serializer marker is removed last, only after complete inspection. Internal

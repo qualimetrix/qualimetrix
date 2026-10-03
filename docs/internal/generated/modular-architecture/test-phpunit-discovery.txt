@@ -9831,6 +9831,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a directory as the target"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a name ending in a slash"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"a symbolic link loop"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"empty path"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProfileExportTest::itRefusesAnImpossibleExportBeforeAnalysis"missing directory"
@@ -10075,6 +10076,14 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesAnUnsupportedGraphTargetWithoutWritingAReport
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesEnvironmentFailureAfterCheckReport
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureAtDirectivesExit
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureAtGraphExit
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itClassifiesRawFileFailureBeforeCheckReport
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itKeepsAnExplicitStandardOutputGraphAsOneJsonDocumentWhenCleanupFails
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itLeavesOutputLogAndCacheUntouchedWhenTheLateScopeIsInvalid
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetExitRoutingTest::itReportsProfileExportAndCleanupFailuresAfterOneJsonReport
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtApplicationExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtLayerAssignmentExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itAcceptsAKeyReadOnlyByAnotherFormatter
@@ -10123,6 +10132,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itRefusesABlankLogFileBeforeAnalysis"empty"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itRefusesABlankLogFileBeforeAnalysis"space"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itStillWritesANamedLogFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\LogTargetFailureTest::itReportsACollectionLogWriteFailureInsteadOfACompletedRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -10171,6 +10181,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"security"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"size"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleSelectorHelpGrammarTest::itRefusesABareGroupNameAndNamesTheStarSpelling"suppression"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itAllowsTheSameNullDeviceForTwoExplicitDocuments
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itRefusesAReportAndLogNamingOneAbsentPathWithoutCreatingIt
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itRefusesAReportAndProfileNamingOneExistingInodeBeforeEitherWrites
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itRefusesAnImplicitReportAndProfileNamingStandardOutput
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itKeepsShowSuppressedWorkingOnTextFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itPopulatesTheLedgerHalvesWhenOnlyTheFormatFlagAsksForThem
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itReportsTheSameCompositionWhetherTheFormatCameFromTheCliOrFromConfig
@@ -10321,11 +10335,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"ComputedMetrics"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Coupling"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itPreservesTheMemoryLimitAuthorAndRuntimeCauseWhenIniSetThrows
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRefusesAnIncompleteCacheClearWithTheDirectoryAndReason
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itReportsAnUnapplicableMemoryLimitAfterCommittingStoresAndBeforeLaterEffects
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itResetsACustomRunBeforeApplyingDefaultValuesInTheSameProcess
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itResolvesDefinitionsOnceAndCommitsTheExactDefinitionsAndChannelSnapshot
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterApplyFailure
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfiguratorTest::itWarnsOnceWhenTheDefaultCacheIsDisabledForAnUnusableDirectory
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AnalysisInputPathValidatorTest::itLeavesDirectoriesAndLowercasePhpFilesForDiscovery
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AnalysisInputPathValidatorTest::itRefusesMissingAndExplicitNonPhpPathsInOneAnswer
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AnalysisInputPathValidatorTest::itUsesTheFinderCaseSensitivePhpGrammar
@@ -10358,43 +10374,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsRefusalExitCodeForAnUnknownCommandNonInteractively
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsRefusalExitCodeForAnUnreadableWorkingDirectoryWithoutChdir
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itStillDeliversARefusalMessageUnderSilent
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesANewTargetAndLeavesNoOtherFile
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesTheFileADanglingSymlinkNames"beside the link"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesTheFileADanglingSymlinkNames"from a directory that cannot be written"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itCreatesTheFileADanglingSymlinkNames"in another directory"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itDoesNotWriteThroughALinkTheKernelRefusesToFollow"to a file to create"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itDoesNotWriteThroughALinkTheKernelRefusesToFollow"to an existing file"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itKeepsThePermissionsOfTheFileItReplaces
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itNamesTheSupportedSpellingsWhenAnotherSpellingOfAPipeCannotBeOpened"through /proc/thread-self"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itNamesTheSupportedSpellingsWhenAnotherSpellingOfAPipeCannotBeOpened"through a link of its own"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itNamesTheSupportedSpellingsWhenAnotherSpellingOfAPipeCannotBeOpened"through a parent step"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesADescriptorHeldOnlyForReadingBeforeAnyWork
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesADescriptorTheProcessDoesNotHoldBeforeAnyWork
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesADirectoryNamingTheOptionThatNamedIt
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesALinkThatLeadsToNoFileItCanCreate"a dangling link to a directory name"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesALinkThatLeadsToNoFileItCanCreate"a link loop"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesALinkThatLeadsToNoFileItCanCreate"a link to a file name ending in a slash"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesANewNameInADirectoryItCannotSearchBeforeAnyWork
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesATargetWhoseDirectoryDoesNotExist
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAWriteThatFailsAfterThePrecheck
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAWriteThatFailsMidway"a new name"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAWriteThatFailsMidway"an existing file"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itRefusesAnExistingFileItCannotWrite
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesAWritableFileInADirectoryItCannotWrite
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesAnExistingTargetInPlaceAndLeavesNoOtherFile
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesIntoANamedPipeForItsReader
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesTheWholeArtifactIntoANonBlockingStream
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesThroughAHardLinkSoBothNamesReadTheArtifact
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesThroughASymlinkToTheFileItNames
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToACharacterDeviceInPlace
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/fd/1 piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/fd/1 redirected to a file"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/fd/2 piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/stderr piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/stdout piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/dev/stdout redirected to a file"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/proc/self/fd/1 piped"
- - Qualimetrix\Tests\Infrastructure\Console\Unit\ArtifactFileTest::itWritesToTheProcessStreamWhateverItIs"/proc/self/fd/1 redirected to a file"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AuthoredRuleOptionWritesTest::itKeepsRepeatedAliasesAndRuleOptionsBeforeAndAfterBind
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AuthoredRuleOptionWritesTest::itReadsBoundProgrammaticInputWithoutInventingAliasHistory
  - Qualimetrix\Tests\Infrastructure\Console\Unit\AuthoredRuleOptionWritesTest::itStopsAtTerminatorAndSkipsValuesOfOtherOptions
@@ -10692,6 +10671,41 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionAliasRangeRefusalTest::itKeepsAcceptingAValueAtOrAboveTheFloorThroughTheSameAlias
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleOptionAliasRangeRefusalTest::itRefusesANegativeValueWrittenThroughARuleAlias
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetSessionTest::itClassifiesAnUnexpectedCleanupArgumentFailureAsInternal
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itAcceptsAnAbsoluteFileUrlAndRefusesAClosedDescriptor
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itCompletesANonBlockingStandardOutputToASlowReader
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itCreatesOnlyTheRequestedNameAndRemovesAnUnwrittenClaim
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itCreatesTheReferentOfATrustedDanglingLink"beside link"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itCreatesTheReferentOfATrustedDanglingLink"other directory"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itCreatesTheReferentOfATrustedDanglingLink"sealed link directory"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesALinkThatCannotNameACreatableFile"directory suffix"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesALinkThatCannotNameACreatableFile"file suffix"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesALinkThatCannotNameACreatableFile"link loop"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesANewNameInAnUnsearchableParentBeforeCreatingIt
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesAParentSealedAfterJudgementWithoutCreatingTheTarget
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesAProfileThatAliasesStandardOutput
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesAReadOnlyDescriptorBeforeChangingItsFile
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesAnExistingReadOnlyTargetBeforeChangingItsBytes
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesDifferentNamesOfOneInodeBeforeClaimingEither
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itRefusesMissingParentsAndDirectoriesBeforeClaim
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itReleasesTheLoggerFactoryWhenTheRunIsAbandoned
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesAnExistingInodeThroughItsHardLinkWithoutChangingItsMode
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesTheCompleteArtifactIntoAFifoWithAReader
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughATrustedLinkWithoutReplacingTheLink
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/fd/../fd/1 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/fd/../fd/1 redirected"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/fd/1 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/fd/1 redirected"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/fd/2 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/stderr piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/stdout piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/dev/stdout redirected"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/proc/self/fd/1 piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"/proc/self/fd/1 redirected"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"php://stdout piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"php://stdout redirected"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesThroughTheHeldProcessStreamWithoutTruncatingIt"stderr piped"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\RunTargetsTest::itWritesToACharacterDeviceWithoutChangingItsKind
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"bytes"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"lowercase suffix"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeLimitsTest::itAcceptsAPositiveSizeOrUnlimited"megabytes"
@@ -11018,10 +11032,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itSupportsAllPsrLogLevels
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itSupportsStringableMessages
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itAppendsToExistingFile
- - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itCreatesDirectory
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itHandlesEmptyContext
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itInterpolatesPlaceholders
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itKeepsARecordWhoseContextIsNotValidUtf8
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itLeavesMissingDirectoriesUntouchedUntilTheTargetIsJudged
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesADirectoryItCannotCreateWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesAFileItCannotOpenWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesToLeaveATruncatedRecord

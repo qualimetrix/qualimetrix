@@ -83,6 +83,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/Abs
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/ProductIdentity.php	Qualimetrix\Core	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Console/Refusal/ConsoleExitCode.php	Qualimetrix\Infrastructure\Console\Refusal	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Infrastructure/Serializer/IgbinarySerializer.php	Qualimetrix\Infrastructure\Serializer	error	1
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Coupling/AbstractnessCollector.php	Qualimetrix\Analysis\Evidence\Coupling	warning	1
 rule-namespace-suppression	coupling.instability	coupling.instability	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionAudit.php	Qualimetrix\Analysis\Finding\SuppressionBinding	warning	1
@@ -178,6 +179,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Contract/Config
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/AnalysisPipeline.php	Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/DependencyGraphAnalyzer.php	Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileTargetFailure.php	Qualimetrix\Core\FileTarget\FileTargetFailure	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/AnalysisInputPathValidator.php	Qualimetrix\Infrastructure\Console	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/AbstractHookCommand.php	Qualimetrix\Infrastructure\Console\Command	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	warning	1

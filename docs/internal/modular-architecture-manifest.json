@@ -1195,10 +1195,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ArtifactFile"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
         },
         {
@@ -1304,6 +1300,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargetSession"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
         }
       ]
     },
@@ -18737,13 +18741,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Infrastructure\\Console\\ArtifactFile": {
-      "path": "src/Infrastructure/Console/ArtifactFile.php",
-      "kind": "class",
-      "owner": "Infrastructure.Console",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Infrastructure\\Console\\AuthoredRuleOptionWrites": {
       "path": "src/Infrastructure/Console/AuthoredRuleOptionWrites.php",
       "kind": "class",
@@ -20136,6 +20133,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
         }
       ]
     },
@@ -21834,6 +21835,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargetSession"
         }
       ]
     },
@@ -21867,6 +21872,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\ProcessStreams"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions"
         }
       ]
     },
@@ -21927,6 +21940,18 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
+        },
+        {
+          "owner": "Infrastructure.Logging",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Logging\\FileLogger"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
         }
       ]
     },
@@ -21959,6 +21984,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
         }
       ]
     },
@@ -21983,6 +22012,22 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Infrastructure.Logging",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Logging\\Contract\\LoggerFactoryInterface"
+        },
+        {
+          "owner": "Infrastructure.Logging",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Logging\\FileLogger"
+        },
+        {
+          "owner": "Infrastructure.Logging",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Logging\\LoggerFactory"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
         }
       ]
     },
@@ -22045,6 +22090,18 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions"
         }
       ]
     },
@@ -22073,6 +22130,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions"
         }
       ]
     },
@@ -22105,6 +22170,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
         }
       ]
     },
@@ -22172,6 +22241,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargetSession"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
         }
       ]
     },
@@ -22193,8 +22270,13 @@
       "path": "src/Infrastructure/Cache/CacheClearOutcome.php",
       "kind": "class",
       "owner": "Infrastructure.Cache",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator"
+        }
+      ]
     },
     "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents": {
       "path": "src/Infrastructure/Cache/CacheDirectoryContents.php",
@@ -22209,6 +22291,68 @@
       "owner": "Infrastructure.Cache",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets": {
+      "path": "src/Infrastructure/Console/RunTarget/RunTargets.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator",
+          "operations": [
+            "service_registration"
+          ]
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunTarget\\ProcessStreams": {
+      "path": "src/Infrastructure/Console/RunTarget/ProcessStreams.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess": {
+      "path": "src/Infrastructure/Console/RunTarget/TargetAccess.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions": {
+      "path": "src/Infrastructure/Console/RunTarget/TargetCollisions.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargetSession": {
+      "path": "src/Infrastructure/Console/RunTarget/RunTargetSession.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "composition_binding",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
     }
   },
   "enforcement_seams": {}

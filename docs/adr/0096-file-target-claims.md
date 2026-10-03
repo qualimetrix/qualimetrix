@@ -48,7 +48,9 @@ releasing the lock does not remove its name. Its acquisition deadline uses a
 monotonic clock, so a system-clock adjustment cannot shorten or extend it.
 
 Descriptor duplication preserves the supplied stream's offset and avoids
-truncation. A path-opened handle with the e mode is close-on-exec. PHP's
+truncation. Descriptor and stream writes enable blocking so an inherited
+nonblocking pipe cannot report success after losing buffered bytes.
+A path-opened handle with the e mode is close-on-exec. PHP's
 php://fd wrapper does not preserve that guarantee for its duplicate: it may
 survive proc_open. Worker descriptor maps are a separate protection and do not
 make descriptor duplication universally close-on-exec.
@@ -82,3 +84,33 @@ Clear returns completion, remaining recognizable entries, directory and reason;
 uninspectable shards cannot establish completion. Entry replacement delegates
 complete-write and cleanup semantics to Core. Serializer-marker publication
 retains its separate implementation.
+
+Console owns `RunTargets`, the lifecycle for report, profile and log destinations.
+It judges targets without opening them, includes implicit report stdout in
+collision checks, and claims them after configuration, scope, selector and
+baseline input checks. Equal ordinary inodes and equal absent names refuse;
+character devices may coincide. Opened identities are compared again before
+delivery. Teardown releases every held target and attempts to remove its
+unwritten new name; an unsuccessful removal remains a reported failure.
+
+Check and Graph share a `RunTargetSession` with those same targets and the
+terminal presenter. It retains the primary throwable, attempts cleanup, then
+classifies both causes. After a completed report or graph publication, diagnostics
+use stderr without a second stdout envelope. Internal failures take exit 1;
+environment cleanup takes exit 3 over findings exits. An unsuccessful cleanup
+can leave an unwritten target behind and reports that fact. The marker covers
+successful presenter return, not partial output followed by an exception inside
+the presenter. The existing inner claim cleanup and the application's terminal
+presenter fallback retain their separate failure boundaries.
+
+The per-run `LoggerFactory` creates a buffering file logger without opening the
+path. After claim it attaches the same held target. Append failures latch their
+first cause and count lost records rather than escaping into parser recovery
+handlers. Console settles logging before report publication and after profile
+delivery, and resets the factory on teardown. Graph status uses stderr.
+
+Descriptor existence is judged on both macOS and Linux. Linux fdinfo also permits
+a pure preflight refusal of a descriptor opened only for reading. PHP on macOS
+does not expose that original flag: duplicate stream metadata describes its
+requested mode, so an unknown access mode is left to the real write and its typed
+environment refusal. No speculative write is made to establish writability.

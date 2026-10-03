@@ -373,17 +373,26 @@ SymbolPath::forFile('src/Service/UserService.php');
 $repository->forMethod('App\Service\UserService::calculate'); // OLD API
 ```
 
-### 5. Atomic Cache Writes
+### 5. Judged File Writes
+
+Use Core's file-target lifecycle for current report, profile, log, cache-entry,
+baseline and hook-content destinations. Judge without opening the target;
+claim only after input refusals; keep full writes and identity checks with Core.
 
 ```php
-// Correct: atomic rename
-$tmp = $path . '.tmp.' . getmypid();
-file_put_contents($tmp, serialize($data));
-rename($tmp, $path);
-
-// Wrong: direct write (race condition)
-file_put_contents($path, serialize($data));
+$target = TargetPath::resolve($path);
+FileReplacement::replace($target, serialize($data), null, NewName::LastWriterWins);
 ```
+
+`FileReplacement` uses `TemporarySibling`, writes and flushes the full payload,
+then publishes atomically. It preserves an existing mode when `mode` is null
+and cleans its temporary name on failure. Report streams instead use
+`HeldTarget`; appending log records uses its `append()` operation.
+
+Hook removal and backup restoration retain their subject-owned native operations
+with identity checks. Serializer-marker writes retain their separate implementation.
+This is a boundary for the named current destinations, not a lexical guarantee
+about every future filesystem call. See ADR 0096 for races and platform limits.
 
 ### 6. Anonymous Classes — Ignore
 

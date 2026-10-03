@@ -1061,7 +1061,6 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
-        - 'Qualimetrix\Infrastructure\Console\ArtifactFile'
         - 'Qualimetrix\Infrastructure\Console\AuthoredRuleOptionWrites'
         - 'Qualimetrix\Infrastructure\Console\BaselineFilterReporter'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
@@ -1138,6 +1137,11 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\RuleListingPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleOptionArgv'
         - 'Qualimetrix\Infrastructure\Console\RunConfigurationPreparation'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\ProcessStreams'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\RunTargets'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess'
+        - 'Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocator'
         - 'Qualimetrix\Infrastructure\Console\RunningBinaryLocatorInterface'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
@@ -1610,6 +1614,7 @@ architecture:
       - reporting
       - external
     infrastructure-logging:
+      - core-filetarget
       - external
     infrastructure-parallel:
       - analysis-configuration
@@ -1858,6 +1863,8 @@ rules:
       # RunConfiguration is the shared run-policy carrier: inbound Ca=17, CBO=21.
       # Its exact declaration deliberately serves those named run consumers.
       - exact: src/Analysis/Run/Contract/Configuration/RunConfiguration.php
+      # The file-failure carrier has Ca=19/Ce=2: one typed cause shared by its readers.
+      - exact: src/Core/FileTarget/FileTargetFailure.php
       # AST visitors depend on many php-parser node types (not actionable coupling).
       # Exact capability roots preserve the visitor exclusion without enrolling
       # a future Analysis/Evidence sibling.
@@ -1931,6 +1938,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Five concrete refusal adapters intentionally share framing: A=0, Ca=14/Ce=13, D=0.518519.
+      - exact: 'Qualimetrix\Infrastructure\Console\Refusal'
       # The same concrete authored directive contract has intentional distance 0.52.
       - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
       # Five concrete scope conclusions are shared contracts: A=0, I=0.272727, D=0.727273.

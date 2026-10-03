@@ -34,7 +34,7 @@ complexity.cognitive	channel	?		20	106	2	2	14	55	0	21	0	0	0	0
 complexity.npath	channel	?		17	123	2	2	4	51	0	14	0	0	0	0
 complexity.wmc	channel	?		19	86	2	2	3	38	0	12	0	0	0	0
 coupling.cbo	channel	?		60	372	2	5	5	136	0	10	0	0	0	0
-coupling.class-rank	channel	?		20	135	0	2	2	42	0	39	0	0	0	0
+coupling.class-rank	channel	?		18	135	0	2	2	42	0	39	0	0	0	0
 coupling.distance	channel	?		31	116	2	2	1	49	0	41	0	0	0	0
 coupling.instability	channel	?		42	135	2	3	9	60	0	13	0	0	0	0
 coupling.unmatched-framework-namespace	channel	?		5	11	0	0	0	18	0	2	0	0	0	0
@@ -86,7 +86,7 @@ coupling.ce	metric-key	?		29	106	0	1	0	16	0	2	0	0	0	0
 coupling.ce-framework	metric-key	?		13	15	0	0	0	10	0	1	0	0	0	0
 coupling.ce-own	metric-key	?		4	12	0	0	0	8	0	0	0	0	0	0
 coupling.ce-packages	metric-key	?		11	10	0	0	0	5	0	0	0	0	0	0
-coupling.class-rank	metric-key	?		20	135	0	2	2	42	0	39	0	0	0	0
+coupling.class-rank	metric-key	?		18	135	0	2	2	42	0	39	0	0	0	0
 coupling.distance	metric-key	?		31	116	2	2	1	49	0	41	0	0	0	0
 coupling.distance-own	metric-key	?		7	18	0	0	0	9	0	0	0	0	0	0
 coupling.instability	metric-key	?		42	135	2	3	9	60	0	13	0	0	0	0
@@ -173,7 +173,7 @@ complexity.npath	producer	?		17	123	2	2	4	51	0	14	0	0	0	0
 complexity.wmc	producer	?		19	86	2	2	3	38	0	12	0	0	0	0
 computed	producer	?		131	143	0	1	0	65	0	8	0	0	0	0
 coupling.cbo	producer	?		60	372	2	5	5	136	0	10	0	0	0	0
-coupling.class-rank	producer	?		20	135	0	2	2	42	0	39	0	0	0	0
+coupling.class-rank	producer	?		18	135	0	2	2	42	0	39	0	0	0	0
 coupling.distance	producer	?		31	116	2	2	1	49	0	41	0	0	0	0
 coupling.instability	producer	?		42	135	2	3	9	60	0	13	0	0	0	0
 coupling.unmatched-framework-namespace	producer	?		5	11	0	0	0	18	0	2	0	0	0	0

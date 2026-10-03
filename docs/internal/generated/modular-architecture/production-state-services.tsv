@@ -114,9 +114,12 @@ src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\Er
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	"adapter session or cache"	-	delegate	reset,setMessage
+src/Infrastructure/Console/RunTarget/RunTargetSession.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	"adapter session or cache"	-	outputPublished	-
+src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	held,judged,reportOnStandardOutput	settle
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	-
 src/Infrastructure/Git/NameStatusListing.php	Qualimetrix\Infrastructure\Git\NameStatusListing	Infrastructure.Git	"adapter session or cache"	-	skipped	-
-src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	handle	-
+src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	failure,lostRecords,pending,target	settle
+src/Infrastructure/Logging/LoggerFactory.php	Qualimetrix\Infrastructure\Logging\LoggerFactory	Infrastructure.Logging	"adapter session or cache"	-	fileLogger	reset,settle
 src/Infrastructure/Logging/LoggerHolder.php	Qualimetrix\Infrastructure\Logging\LoggerHolder	Infrastructure.Logging	"runtime holder"	-	logger	reset,setLogger
 src/Infrastructure/Parallel/Runtime/ParallelConfigurationStore.php	Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore	Infrastructure.Parallel	"adapter session or cache"	-	configuration	reset
 src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php	Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy	Infrastructure.Parallel	"adapter session or cache"	-	cacheDir,minFilesForParallel,projectRoot,workerCount	execute,executeParallel,executeSequential,setCacheDir,setMinFilesForParallel,setProjectRoot,setWorkerCount

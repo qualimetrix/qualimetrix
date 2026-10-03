@@ -53,7 +53,12 @@ Console/
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
 ├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
-├── ArtifactFile.php                 # A file an option names for an artifact (--output, --profile, graph --output): one model of the target for the precheck and the write
+├── RunTarget/
+│   ├── RunTargets.php               # shared claims and teardown for report/profile/log
+│   ├── RunTargetSession.php         # command outcome, cleanup and terminal classification
+│   ├── TargetAccess.php             # pure CLI target-access judgement
+│   ├── TargetCollisions.php         # identity/name conflicts before and after claim
+│   └── ProcessStreams.php           # current descriptor identity and Linux access-mode inspection
 ├── CommandLineSpelling.php          # An option or argument value as argv would spell it; every valued door reads through it
 ├── FormatOptionPairs.php            # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
 ├── CheckCommandDefinition.php
@@ -197,7 +202,7 @@ way PHP folds class names; layer matching itself stays case-sensitive.
 | 0    | No findings                                             |
 | 1    | Warnings present (but no errors)                        |
 | 2    | Errors present                                          |
-| 3    | Configuration or input error                            |
+| 3    | Configuration, input or environment refusal             |
 | 4    | Analysis incomplete; policy result is not authoritative |
 
 Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
@@ -208,27 +213,33 @@ refuses an empty value for the five doors whose owners would read it as
 `ProfilePresenter::refuseImpossibleExport()` refuses a `--profile-format` outside
 its closed set and a `--profile` target the export cannot be written to, and
 `ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
-analysis. Both targets, and `graph:export --output`, are judged by
-`ArtifactFile`, which also makes the write, so the precheck cannot model a
-different write than the one made. The write is a shell's `>` as nearly as
-PHP allows, and the kernel decides what a path leads to: a target it reaches is
-opened by the path as written and written in place; a name it reaches nothing
-at is created by `touch()`, whose open the kernel resolves, so a dangling link
-creates its target and a link `fs.protected_symlinks` forbids is refused —
-every other PHP open resolves links in userspace, beyond that rule. The
-precheck asks only what the kernel answers without a write (not a directory; a
-reachable target writable; a new name's directory writable and searchable; a
-descriptor held and, on Linux, open for writing) and leaves a link it does not
-follow to the write, which refuses after the run. The supported spellings
-`/dev/stdout`, `/dev/stderr`, `/dev/fd/N` and `/proc/self/fd/N`, exactly as
-written, go through `php://fd/N` in blocking mode, because PHP on Linux opens
-those paths by resolving them, which fails on a pipe and truncates a redirected
-file; another spelling is opened by its path. A write that fails midway removes
-a file it created and leaves an existing target partly written. A profile write
-that still fails after the report is published
-ends the run with exit 3 through `RefusalPresenter::refusalAfterPublishedReport()`:
-the sentence goes to stderr whatever the format, so stdout keeps the report as
-its only document. `FormatOptionPairs` judges every written `--format-opt` pair
+analysis. `RunTargets` owns report, profile and log target judgement, collision
+checks and held resources. Core resolves target components and trusted links;
+unknown wrappers, exposed links and unsupported targets refuse. Pure preflight
+checks writable regular targets and writable/searchable parents without opening
+them. Descriptor existence is checked on both platforms; Linux fdinfo also
+identifies descriptors opened only for reading. On macOS an unknown original
+access mode is left to the actual write and its typed environment refusal.
+
+Claims happen after configuration, scope, selector and baseline input checks,
+before cache clearing or analysis. An existing file is held without truncation
+until report delivery, preserving inode, ownership, mode and hard links. A new
+unwritten name is removed during teardown when cleanup succeeds. A write failure can leave an existing
+file partly written. Closed symbolic links keep their entry and write the resolved
+referent; their parent must already exist. Explicit descriptors retain offset
+and use blocking writes. Equal ordinary inodes and equal absent names refuse,
+including collisions with implicit report stdout; character devices may coincide.
+The shared logger buffers early records, attaches its claimed target, latches
+append failures and reports lost records at settle before report publication.
+`RunTargetSession` runs Check and Graph actions, attempts target cleanup, then
+classifies the primary and cleanup failures. After successful report or graph
+publication, both diagnostics use stderr without another stdout envelope.
+An environment cleanup failure overrides a findings exit code; an internal
+failure keeps exit 1. Failed cleanup can leave an unwritten new target behind,
+and names that failure. The publication marker covers completed presenter
+calls, not partially written output or exceptions inside the presenter. The
+existing inner claim cleanup and terminal-presenter fallback retain their own
+boundaries. `FormatOptionPairs` judges every written `--format-opt` pair
 before any fold by key and refuses a key written twice, and two keys that set
 one value (`violations` and `limit`, or `limit` beside `--all`);
 `FormatterContextFactory` refuses `--detail` or `--detail=N` beside `--all` the
@@ -330,8 +341,8 @@ All three commands test `is_link` before `file_exists`, because a hook
 installed by an earlier release is now a symlink leading nowhere, and
 `file_exists` follows the link and calls it absent.
 
-They refuse the way every other command does: by throwing a
-`ConfigurationRefusal`, which `Application::doRun()` turns into exit 3 and a
+They refuse the way every other command does: by throwing a typed input or
+environment refusal, which `Application::doRun()` turns into exit 3 and a
 line on stderr — no hook command writes its reason to stdout or returns 1.
 The `.backup` slot is single because `--restore-backup` reads it by that name,
 so `hook:install --force` refuses to overwrite a slot holding a different hook

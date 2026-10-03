@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ArtifactFile` is removed. Console report, profile and log delivery uses one
+  shared `RunTargets`: judge destinations, claim after input checks, write through
+  held targets and abandon on teardown. `CheckCommand` requires a shared
+  `RunTargetSession` as its final constructor argument; `GraphExportCommand`
+  requires that session before its optional logger. Construct the session with
+  the shared `RunTargets` and `RefusalPresenter`; `RuntimeLoggerConfigurator`
+  requires those same targets as its final constructor argument.
+  `ResultPresenter::presentResults()`, `presentProfile()` and
+  `assertOutputIsWritable()`, and `ProfilePresenter::present()`, require explicit
+  run targets. Report/profile/log aliases of one ordinary inode or absent name
+  now refuse, including collisions with implicit report stdout. Graph status
+  moves to stderr. See ADR 0096 for filesystem guarantees and platform limits.
+  A cleanup failure after a completed report is also diagnosed on stderr,
+  alongside the primary failure, without appending another JSON document.
+- `FileLogger` no longer opens a file or creates its parent in its constructor.
+  Create the parent explicitly, attach a claimed `HeldTarget` and call `settle()`
+  to receive a latched write failure with the lost-record count.
+  `LoggerFactoryInterface::create()` requires all three arguments, including
+  explicit nulls; implementations must provide `attachFileTarget()`, `settle()`
+  and `reset()`. File logging begins after input checks; an invalid invocation
+  leaves the requested log untouched. File failures use environment exit 3.
 - Baseline writers now require a prepared `ResolvedTarget` instead of a string
   destination. `destinationSnapshot()` returns `{target, hash}` for both absent
   and existing targets. Prepare the destination before analysis and pass the
