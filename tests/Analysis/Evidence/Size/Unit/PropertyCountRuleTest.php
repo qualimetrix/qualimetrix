@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(PropertyCountRule::class)]
 #[CoversClass(PropertyCountOptions::class)]
@@ -353,6 +355,13 @@ final class PropertyCountRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php',
             'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
+    }
+
+    #[Test]
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
+    {
+        self::assertEquals(new PropertyCountOptions(), PropertyCountOptions::fromResolved(ResolvedOptionsFixture::values(PropertyCountOptions::class, [])));
+        self::assertFalse(PropertyCountOptions::fromResolved(ResolvedOptionsFixture::values(PropertyCountOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

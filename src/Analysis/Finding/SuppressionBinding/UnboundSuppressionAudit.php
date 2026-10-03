@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Finding\SuppressionBinding;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -40,12 +39,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * counts removals; a suppressor that binds to nothing is reported here and is
  * indistinguishable from the first in that list.
  *
- * **Its Options service is the rule's own, and this service is lazy for that
- * reason.** The container builds the console command before the runtime
- * configuration has applied `rules.<name>.enabled` or `--rule-opt`, so an
- * eagerly constructed audit would capture an Options object that still reads
- * `enabled: true` after the configuration said otherwise. Declared lazy, the
- * audit is constructed at its first call, which is after the run.
+ * The shared audit reads the ready invocation snapshot when called, so it
+ * cannot retain an earlier invocation's enablement.
  *
  * **Two gates keep this quiet where it cannot judge.** The caller asks the
  * project-wide one
@@ -75,7 +70,6 @@ final readonly class UnboundSuppressionAudit
     private const string OCCURRENCE_KIND = 'unbound-suppression-value';
 
     public function __construct(
-        private RuleOptionsInterface $options,
         private RuleExecutionInterface $ruleExecution,
         private RuleConfigurationInterface $ruleConfiguration,
     ) {}
@@ -110,7 +104,7 @@ final readonly class UnboundSuppressionAudit
         ?array $declaredNamespaces,
         ValueScopeJudgement $scope,
     ): array {
-        if (!$this->options->isEnabled()) {
+        if (!$this->ruleConfiguration->resolvedOptions()->for(UnboundSuppressionRule::NAME)->isEnabled()) {
             return [];
         }
 
@@ -168,13 +162,30 @@ final readonly class UnboundSuppressionAudit
     }
 
     /**
+     * @param list<PathPattern> $suppressPaths
+     * @param list<NamespacePattern> $suppressNamespaces
+     * @param ?list<string> $declaredNamespaces
+     *
+     * @return list<string>
+     */
+    public function judgedChannels(array $suppressPaths, array $suppressNamespaces, ?array $declaredNamespaces, ValueScopeJudgement $scope): array
+    {
+        $channels = [];
+        foreach ($this->configuredValues($suppressPaths, $suppressNamespaces) as $value) {
+            if ($this->judges($value, $declaredNamespaces, $scope)) {
+                $channels[$value['channel']] = true;
+            }
+        }
+
+        return array_keys($channels);
+    }
+
+    /**
      * Every configured value, global and per-rule, with the channel that
      * reports it.
      *
-     * Per-rule entries are read through {@see ConfiguredSuppression} — the one
-     * reader {@see \Qualimetrix\Analysis\Finding\FindingExclusionLedger} also
-     * uses when it applies them, so "bound" here and "applied" there cannot
-     * mean two different pattern sets.
+     * Per-rule entries come from the current typed snapshot's suppression
+     * values, so the audit cannot re-parse a different pattern set.
      *
      * **All three per-rule options, including `suppress_namespace_channels`.**
      * That one was applied and not judged while each side enumerated the
@@ -208,18 +219,15 @@ final readonly class UnboundSuppressionAudit
             $values[] = ['channel' => UnboundSuppressionOptions::UNMATCHED_NAMESPACE, 'rule' => null, 'option' => ConfiguredSuppression::NAMESPACES, 'pattern' => $pattern];
         }
 
-        foreach ($this->ruleConfiguration->all() as $ruleName => $options) {
-            if (!\is_array($options)) {
-                continue;
-            }
-
-            $rule = (string) $ruleName;
+        $snapshot = $this->ruleConfiguration->resolvedOptions();
+        foreach ($snapshot->all() as $rule => $options) {
+            $suppression = $snapshot->suppressionFor($rule);
             $entries = [
-                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $this->ruleConfiguration->pathExclusions($rule)),
-                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $this->ruleConfiguration->namespaceExclusions($rule)),
+                ...array_map(static fn(PathPattern $p): array => [ConfiguredSuppression::PATHS, $p], $suppression->paths),
+                ...array_map(static fn(NamespacePattern $p): array => [ConfiguredSuppression::NAMESPACES, $p], $suppression->namespaces),
             ];
 
-            foreach ($this->ruleConfiguration->namespaceChannelExclusions($rule) as $selector => $patterns) {
+            foreach ($suppression->namespaceChannels as $selector => $patterns) {
                 foreach ($patterns as $pattern) {
                     $entries[] = [ConfiguredSuppression::NAMESPACE_CHANNELS . '.' . $selector, $pattern];
                 }

@@ -65,7 +65,8 @@ final class CommandLineSpellingTest extends TestCase
             self::fail('A shape no command line writes must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString(\sprintf('Invalid --one value of type %s', $type), $refusal->getMessage());
-            self::assertSame('--one', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--one', $refusal->sources()[0]->locator());
         }
     }
 

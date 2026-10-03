@@ -47,7 +47,7 @@ final class ReportPayload
         }
 
         try {
-            $decoded = json_decode($matches[1], false, 512, \JSON_THROW_ON_ERROR);
+            json_decode($matches[1], false, 512, \JSON_THROW_ON_ERROR);
         } catch (JsonException $error) {
             throw new GateError(\sprintf(
                 'The %s HTML report for %s carries a `report-data` payload that is not JSON (%s).',
@@ -57,7 +57,7 @@ final class ReportPayload
             ));
         }
 
-        return (string) json_encode($decoded, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
+        return $matches[1];
     }
 
     private function __construct() {}

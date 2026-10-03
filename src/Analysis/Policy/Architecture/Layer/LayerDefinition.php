@@ -86,7 +86,7 @@ final readonly class LayerDefinition
         bool $expanded = false,
         private ?string $declaredAs = null,
     ) {
-        $this->validateName($name, $expanded);
+        self::validateName($name, $expanded);
     }
 
     /**
@@ -108,6 +108,18 @@ final readonly class LayerDefinition
     public static function expanded(string $name, MembershipSpec $membership, ?string $declaredAs = null): self
     {
         return new self($name, $membership, expanded: true, declaredAs: $declaredAs);
+    }
+
+    /**
+     * Validates the grammar of a name written as a static layer declaration.
+     * Configuration-layer validation calls this before a later authored layer
+     * can replace the whole list.
+     *
+     * @throws InvalidLayerDefinitionException If the name is invalid.
+     */
+    public static function assertValidDeclaredName(string $name): void
+    {
+        self::validateName($name, false);
     }
 
     /**
@@ -281,7 +293,7 @@ final readonly class LayerDefinition
             : self::excludeOutcome($context, $exclude, $exclude->patterns);
     }
 
-    private function validateName(string $name, bool $expanded): void
+    private static function validateName(string $name, bool $expanded): void
     {
         if ($name === '') {
             throw new InvalidLayerDefinitionException('Layer name must not be empty.');

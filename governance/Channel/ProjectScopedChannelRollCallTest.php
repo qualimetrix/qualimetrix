@@ -44,7 +44,7 @@ final class ProjectScopedChannelRollCallTest extends TestCase
      * fourth declarer arriving unread is caught by
      * {@see itReadsEveryFileThatNamesTheConstant}, not by this number.
      */
-    private const int KNOWN_DECLARERS = 2;
+    private const int KNOWN_DECLARERS = 3;
 
     /**
      * Files that name the constant without declaring one, each with the reason.

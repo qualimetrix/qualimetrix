@@ -158,14 +158,35 @@ the whole point of the line.
 Each `computed_metrics:` entry accepts exactly nine keys: `formula`, `formulas`,
 `levels`, `description`, `inverted`, `threshold`, `warning`, `error`, and
 `enabled`. `threshold` sets both `warning` and `error` to the same value and
-cannot be combined with either of them. Inside `formulas:`, the only accepted
+cannot be combined with either of them in the same layer. Inside `formulas:`, the only accepted
 keys are the three report levels: `class`, `namespace`, and `project`.
 
 An unknown key, a value of the wrong type, or a `health.*` name outside the
 six built-in dimensions (`health.complexity`, `health.cohesion`,
 `health.coupling`, `health.typing`, `health.maintainability`,
 `health.overall`) is refused with exit code 3 and a message naming what was
-written and what is accepted — none of these are ignored silently.
+written and what is accepted — none of these are ignored silently. A key is
+recognised even when its value is `~`, so `warnign: ~` is refused too.
+
+### Across presets and your file
+
+`computed_metrics` merges metric by metric, and inside one metric key by key:
+a preset's metric and your file's keys for the same name combine, and a metric
+another layer never names is left as it is.
+
+- `threshold` is expanded into `warning` and `error` in the layer that wrote
+  it, so a file that writes only `warning` over a preset's `threshold` keeps
+  the preset's value as `error`.
+- `formula` sets every level and `formulas.<level>` refines one level,
+  whichever layers wrote them: a file's `formulas: {class: …}` over a preset's
+  `formula` changes the class level only.
+- A metric is removed only by `enabled: false`. `computed_metrics: {}` and
+  `health.complexity: ~` leave the lower layer's values standing — neither
+  resets anything to the built-in defaults.
+- `exclude_health` accumulates across layers.
+
+The rules every configuration key follows are in
+[How layers combine](../getting-started/configuration.md#how-layers-combine).
 
 ### Customizing Thresholds
 

@@ -8,7 +8,7 @@
 # Do not hand-edit. Regenerate with:
 #   php scripts/generate-rename-enumeration.php --runtime-channels
 #
-# ROW COUNTS: 6 builtin, 1 corpus-observed
+# ROW COUNTS: 6 builtin, 3 corpus-observed
 #
 # HOW THIS WAS PRODUCED
 # - `builtin` rows are DERIVED from
@@ -42,3 +42,5 @@ health.maintainability	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMet
 health.overall	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.overall	Ш5d
 health.typing	builtin	src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php	health.typing	Ш5d
 computed.branch-load	corpus-observed	finding-gate/cases/health/qmx.yaml	computed	Ш5d
+computed.class-load	corpus-observed	finding-gate/cases/computed-cross-level/qmx.yaml	computed	Ш5d
+computed.project-load	corpus-observed	finding-gate/cases/computed-cross-level/qmx.yaml	computed	Ш5d

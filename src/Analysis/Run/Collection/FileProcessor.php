@@ -36,11 +36,14 @@ use SplFileInfo;
 final class FileProcessor implements FileProcessorInterface
 {
     private ?AbsolutePath $projectRoot = null;
+    private readonly SourceReader $sourceReader;
     public function __construct(
         private readonly FileParserInterface $parser,
         private readonly FileMeasurementCollectorInterface $collector,
         private readonly SourceControlExtractorInterface $sourceControlExtractor,
-    ) {}
+    ) {
+        $this->sourceReader = new SourceReader();
+    }
 
     /**
      * Sets the project root used to relativize file paths. The orchestrator
@@ -59,17 +62,23 @@ final class FileProcessor implements FileProcessorInterface
             throw new LogicException('projectRoot must be set via setProjectRoot() before process()');
         }
 
-        $relativePath = PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot);
+        $relativePath = PathFactory::published(
+            PathFactory::fromCliArgument($file->getPathname(), $this->projectRoot),
+            $this->projectRoot,
+        );
+
+        $source = $this->sourceReader->read($file);
+        if ($source instanceof UnreadableSource) {
+            return FileProcessingResult::failure($relativePath, $source->reason, FileProcessingFailureKind::UnreadableFile);
+        }
 
         try {
-            $payload = $this->measure($file, $relativePath);
+            $payload = $this->measure($file, $relativePath, $source);
         } catch (ParseException $e) {
             return self::parseFailure($relativePath, $e->getMessage());
         }
 
-        return $payload === null
-            ? self::parseFailure($relativePath, 'Failed to read file contents')
-            : FileProcessingResult::success(filePath: $relativePath, payload: $payload);
+        return FileProcessingResult::success(filePath: $relativePath, payload: $payload);
     }
 
     private static function parseFailure(RelativePath $filePath, string $error): FileProcessingResult
@@ -81,24 +90,12 @@ final class FileProcessor implements FileProcessorInterface
         );
     }
 
-    /**
-     * Null means the entry could not be read and the parser did not refuse
-     * it. The AST and the source are released in this frame, before the
-     * cycle collection, so a worker does not hold a finished file's tree.
-     */
-    private function measure(SplFileInfo $file, RelativePath $relativePath): ?SuccessfulFileProcessing
+    /** The AST and source are released before cycle collection. */
+    private function measure(SplFileInfo $file, RelativePath $relativePath, string $source): SuccessfulFileProcessing
     {
-        $source = self::readSource($file);
-        if ($source === null) {
-            // The parser owns the typed refusal of an entry that cannot be
-            // read — its message names which of the reasons it was.
-            $this->parser->parse($file);
-
-            return null;
-        }
-
         $ast = $this->parser->parseContent($file, $source);
         $this->collector->reset();
+        $this->collector->measureSource($source);
         $output = $this->collectMeasurements($file, $ast, $relativePath);
 
         $callableMetrics = $this->extractCallableMetrics($relativePath);
@@ -121,22 +118,6 @@ final class FileProcessor implements FileProcessorInterface
             thresholdOverrides: $controls->thresholdOverrides,
             thresholdDiagnostics: $controls->thresholdDiagnostics,
         );
-    }
-
-    /**
-     * The bytes are read here, once, and handed both to the parser and to
-     * source-control extraction, so the AST and the text extraction searches
-     * describe the same file whether the AST was parsed or came from a cache.
-     */
-    private static function readSource(SplFileInfo $file): ?string
-    {
-        if (!$file->isFile() || !$file->isReadable()) {
-            return null;
-        }
-
-        $source = @file_get_contents($file->getPathname());
-
-        return $source === false ? null : $source;
     }
 
     /** @param array<\PhpParser\Node> $ast */

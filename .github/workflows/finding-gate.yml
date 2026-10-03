@@ -1,0 +1,32 @@
+name: Finding gate controls
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  gate-controls:
+    name: Gate controls (composer gate:controls)
+    runs-on: ubuntu-latest
+    timeout-minutes: 160
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: igbinary, pcntl, posix
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Run gate controls
+        run: composer gate:controls -- --reference=HEAD --jobs=8

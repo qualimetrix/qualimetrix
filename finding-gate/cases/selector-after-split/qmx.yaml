@@ -1,0 +1,2 @@
+suppress_paths: []
+only_rules: [complexity]

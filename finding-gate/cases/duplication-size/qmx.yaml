@@ -1,0 +1,15 @@
+suppress_paths: []
+computed_metrics:
+  health.complexity: { enabled: false }
+  health.cohesion: { enabled: false }
+  health.coupling: { enabled: false }
+  health.typing: { enabled: false }
+  health.maintainability: { enabled: false }
+  health.overall: { enabled: false }
+only_rules: [duplication.clone]
+rules:
+  duplication.clone:
+    min_lines: 12
+    min_tokens: 45
+    warning: 1
+    error: 100

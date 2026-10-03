@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\FileTarget\FileReplacement;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
+use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Infrastructure\Console\Hook\PreCommitHook;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -41,10 +47,7 @@ final class HookInstallCommand extends AbstractHookCommand
 
         $this->clearExistingHook($input, $output, $hookPath);
 
-        $failure = self::write($hookPath, PreCommitHook::script($binary));
-        if ($failure !== null) {
-            throw $this->refusal(\sprintf('Failed to write hook: %s: %s', $hookPath, $failure));
-        }
+        $this->write($hookPath, PreCommitHook::script($binary), $output);
 
         $output->writeln('<info>✓ Pre-commit hook installed</info>');
         $output->writeln(\sprintf('Hook path: %s', $hookPath));
@@ -77,16 +80,17 @@ final class HookInstallCommand extends AbstractHookCommand
 
         $this->backUp($output, $hookPath);
 
-        // The link itself, not what it points at: `rename()` would replace the
-        // target through it and leave the repository pointing at a file that
-        // no longer belongs there.
+        // Remove the link itself before resolving the replacement target;
+        // otherwise the Core writer would resolve and replace its referent.
         if (!is_link($hookPath)) {
             return;
         }
 
+        $entry = self::entry($hookPath);
+        self::assertSameEntry($hookPath, $entry);
         [$removed, $reason] = self::attempt(static fn(): bool => unlink($hookPath));
         if (!$removed) {
-            throw $this->refusal(\sprintf('Failed to remove the existing hook: %s: %s', $hookPath, $reason));
+            throw EnvironmentRefusal::aboutFile($hookPath, 'remove', $reason);
         }
     }
 
@@ -106,14 +110,19 @@ final class HookInstallCommand extends AbstractHookCommand
     private function backUp(OutputInterface $output, string $hookPath): void
     {
         if (!file_exists($hookPath)) {
-            $output->writeln('<comment>Existing hook is a broken symlink; nothing to back up.</comment>');
+            if (!$this->danglingLink($hookPath, $output)) {
+                throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $hookPath, 'hook disappeared before backup');
+            }
 
+            $output->writeln('<comment>Existing hook is a broken symlink; nothing to back up.</comment>');
             return;
         }
 
-        $contents = @file_get_contents($hookPath);
+        $target = $this->judge($hookPath, $output);
+        $hookEntry = self::entry($hookPath);
+        $contents = self::read($hookPath);
 
-        if ($contents !== false && PreCommitHook::isOurs($contents)) {
+        if (PreCommitHook::isOurs($contents)) {
             $output->writeln('<comment>Replacing a Qualimetrix hook; the existing backup is left alone.</comment>');
 
             return;
@@ -121,58 +130,56 @@ final class HookInstallCommand extends AbstractHookCommand
 
         $backupPath = $hookPath . '.backup';
 
-        if (file_exists($backupPath) || is_link($backupPath)) {
-            if ($contents !== false && @file_get_contents($backupPath) === $contents) {
-                $output->writeln(\sprintf('<comment>The backup %s already holds this hook; it is left as it is.</comment>', $backupPath));
-
-                return;
-            }
-
-            throw $this->refusal(\sprintf(
-                'The backup %s already holds a different hook, and it is the only copy hook:uninstall --restore-backup can restore. '
-                . 'Move it away, then run hook:install --force again.',
-                $backupPath,
-            ));
+        if ($this->backupAlreadyPreserves($backupPath, $contents, $output)) {
+            return;
         }
 
-        [$copied, $reason] = self::attempt(static fn(): bool => copy($hookPath, $backupPath));
-        if (!$copied) {
-            throw $this->refusal(\sprintf('Failed to back up the existing hook to %s: %s. The hook was left in place.', $backupPath, $reason));
+        $sourcePath = $target->path?->value() ?? throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $hookPath, 'hook is not a regular file');
+        $sourceEntry = self::entry($sourcePath);
+        $mode = $sourceEntry['mode'] & 07777;
+        $backupTarget = $this->judge($backupPath, $output);
+        self::assertSameEntry($hookPath, $hookEntry);
+        self::assertSameEntry($sourcePath, $sourceEntry);
+        if (!$target->sameAs($this->judge($hookPath, $output))) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $hookPath, 'hook changed before backup');
         }
+        FileReplacement::replace($backupTarget, $contents, $mode, NewName::Exclusive);
 
         $output->writeln(\sprintf('<info>Existing hook backed up to: %s</info>', $backupPath));
     }
 
-    /**
-     * Writes the hook executable, or leaves whatever was there untouched.
-     *
-     * Temporary file first, then rename: a hook half-written by an
-     * interrupted run is a file git will still try to execute.
-     *
-     * @return string|null the system's reason the hook could not be written, or null once it is
-     */
-    private static function write(string $hookPath, string $contents): ?string
+    private function backupAlreadyPreserves(string $backupPath, string $contents, OutputInterface $output): bool
     {
-        $temporaryPath = $hookPath . '.tmp.' . getmypid();
-
-        // The length, not just `false`: a full disk writes part of the file
-        // and reports how much, and a truncated hook is one git still runs.
-        [$written, $reason] = self::attempt(static fn() => file_put_contents($temporaryPath, $contents));
-        if ($written !== \strlen($contents)) {
-            @unlink($temporaryPath);
-
-            return $reason;
+        if (!file_exists($backupPath) && !is_link($backupPath)) {
+            return false;
         }
 
-        [$placed, $reason] = self::attempt(
-            static fn(): bool => chmod($temporaryPath, 0755) && rename($temporaryPath, $hookPath),
+        $this->judge($backupPath, $output);
+        if (self::read($backupPath) === $contents) {
+            $output->writeln(\sprintf('<comment>The backup %s already holds this hook; it is left as it is.</comment>', $backupPath));
+
+            return true;
+        }
+
+        throw $this->refusal(\sprintf(
+            'The backup %s already holds a different hook, and it is the only copy hook:uninstall --restore-backup can restore. '
+            . 'Move it away, then run hook:install --force again.',
+            $backupPath,
+        ));
+    }
+
+    private function write(string $hookPath, string $contents, OutputInterface $output): void
+    {
+        $target = $this->judge($hookPath, $output);
+        if ($target->path?->value() !== $hookPath) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $hookPath, 'hook name changed before installation');
+        }
+
+        FileReplacement::replace(
+            $target,
+            $contents,
+            0755,
+            $target->kind === TargetKind::Absent ? NewName::Exclusive : NewName::LastWriterWins,
         );
-        if (!$placed) {
-            @unlink($temporaryPath);
-
-            return $reason;
-        }
-
-        return null;
     }
 }

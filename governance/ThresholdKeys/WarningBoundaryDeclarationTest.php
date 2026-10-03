@@ -7,6 +7,7 @@ namespace Qualimetrix\Governance\ThresholdKeys;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
@@ -14,9 +15,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionObject;
 use ReflectionProperty;
 use Throwable;
@@ -344,8 +346,9 @@ final class WarningBoundaryDeclarationTest extends TestCase
         $rules = $container->get(RuleRegistryInterface::class);
         \assert($rules instanceof RuleRegistryInterface);
 
-        $factory = $container->get(RuleOptionsFactory::class);
-        \assert($factory instanceof RuleOptionsFactory);
+        $execution = $container->get(RuleExecutionInterface::class);
+        \assert($execution instanceof RuleExecutionInterface);
+        $snapshot = ResolvedOptionsFixture::build(FindingConfiguration::none(), $execution->allRules());
 
         foreach ($rules->getClasses() as $ruleClass) {
             if (ChannelDeclarationReader::read($ruleClass) === []) {
@@ -354,7 +357,7 @@ final class WarningBoundaryDeclarationTest extends TestCase
 
             $name = RuleNameReader::read($ruleClass);
 
-            yield $name => $factory->create($name, $ruleClass::getOptionsClass());
+            yield $name => $snapshot->for($name);
         }
     }
 

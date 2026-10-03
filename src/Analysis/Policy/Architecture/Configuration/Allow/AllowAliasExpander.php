@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 /**
@@ -30,8 +28,10 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
  * yields {@code [Extends, Implements, TraitUse]} (the trailing `extends` is
  * absorbed by the alias expansion that already includes it).
  *
- * Errors are surfaced as {@see ConfigurationRefusal} so the configuration
- * pipeline can prepend its own user-facing path prefix.
+ * Only the vocabulary lives here. Reading the written list and refusing it
+ * through the layer that wrote it belongs to the configuration zone
+ * ({@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer}),
+ * which this zone may not import.
  */
 final class AllowAliasExpander
 {
@@ -67,130 +67,45 @@ final class AllowAliasExpander
     ];
 
     /**
-     * High-level entry point for the {@code relations:} long-form key. Accepts
-     * the raw YAML value (which is {@code mixed} until validated), enforces
-     * the shape contract (must be a non-empty list) and delegates to
-     * {@see self::expand()} for actual expansion.
+     * The {@see DependencyType} values one token stands for: the members of an
+     * alias, or the one direct value it names; null when it is neither.
      *
-     * Returns null when {@code $raw} is absent (i.e. the user did not declare
-     * {@code relations:} at all) so the caller can leave
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget::$relations} null
-     * (= "any relation allowed").
-     *
-     * Centralising shape validation here keeps {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator}
-     * a thin orchestrator over four single-purpose helpers — the WMC cost of
-     * the four shape checks (non-array, non-list, empty, expand) lives here
-     * next to the rest of the alias-expansion concern.
-     *
-     *
-     * @throws ConfigurationRefusal When the shape contract is violated or a
-     *                              token cannot be expanded.
-     *
-     * @return list<DependencyType>|null
+     * @return non-empty-list<DependencyType>|null
      */
-    public static function parseList(mixed $raw, string $context): ?array
-    {
-        if ($raw === null) {
-            return null;
-        }
-
-        if (!\is_array($raw) || !array_is_list($raw)) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open([...explode('.', $context), 'relations'], 'relations'),
-                \sprintf('%s.relations: must be a list of relation kinds or aliases.', $context),
-            );
-        }
-
-        if ($raw === []) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open([...explode('.', $context), 'relations'], 'relations'),
-                \sprintf(
-                    "%s.relations: must list at least one relation kind. " .
-                    'Use a bare target (e.g. `- target_layer` instead of `- target: target_layer`) ' .
-                    'to keep the "any relation allowed" semantics.',
-                    $context,
-                ),
-            );
-        }
-
-        return self::expand($raw, $context);
-    }
-
-    /**
-     * Expands a user-written token list into a deduplicated {@see DependencyType}
-     * list, preserving order of first appearance.
-     *
-     * @param list<string> $tokens Raw tokens as written in the YAML
-     *                             {@code relations:} list (e.g.
-     *                             {@code ['inheritance', 'attribute']}).
-     * @param string $context User-facing config path prefix used in error messages
-     *                        (e.g. {@code architecture.allow.app[0]}).
-     *
-     * @throws ConfigurationRefusal When a token is neither a direct
-     *                              {@see DependencyType} value nor a known alias.
-     *
-     * @return list<DependencyType>
-     */
-    public static function expand(array $tokens, string $context): array
-    {
-        $expanded = [];
-        $seen = [];
-
-        foreach ($tokens as $index => $token) {
-            if (!\is_string($token) || $token === '') {
-                throw ConfigurationRefusal::atResolvedKey(
-                    RefusedPosition::open([...explode('.', $context), 'relations', (string) $index], (string) $index),
-                    \sprintf(
-                        '%s.relations[%d]: each entry must be a non-empty string.',
-                        $context,
-                        $index,
-                    ),
-                );
-            }
-
-            foreach (self::resolveToken($token, $context) as $type) {
-                $key = $type->value;
-                if (isset($seen[$key])) {
-                    continue;
-                }
-                $seen[$key] = true;
-                $expanded[] = $type;
-            }
-        }
-
-        return $expanded;
-    }
-
-    /**
-     * Resolves a single user token into the {@see DependencyType} values it
-     * represents. Aliases are looked up in {@see self::ALIASES}; direct values
-     * are looked up reflectively against {@see DependencyType::cases()}.
-     *
-     * @return non-empty-list<DependencyType>
-     */
-    private static function resolveToken(string $token, string $context): array
+    public static function expand(string $token): ?array
     {
         if (isset(self::ALIASES[$token])) {
             return self::ALIASES[$token];
         }
 
         $direct = DependencyType::tryFrom($token);
-        if ($direct !== null) {
-            return [$direct];
-        }
 
+        return $direct === null ? null : [$direct];
+    }
+
+    /**
+     * Every token {@see expand()} accepts, sorted — the suggestions a refusal
+     * of an unknown token offers.
+     *
+     * @return list<string>
+     */
+    public static function acceptedTokens(): array
+    {
         $accepted = [...self::acceptedDirectValues(), ...array_keys(self::ALIASES)];
         sort($accepted);
 
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::closed([...explode('.', $context), 'relations'], $token, $accepted),
-            \sprintf(
-                "%s.relations: unknown relation kind '%s'. Known direct values: %s. Known aliases: %s.",
-                $context,
-                $token,
-                self::renderDirectValues(),
-                self::renderAliases(),
-            ),
+        return $accepted;
+    }
+
+    /** The sentence refusing `$token`, naming both vocabularies in full. */
+    public static function unknownTokenMessage(string $context, string $token): string
+    {
+        return \sprintf(
+            "%s.relations: unknown relation kind '%s'. Known direct values: %s. Known aliases: %s.",
+            $context,
+            $token,
+            self::renderDirectValues(),
+            self::renderAliases(),
         );
     }
 

@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
@@ -608,15 +609,39 @@ PHP;
         self::assertSame('src/Foo.php:10-25', $loc->toString());
     }
 
+    #[Test]
+    public function itReadsTheCurrentTypedThresholdsOnEachInspectionWithoutTheRawDoor(): void
+    {
+        $options = new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions(min_tokens: 1000, min_lines: 0);
+        $configuration = $this->createMock(RawDoorRuleConfiguration::class);
+        $configuration->expects(self::never())->method('all');
+        $configuration->method('resolvedOptions')->willReturnCallback(static function () use (&$options): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions {
+            return new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions(
+                ['duplication.clone' => $options],
+                ['duplication.clone' => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression()],
+            );
+        });
+        $this->resultProvider = new DuplicationResultProvider();
+        $detector = new DuplicationDetector($configuration, $this->resultProvider);
+        $files = [$this->createFile('first.php', '<?php echo 1;'), $this->createFile('second.php', '<?php echo 2;')];
+        self::assertSame([], $this->inspect($detector, $files));
+
+        $options = new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions(min_tokens: 1, min_lines: 0);
+        self::assertNotEmpty($this->inspect($detector, $files));
+        $detector->resetForRun();
+        self::assertSame([], $this->resultProvider->all());
+        $options = new \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions(min_tokens: 1000, min_lines: 0);
+        self::assertSame([], $this->inspect($detector, $files));
+    }
+
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
         $ruleConfiguration = new RuleOptionsRegistry();
-        $ruleConfiguration->setConfigFileOptions([
-            'duplication.clone' => [
-                'min_tokens' => $minTokens,
-                'min_lines' => $minLines,
-            ],
-        ]);
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions::class, '', [], false)];
+        $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => [
+            'duplication.clone' => ['min_tokens' => $minTokens, 'min_lines' => $minLines],
+        ]], $metadata);
+        $ruleConfiguration->replace(ResolvedOptionsFixture::ready($configuration, $metadata));
 
         $this->resultProvider = new DuplicationResultProvider();
 
@@ -627,6 +652,8 @@ PHP;
      * @param list<SplFileInfo> $files
      *
      * @return list<DuplicateBlock>
+     *
+     * @phpstan-impure
      */
     private function inspect(DuplicationDetector $detector, array $files): array
     {
@@ -767,4 +794,10 @@ PHP;
         }
         rmdir($dir);
     }
+}
+
+interface RawDoorRuleConfiguration extends \Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface
+{
+    /** @return array<string, mixed> */
+    public function all(): array;
 }

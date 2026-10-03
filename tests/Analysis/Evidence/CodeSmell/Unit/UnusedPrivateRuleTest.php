@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +21,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(UnusedPrivateRule::class)]
 #[CoversClass(UnusedPrivateOptions::class)]
@@ -31,7 +33,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         self::assertSame('code-smell.unused-private', $rule->getName());
-        self::assertSame('Detects unused private methods, properties, and constants', $rule->getDescription());
+        self::assertSame('Detects unused private methods, properties, and constants', $rule::getDescription());
     }
 
     #[Test]
@@ -263,10 +265,10 @@ final class UnusedPrivateRuleTest extends TestCase
     #[Test]
     public function itReadsTheEnabledFlagFromTheOptionsArray(): void
     {
-        $options = UnusedPrivateOptions::fromArray(['enabled' => false]);
+        $options = UnusedPrivateOptions::fromResolved(ResolvedOptionsFixture::values(UnusedPrivateOptions::class, ['enabled' => false]));
         self::assertFalse($options->isEnabled());
 
-        $options = UnusedPrivateOptions::fromArray([]);
+        $options = UnusedPrivateOptions::fromResolved(ResolvedOptionsFixture::values(UnusedPrivateOptions::class, []));
         self::assertTrue($options->isEnabled());
     }
 

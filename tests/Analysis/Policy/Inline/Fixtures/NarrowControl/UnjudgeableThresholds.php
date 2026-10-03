@@ -15,7 +15,7 @@ namespace Fixtures\NarrowControl;
 final class UnjudgeableThresholds
 {
     /**
-     * @qmx-threshold narrow-control.no-such-channel warning=1 error=2 -- already-refused: no
+     * @qmx-threshold narrow-control.no-such-channel warning=1 error=2 -- refused: no
      *                producer owns this channel, and the annotation rule says so.
      * @qmx-threshold complexity.cognitive warning=50 error=80 -- producer-disabled: switched off
      *                in this fixture's own qmx.yaml.

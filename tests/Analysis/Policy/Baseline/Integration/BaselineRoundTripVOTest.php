@@ -134,10 +134,10 @@ final class BaselineRoundTripVOTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         $root = AbsolutePath::fromString('/home/user/project');
 
-        $this->writer->write($this->severalSubjects(), $path, $root);
+        $this->writer->write($this->severalSubjects(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load($path), $path, $root);
+        $this->writer->write($this->loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
 
         self::assertSame($first, (string) file_get_contents($path));
     }
@@ -197,7 +197,7 @@ final class BaselineRoundTripVOTest extends TestCase
     private function writeAndLoad(Baseline $baseline): Baseline
     {
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($baseline, $path, AbsolutePath::fromString('/home/user/project'));
+        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString('/home/user/project'));
 
         return $this->loader->load($path);
     }

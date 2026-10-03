@@ -32,6 +32,9 @@ final class ReportBuilder
     private ?OutOfScopeFindings $outOfScope = null;
     private ?ReportProjectScope $projectScope = null;
 
+    /** @var list<array{message: string, source: list<array<string, mixed>>}> */
+    private array $configurationDiagnostics = [];
+
     /**
      * Creates a new builder instance.
      */
@@ -170,6 +173,19 @@ final class ReportBuilder
     }
 
     /**
+     * Records the warnings about the accepted configuration — see
+     * {@see Report::$configurationDiagnostics}.
+     *
+     * @param list<array{message: string, source: list<array<string, mixed>>}> $diagnostics
+     */
+    public function configurationDiagnostics(array $diagnostics): self
+    {
+        $this->configurationDiagnostics = $diagnostics;
+
+        return $this;
+    }
+
+    /**
      * Builds the Report instance.
      */
     public function build(): Report
@@ -200,6 +216,7 @@ final class ReportBuilder
             suppressionComposition: $this->suppressionComposition,
             outOfScope: $this->outOfScope,
             projectScope: $this->projectScope,
+            configurationDiagnostics: $this->configurationDiagnostics,
         );
     }
 }

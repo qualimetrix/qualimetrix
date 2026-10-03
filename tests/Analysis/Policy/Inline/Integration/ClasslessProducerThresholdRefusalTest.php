@@ -24,9 +24,9 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
  * The producers of the computed-metric family are addressable rule names that
  * cannot be retuned — two facts that only hold together.
  *
- * Splitting `computed.health` into seven producers moved `@qmx-threshold
- * health.cohesion` from one configuration diagnostic to another: from "names no
- * rule" (the name resolved to nothing) to "declares no @qmx-threshold support"
+ * Splitting `computed.health` into seven producers moved
+ * `@qmx-threshold health.cohesion` from one configuration diagnostic to another: from "names no
+ * rule" (the name resolved to nothing) to "declares no `@qmx-threshold` support"
  * (it resolves, and still can never do anything). Both are refusals and both
  * end in the same rejected directive, so nothing about the *count* of findings
  * changes — which is exactly why the finding-equivalence gate cannot express

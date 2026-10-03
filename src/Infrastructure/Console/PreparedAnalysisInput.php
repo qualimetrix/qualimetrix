@@ -6,11 +6,10 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 
 /**
  * One resolved invocation: what to analyse, under which rule configuration,
- * over which file set.
+ * over which file set, and the optional finding configuration it requires.
  *
  * The three travel together because they were derived from one configuration
  * document and disagree the moment they are not. A caller that keeps the run
@@ -21,7 +20,6 @@ final readonly class PreparedAnalysisInput
 {
     public function __construct(
         public RunConfiguration $runConfiguration,
-        public FindingConfiguration $findingConfiguration,
-        public FileDiscoveryInterface $fileDiscovery,
+        public ?FindingConfiguration $findingConfiguration,
     ) {}
 }

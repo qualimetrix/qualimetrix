@@ -8,10 +8,21 @@ classification for `coupling.cbo-app` and `coupling.ce-framework`. It consumes t
 DependencyModel, Measurement, Finding, ConfigurationDocument, and neutral Core
 contracts; it publishes one configuration contract for the runtime adapter.
 
-`CouplingAnalysis` owns the framework-prefix state for one analysis run. Each
-configuration document replaces the previous list, including an empty
-`coupling.frameworkNamespaces` contribution, so sequential runs cannot leak
-classification state.
+`CouplingAnalysis` owns the framework-prefix state for one analysis run. Its
+owner-declared `coupling` map merges key by key, so an empty map keeps lower
+values. The `framework_namespaces` list replaces as one ordered value, including
+an empty list. Each written framework selector must name exactly one kind
+before a later layer can replace its list. Coupling reads the resolved selector
+list before replacing
+its run-local matcher. Sequential runs therefore cannot leak classification
+state.
+
+```text
+Coupling/
+└── Configuration/
+    └── CouplingSection.php # owner-declared coupling map; framework_namespaces
+                             # is the replaced list of selector maps
+```
 
 ## Metrics
 
@@ -395,6 +406,17 @@ class GodClass  // Ca = 20, Ce = 0 — everything depends on it
 }
 ```
 
+
+## Declared options and effective bands
+
+CBO and instability declare their class/namespace forms and bands. A top-level
+band shorthand spreads to both levels in its own layer before winners are chosen;
+explicit writes to the same expanded leaves conflict in that layer. Independent
+level settings such as enabled are preserved. Different layers merge leaf
+writes. `fromResolved` constructs typed options and judges each effective
+band including default halves. Direction, formulas, default numbers and the
+framework-namespace evidence model are unchanged. DoD includes lower-layer
+malformed refusal, distinct-level writes and coherent effective bands.
 
 ## Locality
 

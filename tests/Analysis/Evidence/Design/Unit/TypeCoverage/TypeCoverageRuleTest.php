@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -110,7 +112,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new $ruleClass(new TypeCoverageOptions());
 
         self::assertSame($dimension['name'], $rule->getName());
-        self::assertSame($dimension['description'], $rule->getDescription());
+        self::assertSame($dimension['description'], $rule::getDescription());
         // The literals in this table are the second witness; this is where they
         // are tied back to the constants, so a renamed constant fails here
         // rather than leaving the table quietly measuring a key nothing produces.
@@ -164,7 +166,7 @@ final class TypeCoverageRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
 
         new $ruleClass(new class implements RuleOptionsInterface {
-            public static function fromArray(array $config): static
+            public static function fromResolved(ResolvedRuleOptionValues $config): static
             {
                 return new static();
             }

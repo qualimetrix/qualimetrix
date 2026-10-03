@@ -6,42 +6,99 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
-/** Converts the Symfony CLI ingress into the Configuration-owned request. */
+/**
+ * Converts the Symfony CLI ingress into the Configuration-owned request, and
+ * answers the author about what the resolved document accepted.
+ *
+ * Every command that reads the document resolves it here, which is why its
+ * warnings are written here: a command that forgets to print them runs on a
+ * configuration whose author was never told what it did.
+ */
 final class ConfigurationInputAdapter
 {
     public function __construct(
         private readonly ConfigurationPipelineInterface $configurationPipeline,
+        private readonly ErrorStream $errorStream,
+        private readonly RuleExecutionInterface $ruleExecution,
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
 
-    public function resolve(InputInterface $input): ConfigurationDocument
+    /** @param ?list<array{optionName: string, text: string, ordinal: int}> $authoredRuleRecords */
+    public function resolve(InputInterface $input, ?AnalysisPreflightProfile $profile = null, ?array $authoredRuleRecords = null): ConfigurationDocument
     {
         return $this->configurationPipeline->resolve(
-            $this->adapt($input, self::currentWorkingDirectory()->value()),
+            $this->adapt($input, self::currentWorkingDirectory()->value(), $profile ?? AnalysisPreflightProfile::analysis(), $authoredRuleRecords),
         );
+    }
+
+    /** @param list<ConfigurationDiagnostic> $additional */
+    public function writeDiagnostics(ConfigurationDocument $document, OutputInterface $output, array $additional = []): void
+    {
+        (new ConfigurationDiagnosticsPublisher($this->errorStream))->write($document, $output, $additional);
+    }
+
+    /**
+     * The same warnings as a structured report publishes them, each with every
+     * layer it is about.
+     *
+     * @param list<ConfigurationDiagnostic> $additional
+     *
+     * @return list<array{message: string, source: list<array<string, mixed>>}>
+     */
+    public function publishedDiagnostics(ConfigurationDocument $document, array $additional = []): array
+    {
+        return (new ConfigurationDiagnosticsPublisher($this->errorStream))->report($document, $additional);
+    }
+
+    /**
+     * A refusal of the analysed paths naming the layer that wrote them: the
+     * `paths` argument when the command line wrote them, the file or preset
+     * otherwise.
+     */
+    public static function pathsRefusal(ConfigurationDocument $document, string $summary): ConfigurationRefusal
+    {
+        return ($paths = $document->resolved()->get(ConfigSchema::PATHS)) !== null
+            ? Provenance::refusalOf($paths->contributors(), $summary)
+            : ConfigurationRefusal::aboutResolvedInput($summary, ConfigSchema::PATHS);
     }
 
     public function exitPolicy(ConfigurationDocument $document): ExitPolicy
     {
-        return ExitPolicy::fromContributions($document->contributions(ConfigSchema::FAIL_ON));
+        return ExitPolicy::fromResolvedValue($document->resolved()->get(ConfigSchema::FAIL_ON));
     }
 
-    public function adapt(InputInterface $input, string $workingDirectory): ConfigurationResolutionRequest
+    /** @param ?list<array{optionName: string, text: string, ordinal: int}> $authoredRuleRecords */
+    public function adapt(InputInterface $input, string $workingDirectory, ?AnalysisPreflightProfile $profile = null, ?array $authoredRuleRecords = null): ConfigurationResolutionRequest
     {
         $this->refuseEmptyValues($input);
+
+        $profile ??= AnalysisPreflightProfile::analysis();
+        [$values, $optionNames] = $this->overrides($input, $profile);
+        $writes = [];
+        if ($profile->requiresFindingConfiguration) {
+            $parser = (new RuleOptionsParserFactory())->createFromMetadata($this->ruleExecution->allRules());
+            $writes = (new CliOptionsParser($parser, $this->selectorDecoder))->pathWrites($input, $authoredRuleRecords);
+        }
 
         return new ConfigurationResolutionRequest(
             self::absoluteWorkingDirectory($workingDirectory),
             CommandLineSpelling::option($input, 'config'),
             CommandLineSpelling::options($input, 'preset'),
-            $this->overrides($input),
+            $values,
+            $optionNames,
+            $writes,
         );
     }
 
@@ -79,38 +136,110 @@ final class ConfigurationInputAdapter
         }
     }
 
-    /** @return array<string, mixed> */
-    private function overrides(InputInterface $input): array
+    /**
+     * The configuration keys the command line writes, and the option or
+     * argument that wrote each.
+     *
+     * An `--exclude` selector is checked here, where the option still names
+     * it, and handed on in the mapping form a document writes it in.
+     *
+     * @return array{array<string, mixed>, array<string, string>}
+     */
+    private function overrides(InputInterface $input, AnalysisPreflightProfile $profile): array
     {
         $values = [];
-        $this->put($values, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'));
-        $this->put($values, ConfigSchema::EXCLUDES, array_map(
-            fn(string $selector) => $this->selectorDecoder->decodePath($selector, '--exclude'),
-            CommandLineSpelling::options($input, 'exclude'),
-        ));
-        foreach (self::SINGLE_VALUED as $option => $key) {
-            $this->put($values, $key, CommandLineSpelling::option($input, $option));
-        }
-        foreach (self::REPEATABLE as $option => $key) {
-            $this->put($values, $key, CommandLineSpelling::options($input, $option));
+        $names = [];
+        $this->pathOverrides($input, $profile, $values, $names);
+        $this->singleValuedOverrides($input, $profile, $values, $names);
+        $this->repeatableOverrides($input, $profile, $values, $names);
+        $this->switchOverrides($input, $profile, $values, $names);
+        $this->workerOverride($input, $profile, $values, $names);
+
+        return [$values, $names];
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function pathOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        $this->put($values, $names, ConfigSchema::PATHS, CommandLineSpelling::arguments($input, 'paths'), 'paths');
+        if (!$profile->mapsOption('exclude')) {
+            return;
         }
 
-        if ($this->option($input, 'no-cache') === true) {
-            $values[ConfigSchema::CACHE_ENABLED] = false;
+        $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
+            function (string $selector): array {
+                $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
+
+                return [$definition->kind->value => $definition->value];
+            },
+            CommandLineSpelling::options($input, 'exclude'),
+        ), '--exclude');
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function singleValuedOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        foreach (self::SINGLE_VALUED as $option => $key) {
+            if ($profile->mapsOption($option)) {
+                $this->put($values, $names, $key, CommandLineSpelling::option($input, $option), '--' . $option);
+            }
         }
-        if ($this->option($input, 'include-generated') === true) {
-            $values[ConfigSchema::INCLUDE_GENERATED] = true;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function repeatableOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        foreach (self::REPEATABLE as $option => $key) {
+            if ($profile->mapsOption($option)) {
+                $this->put($values, $names, $key, CommandLineSpelling::options($input, $option), '--' . $option);
+            }
         }
-        if ($this->option($input, 'include-autoload-dev') === true) {
-            $values[ConfigSchema::INCLUDE_AUTOLOAD_DEV] = true;
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function switchOverrides(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        foreach (self::SWITCHES as $option => [$key, $value]) {
+            if ($profile->mapsOption($option) && $this->option($input, $option) === true) {
+                $this->put($values, $names, $key, $value, '--' . $option);
+            }
         }
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     * @param array<string, string> $names
+     */
+    private function workerOverride(InputInterface $input, AnalysisPreflightProfile $profile, array &$values, array &$names): void
+    {
+        if (!$profile->mapsOption('workers')) {
+            return;
+        }
+
         $workers = CommandLineSpelling::option($input, 'workers');
         if ($workers !== null) {
-            $values[ConfigSchema::PARALLEL_WORKERS] = (int) $workers;
+            $this->put($values, $names, ConfigSchema::PARALLEL_WORKERS, (int) $workers, '--workers');
         }
-
-        return $values;
     }
+
+    /** @var array<string, array{string, bool}> switch => configuration key and value */
+    private const array SWITCHES = [
+        'no-cache' => [ConfigSchema::CACHE_ENABLED, false],
+        'include-generated' => [ConfigSchema::INCLUDE_GENERATED, true],
+        'include-autoload-dev' => [ConfigSchema::INCLUDE_AUTOLOAD_DEV, true],
+    ];
 
     /** @var array<string, string> single-valued option => configuration key */
     private const array SINGLE_VALUED = [
@@ -139,11 +268,13 @@ final class ConfigurationInputAdapter
      * silently what the YAML door refuses.
      *
      * @param array<string, mixed> $values
+     * @param array<string, string> $names
      */
-    private function put(array &$values, string $key, mixed $value): void
+    private function put(array &$values, array &$names, string $key, mixed $value, string $writer): void
     {
         if ($value !== null && $value !== []) {
             $values[$key] = $value;
+            $names[$key] = $writer;
         }
     }
 

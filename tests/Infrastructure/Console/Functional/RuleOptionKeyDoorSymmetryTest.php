@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -19,25 +19,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * The two doors a rule option can be written at, asked the same question.
+ * The same declared vocabulary reached through configuration files and CLI flags.
  *
- * A user has exactly two of them — a configuration file and `--rule-opt` — and
- * they arrive at the factory by different routes: the file through the loader's
- * per-section normalization policy, the flag through
- * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser}'s own
- * fold plus dot expansion. A third way exists in code and is **not** a door:
- * writing the registry directly leaves a depth-2 key spelled as typed, so a
- * symmetry proved through it would be a symmetry of a path no user walks. Every
- * case here goes through the command.
- *
- * What the file pins beyond the symmetry is the *spelling* the refusal answers
- * in. Both doors fold separators before the factory exists, so a key mistyped
- * `max_warnign` is answered as `maxWarnign`. That is a limit of ADR 0044's
- * normalization model at this seam, not a defect of the refusal, and it is
- * asserted verbatim so that an accidental improvement to it reddens and gets
- * decided rather than absorbed.
+ * Every case reaches the command. Admission and exit codes agree, while each
+ * refusal preserves its own authored spelling and source: the document reader
+ * names the file and key path, and the CLI parser names the flag. Equal human
+ * sentences would erase that distinction.
  */
-#[CoversClass(RuleOptionsFactory::class)]
+#[CoversClass(RuleOptionsBuild::class)]
 final class RuleOptionKeyDoorSymmetryTest extends TestCase
 {
     private const string ANALYSED_PATH = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
@@ -45,66 +34,64 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     /** @var list<string> */
     private array $cleanUp = [];
 
-    /**
-     * The same unrecognised depth-2 key, written both ways, answered in one
-     * sentence — including the folded spelling, which is what makes this a
-     * symmetry of the *text* rather than only of the verdict.
-     */
+    /** The level vocabulary is shared; each refusal names its actual input source. */
     #[Test]
-    public function itAnswersAnUnrecognisedLevelKeyIdenticallyThroughBothDoors(): void
+    public function itRefusesAnUnrecognisedLevelKeyWithEachDoorsOwnSource(): void
     {
-        $throughTheFile = $this->check(['--config' => $this->configFile("  complexity.ccn:\n    callable:\n      max_warnign: 1\n")]);
+        $path = $this->configFile("  complexity.ccn:\n    callable:\n      max_warnign: 1\n");
+        $throughTheFile = $this->check(['--config' => $path]);
         $throughTheFlag = $this->check(['--rule-opt' => ['complexity.ccn:callable.max_warnign=1']]);
 
         self::assertSame(3, $throughTheFile['exit'], $throughTheFile['stderr']);
         self::assertSame(3, $throughTheFlag['exit'], $throughTheFlag['stderr']);
-        self::assertSame($throughTheFile['refusal'], $throughTheFlag['refusal']);
         self::assertSame(
-            'Configuration error: Option "maxWarnign" is not an option of rule "complexity.ccn" at level "callable".'
-            . ' Options at that level: enabled, error, threshold, warning.'
-            . ' Other levels of this rule take different options.',
+            \sprintf('Configuration error: Unknown key "rules.complexity.ccn.callable.max_warnign" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', $path),
             $throughTheFile['refusal'],
+        );
+        self::assertSame(
+            'Configuration error: Option "max_warnign" is not an option of rule "complexity.ccn" at level "callable".'
+            . ' Options at that level: enabled, error, threshold, warning.'
+            . ' Other levels of this rule take different options. Source: option --rule-opt.',
+            $throughTheFlag['refusal'],
         );
     }
 
-    /**
-     * The named limit, pinned on its own so that it fails as itself. A key
-     * whose *letters* are wrong — which is what a typo gets wrong — survives
-     * the fold intact and is quoted exactly; a key whose separators are wrong
-     * is quoted folded, and neither door can do better without a spelling
-     * side-channel ADR 0044 declined to open.
-     */
+    /** An unknown key keeps the separators its author wrote at either door. */
     #[Test]
     #[DataProvider('provideBothDoors')]
-    public function itPrintsTheFoldedSpellingRatherThanTheOneTheUserTyped(string $door): void
+    public function itPrintsTheAuthoredSpellingThroughBothDoors(string $door): void
     {
         $refusal = $this->check($this->write($door, 'callable', 'max_warnign', 1))['refusal'];
 
-        self::assertStringContainsString('"maxWarnign"', $refusal);
-        self::assertStringNotContainsString('max_warnign', $refusal);
+        self::assertStringContainsString('max_warnign', $refusal);
+        self::assertStringNotContainsString('maxWarnign', $refusal);
     }
 
-    /**
-     * Enumeration rows E53 and E73: the same mistake typed into the file and
-     * into the flag, refused in identical text. E73 exists as a separate row
-     * precisely because the flag used to be believed to preserve the authored
-     * spelling; it does not, and the two rows are one answer.
-     */
+    /** The same typo is refused at both doors without erasing either source. */
     #[Test]
-    public function itAnswersTheSameTypoTheSameWayWhicheverDoorItArrivesThrough(): void
+    public function itRefusesTheSameTypoWithEachDoorsOwnSource(): void
     {
-        $fromTheFile = $this->check($this->write('file', 'callable', 'warnign', 1));
+        $path = $this->configFile("  complexity.ccn:\n    callable:\n      warnign: 1\n");
+        $fromTheFile = $this->check(['--config' => $path]);
         $fromTheFlag = $this->check($this->write('flag', 'callable', 'warnign', 1));
 
         self::assertSame(3, $fromTheFile['exit']);
         self::assertSame(3, $fromTheFlag['exit']);
-        self::assertSame($fromTheFile['refusal'], $fromTheFlag['refusal']);
-        self::assertStringContainsString('Option "warnign"', $fromTheFile['refusal']);
+        self::assertSame(
+            \sprintf('Configuration error: Unknown key "rules.complexity.ccn.callable.warnign" in configuration file "%s" (did you mean "warning"?). Accepted keys: enabled, error, warning, threshold.', $path),
+            $fromTheFile['refusal'],
+        );
+        self::assertSame(
+            'Configuration error: Option "warnign" is not an option of rule "complexity.ccn" at level "callable".'
+            . ' Options at that level: enabled, error, threshold, warning.'
+            . ' Other levels of this rule take different options. Source: option --rule-opt.',
+            $fromTheFlag['refusal'],
+        );
     }
 
     /**
      * Enumeration row E61 measured the three equivalent spellings on the file
-     * door only. Both doors fold, so both must accept all three — and a run
+     * door only. Both doors recognise the declared spellings, and a run
      * that reaches an exit code other than 3 is a run whose configuration was
      * understood.
      */
@@ -138,25 +125,25 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         yield 'rule-opt flag' => ['flag'];
     }
 
-    /**
-     * The other cell of the two-by-two: the depth-1 walk, reached through each
-     * door. Depth 1 and depth 2 are separate comparisons against separate
-     * declarations, so a case at one says nothing about the other — and the
-     * `--rule-opt` door reaches depth 1 without the dot expansion the depth-2
-     * cases exercise.
-     */
+    /** The root vocabulary is judged separately from the level vocabulary. */
     #[Test]
-    public function itAnswersAnUnrecognisedTopLevelKeyIdenticallyThroughBothDoors(): void
+    public function itRefusesAnUnrecognisedTopLevelKeyWithEachDoorsOwnSource(): void
     {
-        $throughTheFile = $this->check(['--config' => $this->configFile("  complexity.ccn:\n    warnign: 1\n")]);
+        $path = $this->configFile("  complexity.ccn:\n    warnign: 1\n");
+        $throughTheFile = $this->check(['--config' => $path]);
         $throughTheFlag = $this->check(['--rule-opt' => ['complexity.ccn:warnign=1']]);
 
         self::assertSame(3, $throughTheFile['exit'], $throughTheFile['stderr']);
         self::assertSame(3, $throughTheFlag['exit'], $throughTheFlag['stderr']);
-        self::assertSame($throughTheFile['refusal'], $throughTheFlag['refusal']);
-        self::assertStringContainsString(
-            'Configuration error: Option "warnign" is not an option of rule "complexity.ccn". Options here:',
+        self::assertSame(
+            \sprintf('Configuration error: Unknown key "rules.complexity.ccn.warnign" in configuration file "%s". Accepted keys: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.', $path),
             $throughTheFile['refusal'],
+        );
+        self::assertSame(
+            'Configuration error: Option "warnign" is not an option of rule "complexity.ccn".'
+            . ' Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.'
+            . ' Source: option --rule-opt.',
+            $throughTheFlag['refusal'],
         );
     }
 
@@ -173,14 +160,26 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     #[Test]
     public function itAnswersWithAParseableEnvelopeUnderJsonFormat(): void
     {
-        $run = $this->check($this->write('file', 'callable', 'max_warnign', 1), ['--format' => 'json']);
+        $path = $this->configFile("  complexity.ccn:\n    callable:\n      max_warnign: 1\n");
+        $run = $this->check(['--config' => $path], ['--format' => 'json']);
 
         self::assertSame(3, $run['exit']);
         self::assertStringNotContainsString('Configuration error:', $run['stderr']);
-        /** @var array{error: string, exit_code: int} $envelope */
+        /** @var array{error: string, exit_code: int, position: mixed, source: mixed} $envelope */
         $envelope = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(3, $envelope['exit_code']);
         self::assertStringContainsString('Configuration error:', $envelope['error']);
+        self::assertSame(
+            \sprintf('Configuration error: Unknown key "rules.complexity.ccn.callable.max_warnign" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', $path),
+            $envelope['error'],
+        );
+        self::assertSame([
+            'path' => ['rules', 'complexity.ccn', 'callable', 'max_warnign'],
+            'written' => 'max_warnign',
+            'accepted' => ['enabled', 'error', 'warning', 'threshold'],
+            'closed' => true,
+        ], $envelope['position']);
+        self::assertSame([['kind' => 'file', 'name' => $path, 'imported_by' => null]], $envelope['source']);
     }
 
     /**
@@ -190,13 +189,14 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     #[Test]
     public function itStillRefusesUnderQuiet(): void
     {
-        $run = $this->check($this->write('file', 'callable', 'max_warnign', 1), verbosity: OutputInterface::VERBOSITY_QUIET);
+        $path = $this->configFile("  complexity.ccn:\n    callable:\n      max_warnign: 1\n");
+        $run = $this->check(['--config' => $path], verbosity: OutputInterface::VERBOSITY_QUIET);
 
         self::assertSame(3, $run['exit']);
         self::assertSame('', $run['stdout']);
-        self::assertStringContainsString(
-            'Configuration error: Option "maxWarnign"',
-            $run['stderr'],
+        self::assertSame(
+            \sprintf('Configuration error: Unknown key "rules.complexity.ccn.callable.max_warnign" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', $path),
+            $run['refusal'],
             'quiet silences the report and the progress frame, never the sentence that ends the run',
         );
     }
@@ -209,35 +209,28 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
     #[Test]
     public function itStillRefusesWithMultipleWorkers(): void
     {
-        $run = $this->check($this->write('file', 'callable', 'max_warnign', 1), ['--workers' => '2']);
+        $path = $this->configFile("  complexity.ccn:\n    callable:\n      max_warnign: 1\n");
+        $run = $this->check(['--config' => $path], ['--workers' => '2']);
 
         self::assertSame(3, $run['exit']);
-        self::assertStringContainsString('Configuration error: Option "maxWarnign"', $run['stderr']);
+        self::assertSame(
+            \sprintf('Configuration error: Unknown key "rules.complexity.ccn.callable.max_warnign" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.', $path),
+            $run['refusal'],
+        );
     }
 
     /**
-     * Two refusals, one framing, one exit code. Both the generic key mistake
-     * and the retired-option mistake are a {@see \Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal}
-     * by the time either reaches the command, and {@see \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter}
-     * frames every one of them the same way — "framing lives here and only
-     * here" (its class docblock). The asymmetry this test used to pin (generic
-     * framed, retired verbatim) was a stale artifact of the retired option
-     * still being an `InvalidArgumentException` printed by the command itself;
-     * now that {@see \Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions}
-     * throws the same carrier, a second framing rule for it would be exactly
-     * a per-dialect special case. Rejected alternative:
-     * keep the retired message unframed by having the presenter pattern-match
-     * on carrier content — that reopens the "framing happens at every call
-     * site" problem the presenter was built to close.
+     * Generic and retired keys keep one framing and exit code. The file's
+     * retired advice uses canonical declared names while its key path keeps
+     * the authored spelling; CLI advice keeps the spelling typed into the flag.
      */
     #[Test]
     public function itFramesEveryRefusalAsAConfigurationErrorRegardlessOfDoorOrCause(): void
     {
         $generic = $this->check($this->write('flag', 'callable', 'max_warnign', 1));
         $retired = $this->check(['--rule-opt' => ['complexity.ccn:exclude_paths=src/Generated']]);
-        $retiredInAFile = $this->check(['--config' => $this->configFile(
-            "  complexity.ccn:\n    exclude_paths: ['src/Generated']\n",
-        )]);
+        $path = $this->configFile("  complexity.ccn:\n    exclude_paths: ['src/Generated']\n");
+        $retiredInAFile = $this->check(['--config' => $path]);
 
         self::assertSame(3, $generic['exit']);
         self::assertSame(3, $retired['exit']);
@@ -247,7 +240,10 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertStringContainsString('The "exclude_paths" option was retired', $retired['refusal']);
         self::assertStringNotContainsString('is not an option of rule', $retired['refusal']);
         self::assertStringStartsWith('Configuration error: ', $retiredInAFile['refusal']);
-        self::assertStringContainsString('The "exclude_paths" option was retired', $retiredInAFile['refusal']);
+        self::assertStringContainsString('"rules.complexity.ccn.exclude_paths"', $retiredInAFile['refusal']);
+        self::assertStringContainsString('The "exclude-paths" option was retired', $retiredInAFile['refusal']);
+        self::assertStringContainsString('use "suppress-paths"', $retiredInAFile['refusal']);
+        self::assertStringContainsString(\sprintf('in configuration file "%s"', $path), $retiredInAFile['refusal']);
     }
 
     /**
@@ -331,7 +327,7 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertInstanceOf(CheckCommand::class, $command);
         $refusalPresenter = $container->get(RefusalPresenter::class);
         self::assertInstanceOf(RefusalPresenter::class, $refusalPresenter);
-        (new Application(new ErrorStream(), $refusalPresenter))->addCommand($command);
+        (new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
 
         return new CommandTester($command);
     }

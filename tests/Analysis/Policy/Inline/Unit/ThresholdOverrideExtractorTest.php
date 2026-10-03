@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
+use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassRule;
+use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator;
+use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult;
 use Qualimetrix\Core\Path\RelativePath;
@@ -24,6 +31,19 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class ThresholdOverrideExtractorTest extends TestCase
 {
     private ThresholdOverrideExtractor $extractor;
+
+    #[Test]
+    public function itRefusesTheFullAuthoredTailWhenAnotherTagIsMasked(): void
+    {
+        foreach (['20 @qmx-ignore-file', '@qmx-ignore-file 20', '20 @qmx-threshold other 30'] as $values) {
+            $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+            $node->setDocComment(new Doc('/** @qmx-threshold complexity.ccn ' . $values . ' */', 10, 50));
+            $result = $this->extractor->extractWithDiagnostics($node, MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))), ControlScope::Class_);
+            self::assertSame([], $result->overrides, $values);
+            self::assertCount(1, $result->diagnostics, $values);
+            self::assertStringContainsString($values, $result->diagnostics[0]->message);
+        }
+    }
 
     protected function setUp(): void
     {
@@ -56,6 +76,18 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame(15, $overrides[0]->error);
         self::assertSame(11, $overrides[0]->line);
         self::assertSame(50, $overrides[0]->endLine);
+    }
+
+    #[Test]
+    public function itRejectsAThresholdCommentWithoutAFilePosition(): void
+    {
+        $node = new Class_('TestClass');
+        $node->setDocComment(new Doc('/** @qmx-threshold complexity.ccn 15 */', 10));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('A comment without a file position cannot name a directive site');
+
+        $this->extract($node);
     }
 
     /**
@@ -188,6 +220,107 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(1, $overrides);
         self::assertSame(0.7, $overrides[0]->warning);
         self::assertSame(0.9, $overrides[0]->error);
+    }
+
+    #[Test]
+    public function itRejectsAFractionalIntegerBoundaryBeforeOptionsCanTruncateIt(): void
+    {
+        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build([ComplexityRule::class]));
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold complexity.ccn 40.5
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $result = $this->extractWithDiagnostics($node);
+
+        self::assertSame([], $result->overrides);
+        self::assertCount(1, $result->diagnostics);
+        self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
+        self::assertSame(11, $result->diagnostics[0]->line);
+        self::assertSame(17, $result->diagnostics[0]->position);
+        self::assertSame('invalid_warning_form', $result->diagnostics[0]->code);
+        self::assertStringContainsString('integer at least 0', $result->diagnostics[0]->message);
+        self::assertStringContainsString('40.5', $result->diagnostics[0]->message);
+    }
+
+    #[Test]
+    public function itKeepsFractionalNumberBoundariesAndRefusesTheIntegerInOneDocblock(): void
+    {
+        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build([
+            ComplexityRule::class,
+            MaintainabilityRule::class,
+            InstabilityRule::class,
+        ]));
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold maintainability.mi 40.5
+             * @qmx-threshold complexity.ccn warning=10 error=20.5
+             * @qmx-threshold coupling.instability 0.85
+             */
+            DOC,
+            20,
+            50,
+        );
+
+        $result = $this->extractWithDiagnostics($node);
+
+        self::assertCount(2, $result->overrides);
+        self::assertSame('maintainability.mi', $result->overrides[0]->rulePattern);
+        self::assertSame(40.5, $result->overrides[0]->warning);
+        self::assertSame(40.5, $result->overrides[0]->error);
+        self::assertSame(21, $result->overrides[0]->line);
+        self::assertSame('coupling.instability', $result->overrides[1]->rulePattern);
+        self::assertSame(0.85, $result->overrides[1]->warning);
+        self::assertSame(0.85, $result->overrides[1]->error);
+        self::assertSame(23, $result->overrides[1]->line);
+        self::assertCount(1, $result->diagnostics);
+        self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
+        self::assertSame(22, $result->diagnostics[0]->line);
+        self::assertSame(69, $result->diagnostics[0]->position);
+        self::assertSame('invalid_error_form', $result->diagnostics[0]->code);
+    }
+
+    #[Test]
+    public function itKeepsIndependentAndWarningOnlySemanticsWithDeclaredForms(): void
+    {
+        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build([
+            DataClassRule::class,
+            GodClassRule::class,
+        ]));
+        $valid = $this->extractWithDiagnostics($this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold design.data-class warning=60 error=20
+             * @qmx-threshold design.god-class 5
+             */
+            DOC,
+            30,
+            50,
+        ));
+
+        self::assertSame([], $valid->diagnostics);
+        self::assertCount(2, $valid->overrides);
+        self::assertSame('design.data-class', $valid->overrides[0]->rulePattern);
+        self::assertSame(60, $valid->overrides[0]->warning);
+        self::assertSame(20, $valid->overrides[0]->error);
+        self::assertSame('design.god-class', $valid->overrides[1]->rulePattern);
+        self::assertSame(5, $valid->overrides[1]->warning);
+
+        $invalid = $this->extractWithDiagnostics($this->createClassNodeWithDoc(
+            '/** @qmx-threshold design.god-class warning=5 error=6 */',
+            40,
+            50,
+        ));
+        self::assertSame([], $invalid->overrides);
+        self::assertCount(1, $invalid->diagnostics);
+        self::assertSame('design.god-class', $invalid->diagnostics[0]->rulePattern);
+        self::assertSame('error_not_supported', $invalid->diagnostics[0]->code);
     }
 
     #[Test]
@@ -390,6 +523,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
         self::assertSame(11, $result->diagnostics[0]->line);
+        self::assertSame(17, $result->diagnostics[0]->position);
+        self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
         self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
         self::assertStringContainsString('complexity.ccn', $result->diagnostics[0]->message);
         self::assertStringContainsString('not-a-number', $result->diagnostics[0]->message);
@@ -503,6 +638,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
         self::assertSame(11, $result->diagnostics[0]->line);
+        self::assertSame(17, $result->diagnostics[0]->position);
+        self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
         self::assertStringContainsString('warning threshold (25) must not exceed error threshold (10)', $result->diagnostics[0]->message);
     }
 
@@ -545,8 +682,39 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(1, $result->overrides);
         self::assertSame(15, $result->overrides[0]->warning);
         self::assertCount(1, $result->diagnostics);
+        self::assertSame('complexity.ccn', $result->diagnostics[0]->rulePattern);
+        self::assertSame(53, $result->diagnostics[0]->position);
         self::assertStringContainsString('duplicate annotation', $result->diagnostics[0]->message);
         self::assertStringContainsString('complexity.ccn', $result->diagnostics[0]->message);
+    }
+
+    #[Test]
+    public function itKeepsUnknownAndWildcardSpellingsOnParserDiagnostics(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold unknown.rule invalid
+             * @qmx-threshold complexity.* 10
+             * @qmx-threshold complexity.* 20
+             */
+            DOC,
+            40,
+            50,
+        );
+
+        $result = $this->extractWithDiagnostics($node);
+
+        self::assertCount(1, $result->overrides);
+        self::assertSame('complexity.*', $result->overrides[0]->rulePattern);
+        self::assertSame(42, $result->overrides[0]->line);
+        self::assertCount(2, $result->diagnostics);
+        self::assertSame('unknown.rule', $result->diagnostics[0]->rulePattern);
+        self::assertSame(41, $result->diagnostics[0]->line);
+        self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
+        self::assertSame('complexity.*', $result->diagnostics[1]->rulePattern);
+        self::assertSame(43, $result->diagnostics[1]->line);
+        self::assertStringContainsString('duplicate annotation', $result->diagnostics[1]->message);
     }
 
     #[Test]

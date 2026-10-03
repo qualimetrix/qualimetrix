@@ -208,20 +208,25 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
+        'tests/Core/FileTarget/Unit/HeldTargetTest.php:219' => 'The descriptor regression binds stdout directly to '
+            . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
+            . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '
+            . 'read stream can be left unserviced.',
+
         'scripts/finding-gate-controls/Shell.php:89' => 'The finding-gate controls supervisor: a global '
             . '`stream_select` across every live child, plus process-group isolation, descendant termination and a '
             . 'bounded parallel scheduler. That is supervision layered on the read discipline, a different subject '
             . 'from flat capture, and its behaviour is what `composer gate:controls` measures.',
 
-        'scripts/finding-gate/ProcessHandle.php:61' => 'The finding-gate worker handle: non-blocking reads under a '
+        'scripts/finding-gate/ProcessHandle.php:82' => 'The finding-gate worker handle: non-blocking reads under a '
             . 'bounded scheduler, with process-group isolation and launcher-disappearance detection. Same '
             . 'supervision subject as the line above.',
 
-        'scripts/finding-gate/ProcessHandle.php:202' => '`groupedCommand()`: source text inside a nowdoc handed to '
+        'scripts/finding-gate/ProcessHandle.php:215' => '`groupedCommand()`: source text inside a nowdoc handed to '
             . '`php -r`, so this is a literal here and a real call in the child. The child opens no pipe at all — '
             . 'its descriptors are the STDIN/STDOUT/STDERR constants — so it carries none of this hazard.',
 
-        'scripts/finding-gate/SelfTest.php:2919' => 'The interrupt self-test needs the child back *alive*, with its '
+        'scripts/finding-gate/SelfTestResources.php:401' => 'The interrupt self-test needs the child back *alive*, with its '
             . 'stdout handle, after reading two announcement lines while the child runs `sleep 30`; the module '
             . 'waits for exit. Stderr goes to a file, leaving stdout the only blocking stream, and the bespoke loop '
             . 'keeps its deadline and SIGKILL backstop.',
@@ -238,7 +243,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'real function fail in the parent. The generated harness it goes into opens nothing of its own and '
             . 'reaches the module through its ordinary entry point, like any other caller.',
 
-        'src/Infrastructure/Git/GitRepositoryLocator.php:94' => 'Production code, which may not import a '
+        'src/Infrastructure/Git/GitRepositoryLocator.php:80' => 'Production code, which may not import a '
             . 'development namespace, and the module lives outside `src/` deliberately. The deadlock is removed by '
             . 'construction instead: `git rev-parse` gets no stdin pipe and its stderr goes to a file, so stdout is '
             . 'the only blocking stream.',
@@ -277,7 +282,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '
             . 'match back to case-sensitive and this entry refuses as stale.',
 
-        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:636' => 'The parent holds the '
+        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:635' => 'The parent holds the '
             . 'lock the child blocks on, so the window opens before the parent is free to read anything and no read '
             . 'discipline closes it. Stderr goes to a file the failure message reads back, leaving stdout the only '
             . 'blocking stream.',
@@ -293,10 +298,6 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'reports EOF, which is a different read discipline rather than a caller of this one. Both streams are '
             . 'drained from one `stream_select` loop.',
 
-        'tests/Infrastructure/Console/Unit/ArtifactFileTest.php:548' => 'PHP source handed to `php -r`, so a '
-            . 'literal here and a real call in the parent it describes. That parent hands its own non-blocking '
-            . 'STDOUT to the child as a descriptor and opens no pipe, so it reads nothing; the test itself runs '
-            . 'the pipeline through the shared subprocess module.',
     ];
 
     /** @var list<array{path: string, line: int, name: string, spelled: string, kind: string}>|null */

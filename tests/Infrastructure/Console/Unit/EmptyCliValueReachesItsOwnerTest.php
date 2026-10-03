@@ -12,8 +12,9 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -61,16 +62,25 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         self::assertSame('json', self::overrides(['format' => 'json'])[ConfigSchema::FORMAT] ?? null);
     }
 
+    /**
+     * A selector is checked where the option still names it, and handed on in
+     * the mapping form a document writes it in, so both doors reach one node.
+     */
     #[Test]
     public function itDecodesExplicitExcludeSelectorsAtTheCliBoundary(): void
     {
-        $patterns = self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDES] ?? null;
-
-        self::assertIsArray($patterns);
-        self::assertContainsOnlyInstancesOf(PathPattern::class, $patterns);
         self::assertSame(
-            ['subtree:build', 'regex:(?:[^/]+/)*cache'],
-            array_map(static fn(PathPattern $pattern): string => $pattern->definition->display(), $patterns),
+            [['subtree' => 'build'], ['regex' => '(?:[^/]+/)*cache']],
+            self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDES] ?? null,
+        );
+    }
+
+    #[Test]
+    public function itNamesTheOptionThatWroteEachValue(): void
+    {
+        self::assertSame(
+            [ConfigSchema::EXCLUDES => '--exclude', ConfigSchema::FORMAT => '--format', ConfigSchema::DISABLED_RULES => '--disable-rule'],
+            self::request(['exclude' => ['subtree:build'], 'format' => 'json', 'disable-rule' => ['size.loc']])->cliOptionNames,
         );
     }
 
@@ -80,6 +90,12 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
      * @return array<string, mixed>
      */
     private static function overrides(array $options): array
+    {
+        return self::request($options)->cliValues;
+    }
+
+    /** @param array<string, string|list<string>> $options */
+    private static function request(array $options): ConfigurationResolutionRequest
     {
         $definition = new InputDefinition([
             new InputArgument('paths', InputArgument::IS_ARRAY),
@@ -101,12 +117,10 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
         $pipeline = new class implements ConfigurationPipelineInterface {
             public function resolve(ConfigurationResolutionRequest $request): ConfigurationDocument
             {
-                return new ConfigurationDocument([], AbsolutePath::fromString('/project'));
+                return LayeredDocument::of([], AbsolutePath::fromString('/project'));
             }
         };
 
-        $captured = (new ConfigurationInputAdapter($pipeline))->adapt($input, '/project')->cliValues;
-
-        return $captured;
+        return (new ConfigurationInputAdapter($pipeline, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)))->adapt($input, '/project');
     }
 }

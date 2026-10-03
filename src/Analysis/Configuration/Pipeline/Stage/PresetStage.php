@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
-use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
-
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
-use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 
 /**
@@ -30,7 +29,6 @@ final class PresetStage implements ConfigurationStageInterface
     public function __construct(
         private readonly ConfigLoaderInterface $loader,
         private readonly PresetResolver $resolver,
-        private readonly ?KnownRuleNamesProviderInterface $knownRuleNamesProvider = null,
     ) {}
 
     public function priority(): int
@@ -51,15 +49,9 @@ final class PresetStage implements ConfigurationStageInterface
             return null;
         }
 
-        $documents = $this->loadPresets($presetNames, $request->workingDirectory->value());
-        if ($documents === []) {
-            return null;
-        }
-
         return new ConfigurationLayer(
             'preset:' . implode(',', $presetNames),
-            [],
-            $documents,
+            authored: $this->loadPresets($presetNames, $request->workingDirectory->value()),
         );
     }
 
@@ -106,29 +98,18 @@ final class PresetStage implements ConfigurationStageInterface
     }
 
     /**
-     * Loads normalized preset source documents in precedence order.
-     *
      * @param list<string> $presetNames
      *
-     * @return list<array<string, mixed>>
+     * @return list<AuthoredLayer>
      */
     private function loadPresets(array $presetNames, string $workingDirectory): array
     {
-        $documents = [];
-
+        $authored = [];
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
-            $data = $this->loader->load($path);
-
-            if ($this->knownRuleNamesProvider !== null) {
-                RuleNameValidator::validateRuleNames($data, "preset:{$name}", $this->knownRuleNamesProvider, $path);
-            }
-
-            $normalized = ConfigDataNormalizer::normalize($data);
-
-            $documents[] = $normalized;
+            $loaded = $this->loader->read($path, $path);
+            $authored[] = new AuthoredLayer(ConfigurationOrigin::of(ConfigurationSource::Preset, $name), $loaded->authored);
         }
-
-        return $documents;
+        return $authored;
     }
 }

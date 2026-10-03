@@ -12,7 +12,7 @@ namespace QmxDirectiveAuditControls;
  * the first thing anyone does after a red run is ask that.
  *
  * The coverage line at the end is the condition no single probe can carry — a
- * case that no breakage reddens is a case that proves nothing, and it is
+ * permanent-population case that no breakage reddens is unguarded, and it is
  * invisible while every probe passes its own declaration.
  *
  * Cases reddened past the declaration are printed beside the ones that stayed
@@ -26,6 +26,33 @@ namespace QmxDirectiveAuditControls;
  */
 final readonly class Report
 {
+    /** @var array<string, string> Exact cases with one-time proof rather than a permanent own probe. */
+    private const array ONE_TIME_PROOF_CASES = [
+        'Qualimetrix.Governance.DirectiveVocabulary.ExecutionFingerprintFieldCoverageTest::itIgnoresTheInternalAddressedProducer' => 'Internal selection-address invariance has a separate one-time product mutation proof; this stand does not repeat that probe.',
+        'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesMeasuredCountsForExcludedGeneratedAndEmptyEntries' => 'Run-entry count publication has its own regression and one-time proof, outside permanent directive-decision mutation coverage.',
+        'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itNamesTheFileThatWroteANonExistentPath' => 'Configuration refusal-origin publication has its own regression and one-time proof, outside permanent directive-decision mutation coverage.',
+        'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itReportsAnIntentionallyEmptyGeneratedScope' => 'Generated-only run outcome has its own regression and one-time proof, outside permanent directive-decision mutation coverage.',
+        'Qualimetrix.Tests.Infrastructure.Console.Unit.DirectiveAuditSummaryProjectionTest::itPublishesBothEqualRankDisableWritersInTheTextAndJsonSelection' => 'Configuration writer provenance has its own regression and one-time proof, outside permanent directive-decision mutation coverage.',
+        'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "inert with refusals"' => 'Report refusal shape and verdict consistency have an owning reader regression and a one-time method mutation proof; no permanent own probe is required.',
+        'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "refusals missing"' => 'Report refusal shape and verdict consistency have an owning reader regression and a one-time method mutation proof; no permanent own probe is required.',
+        'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "refusals not a list"' => 'Report refusal shape and verdict consistency have an owning reader regression and a one-time method mutation proof; no permanent own probe is required.',
+        'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "refusals null"' => 'Report refusal shape and verdict consistency have an owning reader regression and a one-time method mutation proof; no permanent own probe is required.',
+        'QmxDirectiveAudit.Tests.DirectiveAuditReportReadingTest::itRefusesAVerdictWhoseFieldsAreNotTheShapeTheAuditPublishes with data set "refused without refusals"' => 'Report refusal shape and verdict consistency have an owning reader regression and a one-time method mutation proof; no permanent own probe is required.',
+        'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itRefusesToJudgeASelectorThatNamesNoChannelAtAll' => 'Unknown-selector classification has an owning usage regression and a one-time assertion failure proof, outside permanent own-probe coverage.',
+        'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itPublishesEveryInvalidThresholdAsOneRefusedSite' => 'Invalid-threshold publication has an owning command regression and a one-time assertion failure proof, outside permanent own-probe coverage.',
+        'Qualimetrix.Tests.Infrastructure.Console.Unit.DirectiveAuditSummaryProjectionTest::itPublishesRefusalDetailsWithoutTheInternalAddress' => 'Public refusal details have an owning projection regression and a one-time assertion failure proof, outside permanent own-probe coverage.',
+    ];
+
+    /**
+     * @param list<string> $universe
+     *
+     * @return list<string>
+     */
+    public static function coveragePopulation(array $universe): array
+    {
+        return array_values(array_diff($universe, array_keys(self::ONE_TIME_PROOF_CASES)));
+    }
+
     /** @param list<Outcome> $outcomes */
     private function __construct(
         private array $outcomes,
@@ -51,6 +78,12 @@ final readonly class Report
 
         $universe = $this->universe();
         $stale = $this->staleDeclarations($universe);
+
+        foreach (self::ONE_TIME_PROOF_CASES as $case => $reason) {
+            if (\in_array($case, $universe, true)) {
+                printf("  permanent coverage limitation: %s — %s\n", $case, $reason);
+            }
+        }
 
         foreach ($this->outcomes as $outcome) {
             printf(
@@ -199,7 +232,7 @@ final readonly class Report
             $reddened = [...$reddened, ...$outcome->probe->reddens];
         }
 
-        $unguarded = array_values(array_unique(array_diff($universe, $reddened)));
+        $unguarded = array_values(array_unique(array_diff(self::coveragePopulation($universe), $reddened)));
         sort($unguarded);
 
         return $unguarded;

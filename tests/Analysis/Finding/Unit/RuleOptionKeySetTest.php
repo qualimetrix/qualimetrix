@@ -10,12 +10,36 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Evidence\Complexity\ClassComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionKeyMetadata;
 
 #[CoversClass(RuleOptionKeySet::class)]
+#[CoversClass(RuleOptionKeyMetadata::class)]
+#[CoversClass(RuleOptionDeclarations::class)]
 final class RuleOptionKeySetTest extends TestCase
 {
+    #[Test]
+    public function itKeepsTheThreeDeclaredOverrideAxisMapsDistinct(): void
+    {
+        self::assertSame(
+            ['warning' => 'woc-threshold', 'error' => 'wmc-threshold'],
+            DataClassOptions::acceptedOptionKeys()->overrideAxes(),
+        );
+        self::assertSame(
+            ['warning' => 'min-criteria'],
+            GodClassOptions::acceptedOptionKeys()->overrideAxes(),
+        );
+        self::assertSame(
+            ['warning' => 'max-warning', 'error' => 'max-error'],
+            ClassComplexityOptions::acceptedOptionKeys()->overrideAxes(),
+        );
+    }
+
     #[Test]
     public function itPlacesAnAcceptedKeyInTheAcceptedStateOnly(): void
     {
@@ -39,13 +63,14 @@ final class RuleOptionKeySetTest extends TestCase
     #[Test]
     public function itDisplaysAndLocatesAWritableKeyWhoseCarrierTheClassValidates(): void
     {
+        $ingress = RuleOptionShape::listOf(RuleOptionShape::mapOf(RuleOptionShape::nonEmptyText()));
         $set = RuleOptionKeySet::of(['mode' => RuleOptionShape::text()])
-            ->alsoAcceptedAndValidatedByTheClass('include-namespaces');
+            ->alsoAcceptedAndValidatedByTheClass('include-namespaces', $ingress);
 
         self::assertTrue($set->knows('includeNamespaces'));
         self::assertTrue($set->accepts('includeNamespaces'));
         self::assertSame('include-namespaces', $set->spellingOf('includeNamespaces'));
-        self::assertNull($set->shapeOf('includeNamespaces'));
+        self::assertSame($ingress, $set->shapeOf('includeNamespaces'));
         self::assertSame(['include-namespaces', 'mode'], $set->acceptedForDisplay());
     }
 
@@ -136,7 +161,7 @@ final class RuleOptionKeySetTest extends TestCase
         $this->expectExceptionMessage('declared twice');
 
         RuleOptionKeySet::of(['include-namespaces' => RuleOptionShape::text()])
-            ->alsoAcceptedAndValidatedByTheClass('include-namespaces');
+            ->alsoAcceptedAndValidatedByTheClass('include-namespaces', RuleOptionShape::text());
     }
 
     #[Test]

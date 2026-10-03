@@ -1,0 +1,14 @@
+{
+    "id": "directive-placement",
+    "description": "Declaration directives bind before and after attributes and to a closure passed as an argument; a threshold in a line comment is explicitly refused.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": [
+        "complexity.ccn@callable",
+        "annotation.unresolved-directive@file"
+    ]
+}

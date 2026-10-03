@@ -286,7 +286,7 @@ architecture:
 
 The catch-all replaces the older `coverage-gap: warn` recipe for "show me everything I haven't classified yet". The `architecture.coverage-gap` mechanism still works (see "Coverage modes" below), but with a catch-all layer it is usually unnecessary.
 
-**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map continues to merge by source layer, and the scalar `architecture.coverage-gap` is overridden by the later source.
+**YAML merge semantics.** When a preset and a project config both define `architecture.layers`, the **later source replaces the entire list** — order is the user's disambiguation tool, and merging two ordered lists would silently destroy intent. The `architecture.allow` map merges by source layer name, and the target list of one source layer is replaced whole by a later source that writes it — `[]` included, which allows that layer nothing. A higher source cannot delete a lower source's entry. Each source name under `allow` is checked against the layers `layers` declares once every source is merged, so a file may allow a layer its preset declares; a name written with `~` is still checked. Scalars such as `architecture.coverage-gap` are overridden by the later source. The same rules for every configuration key are in [How layers combine](../getting-started/configuration.md#how-layers-combine).
 
 #### Configuration example with vendor and shared layers
 
@@ -528,7 +528,7 @@ A layer can carry an `exclude:` block with the same shape as the membership crit
 
 An `exclude:` clause the run cannot answer — an `extends` / `implements` / `attributes` criterion on a class whose inheritance chain leaves `paths` — does not remove the class: it stays in the layer, and the doubt is reported as described under [Assignments in doubt](#doubted-assignment). Removing it would leave its edges unjudged, which is the worse of the two errors. Such a clause is not reported as one that removed nothing either — see [When the clause removes nothing](#unmatched-exclude).
 
-`exclude.match: all` is also supported, useful for narrow "exclude suffix X only inside namespace Y" cases. The block must declare at least one criterion (an empty `exclude:` is a configuration error). For template layers, exclude criteria may reference the **same** capture variables as the layer name (`exclude: { patterns: ['App\Module\{module}\Generated\**'] }`) — they filter within the same-binding instance. Exclude cannot introduce new capture variables that don't appear in the layer name.
+`exclude.match: all` is also supported, useful for narrow "exclude suffix X only inside namespace Y" cases. A block that writes nothing — `exclude: {}`, `exclude: []`, or criteria written only as `~` — excludes nothing, like any other empty map in the configuration; a block that writes only `match`, or a criterion written as an empty list (`patterns: []`), is a configuration error. For template layers, exclude criteria may reference the **same** capture variables as the layer name (`exclude: { patterns: ['App\Module\{module}\Generated\**'] }`) — they filter within the same-binding instance. Exclude cannot introduce new capture variables that don't appear in the layer name.
 
 Under declaration-order matching, the same effect is often achievable by declaring a narrower layer earlier. `exclude:` is the right tool when the excluded subtree should remain **genuinely unclassified** (so it falls through to a catch-all or to coverage diagnostics) or when the positive criteria mix `patterns` with `suffix`/`implements`/`extends` and a single early layer cannot cleanly express the carve-out.
 
@@ -588,16 +588,14 @@ What the channel deliberately does not do:
   written for — so while any class the layer caught leaves it unanswered, the
   clause is not reported, and nothing advises dropping it. The doubt it leaves
   is reported under [Assignments in doubt](#doubted-assignment).
-- **It is only judged on a run that can judge it.** Like the other channels
-  about a configured value that bound to nothing, it needs paths covering
-  everything `composer.json` declares under `autoload` — `psr-4` and `psr-0`
-  roots, `classmap` and `files` entries alike — and under `autoload-dev` too
-  with [`--include-autoload-dev`](../usage/cli-options.md#--include-autoload-dev).
-  A narrower run leaves the channel silent, and the report's
-  [project scope](../usage/output-formats.md#project-scope-in-every-format)
-  names it as not judged. A project whose manifest declares nothing in the
-  sections the run counts has no project beyond the paths you name, so the
-  channel judges those paths as the whole project.
+- **It is judged only with complete measured declaration evidence.** Together
+  with `architecture.unreachable-layer` and `architecture.empty-template`, it
+  asks declaration absence. Missing PHP, authored PHP removal, generated
+  exclusions and an uncertain universe withhold that answer. A complete named
+  PHP roster can cover paths while removed PHP still withholds this question.
+  Without a usable Composer universe, the whole root may establish completeness;
+  an arbitrary subset is not assumed to be the project. Reports name the causes
+  under [Project scope](../usage/output-formats.md#project-scope-in-every-format).
 
 Unlike the architecture *configuration* diagnostics, this one is an ordinary
 rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore
@@ -663,6 +661,8 @@ question is unaffected by whether the target belongs to the enclosing class
 or to an anonymous class nested inside it. This is the one place the two
 cases stay symmetric: membership (above) treats them differently, `relations:`
 does not.
+
+`relations: ~` is the same as leaving `relations:` out: the target allows any relation.
 
 When multiple allow targets within one source resolve to the same target layer (for instance via overlapping glob selectors), their permissions **union**. If any matching entry uses the bare/short form (no `relations:`), the union is "all relations allowed" — short-form dominates.
 
@@ -779,8 +779,8 @@ prints is dominated by code the project does not own. This gate counts only
 the run itself measured. A declaration for which no collector recorded any
 class-level metric is not in the set and counts as assigned.
 
-It is a rule of its own, off by default, with one option — the mode is the
-switch:
+It is a rule of its own, inactive by default because its mode is `ignore`.
+The owner declares `mode`; framework `enabled` controls producer admission:
 
 ```yaml
 rules:
@@ -790,8 +790,9 @@ rules:
 
 It reads the same single walk over classes and dependency edges that
 `architecture.layer-violation` does, so turning it on costs no extra traversal.
-There is no separate `enabled` key: `mode: ignore` is how the rule is declined,
-and a second switch would be a second answer to one question.
+Framework `enabled` and owner `mode` answer different questions: selection and
+reportability. A muted mode stays inactive; explicit enable with mode:ignore
+refuses. enabled:false with mode:warn is lawful and off.
 
 | Mode               | Behaviour                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------- |
@@ -825,7 +826,13 @@ Unassigned declarations: App\Legacy\Bar, App\Legacy\Baz, App\Legacy\Foo. ...
 
 ### Unreachable-layer diagnostic
 
-`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any analysed class whose assignment the run left in doubt. A layer that would own an analysed class if an earlier layer's unanswered `exclude:` removed it is not reported as matching nothing — that is not a conclusion the run reached. Neither is a layer the run could not answer about an analysed class, as long as some type its `attributes` / `implements` / `extends` criteria name is one the run met: declared in the analysed paths, declared by PHP itself, seen at either end of a dependency edge, or declared by the analysed project's composer install — looked up in `vendor/composer/installed.json`, the project's own `autoload` and the files they map, read as data and never loaded. Both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. A type the run never met is not enough: a class whose parent is outside the analysed paths leaves every such criterion unanswered, a mistyped name included, so on any project where an analysed class extends vendor code a typo would otherwise never be reported. A symbol outside the analysed paths keeps no layer out of this diagnostic either, since the run never reads it. The finding says what it left out, in the words that hold for it: how many symbols the layer could not answer about and, when it names no type the run met, which types those are and whether the install was asked — a mistyped name, or a package that is not installed; or how many symbols outside the analysed paths its criteria matched while an earlier layer holds them through an `exclude:` the run cannot answer. A criterion naming a type only a vendor chain reaches — `implements: ['Doctrine\Persistence\ObjectRepository']` over repositories extending `ServiceEntityRepository`, with no analysed code naming the interface — therefore keeps its layer while the package is installed: the install declares the interface, and the layer is named by [`architecture.doubted-assignment`](#doubted-assignment) instead. The install tells only that the type exists; whether a repository implements it is still unanswered, because the run does not follow the vendor chain. With the package not installed, the layer is reported. The diagnostic is only judged on a run that can judge it: like [`architecture.unmatched-exclude`](#unmatched-exclude), it needs paths covering everything `composer.json` declares under `autoload`. On a run over part of the project — `qmx check src/Web` — a layer whose classes are all outside the slice matches nothing there while owning code elsewhere, so the diagnostic stays silent; the run's warning that the analysed paths do not cover all autoload entries says so on stderr, and the report's [project scope](../usage/output-formats.md#project-scope-in-every-format) — `narrowed`, with this channel among those not judged — says so in every format. A project whose `composer.json` declares no readable production autoload, or that has none, is judged: without a manifest the project is the paths you name, so run it over all of its code — `qmx check src/Web` on such a project reports every layer whose classes lie elsewhere, and the report's project scope reads `unknown`. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
+`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any analysed class whose assignment the run left in doubt. A layer that would own an analysed class if an earlier layer's unanswered `exclude:` removed it is not reported as matching nothing — that is not a conclusion the run reached. Neither is a layer the run could not answer about an analysed class, as long as some type its `attributes` / `implements` / `extends` criteria name is one the run met: declared in the analysed paths, declared by PHP itself, seen at either end of a dependency edge, or declared by the analysed project's composer install — looked up in `vendor/composer/installed.json`, the project's own `autoload` and the files they map, read as data and never loaded. Both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. A type the run never met is not enough: a class whose parent is outside the analysed paths leaves every such criterion unanswered, a mistyped name included, so on any project where an analysed class extends vendor code a typo would otherwise never be reported. A symbol outside the analysed paths keeps no layer out of this diagnostic either, since the run never reads it. The finding says what it left out, in the words that hold for it: how many symbols the layer could not answer about and, when it names no type the run met, which types those are and whether the install was asked — a mistyped name, or a package that is not installed; or how many symbols outside the analysed paths its criteria matched while an earlier layer holds them through an `exclude:` the run cannot answer. A criterion naming a type only a vendor chain reaches — `implements: ['Doctrine\Persistence\ObjectRepository']` over repositories extending `ServiceEntityRepository`, with no analysed code naming the interface — therefore keeps its layer while the package is installed: the install declares the interface, and the layer is named by [`architecture.doubted-assignment`](#doubted-assignment) instead. The install tells only that the type exists; whether a repository implements it is still unanswered, because the run does not follow the vendor chain. With the package not installed, the layer is reported. The diagnostic requires complete measured declaration evidence, like
+[`architecture.unmatched-exclude`](#unmatched-exclude). Missing PHP, authored PHP
+removal, generated exclusions and an uncertain universe withhold absence claims.
+A whole-root fallback may establish completeness without a usable Composer
+universe; an arbitrary subset cannot. Reports name measured causes rather than
+using report state alone as permission.
+It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
 
 1. **Shadowed by a broader layer earlier in the order.** A pattern like `'**'` or `'App\**'` declared before a narrower one captures every class first.
 2. **Pattern matches no class in the analysed codebase and is never seen as a dependency-edge end either.** The layer is declared for a namespace that doesn't exist yet — or the namespace was renamed.
@@ -847,14 +854,14 @@ It exists because `pending: true` switches a safety net off, and a switched-off 
 
 ### Empty-template diagnostic
 
-`architecture.empty-template` fires once per template layer that expanded to **zero** concrete instances — typically a typo in the template pattern, an excluded module, or a single-segment `{var}` used where the binding spans multiple namespace segments (use `{var:**}` for cross-segment captures).
+`architecture.empty-template` fires once per template layer that expanded to **zero** concrete instances when measured scope permits declaration absence. Typical causes are a typo in the pattern or a single-segment `{var}` where the binding spans multiple namespace segments (use `{var:**}`).
 
-Like [`architecture.unreachable-layer`](#unreachable-layer-diagnostic), it is judged only on a run whose paths cover everything `composer.json` declares under `autoload`: a slice of the project cannot show that no module exists.
+Like `architecture.unreachable-layer`, the diagnostic requires complete measured declaration evidence; missing PHP, authored/generated removal and uncertain universe withhold it.
 
 A template that expands to zero instances **silently disables** the policy attached to it, which is why — like the other four configuration diagnostics — it fails the run unconditionally instead of waiting on a severity or `fail_on` setting; see the note under [Coverage modes](#coverage-modes). Three common causes:
 
 1. **Typo in the template pattern.** `App\Modul\{module}\Domain\**` instead of `App\Module\{module}\Domain\**` — no class matches and no instance is created.
-2. **Excluded modules.** Every candidate class is removed by `exclude:`, by `suppress_paths`, or by being in a non-analysed directory.
+2. **No candidate binding tuple exists in the measured universe.** Authored/generated PHP removal or incomplete paths withhold this diagnostic rather than proving the module absent. `suppress_paths` limits publication, not class analysis.
 3. **Single-segment capture spanning namespace separators.** `App\{path}\Domain\**` where `path` is meant to capture `Module\Order` (two segments). Switch to `{path:**}` to allow cross-segment captures.
 
 ### Potential-shadow diagnostic
@@ -1123,7 +1130,7 @@ rules:
       - src/Legacy
 ```
 
-This works because the framework (`RuleOptionsFactory`) extracts `suppress_namespaces` / `suppress_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `suppress_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
+This works because the framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `suppress_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
 
 <!-- llms:skip-end -->
 
@@ -1164,3 +1171,7 @@ For users migrating from a dedicated architecture-testing tool:
 For the design rationale behind the current layer policy — including why templates expand by observed binding tuples, why capture-binding is mandatory, and why `relations:` is whitelist-only — see [ADR 0059: Declared-Layer Policy and Architecture Governance](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0059-declared-layer-policy-and-architecture-governance.md).
 
 <!-- llms:skip-end -->
+
+## Enablement and reportable mode
+
+Unassigned-class accepts the framework enabled switch in addition to mode. enabled:false with mode:warn is lawful and off; an explicit enabled:true with mode:ignore refuses. Use warn/error to report, or remove the exact enable. Shared layer evidence preparation runs when either lawful producer needs it; disabling a sibling does not disable this producer. Layer-violation keeps its own default-enabled/no-layers short circuit. [Configuration forms](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution) apply before discovery.

@@ -51,7 +51,7 @@ final class GodClassRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects God Classes (overly complex, large, low cohesion)';
     }

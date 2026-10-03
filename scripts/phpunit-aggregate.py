@@ -49,6 +49,7 @@ COMMON_ARGUMENTS = (
     "--no-coverage",
     "--exclude-group=benchmark",
     "--exclude-group=live-freshness",
+    "--exclude-group=finding-gate-e2e",
 )
 REFUSAL_EXIT = 2
 TIMEOUT_EXIT = 124

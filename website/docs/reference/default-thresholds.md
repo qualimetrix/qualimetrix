@@ -126,12 +126,14 @@ The built-in `suppression.configuration` rule reports on the run's own suppressi
 
 The built-in `annotation.directive` rule reports inline `@qmx-*` directives that address nothing, cannot apply, or no longer do anything. It has no numeric thresholds and reports through four channels, each its own diagnostic. See [Annotation rules](../rules/annotation.md) for the full reference and [Baseline](../usage/baseline.md#when-a-directive-is-wrong) for how directives interact with suppression and baselines.
 
-| Channel                            | Severity                                            | Default | Notes                                                                                                                                                                                                                                                                                                                         |
-| ---------------------------------- | --------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `annotation.unresolved-directive`  | Error (fixed, not configurable)                     | enabled | Configuration error: the directive names a channel that does not exist. Fails the run unconditionally, independent of `--fail-on`; cannot be baselined or suppressed.                                                                                                                                                         |
-| `annotation.unsupported-threshold` | Error (fixed, not configurable)                     | enabled | Configuration error: `@qmx-threshold` targets a rule that declares no threshold override support. Fails the run unconditionally; cannot be baselined or suppressed.                                                                                                                                                           |
-| `annotation.invalid-threshold`     | Error (fixed, not configurable)                     | enabled | Configuration error: the `@qmx-threshold` payload itself is malformed. Fails the run unconditionally; cannot be baselined or suppressed.                                                                                                                                                                                      |
-| `annotation.unused-directive`      | Info (configurable via `unused_directive_severity`) | enabled | Ordinary finding, not a configuration error: the directive is valid but nothing it addressed fired this run. Can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope; `suppress_namespaces` and the rule's own exclusions do not reach it. It is the one channel no `@qmx-ignore` may address. |
+| Channel                            | Severity                                               | Default | Notes                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------- | ------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `annotation.unresolved-directive`  | Error (fixed, not configurable)                        | enabled | Configuration error: the directive names a channel that does not exist. Fails the run unconditionally, independent of `--fail-on`; cannot be baselined or suppressed.                                                                                                                                                                |
+| `annotation.unsupported-threshold` | Error (fixed, not configurable)                        | enabled | Configuration error: `@qmx-threshold` targets a rule that declares no threshold override support. Fails the run unconditionally; cannot be baselined or suppressed.                                                                                                                                                                  |
+| `annotation.invalid-threshold`     | Error (fixed, not configurable)                        | enabled | Configuration error: the `@qmx-threshold` payload itself is malformed. Fails the run unconditionally; cannot be baselined or suppressed.                                                                                                                                                                                             |
+| `annotation.unused-directive`      | Warning (configurable via `unused-directive-severity`) | enabled | Ordinary finding, not a configuration error: the directive is valid but nothing it addressed fired this run. Can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope; `suppress_namespaces` and the rule's own exclusions do not reach it. Like `duplication.clone`, no `@qmx-ignore` may address it. |
+
+For placement, quoting and member reach, see [Inline suppression](../usage/baseline.md#inline-suppression).
 
 ## Code Smell Rules
 
@@ -318,3 +320,12 @@ You can also suppress every rule in a group with the same wildcard form:
 ```
 
 See [Baseline](../usage/baseline.md#channels-not-rule-names) for the full selector syntax.
+
+## Activation without changing defaults
+
+The numbers in these tables are unchanged. A written NPath class band activates
+without a redundant enabled:true; an explicit class.enabled:false turns it off.
+Complexity top shorthand no longer switches class off, and effective bands are
+validated against default halves. cohesion.unmatched-exclude-method is a secondary
+project warning with magnitude 1, not a new LCOM threshold and not a channel with
+a configured warning boundary. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

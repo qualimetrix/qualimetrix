@@ -1,7 +1,7 @@
 # Architecture policy
 
-`Analysis\\Policy\\Architecture` owns declared-layer policy: YAML contribution
-parsing, layer membership preparation, diagnostics, and
+`Analysis\\Policy\\Architecture` owns declared-layer policy: the `architecture:`
+configuration section, layer membership preparation, diagnostics, and
 `architecture.layer-violation`. It is a leaf capability, not the old combined
 Architecture vertical slice; circular-dependency evidence is owned separately
 by [`Analysis\\Evidence\\CircularDependency`](../../Evidence/CircularDependency/README.md).
@@ -23,13 +23,15 @@ External owners use only the contracts in `Contract/`:
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
 - Configuration and preparation failures are surfaced as
-  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`,
-  built through its `atResolvedKey()`/`aboutResolvedInput()` shorthands, which
-  address `ConfigurationSource::Resolved` because Architecture validates the
-  already-merged document and cannot attribute a rejected value back to one
-  file or CLI option. The two capability-owned exception classes this
-  replaced are retired and kept only until a later cleanup removes them and
-  their remaining Console-side callers.
+  `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`.
+  A configuration refusal names the layer that wrote the refused value —
+  through the resolved node it was read from, see below. Template expansion
+  (`Layer/Expansion/`) still refuses through `atResolvedKey()`, addressing
+  `ConfigurationSource::Resolved`: it judges the expanded layers at
+  preparation time, after the document's provenance is no longer at hand.
+  The two capability-owned exception classes this replaced are retired and
+  kept only until a later cleanup removes them and their remaining
+  Console-side callers.
 
 The concrete `ArchitecturePolicy` owns configured and prepared state for one
 run. It resets before a new configuration and before disabled preparation; no
@@ -40,7 +42,7 @@ policy state enters the worker or cache payload.
 ```text
 Architecture/
 ├── Contract/                  # exact external promises and debug values
-├── Configuration/              # contributed `architecture:` document parser
+├── Configuration/              # the `architecture:` section: its schema and validators
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
 │   └── Expansion/              # observed-template expansion
@@ -56,10 +58,57 @@ internals are not a public API. The generated qmx projection enforces the leaf o
 
 ## Configuration and lifecycle
 
-`ConfigurationDocument` preserves ordered source contributions.
-`ArchitecturePolicy` alone merges its `architecture` contributions and turns
-them into typed policy configuration. The central Configuration merger has no
-Architecture-specific branch or deferred-warning transport.
+`ArchitectureSection` declares the `architecture:` section to the
+configuration document engine (`DocumentSectionSchemaInterface::declaration()`),
+returning an atomic `SectionDeclaration`: its keys at every level, the form of each value and how the configuration layers that
+wrote it merge. The engine recognises and shapes every layer before merging,
+so a misspelt key — in the section, a `layers[i]` entry or its `exclude:` — is
+refused with its writer and spelling whatever its value, `~` included. The
+same policies are published, generated from `ArchitectureSection`, in the table
+of `website/docs/getting-started/configuration.md`; the decision is
+[ADR 0086](../../../../docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+
+| Node                                  | Merge                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `layers`                              | the last layer that writes it replaces the whole list                 |
+| `allow`                               | merged by source layer name; one name's target list is replaced whole |
+| `coverage-gap`, `max_expanded_layers` | the last layer that writes it wins                                    |
+
+`~` anywhere is "not written": the lower layer's value stands, and a key no
+layer wrote takes its default — `relations: ~` on a long-form allow target is
+"any relation", exactly like a target without `relations`. An empty map
+(`exclude: {}`, `allow: {}`) writes nothing and changes nothing.
+
+Two values the engine carries unread, because each has two written shapes: a
+criterion (`patterns`, `suffix`, … — one string or a list) and an allow target
+(a layer name or a long-form map). `LayerCriterionNormalizer` and
+`LongFormAllowEntryNormalizer` judge them; the latter recognises the long-form
+keys by the document's spelling rule (snake_case, kebab-case or camelCase).
+Their form is judged in every layer that writes them, before the merge —
+`ArchitectureSection` declares `LayerCriterionNormalizer::ofLayerEntry()` on a layer
+entry and `CarriedValueForm::ofAllowTarget()` on a target — so a preset's
+malformed criterion or target is refused even under a file that replaces
+`layers` or the target list. Static-layer name grammar, fixed exclude capture
+placement, pattern and selector syntax, match and relation kinds, the coverage
+mode and a positive expansion ceiling are also judged in each writing layer,
+using the same parsers as the resolved validators. Layer references,
+source/target capture compatibility, template bindings and cycles are judged
+on the merged value only.
+An allow source name's syntax is judged even when its value is `~`. Its
+membership is judged after merging against the names the merged `layers`
+declares, in the words of its writing layer (`allow: {infrq: ~}` is refused):
+an exact name must be declared; a glob or captured selector may name layers
+only template expansion produces. A source written `~` keeps the
+targets a lower layer gave it; with none, it allows nothing.
+
+`ArchitectureConfigurationFactory::fromResolved()` reads the section from
+`ConfigurationDocument::resolved()` through `SectionSpot`, which pairs each
+value with the resolved node it came from: every validator refuses through the
+spot, so a refusal names the file or preset that wrote the value — the one
+that won a leaf or wrote a list, every contributor of a merged map, and both
+halves of a relation (an allow cycle, a `coverage-gap` without `layers`). The
+central Configuration merger has no Architecture-specific branch or
+deferred-warning transport.
 
 Run prepares the policy after graph construction. Neither verdict traverses the
 AST or constructs lifecycle state.
@@ -216,7 +265,7 @@ same predicate, so a configuration that loads is never failed for it.
 `ownsIfExcluded` column — those that would own a symbol if an unanswered
 `exclude:` in front of them removed it.
 
-Four declarations that used to be accepted are now refused at config load,
+Three declarations that used to be accepted are now refused at config load,
 because there is no correct silent reading of any of them. A template layer may
 not declare `suffix`, `attributes`, `implements` or `extends` under
 `match: any`: only `patterns` carries capture variables, so the criterion would
@@ -224,9 +273,7 @@ be copied into every expanded instance as one project-wide net and the instance
 that wins a class would be decided by binding-value order. A non-`ignore`
 `coverage-gap:` requires at least one `layers:` entry, because with no layers
 every class is outside every layer while the walk short-circuits and the run
-exits 0 — the strictest setting producing the quietest outcome. An allow entry's
-`relations:` written without a value takes the same refusal as `relations: []`
-instead of reading as "every relation allowed". And an `attributes`,
+exits 0 — the strictest setting producing the quietest outcome. And an `attributes`,
 `implements` or `extends` entry that is nothing but `\` passed the
 namespace-separator check while naming no class; with the leading separator now
 dropped it is refused as such.
@@ -301,11 +348,13 @@ builds four of them: `architecture.coverage-gap`, `architecture.unreachable-laye
 `PotentialShadowDiagnostic` renders `architecture.potential-shadow` from the
 shadow evidence, which no other verdict reads. `unreachable-layer` and
 `empty-template` say that no class matches a declaration, so the validator
-withholds them on a run whose paths do not cover the project's autoload roots
-(`AnalysisContext::$coversProjectScope`, the gate `architecture.unmatched-exclude`
-reads); the run's scope warning and the report's `projectScope` say so. A
-project whose manifest declares no readable production autoload is judged,
-with its analysed paths taken as the whole project. The validator declares `architecture.layer-violation`
+withholds them unless measured `ProjectScopeJudgement::judgesNamespaceClaims()`
+permits declaration absence. `architecture.unmatched-exclude` asks that same
+question. Missing observed PHP, authored removal hiding PHP, generated removal
+and an unknown denominator can withhold it; covering written path roots alone
+is insufficient. Scope warnings and `projectScope` name these measured doors.
+A whole-root fallback can establish filesystem completeness without declared
+Composer code; a subset cannot assume it. The validator declares `architecture.layer-violation`
 as its producer, so all five are registered, addressed, excluded, described and
 switched off exactly as they were while the rule declared them, and it runs in
 the rule's slot so their position in an unsorted report is unchanged.
@@ -322,22 +371,6 @@ matched tally sees even when a broader layer wins every assignment.
 The Console debug command invokes the inspector contract over the same collected
 graph and class universe.
 
-## Rule option key declarations
-
-`LayerViolationOptions` and `UnassignedClassOptions` declare their accepted
-option keys through `RuleOptionsInterface::acceptedOptionKeys()`.
-`LayerViolationOptions` accepts `enabled`, `severity`, and additionally
-declares `empty-template-severity`, `potential-shadow-severity` and
-`unreachable-layer-severity` as answered-by-the-class: `fromArray()` refuses
-these three in its own words (the diagnostics they used to tune now gate the
-run unconditionally) rather than through the generic "unknown option"
-warning. `UnassignedClassOptions` accepts only `mode`, and declares `enabled`
-as answered-by-the-class: `fromArray()` accepts `enabled: false` when it
-agrees with `mode: ignore` and refuses it otherwise, naming `mode` as the
-replacement. `RuleOptionsFactory` reads these declarations and refuses an
-unrecognised key by name — an answered-by-the-class key reaches the class's own
-bespoke refusal unchallenged; anything else is rejected before construction.
-
 ## Definition of Done
 
 - Keep public consumers on the declared contracts; do not import an internal
@@ -347,6 +380,21 @@ bespoke refusal unchallenged; anything else is rejected before construction.
 - Update this README, the manifest inventory, topology tests, and exact
   generated projection whenever the leaf surface or zone DAG changes.
 
+
+## Declared options and preparation
+
+`LayerViolationOptions` and `UnassignedClassOptions` use `fromResolved` and
+owner-declared forms. Framework `enabled` is legal for both producers. Unassigned
+mode independently determines reportability: false+warn is lawful and off,
+explicit true+ignore refuses, and warn/error activates an otherwise enabled
+producer. Retired severity keys refuse through their declared replacement hint.
+
+Preparation reads final `RuleEnablement::runs` for each producer. The shared
+layer evidence walk is needed when either lawful producer runs; it must not gate
+one producer through a sibling's options. Reset, no-layer short-circuiting,
+The captured project universe and all layer assignment judgments are unchanged.
+DoD retains either-producer preparation, no work for muted/off producers and
+full authored provenance of malformed options.
 
 ## Locality
 

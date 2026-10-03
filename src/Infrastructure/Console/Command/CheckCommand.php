@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -27,7 +27,6 @@ use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionIn
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
 #[AsCommand(
     name: 'check',
@@ -47,7 +46,7 @@ final class CheckCommand extends Command
         private readonly CheckScopeResolver $checkScopeResolver,
         private readonly ConfigurationInputAdapter $configurationInputAdapter,
         private readonly CheckConfigurationResolvers $configurationResolvers,
-        private readonly RefusalPresenter $refusalPresenter,
+        private readonly RunTargetSession $runTargetSession,
     ) {
         parent::__construct();
     }
@@ -125,7 +124,7 @@ final class CheckCommand extends Command
                     continue;
                 }
 
-                return $this->refusalPresenter->refusal(
+                return $this->runTargetSession->refuseBeforeExecution(
                     $output,
                     self::formatOption($input),
                     ConfigurationRefusal::aboutCommandLineInput(
@@ -161,22 +160,7 @@ final class CheckCommand extends Command
     {
         $format = self::formatOption($input);
 
-        try {
-            return $this->doExecute($input, $output);
-        } catch (ConfigurationRefusal $refusal) {
-            // First clause: the carrier is a RuntimeException, and every
-            // clause below it — down to `catch (Throwable)` — would otherwise
-            // swallow it as a plain exception.
-            return $this->refusalPresenter->refusal($output, $format, $refusal);
-        } catch (InvalidArgumentException $e) {
-            // The named secondary signal for code 3:
-            // an `InvalidArgumentException` that never became a carrier.
-            // Printed verbatim, unlike the clauses above — its message is
-            // already the whole sentence.
-            return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
-        } catch (Throwable $e) {
-            return $this->refusalPresenter->internalError($output, $format, $e);
-        }
+        return $this->runTargetSession->run($output, $format, fn(): int => $this->doExecute($input, $output));
     }
 
     /**
@@ -194,12 +178,10 @@ final class CheckCommand extends Command
 
         // Refuse an unwritable `--output` before analysis starts. This fast
         // precheck is not a guarantee because writability can change later.
-        $this->resultPresenter->assertOutputIsWritable($input);
+        $this->resultPresenter->assertOutputIsWritable($input, $this->runTargetSession->targets());
         $namespacePattern = $this->resultPresenter->bindOutputOptions($input);
         $resolved = $this->configurationResolvers->resolve($document);
-        $runConfiguration = $resolved->runConfiguration;
-        $cacheConfiguration = $resolved->cacheConfiguration;
-        $parallelConfiguration = $resolved->parallelConfiguration;
+        $runConfiguration = $resolved->run->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $findingExclusions = $resolved->findingExclusions;
         $outputFormat = $resolved->outputFormat;
@@ -209,22 +191,13 @@ final class CheckCommand extends Command
         // Configure runtime using resolved config
         $this->runtimeConfigurator->configure(
             $document,
-            $runConfiguration,
+            $resolved->run,
             $findingConfiguration,
-            $cacheConfiguration,
-            $parallelConfiguration,
             $input,
             $output,
         );
 
-        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
-            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
-        }
-
-        $selectionWarning = $this->ruleInputValidator->conflictingSelectionWarning($findingConfiguration);
-        if ($selectionWarning !== null) {
-            $this->writeWarning($output, $selectionWarning);
-        }
+        $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics);
         if ($output->isVerbose() && $document->appliedSources() !== []) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<info>Configuration loaded from: %s</info>',
@@ -235,16 +208,9 @@ final class CheckCommand extends Command
         $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration);
         $scopeResolution = $resolvedScope->scope;
 
-        $pathErrors = $this->validatePaths($scopeResolution->paths);
-        if ($pathErrors !== []) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                implode(' ', $pathErrors),
-            );
-        }
+        (new AnalysisInputPathValidator())->validate($scopeResolution->paths, $document);
 
         $projectRoot = $runConfiguration->projectRoot;
-        $this->warnIfComposerJsonMissing($projectRoot, $output);
         foreach ($resolvedScope->warnings as $warning) {
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
@@ -264,14 +230,18 @@ final class CheckCommand extends Command
             BaselineLoader::assertReadable($projectionOptions->baselinePath);
         }
 
+        $this->claimRunTargets($input, $output);
+
+        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
+            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
+        }
+
         // Named, and carrying the coverage answer with the paths it is about:
         // rebuilding this positionally lost every field added to the run
         // configuration after the call site was written, silently and once per
         // field.
-        $scopedRunConfiguration = $resolvedScope->coversProjectScope
-            ? $runConfiguration->coveringProjectScope($scopeResolution->paths)
-            : $runConfiguration->narrowedTo($scopeResolution->paths);
-        $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
+        $scopedRunConfiguration = $runConfiguration->withProjectScope($resolvedScope->measurement);
+        $result = $this->runAnalysis($scopedRunConfiguration);
 
         $filterResult = $this->findingFilterOrchestrator->filterAndReport(
             $result,
@@ -281,6 +251,7 @@ final class CheckCommand extends Command
             $projectionOptions,
         );
         $filteredFindings = $filterResult->findings;
+        $this->runTargetSession->targets()->settle();
 
         // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
         // so ResultPresenter no longer has a "baseline was just captured, report
@@ -291,6 +262,7 @@ final class CheckCommand extends Command
             $input,
             $output,
             $projectRoot,
+            runTargets: $this->runTargetSession->targets(),
             outputFormat: $outputFormat,
             exitPolicy: $exitPolicy,
             reportScope: $scopeResolution->reportScope,
@@ -298,9 +270,28 @@ final class CheckCommand extends Command
             projectionOptions: $projectionOptions,
             namespacePattern: $namespacePattern,
             projectScope: $this->findingFilterOrchestrator->projectScope($resolvedScope, $result, $projectionOptions),
+            configurationDiagnostics: $this->configurationInputAdapter->publishedDiagnostics($document, $findingConfiguration->diagnostics),
         );
 
+        $this->runTargetSession->markOutputPublished();
+
         return $this->presentProfile($input, $output, $exitCode);
+    }
+
+    private function claimRunTargets(InputInterface $input, OutputInterface $output): void
+    {
+        $profile = $input->hasOption('profile') ? $input->getOption('profile') : false;
+        if ($profile !== false && $profile !== null && $profile !== true) {
+            $this->runTargetSession->targets()->judge('--profile', CommandLineSpelling::of($profile, '--profile'));
+        }
+        if (CommandLineSpelling::option($input, 'output') === null) {
+            $this->runTargetSession->targets()->reportOnStandardOutput();
+        }
+        foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
+            $this->writeWarning($output, 'Warning: ' . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning));
+        }
+
+        $this->runTargetSession->targets()->claim();
     }
 
     /**
@@ -309,55 +300,18 @@ final class CheckCommand extends Command
      */
     private function presentProfile(InputInterface $input, OutputInterface $output, int $exitCode): int
     {
-        try {
-            $this->resultPresenter->presentProfile($input, $output);
-        } catch (ConfigurationRefusal $refusal) {
-            return $this->refusalPresenter->refusalAfterPublishedReport($output, $refusal);
-        } catch (Throwable $e) {
-            return $this->refusalPresenter->internalErrorAfterPublishedReport($output, $e);
-        }
-
-        return $exitCode;
+        return $this->runTargetSession->afterPublishedReport(function () use ($input, $output): void {
+            $this->resultPresenter->presentProfile($input, $output, $this->runTargetSession->targets());
+            $this->runTargetSession->targets()->settle();
+        }, $exitCode);
     }
 
     /**
      * Runs the analysis on specified paths.
      */
-    private function runAnalysis(RunConfiguration $configuration, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
+    private function runAnalysis(RunConfiguration $configuration): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        return $this->analyzer->analyze($configuration, $fileDiscovery);
-    }
-
-    /**
-     * Validates that all provided paths exist.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @return list<string> Error messages (empty if all valid)
-     */
-    private function validatePaths(array $paths): array
-    {
-        $errors = [];
-        foreach ($paths as $path) {
-            if (!$path->exists()) {
-                $errors[] = \sprintf("Error: path '%s' does not exist", $path->value());
-            }
-        }
-
-        return $errors;
-    }
-
-    /**
-     * Warns when composer.json is not found in project root.
-     */
-    private function warnIfComposerJsonMissing(AbsolutePath $projectRoot, OutputInterface $output): void
-    {
-        if (!file_exists($projectRoot->value() . '/composer.json')) {
-            $this->writeWarning(
-                $output,
-                \sprintf('Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.', $projectRoot->value()),
-            );
-        }
+        return $this->analyzer->analyze($configuration);
     }
 
     /**

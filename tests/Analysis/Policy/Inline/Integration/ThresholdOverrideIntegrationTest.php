@@ -51,7 +51,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * Integration tests for @qmx-threshold overrides applied to rules.
+ * Integration tests for `@qmx-threshold` overrides applied to rules.
  */
 #[CoversClass(MethodCountRule::class)]
 #[CoversClass(ComplexityRule::class)]

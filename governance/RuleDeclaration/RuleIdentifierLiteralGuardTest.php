@@ -77,32 +77,14 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         . ' cured — a definition cannot reference itself.';
 
     /**
-     * Why {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleThresholdKeyGroupRegistry}'s
-     * hand-kept key spellings are exempt: its own docblock argues why it
-     * cannot be derived at configuration-merge time.
+     * The Finding-owned question roster names channels whose executable
+     * declarations belong to other subjects and are not approved imports here.
      */
-    private const string RULE_THRESHOLD_KEY_GROUP_REASON =
-        'Declared, audited hand-kept copy of a rule\'s ThresholdParser::parse() key'
-        . ' spelling. Its own docblock argues why it cannot be derived at'
-        . ' configuration-merge time: RuleOptionThresholdShorthand runs before'
-        . ' any rule\'s Options::fromArray() is invoked, and Options classes live'
-        . ' with their owning rule capability, which Configuration may not depend'
-        . ' on. Every entry is exercised end-to-end by RuleOptionsFactoryTest /'
-        . ' RuleThresholdKeyGroupRegistryCompletenessTest.';
-
-    /**
-     * Why `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` spells four names by
-     * hand: the report names them as not judged on a narrowed run, and their
-     * owners declare them on internal classes Run may not import.
-     */
-    private const string WHOLE_PROJECT_CHANNELS_REASON =
-        'The list a narrowed run\'s report names as not judged. The coupling and'
-        . ' suppression owners declare these names on internal classes Run may not'
-        . ' import; the Architecture names in the same list come from their'
-        . ' contract\'s constants and Discovery\'s is Run\'s own. ProjectScopeReadersTest compares'
-        . ' every entry with its owner\'s constant and every reader of the predicate'
-        . ' with the list, so the copy cannot drift silently.';
-
+    private const string PROJECT_SCOPE_CHANNELS_REASON =
+        'The shared measured-question roster names channels declared by other subjects.'
+        . ' Finding owns the question contract, not their executable producers.'
+        . ' ProjectScopeReadersTest compares its exact set with the registered readers;'
+        . ' the allowed pair does not exempt any other literal or file.';
     /**
      * Why `JsonFormatter`'s `coupling.class-rank` output key is exempt: it is
      * the published JSON key carrying $issue->classRank, sibling to authored
@@ -180,29 +162,13 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
             'code-smell.unreachable-code' => self::METRIC_NAME_DECLARATION_REASON,
             'maintainability.mi' => self::METRIC_NAME_DECLARATION_REASON,
         ],
-        'src/Analysis/Finding/RuleConfiguration/RuleThresholdKeyGroupRegistry.php' => [
-            'design.type-coverage.param' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.type-coverage.return' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.type-coverage.property' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.ccn' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.cognitive' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.npath' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.cbo' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.instability' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.distance' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'coupling.class-rank' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'code-smell.long-parameter-list' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'code-smell.constructor-overinjection' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'code-smell.unreachable-code' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'maintainability.mi' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'size.method-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'size.class-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'size.property-count' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.dit' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'design.noc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'cohesion.lcom' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'complexity.wmc' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
-            'duplication.clone' => self::RULE_THRESHOLD_KEY_GROUP_REASON,
+        'src/Analysis/Finding/Contract/Selection/RuleNameJudge.php' => [
+            'computed' => 'The exact producer named by migration advice for computed.*. Its owner already'
+                . ' depends on Finding contracts, so importing it here would invert that dependency.',
+        ],
+        'src/Analysis/Finding/Selection/RetiredRuleNames.php' => [
+            'cohesion.lcom' => 'The historical replacement for design.lcom, not a live declaration or'
+                . ' an option dictionary. Name similarity cannot recover this consumer migration fact.',
         ],
         'src/Analysis/Policy/Inline/Directive/DirectiveChannelBan.php' => [
             'duplication.clone' => 'The ban must name the second channel no directive may silence,'
@@ -211,11 +177,13 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
                 . ' (InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME); this one has no owner inside'
                 . ' Inline to borrow a constant from.',
         ],
-        'src/Analysis/Run/Configuration/ProjectScopeCoverage.php' => [
-            'coupling.unmatched-framework-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'suppression.unmatched-namespace' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'suppression.unmatched-path' => self::WHOLE_PROJECT_CHANNELS_REASON,
-            'suppression.unmatched-rule-ledger' => self::WHOLE_PROJECT_CHANNELS_REASON,
+        'src/Analysis/Finding/Contract/ProjectScope/ProjectScopeChannels.php' => [
+            'architecture.empty-template' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'architecture.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'architecture.unreachable-layer' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'cohesion.unmatched-exclude-method' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'coupling.unmatched-framework-namespace' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'discovery.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
         ],
         'src/Reporting/Formatter/Json/JsonFormatter.php' => [
             'coupling.class-rank' => self::JSON_FORMATTER_CLASS_RANK_REASON,

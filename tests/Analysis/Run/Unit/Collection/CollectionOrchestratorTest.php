@@ -462,12 +462,12 @@ final class CollectionOrchestratorTest extends TestCase
         $subject = \Qualimetrix\Core\Symbol\MetricSubject::logicalClass(
             new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service')),
         );
-        $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File);
-        $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
+        $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File, position: 0);
+        $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine, position: 0, silencedLine: 17 + 1);
         $override = new ThresholdOverride('complexity.ccn', 12, 20, 8, $subject, ControlScope::Class_);
         $secondOverride = new ThresholdOverride('design.type-coverage.param', 95, 80, 18, $subject, ControlScope::Class_);
-        $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
-        $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');
+        $diagnostic = new ThresholdDiagnostic(9, $subject, 'complexity.ccn', 'invalid fixture threshold', 0);
+        $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'coupling.cbo', 'second invalid fixture threshold', 0);
         $dependencies = [
             $this->dependency('App\\Service', 'App\\Port', DependencyType::Implements, 'tmp/good.php', 10),
             $this->dependency('App\\Service', 'App\\Helper', DependencyType::New_, 'tmp/good.php', 11),

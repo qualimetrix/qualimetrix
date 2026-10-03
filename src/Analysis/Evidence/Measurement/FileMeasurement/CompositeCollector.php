@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
@@ -87,6 +88,15 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
     {
         foreach ($this->collectors as $collector) {
             $collector->reset();
+        }
+    }
+
+    public function measureSource(string $source): void
+    {
+        foreach ($this->collectors as $collector) {
+            if ($collector instanceof SourceMeasuringCollectorInterface) {
+                $collector->measureSource($source);
+            }
         }
     }
 

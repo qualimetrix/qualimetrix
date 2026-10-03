@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
@@ -70,7 +70,7 @@ abstract class BaselineCommand extends Command
             }
 
             return $exitCode;
-        } catch (ConfigurationRefusal $refusal) {
+        } catch (RefusalInterface $refusal) {
             // First clause: the carrier is a RuntimeException, and the split
             // pair below would otherwise catch it and answer with code 1
             // instead of 3.
@@ -85,17 +85,9 @@ abstract class BaselineCommand extends Command
             // is the user's to fix, not ours to explain with a stack.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (RuntimeException $e) {
-            // The baseline loader used to report every envelope problem this
-            // way; it now uses a typed carrier, so what still reaches here is
-            // either a genuine defect or a type without a typed refusal
-            // carrier. Either way it is not a
-            // proven refusal, so it keeps the trace-on-`-v` treatment rather
-            // than the presenter's code 3.
-            return $this->fail($output, $e->getMessage(), $e);
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         } catch (Throwable $e) {
-            // Anything else is a bug in this tool rather than in the user's
-            // input, and is labelled as such so the two are not confused.
-            return $this->fail($output, \sprintf('Unexpected error: %s', $e->getMessage()), $e);
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         }
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\GodClass;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(GodClassRule::class)]
 #[CoversClass(GodClassOptions::class)]
@@ -34,7 +36,7 @@ final class GodClassRuleTest extends TestCase
     {
         $rule = new GodClassRule(new GodClassOptions());
 
-        self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule->getDescription());
+        self::assertSame('Detects God Classes (overly complex, large, low cohesion)', $rule::getDescription());
     }
 
     #[Test]
@@ -435,7 +437,7 @@ final class GodClassRuleTest extends TestCase
     #[Test]
     public function itHasOptionsDefaults(): void
     {
-        $options = GodClassOptions::fromArray(['enabled' => true]);
+        $options = GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, ['enabled' => true]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(47, $options->wmcThreshold);
@@ -450,7 +452,7 @@ final class GodClassRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithCustomValues(): void
     {
-        $options = GodClassOptions::fromArray([
+        $options = GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, [
             'wmc_threshold' => 30,
             'lcom_threshold' => 5,
             'tcc_threshold' => 0.25,
@@ -458,7 +460,7 @@ final class GodClassRuleTest extends TestCase
             'min_criteria' => 2,
             'min_methods' => 5,
             'exclude_readonly' => false,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(30, $options->wmcThreshold);
@@ -473,7 +475,7 @@ final class GodClassRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArrayWithDualKey(): void
     {
-        $options = GodClassOptions::fromArray([
+        $options = GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, [
             'wmcThreshold' => 30,
             'lcomThreshold' => 5,
             'tccThreshold' => 0.25,
@@ -481,7 +483,7 @@ final class GodClassRuleTest extends TestCase
             'minCriteria' => 2,
             'minMethods' => 5,
             'excludeReadonly' => false,
-        ]);
+        ]));
 
         self::assertSame(30, $options->wmcThreshold);
         self::assertSame(5, $options->lcomThreshold);
@@ -493,11 +495,10 @@ final class GodClassRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = GodClassOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new GodClassOptions(), GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, [])));
+        self::assertFalse(GodClassOptions::fromResolved(ResolvedOptionsFixture::values(GodClassOptions::class, ['enabled' => false]))->isEnabled());
     }
     #[Test]
     public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void

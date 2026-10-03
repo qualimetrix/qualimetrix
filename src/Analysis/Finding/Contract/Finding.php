@@ -40,6 +40,7 @@ final readonly class Finding
         public ?DependencyType $dependencyType = null,
         public ?AcceptedLevel $acceptedLevel = null,
         public ?OccurrenceKey $occurrenceKey = null,
+        public ?string $addressedProducer = null,
     ) {}
 
     /**
@@ -84,6 +85,7 @@ final readonly class Finding
             dependencyType: $this->dependencyType,
             acceptedLevel: $acceptedLevel,
             occurrenceKey: $this->occurrenceKey,
+            addressedProducer: $this->addressedProducer,
         );
     }
 

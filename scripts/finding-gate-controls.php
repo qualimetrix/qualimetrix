@@ -32,8 +32,6 @@ require __DIR__ . '/finding-gate/classes.php';
 // crashed on a missing class and the whole table read "NOT AS DECLARED",
 // including the positive one.
 
-foreach (['Shell', 'Scratch', 'Mutation', 'Expectation', 'Control', 'Outcome', 'Controls', 'Harness'] as $part) {
-    require __DIR__ . '/finding-gate-controls/' . $part . '.php';
-}
+require __DIR__ . '/finding-gate-controls/classes.php';
 
 exit(Harness::main(CommandLine::arguments()));

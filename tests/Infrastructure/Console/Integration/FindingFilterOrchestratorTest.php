@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
@@ -21,10 +20,11 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -41,7 +41,6 @@ use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
-use Qualimetrix\Reporting\ReportProjectScope;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -70,6 +69,56 @@ final class FindingFilterOrchestratorTest extends TestCase
             if (file_exists($file)) {
                 unlink($file);
             }
+        }
+    }
+
+    #[Test]
+    public function itRetainsLateAuxiliaryCausesAndRootOmissionsOnAWithheldRun(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-late-manifest-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0777, true);
+        mkdir($root . '/dependency');
+        file_put_contents($root . '/composer.json', '{"autoload":{"files":["src/A.php"]}}');
+        file_put_contents($root . '/src/A.php', '<?php');
+        file_put_contents($root . '/dependency/composer.json', '[]');
+        try {
+            $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+            $anchor = new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader);
+            $anchor->pointAt($root, ['/qmx-missing-' . bin2hex(random_bytes(6)) . '/src']);
+            $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage($reader))->measure(AbsolutePath::fromString($root), [AbsolutePath::fromString($root . '/dependency')], \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored);
+            $reader->read(AbsolutePath::fromString($root . '/dependency'));
+            $scope = new GitScopeResolution($measurement->paths, null, null, AbsolutePath::fromString($root));
+            $measured = $measurement->withDiscoveredFiles(new \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles([], [], [], [], [], new \Qualimetrix\Analysis\Run\Discovery\ScopeFacts([RelativePath::fromString('src/A.php')], [], [], false), 0));
+            $report = $this->createOrchestrator($reader, $anchor)->projectScope(new ResolvedCheckScope($scope, [], $measurement), $this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
+            self::assertSame('narrowed', $report->state);
+            self::assertCount(9, $report->unjudgedChannels);
+            self::assertSame([
+                'architecture.empty-template',
+                'architecture.unmatched-exclude',
+                'architecture.unreachable-layer',
+                'cohesion.unmatched-exclude-method',
+                'coupling.unmatched-framework-namespace',
+                'discovery.unmatched-exclude',
+                'suppression.unmatched-namespace',
+                'suppression.unmatched-path',
+                'suppression.unmatched-rule-ledger',
+            ], $report->unjudgedChannels);
+            $reasons = array_map(static fn($reason): array => $reason->toArray(), $report->reasons);
+            self::assertCount(2, $reasons);
+            self::assertSame('manifest-issue', $reasons[0]['kind']);
+            self::assertSame('invalid-root', $reasons[0]['issueKind']);
+            self::assertTrue($reasons[0]['auxiliary']);
+            self::assertSame(realpath($root . '/dependency/composer.json'), $reasons[0]['source']);
+            self::assertSame('omitted-composer-root', $reasons[1]['kind']);
+            self::assertSame('unresolvable', $reasons[1]['cause']);
+            self::assertSame($report->reasons, $report->withReasons($report->reasons)->reasons);
+        } finally {
+            unlink($root . '/src/A.php');
+            unlink($root . '/composer.json');
+            unlink($root . '/dependency/composer.json');
+            rmdir($root . '/src');
+            rmdir($root . '/dependency');
+            rmdir($root);
         }
     }
 
@@ -377,15 +426,17 @@ final class FindingFilterOrchestratorTest extends TestCase
             $output,
             // Not a whole-project run, so the suppression-binding audit is not
             // asked: it is not this file's subject.
-            new ResolvedCheckScope($scopeResolution, [], false, ReportProjectScope::narrowed([], [])),
+            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored)),
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
         );
     }
 
-    private function createOrchestrator(): FindingFilterOrchestrator
+    private function createOrchestrator(?\Qualimetrix\Infrastructure\Composer\ComposerManifestReader $reader = null, ?\Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap $anchor = null): FindingFilterOrchestrator
     {
+        $reader ??= new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $anchor ??= new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap($reader);
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
         $pipeline = new FindingProjector(
@@ -400,12 +451,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             },
         );
 
-        return new FindingFilterOrchestrator(
-            $pipeline,
-            new ErrorStream(),
-            self::silentSuppressionAudit(),
-            self::createStub(ComposerAutoloadPathReaderInterface::class),
-        );
+        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), $reader, new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor));
     }
 
     /**
@@ -416,11 +462,13 @@ final class FindingFilterOrchestratorTest extends TestCase
      */
     private static function silentSuppressionAudit(): UnboundSuppressionAudit
     {
-        return new UnboundSuppressionAudit(
-            new UnboundSuppressionOptions(enabled: false),
-            self::createStub(RuleExecutionInterface::class),
-            self::createStub(RuleConfigurationInterface::class),
+        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $snapshot = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::build(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => ['enabled' => false]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project'))),
+            [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME, UnboundSuppressionOptions::class, '', [], false)],
         );
+        $configuration->method('resolvedOptions')->willReturn($snapshot);
+        return new UnboundSuppressionAudit(self::createStub(RuleExecutionInterface::class), $configuration);
     }
 
     private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
@@ -452,16 +500,24 @@ final class FindingFilterOrchestratorTest extends TestCase
     /**
      * @param list<Finding> $findings
      */
-    private function createAnalysisResult(array $findings = [], RuleExclusionStats $stats = new RuleExclusionStats()): AnalysisResult
+    private function createAnalysisResult(array $findings = [], RuleExclusionStats $stats = new RuleExclusionStats(), ?\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement $projectScope = null): AnalysisResult
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
-        return new AnalysisResult(
-            findings: $findings,
-            duration: 0.1,
-            metrics: $repository,
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+        return AnalysisResult::fromRun(
+            measured: new MeasuredRunResult(
+                repository: $repository,
+                coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+                namespaceTree: null,
+                projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString(sys_get_temp_dir()), true, [], [], [], true, []), [AbsolutePath::fromString(sys_get_temp_dir())], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+                duration: 0.1,
+            ),
+            directives: new DirectiveObservations(
+                suppressions: [],
+                thresholdOverrides: [],
+            ),
             ruleExecution: new RuleExecutionResult($findings, $findings, $stats, LevelActivity::empty()),
+            latePublished: [],
         );
     }
 
@@ -469,7 +525,6 @@ final class FindingFilterOrchestratorTest extends TestCase
     {
         return new GitScopeResolution(
             paths: [],
-            fileDiscovery: self::createStub(FileDiscoveryInterface::class),
             gitClient: null,
             reportScope: null,
             projectRoot: AbsolutePath::fromString(sys_get_temp_dir()),

@@ -31,10 +31,10 @@ final class ConfigSchemaTest extends TestCase
         self::assertContains('coupling', $keys);
         self::assertContains('parallel', $keys);
 
-        // camelCase top-level keys (no snake_case — loader normalizes before validation)
-        self::assertContains('computedMetrics', $keys);
+        // Owner document roots retain their canonical spelling; legacy leaves are camelCase.
+        self::assertContains('computed_metrics', $keys);
         self::assertContains('memoryLimit', $keys);
-        self::assertContains('excludeHealth', $keys);
+        self::assertContains('exclude_health', $keys);
         self::assertContains('includeGenerated', $keys);
         self::assertContains(ConfigSchema::COUPLING, ConfigSchema::DOCUMENT_ROOTS);
     }
@@ -66,7 +66,7 @@ final class ConfigSchemaTest extends TestCase
         self::assertContains('disabledRules', $lists);
         self::assertContains('onlyRules', $lists);
         self::assertContains('suppressPaths', $lists);
-        self::assertContains('excludeHealth', $lists);
+        self::assertContains('exclude_health', $lists);
 
         // These are NOT lists
         self::assertNotContains('rules', $lists);

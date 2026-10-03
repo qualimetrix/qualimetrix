@@ -43,6 +43,7 @@ final class ErrorStreamContainerIdentityTest extends TestCase
      */
     private const array CONSUMERS = [
         'Qualimetrix\\Infrastructure\\Console\\Command\\GraphExportCommand',
+        'Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter',
         'Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator',
         'Qualimetrix\\Infrastructure\\Console\\ProfilePresenter',
         'Qualimetrix\\Infrastructure\\Console\\Progress\\ProgressConfigurator',
@@ -55,6 +56,18 @@ final class ErrorStreamContainerIdentityTest extends TestCase
     public function itGivesEveryConsumerTheOneOwnerTheContainerHolds(): void
     {
         $container = (new ContainerFactory())->create();
+
+        $execution = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class, $execution);
+        $channels = $container->get(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface::class, $channels);
+        $rules = $container->get(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface::class, $rules);
+        $rules->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready(
+            \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::none(),
+            $execution->allRules(),
+            channels: $channels,
+        ));
 
         $owner = $container->get(ErrorStream::class);
         self::assertInstanceOf(ErrorStream::class, $owner);

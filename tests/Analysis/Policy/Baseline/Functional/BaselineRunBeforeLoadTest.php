@@ -16,7 +16,6 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
@@ -232,7 +231,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
-            new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsFactory(new RuleOptionsRegistry())),
+            new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
             $declarations,
         );
 
@@ -311,7 +310,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
                     1,
                 )],
             ),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }

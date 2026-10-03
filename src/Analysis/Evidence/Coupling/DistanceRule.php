@@ -84,7 +84,7 @@ final class DistanceRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks distance from main sequence at namespace level';
     }

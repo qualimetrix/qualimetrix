@@ -40,7 +40,7 @@ final class ReferenceTree
         private readonly string $temporaryDirectory,
     ) {}
 
-    public static function create(string $candidateRoot, string $reference): self
+    public static function create(string $candidateRoot, string $reference, RenameMaps $maps): self
     {
         $temporaryDirectory = Fs::temporaryDirectory('finding-gate-ref-');
         $root = $temporaryDirectory . '/tree';
@@ -70,7 +70,7 @@ final class ReferenceTree
         }
 
         try {
-            MetricVocabulary::ofTree($candidateRoot)->assertSuffixesAgreeWith(MetricVocabulary::ofTree($root));
+            $maps->acceptReferenceVocabulary(MetricVocabulary::ofTree($root));
             $tree->installVendor();
         } catch (GateError $error) {
             $tree->remove();

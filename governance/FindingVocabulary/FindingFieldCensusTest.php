@@ -56,6 +56,7 @@ final class FindingFieldCensusTest extends TestCase
             'dependencyTarget' => [$original->dependencyTarget, $promoted->dependencyTarget],
             'dependencyType' => [$original->dependencyType, $promoted->dependencyType],
             'occurrenceKey' => [$original->occurrenceKey, $promoted->occurrenceKey],
+            'addressedProducer' => [$original->addressedProducer, $promoted->addressedProducer],
         ];
 
         foreach ($copied as $field => [$before, $after]) {
@@ -110,6 +111,7 @@ final class FindingFieldCensusTest extends TestCase
             threshold: 10,
             dependencyTarget: SymbolPath::forClass('App', 'Bar'),
             dependencyType: DependencyType::New_,
+            addressedProducer: 'complexity.ccn',
         );
     }
 

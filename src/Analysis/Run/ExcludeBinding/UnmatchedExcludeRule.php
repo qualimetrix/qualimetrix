@@ -68,9 +68,9 @@ final class UnmatchedExcludeRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
-        return 'Reports an exclude pattern that removed no directory from the analysed set';
+        return 'Reports exclude selectors matching no project entries or only entries another selector removes; unlistable entries and selectors hidden by another source cannot be judged';
     }
 
     /**

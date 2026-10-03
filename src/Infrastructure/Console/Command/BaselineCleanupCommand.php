@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -140,7 +141,7 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($removal->baseline, $baselinePath, $context->projectRoot);
+        $this->writer->write($removal->baseline, TargetPath::resolve($baselinePath), $context->projectRoot);
 
         $output->writeln(\sprintf(
             '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',

@@ -30,7 +30,7 @@ final class BooleanArgumentRuleTest extends TestCase
         $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
 
         self::assertSame('code-smell.boolean-argument', $rule->getName());
-        self::assertSame('Detects boolean arguments in method/function signatures', $rule->getDescription());
+        self::assertSame('Detects boolean arguments in method/function signatures', $rule::getDescription());
     }
 
     #[Test]

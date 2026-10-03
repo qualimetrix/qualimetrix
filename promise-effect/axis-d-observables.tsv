@@ -27,17 +27,33 @@
 #   logfile   the resolved value echoed into the debug log
 ledger_path	observable	withdraws	hit
 paths	findings	target	[src/Domain]
-exclude	findings		[Sub]
-format	stdout	--format
-fail_on	exitcode	--fail-on
+exclude	findings		[{"subtree":"src/Sub"}]
+format	stdout	--format	json
+fail_on	exitcode	--fail-on	none
 disabled_rules	findings		[code-smell.long-parameter-list]
 only_rules	findings		[complexity.ccn]
-suppress_paths	findings		[src/Sub]
-suppress_namespaces	findings		[Probe\Sub]
-coupling.framework_namespaces	findings		[Zzz\Nope]
+suppress_paths	findings		[{"subtree":"src/Sub"}]
+suppress_namespaces	findings		[{"subtree":"Probe\\Sub"}]
+coupling.framework_namespaces	findings		[{"subtree":"Zzz\\Nope"}]
 exclude_health	findings		[complexity]
-cache	cachedir
+cache	cachedir		{"enabled":false}
 cache.dir	cachedir
 cache.enabled	cachedir
 parallel.workers	logfile	--workers
-memory_limit	exitcode
+memory_limit	exitcode		1G
+architecture.allow	findings		{"sub":[],"infra":["sub"],"rest":["sub","infra"]}
+architecture.coverage-gap	findings		error
+architecture.layers[*].exclude.attributes	findings		["Probe\\ExcludedAttribute"]
+architecture.layers[*].exclude.extends	findings		["Probe\\ExcludedBase"]
+architecture.layers[*].exclude.implements	findings		["Probe\\ExcludedInterface"]
+architecture.layers[*].exclude.patterns	findings		["Probe\\Domain\\*"]
+architecture.layers[*].exclude.suffix	findings		["Order"]
+architecture.layers[*].exclude	findings		{"patterns":["Probe\\Domain\\*"]}
+architecture.layers	findings		[{"name":"domain","patterns":["Probe\\Domain\\*"]},{"name":"infra","patterns":["Probe\\Infra\\*"]}]
+architecture	findings		{"layers":[{"name":"domain","patterns":["Probe\\Domain\\*"]}],"coverage-gap":"error"}
+computed_metrics.<name>.formulas	findings		{"class":"1 + 1"}
+computed_metrics.<name>.formula	findings		1 + 1
+computed_metrics.<name>.levels	findings		["project"]
+computed_metrics	findings		{"computed.probe-metric":{"formula":"1 + 1","levels":["class"],"warning":0.5,"error":0.8}}
+coupling	findings		{"framework_namespaces":[{"subtree":"Zzz\\Nope"}]}
+parallel	logfile	--workers	{"workers":1}

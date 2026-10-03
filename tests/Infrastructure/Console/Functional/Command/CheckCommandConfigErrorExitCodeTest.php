@@ -77,15 +77,16 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
 
     /**
      * The envelope's `position` promises what the throw site located, no more:
-     * a merged value carries none even though its sentence names the key, and
-     * a required key the author left out is where the path ends.
+     * a winning authored value names its file coordinate, and a required key
+     * the author left out is where the path ends.
      */
     #[Test]
-    public function itPublishesOnlyThePositionItsThrowSiteLocated(): void
+    public function itPublishesThePositionItsThrowSiteLocated(): void
     {
+        $mergedConfig = $this->writeFile('merged.yaml', "memory_limit: 010M\n");
         $merged = $this->runCheck([
             '--format' => 'json',
-            '--config' => $this->writeFile('merged.yaml', "memory_limit: 010M\n"),
+            '--config' => $mergedConfig,
         ]);
         $missing = $this->runCheck([
             '--format' => 'json',
@@ -94,7 +95,14 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
 
         self::assertSame(3, $merged->getStatusCode());
         self::assertStringContainsString('memory_limit', self::envelopeError($merged));
-        self::assertNull(self::envelope($merged)['position']);
+        self::assertSame(
+            ['path' => ['memory_limit'], 'written' => 'memory_limit', 'accepted' => [], 'closed' => false],
+            self::envelope($merged)['position'],
+        );
+        self::assertSame(
+            [['kind' => 'file', 'name' => $mergedConfig, 'imported_by' => null]],
+            self::envelope($merged)['source'],
+        );
         self::assertSame(3, $missing->getStatusCode());
         self::assertSame(
             ['path' => ['computed_metrics', 'computed.foo', 'formulas', 'namespace'], 'written' => 'namespace', 'accepted' => [], 'closed' => false],
@@ -163,7 +171,7 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         $tester = new CommandTester($command);
@@ -183,10 +191,10 @@ final class CheckCommandConfigErrorExitCodeTest extends TestCase
         return self::envelope($tester)['error'];
     }
 
-    /** @return array{error: string, exit_code: int, position: mixed} */
+    /** @return array{error: string, exit_code: int, position: mixed, source: mixed} */
     private static function envelope(CommandTester $tester): array
     {
-        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
+        /** @var array{error: string, exit_code: int, position: mixed, source: mixed} $envelope */
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $envelope;

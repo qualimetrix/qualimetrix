@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
@@ -323,7 +324,13 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
 
         // `@qmx-threshold` is the other reader's family; answering that it carried
         // every such tag keeps this probe about the suppression tags alone.
-        foreach ($extractor->extract($node, $subject, ControlScope::Callable, static fn(): bool => true) as $suppression) {
+        foreach ($extractor->extract(
+            $node,
+            $subject,
+            ControlScope::Callable,
+            DeclarationReach::whole($node->getEndLine() > 0 ? $node->getEndLine() : null, 'test'),
+            static fn(): bool => true,
+        ) as $suppression) {
             if ($suppression->type === $expectedType) {
                 return true;
             }
@@ -341,7 +348,7 @@ final class LlmsIndexRegisteredSurfaceTest extends TestCase
 
     private static function classNodeWithDoc(string $tagLine): Class_
     {
-        $doc = new Doc(\sprintf("/**\n * %s\n */", $tagLine));
+        $doc = new Doc(\sprintf("/**\n * %s\n */", $tagLine), 1, 0);
         $node = new Class_('Probe');
         $node->setDocComment($doc);
 

@@ -14,6 +14,7 @@ final readonly class ReportCoverage
         public int $generatedExcluded,
         public int $failed,
         public array $failures = [],
+        public int $excluded = 0,
     ) {}
 
     public function isComplete(): bool
@@ -30,6 +31,7 @@ final readonly class ReportCoverage
             'analyzed' => $this->analyzed,
             'generatedExcluded' => $this->generatedExcluded,
             'failed' => $this->failed,
+            'excluded' => $this->excluded,
             'failures' => array_map(
                 static fn(CoverageFailure $failure): array => [
                     'path' => $failure->path,

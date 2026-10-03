@@ -13,7 +13,10 @@ use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Subprocess\ChildProcess;
 use Symfony\Component\Console\Tester\CommandTester;
+
+require_once \dirname(__DIR__, 5) . '/scripts/subprocess/ChildProcess.php';
 
 /**
  * A profile export that cannot happen is refused before analysis, like an
@@ -52,6 +55,7 @@ final class CheckCommandProfileExportTest extends TestCase
         yield 'empty path' => [['--profile' => ''], '--profile'];
         yield 'a directory as the target' => [['--profile' => '{dir}/target-dir'], '--profile'];
         yield 'a name ending in a slash' => [['--profile' => '{dir}/nodir/'], '--profile'];
+        yield 'a symbolic link loop' => [['--profile' => '{dir}/loop.json'], '--profile'];
     }
 
     /** @param array<string, string> $options */
@@ -59,12 +63,15 @@ final class CheckCommandProfileExportTest extends TestCase
     #[DataProvider('provideImpossibleExports')]
     public function itRefusesAnImpossibleExportBeforeAnalysis(array $options, string $option): void
     {
+        if (($options['--profile'] ?? null) === '{dir}/loop.json') {
+            symlink('loop.json', $this->directory . '/loop.json');
+        }
         $tester = $this->runCheck($options);
 
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
-        /** @var array{error: string, exit_code: int, position: mixed} $envelope */
+        /** @var array{error: string, exit_code: int, position: mixed, source: mixed} $envelope */
         $envelope = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
-        self::assertSame(['error', 'exit_code', 'position'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
+        self::assertSame(['error', 'exit_code', 'position', 'source'], array_keys($envelope), 'Analysis ran: a report precedes the refusal.');
         self::assertStringContainsString($option, $envelope['error']);
         self::assertSame([], array_values(array_filter(self::filesIn($this->directory), is_file(...))));
     }
@@ -95,29 +102,73 @@ final class CheckCommandProfileExportTest extends TestCase
         self::assertNotSame('', file_get_contents($sealed . '/p.json'));
     }
 
-    /**
-     * A write that fails after the report is on stdout cannot turn stdout into
-     * two documents: the report stays the only one, and the refusal is a line
-     * on stderr with exit code 3.
-     *
-     * The failure is planted where no precheck can see it: a link that leads
-     * to itself, which only the write's own open learns it cannot follow.
-     */
+    /** A native profile write can fail after the report; stdout remains one JSON document. */
     #[Test]
     public function itKeepsTheReportTheOnlyStdoutDocumentWhenTheExportFailsAfterIt(): void
     {
-        symlink('p.json', $this->directory . '/p.json');
+        $target = $this->directory . '/p.json';
+        $hits = $this->directory . '/profile-write-hits.txt';
+        file_put_contents($target, 'old profile');
+        file_put_contents($this->directory . '/Source.php', '<?php namespace Demo; final class Source {}');
+        $hook = $this->directory . '/profile-write-hook.php';
+        $source = <<<'PHP'
+            <?php
+            namespace {
+                $GLOBALS['qmx_profile_target'] = __TARGET__;
+                $GLOBALS['qmx_profile_hits'] = 0;
+                register_shutdown_function(static function (): void {
+                    \file_put_contents(__HITS__, (string) $GLOBALS['qmx_profile_hits']);
+                });
+                function qmxProfileWrite($stream, string $bytes): int|false
+                {
+                    $uri = \stream_get_meta_data($stream)['uri'] ?? '';
+                    if (\realpath($uri) !== \realpath($GLOBALS['qmx_profile_target'])) {
+                        return \fwrite($stream, $bytes);
+                    }
+                    ++$GLOBALS['qmx_profile_hits'];
+                    return 0;
+                }
+            }
+            namespace Qualimetrix\Infrastructure\Console {
+                function fwrite($stream, string $bytes): int|false
+                {
+                    return \qmxProfileWrite($stream, $bytes);
+                }
+            }
+            namespace Qualimetrix\Core\FileTarget {
+                function fwrite($stream, string $bytes): int|false
+                {
+                    return \qmxProfileWrite($stream, $bytes);
+                }
+            }
+            PHP;
+        file_put_contents($hook, str_replace(
+            ['__TARGET__', '__HITS__'],
+            [var_export($target, true), var_export($hits, true)],
+            $source,
+        ));
+        $run = ChildProcess::run([
+            \PHP_BINARY,
+            '-d',
+            'auto_prepend_file=' . $hook,
+            \dirname(__DIR__, 5) . '/bin/qmx',
+            'check',
+            'Source.php',
+            '--format=json',
+            '--workers=0',
+            '--no-cache',
+            '--profile=' . $target,
+        ], $this->directory);
 
-        $tester = $this->runCheck(['--profile' => '{dir}/p.json']);
-
-        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(3, $run['exitCode'], $run['stdout'] . $run['stderr']);
+        self::assertGreaterThan(0, (int) file_get_contents($hits), 'The native profile write hook was not reached.');
         /** @var array<string, mixed> $report */
-        $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        $report = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
         self::assertArrayNotHasKey('error', $report, 'The refusal was written to stdout as a second document.');
         self::assertArrayHasKey('summary', $report);
-        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
-        self::assertStringContainsString('--profile', $tester->getErrorOutput());
-        self::assertFileDoesNotExist($this->directory . '/p.json');
+        self::assertStringContainsString('Environment error:', $run['stderr']);
+        self::assertStringContainsString('--profile', $run['stderr']);
+        self::assertSame('', file_get_contents($target));
     }
 
     /** @return iterable<string, array{string}> */
@@ -169,7 +220,7 @@ final class CheckCommandProfileExportTest extends TestCase
         $command = $container->get(CheckCommand::class);
         /** @var RefusalPresenter $refusalPresenter */
         $refusalPresenter = $container->get(RefusalPresenter::class);
-        $application = new Application(new ErrorStream(), $refusalPresenter);
+        $application = new Application(new ErrorStream(), $refusalPresenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->addCommand($command);
 
         $input = ['paths' => [self::FIXTURE], '--format' => 'json', '--no-cache' => true, '--workers' => '0'];

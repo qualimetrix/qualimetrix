@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
-use FilesystemIterator;
+use Qualimetrix\Core\FileTarget\FileReplacement;
+use Qualimetrix\Core\FileTarget\FileTargetFailure;
+use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
 use Qualimetrix\Infrastructure\Serializer\SerializerSelector;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use Throwable;
-use UnexpectedValueException;
 
 /**
  * File-based cache implementation with sharding and atomic writes.
@@ -74,16 +74,15 @@ final class FileCache implements CacheInterface
             throw CacheWriteException::failedToCreateDirectory($dir);
         }
 
-        // Atomic write: write to temp file, then rename
-        $tmp = self::temporaryPathFor($path);
-
-        if (@file_put_contents($tmp, $this->serializer->serialize($value)) === false) {
-            throw CacheWriteException::failedToWriteFile($tmp);
-        }
-
-        if (!@rename($tmp, $path)) {
-            @unlink($tmp);
-            throw CacheWriteException::failedToRename($tmp, $path);
+        try {
+            FileReplacement::replace(
+                TargetPath::resolve($path),
+                $this->serializer->serialize($value),
+                null,
+                NewName::LastWriterWins,
+            );
+        } catch (FileTargetFailure $failure) {
+            throw new CacheWriteException(\sprintf('Failed to write cache file "%s": %s', $path, $failure->getMessage()), 0, $failure);
         }
     }
 
@@ -101,93 +100,20 @@ final class FileCache implements CacheInterface
         }
     }
 
-    public function clear(): void
+    public function clear(): CacheClearOutcome
     {
         $this->serializerVerified = false;
 
-        $this->removeEverything();
+        return $this->removeEverything();
     }
 
-    /**
-     * Empties the directory and says whether it ended up empty.
-     *
-     * Three ways it may not: the directory itself refuses to open, a
-     * subdirectory refuses to open, or an unlink or rmdir is refused. All
-     * three leave entries behind in whatever format wrote them, and the caller
-     * that clears in order to change format has to know.
-     *
-     * The answer is a second look rather than the walk's own tally, because
-     * the walk cannot see the middle case: measured, `CATCH_GET_CHILD` drops
-     * an unreadable subtree entirely — not even the directory itself is
-     * yielded — so every removal can succeed over a directory that is not
-     * empty. What the marker claims is that the directory holds nothing, and
-     * that is what is checked.
-     *
-     * The marker is kept back from the walk and removed last, only once
-     * everything else is gone. A marker deleted beside a surviving entry is
-     * worse than one left in place: the next process reads "nothing says",
-     * takes the no-clear branch and writes its own name over the old format.
-     */
-    private function removeEverything(): bool
+    private function removeEverything(): CacheClearOutcome
     {
-        $directory = $this->directory->value();
-
-        if (!is_dir($directory)) {
-            return true;
-        }
-
-        // A cache directory the process cannot descend into must cost the
-        // clear, not the run: this runs from get() and set(), so an escaping
-        // exception would turn a cache problem into a failed file.
-        try {
-            $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::CHILD_FIRST,
-                RecursiveIteratorIterator::CATCH_GET_CHILD,
-            );
-        } catch (UnexpectedValueException) {
-            return false;
-        }
-
-        $markerPath = $this->serializerMarkerPath();
-
-        foreach ($iterator as $item) {
-            if ($item->getPathname() === $markerPath) {
-                continue;
-            }
-
-            $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
-        }
-
-        if (!$this->holdsNothingButTheMarker()) {
-            return false;
-        }
-
-        return !is_file($markerPath) || @unlink($markerPath);
-    }
-
-    /** Whether the walk left the directory with nothing in it but the marker. */
-    private function holdsNothingButTheMarker(): bool
-    {
-        try {
-            $entries = new FilesystemIterator(
-                $this->directory->value(),
-                FilesystemIterator::SKIP_DOTS
-                | FilesystemIterator::KEY_AS_FILENAME
-                | FilesystemIterator::CURRENT_AS_PATHNAME,
-            );
-
-            foreach ($entries as $filename => $_) {
-                if ($filename !== self::SERIALIZER_MARKER) {
-                    return false;
-                }
-            }
-        } catch (UnexpectedValueException) {
-            // A directory that cannot even be listed has certainly not been emptied.
-            return false;
-        }
-
-        return true;
+        return (new CacheDirectoryContents(
+            $this->directory->value(),
+            $this->serializerMarkerPath(),
+            self::EXTENSION,
+        ))->clear();
     }
 
     /**
@@ -202,12 +128,10 @@ final class FileCache implements CacheInterface
      * Checks if the current serializer matches the one used to write the cache.
      * If not, clears the entire cache and writes a new marker.
      *
-     * The marker is a claim about what the directory holds, so it is written
-     * only once the directory holds nothing. A clear that could not finish
-     * leaves the old marker in place and no new one: the next process reads a
-     * mismatch again and tries again, which is the honest answer and not the
-     * convenient one. Entries surviving in the old format then read back as
-     * corrupt and are dropped by {@see get()}, so the cost is cache misses.
+     * The marker is a claim about the cache entries' format. A clear that
+     * leaves an owned entry or an uninspectable subtree keeps the old marker:
+     * the next process reads the mismatch and tries again. Surviving entries
+     * in the old format then read as corrupt and cost cache misses.
      *
      * The verified flag is set once per instance either way — a failed clear
      * is not worth a full directory walk on every subsequent read.
@@ -226,7 +150,7 @@ final class FileCache implements CacheInterface
             return;
         }
 
-        if ($storedName !== null && !$this->removeEverything()) {
+        if ($storedName !== null && !$this->removeEverything()->complete) {
             return;
         }
 

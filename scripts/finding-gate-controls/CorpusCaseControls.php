@@ -1,0 +1,250 @@
+<?php
+
+declare(strict_types=1);
+
+namespace QmxFindingGateControls;
+
+use QmxFindingGate\{FailureClass, Normalization};
+
+final class CorpusCaseControls
+{
+    public static function duplicationSize(): Control
+    {
+        return self::product(
+            'duplication-size',
+            'src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php',
+            '$longest = max(array_map(function (int $copy) use ($length): int {',
+            '$longest = min(array_map(function (int $copy) use ($length): int {',
+            [
+                FailureClass::CASE_CLAIM_MISMATCH => [
+                    'case:duplication-size',
+                ],
+                FailureClass::FINDING_COUNT_MISMATCH => [
+                    'case:duplication-size',
+                ],
+                FailureClass::RECORD_UNDECLARED => [
+                    'case:duplication-size|format:json',
+                ],
+                FailureClass::SURFACE_MISMATCH => [
+                    'candidate / case:duplication-size|format:github',
+                    'case:duplication-size|baseline-file',
+                    'case:duplication-size|check:output:file',
+                    'case:duplication-size|directives',
+                    'case:duplication-size|format:checkstyle',
+                    'case:duplication-size|format:github',
+                    'case:duplication-size|format:gitlab',
+                    'case:duplication-size|format:html',
+                    'case:duplication-size|format:json',
+                    'case:duplication-size|format:metrics',
+                    'case:duplication-size|format:sarif',
+                    'case:duplication-size|format:summary',
+                    'case:duplication-size|format:text',
+                    'case:duplication-size|format:text-verbose',
+                    'case:duplication-size|show-suppressed',
+                ],
+            ],
+        );
+    }
+
+    public static function configPrecedence(): Control
+    {
+        return self::product(
+            'config-precedence',
+            'src/Analysis/Evidence/Complexity/ComplexityOptions.php',
+            "if (isset(\$config['threshold'])) {",
+            "if (isset(\$config['threshold']) && !isset(\$config['callable'])) {",
+            [
+                FailureClass::CASE_CLAIM_MISMATCH => [
+                    'case:config-precedence',
+                ],
+                FailureClass::FINDING_COUNT_MISMATCH => [
+                    'case:config-precedence',
+                ],
+                FailureClass::RECORD_UNDECLARED => [
+                    'case:config-precedence|format:json',
+                ],
+                FailureClass::SURFACE_MISMATCH => [
+                    'case:config-precedence|baseline-file',
+                    'case:config-precedence|check:output:file',
+                    'case:config-precedence|directives',
+                    'case:config-precedence|format:checkstyle',
+                    'case:config-precedence|format:github',
+                    'case:config-precedence|format:gitlab',
+                    'case:config-precedence|format:html',
+                    'case:config-precedence|format:json',
+                    'case:config-precedence|format:metrics',
+                    'case:config-precedence|format:sarif',
+                    'case:config-precedence|format:summary',
+                    'case:config-precedence|format:text',
+                    'case:config-precedence|format:text-verbose',
+                    'case:config-precedence|show-suppressed',
+                ],
+            ],
+        );
+    }
+
+    public static function thresholdRaising(): Control
+    {
+        return self::product(
+            'threshold-raising',
+            'src/Analysis/Evidence/Design/GodClass/GodClassOptions.php',
+            'minCriteria: $warning !== null ? (int) $warning : $this->minCriteria,',
+            'minCriteria: $warning !== null ? min((int) $warning, $this->minCriteria) : $this->minCriteria,',
+            [
+                FailureClass::FINDING_COUNT_MISMATCH => [
+                    'case:threshold-raising',
+                ],
+                FailureClass::RECORD_UNDECLARED => [
+                    'case:threshold-raising|format:json',
+                ],
+                FailureClass::SURFACE_MISMATCH => [
+                    'case:threshold-raising|baseline-file',
+                    'case:threshold-raising|check:output:file',
+                    'case:threshold-raising|directives',
+                    'case:threshold-raising|format:checkstyle',
+                    'case:threshold-raising|format:github',
+                    'case:threshold-raising|format:gitlab',
+                    'case:threshold-raising|format:html',
+                    'case:threshold-raising|format:json',
+                    'case:threshold-raising|format:metrics',
+                    'case:threshold-raising|format:sarif',
+                    'case:threshold-raising|format:summary',
+                    'case:threshold-raising|format:text',
+                    'case:threshold-raising|format:text-verbose',
+                    'case:threshold-raising|show-suppressed',
+                ],
+                FailureClass::VALUE_MISMATCH => [
+                    'case:threshold-raising|directives|record:{"file":"src/Design.php","line":5,"form":"threshold","target":"design.god-class"}',
+                ],
+            ],
+        );
+    }
+
+    public static function directivePlacement(): Control
+    {
+        return self::product(
+            'directive-placement',
+            'src/Analysis/Policy/Inline/Extraction/UnattachedComments.php',
+            'return $owner;',
+            'return null;',
+            [
+                FailureClass::FINDING_COUNT_MISMATCH => [
+                    'case:directive-placement',
+                ],
+                FailureClass::RECORD_UNDECLARED => [
+                    'case:directive-placement|format:json',
+                    'case:directive-placement|format:suppressed',
+                ],
+                FailureClass::SURFACE_MISMATCH => [
+                    'case:directive-placement|baseline-file',
+                    'case:directive-placement|check:output:file',
+                    'case:directive-placement|directives',
+                    'case:directive-placement|format:checkstyle',
+                    'case:directive-placement|format:github',
+                    'case:directive-placement|format:gitlab',
+                    'case:directive-placement|format:html',
+                    'case:directive-placement|format:json',
+                    'case:directive-placement|format:metrics',
+                    'case:directive-placement|format:sarif',
+                    'case:directive-placement|format:summary',
+                    'case:directive-placement|format:suppressed',
+                    'case:directive-placement|format:text',
+                    'case:directive-placement|format:text-verbose',
+                    'case:directive-placement|show-suppressed',
+                    'case:directive-placement|stderr:show-suppressed',
+                ],
+                FailureClass::VALUE_MISMATCH => [
+                    'case:directive-placement|directives|record:{"file":"src/Placed.php","line":19,"form":"symbol","target":"complexity.ccn"}',
+                ],
+            ],
+        );
+    }
+
+    public static function warningClockRow(): Control
+    {
+        $row = 'stderr' . "\t" . Normalization::WARNING_TIME_PATTERN . "\tline-regex\t" . Normalization::MEASURED_REASON . "\n";
+        return Control::red(
+            'corpus-warning-clock-row-missing',
+            'the warning clock remains a compared field when its public normalization row is removed',
+            Mutation::edit('finding-gate/normalization.tsv', [$row => ''], 'remove only the generic warning-clock exclusion'),
+            self::expectations([
+                FailureClass::NONDETERMINISM_UNDECLARED => [
+                    'case:stderr-warning|stderr:baseline-file',
+                    'case:stderr-warning|stderr:directives',
+                    'case:stderr-warning|stderr:format:checkstyle',
+                    'case:stderr-warning|stderr:format:github',
+                    'case:stderr-warning|stderr:format:gitlab',
+                    'case:stderr-warning|stderr:format:health',
+                    'case:stderr-warning|stderr:format:html',
+                    'case:stderr-warning|stderr:format:json',
+                    'case:stderr-warning|stderr:format:metrics',
+                    'case:stderr-warning|stderr:format:sarif',
+                    'case:stderr-warning|stderr:format:summary',
+                    'case:stderr-warning|stderr:format:suppressed',
+                    'case:stderr-warning|stderr:format:text',
+                    'case:stderr-warning|stderr:format:text-verbose',
+                    'case:stderr-warning|stderr:show-suppressed',
+                ],
+                FailureClass::SURFACE_MISMATCH => [
+                    'case:stderr-warning|stderr:baseline-file',
+                    'case:stderr-warning|stderr:directives',
+                    'case:stderr-warning|stderr:format:checkstyle',
+                    'case:stderr-warning|stderr:format:github',
+                    'case:stderr-warning|stderr:format:gitlab',
+                    'case:stderr-warning|stderr:format:health',
+                    'case:stderr-warning|stderr:format:html',
+                    'case:stderr-warning|stderr:format:json',
+                    'case:stderr-warning|stderr:format:metrics',
+                    'case:stderr-warning|stderr:format:sarif',
+                    'case:stderr-warning|stderr:format:summary',
+                    'case:stderr-warning|stderr:format:suppressed',
+                    'case:stderr-warning|stderr:format:text',
+                    'case:stderr-warning|stderr:format:text-verbose',
+                    'case:stderr-warning|stderr:show-suppressed',
+                ],
+            ]),
+        );
+    }
+
+    public static function parallelFiles(): Control
+    {
+        return self::product(
+            'parallel-files',
+            'src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php',
+            'array_push($results, ...$batchResults);',
+            'array_push($results, ...array_reverse($batchResults));',
+            [
+                FailureClass::SURFACE_MISMATCH => [
+                    'case:parallel-files|check:parallel',
+                ],
+            ],
+        );
+    }
+
+    /**
+     * @param array<string,list<string>> $failures
+     *
+     * @return list<Expectation>
+     */
+    private static function expectations(array $failures): array
+    {
+        $expectations = [];
+        foreach ($failures as $failure => $scopes) {
+            foreach ($scopes as $scope) {
+                $expectations[] = new Expectation($failure, $scope, exactScope: true);
+            }
+        }
+        return $expectations;
+    }
+
+    /** @param array<string,list<string>> $failures */
+    private static function product(string $case, string $path, string $old, string $replacement, array $failures, ?string $id = null): Control
+    {
+        return Control::red(
+            $id ?? 'corpus-' . $case,
+            'the product changes only the ' . $case . ' case',
+            Mutation::edit($path, [$old => $replacement], 'perturb the product behaviour exercised by ' . $case),
+            self::expectations($failures),
+        );
+    }
+}

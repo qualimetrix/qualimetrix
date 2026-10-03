@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorOutcome;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
-use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -41,7 +41,8 @@ final readonly class FindingFilterOrchestrator
         private FindingProjector $findingProjector,
         private ErrorStream $errorStream,
         private UnboundSuppressionAudit $unboundSuppressionAudit,
-        private ComposerAutoloadPathReaderInterface $composerReader,
+        private ComposerManifestReaderInterface $composerReader,
+        private ObservedProjectScopeReasons $observedProjectScopeReasons,
     ) {}
 
     public function projectionOptions(
@@ -90,14 +91,19 @@ final readonly class FindingFilterOrchestrator
         $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
         $filterResult = $this->findingProjector->project(
-            [...$result->findings, ...$this->unboundSuppressions($result, $options, $this->valueScope($resolvedScope))],
-            $result->suppressions,
+            [...$result->findings(), ...$this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope))],
+            $result->directives->suppressions,
             $options,
         );
 
-        $this->reportBaselineEntries($filterResult, $input, $output);
-        $this->reportInertEntries($filterResult, $output);
-        $this->reportScopeMismatch($filterResult, $scopeResolution, $output);
+        (new BaselineFilterReporter(
+            $output,
+            $input->getOption('show-resolved') === true,
+        ))->report(
+            $filterResult,
+            $scopeResolution->paths,
+            $scopeResolution->projectRoot,
+        );
         $this->reportSuppressedFindings($filterResult, $input, $output);
         $this->reportExclusionCounts($filterResult, $output);
         $this->reportRuleExclusions($result, $input, $output);
@@ -111,35 +117,23 @@ final readonly class FindingFilterOrchestrator
      * all. Both readers below build it from the same carried answer, so the
      * findings and the report's list of skipped values cannot part.
      *
-     * **Coverage is carried, not re-measured.** {@see CheckScopeResolver}
-     * measured it for the resolved paths — after `--report=git:...` narrowed
-     * them — and a second measurement here was one more place for the two
-     * answers to part. On a run narrowed below the project's autoload targets
-     * a value that names nothing binds nothing for a reason its author did not
-     * choose, so there is nothing to judge.
-     *
      * The PSR-4 map includes `autoload-dev` whatever the run's policy, unlike
      * the coverage denominator: it is asked where a namespace lives, not which
      * roots a whole-project run must reach, and a value naming test code is
-     * judged exactly by a run that analysed it. An `unknown` project declares
-     * no autoload to place a namespace through, so none of its namespace
-     * values is judged.
+     * judged exactly by a run that analysed it. Without accepted PSR-4 roots
+     * there is no declared map to locate namespace values, so none is judged.
      */
-    private function valueScope(ResolvedCheckScope $resolvedScope): ?ValueScopeJudgement
+    private function valueScope(AnalysisResult $result, ResolvedCheckScope $resolvedScope): ValueScopeJudgement
     {
-        if (!$resolvedScope->coversProjectScope) {
-            return null;
-        }
-
         $scope = $resolvedScope->scope;
+        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
 
         return new ValueScopeJudgement(
             $scope->projectRoot->value(),
-            $this->composerReader->extractPsr4Roots(
-                $scope->projectRoot->joinRelative(RelativePath::fromString('composer.json'))->value(),
-            ),
+            $this->composerReader->read($scope->projectRoot)->psr4Roots(),
             array_map(static fn(AbsolutePath $path): string => $path->value(), $scope->paths),
-            projectDeclared: $resolvedScope->projectScope->state !== ReportProjectScope::UNKNOWN,
+            projectDeclared: $measurement->universe->namespaceMapUsable,
+            scope: $measurement->judgement(),
         );
     }
 
@@ -153,18 +147,41 @@ final readonly class FindingFilterOrchestrator
         AnalysisResult $result,
         FindingProjectionOptions $options,
     ): ReportProjectScope {
-        $valueScope = $this->valueScope($resolvedScope);
-
-        if ($valueScope === null) {
-            return $resolvedScope->projectScope;
-        }
-
-        return $resolvedScope->projectScope->withUnjudgedValues($this->unboundSuppressionAudit->unjudgedValues(
+        $valueScope = $this->valueScope($result, $resolvedScope);
+        $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
+        $judgement = $measurement->judgement();
+        $source = $this->composerReader->read($measurement->universe->projectRoot)->source();
+        $reasons = $this->observedProjectScopeReasons->forMainSource($source);
+        $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
+        $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,
             $options->suppressNamespaces,
-            $result->namespaceTree?->getAllNamespaces(),
+            $namespaces,
             $valueScope,
-        ));
+        );
+        foreach ($judgement->excludeSelectors() as $selector) {
+            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::NotJudged, ExcludeSelectorOutcome::CoveredByOtherSource], true)) {
+                $unjudged[] = [
+                    'channel' => ProjectScopeChannels::WALK_CHANNEL,
+                    'option' => 'exclude',
+                    'pattern' => $selector->display,
+                ];
+            }
+        }
+        $judgedChannels = $this->unboundSuppressionAudit->judgedChannels(
+            $options->suppressPaths,
+            $options->suppressNamespaces,
+            $namespaces,
+            $valueScope,
+        );
+        foreach ($judgement->excludeSelectors() as $selector) {
+            if (\in_array($selector->outcome, [ExcludeSelectorOutcome::Removed, ExcludeSelectorOutcome::Unmatched, ExcludeSelectorOutcome::CoveredBySameSource], true)) {
+                $judgedChannels[] = ProjectScopeChannels::WALK_CHANNEL;
+                break;
+            }
+        }
+
+        return ReportProjectScope::measured($measurement, $unjudged, $judgedChannels)->withReasons($reasons);
     }
 
     /**
@@ -189,164 +206,14 @@ final readonly class FindingFilterOrchestrator
     private function unboundSuppressions(
         AnalysisResult $result,
         FindingProjectionOptions $options,
-        ?ValueScopeJudgement $valueScope,
+        ValueScopeJudgement $valueScope,
     ): array {
-        if ($valueScope === null) {
-            return [];
-        }
-
         return $this->unboundSuppressionAudit->findings(
             $options->suppressPaths,
             $options->suppressNamespaces,
-            $result->coverage->analyzedFiles,
-            $result->namespaceTree?->getAllNamespaces(),
+            $result->measured->coverage->analyzedFiles,
+            $result->measured->namespaceTree?->getAllNamespaces(),
             $valueScope,
-        );
-    }
-
-    /**
-     * Reports entries whose identity the run did not measure — and does
-     * nothing else with them (ADR 0017).
-     *
-     * `--show-resolved` reads the same predicate and reports the same set in
-     * a different unit: entries whose group did not appear, not findings. It
-     * is a presentation of staleness rather than a fourth operation, which is
-     * why both are answered from one list here.
-     *
-     * The stale message says what was actually measured. "Symbols no longer
-     * exist" was true while staleness was keyed on the symbol; under the
-     * identity of ADR 0017 the symbol is usually still right there and one of its
-     * channels simply stopped firing, which the list printed underneath makes
-     * plain. A moved declaration is named as the third cause because it is the
-     * one a reader cannot infer from the entry: the other two are about the
-     * finding, this one is about the key (ADR 0026).
-     *
-     * There is deliberately no `baseline:cleanup` suggestion. That command
-     * selects on a different predicate — whether the `file:` a key names is
-     * gone — so for a `callable:`, `class:`, `ns:` or `project:` entry it is a
-     * guaranteed no-op, and advising it would send a user round a loop with
-     * no exit. Removal must address the complete entry identity.
-     */
-    private function reportBaselineEntries(
-        FindingProjectionResult $filterResult,
-        InputInterface $input,
-        OutputInterface $output,
-    ): void {
-        if ($filterResult->staleEntries === []) {
-            return;
-        }
-
-        $output->writeln(\sprintf(
-            '<comment>%d baseline entries did not appear in this run:</comment>',
-            $filterResult->staleEntryCount(),
-        ));
-
-        foreach ($filterResult->staleEntries as $entry) {
-            $output->writeln(\sprintf(
-                '  - %s [%s]',
-                $entry->identity->describe(),
-                $entry->selector()->value,
-            ));
-        }
-
-        $output->writeln(
-            '<comment>An entry stops appearing when its finding was repaired, when configuration '
-            . 'stopped producing it, or when the declaration it names is no longer that declaration: '
-            . 'renamed, moved to another file, or renumbered because a sibling it is counted against was '
-            . 'added, removed or moved — another declaration of the same logical identity, or, for a closure '
-            . 'or a member of an anonymous class, another unnamed declaration of its kind in that file. '
-            . 'Nothing is removed automatically; the remaining entries still apply.</comment>',
-        );
-
-        if ($input->getOption('show-resolved') === true) {
-            $output->writeln(\sprintf(
-                '<info>%d baseline entries have been resolved!</info>',
-                $filterResult->staleEntryCount(),
-            ));
-        }
-    }
-
-    /**
-     * Reports every entry the loaded baseline could not apply (ADR 0017): a bad
-     * `channel`, an undeclared one, a shape mismatch in either direction, an
-     * unrecognized `mode`, or two entries claiming one identity.
-     *
-     * Printed unconditionally, not behind a flag — an inert entry suppresses
-     * nothing, so the findings it was meant to cover are reported at their
-     * own severity with no other signal that the baseline file has a line
-     * that no longer does anything. This is not a load failure and does not
-     * fail the run: refusing to load would punish the whole file for one bad
-     * line.
-     */
-    private function reportInertEntries(FindingProjectionResult $filterResult, OutputInterface $output): void
-    {
-        if ($filterResult->inertEntries === []) {
-            return;
-        }
-
-        $output->writeln('');
-        $output->writeln(\sprintf(
-            '<comment>%d baseline entries could not be applied and are not suppressing anything:</comment>',
-            \count($filterResult->inertEntries),
-        ));
-
-        foreach ($filterResult->inertEntries as $entry) {
-            $output->writeln(\sprintf(
-                '  - %s [%s]: %s — %s',
-                $entry->describe(),
-                $entry->selector->value,
-                $entry->reason->description(),
-                $entry->detail,
-            ));
-        }
-
-        $output->writeln(
-            '<comment>The findings these entries were meant to cover are reported at their own severity, '
-            . 'not suppressed. Fix or remove the line in the baseline file to stop seeing this.</comment>',
-        );
-    }
-
-    /**
-     * Reports when this run's analysed paths do not cover the loaded
-     * baseline's recorded `scope` (ADR 0017). Narrower than usual is legitimate —
-     * checking one directory is the ordinary case — so this never fails the
-     * run; the scope guard that refuses to run is a precondition of the
-     * writing commands (`baseline:update`, `baseline:cleanup`), not of
-     * `check`.
-     *
-     * A narrower run makes every identity outside it look absent, which is
-     * exactly what the stale list above reports — so the explanation here
-     * points back at it rather than duplicating the mechanism.
-     *
-     * The run's own scope is derived by {@see RunScope::record()} — the same
-     * call the writing commands make — so this side of the guard and theirs
-     * cannot disagree about what a run analysed.
-     */
-    private function reportScopeMismatch(
-        FindingProjectionResult $filterResult,
-        GitScopeResolution $scopeResolution,
-        OutputInterface $output,
-    ): void {
-        if ($filterResult->baselineScope === null) {
-            return;
-        }
-
-        $runScope = RunScope::record($scopeResolution->paths, $scopeResolution->projectRoot);
-        $uncovered = $runScope->uncoveredPaths($filterResult->baselineScope);
-
-        if ($uncovered === []) {
-            return;
-        }
-
-        $output->writeln('');
-        $output->writeln(\sprintf(
-            '<comment>This run does not cover the baseline\'s recorded scope: %s</comment>',
-            implode(', ', $uncovered),
-        ));
-        $output->writeln(
-            '<comment>Entries under an uncovered path look absent from this run and are counted among the '
-            . 'stale entries above — they are not resolved. Run against the recorded scope to see the '
-            . 'baseline\'s full state.</comment>',
         );
     }
 

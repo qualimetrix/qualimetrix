@@ -65,7 +65,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects identical sub-expressions indicating copy-paste errors or logic bugs';
     }
@@ -130,7 +130,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
         ];
     }
 }

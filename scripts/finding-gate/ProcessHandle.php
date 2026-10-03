@@ -44,7 +44,7 @@ final class ProcessHandle
     private function __construct(private $handle, array $pipes, int $processGroup)
     {
         $this->open = [1 => $pipes[1], 2 => $pipes[2]];
-        $this->startedAt = microtime(true);
+        $this->startedAt = (hrtime(true) / 1_000_000_000);
         $this->processGroup = $processGroup;
 
         foreach ($this->open as $pipe) {
@@ -52,13 +52,16 @@ final class ProcessHandle
         }
     }
 
-    /** @param list<string> $command */
-    public static function start(array $command, string $workingDirectory): self
+    /**
+     * @param list<string> $command
+     * @param array<string,string> $environmentAdditions
+     */
+    public static function start(array $command, string $workingDirectory, array $environmentAdditions = []): self
     {
         self::ensureProcessTreeSupervision();
 
         $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-        $handle = proc_open(self::groupedCommand($command), $descriptors, $pipes, $workingDirectory, [
+        $environment = [
             'PATH' => (string) getenv('PATH'),
             'HOME' => (string) getenv('HOME'),
             'LC_ALL' => 'C',
@@ -66,7 +69,17 @@ final class ProcessHandle
             'COLUMNS' => '120',
             'NO_COLOR' => '1',
             'TMPDIR' => (string) getenv('TMPDIR'),
-        ]);
+        ];
+        foreach ($environmentAdditions as $key => $value) {
+            if (!\is_string($key) || $key === '' || str_contains($key, '=') || str_contains($key, "\0")
+                || !\is_string($value) || str_contains($value, "\0")) {
+                throw new GateError('Child environment additions must be named string values.');
+            }
+            if (\array_key_exists($key, $environment)) {
+                throw new GateError('Cannot replace the fixed child environment key ' . $key . '.');
+            }
+        }
+        $handle = proc_open(self::groupedCommand($command), $descriptors, $pipes, $workingDirectory, [...$environment, ...$environmentAdditions]);
 
         if (!\is_resource($handle)) {
             throw new GateError(\sprintf('Cannot start %s.', implode(' ', $command)));
@@ -140,7 +153,7 @@ final class ProcessHandle
 
     public function age(): float
     {
-        return microtime(true) - $this->startedAt;
+        return (hrtime(true) / 1_000_000_000) - $this->startedAt;
     }
 
     public function terminate(): void
@@ -163,7 +176,7 @@ final class ProcessHandle
 
     private function waitForExit(int $microseconds): void
     {
-        $deadline = microtime(true) + ($microseconds / 1_000_000);
+        $deadline = (hrtime(true) / 1_000_000_000) + ($microseconds / 1_000_000);
 
         do {
             $this->drain();
@@ -173,7 +186,7 @@ final class ProcessHandle
             }
 
             usleep(10_000);
-        } while (microtime(true) < $deadline);
+        } while ((hrtime(true) / 1_000_000_000) < $deadline);
     }
 
     private static function ensureProcessTreeSupervision(): void
@@ -215,7 +228,7 @@ final class ProcessHandle
      */
     private static function waitForOwnProcessGroup($handle, int $pid, array $command): void
     {
-        $deadline = microtime(true) + (self::GROUP_ISOLATION_DEADLINE_MICROSECONDS / 1_000_000);
+        $deadline = (hrtime(true) / 1_000_000_000) + (self::GROUP_ISOLATION_DEADLINE_MICROSECONDS / 1_000_000);
 
         do {
             if (@posix_getpgid($pid) === $pid) {
@@ -228,7 +241,7 @@ final class ProcessHandle
             }
 
             usleep(1_000);
-        } while (microtime(true) < $deadline);
+        } while ((hrtime(true) / 1_000_000_000) < $deadline);
 
         proc_terminate($handle);
 
@@ -249,7 +262,7 @@ final class ProcessHandle
 
     private static function waitForProcessGroupExit(int $processGroup, int $microseconds): void
     {
-        $deadline = microtime(true) + ($microseconds / 1_000_000);
+        $deadline = (hrtime(true) / 1_000_000_000) + ($microseconds / 1_000_000);
 
         do {
             if (!@posix_kill(-$processGroup, 0) && posix_get_last_error() !== 1) {
@@ -257,7 +270,7 @@ final class ProcessHandle
             }
 
             usleep(10_000);
-        } while (microtime(true) < $deadline);
+        } while ((hrtime(true) / 1_000_000_000) < $deadline);
 
         throw new GateError(\sprintf('Process group %d survived SIGKILL.', $processGroup));
     }

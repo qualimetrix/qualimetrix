@@ -14,6 +14,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -122,7 +123,18 @@ final class BaselineIncompleteAnalysisTest extends TestCase
         /** @var Command $command */
         $command = (new ContainerFactory())->create()->get($commandClass);
         $tester = new CommandTester($command);
-        $tester->execute($input);
+        $previous = getcwd();
+        if ($previous === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the baseline fixture root');
+        }
+
+        try {
+            $tester->execute($input);
+        } finally {
+            if (!chdir($previous)) {
+                throw new RuntimeException('Cannot restore the working directory');
+            }
+        }
 
         return $tester;
     }

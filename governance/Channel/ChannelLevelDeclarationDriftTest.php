@@ -7,6 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxFindingGate\CaseDefinition;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
@@ -355,7 +356,10 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
         self::$runtime = [];
         self::$recognisedForms = [];
 
-        foreach (CorpusCaseRun::cases() as $directory => $case) {
+        foreach (CorpusCaseRun::cases(CorpusCaseRun::repositoryRoot()) as $directory => $case) {
+            if (!CorpusCaseRun::isAnalysis($case)) {
+                continue;
+            }
             $channelsInCase = [];
 
             foreach (self::findingsOf($directory, $case) as $finding) {
@@ -375,7 +379,6 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $case
      * @param list<string> $channels
      *
      * @return array<string, list<string>>
@@ -383,7 +386,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
     private static function declarationsFor(
         ContainerInterface $container,
         string $directory,
-        array $case,
+        CaseDefinition $case,
         array $channels,
     ): array {
         $pipeline = $container->get(ConfigurationPipelineInterface::class);
@@ -402,7 +405,7 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
             // both readings the same file.
             new ConfigurationResolutionRequest(
                 AbsolutePath::fromString($directory),
-                $directory . '/' . CorpusCaseRun::stringField($case, 'config'),
+                $directory . '/' . $case->config,
                 [],
                 [],
             ),
@@ -485,11 +488,10 @@ final class ChannelLevelDeclarationDriftTest extends TestCase
      * off them. The run itself, and the refusal to accept a partial one as an
      * observation, live in {@see CorpusCaseRun}.
      *
-     * @param array<string, mixed> $case
      *
      * @return list<array{channel: string, subject: string}>
      */
-    private static function findingsOf(string $directory, array $case): array
+    private static function findingsOf(string $directory, CaseDefinition $case): array
     {
         $findings = [];
 

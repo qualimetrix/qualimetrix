@@ -923,7 +923,7 @@ class OrderService
 
 - **Remove** the unused member if it is truly dead code.
 - **Change visibility** to `protected` or `public` if the member is used by subclasses or external code.
-- If the member is intentionally kept for future use, suppress the warning with `@qmx-ignore code-smell.unused-private`.
+- If the member is intentionally kept, place `@qmx-ignore code-smell.unused-private` on that member. It reaches findings on the member's lines only; a promoted parameter also reaches its corresponding property finding. See [member reach](../usage/baseline.md#declaration-binding-and-member-reach).
 
 ---
 
@@ -1069,3 +1069,7 @@ bin/qmx check src/ --disable-rule=code-smell.exit
 # Disable all code smell rules at once (wildcard match; matches descendants only, not "code-smell" itself)
 bin/qmx check src/ --disable-rule=code-smell.*
 ```
+
+## Authored enabling and forms
+
+A written enabled:true can reverse a lower preset disable; retain it when that is intended. Empty maps preserve lower options, and a rule true writes enabled only rather than resetting severity/options. All malformed lower writes refuse before discovery. Code-smell algorithms and fixed severities are unchanged. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

@@ -9,16 +9,17 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusal;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
@@ -29,6 +30,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\Audit\DirectiveUsage;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -37,6 +39,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * What each authored suppression did, against the real channel universe.
@@ -76,12 +79,13 @@ final class DirectiveUsageTest extends TestCase
      * `@qmx-ignore-file` is desugared to the same token by the extractor.
      */
     #[Test]
-    public function itRefusesToJudgeADirectiveWithoutARuleFilter(): void
+    public function itJudgesADirectiveWithoutARuleFilterByWhatItSilenced(): void
     {
         $verdicts = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AddressesEveryChannel, self::single($verdicts)->reason);
+        self::assertSame(DirectiveEffect::Inert, self::single($verdicts)->effect);
+        $effective = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [self::finding()], LevelActivity::empty());
+        self::assertSame(DirectiveEffect::Effective, self::single($effective)->effect);
     }
 
     /**
@@ -94,8 +98,7 @@ final class DirectiveUsageTest extends TestCase
     {
         $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL . ':project'), [], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+        self::assertSame([], $verdicts);
     }
 
     /**
@@ -110,8 +113,7 @@ final class DirectiveUsageTest extends TestCase
         foreach ([InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, 'annotation.*'] as $target) {
             $verdicts = self::usage()->verdicts(self::fileDirective($target), [], LevelActivity::empty());
 
-            self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect, $target);
-            self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason, $target);
+            self::assertSame([], $verdicts, $target);
         }
     }
 
@@ -120,17 +122,15 @@ final class DirectiveUsageTest extends TestCase
     {
         $verdicts = self::usage()->verdicts(self::fileDirective('coupling.instabilty'), [], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+        self::assertSame([], $verdicts);
     }
 
     #[Test]
     public function itRefusesToJudgeADirectiveWhoseProducerASelectorSwitchedOff(): void
     {
         $registry = new RuleOptionsRegistry();
-        $registry->configureSelection(new RuleSelection(disabled: [self::CHANNEL]));
 
-        $verdicts = self::usage($registry)->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
+        $verdicts = self::usage($registry, disabled: [self::CHANNEL])->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, self::single($verdicts)->reason);
@@ -190,8 +190,8 @@ final class DirectiveUsageTest extends TestCase
     public function itKeepsTwoDirectiveFormsWrittenOnOneLineApart(): void
     {
         $verdicts = self::usage()->verdicts([self::FILE => [
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File),
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 0),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine, position: 0, silencedLine: 7 + 1),
         ]], [], LevelActivity::empty());
 
         self::assertCount(2, $verdicts);
@@ -211,7 +211,7 @@ final class DirectiveUsageTest extends TestCase
     public function itCarriesTheSiteTheDirectiveWasWrittenAt(): void
     {
         $verdicts = self::usage()->verdicts(
-            ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File)]],
+            ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File, position: 0)]],
             [],
             LevelActivity::empty(),
         );
@@ -232,11 +232,11 @@ final class DirectiveUsageTest extends TestCase
     {
         $directives = [self::FILE => [
             ...self::classDocblockBindings(self::CHANNEL),
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File),
-            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 0),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine, position: 0, silencedLine: 7 + 1),
         ]];
 
-        $policy = new InlineDirectivePolicy(self::usage());
+        $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
         $policy->prepare($directives, [], []);
         $authored = array_map(
             static fn(Suppression $suppression): string => $suppression->line . '/' . $suppression->type->value,
@@ -263,9 +263,9 @@ final class DirectiveUsageTest extends TestCase
     public function itProjectsExactlyTheInertVerdictsIntoStaleFindings(): void
     {
         $directives = [self::FILE => [
-            new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File),
-            new Suppression(SuppressionTarget::NO_RULE_FILTER, 'reason', 4, SuppressionType::File),
-            new Suppression('complexity.ccn', 'reason', 5, SuppressionType::File),
+            new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File, position: 0),
+            new Suppression(SuppressionTarget::NO_RULE_FILTER, 'reason', 4, SuppressionType::File, position: 0),
+            new Suppression('complexity.ccn', 'reason', 5, SuppressionType::File, position: 0),
         ]];
         $usage = self::usage();
 
@@ -289,6 +289,25 @@ final class DirectiveUsageTest extends TestCase
         return $verdicts[0];
     }
 
+    #[Test]
+    public function itKeepsIdenticalSuppressionsFromTwoPositionsOnOneLineApart(): void
+    {
+        $directives = [self::FILE => [
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 20),
+            new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 80),
+        ]];
+        $usage = self::usage();
+        $verdicts = $usage->verdicts($directives, [], LevelActivity::empty());
+        self::assertCount(2, $verdicts);
+        self::assertSame([20, 80], array_map(static fn(DirectiveVerdict $v): ?int => $v->site->position, $verdicts));
+
+        $policy = new InlineDirectivePolicy($usage, new RefusedDirectives(self::productionUniverse()));
+        $policy->prepare($directives, [], []);
+        $authored = $policy->authoredSuppressions();
+        self::assertArrayHasKey(self::FILE, $authored);
+        self::assertCount(2, $authored[self::FILE]);
+    }
+
     /** @return array<string, list<Suppression>> */
     /**
      * A directive the extractor refused is carried to the store so that it can
@@ -304,13 +323,13 @@ final class DirectiveUsageTest extends TestCase
             null,
             3,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         )]];
 
         $verdicts = self::usage()->verdicts($refused, [self::finding()], LevelActivity::empty());
 
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
-        self::assertSame(DirectiveUnmeasurableReason::AlreadyRefused, self::single($verdicts)->reason);
+        self::assertSame([], $verdicts);
     }
 
     /** A report that named an unreadable tag as one of the four real ones would send its author to the wrong line. */
@@ -322,13 +341,16 @@ final class DirectiveUsageTest extends TestCase
             null,
             3,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
         )]];
 
-        $verdicts = self::usage()->verdicts($refused, [], LevelActivity::empty());
+        $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
+        $policy->prepare($refused, [], []);
+        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty());
 
         self::assertSame('ignore-lines', self::single($verdicts)->site->form);
-        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
+        self::assertSame(DirectiveEffect::Refused, self::single($verdicts)->effect);
     }
 
     /**
@@ -341,16 +363,16 @@ final class DirectiveUsageTest extends TestCase
     public function itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart(): void
     {
         $directives = [self::FILE => [
-            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lines')),
-            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::formNotRecognised('ignore-lins')),
-            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, refusal: DirectiveRefusal::noDeclarationToBind()),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::formNotRecognised('ignore-lines')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::formNotRecognised('ignore-lins')),
+            new Suppression(self::CHANNEL, null, 3, SuppressionType::Symbol, position: 0, refusal: DirectiveRefusal::noDeclarationToBind()),
         ]];
 
-        $policy = new InlineDirectivePolicy(self::usage());
+        $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
         $policy->prepare($directives, [], []);
         $judged = array_map(
             static fn(DirectiveVerdict $verdict): string => $verdict->site->form,
-            self::usage()->verdicts($directives, [], LevelActivity::empty()),
+            $policy->directiveVerdicts([], LevelActivity::empty()),
         );
         sort($judged);
 
@@ -361,7 +383,7 @@ final class DirectiveUsageTest extends TestCase
     /** @return array<string, list<Suppression>> */
     private static function fileDirective(string $authored): array
     {
-        return [self::FILE => [new Suppression($authored, 'reason', 3, SuppressionType::File)]];
+        return [self::FILE => [new Suppression($authored, 'reason', 3, SuppressionType::File, position: 0)]];
     }
 
     /**
@@ -393,7 +415,8 @@ final class DirectiveUsageTest extends TestCase
                 'reason',
                 4,
                 SuppressionType::Symbol,
-                binding: new DeclarationBinding($subject, ControlScope::Class_),
+                position: 0,
+                binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
             ),
             $subjects,
         );
@@ -414,22 +437,34 @@ final class DirectiveUsageTest extends TestCase
         );
     }
 
-    private static function usage(?RuleOptionsRegistry $registry = null): DirectiveUsage
+    /** @param list<string> $disabled */
+    private static function usage(?RuleOptionsRegistry $registry = null, array $disabled = []): DirectiveUsage
     {
-        return new DirectiveUsage(
-            self::productionUniverse(),
-            new RuleSelector(new InMemoryRuleChannelRegistry()),
-            $registry ?? new RuleOptionsRegistry(),
-            self::productionUniverse(),
-        );
+        $universe = self::productionUniverse();
+        $registry ??= new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(
+            FindingConfiguration::none(),
+            self::$metadata,
+            channels: $universe,
+            disabled: $disabled,
+        ));
+
+        return new DirectiveUsage($universe, $registry, $universe, new RefusedDirectives($universe));
     }
+
+    /** @var list<RuleMetadata> */
+    private static array $metadata = [];
 
     private static ?RuleChannelSnapshotFactoryInterface $snapshotFactory = null;
 
     private static function productionUniverse(): ChannelUniverseInterface
     {
         if (self::$snapshotFactory === null) {
-            $universe = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+            $container = (new ContainerFactory())->create();
+            $execution = $container->get(RuleExecutionInterface::class);
+            \assert($execution instanceof RuleExecutionInterface);
+            self::$metadata = $execution->allRules();
+            $universe = $container->get(ChannelUniverseInterface::class);
             \assert($universe instanceof RuleChannelSnapshotFactoryInterface);
             self::$snapshotFactory = $universe;
         }

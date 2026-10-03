@@ -31,9 +31,26 @@ Measurement/
 The `Contract/` namespace is the complete external surface. Important promises
 include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,
 `MetricCollectorInterface`, `FileMeasurementCollectorInterface`,
-`MeasurementAggregationInterface`, and `ProjectNamespaceResolverInterface`.
+`MeasurementAggregationInterface`, `ProjectNamespaceResolverInterface`, and
+`ProjectNamespaceSourceControlInterface`.
+
+`SourceMeasuringCollectorInterface` is the narrow byte-handoff contract for
+`LocCollector`. Run reads the private source snapshot and supplies the same
+bytes to parsing, LOC and Inline extraction. `CompositeCollector` resets before
+handoff and AST traversal; the general collector contract does not receive a
+source API.
+
 Consumers must not import repository indexes, visitor state, aggregation helpers,
 or collector implementations.
+
+`ProjectNamespaceResolver` takes optional explicit PSR-4 prefixes and performs
+no constructor filesystem IO. Console binds the current analysed project's
+`ComposerManifestFacts` through `ProjectNamespaceSourceControlInterface` before
+collection. Accepted production and development PSR-4 records form the namespace
+map independently of the run's `ProjectScopeState` and autoload-dev policy.
+Binding another invocation resets the old map, including when the new manifest
+has no accepted PSR-4 records. Worker reconstruction uses the captured prefixes;
+it does not re-read a worker's current directory.
 
 `Core\Symbol\SymbolLevel` is the project's one level vocabulary: the rule
 layer, the finding, the channel declaration, the stored metric and this
@@ -121,6 +138,9 @@ run.
 collectors, and re-aggregation of global metric definitions. It consumes the
 DependencyModel graph through `DependencyGraphInterface`; the graph itself and
 its extraction internals remain DependencyModel-owned.
+
+The aggregation completion log measures elapsed time with monotonic `hrtime`
+readings and publishes seconds, independently of adjustments to the system date.
 
 `NamespaceTree` holds the global namespace (the empty string) as an isolated
 leaf, so `NamespaceToProjectAggregator` reads its bag like any other one's.

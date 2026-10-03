@@ -46,7 +46,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks cognitive complexity at method and class levels';
     }

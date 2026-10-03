@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -88,7 +89,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($result->baseline, $baselinePath, $context->projectRoot);
+        $this->writer->write($result->baseline, TargetPath::resolve($baselinePath), $context->projectRoot);
 
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(InstabilityRule::class)]
 #[CoversClass(InstabilityOptions::class)]
@@ -43,7 +45,7 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertSame(
             'Checks instability at class and namespace levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -614,11 +616,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassOptionsFromArray(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'enabled' => false,
             'max_warning' => 0.7,
             'max_error' => 0.9,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.7, $options->maxWarning);
@@ -628,7 +630,7 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itUsesClassOptionDefaults(): void
     {
-        $options = ClassInstabilityOptions::fromArray([]);
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, []));
 
         self::assertTrue($options->enabled);
         self::assertSame(0.8, $options->maxWarning);
@@ -638,11 +640,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceOptionsFromArray(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => false,
             'max_warning' => 0.75,
             'max_error' => 0.92,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.75, $options->maxWarning);
@@ -652,7 +654,7 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesInstabilityOptionsFromHierarchicalArray(): void
     {
-        $options = InstabilityOptions::fromArray([
+        $options = InstabilityOptions::fromResolved(ResolvedOptionsFixture::values(InstabilityOptions::class, [
             'class' => [
                 'max_warning' => 0.7,
                 'max_error' => 0.9,
@@ -661,7 +663,7 @@ final class InstabilityRuleTest extends TestCase
                 'max_warning' => 0.75,
                 'max_error' => 0.92,
             ],
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->class->isEnabled());
@@ -713,9 +715,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinClassCountFromArray(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'min_class_count' => 5,
-        ]);
+        ]));
 
         self::assertSame(5, $options->minClassCount);
     }
@@ -723,9 +725,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itDefaultsNamespaceMinClassCountToThree(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => true,
-        ]);
+        ]));
 
         self::assertSame(3, $options->minClassCount);
     }
@@ -733,9 +735,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinClassCountCamelCaseAlias(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'minClassCount' => 7,
-        ]);
+        ]));
 
         self::assertSame(7, $options->minClassCount);
     }
@@ -797,9 +799,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassMinAfferentFromArray(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'min_afferent' => 3,
-        ]);
+        ]));
 
         self::assertSame(3, $options->minAfferent);
     }
@@ -807,9 +809,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassMinAfferentCamelCaseAlias(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'minAfferent' => 5,
-        ]);
+        ]));
 
         self::assertSame(5, $options->minAfferent);
     }
@@ -817,7 +819,7 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itDefaultsClassMinAfferentToOne(): void
     {
-        $options = ClassInstabilityOptions::fromArray([]);
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, []));
 
         self::assertSame(1, $options->minAfferent);
     }
@@ -835,9 +837,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinAfferentFromArray(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'min_afferent' => 2,
-        ]);
+        ]));
 
         self::assertSame(2, $options->minAfferent);
     }
@@ -845,9 +847,9 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itDefaultsNamespaceMinAfferentToOne(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => true,
-        ]);
+        ]));
 
         self::assertSame(1, $options->minAfferent);
     }
@@ -866,11 +868,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesClassOptionsFromArrayWithCamelCase(): void
     {
-        $options = ClassInstabilityOptions::fromArray([
+        $options = ClassInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(ClassInstabilityOptions::class, [
             'enabled' => false,
             'maxWarning' => 0.7,
             'maxError' => 0.9,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.7, $options->maxWarning);
@@ -880,11 +882,11 @@ final class InstabilityRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceOptionsFromArrayWithCamelCase(): void
     {
-        $options = NamespaceInstabilityOptions::fromArray([
+        $options = NamespaceInstabilityOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceInstabilityOptions::class, [
             'enabled' => false,
             'maxWarning' => 0.75,
             'maxError' => 0.92,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(0.75, $options->maxWarning);

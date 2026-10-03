@@ -9,13 +9,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionClass;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * A `--namespace`/`--class` selection lists part of the run's findings, and
@@ -45,6 +45,7 @@ final class CheckCommandDrillDownFormatTest extends TestCase
             }
         }
         rmdir($this->directory . '/src');
+        (new Filesystem())->remove($this->directory . '/.qmx-cache');
         rmdir($this->directory);
     }
 
@@ -63,7 +64,8 @@ final class CheckCommandDrillDownFormatTest extends TestCase
     {
         [$tester, $pipeline] = $this->tester();
 
-        $exit = $tester->execute(
+        $exit = $this->executeInFixture(
+            $tester,
             ['paths' => [$this->directory . '/src'], '--config' => $this->directory . '/qmx.yaml', '--format' => $format, $selector => $value],
             ['capture_stderr_separately' => true],
         );
@@ -84,7 +86,8 @@ final class CheckCommandDrillDownFormatTest extends TestCase
         file_put_contents($this->directory . '/checkstyle.yaml', "format: checkstyle\n");
         [$tester, $pipeline] = $this->tester();
 
-        $exit = $tester->execute(
+        $exit = $this->executeInFixture(
+            $tester,
             ['paths' => [$this->directory . '/src'], '--config' => $this->directory . '/checkstyle.yaml', '--namespace' => 'subtree:App'],
             ['capture_stderr_separately' => true],
         );
@@ -109,13 +112,29 @@ final class CheckCommandDrillDownFormatTest extends TestCase
     {
         [$tester, $pipeline] = $this->tester();
 
-        $exit = $tester->execute(
+        $exit = $this->executeInFixture(
+            $tester,
             ['paths' => [$this->directory . '/src'], '--config' => $this->directory . '/qmx.yaml', ...$options],
             ['capture_stderr_separately' => true],
         );
 
         self::assertNotSame(3, $exit, $tester->getDisplay() . $tester->getErrorOutput());
         self::assertSame(1, $pipeline->calls);
+    }
+
+    /** @param array<string, mixed> $input
+     * @param array<string, mixed> $options
+     */
+    private function executeInFixture(CommandTester $tester, array $input, array $options): int
+    {
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($this->directory);
+        try {
+            return $tester->execute($input, $options);
+        } finally {
+            chdir($previous);
+        }
     }
 
     /** @return array{CommandTester, object{calls: int}} */
@@ -134,11 +153,11 @@ final class CheckCommandDrillDownFormatTest extends TestCase
 
             public function __construct(private readonly AnalysisPipelineInterface $delegate) {}
 
-            public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult
+            public function analyze(RunConfiguration $configuration): AnalysisResult
             {
                 ++$this->calls;
 
-                return $this->delegate->analyze($configuration, $customFileDiscovery);
+                return $this->delegate->analyze($configuration);
             }
         };
 
@@ -151,7 +170,7 @@ final class CheckCommandDrillDownFormatTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         return [new CommandTester($command), $pipeline];

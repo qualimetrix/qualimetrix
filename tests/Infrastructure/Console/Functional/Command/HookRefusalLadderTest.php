@@ -126,6 +126,159 @@ final class HookRefusalLadderTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesTheOriginalModeInAForeignHookBackup(): void
+    {
+        file_put_contents($this->hookPath(), "#!/bin/sh\necho foreign\n");
+        chmod($this->hookPath(), 0700);
+
+        $tester = $this->runHookCommand('hook:install', ['--force' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(0700, fileperms($this->hookPath() . '.backup') & 07777);
+        self::assertSame("#!/bin/sh\necho foreign\n", file_get_contents($this->hookPath() . '.backup'));
+        self::assertSame(0755, fileperms($this->hookPath()) & 07777);
+    }
+
+    #[Test]
+    public function itRestoresTheBackupInodeAndModeAndConsumesTheSlot(): void
+    {
+        self::assertSame(0, $this->runHookCommand('hook:install', [])->getStatusCode());
+        file_put_contents($this->hookPath() . '.backup', "#!/bin/sh\necho original\n");
+        chmod($this->hookPath() . '.backup', 0700);
+        $backupInode = fileinode($this->hookPath() . '.backup');
+
+        $tester = $this->runHookCommand('hook:uninstall', ['--restore-backup' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame($backupInode, fileinode($this->hookPath()));
+        self::assertSame(0700, fileperms($this->hookPath()) & 07777);
+        self::assertSame("#!/bin/sh\necho original\n", file_get_contents($this->hookPath()));
+        self::assertFileDoesNotExist($this->hookPath() . '.backup');
+    }
+
+    #[Test]
+    public function itRefusesToReportAnUnreadableHookAsHealthy(): void
+    {
+        self::skipAsRoot();
+        file_put_contents($this->hookPath(), "#!/bin/sh\necho foreign\n");
+        chmod($this->hookPath(), 0000);
+
+        $tester = $this->runHookCommand('hook:status', []);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itRefusesToInstallOverAnUnreadableHookWithoutChangingIt(): void
+    {
+        self::skipAsRoot();
+        file_put_contents($this->hookPath(), "#!/bin/sh\necho foreign\n");
+        chmod($this->hookPath(), 0000);
+
+        $tester = $this->runHookCommand('hook:install', ['--force' => true]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
+        self::assertSame(0000, fileperms($this->hookPath()) & 07777);
+        self::assertFileDoesNotExist($this->hookPath() . '.backup');
+    }
+
+    #[Test]
+    public function itRefusesToUninstallAnUnreadableHookWithoutChangingIt(): void
+    {
+        self::skipAsRoot();
+        file_put_contents($this->hookPath(), "#!/bin/sh\n# Qualimetrix pre-commit hook\n");
+        chmod($this->hookPath(), 0000);
+
+        $tester = $this->runHookCommand('hook:uninstall', []);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
+        self::assertSame(0000, fileperms($this->hookPath()) & 07777);
+    }
+
+    #[Test]
+    public function itReportsAnExposedHookTargetOnceBeforeForceInstall(): void
+    {
+        file_put_contents($this->hookPath(), "#!/bin/sh\necho foreign\n");
+        chmod($this->tempDir . '/.git/hooks', 0777);
+
+        $tester = $this->runHookCommand('hook:install', ['--force' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertSame(1, substr_count($tester->getErrorOutput(), 'Warning: Hook target ' . $this->hookPath()));
+        self::assertStringContainsString('by others', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itReplacesTheHookLinkWithoutOverwritingItsExternalTarget(): void
+    {
+        $outside = $this->tempDir . '/external-hook';
+        file_put_contents($outside, "#!/bin/sh\necho outside\n");
+        symlink($outside, $this->hookPath());
+
+        $tester = $this->runHookCommand('hook:install', ['--force' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertFalse(is_link($this->hookPath()));
+        self::assertSame("#!/bin/sh\necho outside\n", file_get_contents($outside));
+        self::assertSame("#!/bin/sh\necho outside\n", file_get_contents($this->hookPath() . '.backup'));
+        self::assertTrue(PreCommitHook::isOurs((string) file_get_contents($this->hookPath())));
+    }
+
+    #[Test]
+    public function itRefusesAnExposedHookLinkBeforeBackingUpOrReplacingIt(): void
+    {
+        $outside = $this->tempDir . '/external-hook';
+        file_put_contents($outside, "#!/bin/sh\necho outside\n");
+        symlink($outside, $this->hookPath());
+        chmod($this->tempDir . '/.git/hooks', 0777);
+
+        $tester = $this->runHookCommand('hook:install', ['--force' => true]);
+
+        self::assertSame(3, $tester->getStatusCode());
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString('symbolic link can be placed by another user', $tester->getErrorOutput());
+        self::assertTrue(is_link($this->hookPath()));
+        self::assertSame("#!/bin/sh\necho outside\n", file_get_contents($outside));
+        self::assertFileDoesNotExist($this->hookPath() . '.backup');
+    }
+
+    #[Test]
+    public function itDistinguishesAnInaccessibleLinkTargetFromADanglingLink(): void
+    {
+        self::skipAsRoot();
+        $private = $this->tempDir . '/private';
+        mkdir($private);
+        file_put_contents($private . '/hook', "#!/bin/sh\necho outside\n");
+        symlink($private . '/hook', $this->hookPath());
+        chmod($private, 0000);
+
+        try {
+            foreach (['hook:status' => [], 'hook:install' => ['--force' => true], 'hook:uninstall' => []] as $command => $options) {
+                $tester = $this->runHookCommand($command, $options);
+
+                self::assertSame(3, $tester->getStatusCode(), $command);
+                self::assertStringContainsString('Environment error:', $tester->getErrorOutput(), $command);
+                self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput(), $command);
+                self::assertStringContainsString($private, $tester->getErrorOutput(), $command);
+                self::assertTrue(is_link($this->hookPath()), $command);
+                self::assertFileDoesNotExist($this->hookPath() . '.backup');
+            }
+        } finally {
+            chmod($private, 0700);
+        }
+        self::assertSame("#!/bin/sh\necho outside\n", file_get_contents($private . '/hook'));
+    }
+
+    #[Test]
     public function itRefusesToUninstallAThirdPartyHook(): void
     {
         file_put_contents($this->hookPath(), "#!/bin/sh\necho foreign\n");
@@ -165,10 +318,9 @@ final class HookRefusalLadderTest extends TestCase
         $tester = $this->runWithoutDiagnostics('hook:uninstall', []);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString(
-            \sprintf('Failed to remove hook file: %s: Permission denied', $this->hookPath()),
-            $tester->getErrorOutput(),
-        );
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
         self::assertFileExists($this->hookPath());
     }
 
@@ -182,10 +334,9 @@ final class HookRefusalLadderTest extends TestCase
         $tester = $this->runWithoutDiagnostics('hook:install', ['--force' => true]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString(
-            \sprintf('Failed to remove the existing hook: %s: Permission denied', $this->hookPath()),
-            $tester->getErrorOutput(),
-        );
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -198,39 +349,31 @@ final class HookRefusalLadderTest extends TestCase
         $tester = $this->runWithoutDiagnostics('hook:install', ['--force' => true]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString(
-            \sprintf('Failed to back up the existing hook to %s: ', $this->hookPath() . '.backup'),
-            $tester->getErrorOutput(),
-        );
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath() . '.backup', $tester->getErrorOutput());
         self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
         self::assertSame("#!/bin/sh\necho foreign\n", file_get_contents($this->hookPath()));
+        self::assertFileDoesNotExist($this->hookPath() . '.backup');
     }
 
     #[Test]
     public function itRefusesAHookItCannotWriteWithTheSystemsReason(): void
     {
-        mkdir($this->hookPath() . '.tmp.' . getmypid());
+        self::skipAsRoot();
+        chmod($this->tempDir . '/.git/hooks', 0555);
 
         $tester = $this->runWithoutDiagnostics('hook:install', []);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString(
-            \sprintf('Failed to write hook: %s: ', $this->hookPath()),
-            $tester->getErrorOutput(),
-        );
-        self::assertStringContainsString('Is a directory', $tester->getErrorOutput());
+        self::assertStringContainsString('Environment error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('Permission denied', $tester->getErrorOutput());
         self::assertFileDoesNotExist($this->hookPath());
+        self::assertSame([], glob($this->tempDir . '/.git/hooks/.qmx-*'));
     }
 
-    /**
-     * The move into place, which the temporary-file case above never reaches.
-     *
-     * A directory at the hook path is read as an empty hook, and an empty
-     * backup beside it counts as already holding it, so `--force` goes on to
-     * the write and only `rename()` over the directory can fail.
-     */
     #[Test]
-    public function itRefusesAHookItCannotMoveIntoPlaceWithTheSystemsReason(): void
+    public function itRefusesADirectoryAtTheHookNameBeforeReplacement(): void
     {
         mkdir($this->hookPath());
         touch($this->hookPath() . '/keep-me');
@@ -239,13 +382,11 @@ final class HookRefusalLadderTest extends TestCase
         $tester = $this->runWithoutDiagnostics('hook:install', ['--force' => true]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString(
-            \sprintf('Failed to write hook: %s: ', $this->hookPath()),
-            $tester->getErrorOutput(),
-        );
-        self::assertMatchesRegularExpression('/: (Is a directory|Directory not empty)/', $tester->getErrorOutput());
+        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath(), $tester->getErrorOutput());
+        self::assertStringContainsString('target is a directory', $tester->getErrorOutput());
         self::assertFileExists($this->hookPath() . '/keep-me');
-        self::assertSame([], glob($this->hookPath() . '.tmp.*'), 'the temporary file is removed');
+        self::assertSame([], glob($this->tempDir . '/.git/hooks/.qmx-*'), 'no replacement sibling is left behind');
     }
 
     #[Test]
@@ -257,11 +398,10 @@ final class HookRefusalLadderTest extends TestCase
         $tester = $this->runWithoutDiagnostics('hook:uninstall', ['--restore-backup' => true]);
 
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString(
-            \sprintf('Failed to restore backup %s to %s: ', $this->hookPath() . '.backup', $this->hookPath()),
-            $tester->getErrorOutput(),
-        );
-        self::assertStringContainsString('cannot be a directory', $tester->getErrorOutput());
+        self::assertStringContainsString('Configuration error:', $tester->getErrorOutput());
+        self::assertStringContainsString($this->hookPath() . '.backup', $tester->getErrorOutput());
+        self::assertStringContainsString('target is a directory', $tester->getErrorOutput());
+        self::assertFileExists($this->hookPath());
     }
 
     /** @param array<string, mixed> $options */
@@ -320,10 +460,10 @@ final class HookRefusalLadderTest extends TestCase
         };
 
         $errorStream = new ErrorStream();
-        $application = new Application($errorStream, new RefusalPresenter($errorStream));
+        $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         foreach ([HookInstallCommand::class, HookUninstallCommand::class, HookStatusCommand::class] as $class) {
-            $application->addCommand(new $class(new GitRepositoryLocator(), $locator));
+            $application->addCommand(new $class(new GitRepositoryLocator(), $locator, $errorStream));
         }
 
         $tester = new ApplicationTester($application);

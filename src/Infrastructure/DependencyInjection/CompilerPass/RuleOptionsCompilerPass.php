@@ -8,12 +8,14 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use ReflectionClass;
 use ReflectionNamedType;
+use ReflectionParameter;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
@@ -21,7 +23,7 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * For each tagged Rule, this pass:
  * 1. Calls Rule::getOptionsClass() to get the Options class
- * 2. Registers producer-specific Options with RuleOptionsFactory::create() as factory
+ * 2. Registers producer-specific Options with RuleOptionsRegistry::optionsFor() as factory
  * 3. Binds the Options to the Rule via setArgument('$options', ...)
  *
  * This allows Rules to be auto-registered via registerClasses() without
@@ -35,58 +37,58 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
 
     public static function consumerServiceIds(): array
     {
-        return [RuleOptionsFactory::class];
+        return [RuleOptionsRegistry::class];
     }
 
     public function process(ContainerBuilder $container): void
     {
         // hasDefinition(), not has(): the check ConsumerRegistrationCompilerPass
         // makes on the product container must be this very question.
-        if (!$container->hasDefinition(RuleOptionsFactory::class)) {
+        if (!$container->hasDefinition(RuleOptionsRegistry::class)) {
             return;
         }
 
         foreach ($container->findTaggedServiceIds(RuleCompilerPass::TAG) as $ruleId => $tags) {
-            $ruleDefinition = $container->getDefinition($ruleId);
-            $ruleClass = $ruleDefinition->getClass();
-
-            if ($ruleClass === null) {
-                continue;
-            }
-
-            // Ensure rule class implements RuleInterface and has getOptionsClass
-            if (!is_a($ruleClass, self::RULE_INTERFACE, true)) {
-                continue;
-            }
-
-            $reflection = new ReflectionClass($ruleClass);
-            $optionsClass = $reflection->getMethod('getOptionsClass')->invoke(null);
-            if (!\is_string($optionsClass) || !is_a($optionsClass, RuleOptionsInterface::class, true)) {
-                continue;
-            }
-
-            $ruleName = RuleNameReader::read($ruleClass);
-
-            // Options configuration is keyed by producer rule name. The service identity
-            // must therefore include both the producer and the Options class: multiple
-            // rules may intentionally reuse the same immutable Options implementation
-            // while still requiring independently configured instances.
-            $optionsServiceId = self::optionsServiceId($ruleName, $optionsClass);
-
-            if (!$container->hasDefinition($optionsServiceId)) {
-                $container->register($optionsServiceId, $optionsClass)
-                    ->setFactory([new Reference(RuleOptionsFactory::class), 'create'])
-                    ->setArguments([$ruleName, $optionsClass]);
-                // Note: Options are NOT lazy - they're simple value objects
-            }
-
-            // Bind Options to Rule
-            $ruleDefinition->setArgument('$options', new Reference($optionsServiceId));
-
-            // Resolve additional constructor dependencies (rules have autowiring disabled,
-            // so we must manually bind typed parameters beyond $options)
-            $this->resolveExtraDependencies($container, $ruleDefinition, $ruleClass);
+            $this->registerRuleOptions($container, $container->getDefinition($ruleId));
         }
+    }
+
+    private function registerRuleOptions(ContainerBuilder $container, Definition $ruleDefinition): void
+    {
+        $ruleClass = $ruleDefinition->getClass();
+        if ($ruleClass === null || !is_a($ruleClass, self::RULE_INTERFACE, true)) {
+            return;
+        }
+
+        $optionsClass = (new ReflectionClass($ruleClass))->getMethod('getOptionsClass')->invoke(null);
+        if (!\is_string($optionsClass) || !is_a($optionsClass, RuleOptionsInterface::class, true)) {
+            return;
+        }
+
+        $ruleName = RuleNameReader::read($ruleClass);
+        $optionsServiceId = self::optionsServiceId($ruleName, $optionsClass);
+        $this->registerOptionsService($container, $optionsServiceId, $ruleName, $optionsClass);
+        $ruleDefinition->setArgument('$options', new Reference($optionsServiceId));
+        $this->resolveExtraDependencies($container, $ruleDefinition, $ruleClass);
+    }
+
+    /** @param class-string<RuleOptionsInterface> $optionsClass */
+    private function registerOptionsService(
+        ContainerBuilder $container,
+        string $optionsServiceId,
+        string $ruleName,
+        string $optionsClass,
+    ): void {
+        if ($container->hasDefinition($optionsServiceId)) {
+            return;
+        }
+
+        // Producer identity keeps independently configured instances separate even
+        // when several rules intentionally reuse the same immutable Options class.
+        $container->register($optionsServiceId, $optionsClass)
+            ->setFactory([new Reference(RuleOptionsRegistry::class), 'optionsFor'])
+            ->setArguments([$ruleName, $optionsClass])
+            ->setShared(false);
     }
 
     /**
@@ -175,7 +177,7 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
      */
     private function resolveExtraDependencies(
         ContainerBuilder $container,
-        \Symfony\Component\DependencyInjection\Definition $ruleDefinition,
+        Definition $ruleDefinition,
         string $ruleClass,
     ): void {
         $reflection = new ReflectionClass($ruleClass);
@@ -186,39 +188,35 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface, ConsumerBo
         }
 
         foreach ($constructor->getParameters() as $param) {
-            $paramName = '$' . $param->getName();
+            $this->bindDependency($container, $ruleDefinition, $param);
+        }
+    }
 
-            // Skip $options — already bound above
-            if ($paramName === '$options') {
-                continue;
-            }
+    private function bindDependency(
+        ContainerBuilder $container,
+        Definition $ruleDefinition,
+        ReflectionParameter $param,
+    ): void {
+        $paramName = '$' . $param->getName();
+        if ($paramName === '$options' || \array_key_exists($paramName, $ruleDefinition->getArguments())) {
+            return;
+        }
 
-            // Skip parameters already explicitly set
-            if (\array_key_exists($paramName, $ruleDefinition->getArguments())) {
-                continue;
-            }
+        $type = $param->getType();
+        if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+            return;
+        }
 
-            $type = $param->getType();
-            if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
-                continue;
-            }
+        $typeClass = $type->getName();
+        if (is_a($typeClass, RuleOptionsInterface::class, true)) {
+            return;
+        }
 
-            $typeClass = $type->getName();
-
-            // Skip RuleOptionsInterface — handled above
-            if (is_a($typeClass, RuleOptionsInterface::class, true)) {
-                continue;
-            }
-
-            // Map PSR interfaces to concrete implementations
-            $serviceId = $this->resolveServiceId($typeClass, $container);
-
-            // If the container has this service, bind it
-            if ($serviceId !== null) {
-                $ruleDefinition->setArgument($paramName, new Reference($serviceId));
-            } elseif ($type->allowsNull() || $param->isDefaultValueAvailable()) {
-                // Nullable or has default — skip (will use null/default)
-            }
+        // Rules are not autowired. An unavailable service leaves the constructor's
+        // null/default handling, or the container's missing-argument refusal, intact.
+        $serviceId = $this->resolveServiceId($typeClass, $container);
+        if ($serviceId !== null) {
+            $ruleDefinition->setArgument($paramName, new Reference($serviceId));
         }
     }
 }

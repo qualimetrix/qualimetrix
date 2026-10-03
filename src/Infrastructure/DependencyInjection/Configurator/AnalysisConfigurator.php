@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
@@ -13,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -21,16 +19,22 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyI
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspectorInterface;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectTree;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
@@ -53,40 +57,37 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string RULE_SELECTOR_PRODUCER_GATE_CLASS = 'Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate';
     private const string RULE_PRODUCER_PREPARATION = 'qmx.analysis.run.rule_producer_preparation';
     private const string RULE_PRODUCER_PREPARATION_CLASS = 'Qualimetrix\\Analysis\\Run\\RuleProducerPreparation';
-    private const string FILE_DISCOVERY = 'qmx.run.file_discovery';
-    private const string FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery';
-    private const string ANALYSIS_FILE_DISCOVERY = 'qmx.analysis.run.file_discovery';
-    private const string ANALYSIS_FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery';
+    private const string INLINE_DIRECTIVE_RUN = 'qmx.analysis.run.inline_directive_run';
+    private const string INLINE_DIRECTIVE_RUN_CLASS = 'Qualimetrix\\Analysis\\Run\\InlineDirectiveRun';
     private const string FILE_PROCESSOR = 'qmx.run.file_processor';
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
+    private const string INLINE_REFUSED_DIRECTIVES_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives';
+
     private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
     private const string INLINE_DIRECTIVE_USAGE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveUsage';
     private const string INLINE_THRESHOLD_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveAudit';
     private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\UnusedDirectiveRule';
     private const string INLINE_DIRECTIVE_VALIDATOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator';
-    private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
-    private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
     private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
     private const string GENERATED_FILE_FILTER_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\GeneratedFileFilter';
-    private const string EXCLUDE_BINDING_PROBE_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\ExcludeBindingProbe';
     private const string UNMATCHED_EXCLUDE_AUDIT_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeAudit';
     private const string UNMATCHED_EXCLUDE_RULE_CLASS = 'Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule';
 
     public function configure(ContainerBuilder $container): void
     {
-        $container->register(self::FILE_DISCOVERY, self::FILE_DISCOVERY_CLASS);
-        $container->setAlias(FileDiscoveryInterface::class, self::FILE_DISCOVERY);
-        $container->register(self::FILE_DISCOVERY_FACTORY, self::FILE_DISCOVERY_FACTORY_CLASS);
-        $container->setAlias(FileDiscoveryFactoryInterface::class, self::FILE_DISCOVERY_FACTORY);
+        $container->register(EntryInspector::class);
+        $container->setAlias(EntryInspectorInterface::class, EntryInspector::class);
+        $container->register(ProjectWalk::class)->setArgument('$inspector', new Reference(EntryInspectorInterface::class));
+        $container->register(ProjectTree::class)->setArgument('$inspector', new Reference(EntryInspectorInterface::class));
+        $container->setAlias(ProjectTreeQueryInterface::class, ProjectTree::class);
         $container->register(self::GENERATED_FILE_FILTER, self::GENERATED_FILE_FILTER_CLASS);
         $container->setAlias(GeneratedFileFilterInterface::class, self::GENERATED_FILE_FILTER);
-        $container->register(self::ANALYSIS_FILE_DISCOVERY, self::ANALYSIS_FILE_DISCOVERY_CLASS)
-            ->setArguments([
-                new Reference(FileDiscoveryInterface::class),
-                new Reference(GeneratedFileFilterInterface::class),
-                new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
-            ]);
+        $container->register(ProjectFiles::class)->setArguments([
+            new Reference(ProjectWalk::class),
+            new Reference(GeneratedFileFilterInterface::class),
+        ]);
+        $container->setAlias(ProjectFilesInterface::class, ProjectFiles::class);
 
         // ThresholdOverrideExtractor - per-rule `@qmx-threshold` validator map injected
         // by ThresholdValidatorMapCompilerPass after RuleRegistryCompilerPass runs
@@ -134,7 +135,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setPublic(true);
 
         $container->register(self::RULE_SELECTOR_PRODUCER_GATE, self::RULE_SELECTOR_PRODUCER_GATE_CLASS)
-            ->setArgument('$ruleSelector', new Reference(RuleSelector::class));
+            ->setArgument('$ruleConfiguration', new Reference(RuleConfigurationInterface::class));
         $container->register(self::FILE_SET_INSPECTION_COMPOSITE, self::FILE_SET_INSPECTION_COMPOSITE_CLASS)
             ->setArguments([
                 '$participants' => [],
@@ -144,6 +145,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
 
         $this->registerUnmatchedExcludeProducer($container);
         $this->registerInlineDirectivePolicy($container);
+        $this->registerInlineDirectiveRun($container);
         $this->registerRuleProducerPreparation($container);
         $this->registerAnalysisPipeline($container);
     }
@@ -156,12 +158,14 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
      */
     private function registerInlineDirectivePolicy(ContainerBuilder $container): void
     {
+        $container->register(self::INLINE_REFUSED_DIRECTIVES_CLASS, self::INLINE_REFUSED_DIRECTIVES_CLASS)
+            ->setArguments([new Reference(ChannelIdentityInterface::class)]);
         $container->register(self::INLINE_DIRECTIVE_USAGE_CLASS, self::INLINE_DIRECTIVE_USAGE_CLASS)
             ->setArguments([
                 new Reference(ChannelIdentityInterface::class),
-                new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS),
             ]);
 
         // The threshold half is a service of its own rather than a method on
@@ -169,9 +173,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // context it already prepared — while the policy is exactly that state.
         $container->register(self::INLINE_THRESHOLD_AUDIT_CLASS, self::INLINE_THRESHOLD_AUDIT_CLASS)
             ->setArguments([
-                new Reference(ChannelIdentityInterface::class),
-                new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),
+                new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS),
             ]);
         $container->setAlias(ThresholdDirectiveAuditInterface::class, self::INLINE_THRESHOLD_AUDIT_CLASS);
 
@@ -179,7 +182,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // the policy is the run's directive store, and the collaborators the
         // accounting needs are not the store's.
         $container->register(self::INLINE_DIRECTIVE_POLICY_CLASS, self::INLINE_DIRECTIVE_POLICY_CLASS)
-            ->setArguments([new Reference(self::INLINE_DIRECTIVE_USAGE_CLASS)])
+            ->setArguments([new Reference(self::INLINE_DIRECTIVE_USAGE_CLASS), new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS)])
             ->setPublic(true);
         $container->setAlias(InlineDirectivePolicyInterface::class, self::INLINE_DIRECTIVE_POLICY_CLASS)
             ->setPublic(true);
@@ -189,18 +192,10 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // this family's published order has the three directive diagnostics
         // ahead of `annotation.unused-directive`. See
         // ChannelDeclarationCompilerPass.
-        //
-        // The validator answers to the rule's own Options service — the one
-        // `--rule-opt=annotation.directive:enabled=false` configures — rather
-        // than to a copy of it. The id is derived from the rule the same way
-        // RuleOptionsCompilerPass derives it when it registers that service
-        // later in the build; a reference to it resolves at the end of
-        // compilation.
         $container->register(self::INLINE_DIRECTIVE_VALIDATOR_CLASS, self::INLINE_DIRECTIVE_VALIDATOR_CLASS)
             ->setArguments([
-                new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::INLINE_DIRECTIVE_RULE_CLASS)),
                 new Reference(self::INLINE_DIRECTIVE_POLICY_CLASS),
-                new Reference(ChannelIdentityInterface::class),
+                new Reference(self::INLINE_REFUSED_DIRECTIVES_CLASS),
             ])
             ->setAutoconfigured(true)
             ->setAutowired(false)
@@ -227,8 +222,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
      */
     private function registerUnmatchedExcludeProducer(ContainerBuilder $container): void
     {
-        $container->register(self::EXCLUDE_BINDING_PROBE_CLASS, self::EXCLUDE_BINDING_PROBE_CLASS);
-
         // Lazy, and that is the whole reason the audit may hold its rule's
         // Options service: constructed eagerly it would capture the options as
         // they stood before the console applied `rules.<name>.enabled` or
@@ -237,7 +230,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(self::UNMATCHED_EXCLUDE_AUDIT_CLASS, self::UNMATCHED_EXCLUDE_AUDIT_CLASS)
             ->setArguments([
                 new Reference(RuleOptionsCompilerPass::optionsServiceIdForRule(self::UNMATCHED_EXCLUDE_RULE_CLASS)),
-                new Reference(self::EXCLUDE_BINDING_PROBE_CLASS),
             ])
             ->setLazy(true);
 
@@ -253,11 +245,17 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(LayerPolicyPreparationInterface::class),
                 new Reference(CircularDependencyPreparationInterface::class),
-                new Reference(InlineDirectivePolicyInterface::class),
-                new Reference(ThresholdDirectiveAuditInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
                 new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
-                new Reference(RuleConfigurationInterface::class),
+            ]);
+    }
+
+    private function registerInlineDirectiveRun(ContainerBuilder $container): void
+    {
+        $container->register(self::INLINE_DIRECTIVE_RUN, self::INLINE_DIRECTIVE_RUN_CLASS)
+            ->setArguments([
+                new Reference(InlineDirectivePolicyInterface::class),
+                new Reference(ThresholdDirectiveAuditInterface::class),
             ]);
     }
 
@@ -267,7 +265,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // resolver stamps its answer onto every RunConfiguration, and the
         // console derives its incomplete-scope warning from the same answer.
         $container->register(ProjectScopeCoverage::class)
-            ->setArgument('$composerReader', new Reference(ComposerAutoloadPathReaderInterface::class))
+            ->setArgument('$composerReader', new Reference(ComposerManifestReaderInterface::class))
             ->setPublic(true);
 
         $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
@@ -276,10 +274,12 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // retains its own state behind a narrow public contract.
         $container->register(self::ANALYSIS_PIPELINE, self::ANALYSIS_PIPELINE_CLASS)
             ->setArguments([
-                new Reference(self::ANALYSIS_FILE_DISCOVERY),
+                new Reference(ProjectFilesInterface::class),
+                new Reference(self::UNMATCHED_EXCLUDE_AUDIT_CLASS),
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(RuleExecutionInterface::class),
                 new Reference(self::RULE_PRODUCER_PREPARATION),
+                new Reference(self::INLINE_DIRECTIVE_RUN),
                 new Reference(MeasurementAggregationInterface::class),
                 new Reference($computedMetricEvaluation),
                 new Reference(DependencyGraphBuilderInterface::class),

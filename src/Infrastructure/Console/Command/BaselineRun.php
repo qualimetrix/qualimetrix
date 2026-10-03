@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunConfigurationPreparation;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\Formatter\CoverageNarrator;
+use Qualimetrix\Reporting\ReportCoverage;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -44,19 +44,17 @@ final readonly class BaselineRun implements BaselineRunInterface
         private MeasuredFindingSet $measuredFindingSet,
         private RuleInputValidator $ruleInputValidator,
         private ConfigurationInputAdapter $configurationInputAdapter,
-        private RunConfigurationResolverInterface $runConfigurationResolver,
+        private RunConfigurationPreparation $runConfigurationPreparation,
         private ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
-        private CacheConfigurationResolverInterface $cacheConfigurationResolver,
-        private ParallelConfigurationResolverInterface $parallelConfigurationResolver,
+        private ErrorStream $errorStream,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
     {
         $this->runtimeConfigurator->resetRunState();
         $document = $this->configurationInputAdapter->resolve($input);
-        $configuration = $this->runConfigurationResolver->resolve($document);
-        $cacheConfiguration = $this->cacheConfigurationResolver->resolve($document, $configuration->projectRoot);
-        $parallelConfiguration = $this->parallelConfigurationResolver->resolve($document);
+        $runConfiguration = $this->runConfigurationPreparation->resolve($document);
+        $configuration = $runConfiguration->runConfiguration;
         $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
         $exclusions = $this->findingExclusionsResolver->resolve($document);
 
@@ -66,18 +64,16 @@ final readonly class BaselineRun implements BaselineRunInterface
         // and the two would measure different sets on the same project.
         $this->runtimeConfigurator->configure(
             $document,
-            $configuration,
+            $runConfiguration,
             $findingConfiguration,
-            $cacheConfiguration,
-            $parallelConfiguration,
             $input,
             $output,
         );
-        $this->assertPathsExist($configuration->paths);
+        $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics);
+        (new AnalysisInputPathValidator())->validate($configuration->paths, $document);
 
         $run = $this->measuredFindingSet->run(
             $configuration,
-            null,
             new FindingProjectionOptions(
                 suppressPaths: $exclusions->suppressPaths,
                 suppressNamespaces: $exclusions->suppressNamespaces,
@@ -89,41 +85,24 @@ final readonly class BaselineRun implements BaselineRunInterface
         // lifecycle command interpret, report candidates from, or mutate a
         // baseline. --force only overrides the recorded-scope guard; it must
         // never turn analysis failure into accepted state.
-        if (!$run->result->coverage->isComplete()) {
-            throw new IncompleteAnalysisException($run->result->coverage);
+        if (!$run->result->measured->coverage->isComplete()) {
+            throw new IncompleteAnalysisException($run->result->measured->coverage);
+        }
+
+        $coverage = $run->result->measured->coverage;
+        if ($coverage->isIntentionallyEmpty()) {
+            $this->errorStream->write($output, CoverageNarrator::describe(new ReportCoverage(
+                $coverage->discoveredFiles(),
+                $coverage->analyzedFilesCount(),
+                $coverage->generatedExcludedFilesCount(),
+                $coverage->failedFilesCount(),
+                excluded: $coverage->excludedCount(),
+            )));
         }
 
         $projectRoot = $configuration->projectRoot;
 
         return new BaselineRunContext($run, RunScope::record($configuration->paths, $projectRoot), $projectRoot);
-    }
-
-    /**
-     * A path that does not exist would silently measure nothing, and a
-     * baseline captured from nothing is indistinguishable from a project with
-     * no findings — the one file state that must never be written by
-     * accident.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @throws ConfigurationRefusal
-     */
-    private function assertPathsExist(array $paths): void
-    {
-        $missing = [];
-
-        foreach ($paths as $path) {
-            if (!$path->exists()) {
-                $missing[] = $path->value();
-            }
-        }
-
-        if ($missing !== []) {
-            throw ConfigurationRefusal::aboutCommandLineInput(
-                'paths',
-                \sprintf('Path(s) do not exist: %s', implode(', ', $missing)),
-            );
-        }
     }
 
 }

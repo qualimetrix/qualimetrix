@@ -35,7 +35,7 @@ namespace QmxFindingGate;
  *
  * - self-consistency is measured on RAW artifacts, each side's published value
  *   against a recomputation from that same side's own untranslated fields
- *   ({@see \QmxFindingGate\Gate::checkFingerprints()});
+ *   ({@see \QmxFindingGate\FingerprintCheck::checkFingerprints()});
  * - substitution happens on the RAW artifact too, from that side's own verified
  *   hash-to-identity pairs, and only the substituted text is then translated.
  *
@@ -52,10 +52,10 @@ namespace QmxFindingGate;
  */
 final class Fingerprints
 {
-    /**
-     * The one surface whose published fingerprint is opaque, and is therefore
-     * substituted before comparison.
-     */
+    /** Fingerprints are licensed by the authoritative main finding publication. */
+    public const SOURCE_VIEW = 'format:json';
+
+    /** The opaque hash surface substituted before comparison. */
     public const OPAQUE_SURFACE = 'format:gitlab';
 
     /**
@@ -65,7 +65,7 @@ final class Fingerprints
      * the opaque publication: an input outside the tuple would be a datum the
      * hash carries and nothing else compares, and dropping the hash would then
      * retire it from the comparison. Checked against the tracked tuple in
-     * {@see \QmxFindingGate\Gate::checkTuple()}.
+     * {@see \QmxFindingGate\TupleCheck::checkTuple()}.
      *
      * @var list<string>
      */

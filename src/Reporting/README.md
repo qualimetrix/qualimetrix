@@ -30,7 +30,8 @@ Reporting/
 ├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
 ├── ReportBuilder.php                       # Builder for creating reports
 ├── ReportCoverage.php                      # Reporting-safe coverage projection
-├── ReportProjectScope.php                  # Covered / narrowed / unknown project scope, the targets left out, the channels and suppression values left unjudged
+├── ReportProjectScope.php                  # Covered / narrowed / unknown / unmeasured scope, unjudged values and typed source reasons
+├── Configuration/                          # OutputFormatSection, OutputFormatVocabulary and OutputFormatResolver
 ├── CoverageFailure.php                     # One projected parse/processing failure
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
@@ -52,6 +53,7 @@ Reporting/
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
 │   ├── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── GitScopeFindingFilter.php          # Private Git publication predicate; the projector retains query and order
 │   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
 │   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)
 │   ├── InertSuppressor.php                # A configured suppressor (pattern/rule) that excluded nothing this run
@@ -108,7 +110,7 @@ Reporting/
     │   ├── HtmlFormatter.php              # Interactive HTML report with D3 treemap
     │   ├── HtmlTreeBuilder.php            # Builds namespace tree from MetricRepository
     │   ├── HtmlTreeNode.php               # Internal VO for tree construction
-    │   ├── HtmlDebtCalculator.php         # Computes and aggregates technical debt for HTML reports
+    │   ├── HtmlDebtCalculator.php         # Completes own debt and bottom-up totals for HTML trees
     │   ├── HtmlMetricAggregator.php       # Bottom-up metric aggregation for HTML tree
     │   ├── HtmlProjectMetadata.php        # The report's `project` object: analysed project's name, version, docs addresses
     │   └── HtmlFindingPartitioner.php   # Puts every finding on exactly one tree node (root at the latest)
@@ -128,14 +130,18 @@ queried through `GitScopeQueryInterface`; its Infrastructure adapter never
 leaks into Reporting. Git changes only the reported list and cannot alter the
 measured, accepted, or stale Baseline facts.
 
-Configuration-owned `OutputFormat` carries the resolved formatter name to the
+Reporting-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
-configuration. `OutputFormatResolver` closes that set before a single file is
-read: it asks `FormatterRegistryInterface` which names exist, rather than
-holding a list that could fall out of step with the registry, and refuses an
-unknown one with `ConfigurationRefusal`. Every contribution is judged, not only
-the winning one — a `format:` typo in a file is answered even when the command
-line overrode it.
+configuration. `OutputFormatVocabulary` asks `FormatterRegistryInterface`
+which names exist and owns the canonical `format` key. `OutputFormatSection` returns an atomic
+`SectionDeclaration` through `DocumentSectionSchemaInterface`: the
+`format` string scalar uses the vocabulary in every writing layer before
+merge, so a typo remains refused even under a valid command-line override.
+`OutputFormatResolver` uses that same vocabulary for the winner before a
+single file is read, including documents composed without the real format
+section. Refusals retain their source. Infrastructure registers the section
+with autoconfiguration and the vocabulary and resolver as separate services.
+See [ADR 0088](../../docs/adr/0088-atomic-section-declarations-and-format-vocabulary.md).
 
 ### Suppression composition
 
@@ -144,9 +150,12 @@ line overrode it.
 facts the pipeline already computed: `FindingProjectionResult` for the five
 global `FindingFilterStage` cases, and `RuleExecutionResult`'s exclusion
 ledger (via `RuleExclusionLedgerAttributor`) for the two per-rule halves. It
-recomputes *which* pattern or directive removed a finding rather than reading
-a per-finding attribution the pipeline carries, because no stage records one;
-see the class docblock for why that narrow duplication was accepted. See
+reads Inline's first actually applied `DirectiveSite` from
+`FindingProjectionResult`'s `AnnotationSuppressionResult` for annotations.
+It does not repeat declaration placement or matching;
+`DirectiveSuppressorResolver` has been removed. Configured path and namespace
+patterns retain their own attribution. The public annotation suppressor is
+still `file:line`: two physical sites on one line have the same label. See
 `docs/adr/0037-suppressed-format-and-produced-findings.md` for why this is a
 separate format rather than a `json` section.
 
@@ -305,6 +314,7 @@ final readonly class Report
         public ?SuppressionComposition $suppressionComposition = null,
         public ?OutOfScopeFindings $outOfScope = null, // what a --namespace/--class selection left out; null without one
         public ?ReportProjectScope $projectScope = null, // how the run's paths stood against composer.json autoload; set on every check run
+        public array $configurationDiagnostics = [], // list<{message, source}> — warnings about the accepted configuration, already published
     ) {}
 
     public function isEmpty(): bool;
@@ -492,7 +502,32 @@ and three commands outside `check` (`directives`,
 
 **`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` has none: a selection does not narrow it.
 
-**`projectScope`:** always present, and of one shape: `{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues}`, `state` being `covered`, `narrowed` or `unknown` (see `ReportProjectScope`). `uncoveredAutoloadTargets` is empty unless the run was narrowed below the project's autoload targets; `unjudgedChannels` then names the channels judged only on a whole-project run, and `unjudgedValues` is empty. On `covered` and `unknown` `unjudgedValues` lists each configured suppression value the run skipped as `{option, pattern}`, and `unjudgedChannels` is derived from them. `metrics` and `suppressed` publish the same object; `sarif` (`QMX-RUN-PROJECT-SCOPE`), `github` (`run.project-scope`), `html` and the human formats add an entry whenever `describe()` has a sentence: `narrowed`, `unknown`, and a `covered` run that skipped a value. `gitlab` and `checkstyle` publish nothing: every entry there is a finding to its consumer, and a narrowed run is the caller's choice, not a defect — unlike a selection, it is not refused.
+**`projectScope`:** always has
+`{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues, reasons}`.
+`state` remains `covered`, `narrowed`, `unknown` or `unmeasured`; the pipeline's
+final measured judgement, rather than this enum alone, answers declaration
+absence and selector/path completeness separately. Missing observed PHP, authored
+PHP removal, generated removal and uncertain denominator are named causes.
+All nine project-scoped channels use these measured questions; see
+[ADR 0093](../../docs/adr/0093-measured-run-scope-and-project-tree-queries.md).
+
+Each published skipped value has `{channel, option, pattern}`.
+`unjudgedChannels` lists channels with no judged value; a partially judged channel
+can be absent while its skipped values remain named. Reasons retain
+flat named cause fields even on a `covered` run. Namespace location still uses
+accepted PSR-4 facts independently of state. `metrics` and `suppressed` share
+this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
+and human formats render the scope explanation; `gitlab` and `checkstyle` have
+no diagnostic entry because their consumers treat every entry as a finding.
+Auxiliary install issues explain ancestry limits without changing main-project
+coverage. `coverage.excluded` counts named authored entries separately from
+`discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
+terminal entries. Named exclusions are outside that sum; failures may name
+directories, links or special entries rather than PHP files. A complete
+intentionally empty run and an incomplete run remain distinct; failure has
+priority and its policy/health result is not authoritative.
+
+**`configurationDiagnostics`:** always present, `[]` when the configuration drew no warning. Each entry is `{message, source}`: the warning as `check` also prints it on stderr, and `source` every layer it is about, lowest precedence first, each as the refusal envelope's `source` entries are — `{kind, name, imported_by}`. The entries arrive already published (`Infrastructure\Console\ConfigurationInputAdapter::publishedDiagnostics()`), so `Reporting` does not read the configuration document.
 
 **`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
 
@@ -683,9 +718,9 @@ payload never changes shape for a feature it did not ask for (see
 `FindingProjection\SuppressionCompositionBuilder`), never the finding list
 every other formatter reads.
 
-The composition is a multiset over mechanism x finding across seven
-mechanisms — `SuppressionMechanism`'s five global stages plus the two
-per-rule exclusion-ledger halves — not a set of findings: a finding removed
+The composition is a multiset over mechanism x finding across eight
+mechanisms — the five global stages, two per-rule exclusion-ledger halves
+and final produced-finding selection — not a set of findings: a finding removed
 by more than one mechanism appears once per mechanism, so `byMechanism`
 counts do not sum to a distinct-finding total. A separate `neverMatched` list
 publishes configured suppressors (a path/namespace pattern, a per-rule
@@ -760,7 +795,8 @@ $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top findings by impact score
 $report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
-$report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown against composer.json autoload
+$report->projectScope     // ?ReportProjectScope — covered/narrowed/unknown/unmeasured with source reasons
+$report->configurationDiagnostics // list<{message, source}> — warnings about the accepted configuration
 ```
 
 ADR 0062 publishes a health score's coverage alongside the score, and every
@@ -774,6 +810,11 @@ rendering of that payload lives in `html-report/`.
 coverage state. Every formatter must preserve a useful payload for zero files and
 must make incomplete analysis machine-detectable; see
 [ADR 0018](../../docs/adr/0018-analysis-coverage-verdict-and-output-projection.md).
+
+CoverageNarrator is the Reporting contract for the human coverage sentence.
+BaselineRun, GraphExportCommand and DirectiveAuditPresenter construct
+ReportCoverage and reuse that sentence for complete intentionally empty results.
+The manifest names these exact adapter consumers.
 
 ## Accepted level (baseline breach)
 
@@ -904,7 +945,11 @@ plus `docs` and `llmsTxt` from `Core\ProductIdentity`). `name` is
 `--format-opt=project-name`, else the `name` of the analysed project's
 `composer.json`, else its root directory's name — never the Composer runtime's
 root package, which under a phar, a global install or a qmx checkout is qmx
-itself. The browser program's
+itself. It reads metadata through the same invocation
+`ComposerManifestReaderInterface` as configuration and scope, including absent
+or invalid snapshots; it does not decode the file independently.
+`HtmlTreeBuilder` receives an instance of `HtmlProjectMetadata`.
+The browser program's
 footer reads this object and renders `docs` and `llmsTxt` as links beside the
 existing generated-date and version line, so the same values that reach every
 other output channel also reach the HTML report — JavaScript cannot read a PHP
@@ -928,10 +973,24 @@ Possible extensions:
 - **Markdown** — for documentation and PR comments
 - **JUnit XML** — for integration with test frameworks
 
+## Selection audit
+
+The suppression composition has eight mechanisms, adding `selection` to the
+seven existing mechanisms. Only actually produced findings removed by final
+publication selection enter that multiset and its byMechanism counts.
+`SuppressionComposition::notRun` separately records producers that never ran:
+producer, reason (`disabled` or `filtered`), decisive statement and layer. It is
+metadata, not fabricated findings, and contributes no suppression count.
+Drill-down and formatter truncation remain presentation operations; neither is
+selection. Capture and output use the same committed options/enablement snapshot.
+DoD preserves produced-removal identity and empty/not-run separation.
+
 ## Locality
 
 Reporting owns output projection and formatter composition, not feature state.
 It consumes named capability contracts and resolves its immutable output and
-finding-projection values from `ConfigurationDocument`; delivery adapters remain
-in Infrastructure. Keep formatter tests, templates, and documentation with
-their Reporting subject, and keep runtime values with their named owners.
+finding-projection values from declared resolved document sections: the output
+format and configured suppressions. `configurationDiagnostics` already arrives
+from Console as a published value. Delivery adapters remain in Infrastructure.
+Keep formatter tests, templates, and documentation with their Reporting subject,
+and keep runtime values with their named owners.

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
@@ -19,6 +21,7 @@ use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
+use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
 
 /**
  * The cases the command cannot stage: a run with no namespace tree, and the
@@ -47,7 +50,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [RelativePath::fromString('src/Service.php')],
             null,
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         ));
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $channels);
@@ -65,7 +68,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [],
             [],
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         ));
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $channels);
@@ -91,7 +94,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             ],
             [RelativePath::fromString('src/UserService.php')],
             ['Sample\\Deep'],
-            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+            $this->scope(new ProjectScopeJudgement(), [$this->tempDir . '/src', $this->tempDir . '/tests']),
         );
 
         self::assertSame([], $this->channelsOf($bound));
@@ -106,7 +109,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service/User.php')],
             [],
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         );
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_PATH], $this->channelsOf($findings));
@@ -123,7 +126,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [],
             [],
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         ));
     }
 
@@ -151,7 +154,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service.php')],
             [],
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         );
         $messages = array_map(static fn(Finding $finding): string => $finding->message, $findings);
 
@@ -177,7 +180,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             'coupling.cbo' => ['coupling.cbo:namespace' => [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')]],
         ]);
 
-        $findings = $audit->findings([], [], [], ['Sample'], $this->scope());
+        $findings = $audit->findings([], [], [], ['Sample'], $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])));
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER], $this->channelsOf($findings));
         self::assertStringContainsString(
@@ -197,7 +200,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             'coupling.cbo' => ['coupling.cbo:namespace' => [$this->namespace(SelectorKind::Subtree, 'Sample')]],
         ]);
 
-        self::assertSame([], $this->channelsOf($audit->findings([], [], [], ['Sample'], $this->scope())));
+        self::assertSame([], $this->channelsOf($audit->findings([], [], [], ['Sample'], $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])))));
     }
 
     /**
@@ -214,7 +217,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Tests\\Gone')],
             [RelativePath::fromString('src/Service.php')],
             ['Sample'],
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         );
 
         self::assertSame([], $this->channelsOf($findings));
@@ -233,7 +236,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Tests\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            $this->scope([$this->tempDir]),
+            $this->scope(new ProjectScopeJudgement(), [$this->tempDir]),
         );
 
         self::assertSame(
@@ -254,7 +257,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service.php')],
             [],
-            $this->scope(),
+            $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
         );
 
         self::assertSame([], $this->channelsOf($findings));
@@ -272,7 +275,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Regex, '.*\\\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            $this->scope([$this->tempDir]),
+            $this->scope(new ProjectScopeJudgement(), [$this->tempDir]),
         );
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $this->channelsOf($findings));
@@ -290,7 +293,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [$this->namespace(SelectorKind::Subtree, 'Sample\\Gone')],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             ['Sample', 'Sample\\Tests'],
-            $this->scope([$this->tempDir . '/src', $this->tempDir . '/tests']),
+            $this->scope(new ProjectScopeJudgement(), [$this->tempDir . '/src', $this->tempDir . '/tests']),
         );
 
         self::assertSame([UnboundSuppressionOptions::UNMATCHED_NAMESPACE], $this->channelsOf($findings));
@@ -309,7 +312,7 @@ final class UnboundSuppressionAuditTest extends TestCase
             [],
             [RelativePath::fromString('src/Service.php'), RelativePath::fromString('tests/ServiceTest.php')],
             [],
-            $this->scope([$this->tempDir]),
+            $this->scope(new ProjectScopeJudgement(), [$this->tempDir]),
         );
         $recommendations = array_map(
             static fn(Finding $finding): string => $finding->recommendation ?? '',
@@ -321,6 +324,60 @@ final class UnboundSuppressionAuditTest extends TestCase
         self::assertStringContainsString('"subtree" selector also includes descendants', $recommendations[1]);
         self::assertStringContainsString('"regex" selector is a full-subject PCRE fragment', $recommendations[2]);
         self::assertStringNotContainsString('glob character', implode(' ', $recommendations));
+    }
+
+    #[Test]
+    public function itReadsEachInvocationSnapshotFromTheSameAuditInstance(): void
+    {
+        $registry = new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry();
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('publishable')->willReturnArgument(0);
+        $audit = new UnboundSuppressionAudit($execution, $registry);
+        $producer = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME;
+        $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata($producer, UnboundSuppressionOptions::class, '', [], false)];
+        foreach ([true, false, true] as $enabled) {
+            $registry->resetRuntimeState();
+            $configuration = \Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration::fromDocument(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::document([['source' => 'config', 'values' => ['rules' => [$producer => ['enabled' => $enabled]]]]], \Qualimetrix\Core\Path\AbsolutePath::fromString('/project')));
+            $registry->replace(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::ready($configuration, $metadata));
+            $findings = $audit->findings(
+                [$this->path(SelectorKind::Subtree, 'src/Gone')],
+                [],
+                [RelativePath::fromString('src/Service.php')],
+                null,
+                $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])),
+            );
+            self::assertCount($enabled ? 1 : 0, $findings);
+        }
+    }
+
+    #[Test]
+    public function itReplacesTheTypedSuppressionUniverseBetweenInvocations(): void
+    {
+        $producer = \Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME;
+        $options = [$producer => new UnboundSuppressionOptions(), 'computed.health' => new UnboundSuppressionOptions()];
+        $snapshot = new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, [
+            $producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(),
+            'computed.health' => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(paths: [$this->path(SelectorKind::Subtree, 'src/Gone')]),
+        ]);
+        $configuration = self::createStub(RawDoorAuditConfiguration::class);
+        $configuration->method('resolvedOptions')->willReturnCallback(static function () use (&$snapshot): \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions {
+            return $snapshot;
+        });
+        foreach (['all', 'pathExclusions', 'namespaceExclusions', 'namespaceChannelExclusions'] as $rawDoor) {
+            $configuration->method($rawDoor)->willThrowException(new LogicException('The audit must read typed suppression.'));
+        }
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('publishable')->willReturnArgument(0);
+        $audit = new UnboundSuppressionAudit($execution, $configuration);
+        $findings = $audit->findings([], [], [], null, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])));
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('rule "computed.health"', $findings[0]->message);
+
+        $snapshot = new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions(
+            [$producer => $options[$producer]],
+            [$producer => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression()],
+        );
+        self::assertSame([], $audit->findings([], [], [], null, $this->scope(new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))));
     }
 
     /**
@@ -349,25 +406,28 @@ final class UnboundSuppressionAuditTest extends TestCase
         // the subject, so `publishable()` passes everything through.
         $execution->method('publishable')->willReturnArgument(0);
 
-        $configuration = self::createStub(RuleConfigurationInterface::class);
+        $configuration = self::createStub(RawDoorAuditConfiguration::class);
         $rules = array_values(array_unique([
             ...array_keys($pathLedger),
             ...array_keys($namespaceLedger),
             ...array_keys($channelLedger),
         ]));
-        $configuration->method('all')->willReturn(array_fill_keys($rules, []));
-        $configuration->method('pathExclusions')->willReturnCallback(
-            static fn(string $ruleName): array => $pathLedger[$ruleName] ?? [],
-        );
-        $configuration->method('namespaceExclusions')->willReturnCallback(
-            static fn(string $ruleName): array => $namespaceLedger[$ruleName] ?? [],
-        );
-        $configuration->method('namespaceChannelExclusions')->willReturnCallback(
-            static fn(string $ruleName): array => $channelLedger[$ruleName] ?? [],
-        );
-
+        foreach (['all', 'pathExclusions', 'namespaceExclusions', 'namespaceChannelExclusions'] as $rawDoor) {
+            $configuration->method($rawDoor)->willThrowException(new LogicException('The audit must read typed suppression.'));
+        }
+        $options = [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => new UnboundSuppressionOptions(enabled: $enabled)];
+        $suppressions = [\Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule::NAME => new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression()];
+        foreach ($rules as $producer) {
+            $options[$producer] ??= new UnboundSuppressionOptions();
+            $suppressions[$producer] = new \Qualimetrix\Analysis\Finding\Contract\RuleSuppression(
+                paths: $pathLedger[$producer] ?? [],
+                namespaces: $namespaceLedger[$producer] ?? [],
+                namespaceChannels: $channelLedger[$producer] ?? [],
+            );
+        }
+        $snapshot = new \Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions($options, $suppressions);
+        $configuration->method('resolvedOptions')->willReturn($snapshot);
         return new UnboundSuppressionAudit(
-            new UnboundSuppressionOptions($enabled),
             $execution,
             $configuration,
         );
@@ -401,13 +461,14 @@ final class UnboundSuppressionAuditTest extends TestCase
     /**
      * @param ?list<string> $analyzedPaths
      */
-    private function scope(?array $analyzedPaths = null): ValueScopeJudgement
+    private function scope(ProjectScopeJudgement $scope, ?array $analyzedPaths = null): ValueScopeJudgement
     {
         return new ValueScopeJudgement(
             $this->tempDir,
-            (new ComposerReader())->extractPsr4Roots($this->tempDir . '/composer.json'),
+            (new ComposerManifestReader())->read(\Qualimetrix\Core\Path\AbsolutePath::fromString($this->tempDir))->psr4Roots(),
             $analyzedPaths ?? [$this->tempDir . '/src'],
             projectDeclared: true,
+            scope: $scope,
         );
     }
 
@@ -420,4 +481,11 @@ final class UnboundSuppressionAuditTest extends TestCase
     {
         return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind->value, $value));
     }
+}
+
+/** Raw entry points remain tripwires after their removal from the production interface. */
+interface RawDoorAuditConfiguration extends RuleConfigurationInterface
+{
+    /** @return array<string, mixed> */
+    public function all(): array;
 }

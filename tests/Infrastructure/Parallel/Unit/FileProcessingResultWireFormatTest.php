@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
@@ -126,10 +127,11 @@ final class FileProcessingResultWireFormatTest extends TestCase
             'fixture',
             12,
             SuppressionType::Symbol,
-            binding: new DeclarationBinding($subject, ControlScope::Class_),
+            position: 23,
+            binding: new DeclarationBinding($subject, ControlScope::Class_, DeclarationReach::whole(40, 'class One\\Thing')),
         );
         $override = new ThresholdOverride('complexity.ccn', 10, 20, 13, $subject, ControlScope::Class_);
-        $diagnostic = new ThresholdDiagnostic(14, $subject, 'invalid threshold');
+        $diagnostic = new ThresholdDiagnostic(14, $subject, 'complexity.ccn', 'invalid threshold', 31);
 
         $result = FileProcessingResult::success(
             filePath: $path,
@@ -171,9 +173,15 @@ final class FileProcessingResultWireFormatTest extends TestCase
         // with --workers=0 for every anonymous-class fixture in this plan.
         self::assertTrue($restored->dependencies()[0]->describesNestedAnonymousClass);
         self::assertTrue($restored->dependencies()[1]->interfaceExtends);
-        self::assertEquals($suppression, $restored->suppressions()[0]);
+        $restoredSuppression = $restored->suppressions()[0];
+        self::assertEquals($suppression, $restoredSuppression);
+        self::assertSame(23, $restoredSuppression->position);
+        self::assertNotNull($restoredSuppression->binding);
+        self::assertSame('whole:40', $restoredSuppression->binding->reach->key());
+        self::assertSame('class One\\Thing', $restoredSuppression->binding->reach->describe());
         self::assertEquals($override, $restored->thresholdOverrides()[0]);
         self::assertEquals($diagnostic, $restored->thresholdDiagnostics()[0]);
+        self::assertSame(31, $restored->thresholdDiagnostics()[0]->position);
     }
 
     #[Test]
@@ -206,12 +214,28 @@ final class FileProcessingResultWireFormatTest extends TestCase
             new Location($path, 11),
             true,
         );
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)));
+        $suppression = new Suppression(
+            rule: 'complexity.ccn',
+            reason: 'fixture',
+            line: 12,
+            type: SuppressionType::Symbol,
+            position: 29,
+            binding: new DeclarationBinding(
+                $subject,
+                ControlScope::Class_,
+                DeclarationReach::lines(11, 15, 'class One\\Thing'),
+            ),
+        );
+        $diagnostic = new ThresholdDiagnostic(14, $subject, 'complexity.ccn', 'invalid threshold', 37);
 
         $result = FileProcessingResult::success(
             filePath: $path,
             payload: new SuccessfulFileProcessing(
                 fileBag: MetricBag::fromArray(['size.loc' => 42]),
                 dependencies: [$dependency],
+                suppressions: [$suppression],
+                thresholdDiagnostics: [$diagnostic],
             ),
         );
 
@@ -224,6 +248,12 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertSame('src/X.php', $restored->filePath->value());
         self::assertSame(42, $restored->fileBag()->get('size.loc'));
         self::assertEquals($dependency, $restored->dependencies()[0]);
+        $restoredSuppression = $restored->suppressions()[0];
+        self::assertSame(29, $restoredSuppression->position);
+        self::assertNotNull($restoredSuppression->binding);
+        self::assertSame('lines:11:15', $restoredSuppression->binding->reach->key());
+        self::assertSame('class One\\Thing, lines 11–15', $restoredSuppression->binding->reach->describe());
+        self::assertSame(37, $restored->thresholdDiagnostics()[0]->position);
         // Same IPC-survival pin as the php-serialize round trip above, for
         // the other wire format the parallel worker pool can select.
         self::assertTrue($restored->dependencies()[0]->describesNestedAnonymousClass);

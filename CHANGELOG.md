@@ -9,6 +9,421 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ArtifactFile` is removed. Console report, profile and log delivery uses one
+  shared `RunTargets`: judge destinations, claim after input checks, write through
+  held targets and abandon on teardown. `CheckCommand` requires a shared
+  `RunTargetSession` as its final constructor argument; `GraphExportCommand`
+  requires that session before its optional logger. Construct the session with
+  the shared `RunTargets` and `RefusalPresenter`; `RuntimeLoggerConfigurator`
+  requires those same targets as its final constructor argument.
+  `ResultPresenter::presentResults()`, `presentProfile()` and
+  `assertOutputIsWritable()`, and `ProfilePresenter::present()`, require explicit
+  run targets. Report/profile/log aliases of one ordinary inode or absent name
+  now refuse, including collisions with implicit report stdout. Graph status
+  moves to stderr. Directory exposure warnings precede analysis on stderr.
+  Implicit report and graph streams now refuse failed writes with environment
+  exit 3, using the supplied console resource and respecting SILENT and QUIET.
+  See ADR 0096 for filesystem guarantees and platform limits.
+  A cleanup failure after a completed report is also diagnosed on stderr,
+  alongside the primary failure, without appending another JSON document.
+- `FileLogger` no longer opens a file or creates its parent in its constructor.
+  Create the parent explicitly, attach a claimed `HeldTarget` and call `settle()`
+  to receive a latched write failure with the lost-record count.
+  `LoggerFactoryInterface::create()` requires all three arguments, including
+  explicit nulls; implementations must provide `attachFileTarget()`, `settle()`
+  and `reset()`. File logging begins after input checks; an invalid invocation
+  leaves the requested log untouched. File failures use environment exit 3.
+- Baseline writers now require a prepared `ResolvedTarget` instead of a string
+  destination. `destinationSnapshot()` returns `{target, hash}` for both absent
+  and existing targets. Pass that prepared target to `BaselineWriter::write()`;
+  `baseline:generate` prepares its destination before analysis. Create parent directories
+  explicitly: baseline publication no longer creates them. Existing modes are
+  preserved. Closed, Core-judged symbolic links write their resolved referents;
+  exposed links refuse. `--force` still authorizes replacing occupied names.
+- `BaselineGenerateCommand` requires its fourth `ErrorStream` argument, and
+  hook commands require the third. Use the same stream as `RefusalPresenter`.
+  Unreadable hooks now refuse with environment exit 3. Hook backups preserve
+  mode; restoring a backup moves its inode and consumes the backup name.
+- `CacheInterface::clear()` now returns `CacheClearOutcome`, with completion,
+  remaining-entry count, directory and reason. Inspect completion rather than
+  assuming every entry was removed. Cache configuration resolution no longer
+  creates directories; an unusable default disables caching, while an explicit
+  unusable directory refuses with its authored provenance.
+
+
+**Inline directives are authored sites with bounded declaration reach.**
+Previously midline tags could become live controls, quote handling depended on
+a tick immediately before the tag, and binding followed the parser's outer
+node or broad containment. A tag must now start its physical comment line
+after decoration; quote documentation with equal paired backtick runs or a
+closed fence. Midline and unclosed-fence mentions are refused. Put a closure
+directive directly before `function`/`fn`, or on its direct argument, array
+value, return value or assignment chain; wrappers around a nested closure do
+not bind. Docblocks anywhere in a declaration header belong to that declaration.
+
+Member suppressions now reach only findings on the member's source lines in
+the containing class or callable. A method retains whole-callable reach;
+a hooked property also reaches its hooks, and a promoted parameter reaches
+both parameter and property findings. Move an intentional member exception
+onto that member. Explicit `:level` selectors must be reachable there.
+Threshold overrides retain whole declaration semantics and gain no containing
+member reach.
+
+Every read tag produces one audit site. Suppressions and diagnostics carry its
+byte position, and next-line sites name the tag line while targeting the line
+after the comment. Two identical comments on one line remain distinct;
+threshold overrides of the same rule on the same line still coalesce.
+Replace `unmeasured / already-refused` and `addresses-every-channel` handling
+with `refused` and required `refusals: [{channel, message}]` (empty for other
+verdicts). JSON does not publish the internal addressed producer. Audit exit
+`4` for incomplete analysis takes priority over `2` for a publishable refusal
+or observable inert directive, otherwise `0`. Blanket `*` and bare file
+controls are judged effective/inert while still unable to silence banned
+channels.
+
+Unused directives now default to Warning instead of Info. To keep the former
+severity, set `rules.annotation.directive.unused-directive-severity: info`
+(or the equivalent nested YAML key). Unresolved and unused channels are
+`Selectable`; unsupported and invalid thresholds are `FollowsAddressedRule`.
+
+PHP consumers must provide `DeclarationBinding(subject, scope, reach)` with
+Inline's `DeclarationReach`, and provide `Suppression`'s physical `position`
+and separate `silencedLine`. `ThresholdDiagnostic` requires `position`;
+`DirectiveSite` requires nullable `position`; `DirectiveVerdict` requires
+nonempty refusal details exactly when refused.
+Read the first actually applied site through
+`AnnotationSuppressionResult::suppressorOf(Finding)`; Reporting receives that
+result through `FindingProjectionResult` rather than repeating a matcher.
+Construct `AnnotationSuppressionResult(retained, suppressed, suppressors)`
+with one site per suppressed finding and supply that result as
+`FindingProjectionResult`'s required `annotationSuppression` argument.
+The suppressed formatter still publishes only `file:line`, so same-line
+sites share that public label. A missing rule class now refuses validator-map
+construction instead of silently being skipped.
+See [ADR 0095](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md)
+for ownership and rationale.
+
+- `ValueScopeJudgement` now requires its existing fifth constructor argument, the measured `ProjectScopeJudgement`; omitting it previously assumed both questions were open. Pass the pipeline judgement explicitly. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for the single measured authority.
+
+- Replace the nine-input `AnalysisResult` constructor with `AnalysisResult::fromRun(measured, directives, ruleExecution, latePublished)`. Read metrics as `measured.repository`; read coverage, namespaceTree, projectScope and duration under `measured`, and suppressions/thresholdOverrides under `directives`. Replace the findings property with `findings()` and filesAnalyzed/filesSkipped with measured coverage methods. Execution publication and late findings remain separate, and merge preserves their original order. See [ADR 0094](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0094-analysis-results-publish-subject-owned-values.md) for PHP-consumer migration.
+- Run scope is measured from the captured project universe and final entry selection. Namespace/declaration absence and exclude-selector binding use separate judgements. A complete named PHP roster can cover paths; authored removal hiding PHP and generated removal still withhold declaration-absence claims. Unjudged report values now include `channel` beside `option` and `pattern`.
+- Authored `exclude` removes named files and directories instead of refusing written directories or bypassing selectors for named files. A complete intentionally empty run (`analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0`) succeeds: `check` and `directives` return 0, `graph:export` writes an empty graph, and `baseline:generate` writes an empty baseline with a stderr explanation. Incomplete input takes priority with exit 4 and no baseline mutation or authoritative graph output. Exclusion is not remediation; baseline cleanup/explain retain the metadata-coverage limitation described in their guide.
+- Replace Run's `FileDiscoveryInterface`, `FileDiscoveryFactoryInterface`, `SkipReportingDiscoveryInterface` and `AnalysisFileDiscovery` composition with `ProjectFilesInterface::discover(RunConfiguration): DiscoveredProjectFiles`. Remove `FinderFileDiscovery`, `DiscoveredAnalysisFiles`, `DirectoryPruner`, `DirectoryWalk`, `ExcludeBindingProbe` and `ExcludeBindingVerdict` integrations. Graph and debug pass the captured run configuration. `LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath)` replaces separate path/exclude/root inputs and `resolveIncludingGenerated()`.
+- Replace `AnalysisContext::$coversProjectScope` with Finding's measured `ProjectScopeJudgement`: use `judgesNamespaceClaims()` for declaration absence and `judgesExcludeSelectors()` for selector completeness. Carry the pipeline's judgement into copied contexts instead of deriving another boolean from report state. Replace `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` with Finding's sole `ProjectScopeChannels` roster. `unjudgedChannels` contains only channels with no judged value; partially judged channels can still have named skipped values.
+- `FileParserInterface::parse(SplFileInfo)` is removed: supply caller-owned bytes through `parseContent(SplFileInfo, string)` with the original absolute file identity. Replace file-based `CacheKeyGenerator::generate()` with `generateForContent()`. Run supplies one snapshot to parser, LOC and Inline processing; source-read refusal becomes `unreadable-file` before parsing.
+- Replace `PathFactory::bestEffortRelative()` and `structurePreservingFallback()` with `published(AbsolutePath, AbsolutePath)`. Publication requires a canonical parent inside the captured root and preserves lexical basename and POSIX backslashes. Outside parents refuse instead of producing a fallback path. Explicit directory aliases targeting the root or its descendants remain valid.
+- `GitRepositoryLocator::findGitDir()` and `findHooksDir()` require an explicit `AbsolutePath`. Git reporting retains all nine project-scoped configuration channels even in strict mode, resolves empty range endpoints as HEAD and uses root-relative diffs. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for migration and limits.
+
+**Authored threshold override requests.** Replace validate(warning, error,
+errorWasExplicit) with validate(ThresholdOverrideRequest). An absent override
+skips validation; equal non-null shorthand and explicit corresponding axes
+are the two supported requests. Empty or inconsistent requests refuse at
+construction. See ADR 0092 for migration steps.
+
+**Linked enablement decisions.** Replace independent EnablementDecision constructor
+arguments with SelectionCellAddress, AuthoredCellDecision and OptionActivity.
+Use CellSwitch and CellAdmission for the choice and pass the complete decisive
+writer list; its first writer supplies statement and provenance. The existing
+readonly observations remain available. See ADR 0092.
+
+**Typed document and option declarations.** Programmatic declaration consumers
+must replace NodeSchema scalar/map/list getters with its readonly typed facts.
+Replace stringList() with list(scalar(ScalarForm::String)), and oneOf(words, foldCase)
+with words(SchemaWordSet::of(...) or ::foldingCase(...)).
+RuleOptionShape::oneOf()/oneOfIgnoringCase() become
+words(RuleOptionWordSet::of(...)/::foldingCase(...)); wordsDeclared() becomes
+the readonly word set. Configuration grammar, numeric defaults and published
+diagnostics remain unchanged. See ADR 0092.
+
+**Declared rule options and one final enablement snapshot.**
+
+1. **Rule option validation moves before discovery.** Previously a bad option could survive until Collection. Every authored layer is now shaped and judged before Discovery, including writes later overridden. Correct the offending file, preset or command-line value; disabling its producer does not make malformed input lawful.
+
+2. **Hierarchical shorthand no longer discards sibling level settings.** A top-level shorthand and an explicit write to the same expanded leaf in one layer now refuse. Independent leaves, such as callable.enabled beside a threshold shorthand, are preserved. Put overlapping writes in distinct layers or use explicit level bands only; later layers merge the expanded leaves.
+
+3. **Complexity shorthand preserves the class band.** A top-level threshold for complexity.ccn, complexity.cognitive or complexity.npath changes the callable band and no longer disables the class band. To retain the former no-class result, write class.enabled: false explicitly.
+
+4. **Empty rule and level maps do not reset.** A rule or level {} contributes no options instead of restoring defaults. To restore a compiled default over a lower layer, write the required value explicitly.
+
+5. **Rule true preserves lower options.** The boolean rule form true writes enabled: true only; it no longer replaces a lower option map. Existing thresholds and exclusions survive. Write all desired defaults if replacement was intended.
+
+6. **Reset without enumerating defaults is not available.** There is no reset token or constructor compatibility mode. Empty and null bodies do not erase lower options. A future reset contract would need an explicit owner-declared default representation; consumers must currently write the values.
+
+7. **Coupling shorthand spreads per writing layer.** Top-level CBO and instability bands expand into class and namespace leaves in that layer before merging. Explicit writes to the same expanded leaves conflict in one layer; independent level settings remain lawful. Configure distinct level bands explicitly when their values differ.
+
+8. **Later exact enable can cancel an earlier disable.** Disable is no longer permanently dominant. A higher-layer exact rules.PRODUCER.enabled: true can reverse a lower disable. Remove the later enable when the producer must remain off.
+
+9. **Same-layer exact enable beats a group disable.** A specific producer enable wins over a less specific group disable in the same layer. Remove that exact enable to keep the entire group disabled.
+
+10. **An empty effective only selection refuses.** An only filter that admits no live cell now refuses with its decisive statements instead of succeeding with an empty report. Correct the filter or the disable/activity statements.
+
+11. **Dead exact only selectors refuse.** A selector disabled at or below its filter cannot silently select nothing. A later disable can legitimately narrow the earlier filter. Remove a dead selector or place the intentional narrowing in a higher layer.
+
+12. **Exact enable outside the effective only filter refuses.** An explicit enable outside its own or a lower effective filter must have direct or declared role admission. Widen the filter or remove the enable; enabling is not an implicit filter bypass.
+
+13. **Contradictory exact enable and disable refuse in every layer.** Writing both for one producer in one layer is refused even if a later layer overrides it. Keep one authored decision.
+
+14. **The both-disable-and-only warning is removed.** The resolver now applies the explicit cell rules and refuses unlawful combinations. Consumers must not depend on the former warning text.
+
+15. **Selection changes typed option enablement and preparation.** Selectors now affect the built options isEnabled answer and the final preparation gate. Off producers perform no preparation or inspection. Read the committed RuleEnablement rather than applying another name filter.
+
+16. **Unassigned-class uses framework enabled and its own mode.** The producer accepts enabled like other rules. enabled: false with mode: warn is lawful and off; enabled: true with mode: ignore refuses as an explicitly enabled inactive producer. Choose warn/error to enable reporting, or remove the explicit enable.
+
+17. **Effective threshold bands are validated.** Warning/error ordering is judged on the effective band, including values from distinct layers and compiled defaults. Write a coherent band; an overridden lower malformed value is still refused independently.
+
+18. **Written NPath class bands activate.** A written class band is effective without a separate enabled: true. To keep class reporting off, write class.enabled: false.
+
+19. **CLI aliases and rule-opt share authored YAML value grammar.** Both doors parse the declared YAML form, preserve provenance and refuse duplicate writes to the same canonical option in one CLI layer. Keep only one alias or rule-opt write for that option.
+
+20. **LCOM method exclusions require a sequence.** A bare CSV string is no longer split. Use --lcom-exclude-methods='[getName, getDescription]' or a YAML sequence; scalar and map substitutes refuse.
+
+21. **CLI null is not a string fallback.** A YAML null written to a non-null CLI option is refused rather than converted into text. Omit the write to retain the lower value.
+
+22. **CLI refusals name their real option.** Configuration diagnostics retain command-line source and the authored flag or option locator, with no document position for that source. Update envelope consumers instead of inventing a file path.
+
+23. **CLI dotted addresses name declared levels only.** An option path after the producer may traverse a declared level and its own keys, not an arbitrary nested dictionary. Put channel-keyed namespace suppression maps in YAML.
+
+24. **Integer threshold annotations reject fractions.** A fractional numeric override is no longer truncated for an integer boundary; it produces annotation.invalid-threshold. Write an integer. Floating-point owner boundaries retain their own numeric contract.
+
+25. **Duplication min_tokens must be at least one.** Zero and negative min_tokens now refuse configuration instead of creating an invalid detection window. Disable duplication.clone explicitly to skip detection.
+
+26. **LCOM exclusions use PHP method case folding and report unmatched names.** Method names match case-insensitively, retaining the first authored spelling. On a covered whole-project run, unmatched names publish cohesion.unmatched-exclude-method once per normalized name. Correct the name; partial runs do not claim that it is absent from the project.
+
+27. **Producer name diagnostics use one judge.** Unknown owners and selectors share the registered producer/channel universe and actionable hints across YAML, presets and CLI. Bare group names require X.*; no compatibility producer aliases are added.
+
+28. **Namespace-channel exclusions require a real namespace witness.** A selector must address a channel published by its owner at namespace level. A global level witness from another producer no longer makes the exclusion legal. Remove an impossible key or choose the owner channel that actually reports at namespace level.
+
+29. **Rule option refusals retain authored full paths and writers.** Diagnostics now retain rules.PRODUCER and the precise key, origin and position when available. Effective-band refusals name their contributing writers and default halves. Consumers must retain all contributing sources rather than relabel every failure resolved.
+
+30. **Only declared snake, camel and kebab spellings are accepted.** Other letter-case variants are refused with the canonical hint. Two accepted spellings of one key in the same map still constitute a duplicate write. Use documented snake_case in YAML and kebab-case in CLI addresses.
+
+31. **Suppressed output includes selection and notRun.** Produced findings removed by selection join the suppression multiset as mechanism selection. Producers that never ran are separate notRun metadata, not invented findings and not counted in byMechanism.
+
+32. **Directive selection lists only decisive disabling statements.** Text and JSON retain every tied decisive disabling text in resolver order and deduplicate repetitions across cells. A statement canceled by a later enable is absent. JSON selection.disabled remains a list of strings.
+
+33. **Directive diagnostics follow declared selection roles.** Unresolved and unused directives are directly selectable. Unsupported and invalid thresholds follow the addressed rule. Disable annotation.directive explicitly to silence its producer.
+
+34. **Retired option diagnostics name one replacement through the declared vocabulary.** Document advice uses canonical declared names; CLI advice keeps the authored spelling. Each refusal retains its own source and written position, so full diagnostic sentences are source-specific. Follow the named replacement; no deprecated aliases or second raw-name walk remain.
+
+35. **Rules listing publishes forms and actual selection writers.** qmx rules lists accepted root/level options separately from dedicated aliases, retains all tied disabling texts and the effective only filter, and emits Selection source with actual origin and layer index. It judges the document and selection but does not build effective rule options or commit runtime state.
+
+36. **InlineDirectiveValidator drops its unused options constructor argument.** Replace new InlineDirectiveValidator(options, policy, identity) with new InlineDirectiveValidator(policy, identity). RuleExecution owns the producer activity gate; no no-op options parameter or compatibility constructor remains.
+
+Programmatic consumers must replace Options::fromArray with Options::fromResolved(ResolvedRuleOptionValues). Compose authored layers through the registered RulesSection, then use one invocation channel snapshot for RuleEnablementResolver::decide, RuleOptionsBuild::build and RuleEnablementResolver::conclude. Publish the completed FindingConfiguration only after preflight succeeds. Raw RuleSelection/RuleSelector filtering, FindingConfigurationResolver, RuleOptionsFactory and the three temporary ConfigurationDocument rule contribution getters are retired; do not recreate their merge or name algorithms in consumers. Default threshold numbers and metric formulas are unchanged.
+
+Finding public API imports move under its Contract namespace. Update these exact FQCNs; there are no aliases:
+
+| Old FQCN                                                          | New FQCN                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsBuild` | `Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild`   |
+| `Qualimetrix\Analysis\Finding\Selection\RuleEnablementResolver`   | `Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver` |
+| `Qualimetrix\Analysis\Finding\Selection\RuleNameJudge`            | `Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge`          |
+| `Qualimetrix\Analysis\Finding\Selection\StatedEnablement`         | `Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement`       |
+
+RuleOptionsBuild now accepts RuleExecutionInterface as its only constructor argument. Remove a supplied RuleSuppressionSelectorDecoder argument: suppression decoding remains owner-private and keeps its existing semantics. FindingConfiguration requires a ResolvedDocument, with typed withResolvedOptions, withChannelUniverse, withEnablement and withDiagnostics copies. Replace raw RuleOptionsDocument/FindingCliOverrides staging with authored document composition; there is no optional raw carrier. ConfigLoaderInterface::read returns LoadedDocument containing AuthoredNode; ConfigurationLayer carries authored layers and diagnostics, while ConfigurationDocument retains the two non-authored Composer discovery facts.
+
+**Composer metadata is one invocation snapshot.** Replace
+`Analysis\Configuration\Discovery\ComposerReader` and
+`ComposerAutoloadPathReaderInterface` with
+`Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::read($root)`.
+Read production/development targets and PSR-4 roots from its typed facts.
+Construct each accepted autoload section as `ComposerAutoloadSection($mappings, $complete)`
+and pass those two values to the seven-argument `ComposerManifestFacts` constructor;
+replace `productionComplete`/`developmentComplete` with `production->complete`/
+`development->complete`, and `scopeIssues(bool)` with
+`productionScopeIssues()` or `allScopeIssues()`.
+Missing, unreadable, invalid and partially accepted sources now retain reasons.
+`Application` construction requires the same reader's
+`ManifestSnapshotControlInterface` as its third argument.
+Replace `ProjectNamespaceResolver($composerJsonPath, $overridePrefixes)`
+with explicit prefix construction or `ProjectNamespaceSourceControlInterface::bind($facts)`;
+construction no longer reads the working directory.
+Replace static `HtmlProjectMetadata::of(...)` with
+`(new HtmlProjectMetadata($reader))->of(...)`, and pass that metadata object
+as `HtmlTreeBuilder`'s third constructor argument.
+See ADR 0089.
+
+**Run configuration carries measured paths and explicit policies.** Replace
+constructor `paths:` and `coversProjectScope:` arguments with
+`projectScope: ProjectScopeMeasurement`, and always supply
+`autoloadDevPolicy: AutoloadDevPolicy::Include|Exclude`.
+Measurement/state imports move from `Analysis\Run\Configuration` to
+`Analysis\Run\Contract\Configuration`.
+Call `measure(root, paths, autoloadDev, PathsAuthorship::Authored|Inferred)`
+with explicit origin. Construct the seven-field `ProjectScopeUniverse` once,
+then pass it with current paths, state and uncovered roots to the four-argument
+`ProjectScopeMeasurement` constructor. Read root, authoredness, denominator,
+pruned targets, reasons, namespace usability and captured path aliases through
+`measurement->universe`. Replace `narrowedTo()`, `coveringProjectScope()` and
+static `ProjectScopeCoverage::narrow()` with `measurement->narrowTo($paths)`
+and `withProjectScope()`; narrowing retains the same universe and performs no IO.
+Paths and the coverage boolean are derived from that measurement; a different
+uncaptured project root is refused as a programmer error.
+`ProjectScopeCoverage::reachableTargets()` is removed from the public measurement
+service. Resolve run inputs through `RunConfigurationResolverInterface`;
+path acquisition now belongs to Run's private `ProjectScopePaths`. See ADR 0089.
+
+**HTML debt calculation is one complete operation.** Replace the consecutive
+`HtmlDebtCalculator::computeDebt()` and `aggregateBottomUp()` calls with
+`calculate($root, $findingsByNode, $nodesByPath)`, which assigns own debt and
+then aggregates counts and debt through the tree. Its numeric output is unchanged.
+
+**An undeclared or damaged subset is unmeasured.** Previously a manifest-less
+subset was `unknown` and judged as the whole project. It is now `unmeasured`,
+with the eight whole-project channels withheld. A whole root remains
+`unknown` and judges; a damaged manifest requires that root to be authored.
+Surviving inferred fragments of a partial manifest are also unmeasured.
+Unusable damaged defaults refuse with exit 3; write explicit paths.
+Structured `projectScope` adds `reasons[]` in every state and accepts
+`unmeasured`; consumers must retain those causes. Missing on-disk targets
+still remain outside the denominator and are named as reasons.
+Namespace location uses accepted PSR-4 facts independently of the state.
+See ADR 0089 and the amendment to ADR 0084.
+
+**Graph export resolves the configured run.** Previously graph paths and
+discovery bypassed the document. Omitted paths now follow the same Composer
+defaults as `check`, configured directory exclusions apply and generated files
+are excluded unless included. Graph accepts configuration/presets, cache,
+workers, memory limits and inclusion flags. Its `--format/-f` still selects
+`dot|json` independently of Reporting's document `format:`.
+Correct integrations following the former documented direction alias: use
+`--direction`; global `-d` selects the working directory.
+Debug accepts `--preset`; all four measuring baseline commands share
+`--no-cache`, `--workers` and `--memory-limit`. See ADR 0089.
+
+**Rules reads the current configuration document.** Previously the listing
+could succeed beside an invalid document. It now refuses invalid declared
+document values with exit 3, lists configured computed metric names and marks
+selection through the final `disabled_rules`/`only_rules`.
+It does not require analysis paths. Rule enable switches and selection use
+the declared document and the shared selection resolver. Programmatic command composition must provide the document
+adapter and the named resolvers. See ADR 0089.
+
+**Automatic configuration names are exact.** Previously filesystem lookup
+could accept a case variant, and two config files silently preferred one.
+Automatic discovery accepts directory entries named exactly `qmx.yaml` or
+`qmx.yml` and refuses two exact names with exit 3. Near spellings warn when
+no exact name exists. Rename the automatic file or use `--config` explicitly.
+An unlistable configuration search directory also refuses instead of inferring
+that no config exists. Every measuring command now refuses a missing input or an explicitly named
+existing regular non-PHP file before discovery; direct Finder use also refuses
+the non-PHP file instead of silently dropping it. See ADR 0089.
+
+
+**Graph analysis receives its complete run policy.** Replace
+`DependencyGraphAnalyzerInterface::analyze($paths, $projectRoot)` with
+`analyze($runConfiguration, $fileDiscovery)`. Both inputs are mandatory.
+Construct the analyzer with `AnalysisFileDiscovery` instead of a bare finder;
+the shared discovery applies generated-file policy and counts skipped files
+in coverage. See ADR 0089.
+
+**Debug command composition declares its preflight profile.** Replace the
+three-argument `LayerAssignmentCommand` constructor with the four-argument
+constructor, passing `AnalysisPreflightProfile::analysis()` after the preflight.
+See ADR 0089.
+
+**Document sections return one atomic declaration.** Replace
+`DocumentSectionSchemaInterface::key(): string` and `schema(): NodeSchema`
+with `declaration(): SectionDeclaration`, returning
+`new SectionDeclaration($key, $schema)`. Consumers read its readonly
+`key` and `schema` properties. `OutputFormatResolver` no longer provides a
+schema: register `OutputFormatSection` with `OutputFormatVocabulary`; the
+resolver takes that same vocabulary for winner validation. See ADR 0088.
+
+**Project-scope callers read one measurement.** Replace
+`ProjectScopeCoverage::pathsCoverProjectScope()` and
+`uncoveredAutoloadRoots()` with `measure()`, then read
+`$measurement->state()->coversProjectScope()` and `$measurement->uncoveredRoots`.
+Call `ProjectScopeCoverage::reachableTargets()` statically. That consolidation
+preserved its then-current scope policy; the later four-state amendment is
+recorded above and in ADR 0089. See ADR 0088 for the consolidation.
+
+**Invalid authored configuration values cannot be hidden by an override.**
+A lower layer with an unknown format or exit policy, an empty cache directory
+or path list, invalid worker count or memory-limit syntax, malformed
+Architecture value or invalid computed formula syntax or level list now
+refuses with exit code 3 even when a higher layer supplies a valid replacement.
+Correct the layer that wrote the invalid value; its source is named in both
+text and JSON refusals. References requiring the merged document are still
+judged after merging. Rule-specific meanings remain on the temporary Finding
+boundary. Custom document composition must register the owning sections:
+`ConfigurationRoot::Paths`, `FailOn`, `MemoryLimit`, `Parallel` and `Format` are removed;
+use Run's `PathsSection`, Console's `ExitPolicySection` and `MemoryLimitSection`,
+and `ParallelConfigurationResolver` as schema providers. For `Format`, register
+Reporting's `OutputFormatSection` with its registry-backed
+`OutputFormatVocabulary`. Compiled container
+composition registers them automatically. See ADR 0086.
+
+**Exit policy values are textual.** Replace the former YAML `fail_on: false`
+with the equivalent `fail_on: none`; `false` is refused with exit code 3.
+`none` still means that findings do not fail the run. See ADR 0086.
+
+**Programmatic worker configuration requires a non-negative count.**
+`new ParallelConfiguration(-1)` now throws `InvalidArgumentException` rather
+than carrying an invalid worker count. Use `null` for automatic detection,
+`0` for sequential execution, or a positive count. The same integer grammar
+is applied to each authored `parallel.workers` value. See ADR 0086.
+
+**Resolved-document reads require declared canonical paths.**
+`get()` now throws `LogicException` for a path the schema does not declare;
+only a declared but unwritten path returns `null`. When constructing a document,
+replace `new ResolvedDocument($roots, $diagnostics)` with
+`new ResolvedDocument($schema, $roots, $diagnostics)`. Use `computed_metrics`
+and `exclude_health` as the canonical `ConfigSchema` roots instead of the
+former internal `computedMetrics` and `excludeHealth` projections. See ADR 0086.
+
+**Resolved document values now refuse by throwing, and their concrete forms are
+internal.** Replace
+`ResolvedValueInterface::refusal(string): ConfigurationRefusal` with
+`ResolvedValueInterface::refuse(string): never`; a call such as
+`$value->refusal($message)` becomes `$value->refuse($message)` and does not
+return. Replace reads and type checks against `ResolvedMap`, `ResolvedList`,
+`ResolvedOpaque`, and `ResolvedBareName` with their respective
+`*Interface` contracts under `Analysis\Configuration\Contract\Document`.
+Their concrete implementations, together with `ResolvedScalar`, now belong to
+the internal `Analysis\Configuration\Document\Resolved` subject and are not a
+consumer construction API. Build a `ConfigurationRefusal` directly with
+`Provenance::refusalOf()` only where the caller must inspect or carry the
+exception object rather than immediately throw it. See ADR 0086.
+
+**Configuration owners now read declared resolved values instead of folding
+generic contributions.** The generic `ConfigurationDocument::contributions()`
+operation and `ConfigurationRefusal::origin()` are gone. Finding temporarily
+uses the named `ruleContributions()`, `onlyRuleContributions()` and
+`disabledRuleContributions()` operations until Finding declares its rule subtree; Composer's production and
+development autoload targets are separate non-authored facts. `coupling` now
+deep-merges as a map, `framework_namespaces` replaces as a list, and `coupling:
+{}` preserves lower fields. Its keys follow the shared snake_case, kebab-case
+and camelCase spelling rule; former Title-case keys such as
+`FrameworkNamespaces` are refused. A malformed written value is refused in the layer
+that wrote it, while a final or joint refusal carries the winning or
+contributing sources and position, with the original cause where one exists. See ADR 0086 for the declared-policy
+rationale; rule-option semantics are unchanged.
+
+**Finding-gate declaration derivation now writes complete measurable forms even
+when another change remains unexplained.** Previously a failed comparison wrote
+nothing; `--derive-declarations` now lists written files and still exits 5 with
+the unexpressed remainder. Inspect both before retrying, and use the ordinary
+comparison for acceptance. See ADR 0087.
+
+**The finding gate declares measured changes instead of treating finding changes
+as opaque report diffs or ranked-position allowances.** The old rename/diff-only
+contract becomes exact record, value, schema, outcome, surface and structural
+input declarations with intention and derived tables. JSON record declarations
+now use complete physical records, including records hidden by presentation
+limits, plus `ranking.impactScore` and `ranking.coupling.class-rank`. Baseline
+checks own their JSON and ranking views. Ranking order uses
+`kind=order, key=ranking, level=*`; slice-limit changes use
+`kind=field, key=topIssues.limit`, with exact derived `=k`/`>=n` values.
+Schema changes on ranked records name the `json/ranking` view. Re-derive existing
+declarations against the original reference, review their exact records and
+values, and run the ordinary comparison: a derivation exits 4, not GREEN.
+Consumers of failure reports must handle `record-ambiguous`,
+`ranking-projection-mismatch` and `ranking-order-mismatch`. Wiring no longer
+accepts `pending`, including an empty key, and every failure class requires an
+observed producer witness. See [ADR 0087](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0087-the-finding-gate-declares-measured-changes.md)
+and [the gate declaration reference](https://github.com/qualimetrix/qualimetrix/blob/main/finding-gate/README.md).
+
 **The project distance aggregate is renamed and now covers every namespace that
 declares a type.** `coupling.distance.avg` and `coupling.distance.count` at
 project level become `coupling.distance-own.avg` and
@@ -236,13 +651,6 @@ loose criterion matches, and the first instance in expansion order — which is
 binding-value alphabetical — wins it. Write `match: all` for the narrowing this
 almost certainly meant, or a static layer for the global net.
 
-**`relations:` written with no value is refused.** `relations:` followed by
-nothing — an empty list, commented-out items, a lost indent — parsed as "no
-filter declared", so a policy meant to be narrowed was silently widened to every
-relation kind. `relations: []` was already refused for exactly that reason; both
-spellings of the same slip now refuse alike. Drop the key entirely to keep "any
-relation allowed".
-
 **`architecture.coverage-gap: warn` or `error` with no `architecture.layers`
 is refused** with exit 3. With no layers every class is outside every layer,
 and the run reported none of them — so the strictest setting of the option was also the
@@ -277,35 +685,9 @@ symbol, and a symbol that reaches such a key gets no value and is counted in
 the warning. A key read in the condition, or by both branches, is refused. A chain none of whose links the level carries is
 refused naming every link.
 
-**Inline-directive forms that used to be silent now fail the run.** Each is
-reported on `annotation.unresolved-directive` at the line it was written on.
-That channel is a configuration error, so the run exits 2 whatever `--fail-on`
-says — `--fail-on=none` included — and no baseline accepts it:
-
-- a declaration-form `@qmx-ignore` written where nothing is measured (above a
-  statement, on a property without hooks);
-- a docblock `@qmx-threshold` written where nothing it can retune is measured
-  (above a statement, on a property without hooks, a class constant or a
-  parameter);
-- `@qmx-threshold` in a `//` or `/* */` comment — a threshold is read only from
-  a docblock, and over a measured method this form used to retune nothing;
-- a `@qmx-` tag name this tool does not read (`@qmx-ignore-lines`);
-- `@qmx-ignore` or `@qmx-ignore-next-line` with no channel on the tag's line,
-  and `@qmx-threshold` with no rule — answered "names no channel" / "names no
-  rule". `/** @qmx-threshold */` used to be reported as an invalid threshold on
-  the rule `*`, which nobody wrote.
-
-The first was worse than silent: it threw out of extraction, so the whole file
-was dropped from the analysis — its metrics and findings simply absent — while
-the run still called itself complete. No new channel and no new option: correct
-the directive or remove it. Prose that mentions a tag in a `//` comment is read
-as the tag: quote it in backticks.
-
-**`bin/qmx directives --format=json` reports the form of a refused directive
-from its vocabulary.** A `@qmx-ignore` / `@qmx-ignore-next-line` refused for
-naming no channel appears under the form `symbol` / `next-line`, as every other
-directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
-`@qmx-threshold` appears under the form `threshold`.
+Inline declaration refusals now preserve the file's analysis instead of
+aborting extraction. The authored-site migration and audit shape are described
+in the inline-directive Breaking entry above.
 
 - **An option value that does not parse is refused instead of falling back to a
   default.** `--detail`, `--top`, `--group-by`, every `--format-opt` value
@@ -359,12 +741,15 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   analyze", `directives` refused without saying why. Name a file or a directory
   inside it instead (`bin/qmx check vendor/acme/`); a `vendor` directory inside
   a path you name is still skipped, without a refusal.
-- **The JSON refusal envelope is `{error, exit_code, position}`** (was
+- **The JSON refusal envelope is `{error, exit_code, position, source}`** (was
   `{error, exit_code}`): `position` is `{path, written, accepted, closed}` when
   the refusal was raised at a place in a configuration document, and `null`
   otherwise — including a merged value such as `memory_limit: 010M` whose
-  message names the key. A consumer comparing the key set exactly must accept
-  the new key.
+  message names the key. `source` lists the configuration layers the refusal
+  is about, each `{kind, name, imported_by}` (`kind` is `defaults`, `composer`,
+  `preset`, `file`, `cli`, `baseline`, or `resolved` for a value not yet traced
+  to one layer), and is `null` for an outcome that is not a configuration
+  refusal. A consumer comparing the key set exactly must accept the new keys.
 - **`--format=json` `topIssues[].message` and every `--format=suppressed`
   entry's `message` are now the finding's message**, as in
   `violations[].message`; the recommendation they carried moved to a new
@@ -412,8 +797,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   `suppressPaths`) instead of the later silently winning; `memory_limit: 0`, a
   leading zero (`010M`, read by PHP as octal) and a limit the runtime rejects,
   each with the value quoted; and a `computed_metrics` entry written as
-  `name: ~`, now read as `name: {}`, so an invalid or unknown name or a user
-  metric without a formula is refused instead of silently dropped.
+  `name: ~` or `name: {}`, whose name is now judged whatever its body, so an
+  invalid or unknown name, or a user metric no layer gives a formula, is
+  refused instead of silently dropped.
 
 - **`complexity.cognitive` follows the SonarSource whitepaper (v1.7) where it
   did not.** A ternary gets the nesting increment and nests its branches; a
@@ -509,8 +895,83 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   each span gains `stopped` and loses `peak_memory_delta_bytes`, which was not
   a peak (memory is sampled only at span boundaries).
 
+**Configuration layers merge by one policy per key, declared by the key.**
+Defaults, presets, `qmx.yaml` and the command line used to be combined by each
+section its own way. They now combine by the policy the configuration page's
+generated table lists for every key; see
+[ADR 0086](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0086-one-configuration-document-merged-by-declared-policy.md).
+What changes for a configuration you already have:
+
+- `computed_metrics` merges metric by metric and key by key (was: a later
+  layer's `computed_metrics` replaced the earlier one whole, and a metric it
+  named was replaced whole). A preset's metric your file does not name now
+  stays; a file's `warning` over a preset's `threshold` keeps the preset's
+  `formula` and `error` instead of failing on the missing formula or resetting
+  `error` to the default.
+- A computed metric a lower layer wrote is removed only by `enabled: false`;
+  there is no way to replace a preset's whole set of computed metrics.
+- Outside `rules:`, `{}` and `~` never reset anything: `computed_metrics: {}` and
+  `health.complexity: ~` (or `: {}`) over a preset keep the preset's values
+  (was: back to the built-in defaults). To return to a default, write it.
+- A misspelt key is refused even when its value is `~` — under `architecture`
+  (the section, a `layers` entry, an `exclude:` block) and under a
+  `computed_metrics` entry, `formulas:` included (was: silently accepted). A
+  name under `architecture.allow` that `layers` does not declare is refused
+  even when written with `~` or `{}`.
+- A key is accepted in the snake_case, kebab-case or camelCase of its words,
+  at the root and in every declared section, including `coupling:`; `rules:`
+  still has its own reader. Any other spelling of the same words
+  is refused as a misspelling, with the accepted one (was: `Fail_On` folded
+  silently at the root, `FAILON` and `failon` refused as unknown keys with a
+  did-you-mean hint, and each section reading spellings its own way).
+- A list item that is not a string, `~` included, is refused with its index —
+  `only_rules: [~]`, `disabled_rules: [5]`, `exclude: [~]` (was: a `~` item in
+  `only_rules` or `disabled_rules` silently accepted, and one in `exclude`
+  refused with a message about bare strings).
+- A value of the wrong shape is refused in whichever layer wrote it, even when
+  a later layer overrides it: a preset's `fail_on: 5` under a file that sets
+  `fail_on: error`, a preset's `architecture.coverage-gap: 5`, and a preset's
+  `architecture.layers` entry with `patterns: 42` or an allow target with a
+  misspelt key under a file that writes its own `layers` or `allow` list (was:
+  skipped).
+- An `exclude:` block of an `architecture.layers` entry that writes nothing —
+  `exclude: {}`, `exclude: []`, or criteria written only as `~` — excludes
+  nothing, like any other empty map (was: refused as an empty block). A block
+  that writes only `match`, or a criterion written as an empty list, is still
+  refused.
+- A computed metric a lower layer switched off with `enabled: false` stays off
+  when a higher layer writes only its thresholds or formula; write
+  `enabled: true` beside them to switch it back on (was: the higher layer's
+  metric replaced the lower one whole, switching it on).
+- Code constructing resolved-document provenance must pass the layer's
+  precedence index: `Provenance(origin, path, ?line = null)` becomes
+  `Provenance(origin, path, int layerIndex, ?line = null)`. Assign indices
+  from the same ordered document composition; the line remains optional.
+  Joint refusals sort these indices instead of relying on caller collection
+  order, and an explicitly supplied null position stays null.
+- `check --format=json` has a new top-level key, `configurationDiagnostics`:
+  the warnings about the configuration the run accepted, `[]` when there are
+  none. A consumer comparing the key set exactly must accept it.
+
 ### Changed
 
+- A configuration error names the layer that wrote the value — the preset,
+  the file, the command-line option — and quotes the key as you spelled it; an
+  error about two keys, or about a value several layers wrote, names each
+  layer in precedence order, lowest first, and positions the last writer. An
+  inherited project formula names the actual namespace-formula writer, even
+  when a later layer changed only its description; a built-in project formula
+  retains its default authorship under a namespace override. A path to analyse
+  that does not exist names the file, preset or argument that wrote it.
+  Final-value refusals name their authors in text and in JSON `source`.
+  The remaining raw Finding rule-option reader does not yet preserve that
+  authored provenance; see ADR 0086's transitional state.
+- Warnings about a configuration that is legal but probably not what was meant
+  are printed on stderr by every command that reads the configuration. The
+  first is `only_rules: []` over a layer that filters the rules: it lifts the
+  filter, and now says so unless a layer above writes a filter again.
+- `memory_limit` accepts an unquoted integer, so `memory_limit: -1` means "no
+  limit" as it does in `php.ini`.
 - Namespace-level `coupling.cbo` is now counted over the namespace's whole
   subtree, the region its `coupling.ca`/`coupling.ce` cover, so a namespace
   holding only sub-namespaces no longer publishes 0. What `coupling.cbo` used
@@ -712,6 +1173,17 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
 
 ### Fixed
 
+- Stale suppression regex values are audited on a complete named PHP file roster using measured path completeness, with the separate declaration-completeness requirement for namespace values.
+
+- Analysis durations, baseline lock deadlines and script elapsed-time checks use
+  monotonic clocks. A backward adjustment of the system date no longer makes
+  an otherwise valid analysis fail with `Configuration error: Duration must be
+  non-negative`; timeout intervals and duration units remain unchanged.
+
+- Finding-gate derivation canonicalizes an empty delta index after a complete
+  GREEN measurement. An empty remainder of a refused measurement still leaves
+  the index unchanged.
+
 - **`@qmx-ignore` and `@qmx-ignore-next-line` written with no channel no longer
   silence everything.** In a block comment and in a docblock, the comment's own
   closing delimiter was read as the channel argument `*` — the spelling that
@@ -772,9 +1244,9 @@ directive of those tags, instead of `ignore` / `ignore-next-line`; a refused
   the last argument of a call, after the last element of an array) is now read:
   `@qmx-ignore-next-line` and `@qmx-ignore-file` work there, and a declaration
   form is refused instead of being dropped.
-- A backtick written directly before a tag always opens a quote, so a stray
-  backtick earlier on the same docblock line no longer turns a quoted example
-  such as `` `@qmx-ignore complexity.ccn` `` into a live suppression.
+- Quoting uses same-line equal backtick runs rather than a special tick
+  immediately before the tag; malformed examples receive a placement refusal.
+  Closed fences quote multiline examples; unclosed fences report refusals.
 - Two different refused tags naming one channel on one line are reported as two
   `annotation.unresolved-directive` findings and two audit verdicts; one used to
   replace the other.

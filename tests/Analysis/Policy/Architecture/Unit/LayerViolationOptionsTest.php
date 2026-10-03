@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(LayerViolationOptions::class)]
 final class LayerViolationOptionsTest extends TestCase
@@ -27,7 +29,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itParsesAnEmptyArrayIntoTheConstructorDefaults(): void
     {
-        $options = LayerViolationOptions::fromArray([]);
+        $options = LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, []));
 
         self::assertTrue($options->isEnabled());
         self::assertSame(Severity::Warning, $options->severity);
@@ -36,7 +38,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itParsesEnabledFalse(): void
     {
-        $options = LayerViolationOptions::fromArray(['enabled' => false]);
+        $options = LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['enabled' => false]));
 
         self::assertFalse($options->isEnabled());
     }
@@ -44,7 +46,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itParsesSeverityError(): void
     {
-        $options = LayerViolationOptions::fromArray(['severity' => 'error']);
+        $options = LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['severity' => 'error']));
 
         self::assertSame(Severity::Error, $options->severity);
     }
@@ -52,7 +54,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itParsesAnExplicitSeverityWarning(): void
     {
-        $options = LayerViolationOptions::fromArray(['severity' => 'warning']);
+        $options = LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['severity' => 'warning']));
 
         self::assertSame(Severity::Warning, $options->severity);
     }
@@ -64,7 +66,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itLeavesTheDefaultWhenSeverityIsWrittenNull(): void
     {
-        $options = LayerViolationOptions::fromArray(['severity' => null]);
+        $options = LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['severity' => null]));
 
         self::assertSame(Severity::Warning, $options->severity);
     }
@@ -72,7 +74,7 @@ final class LayerViolationOptionsTest extends TestCase
     #[Test]
     public function itParsesSeverityCaseInsensitively(): void
     {
-        $options = LayerViolationOptions::fromArray(['severity' => 'ERROR']);
+        $options = LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['severity' => 'ERROR']));
 
         self::assertSame(Severity::Error, $options->severity);
     }
@@ -83,7 +85,7 @@ final class LayerViolationOptionsTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('severity');
 
-        LayerViolationOptions::fromArray(['severity' => 'bogus']);
+        LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['severity' => 'bogus']));
     }
 
     #[Test]
@@ -92,7 +94,7 @@ final class LayerViolationOptionsTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('severity');
 
-        LayerViolationOptions::fromArray(['severity' => 42]);
+        LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, ['severity' => 42]));
     }
 
     /**
@@ -118,7 +120,7 @@ final class LayerViolationOptionsTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('no longer exists');
 
-        LayerViolationOptions::fromArray([$key => 'info']);
+        LayerViolationOptions::fromResolved(ResolvedOptionsFixture::values(LayerViolationOptions::class, [$key => 'info']));
     }
 
     #[Test]

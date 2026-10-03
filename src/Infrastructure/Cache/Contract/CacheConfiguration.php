@@ -8,5 +8,9 @@ use Qualimetrix\Core\Path\AbsolutePath;
 
 final readonly class CacheConfiguration
 {
-    public function __construct(public AbsolutePath $directory, public bool $enabled = true) {}
+    public function __construct(
+        public AbsolutePath $directory,
+        public bool $enabled = true,
+        public ?string $disabledBecause = null,
+    ) {}
 }

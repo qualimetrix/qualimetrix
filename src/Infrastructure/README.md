@@ -39,6 +39,9 @@ Infrastructure/
 │   ├── CacheKeyGenerator.php
 │   └── CacheWriteException.php      # Cache write failure exception
 ├── Composer/
+│   ├── ComposerManifestReader.php  # One typed manifest snapshot per analysed root and invocation
+│   ├── LocatedComposerRoots.php     # Bounded install roots plus observed omissions
+│   ├── ComposerRootOmission.php     # A named unresolvable, filesystem-root or walk-limit omission
 │   ├── ClassmapPath.php              # Resolves generated classmap path expressions without executing them
 │   ├── ComposerAutoloadMap.php       # Places classes from the analysed project's Composer roots
 │   ├── DeclaredParentReader.php      # Reads external inheritance declarations for Design DIT
@@ -111,6 +114,10 @@ Infrastructure/
 │   │   ├── DuplicationConfigurator.php
 │   │   ├── AnalysisConfigurator.php
 │   │   └── OutputConfigurator.php
+│   ├── ProjectManifest/
+│   │   └── ProjectManifestConfigurator.php # Shared invocation snapshot and exact public aliases
+│   ├── Registration/
+│   │   └── EvidenceRegistration.php   # Fresh evidence loaders and registration prototypes
 │   └── CompilerPass/
 │       ├── CollectorCompilerPass.php
 │       ├── GlobalCollectorCompilerPass.php
@@ -137,8 +144,15 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredFindingSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit on a run wide enough to judge it — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
-    ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
+    ├── FindingFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector, asks Finding's suppression-binding audit using the final measured judgement — for findings and for the values it skipped, which the project scope publishes — and reports the stage results
+    ├── RuntimeConfigurator.php        # Closed-profile runtime composition; graph consumes no Finding or analysis format
+    ├── AnalysisPreflightProfile.php   # Positive CLI and consumer profiles for analysis and graph
+    ├── RunConfigurationPreparation.php # Resolves run/cache/parallel before runtime stores commit
+    ├── ResolvedRunConfiguration.php   # Accepted immutable run/cache/parallel values
+    ├── PreparedAnalysisRuntimeConfiguration.php # Accepted analysis values before stores commit
+    ├── ObservedProjectScopeReasons.php # Already observed manifest and install-root reasons
+    ├── AnalysisInputPathValidator.php # Missing path and explicit non-PHP regular-file refusal
+    ├── ProjectSourceConfigurator.php # Current manifest facts, namespace source binding and install anchor
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── ErrorStream.php               # Sole owner of the run's error stream: progress section plus every diagnostic writer
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
@@ -146,11 +160,16 @@ Infrastructure/
     ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── DirectiveAuditPresenter.php    # Both projections of one directive audit; the text one prints the claim, the JSON one the stable key
     ├── DirectiveVerdictTally.php      # How many directives of each verdict one audit produced, tallied over the vocabulary and rendered for both projections
-    ├── ScopeWarningChecker.php        # Renders the incomplete-scope and pruned-target warnings from Run's ProjectScopeCoverage answer
+    ├── ScopeWarningChecker.php        # Renders named reasons from the final Run scope measurement
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
     ├── FormatOptionPairs.php          # The --format-opt door: every written pair judged, a repeated key and two spellings of one value refused
-    ├── ArtifactFile.php               # A file an option names for an artifact: written in place when it exists, created when it does not
+    ├── RunTarget/
+    │   ├── RunTargets.php             # Shared report/profile/log judgement, claims and teardown
+    │   ├── RunTargetSession.php       # Command outcome, cleanup and terminal classification
+    │   ├── TargetAccess.php           # Pure CLI target-access judgement
+    │   ├── TargetCollisions.php       # Target identity/name conflicts before and after claim
+    │   └── ProcessStreams.php         # Process descriptor identity and Linux access-mode inspection
     ├── CommandLineSpelling.php        # An option or argument value as argv would spell it; other shapes refused with exit 3
     ├── CheckCommandDefinition.php     # Command option definitions
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
@@ -214,7 +233,7 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `ConfigurationConfigurator` — Analysis.Configuration pipeline and ordered document source seam
 - `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
 - `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
-- `MeasurementConfigurator` — repository, aggregation, Cohesion LCOM configuration, and worker reconstruction
+- `MeasurementConfigurator` — repository, aggregation, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — collector compiler-pass and parallel-class composition; it does not scan capability implementations
 - `RuleConfigurator` — rule registries, channels, selector, and compiler passes; it does not scan capability implementations
@@ -222,6 +241,8 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
   `DesignConfigurator`, `MaintainabilityConfigurator`, `SecurityConfigurator`,
   and `SizeConfigurator` — exact owned collector roots plus lazy, non-autowired
   rule roots
+- `CohesionConfigurator` also registers the LCOM configuration resolver and
+  store, with the tagged LCOM-configurable collectors
 - `CouplingConfigurator` — the same exact collector/rule registration for
   Coupling, plus internal `CouplingAnalysis` state and the public
   `CouplingConfiguratorInterface` alias
@@ -230,6 +251,10 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
 - `AnalysisConfigurator` — Run pipeline, discovery, collection, and strategies
 - `OutputConfigurator` — formatters, GraphProjection, and exact composition for Reporting finding projection, Inline annotation suppression, and the Git query adapter
+
+`Registration/EvidenceRegistration` supplies fresh loader and collector/rule
+prototypes to Cohesion, Complexity, Coupling, Maintainability and Size. Each
+configurator retains its literal exact resource roots and special bindings.
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container
@@ -260,10 +285,9 @@ Console and Finding receive that universe through their own narrow contracts.
 
 ### Lazy Services
 
-Rules and their Options are made lazy via `->setLazy(true)`:
-- Rules are not created during container compilation
-- Rules are created on first use in Finding's `RuleExecution`
-- By that time RuleOptionsFactory is already configured with CLI options
+Executable rules are lazy services and are created on first use in
+Finding's `RuleExecution`. Options are immutable values built during preflight
+for every producer, not lazy services or raw CLI readers.
 
 ### CompilerPass
 
@@ -382,11 +406,15 @@ Decorator for `FileParserInterface`.
 - `CacheInterface $cache`
 - `CacheKeyGenerator $keyGenerator`
 
-**Algorithm of parse():**
-1. Read source bytes once from the original file.
-2. Generate the cache key from those bytes.
+**Algorithm of `parseContent()`:**
+1. Receive caller-owned bytes and the original absolute file identity.
+2. Generate the key from those bytes with `generateForContent()`.
 3. Cache hit -> return from cache.
-4. Cache miss -> parse those same bytes via `$inner` while retaining the original file for diagnostics, save.
+4. Cache miss -> parse those bytes via `$inner`, preserving file identity for diagnostics, and save.
+
+Source IO belongs to Run's private `SourceReader`. Parser/cache adapters neither
+reopen source nor infer cwd. Generated-header inspection and Duplication retain
+separate reads. See [Run](../Analysis/Run/README.md).
 
 ### FileParserFactory
 
@@ -453,6 +481,18 @@ Factory with runtime configuration awareness.
 - Exit codes are correct
 - No ServiceLocator (all dependencies via constructor)
 
+
+## Atomic typed rule configuration
+
+Infrastructure supplies one immutable channel universe over the candidate
+computed-metric definitions, shared by document/selection/option preparation.
+Every producer's options are built, even when inactive, before collection. The
+completed `FindingConfiguration` carries document, options, enablement, universe
+and diagnostics; runtime stores receive it only after all preflight succeeds.
+A failed invocation cannot leave part of a candidate configuration committed.
+Rules remain lazy executable services. Their Options are already immutable
+prepared values, not lazy raw readers. No generic contribution adapter or second
+constructor-reflected option catalogue participates in runtime execution.
 
 ## Locality
 

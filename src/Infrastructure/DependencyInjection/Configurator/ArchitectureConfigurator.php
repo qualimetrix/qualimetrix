@@ -10,9 +10,9 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
-use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Symfony\Component\Config\FileLocator;
@@ -25,6 +25,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 {
     private const string ARCHITECTURE_POLICY = 'Qualimetrix\\Analysis\\Policy\\Architecture\\ArchitecturePolicy';
+    private const string ARCHITECTURE_SECTION = 'Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\ArchitectureSection';
     private const string LAYER_ASSIGNMENT_COMMAND = 'Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand';
     private const string LAYER_ASSIGNMENT_RESOLVER = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
     private const string LAYER_DECLARATION_VALIDATOR = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerDeclarationValidator';
@@ -52,6 +53,8 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 
         $container->register(self::ARCHITECTURE_POLICY)
             ->setAutowired(true);
+        $container->register(self::ARCHITECTURE_SECTION)
+            ->setAutoconfigured(true);
 
         $this->registerLayerVerdicts($container);
         $container->setAlias(ArchitecturePolicyConfiguratorInterface::class, self::ARCHITECTURE_POLICY)
@@ -67,12 +70,14 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(LayerAssignmentInspectorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
-                new Reference(FileDiscoveryFactoryInterface::class),
-                new Reference(GeneratedFileFilterInterface::class),
+                new Reference(ProjectFilesInterface::class),
             ]);
+        $container->register(AnalysisPreflightProfile::class)
+            ->setFactory([AnalysisPreflightProfile::class, 'analysis']);
         $container->register(self::LAYER_ASSIGNMENT_COMMAND)
             ->setArguments([
                 new Reference(AnalysisPreflight::class),
+                new Reference(AnalysisPreflightProfile::class),
                 new Reference(self::LAYER_ASSIGNMENT_RESOLVER),
                 new Reference(RefusalPresenter::class),
             ])

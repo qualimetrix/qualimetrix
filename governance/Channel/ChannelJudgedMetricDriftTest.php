@@ -7,6 +7,7 @@ namespace Qualimetrix\Governance\Channel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use QmxFindingGate\CaseDefinition;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -317,7 +318,10 @@ final class ChannelJudgedMetricDriftTest extends TestCase
         $catalog = [];
         $classDeclarations = [];
 
-        foreach (CorpusCaseRun::cases() as $directory => $case) {
+        foreach (CorpusCaseRun::cases(CorpusCaseRun::repositoryRoot()) as $directory => $case) {
+            if (!CorpusCaseRun::isAnalysis($case)) {
+                continue;
+            }
             $catalog[$directory] = self::indexMetrics($directory, $case);
 
             foreach (CorpusCaseRun::findings($directory, $case) as $finding) {
@@ -393,11 +397,10 @@ final class ChannelJudgedMetricDriftTest extends TestCase
      * and a wrong join would compare a real number against a real number and
      * look like agreement.
      *
-     * @param array<string, mixed> $case
      *
      * @return array<string, array<string, int|float>>
      */
-    private static function indexMetrics(string $directory, array $case): array
+    private static function indexMetrics(string $directory, CaseDefinition $case): array
     {
         $index = [];
 

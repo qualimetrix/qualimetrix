@@ -33,6 +33,7 @@
     ],
     "channels": [
         "cohesion.lcom@class",
+        "cohesion.unmatched-exclude-method@project",
         "complexity.cognitive@callable",
         "complexity.cognitive@class",
         "complexity.ccn@callable",

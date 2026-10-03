@@ -13,9 +13,16 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalPa
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
+use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
-use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
+use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
@@ -57,8 +64,7 @@ final class DependencyGraphAnalyzerTest extends TestCase
         file_put_contents($this->tempDir . '/Model.php', '<?php namespace Domain; final class Model {}');
 
         $result = $this->createAnalyzer($this->parser())->analyze(
-            [AbsolutePath::fromString($this->tempDir)],
-            AbsolutePath::fromString($this->tempDir),
+            $this->configuration(),
         );
 
         self::assertTrue($result->coverage->isComplete());
@@ -88,8 +94,7 @@ namespace App {
 PHP);
 
         $result = $this->createAnalyzer($this->parser())->analyze(
-            [AbsolutePath::fromString($this->tempDir)],
-            AbsolutePath::fromString($this->tempDir),
+            $this->configuration(),
         );
         $classes = array_map(
             static fn($path): string => $path->toCanonical(),
@@ -126,15 +131,6 @@ PHP);
                 private readonly string $processingFailure,
             ) {}
 
-            public function parse(SplFileInfo $file): array
-            {
-                if ($file->getPathname() === $this->processingFailure) {
-                    throw new RuntimeException('Synthetic processing failure');
-                }
-
-                return $this->delegate->parse($file);
-            }
-
             public function parseContent(SplFileInfo $file, string $content): array
             {
                 if ($file->getPathname() === $this->processingFailure) {
@@ -146,8 +142,7 @@ PHP);
         };
 
         $result = $this->createAnalyzer($parser)->analyze(
-            [AbsolutePath::fromString($this->tempDir)],
-            AbsolutePath::fromString($this->tempDir),
+            $this->configuration(),
         );
 
         self::assertFalse($result->coverage->isComplete());
@@ -168,10 +163,58 @@ PHP);
         self::assertSame(DependencyTraversalParticipantInterface::class, (string) $type);
     }
 
+    #[Test]
+    public function itKeepsRealDirectoryLinkRefusalsBeforeParsing(): void
+    {
+        symlink($this->tempDir, $this->tempDir . '/Link.php');
+        $parser = $this->createMock(FileParserInterface::class);
+        $parser->expects(self::never())->method('parseContent');
+
+        $result = $this->createAnalyzer($parser)->analyze($this->configuration());
+
+        self::assertFalse($result->coverage->isComplete());
+        self::assertSame(0, $result->coverage->analyzedFilesCount());
+        self::assertSame(1, $result->coverage->failedFilesCount());
+        self::assertSame(AnalysisFailureKind::DirectorySymlink, $result->coverage->failures[0]->kind);
+    }
+
+    #[Test]
+    public function itReportsADeletedCandidateAsUnreadableBeforeParsing(): void
+    {
+        $path = $this->tempDir . '/Deleted.php';
+        $projectFiles = self::createStub(ProjectFilesInterface::class);
+        $projectFiles->method('discover')->willReturn(new DiscoveredProjectFiles(
+            [new SplFileInfo($path)],
+            [],
+            [],
+            [],
+            [],
+            new ScopeFacts([], [], [], false),
+            1,
+        ));
+        $parser = $this->createMock(FileParserInterface::class);
+        $parser->expects(self::never())->method('parseContent');
+        $analyzer = new DependencyGraphAnalyzer(
+            $projectFiles,
+            $parser,
+            new DependencyVisitor(new DependencyResolver()),
+            AdjacencyGraphBuilder::builder(),
+            new DeclarationRegistrarFactory(),
+        );
+
+        $result = $analyzer->analyze($this->configuration());
+
+        self::assertFalse($result->coverage->isComplete());
+        self::assertSame(1, $result->coverage->failedFilesCount());
+        self::assertSame(AnalysisFailureKind::UnreadableFile, $result->coverage->failures[0]->kind);
+        self::assertSame('Deleted.php', $result->coverage->failures[0]->path->value());
+        self::assertSame([], $result->graph->getAllDependencies());
+    }
+
     private function createAnalyzer(FileParserInterface $parser): DependencyGraphAnalyzer
     {
         return new DependencyGraphAnalyzer(
-            new FinderFileDiscovery(),
+            new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()),
             $parser,
             new DependencyVisitor(new DependencyResolver()),
             AdjacencyGraphBuilder::builder(),
@@ -179,20 +222,15 @@ PHP);
         );
     }
 
+    private function configuration(): RunConfiguration
+    {
+        $root = AbsolutePath::fromString($this->tempDir);
+        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
+    }
+
     private function parser(): FileParserInterface
     {
         return new class implements FileParserInterface {
-            /** @return list<Node> */
-            public function parse(SplFileInfo $file): array
-            {
-                $content = file_get_contents($file->getPathname());
-                if ($content === false) {
-                    throw new RuntimeException('Unable to read test fixture');
-                }
-
-                return $this->parseContent($file, $content);
-            }
-
             /** @return list<Node> */
             public function parseContent(SplFileInfo $file, string $content): array
             {

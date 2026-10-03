@@ -23,6 +23,7 @@ use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use RuntimeException;
 use SplFileInfo;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -45,16 +46,27 @@ final class JsonDocumentMetaParityTest extends TestCase
     private const array RUN_SPECIFIC_KEYS = ['timestamp'];
 
     private string $tempDir;
+    private string $originalWorkingDirectory;
 
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx-json-meta-' . bin2hex(random_bytes(6));
         mkdir($this->tempDir . '/src', 0o755, true);
         file_put_contents($this->tempDir . '/src/Thing.php', "<?php\n\nnamespace App\\Service;\n\nfinal class Thing {}\n");
+        $workingDirectory = getcwd();
+        if ($workingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Cannot enter the fixture working directory');
+        }
+        $this->originalWorkingDirectory = $workingDirectory;
+
     }
 
     protected function tearDown(): void
     {
+        if (!chdir($this->originalWorkingDirectory)) {
+            throw new RuntimeException('Cannot restore the working directory');
+        }
+
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator($this->tempDir, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::CHILD_FIRST,
@@ -149,7 +161,7 @@ final class JsonDocumentMetaParityTest extends TestCase
         $tester = match ($command) {
             'directives' => $this->execute(DirectivesCommand::class, [
                 'paths' => [$this->tempDir . '/src'],
-                '--config' => $this->writeFile('qmx.yaml', "paths: []\n"),
+                '--config' => $this->writeFile('qmx.yaml', "{}\n"),
                 '--format' => 'json',
             ]),
             'layer-assignment' => $this->execute(LayerAssignmentCommand::class, [

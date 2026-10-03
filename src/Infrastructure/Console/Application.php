@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
+
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -47,6 +50,7 @@ final class Application extends BaseApplication
     public function __construct(
         private readonly ErrorStream $errorStream,
         private readonly RefusalPresenter $refusalPresenter,
+        private readonly ManifestSnapshotControlInterface $manifestSnapshot,
     ) {
         parent::__construct(self::NAME, Version::get());
 
@@ -168,18 +172,19 @@ final class Application extends BaseApplication
 
         try {
             self::applyWorkingDirOption($input);
+            $this->manifestSnapshot->beginInvocation();
 
             return parent::doRun($input, $output);
-        } catch (ConfigurationRefusal $refusal) {
+        } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (ConsoleLogicException $e) {
-            return $this->refusalPresenter->internalError($output, $format, $e);
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         } catch (ConsoleExceptionInterface $e) {
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (InvalidArgumentException $e) {
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Throwable $e) {
-            return $this->refusalPresenter->internalError($output, $format, $e);
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         }
     }
 

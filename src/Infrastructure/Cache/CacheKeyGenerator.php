@@ -8,7 +8,6 @@ use Composer\InstalledVersions;
 use OutOfBoundsException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use SplFileInfo;
 
 /**
  * Generates cache keys for PHP files based on their content and environment.
@@ -46,30 +45,6 @@ final class CacheKeyGenerator
                 self::PARSER_PACKAGE,
             ));
         }
-    }
-
-    /**
-     * Generate a unique cache key for a file.
-     *
-     * Key components:
-     * - content hash: invalidates the cache for every source change
-     * - cacheVersion: PHP + php-parser version
-     */
-    public function generate(SplFileInfo $file): string
-    {
-        $realPath = $file->getRealPath();
-
-        if ($realPath === false || !is_file($realPath) || !is_readable($realPath)) {
-            return '';
-        }
-
-        $content = @file_get_contents($realPath);
-
-        if ($content === false) {
-            return '';
-        }
-
-        return $this->generateForContent($content);
     }
 
     /**

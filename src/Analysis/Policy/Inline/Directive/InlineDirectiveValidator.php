@@ -5,17 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -61,24 +57,10 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
 
     private const string INVALID_CHANNEL = InlineDirectivePolicy::INVALID_THRESHOLD_NAME;
 
-    /**
-     * Built here rather than injected: it is a pure function of the same
-     * universe, and it has no lifecycle of its own.
-     */
-    private readonly DirectiveAddressability $addressability;
-
-    /**
-     * The options are the producer rule's own, the same configuration
-     * `--rule-opt=annotation.directive:enabled=false` writes. A validator has
-     * no thresholds of its own, but it is switched off with its producer.
-     */
     public function __construct(
-        private readonly RuleOptionsInterface $options,
         private readonly InlineDirectivePolicy $policy,
-        ChannelIdentityInterface&ChannelDeclarationRegistryInterface $identity,
-    ) {
-        $this->addressability = new DirectiveAddressability($identity);
-    }
+        private readonly RefusedDirectives $refused,
+    ) {}
 
     public static function producerRuleName(): string
     {
@@ -108,8 +90,10 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
             self::UNRESOLVED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
                 ->describedAs('Reports an inline directive that addresses nothing it may address, or that is malformed before any channel is read.'),
             self::UNSUPPORTED_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->selectedAs(ChannelSelectionRole::FollowsAddressedRule)
                 ->describedAs('Reports a threshold directive that targets a rule with no threshold-override support.'),
             self::INVALID_CHANNEL => ChannelDeclaration::occurrence(SymbolLevel::File)
+                ->selectedAs(ChannelSelectionRole::FollowsAddressedRule)
                 ->describedAs('Reports a threshold directive whose payload does not fit the targeted rule\'s options.'),
         ];
     }
@@ -119,148 +103,71 @@ final class InlineDirectiveValidator implements ConfigurationValidatorInterface
      */
     public function validate(AnalysisContext $context): array
     {
-        if (!$this->options->isEnabled()) {
-            return [];
-        }
-
-        return [
-            ...$this->suppressionFindings(),
-            ...$this->thresholdFindings(),
-            ...$this->invalidThresholdFindings(),
-        ];
-    }
-
-    /** @return list<Finding> */
-    private function suppressionFindings(): array
-    {
         $findings = [];
-
-        foreach ($this->policy->authoredSuppressions() as $file => $suppressions) {
-            $path = RelativePath::fromString($file);
-
-            foreach ($suppressions as $suppression) {
-                $problem = $this->addressability->problemWithSuppression($suppression);
-                if ($problem === null) {
-                    continue;
-                }
-
-                $findings[] = self::unresolved($path, $suppression->line, $problem);
-            }
+        foreach ($this->refused->all(
+            $this->policy->authoredSuppressions(),
+            $this->policy->authoredThresholdOverrides(),
+            $this->policy->authoredThresholdDiagnostics(),
+        ) as $refusal) {
+            $findings[] = match ($refusal->channel) {
+                DirectiveRefusalChannel::Unresolved => self::unresolved($refusal),
+                DirectiveRefusalChannel::Unsupported => self::unsupported($refusal),
+                DirectiveRefusalChannel::Invalid => self::invalid($refusal),
+            };
         }
 
         return $findings;
     }
 
-    /** @return list<Finding> */
-    private function thresholdFindings(): array
+    private static function unresolved(RefusedDirective $refusal): Finding
     {
-        $findings = [];
-
-        foreach ($this->policy->authoredThresholdOverrides() as $file => $overrides) {
-            $path = RelativePath::fromString($file);
-
-            foreach ($overrides as $override) {
-                $findings[] = $this->thresholdFinding($path, $override);
-            }
-        }
-
-        return array_values(array_filter($findings));
-    }
-
-    private function thresholdFinding(RelativePath $path, ThresholdOverride $override): ?Finding
-    {
-        $rejection = $this->addressability->problemWithThreshold($override);
-        if ($rejection === null) {
-            return null;
-        }
-
-        if (!$rejection->ruleExistsButCannotBeRetuned) {
-            return self::unresolved($path, $override->line, $rejection->message);
-        }
-
-        $subject = self::authoringSubject($path);
+        $subject = MetricSubject::aggregate(SymbolPath::forFile($refusal->site->file));
 
         return new Finding(
-            location: new Location($path, $override->line, precise: true),
-            subject: $subject,
-            symbolPath: $subject->toSymbolPath(),
-            ruleName: self::UNSUPPORTED_CHANNEL,
-            code: self::UNSUPPORTED_CHANNEL,
-            message: $rejection->message,
-            severity: Severity::Error,
-        );
-    }
-
-    /**
-     * Malformed values are the same class of mistake as an unaddressable
-     * name, and they arrive already diagnosed by the extractor.
-     *
-     * The validator's stable code used to be spliced into the finding code,
-     * which made every new validator outcome a new channel nobody declared.
-     * It is data about this finding, so it is reported as data.
-     *
-     * @return list<Finding>
-     */
-    private function invalidThresholdFindings(): array
-    {
-        $findings = [];
-
-        foreach ($this->policy->authoredThresholdDiagnostics() as $file => $diagnostics) {
-            $path = RelativePath::fromString($file);
-
-            foreach ($diagnostics as $diagnostic) {
-                $subject = self::authoringSubject($path);
-                $findings[] = new Finding(
-                    location: new Location($path, $diagnostic->line, precise: true),
-                    subject: $subject,
-                    symbolPath: $subject->toSymbolPath(),
-                    ruleName: self::INVALID_CHANNEL,
-                    code: self::INVALID_CHANNEL,
-                    message: $this->addressability->describeDiagnostic($diagnostic),
-                    severity: Severity::Error,
-                    recommendation: $diagnostic->hint,
-                );
-            }
-        }
-
-        return $findings;
-    }
-
-    /**
-     * Where a directive finding belongs: the file the annotation is written
-     * in, never one of the declarations the annotation was bound to.
-     *
-     * The extraction layer binds a class docblock to the class and to every
-     * method in it, so "the subject" of a directive would otherwise be
-     * whichever binding happened to come first — `Demo\Big::a` for an
-     * annotation written on `Demo\Big`. The `Location` carries the exact
-     * line, which is the only placement the author can act on.
-     */
-    private static function authoringSubject(RelativePath $path): MetricSubject
-    {
-        return MetricSubject::aggregate(SymbolPath::forFile($path));
-    }
-
-    /**
-     * The only channel with two authoring surfaces behind it: a suppression
-     * and a threshold directive can both name something unaddressable, and
-     * both are the same mistake.
-     */
-    private static function unresolved(
-        RelativePath $path,
-        int $line,
-        string $message,
-    ): Finding {
-        $subject = self::authoringSubject($path);
-
-        return new Finding(
-            location: new Location($path, $line, precise: true),
+            location: new Location($refusal->site->file, $refusal->site->line, precise: true),
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: self::UNRESOLVED_CHANNEL,
             code: self::UNRESOLVED_CHANNEL,
-            message: $message,
+            message: $refusal->message,
             severity: Severity::Error,
+            recommendation: $refusal->hint,
+            addressedProducer: $refusal->addressedProducer,
         );
     }
+
+    private static function unsupported(RefusedDirective $refusal): Finding
+    {
+        $subject = MetricSubject::aggregate(SymbolPath::forFile($refusal->site->file));
+
+        return new Finding(
+            location: new Location($refusal->site->file, $refusal->site->line, precise: true),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: self::UNSUPPORTED_CHANNEL,
+            code: self::UNSUPPORTED_CHANNEL,
+            message: $refusal->message,
+            severity: Severity::Error,
+            recommendation: $refusal->hint,
+            addressedProducer: $refusal->addressedProducer,
+        );
+    }
+
+    private static function invalid(RefusedDirective $refusal): Finding
+    {
+        $subject = MetricSubject::aggregate(SymbolPath::forFile($refusal->site->file));
+
+        return new Finding(
+            location: new Location($refusal->site->file, $refusal->site->line, precise: true),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: self::INVALID_CHANNEL,
+            code: self::INVALID_CHANNEL,
+            message: $refusal->message,
+            severity: Severity::Error,
+            recommendation: $refusal->hint,
+            addressedProducer: $refusal->addressedProducer,
+        );
+    }
+
 }

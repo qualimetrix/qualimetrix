@@ -8,21 +8,13 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
  * The words of every refusal raised when a rule option key is written where
  * the class at that depth does not answer for it.
  *
- * It sits beside {@see ChannelLevelRefusalWording} for that file's own reason:
- * a refusal that names a level is a formulation, and a formulation that could
- * be authored anywhere would let some other seam decide a level silently and
- * still sound like this one. Both halves of the seam — the judgement in
- * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition} and
- * the wording here — change together.
+ * CLI option addressing uses these sentences when no declared option owns
+ * the written key. The document reader judges file keys with its own schema
+ * wording and preserves the authored path and origin.
  *
- * Every sentence prints the key **exactly as the walk received it**. By the
- * time a key arrives, every door has already folded its separators
- * ({@see \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::normalize()}),
- * so there is no authored spelling left to quote and no inverse worth
- * guessing: a mistyped `max_warnign` is answered as `maxWarnign`. The letters
- * — which is what a typo gets wrong — survive the fold intact. The allowed
- * set, by contrast, is printed in the canonical kebab spelling the classes
- * declare, because that is the spelling users type.
+ * The key is printed exactly as the caller received it; no separator folding
+ * or inverse spelling is performed here. Allowed options are printed in the
+ * canonical kebab spelling supplied by the declaration surface.
  */
 final class RuleOptionRefusalWording
 {

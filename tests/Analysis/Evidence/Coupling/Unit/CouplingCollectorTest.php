@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
@@ -26,6 +27,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 #[CoversClass(CouplingCollector::class)]
@@ -1178,9 +1180,9 @@ final class CouplingCollectorTest extends TestCase
     /** @param list<array<string, mixed>> $contributions */
     private function document(array $contributions): ConfigurationDocument
     {
-        return new ConfigurationDocument(array_map(
+        return LayeredDocument::of(array_map(
             static fn(array $values): array => ['source' => 'test', 'values' => $values],
             $contributions,
-        ), AbsolutePath::fromString('/project'));
+        ), AbsolutePath::fromString('/project'), new CouplingSection());
     }
 }

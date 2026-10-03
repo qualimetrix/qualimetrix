@@ -69,7 +69,7 @@ run_benchmark() {
     local start_time end_time duration
     local mem_before mem_after mem_used
 
-    start_time=$(python3 -c "import time; print(time.time())")
+    start_time=$(python3 -c "import time; print(time.monotonic())")
 
     case "$tool" in
         "qmx-seq")
@@ -89,7 +89,7 @@ run_benchmark() {
             ;;
     esac
 
-    end_time=$(python3 -c "import time; print(time.time())")
+    end_time=$(python3 -c "import time; print(time.monotonic())")
     duration=$(python3 -c "print(round($end_time - $start_time, 2))")
 
     echo "$duration"

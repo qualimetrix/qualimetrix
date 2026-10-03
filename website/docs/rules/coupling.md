@@ -271,6 +271,10 @@ themselves classify.
 
 ### When it stays silent
 
+- **Declaration evidence is incomplete.** Missing PHP, authored PHP removal,
+  generated exclusions or an uncertain universe withhold namespace-absence
+  claims; a `covered` report state alone does not authorize them.
+
 - **No `framework-namespaces` configured.** Nothing was claimed, so nothing
   failed.
 - **The selector matched.** Including a selector that only matches your own
@@ -759,3 +763,7 @@ rules:
 bin/qmx check src/ --rule-opt="coupling.class-rank:warning=0.03"
 bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
 ```
+
+## Independent layer bands
+
+CBO and instability spread a top band to class and namespace in its writing layer. Explicit writes to the same expanded leaves conflict in that layer; independent level settings such as enabled are preserved. Configure distinct level bands explicitly or put overlapping overrides in another layer. Effective-band validation includes written and default halves. These forms do not change metric direction, formulas or numeric defaults. A written enabled:true intentionally overrides a lower disable. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).

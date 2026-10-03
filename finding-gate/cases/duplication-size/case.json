@@ -1,0 +1,13 @@
+{
+    "id": "duplication-size",
+    "description": "The same token block spans unequal line counts: its longest copy admits both copies, including one shorter than min_lines.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [],
+    "channels": [
+        "duplication.clone@project"
+    ]
+}

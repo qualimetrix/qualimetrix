@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use RuntimeException;
 
 #[CoversClass(WmcRule::class)]
@@ -41,7 +43,7 @@ final class WmcRuleTest extends TestCase
 
         self::assertSame(
             'Checks Weighted Methods per Class (sum of method complexities)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -400,11 +402,11 @@ final class WmcRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = WmcOptions::fromArray([
+        $options = WmcOptions::fromResolved(ResolvedOptionsFixture::values(WmcOptions::class, [
             'enabled' => false,
             'warning' => 20,
             'error' => 40,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(20, $options->warning);
@@ -412,11 +414,10 @@ final class WmcRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = WmcOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new WmcOptions(), WmcOptions::fromResolved(ResolvedOptionsFixture::values(WmcOptions::class, [])));
+        self::assertFalse(WmcOptions::fromResolved(ResolvedOptionsFixture::values(WmcOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
@@ -505,9 +506,9 @@ final class WmcRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeDataClassesFromArray(): void
     {
-        $options = WmcOptions::fromArray([
+        $options = WmcOptions::fromResolved(ResolvedOptionsFixture::values(WmcOptions::class, [
             'exclude_data_classes' => true,
-        ]);
+        ]));
 
         self::assertTrue($options->excludeDataClasses);
     }
@@ -515,9 +516,9 @@ final class WmcRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeDataClassesFromArrayCamelCase(): void
     {
-        $options = WmcOptions::fromArray([
+        $options = WmcOptions::fromResolved(ResolvedOptionsFixture::values(WmcOptions::class, [
             'excludeDataClasses' => true,
-        ]);
+        ]));
 
         self::assertTrue($options->excludeDataClasses);
     }

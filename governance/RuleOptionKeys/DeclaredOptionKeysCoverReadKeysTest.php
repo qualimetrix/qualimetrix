@@ -22,43 +22,14 @@ use ReflectionClass;
 use SplFileInfo;
 
 /**
- * The declaration is a promise; this is the guard that it still matches the deed.
+ * Every unguarded literal read must belong to its owning declaration.
  *
- * **The invariant, in one sentence:** for every options class and every level
- * class the product exposes, every configuration key its `fromArray()` reads
- * *outside the body of a branch* is a key its own `acceptedOptionKeys()`
- * answers for — `knows()`, the very predicate `RuleOptionsFactory` refuses on.
- *
- * The two sides come from two different places, which is the whole point: the
- * declared side is the class's own statement, the read side is an AST walk of
- * the method body ({@see FromArrayKeyReader}), and neither is a list typed by
- * the author of the other.
- *
- * **What the invariant therefore cannot see** — stated here rather than
- * discovered later, and repeated in the failure message of the case it bites:
- *
- * 1. *A key read only inside a branch body.* Six of them exist: top-level
- *    `warning`/`error` on the three complexity wrappers, which the plan decides
- *    to refuse while `ThresholdParser::parse()` keeps naming them as its
- *    mandatory positional arguments inside the flat branch. Declared ⊇ read and
- *    *refuse* cannot both hold for one key, so the guard is narrowed to the
- *    unguarded column and those six are pinned by behaviour instead — by the
- *    discriminator asserting that top-level `warning` is refused on
- *    `complexity.ccn` and accepted-and-effective on `coupling.cbo`.
- * 2. *A key the reader cannot resolve to a literal.* `LayerViolationOptions`
- *    reads three keys through a `foreach` over a constant map; the reader
- *    records a `dynamic-key` blind spot instead of the keys. The guard is
- *    therefore ⊇ and not equality — a class may honestly declare a key the
- *    reader never saw.
- * 3. *A declared key nothing reads.* Deliberately not asserted: it would fail
- *    on exactly the honest case of point 2.
- * 4. *A key read past a handoff the reader cannot follow* — a config array
- *    given to a foreign helper, spread, or iterated. Nothing hides there
- *    today, and the guard keeps it that way by refusing the three blind-spot
- *    kinds that would open it (`opaque-sink`, `spread`, `iteration`) rather
- *    than by seeing through them. The two tolerated kinds are covered
- *    otherwise: `nested-delegation` by walking the level class itself,
- *    `dynamic-key` by asserting ⊇ instead of equality.
+ * Root Options may also read framework keys; level Options have only their
+ * own surface. Declarations and AST reads remain independent populations.
+ * Branch-only reads and unresolved dynamic keys are outside this subset;
+ * declared-but-unread keys are not refused because dynamic reads can be honest.
+ * Foreign opaque handoffs, spread and iteration are refused. Level delegation
+ * is covered by walking each declared level class separately.
  */
 #[CoversClass(RuleOptionKeySet::class)]
 final class DeclaredOptionKeysCoverReadKeysTest extends TestCase
@@ -75,7 +46,8 @@ final class DeclaredOptionKeysCoverReadKeysTest extends TestCase
 
         $undeclared = [];
         foreach (array_keys(array_filter($reading->keys)) as $key) {
-            if (!$optionsClass::acceptedOptionKeys()->knows(ConfigKeySpelling::normalize($key))) {
+            if (!\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface::declaredFor($optionsClass)->knows(ConfigKeySpelling::normalize($key))
+                && !(is_a($optionsClass, RuleOptionsInterface::class, true) && \Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys::declared()->knows($key))) {
                 $undeclared[] = $key;
             }
         }
@@ -321,17 +293,15 @@ Sites: " . implode('; ', $reading->unresolvedDetail),
     private static function wording(string $optionsClass, array $undeclared, array $blindSpots): string
     {
         return \sprintf(
-            "%s::fromArray() reads %s outside any branch body, and %s::acceptedOptionKeys() does not answer for"
+            "%s::fromResolved() reads %s outside any branch body, and its owning declarations do not answer for"
             . " %s. A key read but not declared is refused from the user's config and then applied anyway — the very"
             . " defect this declaration exists to close. Either declare the key or stop reading it.\n"
             . "What this guard does NOT see, so do not read its green as more than it is:\n"
-            . "  - a key read only inside the body of an if/else (the three complexity wrappers' top-level"
-            . " warning/error are there on purpose, pinned by the refusal discriminator instead);\n"
+            . "  - a key read only inside the body of an if/else;\n"
             . "  - a key the reader could not reduce to a literal — for this class: %s;\n"
             . "  - a declared key nothing reads: not asserted, because an honest dynamic read looks exactly like it.",
             $optionsClass,
             implode(', ', $undeclared),
-            $optionsClass,
             \count($undeclared) === 1 ? 'it' : 'them',
             $blindSpots === [] ? 'none' : implode('; ', $blindSpots),
         );

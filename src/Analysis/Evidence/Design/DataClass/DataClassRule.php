@@ -54,7 +54,7 @@ final class DataClassRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects classes whose public interface is mostly data access rather than behavior (Data Classes)';
     }

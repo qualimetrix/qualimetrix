@@ -17,4 +17,7 @@ interface AnalysedInstallAnchorInterface
      * @param list<string> $analysedPaths
      */
     public function pointAt(string $projectRoot, array $analysedPaths): void;
+
+    /** @return list<ComposerRootOmission> Already located candidates, without IO. */
+    public function observedRootOmissions(): array;
 }

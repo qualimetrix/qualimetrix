@@ -7,11 +7,12 @@ namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 use Exception;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
@@ -76,6 +77,7 @@ final class LayerAssignmentCommand extends Command
 
     public function __construct(
         private readonly AnalysisPreflight $preflight,
+        private readonly AnalysisPreflightProfile $preflightProfile,
         private readonly LayerAssignmentResolver $layerAssignmentResolver,
         private readonly RefusalPresenter $refusalPresenter,
     ) {
@@ -158,7 +160,7 @@ final class LayerAssignmentCommand extends Command
         // are the same one every other command's refusal gets.
         try {
             [$format, $rawFqn] = $this->request($input);
-        } catch (ConfigurationRefusal $refusal) {
+        } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $failure) {
             return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);
@@ -168,26 +170,8 @@ final class LayerAssignmentCommand extends Command
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $prepared = $this->preflight->resolve($input, $output);
-            $configuration = $prepared->runConfiguration;
-            $paths = array_map(static fn($path): string => $path->value(), $configuration->paths);
-            $resolution = $configuration->generatedFilePolicy === GeneratedFilePolicy::Include
-                ? $this->layerAssignmentResolver->resolveIncludingGenerated(
-                    $paths,
-                    $configuration->pathExcludes,
-                    $configuration->projectRoot,
-                    $symbol,
-                )
-                : $this->layerAssignmentResolver->resolve(
-                    $paths,
-                    $configuration->pathExcludes,
-                    $configuration->projectRoot,
-                    $symbol,
-                );
-        } catch (ConfigurationRefusal $refusal) {
-            // First clause: the carrier is a RuntimeException, and the
-            // `catch (Exception)` below would otherwise catch it and answer
-            // with FAILURE (1) instead of the shared refusal code.
+            $resolution = $this->resolveAssignment($input, $output, $symbol);
+        } catch (RefusalInterface $refusal) {
             return $this->refusalPresenter->refusal($output, $format, $refusal);
         } catch (InvalidArgumentException $e) {
             // Named secondary signal for code 3: an
@@ -196,28 +180,29 @@ final class LayerAssignmentCommand extends Command
             // `Exception` branch below and answering with 1.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $e);
         } catch (Exception $e) {
-            // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
-            // so genuine programming bugs in the pipeline surface in CI rather than
-            // being silently reported as exit code 1. Configuration failures the
-            // user can fix are refused above as `ConfigurationRefusal`; anything
-            // still reaching here is not one, so it goes through the presenter's
-            // `internalError()` — the same envelope and `-q`/`--silent` survival
-            // every other command's internal error gets, not a local `reportError()`.
-            return $this->refusalPresenter->internalError($output, $format, $e);
+            // Core failures can arrive from collection or inspection without
+            // an intermediate Console translation.
+            return $this->refusalPresenter->unhandled($output, $format, $e);
         }
 
         if ($format === 'json') {
             $this->renderJson($output, $normalized, $resolution);
         } else {
-            // `renderReport()` returns void and always runs to completion before
-            // control reaches this line, whichever of its own exits it took —
-            // so this single point after the call carries the pointer for all
-            // of them, without touching the JSON branch above.
-            $this->renderReport($output, $normalized, $resolution);
+            $shadowedBy = $resolution['firstEstablished'];
+            $shadowed = $shadowedBy === null ? [] : self::matchesAfter($resolution['matches'], $shadowedBy);
+            (new LayerAssignmentTextPresenter($output))->render($normalized, $resolution, $shadowed);
             $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
         }
 
         return self::SUCCESS;
+    }
+
+    /** @return Resolution */
+    private function resolveAssignment(InputInterface $input, OutputInterface $output, SymbolPath $symbol): array
+    {
+        $prepared = $this->preflight->resolve($input, $output, $this->preflightProfile);
+
+        return $this->layerAssignmentResolver->resolve($prepared->runConfiguration, $symbol);
     }
 
     /**
@@ -271,165 +256,7 @@ final class LayerAssignmentCommand extends Command
     }
 
     /**
-     * @param Resolution $resolution
-     */
-    private function renderReport(OutputInterface $output, string $fqn, array $resolution): void
-    {
-        $matches = $resolution['matches'];
-        $undecided = $resolution['undecided'];
-
-        $output->writeln(\sprintf('Class: <info>%s</info>', $fqn));
-        $output->writeln('');
-
-        if ($matches === [] && $undecided !== []) {
-            $this->renderUndecided($output, $undecided, $resolution['chainStopsAt']);
-
-            return;
-        }
-
-        if ($matches === []) {
-            $output->writeln('  Assigned to: <comment>(no layer)</comment>');
-            $output->writeln('');
-            if (!$resolution['hasLayers']) {
-                $output->writeln('  Suggestion: no layers are declared in the configuration. Add an');
-                $output->writeln('  <comment>architecture.layers</comment> section to qmx.yaml to start enforcing');
-                $output->writeln('  layer boundaries.');
-            } else {
-                $output->writeln('  Suggestion: declare a catch-all layer with pattern <comment>\'**\'</comment> at the');
-                $output->writeln('  end of the layers list to capture unclassified classes.');
-            }
-
-            return;
-        }
-
-        $assigned = $matches[0];
-        $output->writeln(\sprintf('  Assigned to: <info>%s</info>', $assigned->layerName));
-        $output->writeln(\sprintf('    Matched by: <comment>%s</comment>', self::describeCriteria($assigned)));
-        if ($undecided !== []) {
-            // The assignment is not withdrawn by an unanswered layer — see
-            // `LayerRegistry::undecidedLayers()` for why — but printing it
-            // alone would hide that the layers named here might change it.
-            // The list already holds only the layers bearing on the
-            // assignment (those declared before the first match the run
-            // established), so "it can change" is true of every one of them.
-            $output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
-            $output->writeln(\sprintf('    Could be owned by: <comment>%s</comment>', implode(', ', $resolution['contenders'])));
-            $output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $resolution['chainStopsAt'])));
-            $output->writeln('    The assignment above is what the answered layers give; it can change');
-            $output->writeln('    once every link of this class\'s inheritance chain is analysed.');
-        }
-        $output->writeln('');
-
-        $alsoMatching = \array_slice($matches, 1);
-
-        $output->writeln('  Would also match (in declaration order):');
-        if ($alsoMatching === []) {
-            $output->writeln('    <comment>(none — the assignment is unique)</comment>');
-
-            return;
-        }
-
-        $maxLayerNameWidth = max(array_map(
-            static fn(LayerAssignmentMatch $entry): int => \strlen($entry->layerName),
-            $alsoMatching,
-        ));
-
-        foreach ($alsoMatching as $entry) {
-            $output->writeln(\sprintf(
-                "    - %-{$maxLayerNameWidth}s (matched by: '<comment>%s</comment>')",
-                $entry->layerName,
-                self::describeCriteria($entry),
-            ));
-        }
-
-        $this->renderShadowHint($output, $resolution);
-    }
-
-    /**
-     * The hint follows the rule `architecture.potential-shadow` draws its
-     * pairs by, so the command never sends the reader to a diagnostic that
-     * says nothing about this class: a match whose `exclude:` went unanswered
-     * neither shadows nor is shadowed, and a layer broader than the one it
-     * loses to is the narrow-before-broad idiom rather than a defect.
-     *
-     * @param Resolution $resolution
-     */
-    private function renderShadowHint(OutputInterface $output, array $resolution): void
-    {
-        $shadowedBy = $resolution['firstEstablished'];
-        if ($shadowedBy === null || self::matchesAfter($resolution['matches'], $shadowedBy) === []) {
-            return;
-        }
-
-        $output->writeln('');
-        $output->writeln('  Diagnostic hint:');
-        $reported = $resolution['reportedShadows'];
-        if ($reported === []) {
-            $output->writeln(\sprintf(
-                "    The later matches lose the class to '<info>%s</info>', and no diagnostic reports",
-                $shadowedBy,
-            ));
-            $output->writeln('    them as a shadow: a broader layer after a narrower one is how declaration');
-            $output->writeln('    order is meant to be used, and a match whose exclude: went unanswered may');
-            $output->writeln('    not match at all.');
-
-            return;
-        }
-
-        $output->writeln(\sprintf(
-            "    Class is shadowed: would have matched '<info>%s</info>' if '<info>%s</info>' was declared later.",
-            $reported[0],
-            $shadowedBy,
-        ));
-        $output->writeln('    See <comment>architecture.potential-shadow</comment> diagnostic for the broader picture.');
-    }
-
-    /**
-     * The report for a class no layer claims *and* no layer answered about.
-     *
-     * Kept apart from the `(no layer)` branch because the two differ in what
-     * the reader should do next. An unclassified class is closed by writing a
-     * layer. This one is closed for certain only by analysing where its chain
-     * stops; a layer declared after the unanswered one would also assign it,
-     * but as a guess, so that edit is named with its cost rather than offered
-     * as the cure. The wording follows `architecture.coverage-gap`, which
-     * counts the same two populations separately from the same walk, so the
-     * two readers of one fact do not describe it differently.
-     *
-     * @param list<string> $undecided
-     * @param list<string> $chainStopsAt
-     */
-    private function renderUndecided(OutputInterface $output, array $undecided, array $chainStopsAt): void
-    {
-        $output->writeln('  Assigned to: <comment>(undecided)</comment>');
-        $output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
-        $output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $chainStopsAt)));
-        $output->writeln('');
-        $output->writeln('  A declared <comment>extends</comment>/<comment>implements</comment>/<comment>attributes</comment> criterion reads facts this');
-        $output->writeln('  run did not collect: where the chain stops is outside the analysed paths.');
-        $output->writeln('  No layer matched, and a layer could not answer.');
-        $output->writeln('');
-        $output->writeln('  Suggestion: widen <comment>paths</comment> to include those declarations — for your own code');
-        $output->writeln('  that decides the layer; for vendor code it means analysing that package. A');
-        $output->writeln('  layer declared after the unanswered one, a catch-all included, would assign');
-        $output->writeln('  this class, but as a guess: it may belong to the layer that could not answer.');
-        $output->writeln('  <comment>architecture.coverage-gap</comment> counts these separately from classes every');
-        $output->writeln('  criterion answered "no" about.');
-    }
-
-    /**
-     * Joins every matched criterion descriptor with a comma so the command
-     * line surface mirrors the order that
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}
-     * scans (pattern → suffix → attribute → implements → extends).
-     */
-    private static function describeCriteria(LayerAssignmentMatch $entry): string
-    {
-        return implode(', ', $entry->criteria);
-    }
-
-    /**
-     * Serializes the same `resolve()` result {@see renderReport()} renders as
+     * Serializes the same `resolve()` result {@see LayerAssignmentTextPresenter::render()} renders as
      * text, so both projections read one resolution and cannot drift.
      *
      * `assigned` is `null` when `$matches` is empty (no layer matched) rather

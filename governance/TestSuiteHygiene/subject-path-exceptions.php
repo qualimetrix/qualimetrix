@@ -19,13 +19,12 @@ declare(strict_types=1);
 
 return [
     'declares_no_coverage' => [
-        'ceiling' => 77,
+        'ceiling' => 76,
         'rows' => [
             'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Cohesion/Unit/LcomCollectionConfigurationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Complexity/Integration/WmcIntegrationTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/ComputedMetrics/Integration/HealthCoverageAgreesWithCountsTest.php' => 'declares no coverage attribute',
-            'tests/Analysis/Evidence/ComputedMetrics/Unit/ComputedMetricContributionReaderTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Coupling/Unit/CouplingConfigurationRefusalTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Duplication/Functional/DuplicationMemoryLimitProcessTest.php' => 'declares no coverage attribute',
             'tests/Analysis/Evidence/Measurement/Integration/Aggregation/GlobalNamespaceProjectAggregateTest.php' => 'declares no coverage attribute',

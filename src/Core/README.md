@@ -26,6 +26,29 @@ Core/
 │   └── FileParserInterface.php            # AST parsing contract
 ├── Exception/
 │   └── ParseException.php                 # Parse error value
+├── Environment/
+│   └── EnvironmentFailureInterface.php    # Neutral delivery/storage failure marker
+├── FileTarget/
+│   ├── DirectoryFacts.php
+│   ├── EntryControl.php
+│   ├── EntryFacts.php
+│   ├── FileIdentity.php
+│   ├── FileReplacement.php
+│   ├── FileTargetFailure.php
+│   ├── FileTargetFailureKind.php
+│   ├── HeldLock.php
+│   ├── HeldTarget.php
+│   ├── NativeCall.php
+│   ├── NewName.php
+│   ├── PathExposure.php
+│   ├── PathInspection.php
+│   ├── PathWalk.php
+│   ├── ProcessOwner.php
+│   ├── ResolvedTarget.php
+│   ├── TargetClaim.php
+│   ├── TargetKind.php
+│   ├── TargetPath.php
+│   └── TemporarySibling.php
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Path/
@@ -331,7 +354,7 @@ instance API, factory, registration mechanism, or optional reflection metadata.
 Base options interface for all rules.
 
 **Methods:**
-- `fromArray(array $config): self` — create options from configuration array (static)
+- `fromResolved(ResolvedRuleOptionValues $config): self` — construct from judged resolved values (static)
 - `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this class answers for (static)
 - `isEnabled(): bool` — whether the rule is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for a metric value (null if acceptable)
@@ -351,7 +374,7 @@ Extends `RuleOptionsInterface` with level-specific capabilities.
 Options for a specific level of a hierarchical rule.
 
 **Methods:**
-- `fromArray(array $config): self` — create from configuration array (static)
+- `fromResolved(ResolvedRuleOptionValues $config): self` — construct level options from judged resolved values (static)
 - `acceptedOptionKeys(): RuleOptionKeySet` — the option keys this slot answers for (static)
 - `isEnabled(): bool` — whether this level is enabled
 - `getSeverity(int|float $value): ?Severity` — severity for the given metric value
@@ -367,26 +390,27 @@ Note that whether a rule *supports* an override is no longer read off this inter
 
 ### RuleOptionKeySet
 
-The value `acceptedOptionKeys()` returns: the option keys one options class — or one level
-slot of one — answers for. It replaces the old derivation from constructor parameters plus
-`ShorthandOptionKeysInterface` / `AdditionalOptionKeysInterface`, both of which are gone.
-Reflection cannot see into a method body, and `fromArray()` is a method body, so the class
-states its keys instead of the reader guessing them (ADR 0038's pattern, applied in ADR 0049).
+Finding owns the declaration returned by `acceptedOptionKeys()`. Each rule or
+level states its admitted keys and value forms before an Options instance
+exists; constructor reflection is not another schema. `RuleOptionSurface`
+combines the owner declaration with framework keys and declared level slots.
 
-A key is in exactly one of three states, disjoint and exhaustive:
+A key has exactly one of four states:
 
-- **accepted** — read here, and printed in the "options here" sentence of a refusal
-- **answered by the class** — recognised only so that `fromArray()` may refuse it in its own
-  words, or accept a spelling meaning "leave things as they are"; a reader must neither warn
-  nor refuse on these (`UnassignedClassOptions::assertNoContradictoryEnabled()` is the case
-  that forces the state to exist)
-- **unknown** — everything else, which `RuleOptionKeyRecognition` refuses with a
-  `ConfigurationRefusal` at whichever depth it was written (exit 3 under `check`, uniformly
-  across commands)
+- **accepted** — writable with its declared value form and printed as allowed;
+- **accepted and validated by the class** — writable with a declared coarse
+  ingress form; the owning Options class judges its detailed semantics;
+- **answered by the class** — recognized so its owner can give the declared
+  refusal rather than a guessed unknown-key message;
+- **unknown** — not admitted by this owner at this depth.
 
-Keys are declared in the canonical kebab spelling users type. Comparison folds both sides
-through `ConfigKeySpelling::normalize()`, so snake, camel and kebab spellings of one key stay
-the same key — and a refusal therefore quotes the key in its folded spelling.
+The same declaration carries threshold bands, shorthand spreading, override
+axes and retired-option hints. `RulesSection` uses it for each authored layer;
+`fromResolved` constructs options from the resulting values and judges effective
+bands with their real contributing writers. Declared snake, camel and kebab
+spellings denote one key; other case variants refuse. Diagnostics retain the
+authored spelling and position when available instead of guessing them from a
+normalized runtime array. These contracts remain Finding-owned, not Core types.
 
 ### NameSelector
 
@@ -812,29 +836,39 @@ that controls with different declaration scopes remain distinct.
 
 ### Suppression
 
-Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
+Inline-owned value object representing a suppression tag from a comment (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
 
 **Fields:**
 - `rule: string` — the authored text: a fully qualified `code`, `X.*`, or `*` for "no rule filter"
 - `reason: ?string` — optional reason for suppression
 - `line: int` — line number of the suppression tag
 - `type: SuppressionType` — scope of suppression
-- `endLine: ?int` — end line for scoped suppressions
+- `position: int` — required nonnegative byte position of the authored tag
+- `binding: ?DeclarationBinding` — Inline-owned subject, scope and required reach
+- `refusal: ?DirectiveRefusal` — the authored control could not bind or be admitted
+- `silencedLine: ?int` — required for a non-refused next-line control; separate from the tag line
 
 **Methods:**
 - `matches(string $code, ?SymbolLevel $level): bool` — checks if suppression applies to a finding on that channel at that level
 - `target(): SuppressionTarget` — what the directive filters on: a `ChannelLevelSelector`, or the
   explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
+Inline owns `DeclarationReach`, not Core: `whole(endLine, standsOn)` covers
+the bound declaration; `lines(start, end, standsOn)` requires the finding's
+location in the authored file and its line in that inclusive range. Member
+reach is Inline policy.
+`authoredSite()` includes physical position, form, argument and refusal,
+so identical comments on one line do not collapse.
+
 ### SuppressionType (Enum)
 
 Defines the scope of a suppression tag.
 
-| Value      | Description                                      |
-| ---------- | ------------------------------------------------ |
-| `Symbol`   | Suppress at symbol level (class/method docblock) |
-| `NextLine` | Suppress the next line only                      |
-| `File`     | Suppress all matching findings in entire file    |
+| Value      | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| `Symbol`   | Suppress through an Inline declaration binding and its reach |
+| `NextLine` | Suppress the next line only                                  |
+| `File`     | Suppress all matching findings in entire file                |
 
 ### ThresholdOverride
 
@@ -892,13 +926,64 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 
 ---
 
+
+## File targets
+
+`Core\\FileTarget` is the first filesystem writer in Core. It owns target
+resolution, entry-control judgement, held descriptors, temporary siblings and
+publication; `Core\\Path` only represents paths and its lexical normalization
+is not a safety judgement. `Core\\Environment\\EnvironmentFailureInterface`
+marks storage or delivery failures with complete user-facing messages.
+
+`TargetPath::resolve()` delegates component inspection to internal `PathWalk`.
+`PathInspection` preserves directory identities and exposure facts in each
+`ResolvedTarget`, alongside target kind, resolved path or process descriptor
+and inode identity. `EntryControl` judges placement and replacement from directory and entry
+facts. `HeldTarget::claim(ResolvedTarget)` uses internal `TargetClaim` to hold
+an unchanged regular file, an exclusively created name or a supplied stream; `write()`, `append()` and `release()` own the
+resource lifecycle. `HeldTarget::writeToStream()` borrows an already opened
+stream and checks complete writes and flush without closing, seeking or truncating
+it; a successful write advances its existing offset. `FileReplacement::replace()` publishes a complete sibling,
+and `HeldLock::acquire()` holds a named lock without truncating it, using a
+monotonic acquisition deadline.
+`TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
+support these operations. `NativeCall` captures the warning of one filesystem
+call and restores the previous PHP error handler even when the call throws.
+`FileTargetFailure` carries an explicit kind, path,
+reason and optional detail. Its failure carrier and kind vocabulary are public
+only to declared exact consumers; publication and lifecycle policy remain
+with each consuming subject. A failed temporary-sibling preparation retains the
+requested destination and the native temporary-path cause. An inaccessible
+existing parent cannot establish that the final name is absent.
+
+Existing regular files open without truncation and are checked against their
+judged inode before a write. An unwritten exclusive name is removed on release
+only if it still identifies the held file. Sticky directory mode protects
+existing owned entries from replacement but does not make a link trustworthy.
+Without POSIX, effective-uid discovery uses an empty diagnostic temporary file
+that must be removed immediately; unsafe cleanup refuses the operation.
+
+A duplicated `php://fd/N` preserves stream offset but may survive `proc_open`;
+descriptor and stream handles use blocking writes to complete delivery to a slow
+reader. Path-held handles opened with `e` are close-on-exec. Mode-bit judgement does not
+cover ACLs, authorized hard-link placement or all component-swap races. A
+same-uid swap before FIFO `we` can truncate a replacement before identity
+refusal. [ADR 0096](../../docs/adr/0096-file-target-claims.md) records these limits.
+
+## File publication
+
+`PathFactory::published(AbsolutePath file, AbsolutePath canonicalRoot)` publishes
+canonical parent plus lexical final basename. Outside or unresolvable parents
+throw `LogicException`; `bestEffortRelative()` and `structurePreservingFallback()`
+are removed. POSIX backslashes remain literal characters. Run owns input-directory
+preflight and captured aliases; Core publication does not reclassify input policy.
+
 ## Other Contracts
 
 ### FileParserInterface
 
 **Methods:**
-- `parse(SplFileInfo $file): array<Node>` — parse PHP file into AST
-- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse an already-read source snapshot while retaining the original file for diagnostics
+- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse caller-supplied bytes with original absolute file identity for diagnostics; no source IO
 - Throws: `ParseException`
 
 ### NamespaceDetectorInterface
@@ -963,6 +1048,14 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - Unit tests for Finding::getFingerprint()
 - Unit tests for MetricDefinition::aggregatedName()
 - PHPStan level 8 with no errors
+
+## Integer boundary overrides
+
+Finding and Inline own the rule-specific threshold grammar. An integer boundary
+refuses a fractional annotation override instead of truncating it and reports
+annotation.invalid-threshold; floating boundaries preserve their declared numeric
+form. Core supplies neutral values only: typed options, producer enablement and
+rule-specific validation do not move into Core.
 
 ## Locality
 

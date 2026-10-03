@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 use LogicException;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -63,7 +64,11 @@ final class ConfigurationValidatorCompilerPass implements CompilerPassInterface,
                 ));
             }
 
-            $validators[] = new Reference($id);
+            $container->getDefinition($id)->setShared(false);
+            $validators[] = [
+                'producer' => $class::producerRuleName(),
+                'create' => new ServiceClosureArgument(new Reference($id)),
+            ];
             $validatorClasses[] = $class;
         }
 

@@ -5,20 +5,21 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(DistanceOptions::class)]
 final class DistanceOptionsTest extends TestCase
 {
     #[Test]
-    public function itAcceptsATypedCliSelector(): void
+    public function itDecodesAnAuthoredSelectorIntoTheTypedNamespacePattern(): void
     {
-        $options = DistanceOptions::fromArray(['include_namespaces' => NamespacePatternStub::subtree('App\\Service')]);
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, ['include_namespaces' => [['subtree' => 'App\\Service']]]));
 
         self::assertSame(['subtree:App\\Service'], self::displays($options->includeNamespaces));
     }
@@ -26,12 +27,12 @@ final class DistanceOptionsTest extends TestCase
     #[Test]
     public function itDecodesAYamlSelectorList(): void
     {
-        $options = DistanceOptions::fromArray([
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, [
             'include_namespaces' => [
                 ['subtree' => 'App\\Service'],
                 ['regex' => 'App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*'],
             ],
-        ]);
+        ]));
 
         self::assertSame(
             ['subtree:App\\Service', 'regex:App\\\\(?:Domain|Model)(?:\\\\[^\\\\]+)*'],
@@ -42,7 +43,7 @@ final class DistanceOptionsTest extends TestCase
     #[Test]
     public function itLeavesIncludeNamespacesNullWhenAbsent(): void
     {
-        $options = DistanceOptions::fromArray([]);
+        $options = DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, []));
 
         self::assertNull($options->includeNamespaces);
     }
@@ -51,9 +52,9 @@ final class DistanceOptionsTest extends TestCase
     public function itRefusesABareYamlString(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('bare strings are not supported');
+        $this->expectExceptionMessage('"rules.fixture.include_namespaces[0]" in configuration file "/project/qmx.yaml" must be a map, got string.');
 
-        DistanceOptions::fromArray(['include_namespaces' => ['App\\Service']]);
+        DistanceOptions::fromResolved(ResolvedOptionsFixture::values(DistanceOptions::class, ['include_namespaces' => ['App\\Service']]));
     }
 
     /**

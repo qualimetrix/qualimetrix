@@ -35,6 +35,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvi
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -92,7 +93,7 @@ final class LayerViolationRuleTest extends TestCase
             ['architecture.layer-violation', 'architecture.unmatched-exclude', 'architecture.doubted-assignment'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
-        self::assertStringContainsString('layer', strtolower($rule->getDescription()));
+        self::assertStringContainsString('layer', strtolower($rule::getDescription()));
     }
 
     #[Test]
@@ -511,7 +512,8 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Only the first exact source declaration is accepted.',
             line: 1,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($firstSubject, ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding($firstSubject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         )]]);
         self::assertSame([false, true], array_map(
             static fn($finding): bool => \in_array($finding, $result->retained, true),
@@ -719,7 +721,8 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Source declaration is independently controlled.',
             line: 1,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($sourceSubject, ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding($sourceSubject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         )]];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([true, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
@@ -729,7 +732,8 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Target declaration control is independent.',
             line: 1,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($firstTargetSubject, ControlScope::Class_),
+            position: 0,
+            binding: new DeclarationBinding($firstTargetSubject, ControlScope::Class_, DeclarationReach::whole(null, 'test')),
         )];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([false, true], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));
@@ -739,6 +743,8 @@ final class LayerViolationRuleTest extends TestCase
             reason: 'Physical use-site control applies to every projection.',
             line: 10,
             type: SuppressionType::NextLine,
+            position: 0,
+            silencedLine: 10 + 1,
         )];
         $result = $filter->apply($findings, $suppressions);
         self::assertSame([false, false], array_map(static fn($v): bool => \in_array($v, $result->retained, true), $findings));

@@ -338,3 +338,12 @@ Stage 03's own number is read directly, with nothing to subtract.
 - The logger parameter is required and bound in `DesignConfigurator`; removing
   the binding fails container compilation rather than disabling the feature.
 - Review of the implementation.
+
+## Current implementation note
+
+[ADR 0089](../../../adr/0089-composer-manifest-facts-and-project-scope-reasons.md)
+replaces the independent Composer reader described in this historical plan
+with one analysed-root invocation snapshot. Install-root discovery retains its
+bounded order and publishes observed omissions; typed manifest issues and
+omissions reach the report's existing project-scope reason list without
+closing main-project coverage. Runtime Composer PHP is still not executed.

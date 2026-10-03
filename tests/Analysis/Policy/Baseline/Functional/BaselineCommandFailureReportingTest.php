@@ -20,9 +20,10 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
-use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
@@ -43,6 +44,7 @@ use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
@@ -55,6 +57,7 @@ use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -101,7 +104,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
         yield 'a defect in the tool itself' => [
             new LogicException('the invariant nobody expected to break'),
-            'Unexpected error: the invariant nobody expected to break',
+            'Internal error: the invariant nobody expected to break',
         ];
     }
 
@@ -115,8 +118,9 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $tester = self::execute($thrown, verbose: false);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString($expected, $tester->getDisplay());
-        self::assertStringNotContainsString('Stack trace:', $tester->getDisplay());
+        $reported = $tester->getDisplay() . $tester->getErrorOutput();
+        self::assertStringContainsString($expected, $reported);
+        self::assertStringNotContainsString('Stack trace:', $reported);
     }
 
     /**
@@ -129,9 +133,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $tester = self::execute($thrown, verbose: true);
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode());
-        self::assertStringContainsString($expected, $tester->getDisplay());
-        self::assertStringContainsString('Stack trace:', $tester->getDisplay());
-        self::assertStringContainsString(self::class, $tester->getDisplay());
+        $reported = $tester->getDisplay() . $tester->getErrorOutput();
+        self::assertStringContainsString($expected, $reported);
+        self::assertStringContainsString('Stack trace:', $reported);
+        self::assertStringContainsString(self::class, $reported);
     }
 
     /**
@@ -176,12 +181,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $runtimeReflection = new ReflectionClass($runtime);
         $analysisRuntime = $runtimeReflection->getProperty('analysisRuntimeConfigurator')->getValue($runtime);
         self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
-        $validator = (new ReflectionClass($analysisRuntime))->getProperty('ruleInputValidator')->getValue($analysisRuntime);
-        self::assertInstanceOf(RuleInputValidator::class, $validator);
-        $selector = (new ReflectionClass($validator))->getProperty('ruleSelector')->getValue($validator);
-        self::assertInstanceOf(RuleSelector::class, $selector);
-        $staticChannels = (new ReflectionClass($selector))->getProperty('defaultChannels')->getValue($selector);
-        $selector->replaceChannels(self::createStub(RuleChannelRegistryInterface::class));
+        $ruleOptions = (new ReflectionClass($analysisRuntime))->getProperty('ruleOptionsRegistry')->getValue($analysisRuntime);
+        self::assertInstanceOf(RuleOptionsRegistry::class, $ruleOptions);
+        $ruleOptions->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), []));
+        self::assertNotNull($ruleOptions->enablement());
 
         $cacheFactory = $runtimeReflection->getProperty('cacheFactory')->getValue($runtime);
         self::assertInstanceOf(CacheFactory::class, $cacheFactory);
@@ -200,25 +203,13 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
             'qmx.yaml was not found',
         ));
-        $baselineRun = new BaselineRun(
-            $runtime,
-            self::withoutConstructor(MeasuredFindingSet::class),
-            self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
-            self::configurationInputAdapter($pipeline),
-            self::createStub(RunConfigurationResolverInterface::class),
-            self::createStub(ConfiguredFindingExclusionsResolverInterface::class),
-            self::createStub(CacheConfigurationResolverInterface::class),
-            self::createStub(ParallelConfigurationResolverInterface::class),
-        );
+        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream());
 
         try {
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());
             self::fail('Configuration loading must fail.');
         } catch (ConfigurationRefusal) {
-            self::assertSame(
-                $staticChannels,
-                (new ReflectionClass($selector))->getProperty('channels')->getValue($selector),
-            );
+            self::assertNull($ruleOptions->enablement());
             self::assertTrue($cacheStore->current()->enabled);
             self::assertNull($parallelStore->current()->workers);
             self::assertFalse($profile->isEnabled());
@@ -274,18 +265,18 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
-        $ruleSelector = new RuleSelector($staticChannels);
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
-            $ruleSelector,
-            new FindingConfigurationResolver(),
             $staticChannels,
+            new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
+            self::createStub(ComputedMetricConfiguratorInterface::class),
+            new RuleEnablementResolver(),
         );
 
         $errorStream = new ErrorStream();
 
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory)),
             new ProgressConfigurator(new SwitchableProgressReporter(), $errorStream),
             new ProfileSession(),
             new AnalysisRuntimeConfigurator(
@@ -300,7 +291,11 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new CacheFactory($cacheStore),
             $parallelStore,
             new RuntimeLimitsController(),
-            new ComposerAutoloadMap(),
+            new \Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator(
+                new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(),
+                new \Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver(),
+                new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+            ),
         );
     }
 
@@ -310,9 +305,10 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
         return new RuleInputValidator(
             $rules,
-            new RuleSelector($staticChannels),
-            new FindingConfigurationResolver(),
             $staticChannels,
+            new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
+            self::createStub(ComputedMetricConfiguratorInterface::class),
+            new RuleEnablementResolver(),
         );
     }
 
@@ -321,6 +317,8 @@ final class BaselineCommandFailureReportingTest extends TestCase
     ): ConfigurationInputAdapter {
         return new ConfigurationInputAdapter(
             $pipeline,
+            new ErrorStream(),
+            self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class),
         );
     }
 

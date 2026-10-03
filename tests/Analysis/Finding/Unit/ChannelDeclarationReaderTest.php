@@ -36,9 +36,6 @@ final class ChannelDeclarationReaderTest extends TestCase
     #[Test]
     public function itReturnsAnEmptyArrayForARuleThatDeclaresNothing(): void
     {
-        // GotoRule's sibling code-smell rules (BooleanArgumentRule, EvalRule,
-        // ...) deliberately have no channelDeclarations() method at all —
-        // this is the "stays untouched" contract, exercised on a real rule.
         self::assertSame([], ChannelDeclarationReader::read(FixtureRuleWithNoDeclarations::class));
     }
 
@@ -49,7 +46,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         $key = GotoRule::NAME;
 
         self::assertSame([$key], array_keys($declarations));
-        self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable), $declarations[$key]);
+        self::assertEquals(ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File), $declarations[$key]);
     }
 
     #[Test]

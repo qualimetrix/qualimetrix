@@ -7,16 +7,13 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
 
 /**
  * Integration test that runs the full analysis pipeline on fixture files
@@ -31,27 +28,17 @@ final class GoldenFileAggregationTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $containerFactory = new ContainerFactory();
-        $container = $containerFactory->create();
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
         $fixtureRoot = AbsolutePath::fromString($fixturesPath);
-        $document = new ConfigurationDocument([], $fixtureRoot);
-
-        /** @var ComputedMetricConfiguratorInterface $computedMetrics */
-        $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
-        $computedMetrics->replace($computedMetrics->resolve($document));
-
-        /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
-        $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        $architecturePolicy->replace($architecturePolicy->resolve($document));
-
-        /** @var AnalysisPipelineInterface $pipeline */
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-
         $root = AbsolutePath::fromString((string) getcwd());
-        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$fixtureRoot], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include, coversProjectScope: true, authoredPathExcludes: []));
-
-        self::$repository = $result->metrics;
+        $fixture = PreparedAnalysis::start($root, [$fixtureRoot], ['include_generated' => true]);
+        try {
+            $pipeline = $fixture->container()->get(AnalysisPipelineInterface::class);
+            \assert($pipeline instanceof AnalysisPipelineInterface);
+            self::$repository = $pipeline->analyze($fixture->prepared()->runConfiguration)->measured->repository;
+        } finally {
+            $fixture->close();
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────

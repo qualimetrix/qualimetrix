@@ -1,0 +1,9 @@
+{
+  "name": "qmx-corpus/parallel-files",
+  "type": "project",
+  "autoload": {
+    "psr-4": {
+      "Corpus\\ParallelFiles\\": "src/"
+    }
+  }
+}

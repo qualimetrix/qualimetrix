@@ -13,7 +13,7 @@ declare(strict_types=1);
  * `Process` gaining a call to `Interruption` did exactly that on 2026-09-14 —
  * `composer check` went red in the directive audit, whose subset stopped at
  * `Process.php`, with a fatal three frames inside a file it had loaded
- * correctly. `finding-gate-controls.php` carries the same scar in a comment:
+ * correctly. The controls harness's entry point carries the same scar in a comment:
  * "Measured the hard way: without these, every control crashed on a missing
  * class."
  *
@@ -26,6 +26,7 @@ foreach (
         'CommandLine',
         'FailureClass',
         'GateError',
+        'Wiring',
         'BudgetExceeded',
         'Interrupted',
         'Interruption',
@@ -42,12 +43,29 @@ foreach (
         'GateReport',
         'Options',
         'CaseDefinition',
+        'CaseOutcome',
         'Corpus',
+        'CapturePlan',
+        'CaptureResult',
+        'BaselineEligibility',
+        'RankingCaptures',
         'RenameMaps',
         'ChannelSplit',
         'PublishedVocabulary',
         'DeclaredDelta',
+        'DeclaredExactSurfaces',
+        'ExactSurfaceAuthority',
         'DeclaredFieldMoves',
+        'DeclarationTable',
+        'DeclaredRecords',
+        'DeclaredValues',
+        'DeclaredFields',
+        'DeclaredOutcomes',
+        'DeclaredSurfaces',
+        'DeclaredStructuralMaps',
+        'Declarations',
+        'DerivedTable',
+        'JsonText',
         'NormalizationRule',
         'Normalization',
         'NormalizationDeriver',
@@ -58,12 +76,47 @@ foreach (
         'ReportPayload',
         'ChannelWitness',
         'ChannelCoverage',
+        'CaseInputTranslation',
         'TreeRun',
         'CaseScheduler',
         'ReferenceTree',
+        'RunContext',
+        'GateExtension',
+        'CaseCheck',
+        'SurfaceStage',
+        'SurfacePair',
+        'RunCheck',
+        'Derivation',
+        'ExactSurfaceDeltaCheck',
+        'TupleCheck',
+        'FingerprintCheck',
+        'RenameMapCheck',
+        'DeclaredDeltaCheck',
+        'StaleDeclarationCheck',
+        'SurfaceComparison',
+        'CoverageCheck',
         'Gate',
+        'GateModes',
+        'SyntheticTree',
+        'RaiseSites',
+        'CheckWitnesses',
+        'WitnessRegistry',
+        'SelfTestGroup',
+        'SelfTestMaps',
+        'SelfTestMetricKeys',
+        'SelfTestCoverage',
+        'SelfTestDeclaredDelta',
+        'SelfTestNormalization',
+        'SelfTestFindingShape',
+        'SelfTestSurfaces',
+        'SelfTestVerdict',
+        'SelfTestResources',
+        'SelfTestRegistries',
         'SelfTest',
     ] as $class
 ) {
     require_once __DIR__ . '/' . $class . '.php';
 }
+
+// Then what each declaration form registers in its own wiring file.
+QmxFindingGate\Wiring::gate()->load();

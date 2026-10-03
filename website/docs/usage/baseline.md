@@ -56,6 +56,15 @@ bin/qmx baseline:generate baseline.json src/ --mode=suppress --force
 
 `baseline:generate <baseline> [<paths>...]` captures every currently measured finding. Its default `--mode=ratchet` records a ceiling; `--mode=suppress` accepts each captured identity regardless of later count or magnitude. `--force` overwrites an existing baseline file and discards its recorded acceptances.
 
+The destination parent must already exist and permit writing and searching.
+Create it explicitly before generating: the command no longer creates missing
+parents. The destination is checked before analysis and existing file modes are
+preserved. With `--force`, a closed symbolic link retains the link and writes its
+resolved target, including an absent referent. Links through directories whose
+entries others can replace refuse. Without `--force`, any occupied name,
+including a dangling link, still refuses. Storage or lock contention returns
+exit 3; failed publication does not install a partial baseline.
+
 ### Replace an older baseline
 
 ```bash
@@ -79,7 +88,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the run measured the entry's channel at the level of its subject and reported nothing; `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the channel was active at the subject level and reported nothing; this does not yet prove an excluded subject was measured (see the metadata-coverage limitation below); `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
 ### Carry a baseline onto renamed channels
 
@@ -118,7 +127,7 @@ rename that matches nothing in this file is reported, not refused. Exit codes:
 baseline or the map not being a readable file, or on a malformed `--format`
 value; every refusal takes the same code regardless of which of those caused
 it. A refusal is reported in the chosen format: under `--format=json` it is
-the `{error, exit_code, position}` envelope every other machine-readable refusal in the
+the `{error, exit_code, position, source}` envelope every other machine-readable refusal in the
 tool uses, not a bespoke `error`-only object.
 
 Two consequences are worth knowing before you run it:
@@ -161,7 +170,7 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=c
 
 `baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
 
-A symbol absent from both the current analysis and the baseline is invalid input,
+Except for a complete intentionally empty excluded set, a symbol absent from both the current analysis and the baseline is invalid input,
 not a clean result. A baseline-only symbol remains explainable and is labelled as
 absent from the current scope or result.
 
@@ -184,10 +193,29 @@ A `--baseline` file (for `check` and `baseline:explain`) or a `<baseline>` argum
 refused with exit 3 before any analysis runs. `baseline:generate --force` refuses a destination
 it cannot read, or one that is not a regular file, the same way.
 
-All lifecycle commands require complete analysis. A parse or processing failure
+All measuring lifecycle commands require complete analysis. Any failure, including unreadable source and skipped filesystem entries,
 returns exit 4 before any baseline is interpreted, classified, created, or
 mutated. `--force` does not override this invariant; existing destinations remain
 byte-identical.
+
+### Intentionally empty excluded input
+
+Authored `exclude` applies to explicitly named files and directories. A complete
+run with `analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0` is
+intentionally empty: `baseline:generate` writes an empty baseline and returns 0
+with its measured scope explanation on stderr. Update/cleanup retain their
+existing complete-run and recorded-scope checks; `--force` has no new meaning.
+Explain returns 0 after observing this scope without claiming the requested
+subject was remediated. Any incomplete input has priority: exit 4 with no baseline
+creation or mutation. Truly undiscovered empty input retains existing input and
+scope checks.
+
+!!! warning "Exclusion is not remediation"
+    Until lifecycle consumers use the full-universe metadata query, cleanup may
+    label an unmeasured excluded entry stale. Partial explain has no per-entry
+    `outsideCoverage`: absence is qualified by measured coverage. Check a full
+    run without the relevant exclusion before removing an entry; unknown metadata
+    does not mean the file is absent.
 
 ## Stale, inert, and resolved entries
 
@@ -213,6 +241,95 @@ Use an inline suppression for an intentional exception rather than silently acce
 | `@qmx-ignore * [-- reason]`                   | All rules on a symbol | `@qmx-ignore * -- Generated mapper`                           |
 | `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`    |
 | `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`    |
+
+### Comment-line grammar
+
+A tag starts its **physical comment line**, after whitespace and comment
+decoration (`//`, `/*`, `*`, `#`). A one-line `/** @qmx-ignore ... */`
+is valid: PHP source may precede the comment, but prose inside the comment may
+not precede the tag. A later exact tag in prose is refused as
+`annotation.unresolved-directive`; write separate comment lines for separate
+tags. Arguments must stay on the tag's own line, and a closing `*/` is never
+an argument.
+
+The tag spellings `@qmx-ignore`, `@qmx-ignore-next-line`,
+`@qmx-ignore-file` and `@qmx-threshold` are exact. Near spellings at line start,
+including case changes, underscores, spaces or a missing separator/`@`,
+are reported as typos rather than silently ignored. Ordinary prose such as
+`qmx ignores` is not a directive.
+
+### Quote examples without addressing them
+
+On a single line, surround an example with matching runs of one or more
+backticks. They must have equal lengths; between the opening run and the tag
+there may be only whitespace, comment decoration or backticks. A lone tick,
+unequal lengths, or prose before the tag inside the span do not quote it.
+For example, `` Write `@qmx-ignore complexity.ccn` `` documents a tag,
+while `` `example @qmx-ignore complexity.ccn` `` is refused.
+
+For multiline examples, open a fence after whitespace/decoration with at least
+three backticks or tildes. The opener may carry an info suffix, but a backtick
+opener's suffix cannot contain a backtick. A closer uses the same character
+with at least the opening length, followed only by whitespace and an optional
+comment closer. A shorter or mixed closer does not close it. A closed fence
+quotes its contents; an unclosed fence reports directive-shaped lines inside
+it as refusals and names the opening line.
+
+### Declaration binding and member reach
+
+A declaration-form suppression binds to the measured declaration it stands
+on. Docblocks anywhere in a declaration header, including between attribute
+groups or between `function` and its name, belong to that declaration.
+Extraction reads the original source without modifying the cached AST.
+
+A closure or arrow function binds when it is the direct value of an argument,
+array element, return statement, expression statement or assignment chain
+(`=` or `??=`). A named argument or array key before that value is allowed.
+A call, ternary, array wrapper or other expression merely containing a closure
+does not bind to it: move the comment directly before `function` or `fn`.
+A statement containing no measured declaration is refused; use the physical
+next-line form when that is the intended scope.
+
+| Location of `@qmx-ignore`                           | Suppression reach                                                                |
+| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Class, interface, trait or enum                     | Whole class-like declaration and its measured callable members                   |
+| Method                                              | Whole method; class findings located on that method's lines                      |
+| Function, closure, arrow function or property hook  | Whole callable                                                                   |
+| Property with hooks                                 | Whole hooks; class findings on the property's lines                              |
+| Property without hooks, class constant or enum case | Class findings on that member's lines                                            |
+| Parameter                                           | Callable findings on that parameter's lines                                      |
+| Promoted parameter                                  | Parameter lines in callable and class findings; whole property hooks, if present |
+
+A member annotation cannot suppress a whole-class finding located on the class
+line or a finding on a neighbouring member. Reach uses inclusive **line**
+ranges, so parameters sharing a line cannot be distinguished by column.
+An explicit `:level` must be declared by the channel and reachable at this
+location: `:class` on a method or promoted parameter is lawful;
+`:callable` on a constant or property without hooks is refused.
+A bare channel selector covers the reachable levels without inventing another
+level check.
+
+`@qmx-threshold` does **not** gain member containment: class-like declarations
+retune themselves and their measured callables; methods/functions/closures/
+arrows/hooks retune themselves; a hooked property retunes its hooks.
+A plain property, constant, enum case or parameter has no threshold binding.
+
+### Physical sites and blanket controls
+
+Every read tag is one authored site even if it creates several declaration
+bindings. Suppressions and threshold diagnostics retain the tag's byte
+position: identical tags in two comments on one line remain separate sites.
+A next-line site's reported line is the tag line; its target is the line
+after the end of the comment, including for multiline comments.
+Threshold overrides do not carry a position, so overrides of the same rule on
+the same line still coalesce.
+
+`@qmx-ignore *` and a bare `@qmx-ignore-file` are judged effective when they
+silence a produced finding and inert when they do not. They cannot silence
+`annotation.unused-directive` or `duplication.clone`, and configuration-error
+findings remain exempt from annotation suppression. An explicit selector
+addressing either banned channel is refused; declaration/level reach is checked
+before the ban.
 
 ### Reason separator
 
@@ -273,11 +390,9 @@ A directive that names something invalid, or that no longer fires, is not silent
 | `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                                                                                                                                                                       |
 | `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                                                                                                                                                                 |
 
-Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. It is the one channel no `@qmx-ignore` can silence — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
+Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Warning`, its severity is configurable via the `unused-directive-severity` rule option (set `info` explicitly for the former severity), and it can be baselined, dropped by the top-level `suppress_paths` or narrowed by a git scope like any other channel. `suppress_namespaces` does not reach it — the finding's subject is the file the annotation sits in, which carries no namespace — and neither do the rule's own exclusions, which run before this channel is assembled. Like `duplication.clone`, no `@qmx-ignore` can silence it — a directive addressing it is refused as an `annotation.unresolved-directive` — so a baseline entry is the way to accept it in place. `@qmx-threshold` never counts toward it.
 
-An inline same-line comment is not supported.
-
-A tag that is misspelled, and a `@qmx-ignore` written above a statement or on a property, used to do nothing quietly; both are now `annotation.unresolved-directive` errors. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
+A tag with a typo, wrong line placement or no valid declaration binding is refused; a property suppression now has bounded member reach. See [Forms that never become a directive](../rules/annotation.md#forms-that-never-become-a-directive).
 
 ### View what annotations hide
 

@@ -94,7 +94,7 @@ final class LayerViolationRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects dependencies between layers that are not explicitly allowed by the architecture policy.';
     }
@@ -159,7 +159,7 @@ final class LayerViolationRule extends AbstractRule
             // whose classes are simply outside the slice. The gate is the
             // same project-coverage predicate
             // UnmatchedFrameworkNamespaceRule asks.
-            ...($context->coversProjectScope
+            ...($context->projectScope->judgesNamespaceClaims()
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, self::UNMATCHED_EXCLUDE_NAME)
                 : []),
             // Not scope-gated: the doubt is about the symbols this run looked

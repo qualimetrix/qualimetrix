@@ -4,37 +4,33 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Core\FileTarget\HeldTarget;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
 
 /**
- * Helper for writing output to console.
- *
- * Restores blocking mode on the output stream before writing. amphp/parallel
- * sets STDOUT to non-blocking via WritableResourceStream, and does not restore
- * it after worker communication ends. Non-blocking fwrite() can silently produce
- * partial writes, causing output truncation.
+ * Writes serialized console output without parsing literal markup.
  */
 final class OutputHelper
 {
     /**
-     * Writes content to output, ensuring the stream is in blocking mode.
+     * Writes content to output, checking stream writes after restoring blocking mode.
      *
      * @param OutputInterface $output Symfony Console output
      * @param string $content Content to write
      */
     public static function write(OutputInterface $output, string $content): void
     {
-        // amphp sets STDOUT to non-blocking for its event loop (WritableResourceStream).
-        // After parallel processing completes, the stream remains non-blocking.
-        // Symfony's @fwrite() suppresses errors, so partial writes go undetected
-        // and output gets silently truncated. Restore blocking mode before writing.
         if ($output instanceof StreamOutput) {
-            stream_set_blocking($output->getStream(), true);
+            if ($output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL) {
+                $stream = $output->getStream();
+                $spelling = stream_get_meta_data($stream)['uri'] ?? 'console output stream';
+                HeldTarget::writeToStream($stream, $content, $spelling);
+            }
+
+            return;
         }
 
-        // Payload formatters already serialized their content; Symfony markup
-        // parsing would corrupt literal tags in HTML, XML, JSON, DOT and text.
         $output->write($content, false, OutputInterface::OUTPUT_RAW);
     }
 }

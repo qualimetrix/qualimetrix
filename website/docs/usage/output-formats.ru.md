@@ -199,7 +199,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+**Ключи верхнего уровня:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (см. [Охват проекта во всех форматах](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, плюс `violationGroups`, когда передан `--group-by` — без него ключа нет вовсе, это не пустой объект.
+
+`configurationDiagnostics` перечисляет предупреждения о конфигурации, которую прогон принял, — те же, что `check` печатает в stderr, — и равен `[]`, когда их нет. Каждая запись — `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` называет каждый слой, о котором предупреждение, от младшего к старшему, в той же форме, что `source` ошибки конфигурации. Например, `only_rules: []` в `qmx.yaml` поверх пресета, фильтрующего правила, законно и даёт одну запись, называющую оба слоя.
 
 `meta` называет инструмент, записавший документ: `version`, `package`, `timestamp` и два адреса документации — `docs`, сайт документации, и `llmsTxt`, индекс для ИИ-агентов. Оба адреса есть в каждом JSON-отчёте, у которого есть объект-конверт; см. исключения в [Адреса документации в JSON-отчётах](#documentation-addresses).
 
@@ -227,7 +229,8 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
+    "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -520,7 +523,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -866,18 +869,19 @@ xdg-open report.html  # Linux
 пер-рулевые исключения. Глобальные `path-suppression` и `namespace-suppression`
 там видны только как счётчик под `-v`, а не по находкам; снятия `baseline` и
 `git-scope` не выводятся вовсе; текстового аналога `neverMatched` нет.
-`suppressed` — единственная поверхность, публикующая все семь механизмов
+`suppressed` — единственная поверхность, публикующая все восемь механизмов
 по отдельным находкам.
 
 **Состав — это мультимножество, а не множество находок.** Одна находка может
 попасть под несколько механизмов сразу — например, находку, которую убрал бы
 инлайновый `@qmx-ignore`, могло раньше убрать исключение по неймспейсу. Всего
-семь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
+восемь механизмов: `suppression` (инлайновые `@qmx-ignore`/`@qmx-ignore-file`/
 `@qmx-ignore-next-line`), `path-suppression` и `namespace-suppression` (глобальные
 `suppress_paths`/`suppress_namespaces`), `baseline` (потолок принятого уровня),
 `git-scope` (сужение `--report=git:*`) и две половины пер-рулевого леджера
 исключений, настраиваемого под ключом `rules: {<имя-правила>: {...}}` —
-`rule-namespace-suppression` и `rule-path-suppression`. `byMechanism` считает
+`rule-namespace-suppression`, `rule-path-suppression` и снятие реально
+порождённых находок механизмом `selection`. `byMechanism` считает
 записи по каждому механизму отдельно; поскольку одна и та же находка может
 попасть под несколько механизмов, эти счётчики **не складываются** в число
 различных подавленных находок — об этом прямо говорит поле `note` самого
@@ -894,8 +898,9 @@ xdg-open report.html  # Linux
 `json`, — аудит неполного прогона говорит, что он неполон), `projectScope`
 (тот же объект, что у `json`, — аудит суженного прогона называет каналы
 подавлений, которые не судились), `mechanisms` (все
-семь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
-нулевые), `suppressed` (само мультимножество), `neverMatched`.
+восемь, всегда присутствуют), `byMechanism` (счётчик на каждый механизм, включая
+нулевые), `suppressed` (само мультимножество), `neverMatched` и `notRun`
+(metadata producers).
 
 Каждая запись `suppressed` несёт идентичность, которую публикует `json`, —
 `channel` (здесь это код находки), `subject`, `occurrence`, `edge`, — чтобы её
@@ -922,10 +927,11 @@ xdg-open report.html  # Linux
         "discovered": 1204,
         "analyzed": 1204,
         "generatedExcluded": 0,
+        "excluded": 0,
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -933,7 +939,8 @@ xdg-open report.html  # Linux
         "baseline",
         "git-scope",
         "rule-namespace-suppression",
-        "rule-path-suppression"
+        "rule-path-suppression",
+        "selection"
     ],
     "byMechanism": {
         "suppression": 12,
@@ -942,7 +949,8 @@ xdg-open report.html  # Linux
         "baseline": 0,
         "git-scope": 0,
         "rule-namespace-suppression": 58,
-        "rule-path-suppression": 131
+        "rule-path-suppression": 131,
+        "selection": 0
     },
     "suppressed": [
         {
@@ -976,6 +984,7 @@ xdg-open report.html  # Linux
             "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
+    "notRun": [],
     "neverMatched": [
         {
             "mechanism": "rule-path-suppression",
@@ -999,6 +1008,31 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## JSON аудита директив
+
+`bin/qmx directives --format=json` публикует `meta`, `scope`,
+`selection`, `sweep`, `directives`, `summary` и `exit_code`.
+У директивы есть `file`, строка тега `line`, `form`, `target`,
+`effect`, `reason`, `masked_by`, `boundary_observable` и обязательный
+`refusals`. Исходы — `effective`, `overrun`, `inert`, `unmeasured`
+и `refused`; `reason` описывает Unmeasured (выключенный producer или
+перекрытый threshold). Место отказа несёт непустой список
+`[{channel, message}]`; остальные исходы — `[]`. Внутренние физическая
+позиция и addressed producer не публикуются. Два одинаковых комментария на
+строке могут поэтому дать две одинаковые публичные записи.
+Threshold overrides одного правила на одной строке пока сливаются.
+
+`summary` считает все пять исходов, включая `refused`. Отказ виден и тогда,
+когда селекция не позволяет его каналу изменить `exit_code`.
+Неполный анализ возвращает 4 раньше решения по отказам/inert; иначе публикуемый
+отказ или наблюдаемый inert даёт 2, оставшиеся случаи — 0.
+См. [справочник команды](cli-options.ru.md#directives).
+
+Для `--format=suppressed` Inline передаёт первую реально применившуюся
+директиву; Reporting не выводит размещение повторно. Публичный `suppressor`
+по-прежнему равен `файл:строка`, поэтому разные физические места на строке
+имеют одну метку.
 
 ## Адреса документации в JSON-отчётах {#documentation-addresses}
 
@@ -1025,128 +1059,131 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 
 Адреса есть не в каждом JSON-выводе. `gitlab` — голый массив, в нём нет объекта
 для них; у DOT-вывода `graph:export` нет конверта вовсе; отказ — это всегда
-ровно `{"error": ..., "exit_code": ..., "position": ...}`, где `position` равен
-`null`, если отказ не привязан к месту в конфигурационном документе: значение
-из командной строки, файл целиком и объединённое значение вроде
-`memory_limit: 010M` дают `null`, даже когда сообщение называет ключ. Если
-`position` есть, он указывает отвергнутое место так, как его нашла проверка:
-для обязательного ключа, которого нет, `path` заканчивается этим ключом, а
-`written` называет его; а baseline-файл — который пишут
+ровно `{"error": ..., "exit_code": ..., "position": ..., "source": ...}`, где
+`position` равен `null`, если отказ не привязан к месту в конфигурационном
+документе: значение из командной строки, отказ о файле целиком или синтетическом
+слитом входе даёт `null`, даже когда сообщение называет ключ. Неверные
+`memory_limit`, `fail_on` и `parallel.workers` из файла сохраняют написавший слой
+и место в документе.
+Если `position` есть, он указывает отвергнутое место так, как его нашла
+проверка: для обязательного ключа, которого нет, `path` заканчивается этим
+ключом, а `written` называет его. `source` перечисляет слои конфигурации, о
+которых отказ, от младшего к старшему — один для значения, написанного одним
+слоем, все вкладчики для ограничения между ключами, — каждый в виде
+`{"kind": ..., "name": ..., "imported_by": ...}`. `kind` — это `defaults`,
+`composer`, `preset`, `file`, `cli`, `baseline` или `resolved`; `name` — имя
+пресета, путь файла или опция. `resolved` называет отказ, владелец которого
+не имеет происхождения написанного значения; его `name` — ключ, если он известен,
+иначе `null`. `source` равен `null` при внутренней ошибке и при отказе без
+источника в конфигурации. Текстовый отказ называет те же написавшие слои в
+сообщении или отдельной строке `Source:`, в том числе под `--quiet`;
+синтетический слитый источник не называется автором.
+А baseline-файл — который пишут
 `baseline:generate`, `update`, `cleanup` и переписывает на месте
 `baseline:rename-channels` — это версионированный входной артефакт, который
 инструмент читает обратно, со своей схемой, а не отчёт.
 
 ## Покрытие анализа во всех форматах
 
-Каждая обнаруженная запись классифицируется как проанализированная,
-намеренно исключённый generated-файл или ошибка. Запись — это PHP-файл, который
-прогон измерил, PHP-файл, который он не смог прочитать, или запись файловой
-системы, которую он вообще не открывал: каталог, который нельзя перечислить,
-ссылка, по которой он не спускается. Generated-исключения не делают анализ
-неполным; любая ошибка делает политический результат неавторитетным. Нуль
-найденных файлов всё равно проходит через выбранный форматтер.
+Запись завершается анализом, намеренным авторским/generated исключением или
+ошибкой. `excluded` считает названные авторские записи вне `discovered`.
+В `discovered` входят PHP `analyzed`, PHP `generatedExcluded` и выбранные записи
+с итоговым `failed`: это могут быть каталоги, ссылки и специальные записи,
+а также PHP-файлы. Снятый каталог не выдаёт число его PHP-потомков. Исключение не делает анализ неполным, любой failure —
+делает. Полный намеренно пустой набор (`analyzed=0`, `failed=0`,
+`excluded + generatedExcluded > 0`) и действительно пустое дерево различаются.
+Код 4 при неполноте имеет приоритет над успехом и политическими нарушениями;
+`check` сохраняет выбранный диагностический отчёт, но результат неавторитетен.
 
-| Формат         | Представление coverage                                                                                               |
-| -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `summary`      | Текстовая строка coverage после заголовка                                                                            |
-| `text`         | Текстовая строка coverage после сводки нарушений                                                                     |
-| `text-verbose` | Та же проекция, что и у `text --detail`                                                                              |
-| `health`       | Текстовая строка coverage после заголовка                                                                            |
-| `json`         | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
-| `metrics`      | Тот же объект `coverage` верхнего уровня, что и в `json`                                                             |
-| `sarif`        | `runs[0].invocations[0].executionSuccessful`; ошибки в `toolExecutionNotifications[]`                                |
-| `gitlab`       | По blocker-issue на каждый сбой с `check_name: analysis.<kind>`; пустой полный прогон даёт `[]`                      |
-| `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                   |
-| `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                           |
-| `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                        |
-| `suppressed`   | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
+| Формат         | Представление coverage                                                                                                           |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `summary`      | Текстовая строка coverage после заголовка                                                                                        |
+| `text`         | Текстовая строка coverage после сводки нарушений                                                                                 |
+| `text-verbose` | Та же проекция, что и у `text --detail`                                                                                          |
+| `health`       | Текстовая строка coverage после заголовка                                                                                        |
+| `json`         | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| `metrics`      | Тот же объект `coverage` верхнего уровня, что и в `json`                                                                         |
+| `sarif`        | `runs[0].invocations[0].executionSuccessful`; ошибки в `toolExecutionNotifications[]`                                            |
+| `gitlab`       | По blocker-issue на каждый сбой с `check_name: analysis.<kind>`; пустой полный прогон даёт `[]`                                  |
+| `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                               |
+| `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                                       |
+| `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                                    |
+| `suppressed`   | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
 
-В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` и
-`message`. Текстовые форматы различают нуль найденных файлов, только
-generated-файлы, полный и неполный анализ.
+В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` и `message`.
+Текстовые форматы выводят измеренные количества, не утверждая, что каждый названный
+путь исключён, когда другой корень просто пуст.
 
-У `kind` пять значений:
+| `kind`                 | Запись                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `parse`                | PHP с синтаксической ошибкой                                                 |
+| `processing`           | Сбой измерения PHP                                                           |
+| `unreadable-file`      | Source snapshot не удалось получить до вызова parser                         |
+| `directory-symlink`    | Ссылка на каталог, встретившаяся внутри обхода и не пройденная               |
+| `not-regular-file`     | Необычная PHP-запись: FIFO, socket, device или недопустимая walked file link |
+| `unreadable-directory` | Каталог, который нельзя перечислить                                          |
 
-| `kind`                 | Запись                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `parse`                | PHP-файл, который не удалось разобрать                                                            |
-| `processing`           | PHP-файл, упавший при измерении                                                                   |
-| `directory-symlink`    | символическая ссылка на каталог, встреченная внутри сканируемого дерева                           |
-| `not-regular-file`     | запись `*.php`, не являющаяся обычным файлом: FIFO, сокет, устройство, ссылка с исчезнувшей целью |
-| `unreadable-directory` | каталог, который процессу нельзя перечислить                                                      |
-
-Последние три называют запись, которая так и не стала единицей анализа, поэтому
-несут путь этой записи, а не PHP-файла. Незнакомое значение считай записью,
-которую прогон не прочитал: список может вырасти, и отказ от всего документа
-ради этого знания хуже, чем сообщить о неполном прогоне.
+Skips называют запись, не ставшую единицей анализа. Неизвестный `kind` считай
+признаком неполного прогона, а не причиной отбросить весь документ.
 
 ## Охват проекта во всех форматах {#project-scope-in-every-format}
 
-Некоторые каналы утверждают, что настроенное значение ни с чем в проекте не
-совпало: слой, которому не принадлежит ни один класс, `exclude:`, не убравший
-ни одного каталога, подавление, не называющее ничего. Прогон по части проекта
-не может утверждать такое о коде, который не анализировал, поэтому эти каналы
-говорят только тогда, когда анализируемые пути покрывают всё, что
-`composer.json` объявляет в `autoload` (и в `autoload-dev` с
-[`--include-autoload-dev`](cli-options.ru.md#--include-autoload-dev)). Отчёт
-сообщает, в каком из трёх состояний был прогон:
+Отчёт публикует итоговое измерение, объединяющее захваченный Composer-состав
+и фактический выбор записей. Initial target-state до обхода не является итогом:
+отсутствующий в selection пустой каталог сам по себе не означает пропущенный PHP.
 
-| Состояние  | Когда                                                                                                                  | Каналы всего проекта                                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `covered`  | анализируемые пути содержат каждую объявленную autoload-цель                                                           | судятся                                                                                                                      |
-| `narrowed` | какая-то объявленная цель лежит вне анализируемых путей                                                                | не судятся; отчёт называет их и оставленные вне прогона цели                                                                 |
-| `unknown`  | `composer.json` отсутствует, не разбирается или не объявляет production-autoload вне `vendor`, `node_modules` и `.git` | судятся, принимая анализируемые пути за весь проект, — кроме значений-неймспейсов каналов подавлений, которые отчёт называет |
+`state` остаётся `covered`, `narrowed`, `unknown` или `unmeasured`. Этот enum
+описывает свидетельства, но не разрешает одинаково все проверки. Есть два вопроса:
 
-Только на прогоне по всему проекту судятся каналы
-`architecture.unreachable-layer`, `architecture.empty-template`,
-`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
-`discovery.unmatched-exclude`, `suppression.unmatched-path`,
-`suppression.unmatched-namespace` и `suppression.unmatched-rule-ledger`.
-Отчёт суженного прогона перечисляет их все, независимо от того, включены ли
-они в этом прогоне.
+- **Отсутствие деклараций.** Пропущенные PHP, авторское снятие PHP,
+  generated-исключения и неизвестный состав кода удерживают утверждение об
+  отсутствии неймспейса, класса или имени метода.
+- **Полнота селекторов/путей.** Проверяется полнота PHP-путей и известность
+  состава кода отдельно. Авторские и generated-исключения не являются входами
+  этого вопроса. Уже привязанный selector остаётся `Removed` и при удержанном ответе.
 
-`covered` — утверждение об автозагрузке, а не о каждом заданном значении.
-Каналы подавлений ещё и судят каждое значение по месту, которое оно называет, и
-значение, называющее место вне проанализированных путей, пропускается:
-`suppress_paths: [{subtree: tests/Legacy}]` при `qmx check src/`, когда `tests/`
-объявлен только в `autoload-dev`, на этом прогоне в состоянии `covered` не
-судится. Отчёт называет каждое пропущенное значение в `unjudgedValues`, а его
-канал — в `unjudgedChannels`, так что «просужено и привязалось» и «не
-просматривалось» читаются по-разному. См.
-[правила подавления](../rules/suppression.ru.md).
+Первый вопрос задают шесть каналов:
+`architecture.empty-template`, `architecture.unmatched-exclude`,
+`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
+`coupling.unmatched-framework-namespace`, `suppression.unmatched-namespace`.
+Второй используют `discovery.unmatched-exclude`, `suppression.unmatched-path`
+и `suppression.unmatched-rule-ledger`; namespace-значения последнего также
+спрашивают первый. Всего девять каналов.
 
-На проекте в состоянии `unknown` запускайте проверку по всему его коду: более
-узкий прогон там судится так, будто он и есть весь проект, и слой, чьи классы
-лежат вне названных путей, будет назван не совпавшим ни с чем. Исключение —
-значения-неймспейсы глобального `suppress_namespaces` и заданных под правилом
-`suppress_namespaces` и `suppress_namespace_channels`: без объявленного автозагрузчика неймспейсу
-негде находиться, поэтому на таком проекте они не судятся ни на каком прогоне,
-а отчёт называет каждое такое значение в `unjudgedValues`, а его канал —
-`suppression.unmatched-namespace` или `suppression.unmatched-rule-ledger` — в
-`unjudgedChannels`.
+Полный поимённый roster PHP может покрыть известную область. Наблюдённый regular
+`.php` вне выбора — пропущенный файл, даже если он совпал с exclude. Снятый каталог
+вне selection скрывает невидимых потомков: именованный `incomplete-universe`
+удерживает оба вопроса без listing или PHP-поиска там. Assets и special entries
+не считаются предполагаемыми пропущенными PHP. Целый корень может установить
+полноту без пригодной объявленной автозагрузки; произвольная часть — нет.
 
-| Формат                                      | Представление охвата проекта                                                                                                              |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Объект верхнего уровня `projectScope` в каждом документе: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
-| `sarif`                                     | `note` в `runs[0].invocations[0].toolExecutionNotifications[]` с дескриптором `QMX-RUN-PROJECT-SCOPE`                                     |
-| `github`                                    | Строка `::notice title=run.project-scope::`                                                                                               |
-| `html`                                      | Баннер над отчётом                                                                                                                        |
-| `summary`, `text`, `text-verbose`, `health` | Строка `Project scope …` рядом с фразой о покрытии                                                                                        |
-| `gitlab`, `checkstyle`                      | Ничего: их потребители считают каждую запись находкой, а сужение прогона — не его дефект                                                  |
+| Формат                                      | Представление охвата проекта                                        |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Объект верхнего уровня `projectScope` в каждом документе            |
+| `sarif`                                     | Уведомление invocation с дескриптором `QMX-RUN-PROJECT-SCOPE`       |
+| `github`                                    | Строка `::notice title=run.project-scope::`                         |
+| `html`                                      | Баннер над отчётом                                                  |
+| `summary`, `text`, `text-verbose`, `health` | Строка `Project scope …`                                            |
+| `gitlab`, `checkstyle`                      | Записи об охвате нет: их потребители считают каждую запись находкой |
 
-У `projectScope` одни и те же ключи в любом состоянии. `uncoveredAutoloadTargets`
-пуст, если состояние не `narrowed`. `unjudgedValues` перечисляет каждое
-заданное значение подавления, которое прогон в состоянии `covered` или
-`unknown` пропустил, в виде `{"option", "pattern"}`: `option` — это
-`suppress_paths`, `suppress_namespaces` или `rules.<rule>.<option>`, ключ, под
-которым искать, а `pattern` — селектор в записанном виде
-(`subtree:tests/Legacy`). `unjudgedChannels` для `narrowed` называет все каналы
-всего проекта — там не судилось ни одно значение, и `unjudgedValues` пуст, — а
-в остальных состояниях каналы пропущенных значений. Остальные форматы добавляют
-запись для `narrowed`, для `unknown` и для прогона в состоянии `covered`,
-пропустившего значение. Консоль, кроме того, печатает в stderr предупреждение с
-autoload-целями, которые суженный прогон оставил вне анализа.
+Объект сохраняет пять полей: `state`, `uncoveredAutoloadTargets[]`,
+`unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Пропущенное значение имеет
+`{channel, option, pattern}`. `unjudgedChannels` перечисляет только каналы,
+у которых не судилось ни одного значения; частично проверенный канал может
+отсутствовать в этом списке, хотя его skipped values сохранены с `channel`.
+Поэтому пустой список каналов не доказывает, что каждое значение проверено.
+Причины сохраняют `kind` и именованные данные, включая места снятия и
+неизвестности. Вспомогательные Composer-проблемы объясняют ограничения ancestry,
+не закрывая охват основного проекта. Карта PSR-4 по-прежнему размещает
+namespace-значения независимо от enum. См. [правила подавления](../rules/suppression.ru.md).
 
+
+Если селектор скрыт другим источником, skipped value сохраняет три ключа.
+Причина Exclude связывает `selector` с `coveredBy`, называет только `sources`
+hider, отсутствующие среди источников селектора, и даёт совет `rerun`.
+Это объяснение удержания ответа, а не finding или доказательство remediation.
+Недоступные метаданные поиска внутри реально снятой run entry также удерживают
+только отсутствие деклараций, сохраняя фактическое свидетельство `unlistable`.
 ## Сравнительная таблица
 
 | Формат         | Читаемость    | Машинный    | Группировка                          | Интеграция с CI            |
@@ -1184,3 +1221,22 @@ autoload-целями, которые суженный прогон остави
 
 !!! note "Примечание"
     Все диагностические сообщения `check` вне выбранного report-payload (уведомления и ошибки конфигурации, deprecation, logging и сообщения о записи файла) выводятся в **stderr**, а не в stdout. Это позволяет безопасно перенаправлять вывод анализа в файл или другой инструмент: `bin/qmx check src/ --format=json > results.json`.
+
+## Selection removals и skipped producers
+
+`selection` — восьмой suppression mechanism. Он содержит реально порождённые
+находки, снятые итоговым publication selection. `byMechanism.selection` считает
+только эти multiset entries, никогда не число неисполненных producers.
+
+`notRun` всегда массив. У записи есть `producer`, `reason` (`disabled` или
+`filtered`), decisive `statement` и описание `layer`. Skipped producer не даёт
+искусственной находки или suppression count. У выключенного channel может быть
+живой sibling, поэтому producer notRun и channel removal — разные исходы.
+Обычные suppressed identity/multiset rules сохраняются; drill-down и formatter
+truncation остаются presentation, а не selection.
+
+Directive JSON сохраняет `selection.only` и `selection.disabled` как списки
+строк. Публикуются итоговый filter и все tied decisive disabling texts;
+повторяющиеся cells удалены, нижние disables, снятые поздним enable, отсутствуют.
+qmx rules печатает реальные origins/layer indices отдельно в human listing;
+это не меняет молча форму directive JSON.

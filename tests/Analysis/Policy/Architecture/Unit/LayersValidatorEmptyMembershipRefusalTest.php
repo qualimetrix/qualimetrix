@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator;
+use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
 final class LayersValidatorEmptyMembershipRefusalTest extends TestCase
 {
@@ -17,9 +18,9 @@ final class LayersValidatorEmptyMembershipRefusalTest extends TestCase
         $validator = new LayersValidator();
 
         try {
-            $validator->validate([
+            $validator->validate(ArchitectureDocument::layers([
                 ['name' => 'empty-layer'],
-            ]);
+            ]));
             self::fail('Expected ConfigurationRefusal for a layer entry declaring no criterion.');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString(

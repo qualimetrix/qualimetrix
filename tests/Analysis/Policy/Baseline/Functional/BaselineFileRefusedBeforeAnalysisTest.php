@@ -11,7 +11,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
@@ -21,7 +20,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -228,7 +226,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
                 $run,
                 $loader,
                 new BoundaryExplanationService(self::createStub(ChannelIdentityInterface::class), StubRuleCoverage::everyRuleRan()),
-                new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsFactory(new RuleOptionsRegistry())),
+                new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
                 $declarations,
             ),
             default => throw new LogicException($name),
@@ -264,11 +262,11 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
 
             public function __construct(private readonly AnalysisPipelineInterface $delegate) {}
 
-            public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult
+            public function analyze(RunConfiguration $configuration): AnalysisResult
             {
                 ++$this->calls;
 
-                return $this->delegate->analyze($configuration, $customFileDiscovery);
+                return $this->delegate->analyze($configuration);
             }
         };
 
@@ -281,7 +279,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         $tester = new CommandTester($command);
@@ -297,7 +295,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
     {
         (new BaselineWriter())->write(
             new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: []),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
     }

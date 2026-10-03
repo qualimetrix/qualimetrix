@@ -63,7 +63,15 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             "python3 -m unittest discover -s scripts/phpunit-aggregate/tests -p 'test_*.py'",
             $this->scriptSteps($scripts, 'test:cross-tool'),
         );
-        self::assertSame(['@gate:self-test', '@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
+        self::assertSame(['@selfcheck:analysis', '@directives:audit'], $scripts['check:self']);
+        self::assertSame(
+            [
+                'Composer\\Config::disableProcessTimeout',
+                'phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e',
+                '@gate:self-test',
+            ],
+            $scripts['check:gate'],
+        );
     }
 
     #[Test]

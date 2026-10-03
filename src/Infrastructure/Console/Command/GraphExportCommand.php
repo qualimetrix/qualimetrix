@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -12,15 +11,15 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\ProductIdentity;
-use Qualimetrix\Infrastructure\Console\ArtifactFile;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
+use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\CliSelectorDecoder;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
-use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
@@ -31,7 +30,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 
 #[AsCommand(
     name: 'graph:export',
@@ -44,8 +42,9 @@ final class GraphExportCommand extends Command
     public function __construct(
         private readonly DependencyGraphAnalyzerInterface $analyzer,
         private readonly DependencyGraphProjectionInterface $projection,
+        private readonly AnalysisPreflight $preflight,
         private readonly ErrorStream $errorStream,
-        private readonly RefusalPresenter $refusalPresenter,
+        private readonly RunTargetSession $runTargetSession,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {
@@ -55,9 +54,17 @@ final class GraphExportCommand extends Command
     protected function configure(): void
     {
         $this
+            ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to configuration file')
+            ->addOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Apply a named preset or preset file', [])
+            ->addOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Directories to exclude', [])
+            ->addOption('include-generated', null, InputOption::VALUE_NONE, 'Include generated files')
+            ->addOption('include-autoload-dev', null, InputOption::VALUE_NONE, 'Include composer autoload-dev files')
+            ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
+            ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
+            ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit')
             ->addArgument(
                 'paths',
-                InputArgument::IS_ARRAY | InputArgument::REQUIRED,
+                InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
                 'Paths to analyze',
             )
             ->addOption(
@@ -122,82 +129,103 @@ final class GraphExportCommand extends Command
         $rawFormat = $input->getOption('format');
         $envelopeFormat = \is_string($rawFormat) ? $rawFormat : null;
 
-        try {
-            return $this->doExecute($input, $output);
-        } catch (ConfigurationRefusal $refusal) {
-            return $this->refusalPresenter->refusal($output, $envelopeFormat, $refusal);
-        } catch (InvalidArgumentException $failure) {
-            // Named secondary signal for code 3: an
-            // `InvalidArgumentException` that never became a
-            // carrier — e.g. from the path value objects below.
-            return $this->refusalPresenter->fallbackRefusal($output, $envelopeFormat, $failure);
-        } catch (Throwable $failure) {
-            return $this->refusalPresenter->internalError($output, $envelopeFormat, $failure);
-        }
+        return $this->runTargetSession->run($output, $envelopeFormat, fn(): int => $this->doExecute($input, $output));
     }
 
     private function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        // Every check in this method runs before `analyzeDependencyGraph()`:
-        // `--direction`/`--format`/`--output` refusals must
-        // not pay for a Discovery+Collection run that their own answer
-        // throws away. A bogus `--direction` or `--format` must reach the
-        // analyzer zero times.
         $format = self::resolveFormat(CommandLineSpelling::option($input, 'format') ?? '');
         $direction = self::resolveDirection(CommandLineSpelling::option($input, 'direction') ?? '');
+        $outputFile = CommandLineSpelling::option($input, 'output');
+        if ($outputFile !== null) {
+            $this->runTargetSession->targets()->judge('--output', $outputFile);
+        } else {
+            $this->runTargetSession->targets()->reportOnStandardOutput();
+        }
 
-        $outputPath = CommandLineSpelling::option($input, 'output');
-        $outputFile = $outputPath === null ? null : new ArtifactFile($outputPath, '--output');
-        $outputFile?->refuseUnwritable();
-
-        $cwd = AbsolutePath::fromString((string) getcwd());
-        $paths = self::resolvePaths($input, $cwd);
+        $prepared = $this->preflight->resolve($input, $output, AnalysisPreflightProfile::graph());
         $request = $this->buildProjectionRequest($input, $format, $direction);
+        foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
+            $this->errorStream->write($output, '<comment>Warning: '
+                . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning) . '</comment>');
+        }
+
+        $this->runTargetSession->targets()->claim();
 
         $this->logger->info('Starting dependency graph export', [
-            'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
+            'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $prepared->runConfiguration->paths),
         ]);
 
-        $result = $this->analyzeDependencyGraph($paths, $cwd);
+        $result = $this->analyzeDependencyGraph($prepared->runConfiguration);
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);
 
-        if ($result->coverage->discoveredFiles() === 0) {
-            // An analysis outcome, not an input refusal.
-            $output->writeln('<error>No files found to analyze</error>');
-
-            return self::FAILURE;
+        $coverageExit = $this->resolveCoverageExit($result, $output);
+        if ($coverageExit !== null) {
+            return $coverageExit;
         }
 
-        $this->logger->info('Dependency collection completed', [
-            'processed' => $result->coverage->analyzedFilesCount(),
-            'skipped' => $result->coverage->skippedFilesCount(),
-            'dependencies' => \count($result->graph->getAllDependencies()),
-        ]);
+        $this->logGraphBuilt($result);
+        $this->assertIncludeNamespacesBind($result, $request);
+        $content = $this->projection->project($result->graph, $request);
+        $this->publishGraph($output, $outputFile, $content, $format);
+        $this->runTargetSession->markOutputPublished();
 
+        return self::SUCCESS;
+    }
+
+    private function resolveCoverageExit(DependencyGraphAnalysisResult $result, OutputInterface $output): ?int
+    {
         if (!$result->coverage->isComplete()) {
             $this->writeIncompleteAnalysis($output, new IncompleteAnalysisException($result->coverage));
 
             return self::EXIT_ANALYSIS_INCOMPLETE;
         }
 
+        if ($result->coverage->discoveredFiles() === 0 && !$result->coverage->isIntentionallyEmpty()) {
+            // An analysis outcome, not an input refusal.
+            $output->writeln('<error>No files found to analyze</error>');
+
+            return self::FAILURE;
+        }
+
+        if ($result->coverage->isIntentionallyEmpty()) {
+            $coverage = $result->coverage;
+            $this->errorStream->write($output, \Qualimetrix\Reporting\Formatter\CoverageNarrator::describe(new \Qualimetrix\Reporting\ReportCoverage(
+                $coverage->discoveredFiles(),
+                $coverage->analyzedFilesCount(),
+                $coverage->generatedExcludedFilesCount(),
+                $coverage->failedFilesCount(),
+                excluded: $coverage->excludedCount(),
+            )));
+        }
+
+        return null;
+    }
+
+    private function logGraphBuilt(DependencyGraphAnalysisResult $result): void
+    {
+        $this->logger->info('Dependency collection completed', [
+            'processed' => $result->coverage->analyzedFilesCount(),
+            'skipped' => $result->coverage->skippedFilesCount(),
+            'dependencies' => \count($result->graph->getAllDependencies()),
+        ]);
+
         $this->logger->info('Dependency graph built', [
             'classes' => \count($result->graph->getAllClasses()),
             'namespaces' => \count($result->graph->getAllNamespaces()),
             'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
+    }
 
-        $this->assertIncludeNamespacesBind($result, $request);
-        $content = $this->projection->project($result->graph, $request);
-
+    private function publishGraph(OutputInterface $output, ?string $outputFile, string $content, GraphExportFormat $format): void
+    {
         if ($outputFile !== null) {
-            self::writeToFile($output, $outputFile, $content, $format);
+            $this->writeToFile($output, $outputFile, $content, $format);
         } else {
             OutputHelper::write($output, $content);
         }
-
-        return self::SUCCESS;
     }
 
     /**
@@ -263,15 +291,6 @@ final class GraphExportCommand extends Command
         return $direction;
     }
 
-    /** @return list<AbsolutePath> */
-    private static function resolvePaths(InputInterface $input, AbsolutePath $cwd): array
-    {
-        return array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            CommandLineSpelling::arguments($input, 'paths'),
-        );
-    }
-
     private function buildProjectionRequest(InputInterface $input, GraphExportFormat $format, GraphDirection $direction): GraphProjectionRequest
     {
         $includeNamespaces = CommandLineSpelling::options($input, 'namespace');
@@ -293,21 +312,21 @@ final class GraphExportCommand extends Command
     }
 
     /** @throws ConfigurationRefusal */
-    private static function writeToFile(OutputInterface $output, ArtifactFile $outputFile, string $content, GraphExportFormat $format): void
+    private function writeToFile(OutputInterface $output, string $outputFile, string $content, GraphExportFormat $format): void
     {
-        $outputFile->write($content);
+        $this->runTargetSession->targets()->write('--output', $content);
 
-        $output->writeln(\sprintf('<info>Graph exported to %s</info>', $outputFile->path));
+        $this->errorStream->write($output, \sprintf('<info>Graph exported to %s</info>', $outputFile));
 
         if ($format === GraphExportFormat::Dot) {
-            $output->writeln(\sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile->path));
+            $this->errorStream->write($output, \sprintf('<comment>Render with: dot -Tpng %s -o graph.png</comment>', $outputFile));
         }
     }
 
-    /** @param list<AbsolutePath> $paths */
-    private function analyzeDependencyGraph(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
-    {
-        return $this->analyzer->analyze($paths, $projectRoot);
+    private function analyzeDependencyGraph(
+        \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration $configuration,
+    ): DependencyGraphAnalysisResult {
+        return $this->analyzer->analyze($configuration);
     }
 
     private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void

@@ -91,6 +91,7 @@ final readonly class AuthoredDirectiveGroup
                 line: $line,
                 form: self::FORM,
                 target: $rule,
+                position: null,
             ),
         );
     }

@@ -28,7 +28,7 @@ final class SuperglobalsRuleTest extends TestCase
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
         self::assertSame('code-smell.superglobals', $rule->getName());
-        self::assertSame('Detects direct access to superglobals', $rule->getDescription());
+        self::assertSame('Detects direct access to superglobals', $rule::getDescription());
     }
 
     #[Test]

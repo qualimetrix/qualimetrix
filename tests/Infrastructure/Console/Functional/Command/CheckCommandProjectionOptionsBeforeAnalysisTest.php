@@ -9,13 +9,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use ReflectionClass;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * `check`'s `projectionOptions()` decodes `--suppress-path`, `--suppress-namespace`
@@ -115,6 +115,9 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
             }
             PHP);
 
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        chdir($dir);
         try {
             [$withoutSuppression] = $this->createCommand();
             $withoutTester = new CommandTester($withoutSuppression);
@@ -147,8 +150,10 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
             $withPayload = json_decode($withTester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
             self::assertSame(0, $withPayload['summary']['violationCount'], $withTester->getDisplay());
         } finally {
+            chdir($previous);
             unlink($fixture);
             unlink($config);
+            (new Filesystem())->remove($dir . '/.qmx-cache');
             rmdir($dir);
         }
     }
@@ -204,7 +209,7 @@ final class CheckCommandProjectionOptionsBeforeAnalysisTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         return [$command, $pipeline];
@@ -224,10 +229,10 @@ final class CountingAnalysisPipeline implements AnalysisPipelineInterface
 
     public function __construct(private readonly AnalysisPipelineInterface $delegate) {}
 
-    public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult
+    public function analyze(RunConfiguration $configuration): AnalysisResult
     {
         ++$this->calls;
 
-        return $this->delegate->analyze($configuration, $customFileDiscovery);
+        return $this->delegate->analyze($configuration);
     }
 }

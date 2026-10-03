@@ -11,38 +11,34 @@ use Throwable;
  * A configuration refusal caused by user input: a key, a value, a file, a
  * selector, a form — anything the configuration's author is responsible for.
  *
- * The single carried kind for exit code 3. There is no
- * public constructor: every refusal is one of the three named forms below, and
- * every form is built through a named factory rather than a shared one with a
- * boolean flag, so an impossible combination (a closed position with nothing
- * accepted) cannot be constructed at all.
+ * The carried kind for configuration refusals. There is no
+ * public constructor: every refusal is one of the four named forms below —
+ * `at()`, `aboutDocument()`, `aboutInput()` and `acrossLayers()` — each built
+ * through a named factory rather than a shared one with a boolean flag.
  *
- * The per-source factories that follow the three forms are shorthands, not a
- * fourth form: each delegates to `at()`, `aboutDocument()` or `aboutInput()`
+ * The per-source factories that follow the forms are shorthands, not a
+ * further form: each delegates to `at()`, `aboutDocument()` or `aboutInput()`
  * with the origin built here. A throw site that names its source literally
  * would otherwise have to import {@see ConfigurationOrigin} and
  * {@see ConfigurationSource} for no reason but to assemble a constant — three
- * type dependencies where one would do. The three general forms stay public
+ * type dependencies where one would do. The general forms stay public
  * for the sites that compute their source or forward an origin they were given.
  *
  * ClassRank measures how much of the graph flows into a type, and for the one
- * carried kind of exit code 3 that number counts the places the product refuses
- * bad input instead of accepting it. CLI doors must use this carrier instead of
+ * carried configuration kind that number counts the places the product refuses
+ * bad input instead of accepting it. CLI doors use this carrier instead of
  * folding empty values into defaults. Splitting the kind to lower the rank would
- * buy a number and a second way to spell a refusal, which is what the
- * single-kind design exists to prevent.
- *
- * @qmx-threshold coupling.class-rank warning=0.03 -- The paragraph above is the
- * reason. The tag takes the rule's unscaled units: raw rank 0.0079 at 1027 classes is
- * 0.0252 before scaling, against the default 0.02; the error bound stays the default.
+ * buy a number and a second way to spell a configuration refusal.
  */
-final class ConfigurationRefusal extends RuntimeException
+final class ConfigurationRefusal extends RuntimeException implements RefusalInterface
 {
+    /** @param list<ConfigurationOrigin> $contributors */
     private function __construct(
         private readonly ConfigurationOrigin $origin,
         private readonly ?RefusedPosition $position,
         private readonly string $summary,
         ?Throwable $previous = null,
+        private readonly array $contributors = [],
     ) {
         parent::__construct($summary, 0, $previous);
     }
@@ -76,6 +72,22 @@ final class ConfigurationRefusal extends RuntimeException
     }
 
     /**
+     * A refusal about a value composed from several layers, or a relation
+     * between values different layers wrote: every contributing layer is at
+     * fault, and each is named. The origin is {@see ConfigurationSource::Resolved}.
+     *
+     * @param non-empty-list<ConfigurationOrigin> $contributors lowest precedence first
+     */
+    public static function acrossLayers(
+        array $contributors,
+        ?RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return new self(ConfigurationOrigin::of(ConfigurationSource::Resolved), $position, $summary, $previous, $contributors);
+    }
+
+    /**
      * A key position inside a configuration file.
      *
      * @param string $path the file the key was written in
@@ -101,6 +113,15 @@ final class ConfigurationRefusal extends RuntimeException
         ?Throwable $previous = null,
     ): self {
         return self::at(ConfigurationOrigin::of(ConfigurationSource::Preset, $preset), $position, $summary, $previous);
+    }
+
+    /** A key position of a built-in value no layer wrote. */
+    public static function atDefaultsKey(
+        RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::at(ConfigurationOrigin::of(ConfigurationSource::Defaults), $position, $summary, $previous);
     }
 
     /**
@@ -196,9 +217,15 @@ final class ConfigurationRefusal extends RuntimeException
         return self::aboutInput(ConfigurationOrigin::of(ConfigurationSource::Resolved, $key), $summary, $previous);
     }
 
-    public function origin(): ConfigurationOrigin
+    /**
+     * Every source the refusal names: the contributing layers of an
+     * {@see self::acrossLayers()} refusal, otherwise the one origin.
+     *
+     * @return non-empty-list<ConfigurationOrigin>
+     */
+    public function sources(): array
     {
-        return $this->origin;
+        return $this->contributors === [] ? [$this->origin] : $this->contributors;
     }
 
     /** Null for the {@see self::aboutDocument()}/{@see self::aboutInput()} forms — there is no position by construction. */

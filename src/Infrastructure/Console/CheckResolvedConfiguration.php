@@ -4,23 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
 
-/**
- * The five values {@see CheckConfigurationResolvers} reads off one resolved
- * `ConfigurationDocument`, bundled so `check` takes one collaborator for
- * "resolve the document" instead of five.
- */
+/** The accepted run, exclusions and reporting format read from one document. */
 final readonly class CheckResolvedConfiguration
 {
     public function __construct(
-        public RunConfiguration $runConfiguration,
-        public CacheConfiguration $cacheConfiguration,
-        public ParallelConfiguration $parallelConfiguration,
+        public ResolvedRunConfiguration $run,
         public ConfiguredFindingExclusions $findingExclusions,
         public OutputFormat $outputFormat,
     ) {}

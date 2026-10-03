@@ -924,7 +924,7 @@ class OrderService
 
 - **Удалите** неиспользуемый член, если это действительно мёртвый код.
 - **Измените видимость** на `protected` или `public`, если член используется подклассами или внешним кодом.
-- Если член намеренно сохранён для будущего использования, подавите предупреждение с помощью `@qmx-ignore code-smell.unused-private`.
+- Если член сохранён намеренно, поставь `@qmx-ignore code-smell.unused-private` на сам член. Подавление достигает лишь находок на его строках; продвигаемый параметр также достигает соответствующей находки свойства. См. [границы члена](../usage/baseline.ru.md#привязка-к-декларации-и-границы-члена).
 
 ---
 
@@ -1070,3 +1070,7 @@ bin/qmx check src/ --disable-rule=code-smell.exit
 # Отключить все правила запахов кода сразу (wildcard-сопоставление; захватывает только потомков, не сам "code-smell")
 bin/qmx check src/ --disable-rule=code-smell.*
 ```
+
+## Авторское включение и формы
+
+Написанный enabled:true может снять disable нижнего пресета; сохрани его, если это намеренно. Пустые maps сохраняют нижние options, а true правила пишет только enabled и не сбрасывает severity/options. Malformed lower writes отказывают до discovery. Code-smell algorithms и fixed severities не меняются. См. [конфигурацию](../getting-started/configuration.ru.md).

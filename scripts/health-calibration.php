@@ -86,9 +86,17 @@ namespace Qualimetrix\HealthCalibration;
 
 use InvalidArgumentException;
 use JsonException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
+use Qualimetrix\Analysis\Configuration\Document\AuthoredNode;
+use Qualimetrix\Analysis\Configuration\Document\DocumentComposer;
+use Qualimetrix\Analysis\Configuration\Document\DocumentSchema;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ExcludeHealthSection;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\MetricLookup;
@@ -1681,8 +1689,10 @@ function definitionsFor(?string $candidatesPath): array
         new HealthFormulaExcluder(),
     );
 
+    $schema = new DocumentSchema([new ComputedMetricsSection(), new ExcludeHealthSection()]);
+
     if ($candidatesPath === null) {
-        return $resolver->resolve([]);
+        return $resolver->resolve(DocumentComposer::compose($schema, []));
     }
 
     $raw = @file_get_contents($candidatesPath);
@@ -1705,8 +1715,13 @@ function definitionsFor(?string $candidatesPath): array
         throw new RuntimeException(\sprintf('Candidate file "%s" has no computed_metrics mapping', $candidatesPath));
     }
 
-    /** @var array<string, mixed> $section */
-    return $resolver->resolve($section);
+    return $resolver->resolve(DocumentComposer::compose(
+        $schema,
+        [new AuthoredLayer(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $candidatesPath),
+            AuthoredNode::fromPlain([ComputedMetricsSection::KEY => $section]),
+        )],
+    ));
 }
 
 /**

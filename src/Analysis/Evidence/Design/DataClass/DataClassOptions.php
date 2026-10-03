@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Design\DataClass;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator;
+
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
@@ -48,23 +49,16 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
         public bool $excludeExceptions = true,
     ) {}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fromArray(array $config): self
+    public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
-        if ($config === []) {
-            return new self(enabled: false);
-        }
-
         return new self(
-            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            wocThreshold: (int) ($config['woc_threshold'] ?? $config['wocThreshold'] ?? 33),
-            wmcThreshold: (int) ($config['wmc_threshold'] ?? $config['wmcThreshold'] ?? 10),
-            minMembers: (int) ($config['min_members'] ?? $config['minMembers'] ?? 3),
-            excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
-            excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
-            excludeExceptions: (bool) ($config['exclude_exceptions'] ?? $config['excludeExceptions'] ?? true),
+            enabled: $config->boolean('enabled', true),
+            wocThreshold: $config->integer('woc-threshold', 33),
+            wmcThreshold: $config->integer('wmc-threshold', 10),
+            minMembers: $config->integer('min-members', 3),
+            excludeReadonly: $config->boolean('exclude-readonly', true),
+            excludePromotedOnly: $config->boolean('exclude-promoted-only', true),
+            excludeExceptions: $config->boolean('exclude-exceptions', true),
         );
     }
 
@@ -124,13 +118,12 @@ final readonly class DataClassOptions implements RuleOptionsInterface, Threshold
     public static function acceptedOptionKeys(): RuleOptionKeySet
     {
         return RuleOptionKeySet::of([
-            'enabled' => RuleOptionShape::boolean()->orNull(),
             'exclude-exceptions' => RuleOptionShape::boolean()->orNull(),
             'exclude-promoted-only' => RuleOptionShape::boolean()->orNull(),
             'exclude-readonly' => RuleOptionShape::boolean()->orNull(),
             'min-members' => RuleOptionShape::integer()->orNull(),
             'wmc-threshold' => RuleOptionShape::integer()->orNull(),
             'woc-threshold' => RuleOptionShape::integer()->orNull(),
-        ]);
+        ])->overriddenAs(['warning' => 'woc-threshold', 'error' => 'wmc-threshold']);
     }
 }

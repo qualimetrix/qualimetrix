@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -33,7 +35,7 @@ final class ProfilePresenter
      *
      * The format is judged whenever the option is written, even without
      * `--profile`: a value outside the set is wrong wherever it stands. The
-     * target is judged by {@see ArtifactFile}, which also makes the write.
+     * target is judged before the run claims it.
      */
     public static function refuseImpossibleExport(InputInterface $input): void
     {
@@ -44,7 +46,7 @@ final class ProfilePresenter
             return;
         }
 
-        if (trim($target->path) === '') {
+        if (trim($target) === '') {
             throw self::refusal(
                 '--profile',
                 'Option --profile was written with an empty value ("--profile="). '
@@ -52,15 +54,15 @@ final class ProfilePresenter
             );
         }
 
-        $target->refuseUnwritable();
+        RunTargets::judgement('--profile', $target);
     }
 
     /**
      * Outputs profiling results if profiling was enabled.
      *
-     * @throws ConfigurationRefusal when the export cannot be written
+     * @throws EnvironmentRefusal when the claimed export target cannot be written
      */
-    public function present(InputInterface $input, OutputInterface $output): void
+    public function present(InputInterface $input, OutputInterface $output, RunTargets $runTargets): void
     {
         $output = $this->errorStream->writer($output);
         if (!$this->profileReport->isEnabled()) {
@@ -78,10 +80,10 @@ final class ProfilePresenter
             return;
         }
 
-        $target->write($this->profileReport->export(self::format($input) ?? ProfileFormat::Json));
+        $runTargets->write('--profile', $this->profileReport->export(self::format($input) ?? ProfileFormat::Json));
 
         $output->writeln(
-            \sprintf('<info>Profile exported to %s</info>', $target->path),
+            \sprintf('<info>Profile exported to %s</info>', $target),
             OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
         );
     }
@@ -90,13 +92,13 @@ final class ProfilePresenter
      * The file `--profile` names; null when the option was not written, or
      * written alone — which an array input spells `true` rather than null.
      */
-    private static function exportTarget(InputInterface $input): ?ArtifactFile
+    private static function exportTarget(InputInterface $input): ?string
     {
         $value = $input->hasOption('profile') ? $input->getOption('profile') : false;
 
         return $value === false || $value === null || $value === true
             ? null
-            : new ArtifactFile(CommandLineSpelling::of($value, '--profile'), '--profile');
+            : CommandLineSpelling::of($value, '--profile');
     }
 
     private static function format(InputInterface $input): ?ProfileFormat

@@ -24,7 +24,7 @@ namespace QmxFindingGate;
  * not reach them, and "one licence sufficed" was a fact about the reader.
  *
  * Two things are therefore stated per surface, and both are checked rather than
- * assumed by {@see SelfTest::publicationVocabulary()}: the key each field is
+ * assumed by {@see SelfTestDeclaredDelta::publicationVocabulary()}: the key each field is
  * published under, pinned against the formatter that writes it, and whether the
  * list is the *whole* of what that surface publishes. The second matters as much
  * as the first: SARIF carries five of the seventeen tuple fields, and letting the
@@ -134,11 +134,11 @@ final class PublishedVocabulary
     ];
 
     /**
-     * The formats no reader can pick a field out of, each with why.
+     * The formats whose lines carry no named finding-field marker, each with why.
      *
      * Enumerated rather than defaulted to, because "that surface publishes
      * nothing readable" is the claim that let eight declarations through
-     * unexamined. Four print the finding as prose with no field marking; two
+     * unexamined. Four print the finding as prose with no member or attribute marker; two
      * publish no finding record at all.
      *
      * @var array<string, string>
@@ -152,10 +152,12 @@ final class PublishedVocabulary
         'health' => 'publishes health scores, not finding records',
     ];
 
+    private const JSON_CAPTURES = ['check:output:file', 'check:parallel', 'check:baseline', 'check:baseline-source'];
+
     /** The key a surface publishes one tuple field under, or null when it does not publish it. */
     public static function spellingOf(string $surfaceClass, string $field): ?string
     {
-        $surface = self::SURFACES[$surfaceClass] ?? null;
+        $surface = self::SURFACES[self::syntaxSurface($surfaceClass)] ?? null;
 
         if ($surface === null) {
             return null;
@@ -183,7 +185,7 @@ final class PublishedVocabulary
 
         $quoted = preg_quote($spelling, '~');
 
-        $pattern = self::SURFACES[$surfaceClass]['syntax'] === self::ATTRIBUTE
+        $pattern = self::SURFACES[self::syntaxSurface($surfaceClass)]['syntax'] === self::ATTRIBUTE
             ? \sprintf('~\b%s\s*=\s*"([^"]*)"()~', $quoted)
             : \sprintf('~"%s"\s*:\s*(?:"((?:[^"\\\\]|\\\\.)*)"|([^,}\]\s]+))~', $quoted);
 
@@ -207,7 +209,7 @@ final class PublishedVocabulary
      */
     public static function readableSurfaces(): array
     {
-        return array_keys(self::SURFACES);
+        return [...array_keys(self::SURFACES), ...self::JSON_CAPTURES];
     }
 
     /**
@@ -218,6 +220,25 @@ final class PublishedVocabulary
      */
     public static function keysOf(string $surfaceClass): array
     {
-        return self::SURFACES[$surfaceClass]['keys'] ?? [];
+        return self::SURFACES[self::syntaxSurface($surfaceClass)]['keys'] ?? [];
     }
+    /** @return list<string> Fields decoded by the complete record comparator. */
+    public static function comparedFieldsOf(string $surface): array
+    {
+        $surface = self::syntaxSurface($surface);
+        return match ($surface) {
+            'format:json' => ReportRecords::SCHEMAS['json'],
+            'format:html' => ['subject', 'rule', 'code', 'message', 'recommendation', 'severity', 'metricValue', 'symbol', 'occurrence', 'file', 'line'],
+            'format:suppressed' => ['rule', 'code', 'subject', 'occurrence', 'edge', 'file', 'line', 'symbol', 'severity', 'message', 'recommendation'],
+            'format:sarif', 'format:gitlab', 'format:checkstyle' => ['code', 'severity', 'message', 'file', 'line'],
+            'baseline-file' => ['subject', 'channel', 'occurrence', 'edge'],
+            default => ProseRecords::FIELDS[$surface] ?? [],
+        };
+    }
+
+    private static function syntaxSurface(string $surface): string
+    {
+        return \in_array($surface, self::JSON_CAPTURES, true) ? 'format:json' : $surface;
+    }
+
 }

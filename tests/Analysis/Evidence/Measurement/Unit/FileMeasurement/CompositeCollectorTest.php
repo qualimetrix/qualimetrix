@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -37,6 +38,20 @@ use stdClass;
 #[CoversClass(CompositeCollector::class)]
 final class CompositeCollectorTest extends TestCase
 {
+    #[Test]
+    public function itHandsSourceBytesOnlyToCollectorsThatMeasureSource(): void
+    {
+        $sourceCollector = $this->createMockForIntersectionOfInterfaces([
+            MetricCollectorInterface::class,
+            SourceMeasuringCollectorInterface::class,
+        ]);
+        $sourceCollector->expects(self::once())->method('measureSource')->with("<?php\n");
+        $ordinaryCollector = self::createStub(MetricCollectorInterface::class);
+
+        $composite = new CompositeCollector([$sourceCollector, $ordinaryCollector], new DeclarationRegistrarFactory());
+        $composite->measureSource("<?php\n");
+    }
+
     #[Test]
     public function itTraversesMetricAndDependencyParticipantsInOneNodeTraverserPass(): void
     {

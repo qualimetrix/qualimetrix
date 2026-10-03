@@ -152,9 +152,11 @@ this ownership change does not alter the rule id, options, algorithm or output.
     it decorates, which the project never is, and `@qmx-ignore-file` /
     `@qmx-ignore-next-line` would silence the one copy they are written beside
     while every other copy still reports the block — and a copy pasted
-    together with such a directive would pass a baseline unseen. All three
-    forms are refused (`annotation.unresolved-directive`) wherever they are
-    written. Disable the rule instead — `disabled_rules: [duplication.clone]`
+    together with such a directive would pass a baseline unseen. Explicit
+    selectors reaching this channel are refused after declaration/level
+    admission. Blanket `*` and bare file directives are judged effective/inert
+    over other channels and still cannot silence this one. Disable the rule
+    instead — `disabled_rules: [duplication.clone]`
     in the configuration, or `--disable-rule=duplication.clone` — or accept
     the block, all of its copies, into the baseline. `suppress_paths` silences
     only the copies inside its paths: the block's other copies are still
@@ -230,3 +232,7 @@ bin/qmx check src/ --disable-rule=duplication.clone
 
 !!! note "Memory usage"
     Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule — `--disable-rule=duplication.clone`, or `enabled: false` under `duplication.clone` in the configuration — skips the detection phase entirely and frees the memory.
+
+## Valid window and explicit disabling
+
+min_tokens is an integer at least 1; zero/negative values refuse before discovery. To skip detection, disable duplication.clone through configuration/selection. The detector consumes the prepared immutable options snapshot, with no raw fallback; existing normalization, minimum-line logic and copy attribution are unchanged. An enabled:true example is an intentional exact enable over lower disables, not a mandatory incantation.

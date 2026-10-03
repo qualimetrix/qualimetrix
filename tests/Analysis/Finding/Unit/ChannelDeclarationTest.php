@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -19,6 +20,23 @@ use ReflectionParameter;
 #[CoversClass(ChannelDeclaration::class)]
 final class ChannelDeclarationTest extends TestCase
 {
+    #[Test]
+    public function itPreservesBoundaryEligibilityWhenSelectingAChannelRole(): void
+    {
+        $original = ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)
+            ->withoutConfiguredWarningBoundary();
+        $selected = $original->selectedAs(ChannelSelectionRole::FollowsAddressedRule);
+
+        self::assertSame(ChannelSelectionRole::Selectable, $original->selectionRole);
+        self::assertSame(ChannelSelectionRole::FollowsAddressedRule, $selected->selectionRole);
+        self::assertFalse($selected->usesProducerWarningBoundary);
+        self::assertSame($original->direction, $selected->direction);
+        self::assertSame($original->levels, $selected->levels);
+        self::assertFalse($selected->isConfigurationError());
+        self::assertSame(ChannelSelectionRole::FollowsAddressedRule, $selected->describedAs('A diagnostic')->selectionRole);
+        self::assertSame(ChannelSelectionRole::FollowsAddressedRule, $selected->asConfigurationError()->selectionRole);
+    }
+
     /**
      * ADR 0031 moved {@see \Qualimetrix\Analysis\Finding\Contract\ChannelShape} off this class onto the producer, so
      * a magnitude-without-direction / occurrence-with-a-direction pairing is
@@ -241,6 +259,30 @@ final class ChannelDeclarationTest extends TestCase
 
         self::assertSame('Reports a fixture.', $plain->asConfigurationError()->describedAs('Reports a fixture.')->description);
         self::assertTrue($plain->asConfigurationError()->describedAs('Reports a fixture.')->isConfigurationError());
+    }
+
+    #[Test]
+    public function itDeclinesTheProducerBoundaryWithoutLosingOtherChannelFacts(): void
+    {
+        $plain = ChannelDeclaration::judging(
+            WorseDirection::Lower,
+            JudgedMetrics::of(MetricName::MAINTAINABILITY_MI),
+            SymbolLevel::Callable,
+        )->describedAs('Reports a fixture.')->asConfigurationError();
+        self::assertTrue($plain->usesProducerWarningBoundary);
+
+        $declined = $plain->withoutConfiguredWarningBoundary();
+        foreach ([$declined, $declined->describedAs('Reports another fixture.'), $declined->asConfigurationError()] as $copy) {
+            self::assertFalse($copy->usesProducerWarningBoundary);
+            self::assertSame(WorseDirection::Lower, $copy->direction);
+            self::assertSame([SymbolLevel::Callable], $copy->levels);
+            self::assertNotNull($copy->judges);
+            self::assertSame([MetricName::MAINTAINABILITY_MI], $copy->judges->keys);
+            self::assertTrue($copy->isConfigurationError());
+        }
+        self::assertSame('Reports a fixture.', $declined->description);
+        self::assertSame('Reports another fixture.', $declined->describedAs('Reports another fixture.')->description);
+        self::assertTrue($plain->usesProducerWarningBoundary);
     }
 
     #[Test]

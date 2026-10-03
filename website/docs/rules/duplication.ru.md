@@ -153,8 +153,9 @@ Qualimetrix использует алгоритм **скользящего хе�
     является; `@qmx-ignore-file` и `@qmx-ignore-next-line` подавили бы одну
     копию, рядом с которой написаны, а все остальные копии продолжали бы
     сообщать блок — и копия, вставленная вместе с такой директивой, прошла бы
-    baseline незамеченной. Все три формы отклоняются
-    (`annotation.unresolved-directive`) там, где написаны. Вместо этого
+    baseline незамеченной. Явные селекторы этого канала получают отказ после
+    проверки декларации/уровня. Общий `*` и голый file получают effective/inert
+    по другим каналам и всё равно не глушат этот канал. Вместо этого
     отключите правило — `disabled_rules: [duplication.clone]` в
     конфигурации или `--disable-rule=duplication.clone` — либо примите блок
     со всеми его копиями в baseline. `suppress_paths` подавляет только копии
@@ -230,3 +231,7 @@ bin/qmx check src/ --disable-rule=duplication.clone
 
 !!! note "Потребление памяти"
     Обнаружение дубликатов использует алгоритм скользящего хеша Рабина-Карпа, который требует хранения нормализованных токенов всех файлов с совпавшими хешами в памяти одновременно. На больших кодовых базах (500+ файлов) это может потреблять значительный объём памяти. Отключение правила — `--disable-rule=duplication.clone` или `enabled: false` в разделе `duplication.clone` конфигурации — полностью пропускает фазу обнаружения и освобождает память.
+
+## Корректное окно и явное выключение
+
+min_tokens — integer не меньше 1; ноль и отрицательные значения отказывают до discovery. Чтобы пропустить detection, выключи duplication.clone через configuration/selection. Detector читает prepared immutable options snapshot без raw fallback; normalization, minimum-line logic и copy attribution не меняются. enabled:true в example намеренно включает поверх нижних disables и не обязателен для defaults.

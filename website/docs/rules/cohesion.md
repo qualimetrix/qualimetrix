@@ -33,9 +33,9 @@ rules:
     exclude_methods: [getName, getDescription]
 ```
 
-`exclude_methods` also takes a single string, which stands for a one-element
-list: `exclude_methods: getName` means exactly `exclude_methods: [getName]`. A
-digit string is a method name like any other.
+`exclude_methods` requires a YAML sequence of strings. Use
+`exclude_methods: [getName]`; a scalar string or CSV is refused. String items
+retain their authored spelling and match method names case-insensitively.
 
 For a simple pass/fail threshold instead of separate warning/error levels
 (`threshold` cannot be combined with `warning` or `error` — mixing them is a
@@ -276,3 +276,7 @@ bin/qmx check src/ --format=metrics
 ```
 
 To use TCC/LCC for quality gates, you can process the metrics JSON output programmatically (e.g., in a CI pipeline script).
+
+## Unmatched configured method names
+
+exclude_methods is a sequence and uses PHP case-insensitive method matching, with the first authored spelling retained. When measured scope permits declaration-absence claims, the LCOM producer also publishes cohesion.unmatched-exclude-method once per unmatched normalized configured name. Functions and property hooks do not witness Method-kind declarations; partial runs do not claim project-wide absence. This secondary warning carries project magnitude 1 and a semantic occurrence for the normalized name, without a configured warning boundary. The primary LCOM 3/5 band and graph formula are unchanged. CLI: --lcom-exclude-methods='[getName, getDescription]'.

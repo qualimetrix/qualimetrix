@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ComplexityRule::class)]
 #[CoversClass(ComplexityOptions::class)]
@@ -42,7 +44,7 @@ final class ComplexityRuleTest extends TestCase
 
         self::assertSame(
             'Checks cyclomatic complexity at method and class levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -377,11 +379,11 @@ final class ComplexityRuleTest extends TestCase
     #[Test]
     public function itMethodOptionsFromArray(): void
     {
-        $options = MethodComplexityOptions::fromArray([
+        $options = MethodComplexityOptions::fromResolved(ResolvedOptionsFixture::values(MethodComplexityOptions::class, [
             'enabled' => false,
             'warning' => 15,
             'error' => 30,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(15, $options->warning);
@@ -391,7 +393,7 @@ final class ComplexityRuleTest extends TestCase
     #[Test]
     public function itMethodOptionsFromEmptyArray(): void
     {
-        $options = MethodComplexityOptions::fromArray([]);
+        $options = MethodComplexityOptions::fromResolved(ResolvedOptionsFixture::values(MethodComplexityOptions::class, []));
 
         self::assertTrue($options->enabled);
         self::assertSame(10, $options->warning);
@@ -401,11 +403,11 @@ final class ComplexityRuleTest extends TestCase
     #[Test]
     public function itClassOptionsFromArray(): void
     {
-        $options = ClassComplexityOptions::fromArray([
+        $options = ClassComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ClassComplexityOptions::class, [
             'enabled' => false,
             'max_warning' => 40,
             'max_error' => 60,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(40, $options->maxWarning);
@@ -415,7 +417,7 @@ final class ComplexityRuleTest extends TestCase
     #[Test]
     public function itComplexityOptionsFromHierarchicalArray(): void
     {
-        $options = ComplexityOptions::fromArray([
+        $options = ComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ComplexityOptions::class, [
             'callable' => [
                 'warning' => 15,
                 'error' => 25,
@@ -424,7 +426,7 @@ final class ComplexityRuleTest extends TestCase
                 'max_warning' => 40,
                 'max_error' => 60,
             ],
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
@@ -436,17 +438,18 @@ final class ComplexityRuleTest extends TestCase
     #[Test]
     public function itComplexityOptionsFromFlatThresholdShorthand(): void
     {
-        $options = ComplexityOptions::fromArray([
+        $options = ComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ComplexityOptions::class, [
             'enabled' => true,
             'threshold' => 12,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
         self::assertSame(12, $options->callable->warning);
         self::assertSame(12, $options->callable->error);
-        // Flat shorthand disables class level
-        self::assertFalse($options->class->isEnabled());
+        self::assertTrue($options->class->isEnabled());
+        self::assertSame(30, $options->class->maxWarning);
+        self::assertSame(50, $options->class->maxError);
     }
 
     #[Test]

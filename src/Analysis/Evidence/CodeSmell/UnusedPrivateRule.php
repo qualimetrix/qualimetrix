@@ -51,7 +51,7 @@ final class UnusedPrivateRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects unused private methods, properties, and constants';
     }

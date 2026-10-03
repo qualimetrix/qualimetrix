@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ClassRankRule::class)]
 #[CoversClass(ClassRankOptions::class)]
@@ -39,7 +41,7 @@ final class ClassRankRuleTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        self::assertNotEmpty($rule->getDescription());
+        self::assertNotEmpty($rule::getDescription());
     }
 
     #[Test]
@@ -499,21 +501,20 @@ final class ClassRankRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesTheRuleWhenConstructedFromAnEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = ClassRankOptions::fromArray([]);
-
-        self::assertFalse($options->isEnabled());
+        self::assertEquals(new ClassRankOptions(), ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, [])));
+        self::assertFalse(ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
     public function itUsesCustomThresholdsFromArray(): void
     {
-        $options = ClassRankOptions::fromArray([
+        $options = ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, [
             'enabled' => true,
             'warning' => 0.03,
             'error' => 0.08,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertEqualsWithDelta(0.03, $options->warning, 0.001);
@@ -523,9 +524,9 @@ final class ClassRankRuleTest extends TestCase
     #[Test]
     public function itStaysDisabledWhenExplicitlyDisabledInArray(): void
     {
-        $options = ClassRankOptions::fromArray([
+        $options = ClassRankOptions::fromResolved(ResolvedOptionsFixture::values(ClassRankOptions::class, [
             'enabled' => false,
-        ]);
+        ]));
 
         self::assertFalse($options->isEnabled());
     }

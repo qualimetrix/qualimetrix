@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
 use Closure;
+use LogicException;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
@@ -14,6 +15,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveRefusalReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -54,8 +56,21 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertNull($suppressions[0]->reason);
-        self::assertSame(10, $suppressions[0]->line);
+        self::assertSame(11, $suppressions[0]->line);
+        self::assertSame(17, $suppressions[0]->position);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
+    }
+
+    #[Test]
+    public function itRejectsADirectiveCommentWithoutAFilePosition(): void
+    {
+        $node = new Class_('Foo');
+        $node->setDocComment(new Doc('/** @qmx-ignore complexity */', 10));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('A comment without a file position cannot name a directive site');
+
+        $this->extract($node);
     }
 
     #[Test]
@@ -447,7 +462,7 @@ final class SuppressionExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itNextLineSuppressionInMultiLineDocblockUsesEndLine(): void
+    public function itUsesTheTagLineAndKeepsTheCommentEndAsTheNextLineAnchor(): void
     {
         // Multi-line docblock: starts at line 10, ends at line 14
         $docComment = new Doc(
@@ -459,6 +474,7 @@ final class SuppressionExtractorTest extends TestCase
              */
             DOC,
             startLine: 10,
+            startFilePos: 0,
             endLine: 14,
         );
 
@@ -469,9 +485,21 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
-        // Suppression line should be endLine (14), not startLine (10)
-        // so that SuppressionFilter targets endLine + 1 = line 15 (the actual next line after the docblock)
-        self::assertSame(14, $suppressions[0]->line);
+        self::assertSame(13, $suppressions[0]->line);
+        self::assertSame(15, $suppressions[0]->silencedLine);
+
+        foreach (['@qmx-ignore complexity.ccn', '@qmx-ignore-file complexity.ccn'] as $tag) {
+            $node->setDocComment(new Doc("/**\n * Description.\n *\n * " . $tag . "\n */", 10, 0, 14));
+            $read = $this->extract($node);
+            self::assertCount(1, $read);
+            self::assertSame(13, $read[0]->line);
+        }
+
+        $node->setDocComment(new Doc("/**\n * Description.\n *\n * @qmx-ignore complexity.ccn\n */", 10, 0, 14));
+        $refused = $this->extractor->extractPhysical($node, self::thresholdReadElsewhere(...));
+        self::assertCount(1, $refused);
+        self::assertSame(13, $refused[0]->line);
+        self::assertSame(DirectiveRefusalReason::NoDeclarationToBind, $refused[0]->refusal?->reason);
     }
 
     #[Test]
@@ -494,7 +522,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
-        self::assertSame(50, $suppressions[0]->binding?->endLine);
+        self::assertSame('whole:50', $suppressions[0]->binding?->reach->key());
     }
 
     #[Test]
@@ -517,7 +545,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
-        self::assertNull($suppressions[0]->binding?->endLine);
+        self::assertNull($suppressions[0]->binding);
     }
 
     #[Test]
@@ -540,7 +568,7 @@ final class SuppressionExtractorTest extends TestCase
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
-        self::assertNull($suppressions[0]->binding?->endLine);
+        self::assertNull($suppressions[0]->binding);
     }
 
     #[Test]
@@ -697,6 +725,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '// @qmx-ignore complexity.ccn',
             startLine: 10,
+            startFilePos: 0,
             endLine: 10,
         );
 
@@ -710,7 +739,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertNull($suppressions[0]->reason);
         self::assertSame(10, $suppressions[0]->line);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
-        self::assertSame(20, $suppressions[0]->binding?->endLine);
+        self::assertSame('whole:20', $suppressions[0]->binding?->reach->key());
     }
 
     #[Test]
@@ -719,6 +748,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '/* @qmx-ignore complexity.ccn */',
             startLine: 10,
+            startFilePos: 0,
             endLine: 10,
         );
 
@@ -738,6 +768,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '// @qmx-ignore-next-line complexity.ccn',
             startLine: 15,
+            startFilePos: 0,
             endLine: 15,
         );
 
@@ -759,6 +790,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '// @qmx-ignore-file',
             startLine: 3,
+            startFilePos: 0,
             endLine: 3,
         );
 
@@ -779,6 +811,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '// @qmx-ignore complexity.ccn Legacy algorithm, too costly to refactor',
             startLine: 10,
+            startFilePos: 0,
             endLine: 10,
         );
 
@@ -798,6 +831,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             '/** @qmx-ignore complexity */',
             startLine: 10,
+            startFilePos: 0,
             endLine: 10,
         );
 
@@ -809,7 +843,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
-        self::assertSame(50, $suppressions[0]->binding?->endLine);
+        self::assertSame('whole:50', $suppressions[0]->binding?->reach->key());
     }
 
     #[Test]
@@ -818,12 +852,14 @@ final class SuppressionExtractorTest extends TestCase
         $lineComment = new Comment(
             '// @qmx-ignore coupling.cbo',
             startLine: 9,
+            startFilePos: 0,
             endLine: 9,
         );
 
         $docComment = new Doc(
             '/** @qmx-ignore complexity */',
             startLine: 10,
+            startFilePos: 0,
             endLine: 10,
         );
 
@@ -857,6 +893,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '/* @qmx-ignore-file complexity */',
             startLine: 2,
+            startFilePos: 0,
             endLine: 2,
         );
 
@@ -880,6 +917,7 @@ final class SuppressionExtractorTest extends TestCase
              */
             COMMENT,
             startLine: 10,
+            startFilePos: 0,
             endLine: 12,
         );
 
@@ -891,8 +929,7 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.ccn', $suppressions[0]->rule);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
-        // Line should be endLine (12) so that filter targets line 13
-        self::assertSame(12, $suppressions[0]->line);
+        self::assertSame(11, $suppressions[0]->line);
     }
 
     #[Test]
@@ -901,6 +938,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '// @qmx-ignore',
             startLine: 10,
+            startFilePos: 0,
             endLine: 10,
         );
 
@@ -1052,6 +1090,7 @@ final class SuppressionExtractorTest extends TestCase
         $node->setDocComment(new Doc(
             "/**\n * @qmx-ignore-next-line coupling\n * @qmx-ignore-file size\n */",
             startLine: 10,
+            startFilePos: 0,
             endLine: 13,
         ));
 
@@ -1061,7 +1100,7 @@ final class SuppressionExtractorTest extends TestCase
             static fn($suppression): SuppressionType => $suppression->type,
             $suppressions,
         ));
-        self::assertSame([10, 13], array_map(static fn($suppression): int => $suppression->line, $suppressions));
+        self::assertSame([12, 11], array_map(static fn($suppression): int => $suppression->line, $suppressions));
     }
 
     #[Test]
@@ -1071,6 +1110,7 @@ final class SuppressionExtractorTest extends TestCase
         $node->setDocComment(new Doc(
             "/**\n * @qmx-ignore complexity\n * @qmx-ignore-next-line coupling\n * @qmx-ignore-file size\n */",
             startLine: 10,
+            startFilePos: 0,
             endLine: 14,
         ));
 
@@ -1110,6 +1150,7 @@ final class SuppressionExtractorTest extends TestCase
         $comment = new Comment(
             '// Use `@qmx-ignore-file` to suppress all rules',
             startLine: 1,
+            startFilePos: 0,
             endLine: 1,
         );
 
@@ -1301,6 +1342,7 @@ final class SuppressionExtractorTest extends TestCase
         $node->setDocComment(new Doc(
             "/**\n * Description.\n *\n * @qmx-ignore-lines complexity.ccn\n */",
             startLine: 10,
+            startFilePos: 0,
             endLine: 14,
         ));
 
@@ -1488,6 +1530,108 @@ final class SuppressionExtractorTest extends TestCase
         self::assertStringContainsString('"@qmx-bogus"', $suppressions[0]->refusal->describe($suppressions[0]->rule));
     }
 
+    #[Test]
+    public function itReportsPrefixTyposOnlyAtPhysicalCommentLineStarts(): void
+    {
+        foreach (['ignore', 'threshold'] as $family) {
+            foreach (['@qmx_' . $family, '@QMX-' . $family, '@qmx ' . $family, '@qmx' . $family, 'qmx-' . $family] as $written) {
+                $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+                $node->setDocComment(new Doc('/** ' . $written . ' complexity.ccn 20 */', 10, 50));
+                $read = $this->extract($node);
+                self::assertCount(1, $read, $written);
+                self::assertSame(DirectiveRefusalReason::MisspelledPrefix, $read[0]->refusal?->reason, $written);
+                self::assertStringContainsString('Write @qmx-' . $family, $read[0]->refusal->describe(''));
+                self::assertSame(54, $read[0]->position);
+                self::assertTrue(SuppressionExtractor::mayCarryDirective($written));
+                $node->setDocComment(new Doc('/** Prose ' . $written . ' complexity.ccn 20 */', 10, 50));
+                self::assertSame([], $this->extract($node), $written);
+            }
+        }
+        self::assertFalse(SuppressionExtractor::mayCarryDirective('prose qmx ignores a problem'));
+    }
+
+    #[Test]
+    public function itNamesUnicodeSeparatorsAndRefusesTheirWiderFileSuppression(): void
+    {
+        foreach (["\u{00A0}" => 'NO-BREAK SPACE', "\u{2003}" => 'EM SPACE', "\u{202F}" => 'NARROW NO-BREAK SPACE'] as $space => $name) {
+            foreach (['ignore', 'ignore-file', 'threshold'] as $tag) {
+                $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+                $node->setDocComment(new Doc('/** @qmx-' . $tag . $space . 'complexity.ccn 20 */', 10, 50));
+                $read = $this->extract($node);
+                self::assertCount(1, $read);
+                self::assertSame(DirectiveRefusalReason::MisspelledPrefix, $read[0]->refusal?->reason);
+                self::assertStringContainsString($name, $read[0]->refusal->describe(''));
+                self::assertFalse($read[0]->matches('complexity.ccn', null));
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsTheSecondTagInTheFirstSuppressionsAuthoredReason(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 12, 'endLine' => 30]);
+        $node->setDocComment(new Doc('/** @qmx-ignore complexity.ccn -- @qmx-ignore-file */', 10, 50));
+        $read = $this->extract($node);
+        self::assertCount(2, $read);
+        self::assertNull($read[0]->refusal);
+        self::assertSame('@qmx-ignore-file', $read[0]->reason);
+        self::assertSame(DirectiveRefusalReason::NotAtLineStart, $read[1]->refusal?->reason);
+        $node->setDocComment(new Doc('/** @qmx-ignore @qmx-ignore-file complexity.ccn */', 10, 50));
+        $read = $this->extract($node);
+        self::assertCount(2, $read);
+        self::assertSame(DirectiveRefusalReason::NamesNoTarget, $read[0]->refusal?->reason);
+        self::assertSame(DirectiveRefusalReason::NotAtLineStart, $read[1]->refusal?->reason);
+    }
+
+    #[Test]
+    public function itCarriesUnclosedFenceRefusalsOnTheTagLineWithTheOpeningLine(): void
+    {
+        $node = new Class_('Foo', [], ['startLine' => 16, 'endLine' => 30]);
+        $node->setDocComment(new Doc("/**\n * ~~~php\n * @qmx-threshold complexity.ccn 20\n */", 10, 50));
+        $read = $this->extract($node);
+        self::assertCount(1, $read);
+        self::assertSame(12, $read[0]->line);
+        self::assertSame(DirectiveRefusalReason::InsideUnclosedFence, $read[0]->refusal?->reason);
+        self::assertStringContainsString('opened on line 11', $read[0]->refusal->describe(''));
+        foreach (['//', '#', '///'] as $prefix) {
+            $node->setAttribute('comments', [new Comment($prefix . ' ```', 10, 50), new Comment($prefix . ' @qmx-ignore complexity.ccn', 11, 60)]);
+            $read = $this->extract($node);
+            self::assertCount(1, $read);
+            self::assertNull($read[0]->refusal);
+        }
+        $node->setAttribute('comments', [new Comment('/*** @qmx-ignore complexity.ccn */', 10, 50)]);
+        self::assertNull($this->extract($node)[0]->refusal);
+    }
+
+    #[Test]
+    public function itReadsDirectiveGrammarFromParsedCommentsWithInvalidUtf8Bytes(): void
+    {
+        $byte = \chr(255);
+        foreach ([
+            ['/** prose ' . $byte . ' @qmx-ignore-file code-smell.boolean-argument */', DirectiveRefusalReason::NotAtLineStart],
+            ['/** @qmx_ignore complexity.ccn -- reason ' . $byte . ' */', DirectiveRefusalReason::MisspelledPrefix],
+            ['/** @qmx-ignore complexity.ccn -- reason ' . $byte . ' */', null],
+            ["/**\n * ~~~ " . $byte . "\n * @qmx-ignore-file complexity.ccn\n */", DirectiveRefusalReason::InsideUnclosedFence],
+        ] as [$comment, $reason]) {
+            $source = "<?php\n" . $comment . "\nclass Foo {}";
+            $nodes = (new \PhpParser\ParserFactory())->createForNewestSupportedVersion()->parse($source);
+            self::assertNotNull($nodes);
+            $read = $this->extract($nodes[0]);
+            self::assertCount(1, $read);
+            self::assertSame($reason, $read[0]->refusal?->reason);
+            self::assertSame(strpos($source, '@qmx'), $read[0]->position);
+            if ($reason === null) {
+                self::assertSame('reason ' . $byte, $read[0]->reason);
+            } else {
+                self::assertFalse($read[0]->matches('code-smell.boolean-argument', null));
+            }
+        }
+        $source = "<?php\n/**\n * ```php" . $byte . "\n * @qmx-ignore complexity.ccn\n * ```\n */\nclass Foo {}";
+        $nodes = (new \PhpParser\ParserFactory())->createForNewestSupportedVersion()->parse($source);
+        self::assertNotNull($nodes);
+        self::assertSame([], $this->extract($nodes[0]));
+    }
+
     /** @return list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression> */
     private function extractFileLevel(\PhpParser\Node $node): array
     {
@@ -1506,6 +1650,7 @@ final class SuppressionExtractorTest extends TestCase
             $node,
             MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
             ControlScope::Callable,
+            DeclarationReach::whole($node->getEndLine() > 0 ? $node->getEndLine() : null, 'test'),
             $thresholdRead ?? self::thresholdReadElsewhere(...),
         );
     }

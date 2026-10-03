@@ -13,7 +13,11 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Run\Discovery\ProjectFiles;
+use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -79,11 +83,11 @@ final class TraversalPathAgreementTest extends TestCase
     private function edgeSourcesFromCheckPath(): array
     {
         $file = new SplFileInfo($this->root . '/src/Dup.php');
-        $ast = (new PhpFileParser())->parse($file);
+        $ast = (new PhpFileParser())->parseContent($file, (string) file_get_contents($file->getPathname()));
         $collector = new CompositeCollector([], new DeclarationRegistrarFactory(), [], new DependencyVisitor());
 
         return self::canonicalSources(
-            $collector->collect($file, $ast, PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot()))->dependencies,
+            $collector->collect($file, $ast, PathFactory::published(AbsolutePath::fromString($file->getPathname()), $this->projectRoot()))->dependencies,
         );
     }
 
@@ -105,31 +109,23 @@ final class TraversalPathAgreementTest extends TestCase
         };
 
         $analyzer = new DependencyGraphAnalyzer(
-            $this->fileDiscovery(),
+            new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()),
             new PhpFileParser(),
             new DependencyVisitor(),
             $builder,
             new DeclarationRegistrarFactory(),
         );
-        $result = $analyzer->analyze([$this->projectRoot()], $this->projectRoot());
+        $result = $analyzer->analyze($this->configuration());
 
         self::assertSame([], $result->coverage->failures);
 
         return self::canonicalSources($builder->dependencies);
     }
 
-    private function fileDiscovery(): FileDiscoveryInterface
+    private function configuration(): RunConfiguration
     {
-        $file = new SplFileInfo($this->root . '/src/Dup.php');
-
-        return new class ($file) implements FileDiscoveryInterface {
-            public function __construct(private readonly SplFileInfo $file) {}
-
-            public function discover(AbsolutePath|array $paths): iterable
-            {
-                yield AbsolutePath::fromString($this->file->getPathname()) => $this->file;
-            }
-        };
+        $root = $this->projectRoot();
+        return new RunConfiguration([], $root, GeneratedFilePolicy::Exclude, new ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: ProjectScopeState::Covered, uncoveredRoots: []), [], AutoloadDevPolicy::Exclude);
     }
 
     private function projectRoot(): AbsolutePath

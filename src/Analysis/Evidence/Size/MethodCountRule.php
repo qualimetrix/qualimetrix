@@ -42,7 +42,7 @@ final class MethodCountRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks number of methods per class';
     }

@@ -1422,7 +1422,7 @@ PHP;
     #[Test]
     public function itRespectsExcludeMethodsFromConfig(): void
     {
-        $this->collector->applyLcomCollectionConfiguration(new LcomCollectionConfiguration(['getName']));
+        $this->collector->applyLcomCollectionConfiguration(new LcomCollectionConfiguration(['GETNAME']));
 
         $code = <<<'PHP'
 <?php

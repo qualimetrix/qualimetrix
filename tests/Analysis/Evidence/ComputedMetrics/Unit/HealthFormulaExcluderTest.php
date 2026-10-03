@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
+use Closure;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
@@ -31,7 +35,7 @@ final class HealthFormulaExcluderTest extends TestCase
         $definitions = ComputedMetricDefaults::getDefaults();
         $definitions = array_values($definitions);
 
-        $result = $this->excluder->applyExcludeHealth($definitions, []);
+        $result = $this->excluder->applyExcludeHealth($definitions, [], self::refuseOverall());
 
         self::assertSame($definitions, $result);
     }
@@ -41,7 +45,7 @@ final class HealthFormulaExcluderTest extends TestCase
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['typing']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['typing'], self::refuseOverall());
 
         $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
         self::assertNotContains('health.typing', $names);
@@ -57,7 +61,7 @@ final class HealthFormulaExcluderTest extends TestCase
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['health.typing']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['health.typing'], self::refuseOverall());
 
         $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
         self::assertNotContains('health.typing', $names);
@@ -73,7 +77,7 @@ final class HealthFormulaExcluderTest extends TestCase
             'health.c' => 0.3,
         ]);
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['a']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['a'], self::refuseOverall());
 
         // After excluding 'a' (0.4), remaining weights 0.3 + 0.3 = 0.6
         // Normalized: b = 0.3/0.6 = 0.5, c = 0.3/0.6 = 0.5
@@ -117,7 +121,7 @@ final class HealthFormulaExcluderTest extends TestCase
             }
 
             $overall = $this->findByName(
-                $this->excluder->applyExcludeHealth(array_values(ComputedMetricDefaults::getDefaults()), $excluded),
+                $this->excluder->applyExcludeHealth(array_values(ComputedMetricDefaults::getDefaults()), $excluded, self::refuseOverall()),
                 'health.overall',
             );
 
@@ -164,7 +168,7 @@ final class HealthFormulaExcluderTest extends TestCase
             'health.c' => 0.2,
         ]);
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['a', 'b']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['a', 'b'], self::refuseOverall());
 
         $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
         self::assertNotContains('health.a', $names);
@@ -189,7 +193,7 @@ final class HealthFormulaExcluderTest extends TestCase
             'health.b' => 0.5,
         ]);
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['a', 'b']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['a', 'b'], self::refuseOverall());
 
         $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
         self::assertNotContains('health.a', $names);
@@ -198,16 +202,17 @@ final class HealthFormulaExcluderTest extends TestCase
         self::assertSame([], $result);
     }
 
+    /** The caller judges every name in its author's words; an unknown one here is the caller's defect. */
     #[Test]
-    public function itThrowsForUnknownDimension(): void
+    public function itTreatsAnUnknownDimensionAsTheCallersDefect(): void
     {
         $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessageMatches('/Unknown health dimension.*health\.nonexistent/');
+        self::expectException(LogicException::class);
+        self::expectExceptionMessageMatches('/health\.nonexistent/');
 
-        $excluder->applyExcludeHealth($definitions, ['nonexistent']);
+        $excluder->applyExcludeHealth($definitions, ['nonexistent'], self::refuseOverall());
     }
 
     #[Test]
@@ -216,7 +221,7 @@ final class HealthFormulaExcluderTest extends TestCase
         $excluder = new HealthFormulaExcluder();
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        $result = $excluder->applyExcludeHealth($definitions, ['health.overall']);
+        $result = $excluder->applyExcludeHealth($definitions, ['health.overall'], self::refuseOverall());
 
         // health.overall itself is excluded
         $names = array_map(static fn(ComputedMetricDefinition $d): string => $d->name, $result);
@@ -230,7 +235,7 @@ final class HealthFormulaExcluderTest extends TestCase
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['typing']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['typing'], self::refuseOverall());
 
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
@@ -252,7 +257,7 @@ final class HealthFormulaExcluderTest extends TestCase
             'health.b' => 0.4,
         ]);
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['b']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['b'], self::refuseOverall());
 
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
@@ -287,9 +292,9 @@ final class HealthFormulaExcluderTest extends TestCase
         ];
 
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('Cannot auto-renormalize "health.overall"');
+        self::expectExceptionMessage('[class] Cannot auto-renormalize "health.overall" at level "class"');
 
-        $this->excluder->applyExcludeHealth($definitions, ['a']);
+        $this->excluder->applyExcludeHealth($definitions, ['a'], self::refuseOverall());
     }
 
     #[Test]
@@ -297,7 +302,7 @@ final class HealthFormulaExcluderTest extends TestCase
     {
         $definitions = array_values(ComputedMetricDefaults::getDefaults());
 
-        $result = $this->excluder->applyExcludeHealth($definitions, ['typing']);
+        $result = $this->excluder->applyExcludeHealth($definitions, ['typing'], self::refuseOverall());
 
         $overall = $this->findByName($result, 'health.overall');
         self::assertNotNull($overall);
@@ -348,6 +353,20 @@ final class HealthFormulaExcluderTest extends TestCase
         );
 
         return $definitions;
+    }
+
+    /**
+     * Refuses in the file's name, carrying the level first so a test can see
+     * which level the excluder refused at.
+     *
+     * @return Closure(string, string): ConfigurationRefusal
+     */
+    private static function refuseOverall(): Closure
+    {
+        return static fn(string $level, string $summary): ConfigurationRefusal => ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
+            \sprintf('[%s] %s', $level, $summary),
+        );
     }
 
     /**

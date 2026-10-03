@@ -265,7 +265,7 @@ final class BaselineCleanupCommandTest extends TestCase
                 scope: $scope,
                 entries: $entries,
             ),
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
     }

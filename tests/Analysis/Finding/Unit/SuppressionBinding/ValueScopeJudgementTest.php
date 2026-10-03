@@ -7,6 +7,11 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ExcludeSelectorVerdict;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
@@ -37,7 +42,8 @@ final class ValueScopeJudgementTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/src', '/tests', '/{legacy}'] as $directory) {
+        @unlink($this->root . '/src/A.php');
+        foreach (['/src/dir', '/src\\dir', '/src', '/tests', '/{legacy}'] as $directory) {
             @rmdir($this->root . $directory);
         }
         @rmdir($this->root);
@@ -51,10 +57,11 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itJudgesRegexOnlyWhenTheWholeProjectIsAnalysed(): void
     {
-        $judgement = $this->judgement(['src', 'tests']);
+        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]));
 
         self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
-        self::assertTrue($this->judgement([''])->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+        self::assertTrue($this->judgement(['src', 'tests'], new ProjectScopeJudgement())->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
+        self::assertTrue($this->judgement([''], new ProjectScopeJudgement())->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
     }
 
     /**
@@ -65,7 +72,7 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itStillJudgesAnAnchoredNamespaceValueOnAWholeProjectRun(): void
     {
-        $judgement = $this->judgement(['src', 'tests']);
+        $judgement = $this->judgement(['src', 'tests'], new ProjectScopeJudgement());
 
         self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
     }
@@ -74,7 +81,7 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itStillDeclinesToJudgeAValueServedFromAnUnanalysedRoot(): void
     {
-        $judgement = $this->judgement(['src']);
+        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]));
 
         self::assertFalse($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Tests\\Unit')));
         self::assertTrue($judgement->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
@@ -84,10 +91,46 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itAnswersTheSameForRegexPathValue(): void
     {
-        $judgement = $this->judgement(['src', 'tests']);
+        $judgement = $this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]));
 
         self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone\\.php')));
+        self::assertTrue($this->judgement(['src', 'tests'], new ProjectScopeJudgement())->judgesPathValue($this->regexPath('.*Gone\\.php')));
         self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
+    }
+
+    #[Test]
+    public function itKeepsALiteralBackslashDirectoryDistinctFromASlashDirectory(): void
+    {
+        mkdir($this->root . '/src\\dir');
+        mkdir($this->root . '/src/dir');
+
+        $value = $this->subtreePath('src/dir/Gone');
+
+        self::assertFalse($this->judgement(['src\\dir'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($value));
+        self::assertTrue($this->judgement(['src/dir'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($value));
+    }
+
+    #[Test]
+    public function itWithholdsALiteralUnderRemovedCodeButJudgesItsNeighbour(): void
+    {
+        $source = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml');
+        $removed = ExcludeSelectorVerdict::fromMeasuredFacts(
+            $this->subtreePath('src/Legacy'),
+            [$source],
+            ['src/Legacy'],
+            ['src/Legacy'],
+            'php-file',
+            null,
+            [],
+            true,
+        );
+        $scope = new ProjectScopeJudgement([ProjectScopeDoor::Exclude], [], [$removed]);
+        $judgement = new ValueScopeJudgement($this->root, ['Acme\\' => ['src']], [$this->root . '/src'], true, $scope);
+
+        self::assertFalse($judgement->judgesPathValue($this->subtreePath('src/Legacy/Gone')));
+        self::assertTrue($judgement->judgesPathValue($this->subtreePath('src/Gone')));
+        self::assertFalse($judgement->judgesPathValue($this->regexPath('.*Gone')));
+        self::assertFalse($judgement->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
     }
 
     /**
@@ -100,8 +143,8 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itAnchorsAValueOnACharacterOnlyTheJudgeUsedToCallAGlob(): void
     {
-        self::assertTrue($this->judgement(['{legacy}'])->judgesPathValue($this->subtreePath('{legacy}/Gone')));
-        self::assertFalse($this->judgement(['src'])->judgesPathValue($this->subtreePath('{legacy}/Gone')));
+        self::assertTrue($this->judgement(['{legacy}'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($this->subtreePath('{legacy}/Gone')));
+        self::assertFalse($this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesPathValue($this->subtreePath('{legacy}/Gone')));
     }
 
     /**
@@ -113,25 +156,71 @@ final class ValueScopeJudgementTest extends TestCase
     #[Test]
     public function itJudgesNoNamespaceValueWhereTheProjectDeclaresNoAutoload(): void
     {
-        foreach ([['src'], ['']] as $paths) {
-            $undeclared = $this->judgement($paths, projectDeclared: false);
+        foreach ([
+            [['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths])],
+            [[''], new ProjectScopeJudgement()],
+        ] as [$paths, $scope]) {
+            $undeclared = $this->judgement($paths, $scope, projectDeclared: false);
 
             self::assertFalse($undeclared->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
             self::assertFalse($undeclared->judgesNamespaceValue($this->regexNamespace('Acme\\.*')));
             self::assertTrue($undeclared->judgesPathValue($this->subtreePath('src/Gone')));
         }
 
-        self::assertTrue($this->judgement(['src'])->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
+        self::assertTrue($this->judgement(['src'], new ProjectScopeJudgement([], [ProjectScopeDoor::Paths]))->judgesNamespaceValue($this->subtreeNamespace('Acme\\Gone')));
+    }
+
+    #[Test]
+    public function itJudgesBothRegexKindsFromMeasuredScopeForACompleteNamedRoster(): void
+    {
+        file_put_contents($this->root . '/src/A.php', '<?php namespace App; class A {}');
+        $path = $this->regexPath('src/Gone.*');
+        $namespace = $this->regexNamespace('App.*Gone.*');
+        $judgement = new ValueScopeJudgement(
+            $this->root,
+            ['App\\' => ['src']],
+            [$this->root . '/src/A.php'],
+            true,
+            new ProjectScopeJudgement(),
+        );
+
+        self::assertTrue($judgement->judgesPathValue($path));
+        self::assertTrue($judgement->judgesNamespaceValue($namespace));
+
+        foreach ([ProjectScopeDoor::Paths, ProjectScopeDoor::UnknownUniverse] as $door) {
+            $withheld = new ValueScopeJudgement(
+                $this->root,
+                ['App\\' => ['src']],
+                [$this->root . '/src/A.php'],
+                true,
+                new ProjectScopeJudgement([$door], [$door]),
+            );
+
+            self::assertFalse($withheld->judgesPathValue($path));
+            self::assertFalse($withheld->judgesNamespaceValue($namespace));
+        }
+
+        $generated = new ValueScopeJudgement(
+            $this->root,
+            ['App\\' => ['src']],
+            [$this->root . '/src/A.php'],
+            true,
+            new ProjectScopeJudgement([ProjectScopeDoor::Generated]),
+        );
+
+        self::assertTrue($generated->judgesPathValue($path));
+        self::assertFalse($generated->judgesNamespaceValue($namespace));
     }
 
     /** @param list<string> $analyzedPaths relative to the fixture root */
-    private function judgement(array $analyzedPaths, bool $projectDeclared = true): ValueScopeJudgement
+    private function judgement(array $analyzedPaths, ProjectScopeJudgement $scope, bool $projectDeclared = true): ValueScopeJudgement
     {
         return new ValueScopeJudgement(
             $this->root,
             ['Acme\\' => ['src'], 'Acme\Tests\\' => ['tests']],
             array_map(fn(string $path): string => rtrim($this->root . '/' . $path, '/'), $analyzedPaths),
             $projectDeclared,
+            $scope,
         );
     }
 

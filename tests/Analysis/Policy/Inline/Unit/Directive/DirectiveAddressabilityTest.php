@@ -203,12 +203,31 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::formNotRecognised('ignore-lines'),
         ));
 
         self::assertIsString($problem);
         self::assertStringContainsString('@qmx-ignore-lines complexity.ccn', $problem);
         self::assertStringContainsString('is not a tag this tool reads', $problem);
+    }
+
+    #[Test]
+    public function itNamesTheCarrierWhoseReachCannotSupplyTheRequestedLevel(): void
+    {
+        $problem = self::addressability()->problemWithSuppression(new Suppression(
+            'coupling.cbo:callable',
+            null,
+            7,
+            SuppressionType::Symbol,
+            position: 12,
+            refusal: DirectiveRefusal::levelNotReachableHere('property $value'),
+        ));
+
+        self::assertSame(
+            'Suppression "coupling.cbo:callable" asks for a level that is not reachable from property $value; move it to a declaration at that level or remove the level suffix.',
+            $problem,
+        );
     }
 
     /**
@@ -228,6 +247,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::namesNoTarget($form),
         ));
 
@@ -253,6 +273,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::thresholdWithNoDeclarationToBind(),
         ));
         $outsideDocblock = self::addressability()->problemWithSuppression(new Suppression(
@@ -260,6 +281,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::thresholdOutsideDocblock(),
         ));
 
@@ -278,6 +300,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         ));
 
@@ -299,6 +322,7 @@ final class DirectiveAddressabilityTest extends TestCase
             null,
             1,
             SuppressionType::Symbol,
+            position: 0,
             refusal: DirectiveRefusal::noDeclarationToBind(),
         ));
 
@@ -348,7 +372,7 @@ final class DirectiveAddressabilityTest extends TestCase
 
     private static function suppression(string $rule): Suppression
     {
-        return new Suppression($rule, null, 1, SuppressionType::File);
+        return new Suppression($rule, null, 1, SuppressionType::File, position: 0);
     }
 
     private static function declarationSubject(): MetricSubject

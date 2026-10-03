@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CognitiveComplexityRule::class)]
 #[CoversClass(CognitiveComplexityOptions::class)]
@@ -41,7 +43,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         self::assertSame(
             'Checks cognitive complexity at method and class levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -271,11 +273,11 @@ final class CognitiveComplexityRuleTest extends TestCase
     #[Test]
     public function itMethodOptionsFromArray(): void
     {
-        $options = MethodCognitiveComplexityOptions::fromArray([
+        $options = MethodCognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(MethodCognitiveComplexityOptions::class, [
             'enabled' => false,
             'warning' => 20,
             'error' => 40,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(20, $options->warning);
@@ -285,7 +287,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     #[Test]
     public function itMethodOptionsFromEmptyArray(): void
     {
-        $options = MethodCognitiveComplexityOptions::fromArray([]);
+        $options = MethodCognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(MethodCognitiveComplexityOptions::class, []));
 
         self::assertTrue($options->enabled);
         self::assertSame(15, $options->warning);
@@ -295,11 +297,11 @@ final class CognitiveComplexityRuleTest extends TestCase
     #[Test]
     public function itClassOptionsFromArray(): void
     {
-        $options = ClassCognitiveComplexityOptions::fromArray([
+        $options = ClassCognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(ClassCognitiveComplexityOptions::class, [
             'enabled' => false,
             'max_warning' => 40,
             'max_error' => 60,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(40, $options->maxWarning);
@@ -309,7 +311,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     #[Test]
     public function itCognitiveComplexityOptionsFromHierarchicalArray(): void
     {
-        $options = CognitiveComplexityOptions::fromArray([
+        $options = CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, [
             'callable' => [
                 'warning' => 20,
                 'error' => 35,
@@ -318,7 +320,7 @@ final class CognitiveComplexityRuleTest extends TestCase
                 'max_warning' => 40,
                 'max_error' => 60,
             ],
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
@@ -330,17 +332,18 @@ final class CognitiveComplexityRuleTest extends TestCase
     #[Test]
     public function itCognitiveComplexityOptionsFromFlatThresholdShorthand(): void
     {
-        $options = CognitiveComplexityOptions::fromArray([
+        $options = CognitiveComplexityOptions::fromResolved(ResolvedOptionsFixture::values(CognitiveComplexityOptions::class, [
             'enabled' => true,
             'threshold' => 18,
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->callable->isEnabled());
         self::assertSame(18, $options->callable->warning);
         self::assertSame(18, $options->callable->error);
-        // Flat shorthand disables class level
-        self::assertFalse($options->class->isEnabled());
+        self::assertTrue($options->class->isEnabled());
+        self::assertSame(30, $options->class->maxWarning);
+        self::assertSame(50, $options->class->maxError);
     }
 
     #[Test]

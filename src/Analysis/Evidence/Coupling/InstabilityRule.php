@@ -54,7 +54,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks instability at class and namespace levels';
     }

@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding;
-use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeAudit;
+use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeFinding;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -85,7 +85,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         // channels through one constructor, so no single channel spelling
         // could name it. The pin is a literal either way, which is the whole
         // requirement: it must not follow a rename of the channel.
-        UnmatchedExcludeAudit::class => 'unmatched-exclude-pattern',
+        UnmatchedExcludeFinding::class => 'unmatched-exclude-pattern',
         UnjudgedExcludeFinding::class => 'unjudged-exclude-pattern',
         UnboundSuppressionAudit::class => 'unbound-suppression-value',
         UnmatchedFrameworkNamespaceRule::class => 'unmatched-framework-prefix',

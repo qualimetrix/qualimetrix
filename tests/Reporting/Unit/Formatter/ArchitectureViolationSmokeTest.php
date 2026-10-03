@@ -195,6 +195,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             new HtmlTreeBuilder(
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
             ),
             new HealthHintProjector(new HealthMetricCatalog()),
         );

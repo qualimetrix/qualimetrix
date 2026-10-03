@@ -5,62 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration;
 
 /**
- * The words of every domain-semantic refusal `computed_metrics:` raises —
- * an unknown key, an invalid level or name, or an invalid formula — held in
- * one place for the same reason {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording}
- * is: a refusal that names a key or a level is a formulation, and three
- * different seams author one here — the key traversal, the entry reader, and
- * the name resolver. Keeping them in one file is what keeps the three
- * consistent with each other as the section grows a fourth.
- *
- * Plain type-mismatch sentences (a value written where a map, list, string,
- * boolean or number was expected) live in
- * {@see ComputedMetricShapeRefusalWording} instead — a different kind of
- * formulation, split out to keep each file's sentence count readable.
- *
- * Every sentence prints a key or a metric name exactly as the throw site
- * received it; only the *accepted* set is printed in the canonical spelling
- * declared in {@see ComputedMetricEntryKeys}.
+ * The words of every refusal `computed_metrics:` and `exclude_health:` raise
+ * about what a value means — an invalid level, name or dimension, or an
+ * invalid formula — held in one place so the entry reader, the name resolver
+ * and the formula validator stay consistent. Unknown keys and the form of a
+ * value are refused by the configuration document in its own words.
  */
 final class ComputedMetricRefusalWording
 {
-    /** @param list<string> $acceptedHere canonical spellings, sorted */
-    public static function notAnEntryKey(string $key, string $metricName, array $acceptedHere): string
-    {
-        return \sprintf(
-            'Option "%s" is not an option of computed metric "%s". Options here: %s.',
-            $key,
-            $metricName,
-            implode(', ', $acceptedHere),
-        );
-    }
-
-    /**
-     * A `formulas:` key naming a real level word this capability does not
-     * report at (`callable`, `file`) — distinguished from
-     * {@see self::formulaKeyNotALevelAtAll()} for the same reason
-     * `RuleOptionRefusalWording::notAnOptionAtLevel()` is: a reader told only
-     * "unknown" will try the same word somewhere else in the vocabulary, when
-     * the real problem is that this capability never reports there.
-     *
-     * @param list<string> $reportingLevels canonical level words, sorted
-     */
-    public static function formulaKeyNotAReportingLevel(string $key, string $metricName, array $reportingLevels): string
-    {
-        return \sprintf(
-            'Computed metric "%s" declares a formula for level "%s", which is a real level but not one this'
-            . ' capability reports at. "formulas" keys here: %s.',
-            $metricName,
-            $key,
-            implode(', ', $reportingLevels),
-        );
-    }
-
-    public static function formulaKeyNotALevelAtAll(string $key, string $metricName): string
-    {
-        return \sprintf('Computed metric "%s" declares a formula for "%s", which is not a level at all.', $metricName, $key);
-    }
-
     /** @param list<string> $reportingLevels canonical level words, sorted */
     public static function levelWordNotAReportingLevel(string $level, array $reportingLevels): string
     {
@@ -82,12 +34,6 @@ final class ComputedMetricRefusalWording
     public static function duplicateLevel(string $metricName): string
     {
         return \sprintf('Computed metric "%s" declares the same level more than once', $metricName);
-    }
-
-    public static function thresholdMixedWithGraduated(): string
-    {
-        return 'Cannot mix "threshold" with "warning"/"error". Use either "threshold" alone (simple mode) or'
-            . ' "warning"/"error" (graduated mode).';
     }
 
     public static function nameGrammar(string $name, string $template): string
@@ -122,12 +68,26 @@ final class ComputedMetricRefusalWording
         );
     }
 
-    public static function invalidFormulaSyntax(string $metricName, string $level, string $reason, string $formula): string
+    /**
+     * @param string $where the item as its layer names it: a key path in a file, an option on the command line
+     * @param list<string> $known full dimension names
+     */
+    public static function unknownExcludedHealthDimension(string $written, string $where, array $known): string
     {
         return \sprintf(
-            'Invalid formula syntax for computed metric "%s" at level "%s": %s (formula: %s)',
+            'Unknown health dimension "%s" in %s. Valid dimensions: %s.',
+            $written,
+            $where,
+            implode(', ', $known),
+        );
+    }
+
+    public static function invalidFormulaSyntax(string $metricName, ?string $level, string $reason, string $formula): string
+    {
+        return \sprintf(
+            'Invalid formula syntax for computed metric "%s"%s: %s (formula: %s)',
             $metricName,
-            $level,
+            $level === null ? '' : \sprintf(' at level "%s"', $level),
             $reason,
             $formula,
         );

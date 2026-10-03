@@ -23,30 +23,16 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
     /**
      * Finds the .git directory for the current repository.
      *
-     * @param AbsolutePath|null $workingDir Working directory to start from (defaults to getcwd())
-     *
      * @return AbsolutePath|null Absolute path to .git directory, or null if not in a git repo
      */
-    public function findGitDir(?AbsolutePath $workingDir = null): ?AbsolutePath
+    public function findGitDir(AbsolutePath $workingDir): ?AbsolutePath
     {
-        $workingDir ??= self::currentDirectory();
-
-        if ($workingDir === null) {
-            return null;
-        }
-
         return $this->findViaGitCommand($workingDir)
             ?? $this->findViaDirectoryTraversal($workingDir);
     }
 
-    public function findHooksDir(?AbsolutePath $workingDir = null): ?AbsolutePath
+    public function findHooksDir(AbsolutePath $workingDir): ?AbsolutePath
     {
-        $workingDir ??= self::currentDirectory();
-
-        if ($workingDir === null) {
-            return null;
-        }
-
         // `--git-path hooks` is the only spelling that answers for all three
         // of a plain repository, a `core.hooksPath` override and a linked
         // worktree. It answers for a directory that does not exist yet, which
@@ -125,13 +111,6 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
         } catch (RuntimeException | InvalidArgumentException) {
             return null;
         }
-    }
-
-    private static function currentDirectory(): ?AbsolutePath
-    {
-        $cwd = getcwd();
-
-        return $cwd === false ? null : AbsolutePath::fromString($cwd);
     }
 
     /**

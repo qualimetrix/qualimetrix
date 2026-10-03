@@ -5,20 +5,24 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricEntryKeys;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricAuthorship;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricRefusalWording;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricsSection;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricValueForm;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use ReflectionClass;
-use Symfony\Component\ExpressionLanguage\SyntaxError;
-use Throwable;
 
 /**
  * Validates computed metric definitions: formula syntax, level coverage,
  * circular dependencies, cross-metric references and the levels they are
  * read at, and that every other addressed metric key exists in the catalog.
+ *
+ * @qmx-threshold coupling.instability warning=0.81 -- Ca=2, Ce=8: the eighth efferent
+ * edge is the refusal authorship the six checks name. Moving the one refusal it builds
+ * itself into ComputedMetricAuthorship drops Ca to 1 and pushes ComputedMetricsSection
+ * to 0.83 instead.
  */
 final class ComputedMetricFormulaValidator
 {
@@ -36,17 +40,18 @@ final class ComputedMetricFormulaValidator
      * Runs all validations on the given definitions.
      *
      * @param list<ComputedMetricDefinition> $definitions
+     * @param ComputedMetricAuthorship $authorship which layers wrote each definition, for the refusal to name
      *
      * @throws ConfigurationRefusal If any validation fails
      */
-    public function validate(array $definitions): void
+    public function validate(array $definitions, ComputedMetricAuthorship $authorship = new ComputedMetricAuthorship()): void
     {
-        $this->validateFormulaSyntax($definitions);
-        $this->validateFormulaCoverage($definitions);
-        $this->validateCircularDependencies($definitions);
-        $this->validateComputedMetricReferences($definitions);
-        $this->validateComputedMetricReferenceLevels($definitions);
-        $this->validateMetricKeyExistence($definitions);
+        $this->validateFormulaSyntax($definitions, $authorship);
+        $this->validateFormulaCoverage($definitions, $authorship);
+        $this->validateCircularDependencies($definitions, $authorship);
+        $this->validateComputedMetricReferences($definitions, $authorship);
+        $this->validateComputedMetricReferenceLevels($definitions, $authorship);
+        $this->validateMetricKeyExistence($definitions, $authorship);
     }
 
     /**
@@ -54,7 +59,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
-    private function validateFormulaSyntax(array $definitions): void
+    private function validateFormulaSyntax(array $definitions, ComputedMetricAuthorship $authorship): void
     {
         foreach ($definitions as $definition) {
             foreach ($definition->levels as $level) {
@@ -65,28 +70,9 @@ final class ComputedMetricFormulaValidator
 
                 $levelKey = $level->value;
 
-                try {
-                    $this->expression->parse($formula);
-                } catch (SyntaxError $e) {
-                    // Narrow on purpose: the try body is one call, and SyntaxError
-                    // is the exact family that call's contract names. Widening this
-                    // to Throwable/InvalidArgumentException would let a product
-                    // defect from inside ExpressionLanguage masquerade as a user
-                    // refusal.
-                    throw $this->refuse(
-                        $definition->name,
-                        $levelKey,
-                        ComputedMetricRefusalWording::invalidFormulaSyntax($definition->name, $levelKey, $e->getMessage(), $formula),
-                        $e,
-                    );
-                }
-
-                if (!$this->expression->everyAccessIsALiteralIndex($formula)) {
-                    throw $this->refuse(
-                        $definition->name,
-                        $levelKey,
-                        ComputedMetricRefusalWording::everyAccessMustBeALiteralIndex($definition->name, $formula),
-                    );
+                $refusal = ComputedMetricValueForm::formulaRefusal($this->expression, $definition->name, $levelKey, $formula);
+                if ($refusal !== null) {
+                    throw $authorship->refuseFormula($definition, $levelKey, $refusal);
                 }
             }
         }
@@ -97,7 +83,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
-    private function validateFormulaCoverage(array $definitions): void
+    private function validateFormulaCoverage(array $definitions, ComputedMetricAuthorship $authorship): void
     {
         foreach ($definitions as $definition) {
             foreach ($definition->levels as $level) {
@@ -105,7 +91,7 @@ final class ComputedMetricFormulaValidator
                 if ($formula === null) {
                     $levelKey = $level->value;
 
-                    throw $this->refuse(
+                    throw $authorship->refuseMissingFormula(
                         $definition->name,
                         $levelKey,
                         ComputedMetricRefusalWording::noFormulaForLevel($definition->name, $levelKey),
@@ -120,7 +106,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
-    private function validateCircularDependencies(array $definitions): void
+    private function validateCircularDependencies(array $definitions, ComputedMetricAuthorship $authorship): void
     {
         // Build name → dependencies map
         $graph = [];
@@ -138,21 +124,14 @@ final class ComputedMetricFormulaValidator
         $visited = [];
         $inStack = [];
 
-        $visit = function (string $node, array $path) use (&$visit, &$visited, &$inStack, $graph): void {
+        $visit = function (string $node, array $path) use (&$visit, &$visited, &$inStack, $graph, $authorship): void {
             if (isset($inStack[$node])) {
                 $cycleStart = array_search($node, $path, true);
                 \assert($cycleStart !== false);
                 $cycle = array_values(\array_slice($path, (int) $cycleStart));
                 $cycle[] = $node;
 
-                // The position names the node the cycle closed on — the one
-                // already in $inStack — because a carrier has one position and
-                // the chain is a fact about the whole set, not one metric's
-                // entry; the full chain is named in the summary instead.
-                throw ConfigurationRefusal::atResolvedKey(
-                    RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($node), $node),
-                    ComputedMetricRefusalWording::circularDependency($cycle),
-                );
+                throw $authorship->refuseAcross($cycle, ComputedMetricRefusalWording::circularDependency($cycle));
             }
 
             if (isset($visited[$node])) {
@@ -183,7 +162,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
-    private function validateComputedMetricReferences(array $definitions): void
+    private function validateComputedMetricReferences(array $definitions, ComputedMetricAuthorship $authorship): void
     {
         $nameSet = [];
         foreach ($definitions as $definition) {
@@ -191,11 +170,12 @@ final class ComputedMetricFormulaValidator
         }
 
         foreach ($definitions as $definition) {
-            foreach ($definition->formulas as $formula) {
+            foreach ($definition->formulas as $level => $formula) {
                 foreach ($this->extractComputedMetricReferences($formula) as $ref) {
                     if (!isset($nameSet[$ref])) {
-                        throw ConfigurationRefusal::atResolvedKey(
-                            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definition->name), $definition->name),
+                        throw $authorship->refuseFormula(
+                            $definition,
+                            (string) $level,
                             ComputedMetricRefusalWording::referencesUnknownMetric($definition->name, $ref, $formula),
                         );
                     }
@@ -221,7 +201,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
-    private function validateComputedMetricReferenceLevels(array $definitions): void
+    private function validateComputedMetricReferenceLevels(array $definitions, ComputedMetricAuthorship $authorship): void
     {
         $byName = [];
         foreach ($definitions as $definition) {
@@ -241,7 +221,7 @@ final class ComputedMetricFormulaValidator
                 );
 
                 if ($unpublished !== []) {
-                    self::refuseUnpublishedReferences($definition->name, $unpublished, $byName, $level->value, $formula);
+                    self::refuseUnpublishedReferences($definition->name, $unpublished, $byName, $level->value, $formula, $authorship);
                 }
             }
         }
@@ -257,6 +237,7 @@ final class ComputedMetricFormulaValidator
         array $byName,
         string $level,
         string $formula,
+        ComputedMetricAuthorship $authorship,
     ): never {
         $publishedAt = [];
         foreach ($unpublished as $reference) {
@@ -266,10 +247,10 @@ final class ComputedMetricFormulaValidator
             }
         }
 
-        // The entry, not `formulas.<level>`: an inherited project formula has
-        // no key of its own to point at.
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
+        // Every metric of the relation: the reader's formula and the levels
+        // the read metrics declare may come from different layers.
+        throw $authorship->refuseAcross(
+            [$definitionName, ...$unpublished],
             ComputedMetricRefusalWording::readsComputedMetricNotPublishedAtLevel($definitionName, $publishedAt, $level, $formula),
         );
     }
@@ -291,11 +272,11 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      */
-    private function validateMetricKeyExistence(array $definitions): void
+    private function validateMetricKeyExistence(array $definitions, ComputedMetricAuthorship $authorship): void
     {
         foreach ($definitions as $definition) {
-            foreach ($definition->formulas as $formula) {
-                $this->validateFormulaMetricKeys($definition->name, $formula);
+            foreach ($definition->formulas as $level => $formula) {
+                $this->validateFormulaMetricKeys($definition, (string) $level, $formula, $authorship);
             }
         }
     }
@@ -321,20 +302,25 @@ final class ComputedMetricFormulaValidator
         string $formula,
     ): never {
         throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
+            ComputedMetricsSection::position($definitionName),
             ComputedMetricRefusalWording::referencesMetricAbsentAtLevel($definitionName, $keys, $level, $formula),
         );
     }
 
-    private function validateFormulaMetricKeys(string $definitionName, string $formula): void
+    private function validateFormulaMetricKeys(ComputedMetricDefinition $definition, string $level, string $formula, ComputedMetricAuthorship $authorship): void
     {
         foreach ($this->expression->keysOf($formula) as $key) {
-            $this->assertKeyIsCatalogued($definitionName, $key, $formula);
+            $this->assertKeyIsCatalogued($definition, $level, $key, $formula, $authorship);
         }
     }
 
-    private function assertKeyIsCatalogued(string $definitionName, string $key, string $formula): void
-    {
+    private function assertKeyIsCatalogued(
+        ComputedMetricDefinition $definition,
+        string $level,
+        string $key,
+        string $formula,
+        ComputedMetricAuthorship $authorship,
+    ): void {
         if (ComputedMetricExpression::isComputedReference($key)) {
             return; // Cross-references, validated above against declared definitions.
         }
@@ -343,9 +329,10 @@ final class ComputedMetricFormulaValidator
             return;
         }
 
-        throw ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open(ComputedMetricEntryKeys::nameSegments($definitionName), $definitionName),
-            ComputedMetricRefusalWording::referencesUnknownMetricKey($definitionName, $key, $formula),
+        throw $authorship->refuseFormula(
+            $definition,
+            $level,
+            ComputedMetricRefusalWording::referencesUnknownMetricKey($definition->name, $key, $formula),
         );
     }
 
@@ -388,14 +375,5 @@ final class ComputedMetricFormulaValidator
         }
 
         return self::$catalogBaseKeys = $keys;
-    }
-
-    private function refuse(string $metricName, string $level, string $summary, ?Throwable $previous = null): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::atResolvedKey(
-            RefusedPosition::open([...ComputedMetricEntryKeys::nameSegments($metricName), 'formulas', $level], $level),
-            $summary,
-            previous: $previous,
-        );
     }
 }

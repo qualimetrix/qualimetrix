@@ -11,12 +11,14 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Reporting\ReportCoverage;
 use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMinutes;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
@@ -31,9 +33,31 @@ final class HtmlFormatterTest extends TestCase
             new HtmlTreeBuilder(
                 new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
                 self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
             ),
             new HealthHintProjector(new HealthMetricCatalog()),
         );
+    }
+
+    #[Test]
+    public function itUsesTheInvocationManifestSnapshotForHtmlMetadata(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-html-snapshot-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        $reader = new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader();
+        $metadata = new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata($reader);
+        try {
+            file_put_contents($root . '/composer.json', '{"name":"first/project"}');
+            $reader->read(\Qualimetrix\Core\Path\AbsolutePath::fromString($root));
+            file_put_contents($root . '/composer.json', '{"name":"changed/project"}');
+            self::assertSame('first/project', $metadata->of(false, null, $root)['name']);
+            self::assertSame('authored name', $metadata->of(false, 'authored name', $root)['name']);
+            $reader->beginInvocation();
+            self::assertSame('changed/project', $metadata->of(false, null, $root)['name']);
+        } finally {
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
     }
 
     #[Test]
@@ -63,6 +87,27 @@ final class HtmlFormatterTest extends TestCase
         self::assertStringContainsString('<html lang="en">', $output);
         self::assertStringContainsString('</html>', $output);
         self::assertStringContainsString('id="report-data"', $output);
+    }
+
+    #[Test]
+    public function itUsesTheSameEntryFailureNarrativeInTheBannerAndPreservesCoverageData(): void
+    {
+        $coverage = new ReportCoverage(2, 1, 0, 1, [
+            new CoverageFailure('src/pipe', 'not-regular-file', 'FIFO'),
+        ]);
+        $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(1)->coverage($coverage)->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+
+        self::assertStringContainsString(
+            'data-qmx-coverage="incomplete"',
+            $output,
+        );
+        self::assertStringContainsString(
+            'Analysis incomplete: 1 of 2 discovered entries failed (1 not-regular-file); policy results are not authoritative.',
+            $output,
+        );
+        self::assertSame($coverage->toArray(), self::payload($output)['coverage']);
     }
 
     #[Test]

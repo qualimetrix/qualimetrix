@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\InputDoors;
 
+use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -57,12 +58,13 @@ function application(): Application
     $container = (new ContainerFactory())->create();
     $errorStream = $container->get(ErrorStream::class);
     $refusalPresenter = $container->get(RefusalPresenter::class);
+    $snapshot = $container->get(ManifestSnapshotControlInterface::class);
 
-    if (!$errorStream instanceof ErrorStream || !$refusalPresenter instanceof RefusalPresenter) {
+    if (!$errorStream instanceof ErrorStream || !$refusalPresenter instanceof RefusalPresenter || !$snapshot instanceof ManifestSnapshotControlInterface) {
         throw new RuntimeException('the container did not yield the console collaborators bin/qmx wires');
     }
 
-    $application = new Application($errorStream, $refusalPresenter);
+    $application = new Application($errorStream, $refusalPresenter, $snapshot);
     $application->setCommandLoader(new ContainerCommandLoader($container, commandMap()));
 
     return $application;

@@ -131,7 +131,7 @@ final class FixtureNamelessRule implements RuleInterface
         return 'fixture.nameless';
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Rule fixture without a NAME constant';
     }

@@ -7,12 +7,10 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Infrastructure\Cache\CacheClearOutcome;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
-use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
-use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -36,7 +34,7 @@ final class RuntimeConfigurator
         private readonly CacheFactory $cacheFactory,
         private readonly ParallelConfigurationStoreInterface $parallelConfigurationStore,
         private readonly RuntimeLimitsController $runtimeLimitsController,
-        private readonly AnalysedInstallAnchorInterface $analysedAutoloadMap,
+        private readonly ProjectSourceConfigurator $projectSourceConfigurator,
     ) {}
 
     /** Resets every mutable per-run seam before configuration resolution starts. */
@@ -56,64 +54,54 @@ final class RuntimeConfigurator
      */
     public function configure(
         ConfigurationDocument $document,
-        RunConfiguration $runConfiguration,
-        FindingConfiguration $findingConfiguration,
-        CacheConfiguration $cacheConfiguration,
-        ParallelConfiguration $parallelConfiguration,
+        ResolvedRunConfiguration $run,
+        ?FindingConfiguration $findingConfiguration,
         InputInterface $input,
         OutputInterface $output,
+        ?AnalysisPreflightProfile $profile = null,
     ): void {
-        // Every command that runs the pipeline passes through here, which is
-        // why the anchor lives in this call rather than at one call site: DIT's
-        // ancestor walk silently reports "no install" for any run that forgot
-        // to aim it, and `baseline:generate` forgetting it means the baseline
-        // records a magnitude `check` never produces.
-        $this->analysedAutoloadMap->pointAt(
-            (string) $runConfiguration->projectRoot,
-            array_map(static fn(object $path): string => (string) $path, $runConfiguration->paths),
-        );
+        $profile ??= AnalysisPreflightProfile::analysis();
+        $this->projectSourceConfigurator->configure($run->runConfiguration->projectRoot, $run->runConfiguration->paths);
 
         // Pure preflight: no store or external-effect mutation is allowed
         // until every owner has accepted its immutable value.
-        $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);
-        $computedMetrics = $this->analysisRuntimeConfigurator->resolveComputedMetrics($document);
-        $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
-        $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
         $runtimeLimits = $this->resolveRuntimeLimits($document);
-        ProfilePresenter::refuseImpossibleExport($input);
-        $capture = ($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
-            || $this->resolveFormat($document) === 'suppressed';
-        $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels(
-            $input,
-            $findingConfiguration,
-            $computedMetrics,
-        );
+        $prepared = $findingConfiguration === null ? null : $this->analysisRuntimeConfigurator->prepare($document, $findingConfiguration, $input);
+        $frameworkNamespaces = $prepared !== null ? $prepared->frameworkNamespaces : $this->analysisRuntimeConfigurator->resolveCoupling($document);
 
         // Built-in stores commit only after complete preflight. An unexpected
         // custom-store failure is fail-closed, but is not claimed to roll back.
-        $this->cacheFactory->replaceConfiguration($cacheConfiguration);
-        $this->parallelConfigurationStore->replace($parallelConfiguration);
-        $this->analysisRuntimeConfigurator->replace(
-            $findingConfiguration,
-            $lcomConfiguration,
-            $architecturePolicy,
-            $computedMetrics,
-            $frameworkNamespaces,
-            $channels,
-        );
-        if ($capture) {
-            $this->analysisRuntimeConfigurator->captureExcludedFindings();
+        $this->cacheFactory->replaceConfiguration($run->cacheConfiguration);
+        $this->parallelConfigurationStore->replace($run->parallelConfiguration);
+        if ($prepared !== null) {
+            $this->analysisRuntimeConfigurator->replace($prepared);
+            $this->captureExcludedFindings($document, $input, $profile);
+        } else {
+            $this->analysisRuntimeConfigurator->replaceCoupling($frameworkNamespaces);
         }
 
         // These are fallible process/output effects. Failure aborts before
         // analysis; committed stores are reset at the next invocation entry.
         $this->runtimeLimitsController->apply($runtimeLimits);
         $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
-        foreach ($architecturePolicy->warnings() as $warning) {
-            $logger->warning($warning->message, $warning->context);
+        if ($run->cacheConfiguration->disabledBecause !== null) {
+            $logger->warning($run->cacheConfiguration->disabledBecause);
+        }
+        if ($prepared !== null) {
+            foreach ($prepared->architecturePolicy->warnings() as $warning) {
+                $logger->warning($warning->message, $warning->context);
+            }
         }
         $this->progressConfigurator->configure($input, $output);
         $this->configureProfiler($input);
+    }
+
+    private function captureExcludedFindings(ConfigurationDocument $document, InputInterface $input, AnalysisPreflightProfile $profile): void
+    {
+        if (($input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true)
+            || ($profile->requiresReportingFormat && $this->resolveFormat($document) === 'suppressed')) {
+            $this->analysisRuntimeConfigurator->captureExcludedFindings();
+        }
     }
 
     public function clearCacheIfRequested(InputInterface $input): bool
@@ -122,33 +110,40 @@ final class RuntimeConfigurator
             return false;
         }
 
-        $this->cacheFactory->create()->clear();
+        $outcome = $this->cacheFactory->create()->clear();
+        self::refuseIncompleteCacheClear($outcome);
 
         return true;
+    }
+
+    private static function refuseIncompleteCacheClear(CacheClearOutcome $outcome): void
+    {
+        if ($outcome->complete) {
+            return;
+        }
+
+        throw EnvironmentRefusal::aboutFile(
+            $outcome->directory,
+            'clear cache in',
+            \sprintf('%d cache entries remain: %s', $outcome->remaining, $outcome->reason ?? 'unknown reason'),
+        );
     }
 
     /**
      * Applies PHP memory limit from configuration.
      *
-     * The default (512M) is set in DefaultsStage and can be overridden
-     * via qmx.yaml or --memory-limit CLI option.
+     * No layer sets a default: with no `memory_limit` written anywhere, PHP's
+     * own limit stands.
      */
     private function resolveRuntimeLimits(ConfigurationDocument $document): RuntimeLimits
     {
-        $value = null;
-        foreach ($document->contributions(ConfigSchema::MEMORY_LIMIT) as $candidate) {
-            if (\is_string($candidate)) {
-                $value = $candidate;
-            }
-        }
-
-        return new RuntimeLimits($value);
+        return RuntimeLimits::fromResolvedValue($document->resolved()->get(ConfigSchema::MEMORY_LIMIT));
     }
 
     /**
      * Resolves the effective `--format`/`format:` value without a second
      * service dependency: {@see \Qualimetrix\Reporting\Configuration\OutputFormatResolver}
-     * reads the identical contribution list, and duplicating the two-line
+     * reads the same resolved value, and duplicating the two-line
      * read here is cheaper than wiring a Reporting contract into this class
      * for one string.
      *
@@ -164,14 +159,9 @@ final class RuntimeConfigurator
      */
     private function resolveFormat(ConfigurationDocument $document): ?string
     {
-        $value = null;
-        foreach ($document->contributions(ConfigSchema::FORMAT) as $contribution) {
-            if (\is_string($contribution)) {
-                $value = $contribution;
-            }
-        }
+        $format = $document->resolved()->get(ConfigSchema::FORMAT)?->plain();
 
-        return $value;
+        return \is_string($format) ? $format : null;
     }
 
     /**

@@ -27,6 +27,17 @@ final class GateReport
     /** @var list<array{class: string, scope: string, detail: string, diff: list<string>}> */
     private array $failures = [];
 
+    /**
+     * Where each failure was raised and the methods on the way to it,
+     * innermost first, parallel to `$failures` and never published: the
+     * witness registry holds every raise site, per caller, to a run that
+     * observed it, and a class raised by several checks cannot say which one
+     * spoke.
+     *
+     * @var list<array{file: string, line: int, chain: list<string>}>
+     */
+    private array $raisedAt = [];
+
     /** @var list<string> */
     private array $warnings = [];
 
@@ -36,11 +47,50 @@ final class GateReport
     /** @var array<string, mixed> */
     private array $facts = [];
 
+    /** @var array<string,true> */
+    private array $semanticResiduals = [];
+
+    /** @var array<string,bool> */
+    private array $sourceEvidence = [];
+
+    /** @var array<int,array{side:string,key:string,role:string}> */
+    private array $sourceFailures = [];
+
+    public function sourceEvidence(string $side, string $key, string $role, bool $valid, string $pass = 'first'): void
+    {
+        $address = implode("\0", [$side, $pass, $key, $role]);
+        $this->sourceEvidence[$address] = ($this->sourceEvidence[$address] ?? true) && $valid;
+    }
+
+    public function sourceValid(string $side, string $key, string $role, string $pass = 'first'): bool
+    {
+        return $this->sourceEvidence[implode("\0", [$side, $pass, $key, $role])] ?? false;
+    }
+
+    public function sourceRejected(string $side, string $key, string $role, string $pass = 'first'): bool
+    {
+        return ($this->sourceEvidence[implode("\0", [$side, $pass, $key, $role])] ?? null) === false;
+    }
+
+    public function semanticResidual(string $surface): void
+    {
+        $this->semanticResiduals[$surface] = true;
+    }
+
+    public function hasSemanticResidual(string $surface): bool
+    {
+        return isset($this->semanticResiduals[$surface]);
+    }
+
     /**
      * How many surfaces this run compared against a declaration rather than for
      * equality, so the verdict sentence can name them.
      */
     private int $declaredDeltaCount = 0;
+
+    private int $declaredExactSurfaceCount = 0;
+
+    private int $exactSurfaceUsedCount = 0;
 
     /**
      * How many moves of a compared field this run licensed rather than refused.
@@ -51,9 +101,46 @@ final class GateReport
      */
     private int $fieldMoveCount = 0;
 
+    /**
+     * The other declaration forms a run can be green under, by the report key
+     * each count is published as, in the order the verdict sentence names them.
+     *
+     * @var array<string, string> report key => what one unit of it is
+     */
+    public const array DECLARATION_COUNTS = [
+        'declaredRecordCount' => 'declared record(s)',
+        'declaredValueCount' => 'declared value intent(s)',
+        'declaredFieldCount' => 'declared field change(s)',
+        'declaredOutcomeCount' => 'declared case outcome(s)',
+        'declaredSurfaceCount' => 'declared surface change(s)',
+        'structuralMapCount' => 'structural map row(s)',
+    ];
+
+    /** @var array<string, int> */
+    private array $declarationCounts = [];
+
+    public function countDeclarations(string $reportKey, int $count): void
+    {
+        if (!isset(self::DECLARATION_COUNTS[$reportKey])) {
+            throw new GateError(\sprintf('Unknown declaration count "%s".', $reportKey));
+        }
+
+        $this->declarationCounts[$reportKey] = $count;
+    }
+
     public function countDeclaredDeltas(int $count): void
     {
         $this->declaredDeltaCount = $count;
+    }
+
+    public function countExactSurfaces(int $count): void
+    {
+        $this->declaredExactSurfaceCount = $count;
+    }
+
+    public function usedExactSurface(): void
+    {
+        ++$this->exactSurfaceUsedCount;
     }
 
     public function countFieldMoves(int $count): void
@@ -61,14 +148,47 @@ final class GateReport
         $this->fieldMoveCount = $count;
     }
 
-    /** @param list<string> $diff */
-    public function fail(string $failureClass, string $scope, string $detail, array $diff = []): void
+    /** @param list<string> $diff
+     * @param array{side:string,key:string,role:string}|null $source
+     */
+    public function fail(string $failureClass, string $scope, string $detail, array $diff = [], ?array $source = null): void
     {
         if (!\in_array($failureClass, FailureClass::ALL, true)) {
             throw new GateError(\sprintf('Unknown failure class "%s".', $failureClass));
         }
 
+        $index = \count($this->failures);
         $this->failures[] = ['class' => $failureClass, 'scope' => $scope, 'detail' => $detail, 'diff' => $diff];
+        if ($source !== null) {
+            $this->sourceFailures[$index] = $source;
+        }
+        $frames = debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS);
+        $chain = [];
+
+        foreach (\array_slice($frames, 1) as $frame) {
+            if (isset($frame['class']) && !str_starts_with($frame['function'], '{closure')) {
+                $chain[] = substr((string) strrchr('\\' . $frame['class'], '\\'), 1) . '::' . $frame['function'];
+            }
+        }
+
+        $this->raisedAt[] = ['file' => $frames[0]['file'] ?? '?', 'line' => $frames[0]['line'] ?? 0, 'chain' => $chain];
+    }
+
+    /** @return list<array{class: string, scope: string, detail: string, file: string, line: int, chain: list<string>}> */
+    public function raised(): array
+    {
+        $raised = [];
+
+        foreach ($this->failures as $index => $failure) {
+            $raised[] = [
+                'class' => $failure['class'],
+                'scope' => $failure['scope'],
+                'detail' => $failure['detail'],
+                ...$this->raisedAt[$index],
+            ];
+        }
+
+        return $raised;
     }
 
     public function warn(string $message): void
@@ -111,6 +231,35 @@ final class GateReport
         return array_values(array_unique(array_column($this->failures, 'class')));
     }
 
+    /** @param list<string> $formFailures failures invalidating this form's measurement */
+    public function canDerive(array $formFailures = []): bool
+    {
+        return $this->limits === [] && array_intersect($this->failureClasses(), [
+            FailureClass::ENV_MISMATCH, FailureClass::CORPUS_INVALID, FailureClass::RUN_FAILED,
+            FailureClass::CANDIDATE_INPUT_REFUSED, FailureClass::REFERENCE_INPUT_UNTRANSLATED,
+            ...$formFailures,
+        ]) === [];
+    }
+
+    public function canDeriveExact(): bool
+    {
+        if ($this->limits !== []) {
+            return false;
+        }
+        foreach ($this->failures as $index => $failure) {
+            if (\in_array($failure['class'], [FailureClass::ENV_MISMATCH, FailureClass::CORPUS_INVALID, FailureClass::CANDIDATE_INPUT_REFUSED, FailureClass::REFERENCE_INPUT_UNTRANSLATED], true)) {
+                return false;
+            }
+            if ($failure['class'] === FailureClass::RUN_FAILED) {
+                $source = $this->sourceFailures[$index] ?? null;
+                if ($source === null || !$this->sourceRejected($source['side'], $source['key'], $source['role'])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public function render(): string
     {
         $lines = [];
@@ -138,14 +287,16 @@ final class GateReport
             // quotes. "Under the declared maps" read as if nothing else had been
             // waived.
             self::VERDICT_GREEN => \sprintf(
-                '  GREEN — the two trees are finding-equivalent under the declared maps%s.',
-                $this->declaredDeltaCount === 0 && $this->fieldMoveCount === 0
+                '  GREEN — the two trees are finding-equivalent under the declared maps%s%s.',
+                $this->declaredDeltaCount === 0 && $this->fieldMoveCount === 0 && $this->exactSurfaceUsedCount === 0
                     ? ''
                     : \sprintf(
-                        ' and %d declared delta(s), %d licensed field move(s)',
+                        ' and %d declared delta(s), %d licensed field move(s)%s',
                         $this->declaredDeltaCount,
                         $this->fieldMoveCount,
+                        $this->exactSurfaceUsedCount === 0 ? '' : \sprintf(', %d exact surface(s)', $this->exactSurfaceUsedCount),
                     ),
+                $this->otherDeclarations(),
             ),
             self::VERDICT_PARTIAL => \sprintf(
                 "  PARTIAL — no equivalence is claimed: %s.\n"
@@ -173,10 +324,38 @@ final class GateReport
             // stays GREEN under a declared map row has to be able to assert that
             // it stayed green without a declared delta absorbing the difference.
             'declaredDeltaCount' => $this->declaredDeltaCount,
+            'declaredExactSurfaceCount' => $this->declaredExactSurfaceCount,
+            'exactSurfaceUsedCount' => $this->exactSurfaceUsedCount,
             'fieldMoveCount' => $this->fieldMoveCount,
+            ...$this->declarationCounts(),
         ];
 
         Fs::write($path, json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n");
+    }
+
+    /** @return array<string, int> every declaration count, zero where none was declared */
+    private function declarationCounts(): array
+    {
+        $counts = [];
+
+        foreach (array_keys(self::DECLARATION_COUNTS) as $reportKey) {
+            $counts[$reportKey] = $this->declarationCounts[$reportKey] ?? 0;
+        }
+
+        return $counts;
+    }
+
+    private function otherDeclarations(): string
+    {
+        $named = [];
+
+        foreach ($this->declarationCounts() as $reportKey => $count) {
+            if ($count !== 0) {
+                $named[] = $count . ' ' . self::DECLARATION_COUNTS[$reportKey];
+            }
+        }
+
+        return $named === [] ? '' : ', with ' . implode(', ', $named);
     }
 
     private static function scalar(mixed $value): string

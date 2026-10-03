@@ -28,7 +28,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
         self::assertSame('code-smell.error-suppression', $rule->getName());
-        self::assertSame('Detects usage of error suppression operator (@)', $rule->getDescription());
+        self::assertSame('Detects usage of error suppression operator (@)', $rule::getDescription());
     }
 
     #[Test]

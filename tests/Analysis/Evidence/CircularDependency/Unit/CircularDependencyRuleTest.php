@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
@@ -19,6 +20,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\FixedCycleDetector;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CircularDependencyRule::class)]
 final class CircularDependencyRuleTest extends TestCase
@@ -46,7 +48,7 @@ final class CircularDependencyRuleTest extends TestCase
     {
         $rule = $this->rule(new CircularDependencyOptions());
 
-        self::assertStringContainsString('circular', strtolower($rule->getDescription()));
+        self::assertStringContainsString('circular', strtolower($rule::getDescription()));
     }
 
     #[Test]
@@ -251,11 +253,11 @@ final class CircularDependencyRuleTest extends TestCase
     #[Test]
     public function itCreatesOptionsFromArrayWithSnakeCase(): void
     {
-        $options = CircularDependencyOptions::fromArray([
+        $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'enabled' => true,
             'max_cycle_size' => 5,
             'direct_as_error' => false,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(5, $options->maxCycleSize);
@@ -265,11 +267,11 @@ final class CircularDependencyRuleTest extends TestCase
     #[Test]
     public function itCreatesOptionsFromArrayWithCamelCase(): void
     {
-        $options = CircularDependencyOptions::fromArray([
+        $options = CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'enabled' => true,
             'maxCycleSize' => 3,
             'directAsError' => true,
-        ]);
+        ]));
 
         self::assertTrue($options->enabled);
         self::assertSame(3, $options->maxCycleSize);
@@ -277,14 +279,14 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
-    public function itGivesSnakeCasePrecedenceOverCamelCase(): void
+    public function itRefusesTwoAuthoredSpellingsOfTheCycleLimit(): void
     {
-        $options = CircularDependencyOptions::fromArray([
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage('Keys "max_cycle_size" and "maxCycleSize" in "rules.fixture" in configuration file "/project/qmx.yaml" are two spellings of one key, and a layer may set it only once. Keep one of them.');
+        CircularDependencyOptions::fromResolved(ResolvedOptionsFixture::values(CircularDependencyOptions::class, [
             'max_cycle_size' => 5,
             'maxCycleSize' => 3,
-        ]);
-
-        self::assertSame(5, $options->maxCycleSize);
+        ]));
     }
 
     #[Test]

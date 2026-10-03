@@ -105,6 +105,9 @@ final class BaselineExplainCommand extends BaselineCommand
         }
 
         $context = $this->baselineRun->measure($input, $output);
+        if ($context->result()->measured->coverage->isIntentionallyEmpty()) {
+            return self::SUCCESS;
+        }
         $baseline = $baselinePath !== null ? $this->loader->load($baselinePath) : null;
 
         // Addressability is checked here, not in readChannel(): the registry
@@ -129,9 +132,9 @@ final class BaselineExplainCommand extends BaselineCommand
             $channel,
             $baseline,
             $context->findings(),
-            $context->result()->thresholdOverrides,
+            $context->result()->directives->thresholdOverrides,
             $this->configuredThresholds->resolve(),
-            $context->result()->metrics,
+            $context->result()->measured->repository,
         );
 
         if ($explanation->status === BoundaryExplanationStatus::Unknown) {

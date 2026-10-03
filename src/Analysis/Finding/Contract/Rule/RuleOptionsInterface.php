@@ -9,11 +9,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 interface RuleOptionsInterface
 {
     /**
-     * Creates options from configuration array.
-     *
-     * @param array<string, mixed> $config
+     * Creates options from the resolved configuration document.
      */
-    public static function fromArray(array $config): self;
+    public static function fromResolved(ResolvedRuleOptionValues $config): self;
 
     /**
      * Returns whether the rule is enabled.
@@ -26,7 +24,7 @@ interface RuleOptionsInterface
     public function getSeverity(int|float $value): ?Severity;
 
     /**
-     * Declares which option keys `fromArray()` answers for at this rule's own
+     * Declares which option keys are written at this rule's own
      * depth, and which of them the class refuses or accepts in its own words.
      *
      * Static because this is class-level metadata: the reader consults it

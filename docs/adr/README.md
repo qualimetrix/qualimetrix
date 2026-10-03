@@ -115,6 +115,23 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0083 — A Number Option Declares Its Range in Its Form](0083-a-number-option-declares-its-range-in-its-form.md) — whole and fractional rule options accept 0 and above and a negative value is refused by the value; only computed-metric thresholds declare the signed form.
 - [0084 — A Project Scope Has Three States, and the Report Names It](0084-a-project-scope-has-three-states-and-the-report-names-it.md) — covered, narrowed or unknown; only a narrowed run withholds the whole-project channels, an unknown one leaves namespace values of suppressions unjudged, every format with a place for it publishes the state, and the suppression values a run skipped are named with the channels derived from them.
 - [0085 — A Copy of a Duplicate Block Is a Finding of Its Own](0085-a-copy-of-a-duplicate-block-is-a-finding-of-its-own.md) — `duplication.clone` reports one finding on each copy under an identity of its own and valued by the lines that copy spans, every copy of a block its longest copy admits by `min_lines` — so a pasted copy, however densely written, is a new finding in its own file and to GitLab/SARIF.
+- [0086 — One Configuration Document, Merged by Declared Policy](0086-one-configuration-document-merged-by-declared-policy.md) — every node of the configuration document declares its keys, form, merge policy and shorthands; one engine judges each layer before merging, `~` is "not written" and `{}` changes nothing at any depth, a refusal and a warning name the layers they are about, and the author's table of policies is generated from the declarations.
+
+- [0087 — The Finding Gate Declares Measured Changes](0087-the-finding-gate-declares-measured-changes.md) — complete physical records, one correspondence for ranking values, occurrence-preserving order and exact measured declaration forms.
+
+- [0088 — Atomic Section Declarations and a Shared Format Vocabulary](0088-atomic-section-declarations-and-format-vocabulary.md) — one key/schema declaration per provider, one registered format dictionary for both validation boundaries, and one project-scope measurement for callers.
+
+- [0091 — Declared Rule Options and Enablement](0091-declared-rule-options-and-enablement.md) — typed authored forms and one immutable execution/publication snapshot.
+
+- [0092 — Typed Document Declarations and Option Judgement](0092-typed-document-declarations-and-option-judgement.md) — typed document facts and rule option form projection.
+
+- [0093 — Measured Run Scope and Project Tree Queries](0093-measured-run-scope-and-project-tree-queries.md) — one metadata walk separates declaration absence from selector binding and retains the source snapshot.
+
+- [0094 — Analysis Results Publish Subject-Owned Values](0094-analysis-results-publish-subject-owned-values.md) — measurement and directive observations have their own owners; execution publication and late findings compose without duplicates and preserve merge order.
+
+- [0095 — Inline Directives Are Authored Sites with Bounded Reach](0095-inline-directives-are-authored-sites-with-bounded-reach.md) — Inline owns physical admission, declaration reach, shared refusals and actual suppression attribution; Reporting consumes the measured site.
+
+- [0096 — File Target Claims](0096-file-target-claims.md) — neutral filesystem judgement, held writes, publication and explicit descriptor/race limits.
 
 ## Superseded history
 

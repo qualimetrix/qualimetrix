@@ -1,14 +1,13 @@
 # Git Integration
 
-Qualimetrix integrates with Git to analyze only the code you have changed. This saves time and helps you catch issues before they reach the main branch.
+Git reporting keeps the selected analysis paths and limits published findings relative to a Git reference. It focuses attention on changed code while preserving metric context.
 
-## Why analyze only changed code?
+## Why limit the report to changes?
 
-Running a full analysis on a large codebase can take time. More importantly, a legacy project may have hundreds of existing violations that are not your responsibility right now. Git integration solves both problems:
-
-- **Speed** -- analyze only the files you touched
-- **Focus** -- see only the violations you introduced
-- **Gradual adoption** -- start using Qualimetrix without fixing every old issue first
+`--report` filters publication after analyzing the selected paths. It does not
+promise faster collection or prove that a finding was introduced by this commit.
+Changed-file findings remain alongside relevant namespace/project results and
+project-scoped configuration diagnostics.
 
 ---
 
@@ -67,11 +66,17 @@ Qualimetrix's, an occupied backup slot — it exits with code `3` and prints the
 stderr, like every other refused input. `--working-dir` works with all three commands, also
 when the binary was started by a relative path (`php vendor/bin/qmx hook:install -d ../app`).
 
+Backups keep the original hook's mode. `--restore-backup` moves the backup
+inode to the hook name and consumes the backup slot. An unreadable hook or a
+failed filesystem operation refuses with environment exit 3; it is never
+reported as a healthy hook. Targets and backups use the same judged link
+policy as file output, and writable exposure is reported once per target.
+
 ---
 
 ## PR workflow with --report
 
-The `--report` option shows only violations in files that changed compared to a Git reference:
+The `--report` option limits publication relative to a Git reference, retaining the namespace/project results and configuration diagnostics described below:
 
 ```bash
 # Compare against main branch
@@ -85,34 +90,25 @@ bin/qmx check src/ --report=git:abc1234..HEAD
 ```
 
 !!! note
-    With `--report`, Qualimetrix still analyzes the full codebase (it needs complete metrics for namespace-level rules). It only *filters the output* to show violations from changed files.
+    `--report` preserves the selected analysis paths and filters publication only. Scope is established by actual analysis, not by the Git filter.
 
 ---
 
 ## How --report works
 
-The `--report` option controls which violations are shown in the output. Qualimetrix still analyzes the full codebase (it needs complete metrics for namespace-level rules), but only reports violations from the changed files:
-
-```bash
-# Analyze everything, report only changed files
-bin/qmx check src/ --report=git:main..HEAD
-```
-
-This gives accurate metrics while only showing relevant violations.
-
-| Scenario                        | Recommendation            |
-| ------------------------------- | ------------------------- |
-| Pre-commit hook (speed matters) | `bin/qmx hook:install`    |
-| PR review (accuracy matters)    | `--report=git:main..HEAD` |
-| CI pipeline with full analysis  | `--report=git:main..HEAD` |
-
----
+A code finding with a file location is kept by that file, including duplication.
+Non-strict mode also keeps namespace findings in changed PHP namespaces and their
+ancestors, and location-free project findings when changed PHP files are nonempty.
+All nine project-scoped configuration channels are kept independently of changed
+files, including strict mode: Git filtering does not hide configuration mistakes.
+See the channel list and measured questions under
+[Project scope](output-formats.md#project-scope-in-every-format).
+Namespace queries do not read source through file links.
 
 ## --report-strict
 
-By default, when using `--report`, Qualimetrix also shows violations from parent namespaces of the changed files. This is useful because adding a class to a namespace can push it over size limits.
-
-If you want to see only violations from the changed files themselves:
+Strict mode limits code findings to changed files and removes namespace/project
+widening. Project-scoped configuration diagnostics remain:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -123,6 +119,13 @@ bin/qmx check src/ --report=git:main..HEAD --report-strict
 ## Scope syntax
 
 The `--report` option accepts scope expressions:
+
+An empty range endpoint becomes `HEAD` before ref validation: `git:..main` means
+`HEAD..main`, and `git:main..` means `main..HEAD`. Diff uses repository-root paths
+through `--no-relative`, so a subdirectory invocation does not change their meaning.
+Git 2.28 with this flag is required; flag refusal reports that requirement without
+a second version probe.
+
 
 | Expression                 | Meaning                                      |
 | -------------------------- | -------------------------------------------- |
@@ -153,7 +156,7 @@ git commit -m "refactor: simplify UserService"
 # On your feature branch, check against main
 bin/qmx check src/ --report=git:main..HEAD
 
-# Strict mode: only violations in your changed files
+# Strict mode: changed-file code findings plus project-scoped diagnostics
 bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # With JSON output for CI

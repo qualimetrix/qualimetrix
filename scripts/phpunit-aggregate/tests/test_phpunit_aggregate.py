@@ -274,6 +274,29 @@ class PhpunitAggregateTest(unittest.TestCase):
 
         self.assertEqual(listing, shard)
 
+    def test_phpunit_excludes_each_dedicated_group_and_keeps_ordinary_cases(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-group-selection-") as directory:
+            fixture = Path(directory) / "GroupSelectionTest.php"
+            fixture.write_text("""<?php
+namespace AggregateFixture;
+use PHPUnit\\Framework\\Attributes\\{Group, Test};
+use PHPUnit\\Framework\\TestCase;
+final class GroupSelectionTest extends TestCase {
+    #[Test] public function itRunsOrdinaryCases(): void {}
+    #[Test, Group('benchmark')] public function itRunsBenchmarks(): void {}
+    #[Test, Group('live-freshness')] public function itRunsLiveFreshness(): void {}
+    #[Test, Group('finding-gate-e2e')] public function itRunsGateCapture(): void {}
+}
+""", encoding="utf-8")
+            completed = subprocess.run(
+                [*runner.list_command(PROJECT_ROOT / "vendor/bin/phpunit", None), str(fixture)],
+                cwd=PROJECT_ROOT, capture_output=True, text=True, check=False, timeout=10,
+            )
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        cases = [line.strip() for line in completed.stdout.splitlines() if line.startswith(" - ")]
+        self.assertEqual(["- AggregateFixture\\GroupSelectionTest::itRunsOrdinaryCases"], cases)
+
     def test_every_command_names_the_configuration_instead_of_searching_for_it(self):
         """A local phpunit.xml outranks phpunit.xml.dist in PHPUnit's search.
 

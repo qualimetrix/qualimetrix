@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\FindingProjection;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 
 /**
@@ -37,6 +38,7 @@ final class DeclaredChannelFileScope
         return new ChannelFileScope([
             ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ProjectScopeChannels::PROJECT_SCOPED_CHANNELS,
         ]);
     }
 }

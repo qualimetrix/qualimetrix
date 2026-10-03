@@ -44,7 +44,7 @@ final class ClassRankRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Checks ClassRank (PageRank on dependency graph) to identify critical hub classes';
     }

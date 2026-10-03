@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
@@ -178,7 +177,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
         self::assertStringContainsString('"channel":"b.renamed"', $carried);
@@ -252,7 +251,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
         $rewritten = (string) file_get_contents($path);
 
         self::assertSame(
@@ -545,7 +544,7 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertStringContainsString('{"channel":"mid.two","count":1}', $carried);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
     }
@@ -573,7 +572,7 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertStringNotContainsString('App\\\\Empty', $carried);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load($path), $path, AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
     }
@@ -707,22 +706,23 @@ final class BaselineChannelRenamerTest extends TestCase
      * bytes it read, not whatever a name currently points at.
      */
     #[Test]
-    public function itRefusesToReplaceASymbolicLink(): void
+    public function itCarriesAClosedSymlinkWithoutReplacingIt(): void
     {
         $referent = $this->fixture('referent.json');
         $contents = (string) file_get_contents($referent);
+        chmod($referent, 0o600);
         $path = $this->tempDir . '/link.json';
         symlink($referent, $path);
 
-        try {
-            $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
-            self::fail('Expected the carry to be refused.');
-        } catch (BaselineConflictException $e) {
-            self::assertStringContainsString('symbolic link', $e->getMessage());
-        }
+        $report = $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
 
+        clearstatcache(true, $referent);
+        self::assertTrue($report->written);
         self::assertTrue(is_link($path));
-        self::assertSame($contents, (string) file_get_contents($referent));
+        self::assertSame($referent, readlink($path));
+        self::assertNotSame($contents, (string) file_get_contents($referent));
+        self::assertStringContainsString('"channel":"mid.renamed"', (string) file_get_contents($referent));
+        self::assertSame(0o600, fileperms($referent) & 0o7777);
     }
 
     private function map(string ...$rows): ChannelRenameMap
@@ -795,7 +795,7 @@ final class BaselineChannelRenamerTest extends TestCase
 
         (new BaselineWriter())->write(
             new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), ['src'], $entries),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
 

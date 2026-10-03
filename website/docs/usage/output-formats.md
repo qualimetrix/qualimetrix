@@ -199,7 +199,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+**Top-level keys:** `meta`, `summary`, `outOfScope`, `coverage`, `projectScope` (see [Project scope in every format](#project-scope-in-every-format)), `configurationDiagnostics`, `health`, `worstNamespaces`, `worstClasses`, `topIssues`, `violations`, `violationsMeta`, plus `violationGroups` when `--group-by` is passed — without it, the key is absent entirely, not an empty object.
+
+`configurationDiagnostics` lists the warnings about the configuration the run accepted — the same ones `check` prints on stderr — and is `[]` when there are none. Each entry is `{"message": "…", "source": [{"kind": "preset", "name": "…", "imported_by": null}, …]}`: `source` names every layer the warning is about, lowest precedence first, in the form a configuration error's `source` uses. For example, `only_rules: []` in `qmx.yaml` over a preset that filters the rules is lawful, and draws one entry naming both.
 
 `meta` identifies the tool that wrote the document: `version`, `package`, `timestamp`, and two documentation addresses — `docs`, the documentation site, and `llmsTxt`, the index written for AI agents. Every JSON report with an envelope object carries the same two addresses; see the exceptions in [Documentation addresses in JSON reports](#documentation-addresses).
 
@@ -227,7 +229,8 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         "debtPer1kLoc": 2.1
     },
     "outOfScope": null,
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
+    "configurationDiagnostics": [],
     "health": {
         "complexity": {
             "score": 78.0,
@@ -520,7 +523,7 @@ Raw metric values for every symbol (file, class, namespace, method, function, pr
             }
         }
     ],
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "summary": {
         "filesAnalyzed": 45,
         "filesSkipped": 0,
@@ -864,19 +867,19 @@ disagree.
 exclusions as prose. Global `path-suppression` and `namespace-suppression` appear
 there only as `-v` counts, not per finding; `baseline` and `git-scope`
 removals are not listed at all; and there is no text equivalent of
-`neverMatched`. `suppressed` is the only surface that publishes all seven
+`neverMatched`. `suppressed` is the only surface that publishes all eight
 mechanisms as individual findings.
 
 **The composition is a multiset, not a set of findings.** One finding can be
 removed by more than one mechanism — for example, a finding an inline
 `@qmx-ignore` would suppress may already have been removed earlier by a
-namespace exclusion. There are seven mechanisms: `suppression` (inline
+namespace exclusion. There are eight mechanisms: `suppression` (inline
 `@qmx-ignore`/`@qmx-ignore-file`/`@qmx-ignore-next-line`), `path-suppression` and
 `namespace-suppression` (global `suppress_paths`/`suppress_namespaces`),
 `baseline` (the accepted-level ceiling), `git-scope` (`--report=git:*`
 narrowing), and the two halves of the per-rule exclusion ledger configured
 under `rules: {<rule-name>: {...}}` — `rule-namespace-suppression` and
-`rule-path-suppression`. `byMechanism` counts entries per mechanism; because the
+`rule-path-suppression`, plus produced-finding `selection` removals. `byMechanism` counts entries per mechanism; because the
 same finding can appear under more than one, those counts **do not sum** to
 the number of distinct findings suppressed — the format's own `note` field
 says so.
@@ -890,9 +893,9 @@ deleted file is indistinguishable from one that was never written.
 **Top-level keys:** `meta`, `note`, `coverage` (the same object `json`
 carries, so an audit of an incomplete run says so), `projectScope` (the same
 object `json` carries, so an audit of a narrowed run names the suppression
-channels it did not judge), `mechanisms` (all seven,
+channels it did not judge), `mechanisms` (all eight,
 always present), `byMechanism` (count per mechanism, including zero),
-`suppressed` (the multiset), `neverMatched`.
+`suppressed` (the multiset), `neverMatched`, and `notRun` (producer metadata).
 
 Each `suppressed` entry carries the identity `json` publishes — `channel`
 (here the finding's code), `subject`, `occurrence`, `edge` — so it can be
@@ -919,10 +922,11 @@ a finding back, and the identity leads to the finding's own record.
         "discovered": 1204,
         "analyzed": 1204,
         "generatedExcluded": 0,
+        "excluded": 0,
         "failed": 0,
         "failures": []
     },
-    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": []},
+    "projectScope": {"state": "covered", "uncoveredAutoloadTargets": [], "unjudgedChannels": [], "unjudgedValues": [], "reasons": []},
     "mechanisms": [
         "suppression",
         "path-suppression",
@@ -930,7 +934,8 @@ a finding back, and the identity leads to the finding's own record.
         "baseline",
         "git-scope",
         "rule-namespace-suppression",
-        "rule-path-suppression"
+        "rule-path-suppression",
+        "selection"
     ],
     "byMechanism": {
         "suppression": 12,
@@ -939,7 +944,8 @@ a finding back, and the identity leads to the finding's own record.
         "baseline": 0,
         "git-scope": 0,
         "rule-namespace-suppression": 58,
-        "rule-path-suppression": 131
+        "rule-path-suppression": 131,
+        "selection": 0
     },
     "suppressed": [
         {
@@ -973,6 +979,7 @@ a finding back, and the identity leads to the finding's own record.
             "recommendation": "Constructor parameters: 8 (threshold: 8) — consider splitting responsibilities"
         }
     ],
+    "notRun": [],
     "neverMatched": [
         {
             "mechanism": "rule-path-suppression",
@@ -997,6 +1004,29 @@ bin/qmx check src/ --format=suppressed --no-progress > suppressed.json
 ```
 
 ---
+
+## Directive audit JSON
+
+`bin/qmx directives --format=json` publishes `meta`, `scope`,
+`selection`, `sweep`, `directives`, `summary` and `exit_code`.
+Each directive carries `file`, tag `line`, `form`, `target`, `effect`,
+`reason`, `masked_by`, `boundary_observable` and required `refusals`.
+Effects are `effective`, `overrun`, `inert`, `unmeasured` and `refused`;
+`reason` is for Unmeasured (disabled producer or masked threshold).
+A refused site has a nonempty `[{channel, message}]` list; every other effect
+has `[]`. Internal physical position and addressed producer are not published.
+Two identical comments on one line may therefore yield two equal public rows.
+Same-rule same-line threshold overrides still coalesce.
+
+`summary` counts all five effects, including `refused`. A refusal remains
+visible even when selection prevents its channel from moving `exit_code`.
+Incomplete analysis returns 4 before any refusal/inert decision; otherwise a
+publishable refusal or observable inert directive returns 2, and the remainder
+returns 0. See [the command reference](cli-options.md#directives).
+
+For `--format=suppressed`, Inline supplies the first directive that actually
+matched; Reporting does not infer placement again. The public `suppressor`
+is still `file:line`, so distinct physical sites on one line share that label.
 
 ## Documentation addresses in JSON reports {#documentation-addresses}
 
@@ -1023,126 +1053,133 @@ format, not the tool's) the way `metrics` keeps its own.
 
 Not every JSON output carries the addresses. `gitlab` is a bare array with no
 object to hold them; `graph:export`'s DOT output has no envelope at all; a
-refusal is always exactly `{"error": ..., "exit_code": ..., "position": ...}`,
+refusal is always exactly
+`{"error": ..., "exit_code": ..., "position": ..., "source": ...}`,
 `position` being `null` unless the refusal was raised at a place in a
-configuration document — a command-line value, a whole file and a merged value
-such as `memory_limit: 010M` carry `null` even when the message names the key.
+configuration document — a command-line value, a whole-file refusal or a
+synthetic merged-input refusal carries `null` even when the message names a key.
+A file's invalid `memory_limit`, `fail_on` or `parallel.workers` retains its
+writing layer and document position.
 When present, `position` locates the refused spot as the check found it: for a
-required key that was left out, `path` ends at that key and `written` names it;
-and the baseline
+required key that was left out, `path` ends at that key and `written` names it.
+`source` lists the configuration layers the refusal is about, lowest precedence
+first — one for a value a single layer wrote, every contributing layer for a
+constraint between keys — each as `{"kind": ..., "name": ..., "imported_by": ...}`.
+`kind` is `defaults`, `composer`, `preset`, `file`, `cli`, `baseline` or
+`resolved`; `name` is the preset name, file path or option. `resolved` is what a
+refusal names when its owner has no authored provenance; its `name` is the
+key when known, otherwise `null`. `source` is `null` for an internal error or a
+refusal raised without a configuration source. Text refusals name the same
+authored layers in their message or a separate `Source:` line, including under
+`--quiet`; a synthetic merged origin is not labeled as an author.
+The baseline
 file — written by `baseline:generate`, `update`, `cleanup`, and rewritten in
 place by `baseline:rename-channels` — is a versioned input artifact the tool
 reads back, with its own schema, not a report.
 
 ## Analysis coverage in every format
 
-Every discovered entry is classified as analyzed, intentionally excluded as
-generated, or failed. An entry is a PHP file the run measured, a PHP file it
-could not read, or a filesystem entry it never opened at all — a directory it
-may not list, a link it does not descend into. Generated exclusions are a
-complete run; any failure makes the analysis incomplete and the policy result
-non-authoritative. Zero discovered files still pass through the selected
-formatter instead of being replaced with command prose.
+An entry ends analyzed, intentionally authored/generated excluded, or failed.
+`excluded` counts named authored entries outside `discovered`. The latter sums
+`analyzed` PHP, `generatedExcluded` PHP and `failed` selected terminal entries;
+failures can name directories, links or special entries as well as PHP files.
+Removing a directory does not count its unseen PHP descendants. Exclusion retains completeness; any failure
+closes it. A complete intentionally empty set (`analyzed=0`, `failed=0`,
+`excluded + generatedExcluded > 0`) differs from a truly undiscovered empty tree.
+Incomplete exit 4 takes priority over success and policy findings. `check`
+retains the selected diagnostic report, whose policy result is not authoritative.
 
-| Format         | Coverage representation                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------- |
-| `summary`      | Human coverage sentence after the header                                                                       |
-| `text`         | Human coverage sentence after the violation summary                                                            |
-| `text-verbose` | Same projection as `text --detail`                                                                             |
-| `health`       | Human coverage sentence after the header                                                                       |
-| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
-| `metrics`      | The same top-level `coverage` object as `json`                                                                 |
-| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                       |
-| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`             |
-| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                   |
-| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                        |
-| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
-| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
+| Format         | Coverage representation                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `summary`      | Human coverage sentence after the header                                                                                   |
+| `text`         | Human coverage sentence after the violation summary                                                                        |
+| `text-verbose` | Same projection as `text --detail`                                                                                         |
+| `health`       | Human coverage sentence after the header                                                                                   |
+| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| `metrics`      | The same top-level `coverage` object as `json`                                                                             |
+| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                                   |
+| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`                         |
+| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                               |
+| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                                    |
+| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                               |
+| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
 
-For `json` and `metrics`, each `failures[]` item has `path`, `kind`, and
-`message`. Human formats distinguish no discovered files, generated-only input,
-complete analysis, and incomplete analysis.
+For `json` and `metrics`, each `failures[]` item has `path`, `kind`
+and `message`. Human formats report measured counts without claiming every named
+path was excluded when another root was merely empty.
 
-`kind` is one of five values:
+| `kind`                 | Entry                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `parse`                | PHP with a syntax error                                                      |
+| `processing`           | PHP measurement failed                                                       |
+| `unreadable-file`      | Source snapshot could not be obtained before parser invocation               |
+| `directory-symlink`    | A directory link met inside the walk and not followed                        |
+| `not-regular-file`     | A non-regular PHP entry: FIFO, socket, device or disallowed walked file link |
+| `unreadable-directory` | A directory that cannot be listed                                            |
 
-| `kind`                 | The entry                                                                                            |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `parse`                | a PHP file that could not be parsed                                                                  |
-| `processing`           | a PHP file that failed while being measured                                                          |
-| `directory-symlink`    | a symbolic link to a directory, found inside a scanned tree and not followed                         |
-| `not-regular-file`     | a `*.php` entry that is not a regular file — a FIFO, a socket, a device, a link whose target is gone |
-| `unreadable-directory` | a directory the process may not list                                                                 |
-
-The last three name an entry that never became a unit of analysis, so they carry
-the path of that entry rather than of a PHP file. Treat a value you do not
-recognize as an entry the run did not read: the list can grow, and refusing the
-whole document to learn that is a worse trade than reporting the run as
-incomplete.
+Skips name the entry that never became a unit of analysis. An unknown `kind`
+means incomplete input rather than a reason to discard the whole document.
 
 ## Project scope in every format {#project-scope-in-every-format}
 
-Some channels say that a configured value matches nothing in the project — a
-layer no class belongs to, an `exclude:` that removed no directory, a
-suppression that names nothing. A run over part of the project cannot say
-that about code it did not analyse, so those channels speak only when the
-analysed paths cover everything `composer.json` declares under `autoload`
-(and under `autoload-dev` with
-[`--include-autoload-dev`](cli-options.md#--include-autoload-dev)). The report
-says which of three states the run was in:
+Reports publish final measurement combining the captured Composer universe and
+actual entry selection. The initial target state before discovery is not the
+result: omitting an empty directory alone does not establish missing PHP.
 
-| State      | When                                                                                                                       | Whole-project channels                                                                                                               |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `covered`  | the analysed paths contain every declared autoload target                                                                  | judged                                                                                                                               |
-| `narrowed` | some declared target lies outside the analysed paths                                                                       | not judged; the report names them and the targets left out                                                                           |
-| `unknown`  | `composer.json` is missing, does not parse, or declares no production autoload outside `vendor`, `node_modules` and `.git` | judged, taking the analysed paths as the whole project — except namespace values of the suppression channels, which the report names |
+`state` remains `covered`, `narrowed`, `unknown` or `unmeasured`. This enum
+represents evidence rather than granting the same permission to every audit.
+Two measured questions have separate answers:
 
-The channels judged only on a whole-project run are
-`architecture.unreachable-layer`, `architecture.empty-template`,
-`architecture.unmatched-exclude`, `coupling.unmatched-framework-namespace`,
-`discovery.unmatched-exclude`, `suppression.unmatched-path`,
-`suppression.unmatched-namespace` and `suppression.unmatched-rule-ledger`. A
-narrowed report lists all of them, whether or not this run enabled them.
+- **Declaration absence.** Missing PHP, authored PHP removal, generated
+  exclusions and an uncertain universe withhold namespace, class or method-name
+  absence claims.
+- **Selector/path completeness.** PHP-path completeness and universe certainty
+  are checked separately. Authored/generated removal are not inputs to this
+  question. A bound selector remains `Removed` when the answer is withheld.
 
-`covered` is a statement about the autoload targets, not about every configured
-value. The suppression channels also judge each value against the place it
-names, and a value naming a place outside the analysed paths is skipped:
-`suppress_paths: [{subtree: tests/Legacy}]` on `qmx check src/`, with `tests/`
-declared only under `autoload-dev`, is not judged on that `covered` run. The
-report names every skipped value in `unjudgedValues`, and its channel in
-`unjudgedChannels`, so "judged and bound" and "not looked at" read differently.
+Six channels ask the first question:
+`architecture.empty-template`, `architecture.unmatched-exclude`,
+`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
+`coupling.unmatched-framework-namespace`, `suppression.unmatched-namespace`.
+`discovery.unmatched-exclude`, `suppression.unmatched-path` and
+`suppression.unmatched-rule-ledger` use the second; namespace values under the
+last also ask the first. There are nine channels in total.
+
+A complete named PHP roster can cover a known universe. An observed regular
+`.php` outside selection is missing PHP, even when an exclude matches it. An
+excluded directory outside selection hides unseen descendants: named
+`incomplete-universe` evidence withholds both questions without listing or PHP
+search there. Assets and special entries are not inferred missing PHP. The
+whole root can establish completeness without usable declared autoload code;
+an arbitrary subset cannot.
+
+| Format                                      | Project scope representation                                    |
+| ------------------------------------------- | --------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document               |
+| `sarif`                                     | Invocation notification with descriptor `QMX-RUN-PROJECT-SCOPE` |
+| `github`                                    | `::notice title=run.project-scope::` line                       |
+| `html`                                      | Banner above the report                                         |
+| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line                                        |
+| `gitlab`, `checkstyle`                      | No scope entry: every entry is a finding to their consumers     |
+
+The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
+`unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Each skipped value has
+`{channel, option, pattern}`. `unjudgedChannels` contains only channels with no
+judged value; a partially judged channel may be absent while its skipped values
+remain with their `channel`. An empty channel list therefore does not prove
+that every value was judged. Reasons retain `kind` and named cause fields,
+including removals and uncertain locations. Auxiliary Composer issues explain
+ancestry limits without closing main-project coverage. Accepted PSR-4 facts still
+place namespace values independently of the enum.
 See [Suppression rules](../rules/suppression.md#scope-and-severity).
 
-On an `unknown` project, run the check over all of its code: a narrower run
-there is judged as if it were the whole project, and a layer whose classes lie
-outside the paths you named is reported as matching nothing. Namespace values
-of the global `suppress_namespaces` and of per-rule `suppress_namespaces` and
-`suppress_namespace_channels` are the exception: with no declared autoload a namespace
-has no location, so they are not judged on any run of such a project, and the
-report lists each such value in `unjudgedValues` and its channel —
-`suppression.unmatched-namespace` or `suppression.unmatched-rule-ledger` — in
-`unjudgedChannels`.
 
-| Format                                      | Project scope representation                                                                                                       |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document: `state`, `uncoveredAutoloadTargets[]`, `unjudgedChannels[]`, `unjudgedValues[]` |
-| `sarif`                                     | A `note` in `runs[0].invocations[0].toolExecutionNotifications[]` with descriptor `QMX-RUN-PROJECT-SCOPE`                          |
-| `github`                                    | A `::notice title=run.project-scope::` line                                                                                        |
-| `html`                                      | A banner above the report                                                                                                          |
-| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line beside the coverage sentence                                                                              |
-| `gitlab`, `checkstyle`                      | Nothing: their consumers count every entry as a finding, and narrowing the run is not a defect of it                               |
-
-`projectScope` has the same keys in every state. `uncoveredAutoloadTargets`
-is empty unless the state is `narrowed`. `unjudgedValues` lists every
-configured suppression value a `covered` or `unknown` run skipped, each as
-`{"option", "pattern"}` — `option` is `suppress_paths`, `suppress_namespaces`
-or `rules.<rule>.<option>`, the key to look under, and `pattern` the authored
-selector (`subtree:tests/Legacy`). `unjudgedChannels` names every
-whole-project channel for `narrowed`, where no value was judged and
-`unjudgedValues` is empty, and otherwise the channels of the skipped values.
-Every other format adds its entry for `narrowed`, for `unknown`, and for a
-`covered` run that skipped a value. The console also prints a warning on
-stderr naming the autoload targets a narrowed run left out.
-
+For a selector hidden by another source, the skipped value keeps its three keys.
+An Exclude reason links `selector` to `coveredBy`, names only hider `sources`
+absent from that selector's origins, and supplies `rerun` advice. This explains
+withholding without turning it into a finding or proof of remediation.
+Unavailable search metadata inside an actual removed run entry also withholds
+only declaration absence, with the actual `unlistable` evidence retained.
 ## Comparison table
 
 | Format         | Readable    | Machine   | Grouping                     | CI Integration             |
@@ -1180,3 +1217,22 @@ A symbolic link **named as a scanned path** is the one exception: `qmx check src
 
 !!! note
     All `check` diagnostics outside the selected report payload (configuration notices and errors, deprecation messages, logging, and output-file notices) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.
+
+## Selection removals and skipped producers
+
+`selection` is the eighth suppression mechanism. It contains actual produced
+findings removed by final publication selection. `byMechanism.selection` counts
+only these multiset entries, never the producers that did not run.
+
+`notRun` is always an array. Each entry has `producer`, `reason` (`disabled` or
+`filtered`), the decisive `statement`, and its `layer` description. A skipped
+producer contributes no fabricated finding or suppression count. A disabled
+channel may still have a live sibling, so producer notRun and channel removal
+are separate outcomes. The standard suppressed identity and multiset rules stay
+unchanged; drill-down and formatter truncation remain presentation, not selection.
+
+Directive JSON keeps `selection.only` and `selection.disabled` as string lists.
+Only the effective filter and all tied decisive disabling texts are published;
+repeated cells are deduplicated and lower disables canceled by a later enable
+are omitted. qmx rules prints actual selection writer origins/layer indices on
+its separate human listing; these do not silently change the directive JSON shape.

@@ -344,6 +344,53 @@ final class UnmatchedDiscoveryExcludeIntegrationTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itReportsADeadRegexWhileWithholdingNamespaceAbsenceInOneRun(): void
+    {
+        $tester = $this->check("exclude:\n  - {subtree: src/Legacy}\n  - {regex: NoSuchPath}\nsuppress_namespaces:\n  - {subtree: Sample\\Gone}\n");
+        $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+
+        $findings = $this->findingsOnChannel($tester);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('NoSuchPath', $findings[0]['message']);
+        self::assertContains('suppression.unmatched-namespace', $payload['projectScope']['unjudgedChannels']);
+        self::assertContains(
+            ['channel' => 'suppression.unmatched-namespace', 'option' => 'suppress_namespaces', 'pattern' => 'subtree:Sample\\Gone'],
+            $payload['projectScope']['unjudgedValues'],
+        );
+    }
+
+    #[Test]
+    public function itExplainsTheForeignExcludeThatWithheldASelector(): void
+    {
+        $yaml = "exclude:\n  - {regex: Legacy}\n";
+        $options = ['--exclude' => ['subtree:src/Legacy']];
+        $tester = $this->check($yaml, options: $options);
+        $payload = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($payload);
+
+        self::assertContains(
+            ['channel' => 'discovery.unmatched-exclude', 'option' => 'exclude', 'pattern' => 'regex:Legacy'],
+            $payload['projectScope']['unjudgedValues'],
+        );
+        self::assertContains(
+            [
+                'kind' => 'exclude',
+                'selector' => 'regex:Legacy',
+                'coveredBy' => 'subtree:src/Legacy',
+                'sources' => ['option --exclude'],
+                'rerun' => 'Rerun without the exclude from option --exclude to judge this selector.',
+            ],
+            $payload['projectScope']['reasons'],
+        );
+
+        $human = $this->check($yaml, options: [...$options, '--format' => 'text']);
+        self::assertStringContainsString('subtree:src/Legacy', $human->getDisplay());
+        self::assertStringContainsString('option --exclude', $human->getDisplay());
+        self::assertStringContainsString('Rerun without the exclude', $human->getDisplay());
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

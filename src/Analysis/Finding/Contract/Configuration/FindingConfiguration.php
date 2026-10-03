@@ -4,37 +4,52 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Configuration;
 
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ConfigurationDiagnostic;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 
 final readonly class FindingConfiguration
 {
     public function __construct(
-        public RuleOptionsDocument $ruleOptions,
-        public FindingCliOverrides $cliOverrides,
-        public RuleSelection $selection,
+        public ResolvedDocument $document,
+        public ?ResolvedRuleOptions $resolvedOptions = null,
+        public ?RuleEnablement $enablement = null,
+        public ?ChannelUniverseInterface $channels = null,
+        /** @var list<ConfigurationDiagnostic> */
+        public array $diagnostics = [],
     ) {}
 
-    /** No rule options, no command-line overrides, every rule selected. */
+    public static function fromDocument(ConfigurationDocument $configuration): self
+    {
+        return new self($configuration->resolved());
+    }
+
+    public function withResolvedOptions(ResolvedRuleOptions $options): self
+    {
+        return new self($this->document, $options, $this->enablement, $this->channels, $this->diagnostics);
+    }
+
+    public function withChannelUniverse(ChannelUniverseInterface $channels): self
+    {
+        return new self($this->document, $this->resolvedOptions, $this->enablement, $channels, $this->diagnostics);
+    }
+
+    public function withEnablement(RuleEnablement $enablement): self
+    {
+        return new self($this->document, $this->resolvedOptions, $enablement, $this->channels, $this->diagnostics);
+    }
+
+    /** @param list<ConfigurationDiagnostic> $diagnostics */
+    public function withDiagnostics(array $diagnostics): self
+    {
+        return new self($this->document, $this->resolvedOptions, $this->enablement, $this->channels, $diagnostics);
+    }
+
     public static function none(): self
     {
-        return new self(new RuleOptionsDocument(), new FindingCliOverrides(), new RuleSelection());
-    }
-
-    /** @param array<string, mixed> $rules */
-    public function withRuleOptions(array $rules): self
-    {
-        return new self(new RuleOptionsDocument($rules), $this->cliOverrides, $this->selection);
-    }
-
-    /** @param array<string, array<string, mixed>> $options */
-    public function withCliOverrides(array $options): self
-    {
-        return new self($this->ruleOptions, new FindingCliOverrides($options), $this->selection);
-    }
-
-    public function withSelection(RuleSelection $selection): self
-    {
-        return new self($this->ruleOptions, $this->cliOverrides, $selection);
+        return new self(ResolvedDocument::empty());
     }
 }

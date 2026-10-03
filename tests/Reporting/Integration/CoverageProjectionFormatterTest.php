@@ -26,6 +26,7 @@ final class CoverageProjectionFormatterTest extends TestCase
             'empty' => new ReportCoverage(0, 0, 0, 0),
             'complete' => new ReportCoverage(1, 1, 0, 0),
             'generated-only' => new ReportCoverage(1, 0, 1, 0),
+            'named-excluded' => new ReportCoverage(0, 0, 0, 0, excluded: 1),
             'partial-failure' => self::failedCoverage(2, 1),
             'all-failed' => self::failedCoverage(1, 0),
         ];
@@ -62,12 +63,49 @@ final class CoverageProjectionFormatterTest extends TestCase
             'github' => self::assertGithubCoverage($output, $coverage),
             'html' => self::assertHtmlCoverage($output, $coverage),
             default => self::assertStringContainsString(
-                $coverage->discovered === 0
+                $coverage->excluded > 0
+                    ? 'Nothing analysed: 1 named path(s) left out by exclude patterns.'
+                    : ($coverage->discovered === 0
                     ? 'No PHP files were discovered.'
-                    : 'Analysis ' . ($coverage->isComplete() ? 'complete' : 'incomplete'),
+                    : 'Analysis ' . ($coverage->isComplete() ? 'complete' : 'incomplete')),
                 $output,
             ),
         };
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function entryFailureCases(): iterable
+    {
+        foreach (['text', 'summary', 'health', 'html'] as $format) {
+            foreach (['directory-symlink', 'unreadable-directory', 'not-regular-file'] as $kind) {
+                yield $format . '-' . $kind => [$format, $kind];
+            }
+        }
+    }
+
+    #[Test]
+    #[DataProvider('entryFailureCases')]
+    public function itNamesTheFailedEntryKindInEveryHumanFormat(string $format, string $kind): void
+    {
+        $coverage = new ReportCoverage(2, 1, 0, 1, [new CoverageFailure('src/Entry', $kind, 'Entry unavailable')]);
+        $container = (new ContainerFactory())->create();
+        /** @var FormatterRegistryInterface $registry */
+        $registry = $container->get(FormatterRegistryInterface::class);
+        $output = $registry->get($format)->format(
+            ReportBuilder::create()
+                ->filesAnalyzed(1)
+                ->filesSkipped(1)
+                ->coverage($coverage)
+                ->suppressionComposition(new SuppressionComposition([]))
+                ->build(),
+            new FormatterContext(useColor: false),
+        );
+
+        self::assertStringContainsString(
+            'Analysis incomplete: 1 of 2 discovered entries failed (1 ' . $kind . '); policy results are not authoritative.',
+            $output,
+        );
+        self::assertStringNotContainsString('discovered PHP file(s) failed', $output);
     }
 
     private static function failedCoverage(int $discovered, int $analyzed): ReportCoverage

@@ -98,9 +98,9 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      * An "emitting name" is a real rule's `NAME` constant, one of the five
      * `*_DIAGNOSTIC_NAME` constants {@see LayerDeclarationValidator} emits
      * under, {@see LayerViolationRule::UNMATCHED_EXCLUDE_NAME}, one of the
-     * three {@see UnboundSuppressionOptions} channel constants, or one of
-     * the four inline-directive diagnostic names — the layer policy, the
-     * suppression producer and the directive rule all emit under names other
+     * three {@see UnboundSuppressionOptions} channel constants, the LCOM
+     * method-exclusion diagnostic, or one of the four inline-directive
+     * diagnostic names — these producers all emit under names other
      * than their own `NAME`. A
      * declared name that is neither addresses a channel no producer can ever
      * emit, and the drift guard above cannot see it: that one only compares
@@ -291,6 +291,8 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;
         $names[] = UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER;
 
+        $names[] = 'cohesion.unmatched-exclude-method';
+
         $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
         $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;
         $names[] = InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME;
@@ -333,15 +335,27 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
             $parts = preg_split('/\s+/', $line);
             self::assertNotFalse($parts, \sprintf('Malformed fixture line: "%s".', $line));
-            self::assertContains(\count($parts), [3, 4, 5], \sprintf('Malformed fixture line: "%s".', $line));
+            self::assertContains(\count($parts), [3, 4, 5, 6, 7], \sprintf('Malformed fixture line: "%s".', $line));
 
             $channelKey = $parts[0];
             $directionSpec = $parts[1];
             $optional = \array_slice($parts, 3);
             $judgedSpec = null;
             $acceptabilitySpec = null;
+            $noWarningBoundary = false;
+            $followsAddressedRule = false;
 
             foreach ($optional as $token) {
+                if ($token === 'no-warning-boundary') {
+                    self::assertFalse($noWarningBoundary, 'Duplicate no-warning-boundary token for ' . $channelKey);
+                    $noWarningBoundary = true;
+                    continue;
+                }
+                if ($token === 'follows-addressed-rule') {
+                    self::assertFalse($followsAddressedRule, 'Duplicate follows-addressed-rule token for ' . $channelKey);
+                    $followsAddressedRule = true;
+                    continue;
+                }
                 if (str_starts_with($token, 'judges:')) {
                     $judgedSpec = $token;
 
@@ -351,13 +365,20 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 $acceptabilitySpec = $token;
             }
 
-            $declarations[$channelKey] = self::parseDirectionSpec(
+            $declaration = self::parseDirectionSpec(
                 $directionSpec,
                 $channelKey,
                 self::parseAcceptabilitySpec($acceptabilitySpec, $channelKey),
                 self::parseLevelsSpec($parts[2], $channelKey),
                 self::parseJudgedSpec($judgedSpec, $channelKey),
             );
+            if ($noWarningBoundary) {
+                $declaration = $declaration->withoutConfiguredWarningBoundary();
+            }
+            if ($followsAddressedRule) {
+                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::FollowsAddressedRule);
+            }
+            $declarations[$channelKey] = $declaration;
         }
 
         return $declarations;

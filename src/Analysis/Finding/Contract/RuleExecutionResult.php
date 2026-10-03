@@ -17,20 +17,10 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * from one instance is the case this matters for). A finding either of those
  * two removed is absent from `$published` but still present in `$produced`.
  *
- * **Only the ledger is accounted for in `$exclusions`; channel selection is
- * deliberately not.** A suppression is a claim about the code — "these
- * findings are known" — that can go stale when the code moves, which is what
- * `--format=suppressed` exists to show. A selection is a claim about the
- * invocation — "do not report this channel or level" — and has no premise
- * about the code to go stale. At the user's level it is the same request as
- * switching the level off in the rule's options (`class: {enabled: false}`)
- * or disabling the producer outright, neither of which produces anything to
- * account for; booking only the selection-removed findings would make the
- * account depend on whether the host rule happened to run. A reader who needs
- * them has them: `$produced` minus `$published` minus the ledger's
- * `$excludedFindings` (when captured) is exactly what selection removed, and
- * the selection itself is the run's `--only-rule`/`--disable-rule` and
- * `only_rules`/`disabled_rules`.
+ * The ledger remains in `$exclusions`; `$selection` records findings removed
+ * by publication with their deciding statement, and producer slots that did
+ * not run. Selection is a claim about this invocation rather than about code
+ * accepted as debt, so it has no stale-suppression count.
  *
  * A **producer disabled entirely** is a third, earlier kind of selection that
  * neither collection ever sees: `activeRuleInstances()` drops such a rule
@@ -72,6 +62,7 @@ final readonly class RuleExecutionResult
         public array $published,
         public RuleExclusionStats $exclusions,
         public LevelActivity $levelActivity,
+        public SelectionTrace $selection = new SelectionTrace(),
     ) {}
 
     /**
@@ -99,6 +90,7 @@ final readonly class RuleExecutionResult
                 excludedFindings: [...$this->exclusions->excludedFindings, ...$other->exclusions->excludedFindings],
                 attributions: [...$this->exclusions->attributions, ...$other->exclusions->attributions],
             ),
+            selection: $this->selection->merge($other->selection),
         );
     }
 

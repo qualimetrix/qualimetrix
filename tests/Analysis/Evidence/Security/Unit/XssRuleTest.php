@@ -29,7 +29,7 @@ final class XssRuleTest extends TestCase
         $rule = new XssRule(new SecurityPatternOptions());
 
         self::assertSame('security.xss', $rule->getName());
-        self::assertSame('Detects potential XSS vulnerabilities', $rule->getDescription());
+        self::assertSame('Detects potential XSS vulnerabilities', $rule::getDescription());
     }
 
     #[Test]

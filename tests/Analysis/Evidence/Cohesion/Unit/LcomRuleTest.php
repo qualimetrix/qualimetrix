@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Cohesion\Unit;
 
 use InvalidArgumentException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomExcludedMethods;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -20,8 +23,10 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(LcomRule::class)]
+#[CoversClass(LcomExcludedMethods::class)]
 #[CoversClass(LcomOptions::class)]
 final class LcomRuleTest extends TestCase
 {
@@ -40,7 +45,7 @@ final class LcomRuleTest extends TestCase
 
         self::assertSame(
             'Checks Lack of Cohesion of Methods (high values indicate class should be split)',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -235,11 +240,11 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsOptionsFromArray(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'enabled' => false,
             'warning' => 3,
             'error' => 5,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(3, $options->warning);
@@ -247,11 +252,10 @@ final class LcomRuleTest extends TestCase
     }
 
     #[Test]
-    public function itDisablesOptionsWhenLoadedFromEmptyArray(): void
+    public function itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement(): void
     {
-        $options = LcomOptions::fromArray([]);
-
-        self::assertFalse($options->enabled);
+        self::assertEquals(new LcomOptions(), LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [])));
+        self::assertFalse(LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, ['enabled' => false]))->isEnabled());
     }
 
     #[Test]
@@ -333,9 +337,9 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeMethodsFromArray(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'exclude_methods' => ['getName', 'getDescription'],
-        ]);
+        ]));
 
         self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
     }
@@ -343,30 +347,36 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itLoadsExcludeMethodsFromArraySnakeCase(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'excludeMethods' => ['getName', 'getDescription'],
-        ]);
+        ]));
 
         self::assertSame(['getName', 'getDescription'], $options->excludeMethods);
     }
 
     #[Test]
-    public function itLoadsExcludeMethodsFromArrayAsString(): void
+    public function itRefusesScalarExcludeMethods(): void
     {
-        $options = LcomOptions::fromArray([
-            'exclude_methods' => 'getName',
-        ]);
-
-        self::assertSame(['getName'], $options->excludeMethods);
+        try {
+            LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
+                'exclude_methods' => 'getName',
+            ]));
+            self::fail('A scalar method exclusion must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(
+                '"rules.fixture.exclude_methods" in configuration file "/project/qmx.yaml" must be a list, got string.',
+                $refusal->getMessage(),
+            );
+        }
     }
 
     #[Test]
     public function itSetsExcludeMethodsToNullWhenNotProvided(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'warning' => 3,
             'error' => 5,
-        ]);
+        ]));
 
         self::assertNull($options->excludeMethods);
     }
@@ -374,9 +384,9 @@ final class LcomRuleTest extends TestCase
     #[Test]
     public function itPreservesExcludeMethodsOnOverride(): void
     {
-        $options = LcomOptions::fromArray([
+        $options = LcomOptions::fromResolved(ResolvedOptionsFixture::values(LcomOptions::class, [
             'exclude_methods' => ['getName', 'getDescription'],
-        ]);
+        ]));
 
         $overridden = $options->withOverride(warning: 4, error: 6);
 
@@ -407,6 +417,59 @@ final class LcomRuleTest extends TestCase
             'declaration:class:App\\Service\\Twin@src/A.php',
             'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
+    }
+
+    #[Test]
+    public function itReportsDistinctUnmatchedExclusionsOnlyForWholeProjectMethodFacts(): void
+    {
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([]);
+        $method = self::subjectInfo(SymbolPath::forMethod('App', 'Worker', 'bridge'), RelativePath::fromString('src/Worker.php'), 10);
+        $function = self::subjectInfo(SymbolPath::forGlobalFunction('App', 'helper'), RelativePath::fromString('src/functions.php'), 10);
+        $hookSubject = self::subjectInfo(SymbolPath::forMethod('App', 'Worker', 'hookOnly'), RelativePath::fromString('src/Worker.php'), 20);
+        $hook = new \Qualimetrix\Core\Symbol\SymbolInfo(
+            $hookSubject->subject ?? throw new InvalidArgumentException('The hook fixture requires an exact subject.'),
+            $hookSubject->file,
+            $hookSubject->line,
+            \Qualimetrix\Core\Symbol\CallableKind::PropertyHook,
+        );
+        $repository->method('allCallables')->willReturn([$method, $function, $hook]);
+        $rule = new LcomRule(new LcomOptions(excludeMethods: ['BRIDGE', 'brigde', 'BRIGDE', 'helper', 'hookOnly']));
+
+        $findings = $rule->analyze(new AnalysisContext($repository));
+        self::assertCount(3, $findings);
+        self::assertSame('cohesion.unmatched-exclude-method', $findings[0]->ruleName);
+        self::assertSame('cohesion.unmatched-exclude-method', $findings[0]->code);
+        self::assertSame('The exclude_methods name "brigde" matched no method declared in this project.', $findings[0]->message);
+        self::assertSame(Severity::Warning, $findings[0]->severity);
+        self::assertSame(1, $findings[0]->metricValue);
+        self::assertSame('project:', $findings[0]->subject->toCanonical());
+        self::assertSame(SymbolPath::forProject()->toCanonical(), $findings[0]->symbolPath->toCanonical());
+        self::assertTrue($findings[0]->location->isNone());
+        self::assertNotNull($findings[0]->occurrenceKey);
+        self::assertNotNull($findings[1]->occurrenceKey);
+        self::assertSame(
+            \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('unmatched-exclude-method', ['method' => 'brigde'])->value,
+            $findings[0]->occurrenceKey->value,
+        );
+        self::assertStringContainsString('"helper"', $findings[1]->message);
+        self::assertStringContainsString('"hookOnly"', $findings[2]->message);
+        self::assertNotSame($findings[0]->occurrenceKey->value, $findings[1]->occurrenceKey->value);
+        $uppercase = (new LcomRule(new LcomOptions(excludeMethods: ['BRIGDE'])))
+            ->analyze(new AnalysisContext($repository));
+        self::assertNotNull($uppercase[0]->occurrenceKey);
+        self::assertSame($findings[0]->occurrenceKey->value, $uppercase[0]->occurrenceKey->value);
+        self::assertStringContainsString('"BRIGDE"', $uppercase[0]->message);
+        self::assertSame([], $rule->analyze(new AnalysisContext($repository, projectScope: new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement([\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Paths]))));
+        self::assertSame([], (new LcomRule(new LcomOptions(enabled: false, excludeMethods: ['missing'])))
+            ->analyze(new AnalysisContext($repository)));
+
+        $declaration = LcomRule::channelDeclarations()['cohesion.unmatched-exclude-method'];
+        self::assertSame([\Qualimetrix\Core\Symbol\SymbolLevel::Project], $declaration->levels);
+        self::assertSame(\Qualimetrix\Core\Observation\WorseDirection::Higher, $declaration->direction);
+        self::assertNull($declaration->judges);
+        self::assertFalse($declaration->usesProducerWarningBoundary);
+        self::assertTrue(LcomRule::channelDeclarations()[LcomRule::NAME]->usesProducerWarningBoundary);
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

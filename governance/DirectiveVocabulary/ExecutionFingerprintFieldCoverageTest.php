@@ -30,7 +30,7 @@ use ReflectionParameter;
  * that tells an author to delete an annotation.
  *
  * Two guards, because either alone is satisfiable by a lie. The reflective one
- * proves the two declared lists cover `Finding` — a field added with a default
+ * proves the two declared lists cover every published field of `Finding` — a field added with a default
  * compiles everywhere and would otherwise slip in silently. The behavioural one
  * proves the lists are not decoration: each field, moved on its own, has to
  * move the comparison, and has to move it into the half its list claims.
@@ -50,14 +50,26 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
         );
         sort($carried);
 
-        $keyed = [...ExecutionFingerprint::IDENTITY_FIELDS, ...ExecutionFingerprint::BOUNDARY_FIELDS];
+        $keyed = [...ExecutionFingerprint::IDENTITY_FIELDS, ...ExecutionFingerprint::BOUNDARY_FIELDS, 'addressedProducer'];
         sort($keyed);
 
         self::assertSame(
             $carried,
             $keyed,
-            'Every field of a finding is either part of what it is or part of the boundary it names.',
+            'Every finding field is identity, boundary or the internal addressed producer.',
         );
+    }
+
+    #[Test]
+    public function itIgnoresTheInternalAddressedProducer(): void
+    {
+        $original = self::finding();
+        $before = ExecutionFingerprint::of([self::with($original, addressedProducer: 'complexity.ccn')]);
+        $after = ExecutionFingerprint::of([self::with($original, addressedProducer: 'cohesion.lcom')]);
+
+        self::assertSame(DirectiveEffect::Inert, $before->compareTo($after));
+        self::assertTrue($before->reproduces($after));
+        self::assertSame([], $before->disagreementWith($after));
     }
 
     /**
@@ -183,6 +195,7 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
         ?DependencyType $dependencyType = null,
         ?AcceptedLevel $acceptedLevel = null,
         ?OccurrenceKey $occurrenceKey = null,
+        ?string $addressedProducer = null,
     ): Finding {
         return new Finding(
             location: $location ?? $finding->location,
@@ -200,6 +213,7 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
             dependencyType: $dependencyType ?? $finding->dependencyType,
             acceptedLevel: $acceptedLevel ?? $finding->acceptedLevel,
             occurrenceKey: $occurrenceKey ?? $finding->occurrenceKey,
+            addressedProducer: $addressedProducer ?? $finding->addressedProducer,
         );
     }
 

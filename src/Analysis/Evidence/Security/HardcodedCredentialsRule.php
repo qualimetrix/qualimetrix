@@ -43,7 +43,7 @@ final class HardcodedCredentialsRule extends AbstractRule
         return self::NAME;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return 'Detects hardcoded credentials in code';
     }

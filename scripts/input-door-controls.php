@@ -630,7 +630,7 @@ foreach ($cases as $case) {
                 'require ' . var_export($root . '/vendor/autoload.php', true) . ';'
                 . '$entries = [];'
                 . 'foreach (Qualimetrix\Analysis\Configuration\ConfigSchema::ENTRIES as [$p]) { $entries[$p] = true; }'
-                . 'if (!isset($entries["excludeHealth"], $entries["computedMetrics"])) {'
+                . 'if (!isset($entries["exclude_health"], $entries["computed_metrics"])) {'
                 . ' fwrite(STDERR, "configuration doors lost: DOCUMENT_ROOTS must be read alongside ENTRIES\n"); exit(1); }',
             ),
         );

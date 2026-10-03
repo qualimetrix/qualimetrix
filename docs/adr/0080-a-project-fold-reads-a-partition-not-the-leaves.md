@@ -128,9 +128,18 @@ the run, a sub-namespace's among them, is judged on fewer coupled namespaces
 than a whole run finds, and can drop below its threshold. Measured on a
 namespace of three classes coupled to thirteen namespaces, plus one class in a
 sub-namespace extending one of them: 14 on the whole run, a finding at the
-default threshold; 13 with the sub-namespace left out, none. The run says so:
-a run whose paths leave production autoload targets out publishes
-`projectScope.state: narrowed` (ADR 0084).
+default threshold; 13 with the sub-namespace left out, none.
+
+The run publishes the measured scope of these values. After ADR 0093, the final
+PHP path denominator determines `projectScope.state`: an observed PHP file
+outside the selected paths makes it `narrowed`, while an omitted empty target
+directory alone does not. Authored exclusions that remove regular PHP or leave
+search metadata unavailable, and generated-file removal, carry separate
+`projectScope.reasons`. Declaration-absence claims use the measured namespace
+judgement; they cannot be inferred from the report state alone. Thus a whole
+path selection with excluded or generated PHP can retain `covered` while naming
+why declaration-absence checks were withheld. This changes the scope explanation,
+not the own/subtree coupling formulas or the historical measurements above.
 
 The rejected alternatives were to stop treating as a parent a namespace whose
 children are all below `min_class_count`, which still left the population a

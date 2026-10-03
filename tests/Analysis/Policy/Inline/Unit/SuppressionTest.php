@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Unit;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Core\Path\RelativePath;
@@ -20,6 +23,38 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class SuppressionTest extends TestCase
 {
     #[Test]
+    public function itUsesBytePositionInTheAuthoredSiteIdentity(): void
+    {
+        $first = new Suppression(
+            'complexity.ccn',
+            'reason',
+            10,
+            SuppressionType::Symbol,
+            20,
+            new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
+        );
+        $second = new Suppression(
+            'complexity.ccn',
+            'reason',
+            10,
+            SuppressionType::Symbol,
+            80,
+            new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
+        );
+        $fanout = new Suppression(
+            'complexity.ccn',
+            'reason',
+            10,
+            SuppressionType::Symbol,
+            20,
+            new DeclarationBinding($this->subject(), ControlScope::Class_, DeclarationReach::whole(null, 'other')),
+        );
+
+        self::assertNotSame($first->authoredSite(), $second->authoredSite());
+        self::assertSame($first->authoredSite(), $fanout->authoredSite());
+    }
+
+    #[Test]
     public function itMatchesExactRule(): void
     {
         $suppression = new Suppression(
@@ -27,7 +62,8 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         self::assertTrue($suppression->matches('complexity.ccn', SymbolLevel::Class_));
@@ -42,7 +78,8 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         // `complexity` addresses the channel called `complexity` — there is
@@ -61,7 +98,8 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         self::assertTrue($suppression->matches('complexity.cyclomatic.callable', SymbolLevel::Class_));
@@ -83,7 +121,8 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         self::assertTrue($suppression->matches('architecture.coverage-gap', SymbolLevel::Class_));
@@ -98,6 +137,7 @@ final class SuppressionTest extends TestCase
             reason: 'Ignore all',
             line: 10,
             type: SuppressionType::File,
+            position: 0,
         );
 
         self::assertTrue($suppression->matches('complexity.ccn', SymbolLevel::Class_));
@@ -113,12 +153,45 @@ final class SuppressionTest extends TestCase
             reason: 'Complex business logic',
             line: 42,
             type: SuppressionType::NextLine,
+            position: 0,
+            silencedLine: 42 + 1,
         );
 
         self::assertSame('complexity.ccn', $suppression->rule);
         self::assertSame('Complex business logic', $suppression->reason);
         self::assertSame(42, $suppression->line);
         self::assertSame(SuppressionType::NextLine, $suppression->type);
+        self::assertSame(0, $suppression->position);
+        self::assertSame(43, $suppression->silencedLine);
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidCoordinates')]
+    public function itRejectsInvalidCoordinateCombinations(
+        int $position,
+        SuppressionType $type,
+        ?int $silencedLine,
+        string $message,
+    ): void {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage($message);
+
+        new Suppression(
+            rule: 'complexity.ccn',
+            reason: null,
+            line: 42,
+            type: $type,
+            position: $position,
+            silencedLine: $silencedLine,
+        );
+    }
+
+    /** @return iterable<string, array{int, SuppressionType, ?int, string}> */
+    public static function provideInvalidCoordinates(): iterable
+    {
+        yield 'negative position' => [-1, SuppressionType::File, null, 'A suppression position must be non-negative'];
+        yield 'next-line without silenced line' => [0, SuppressionType::NextLine, null, 'A carried next-line suppression requires its silenced line'];
+        yield 'file with silenced line' => [0, SuppressionType::File, 43, 'no other suppression may carry one'];
     }
 
     #[Test]
@@ -129,7 +202,8 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 42,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         self::assertNull($suppression->reason);
@@ -143,7 +217,8 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,
-            binding: new DeclarationBinding($this->subject(), ControlScope::Callable),
+            position: 0,
+            binding: new DeclarationBinding($this->subject(), ControlScope::Callable, DeclarationReach::whole(null, 'test')),
         );
 
         // More specific pattern does NOT match less specific subject

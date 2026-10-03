@@ -1,0 +1,5 @@
+{
+    "name": "finding-gate-corpus/scoped-layers-unknown",
+    "description": "No readable production autoload: the explicitly named path defines the project scope.",
+    "type": "project"
+}

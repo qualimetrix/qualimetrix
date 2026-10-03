@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
@@ -34,7 +35,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $factory = self::createStub(LoggerFactoryInterface::class);
         $factory->method('create')->willReturn($expectedLogger);
 
-        $logger = (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream()))->configure($input, $output);
+        $logger = (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream(), new RunTargets($factory)))->configure($input, $output);
 
         self::assertSame($expectedLogger, $logger);
         self::assertSame($logger, $holder->getLogger());
@@ -62,7 +63,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
             ->with(self::anything(), null, 'warning')
             ->willReturn(new NullLogger());
 
-        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream()))
+        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory)))
             ->configure(self::logLevelInput('WARNING'), self::createStub(OutputInterface::class));
     }
 
@@ -76,7 +77,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
             ->with(self::anything(), null, null)
             ->willReturn(new NullLogger());
 
-        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream()))
+        (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory)))
             ->configure(
                 new ArrayInput([], new InputDefinition([new InputOption('log-level', null, InputOption::VALUE_REQUIRED)])),
                 self::createStub(OutputInterface::class),
@@ -96,7 +97,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         );
 
         try {
-            (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream()))
+            (new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory)))
                 ->configure(self::logLevelInput('info'), self::createStub(OutputInterface::class));
             self::fail('An unwritable log file was accepted.');
         } catch (ConfigurationRefusal $refusal) {
@@ -104,7 +105,8 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
                 'Option --log-file names "/ro/qmx.log", which cannot be opened for appending: Permission denied.',
                 $refusal->summary(),
             );
-            self::assertSame('--log-file', $refusal->origin()->locator());
+            self::assertCount(1, $refusal->sources());
+            self::assertSame('--log-file', $refusal->sources()[0]->locator());
         }
     }
 
@@ -114,7 +116,8 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $holder = new LoggerHolder();
         $holder->setLogger(self::createStub(\Psr\Log\LoggerInterface::class));
 
-        (new RuntimeLoggerConfigurator(self::createStub(LoggerFactoryInterface::class), $holder, new ErrorStream()))->reset();
+        $factory = self::createStub(LoggerFactoryInterface::class);
+        (new RuntimeLoggerConfigurator($factory, $holder, new ErrorStream(), new RunTargets($factory)))->reset();
 
         self::assertInstanceOf(NullLogger::class, $holder->getLogger());
     }
@@ -124,7 +127,7 @@ final class RuntimeLoggerConfiguratorTest extends TestCase
         $factory = self::createStub(LoggerFactoryInterface::class);
         $factory->method('create')->willReturn(new NullLogger());
 
-        return new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream());
+        return new RuntimeLoggerConfigurator($factory, new LoggerHolder(), new ErrorStream(), new RunTargets($factory));
     }
 
     private static function logLevelInput(string $level): ArrayInput

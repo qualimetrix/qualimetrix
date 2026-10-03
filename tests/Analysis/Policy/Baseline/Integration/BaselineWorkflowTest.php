@@ -117,7 +117,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 2: Write baseline to file
         $writer = new BaselineWriter();
-        $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($this->tempDir));
+        $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
 
         self::assertFileExists($this->baselinePath);
         $written = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
@@ -211,7 +211,7 @@ final class BaselineWorkflowTest extends TestCase
 
         (new BaselineWriter())->write(
             $baseline,
-            $this->baselinePath,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
 
@@ -278,7 +278,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $baseline = $generator->generate($initialFindings, ['src'])->baseline;
         $writer = new BaselineWriter();
-        $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($this->tempDir));
+        $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
 
         // Load baseline
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
@@ -344,7 +344,7 @@ final class BaselineWorkflowTest extends TestCase
         $generator = new BaselineGenerator($declarations, new FixedClock());
         $baseline = $generator->generate($findings, ['src'])->baseline;
         $writer = new BaselineWriter();
-        $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($projectRoot));
+        $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($projectRoot));
 
         // Verify JSON contains relative file: path
         $data = json_decode((string) file_get_contents($this->baselinePath), true);

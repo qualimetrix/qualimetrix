@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(ComputedMetricRuleOptions::class)]
 final class ComputedMetricRuleOptionsTest extends TestCase
@@ -15,7 +17,7 @@ final class ComputedMetricRuleOptionsTest extends TestCase
     #[Test]
     public function itDisablesWhenEnabledFalse(): void
     {
-        $options = ComputedMetricRuleOptions::fromArray(['enabled' => false]);
+        $options = ComputedMetricRuleOptions::fromResolved(ResolvedOptionsFixture::values(ComputedMetricRuleOptions::class, ['enabled' => false]));
 
         self::assertFalse($options->isEnabled());
     }
@@ -23,7 +25,7 @@ final class ComputedMetricRuleOptionsTest extends TestCase
     #[Test]
     public function itIsEnabledByDefault(): void
     {
-        $options = ComputedMetricRuleOptions::fromArray([]);
+        $options = ComputedMetricRuleOptions::fromResolved(ResolvedOptionsFixture::values(ComputedMetricRuleOptions::class, []));
 
         self::assertTrue($options->isEnabled());
     }

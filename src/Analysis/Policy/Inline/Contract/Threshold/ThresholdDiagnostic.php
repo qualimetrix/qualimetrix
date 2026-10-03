@@ -19,13 +19,17 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * for parser-level diagnostics (syntax/duplicate), a validator code
  * (`negative_warning`, `warning_exceeds_error`, etc.) for rule-specific
  * rejections.
+ * `$rulePattern` is the exact rule spelling written in the directive, including
+ * unknown names and wildcards.
  */
 final readonly class ThresholdDiagnostic
 {
     public function __construct(
         public int $line,
         public MetricSubject $subject,
+        public string $rulePattern,
         public string $message,
+        public int $position,
         public ?string $code = null,
         public ?string $hint = null,
     ) {}

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander;
 
@@ -16,8 +16,14 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpan
  *
  * Extracted out of {@see AllowValidator} so that the validator stays the
  * thin orchestrator over short- and long-form discrimination + cross-validation
- * — this helper owns the long-form vocabulary (whitelist of keys, per-key
- * shape rules) so a future key can be added in one place.
+ * — this helper owns the long-form vocabulary (the keys, per-key shape rules)
+ * so a future key can be added in one place.
+ *
+ * The configuration engine carries an allow target unread, because it is
+ * written as a layer name or as this map, so the map's keys are recognised
+ * here — by the document's one spelling rule: each key in its snake_case,
+ * kebab-case or camelCase spelling, and a key that is none of them refused
+ * whatever its value, `~` included.
  *
  * Static + stateless to mirror the rest of the configuration validator
  * surface ({@see LayerCriterionNormalizer}, {@see ExcludeBlockValidator},
@@ -26,33 +32,17 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpan
 final class LongFormAllowEntryNormalizer
 {
     /**
-     * Long-form allow target keys. Any other key is rejected here as
-     * "unknown long-form key" so a user-side typo cannot silently widen the
-     * policy (e.g. {@code relatons:} would otherwise allow every relation kind
-     * instead of the user's intended subset).
-     *
-     * Both spellings of {@code allow_cross_instance} (canonical snake_case and
-     * the camelCase variant) are whitelisted, because the architecture config
-     * tree preserves subtree keys verbatim and users can land either style from
-     * upstream YAML; the normalizer resolves them identically (see
-     * {@see ALLOW_CROSS_INSTANCE_KEYS}).
+     * Long-form allow target keys, canonical spelling. Any other key is
+     * rejected so a user-side typo cannot silently widen the policy (e.g.
+     * {@code relatons:} would otherwise allow every relation kind instead of
+     * the user's intended subset).
      */
-    private const array ALLOWED_KEYS = ['target', 'relations', 'allow_cross_instance', 'allowCrossInstance'];
-
-    /**
-     * The two accepted spellings of the cross-instance opt-out flag. Listed
-     * canonical first so error messages prefer the snake_case form.
-     */
-    private const array ALLOW_CROSS_INSTANCE_KEYS = ['allow_cross_instance', 'allowCrossInstance'];
+    private const array KEYS = ['target', 'relations', 'allow_cross_instance'];
 
     /**
      * Returns the parsed (targetRaw, allowCrossInstance, relations) triple for
      * a long-form entry. Caller is responsible for parsing {@code targetRaw}
-     * into a {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector} (the
-     * normalizer is intentionally selector-agnostic so it can live in
-     * Configuration without dragging in the Core selector parser).
-     *
-     * @param array<array-key, mixed> $entry The long-form map.
+     * into a {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector}.
      *
      * @throws ConfigurationRefusal When an unsupported key is present, the
      *                              target field is missing/empty, or the
@@ -60,177 +50,216 @@ final class LongFormAllowEntryNormalizer
      *
      * @return array{0: string, 1: bool, 2: list<DependencyType>|null}
      */
-    public static function normalize(string $source, int $index, array $entry): array
+    public static function normalize(string $source, int $index, SectionSpot $entry): array
     {
-        self::rejectUnsupportedKeys($source, $index, $entry);
-
-        if (!isset($entry['target']) || !\is_string($entry['target']) || $entry['target'] === '') {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index), 'target'], 'target'),
-                \sprintf(
-                    "architecture.allow.%s[%d]: long-form entry must include a non-empty 'target' key.",
-                    $source,
-                    $index,
-                ),
-            );
-        }
+        [$keys, $targetRaw] = self::judgeKeysAndTarget($source, $index, $entry);
 
         return [
-            $entry['target'],
-            self::parseAllowCrossInstanceFlag($source, $index, $entry),
-            self::parseRelations($source, $index, $entry),
+            $targetRaw,
+            self::parseAllowCrossInstanceFlag($source, $index, $entry->child($keys['allow_cross_instance'] ?? 'allow_cross_instance')),
+            self::parseRelations($source, $index, $entry->child($keys['relations'] ?? 'relations')),
         ];
     }
 
     /**
-     * Thin delegate to {@see AllowAliasExpander::parseList()}. The expander
-     * owns the {@code relations:} shape contract (non-list / empty) AND the
-     * token-expansion vocabulary; presence is decided here, because this is
-     * where the raw entry map is.
-     *
-     * **A key with no value is a written filter, not an absent one.** In YAML
-     * {@code relations:} with an empty list, commented-out items or a lost
-     * indent all parse to {@code null}, and handing that to the expander used
-     * to mean "no filter declared — every relation kind allowed". Its
-     * neighbour, {@code relations: []}, is refused for exactly that reason:
-     * widening a policy silently is not something a typo may do. Two spellings
-     * of one slip must not have opposite effects, and the quiet one must not be
-     * the widening one — so an explicit {@code null} takes the same refusal,
-     * which also names the bare-target form that keeps "any relation allowed".
-     *
-     * @param array<array-key, mixed> $entry
-     *
-     * @return list<DependencyType>|null
+     * @return array{array<string, string>, string} the recognised keys and the written target
      */
-    private static function parseRelations(string $source, int $index, array $entry): ?array
+    private static function judgeKeysAndTarget(string $source, int $index, SectionSpot $entry): array
     {
-        if (!\array_key_exists('relations', $entry)) {
-            return null;
+        $keys = self::recogniseKeys($source, $index, $entry);
+
+        $target = $entry->child($keys['target'] ?? 'target');
+        $targetRaw = $target->value();
+        if (!\is_string($targetRaw) || $targetRaw === '') {
+            throw $target->refusal(\sprintf(
+                "architecture.allow.%s[%d]: long-form entry must include a non-empty 'target' key.",
+                $source,
+                $index,
+            ));
         }
 
-        return AllowAliasExpander::parseList(
-            $entry['relations'] ?? [],
-            \sprintf('architecture.allow.%s[%d]', $source, $index),
-        );
+        return [$keys, $targetRaw];
     }
 
     /**
-     * Extracts the {@code allow_cross_instance} long-form flag. Absent → false.
-     * Non-boolean values are rejected so a user typo (e.g.
+     * Not written — absent or {@code ~} — is the documented default, "any
+     * relation allowed", the same as a bare target. A written list is a
+     * filter: {@see parseRelationList()} owns its shape (non-list, empty) and
+     * {@see AllowAliasExpander} its vocabulary.
+     *
+     * @return list<DependencyType>|null
+     */
+    private static function parseRelations(string $source, int $index, SectionSpot $relations): ?array
+    {
+        if (!$relations->isWritten()) {
+            return null;
+        }
+
+        return self::parseRelationList($relations, \sprintf('architecture.allow.%s[%d]', $source, $index));
+    }
+
+    /**
+     * A written {@code relations:} list: a non-empty list of non-empty
+     * strings, each a direct {@see DependencyType} value or an alias, expanded
+     * in declaration order with later duplicates absorbed. Null when nothing
+     * is written, which the caller reads as "any relation allowed".
+     *
+     * @param string $context the entry's path, e.g. {@code architecture.allow.app[0]}
+     *
+     * @throws ConfigurationRefusal through the layer that wrote the list
+     *
+     * @return list<DependencyType>|null
+     */
+    public static function parseRelationList(SectionSpot $relations, string $context): ?array
+    {
+        if (!$relations->isWritten()) {
+            return null;
+        }
+
+        $expanded = [];
+        foreach (self::relationTokens($relations, $context) as $index => $token) {
+            foreach (self::expandToken($relations->child($index), $token, $context) as $type) {
+                $expanded[$type->value] ??= $type;
+            }
+        }
+
+        return array_values($expanded);
+    }
+
+    /**
+     * The form of a written relation list: a non-empty list of non-empty strings.
+     *
+     * @throws ConfigurationRefusal through the layer that wrote the list
+     *
+     * @return list<string>
+     */
+    private static function relationTokens(SectionSpot $relations, string $context): array
+    {
+        $raw = $relations->value();
+
+        if (!\is_array($raw) || !array_is_list($raw)) {
+            throw $relations->refusal(\sprintf('%s.relations: must be a list of relation kinds or aliases.', $context));
+        }
+
+        if ($raw === []) {
+            throw $relations->refusal(\sprintf(
+                "%s.relations: must list at least one relation kind. " .
+                'Use a bare target (e.g. `- target_layer` instead of `- target: target_layer`) ' .
+                'to keep the "any relation allowed" semantics.',
+                $context,
+            ));
+        }
+
+        $tokens = [];
+        foreach ($raw as $index => $token) {
+            if (!\is_string($token) || $token === '') {
+                throw $relations->child($index)->refusal(\sprintf('%s.relations[%d]: each entry must be a non-empty string.', $context, $index));
+            }
+
+            $tokens[] = $token;
+        }
+
+        return $tokens;
+    }
+
+    /** @return non-empty-list<DependencyType> */
+    private static function expandToken(SectionSpot $spot, string $token, string $context): array
+    {
+        return AllowAliasExpander::expand($token)
+            ?? throw $spot->refusal(AllowAliasExpander::unknownTokenMessage($context, $token), AllowAliasExpander::acceptedTokens(), $token);
+    }
+
+    /**
+     * Extracts the {@code allow_cross_instance} long-form flag. Not written →
+     * false. Non-boolean values are rejected so a user typo (e.g.
      * {@code allow_cross_instance: 'yes'}) cannot silently fall through to the
      * "false" default and surprise the user with wildcard self-allow warnings
      * they thought they had silenced.
-     *
-     * Accepts the canonical snake_case spelling and the camelCase variant as
-     * synonyms — the architecture subtree preserves user-supplied
-     * key spellings, so both shapes survive normalization and need to resolve
-     * to the same flag. Specifying **both** spellings on the same entry is a
-     * user-side ambiguity (different values would silently lose one to key
-     * order); reject it with an actionable message.
-     *
-     * @param array<array-key, mixed> $entry
      */
-    private static function parseAllowCrossInstanceFlag(string $source, int $index, array $entry): bool
+    private static function parseAllowCrossInstanceFlag(string $source, int $index, SectionSpot $flag): bool
     {
-        $presentKeys = array_values(array_filter(
-            self::ALLOW_CROSS_INSTANCE_KEYS,
-            static fn(string $key): bool => \array_key_exists($key, $entry),
-        ));
-
-        if ($presentKeys === []) {
+        $value = $flag->value();
+        if ($value === null) {
             return false;
         }
 
-        if (\count($presentKeys) > 1) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index)], implode(', ', $presentKeys)),
-                \sprintf(
-                    "architecture.allow.%s[%d]: specify either 'allow_cross_instance' or 'allowCrossInstance', not both.",
-                    $source,
-                    $index,
-                ),
-            );
-        }
-
-        $key = $presentKeys[0];
-        $value = $entry[$key];
         if (!\is_bool($value)) {
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::open(['architecture', 'allow', \sprintf('%s[%d]', $source, $index), $key], $key),
-                \sprintf(
-                    "architecture.allow.%s[%d]: '%s' must be a boolean, got %s.",
-                    $source,
-                    $index,
-                    $key,
-                    get_debug_type($value),
-                ),
-            );
+            throw $flag->refusal(\sprintf(
+                "architecture.allow.%s[%d]: '%s' must be a boolean, got %s.",
+                $source,
+                $index,
+                $flag->path[\count($flag->path) - 1],
+                get_debug_type($value),
+            ));
         }
 
         return $value;
     }
 
     /**
-     * Closes the silent-widening loophole in the long-form allow entry. Any
-     * key that is not in the {@see ALLOWED_KEYS} whitelist gets rejected with
-     * a user-actionable error.
+     * Closes the silent-widening loophole in the long-form allow entry: every
+     * written key — `~`-valued ones included — must be one of {@see KEYS} in
+     * an accepted spelling, and each key may be written once.
      *
-     * The "allowed keys" hint in the error message lists only the canonical
-     * spelling of {@code allow_cross_instance} — the camelCase synonym is an
-     * implementation detail of subtree-preserving YAML normalization, not a
-     * separately documented vocabulary.
-     *
-     * @param array<array-key, mixed> $entry
+     * @return array<string, string> canonical key => the spelling written
      */
-    private static function rejectUnsupportedKeys(string $source, int $index, array $entry): void
+    private static function recogniseKeys(string $source, int $index, SectionSpot $entry): array
     {
-        foreach (array_keys($entry) as $key) {
-            if (\in_array($key, self::ALLOWED_KEYS, true)) {
-                continue;
-            }
+        $recognised = [];
+        foreach ($entry->keys() as $written) {
+            $canonical = self::canonical($source, $index, $entry, $written);
 
-            throw ConfigurationRefusal::atResolvedKey(
-                RefusedPosition::closed(
-                    ['architecture', 'allow', \sprintf('%s[%d]', $source, $index)],
-                    (string) $key,
-                    self::sortedAllowedKeys(),
-                ),
-                \sprintf(
-                    "architecture.allow.%s[%d]: unknown long-form key '%s'. Allowed keys: %s.",
+            if (isset($recognised[$canonical])) {
+                throw $entry->child($written)->refusal(\sprintf(
+                    "architecture.allow.%s[%d]: '%s' and '%s' are two spellings of one key; keep one of them.",
                     $source,
                     $index,
-                    (string) $key,
-                    implode(', ', array_map(
-                        static fn(string $k): string => "'" . $k . "'",
-                        self::canonicalAllowedKeys(),
-                    )),
-                ),
-            );
+                    $recognised[$canonical],
+                    $written,
+                ));
+            }
+
+            $recognised[$canonical] = $written;
         }
+
+        return $recognised;
     }
 
-    /**
-     * Returns the canonical user-facing allowed-key list — i.e. the snake_case
-     * spelling for keys that accept both styles (currently only
-     * {@code allow_cross_instance}). Used in error message construction.
-     *
-     * @return list<string>
-     */
-    private static function canonicalAllowedKeys(): array
+    private static function canonical(string $source, int $index, SectionSpot $entry, string $written): string
     {
-        return ['target', 'relations', 'allow_cross_instance'];
-    }
+        foreach (self::KEYS as $canonical) {
+            if (\in_array($written, ConfigKeySpelling::acceptedSpellings($canonical), true)) {
+                return $canonical;
+            }
+        }
 
-    /**
-     * Same vocabulary as {@see self::canonicalAllowedKeys()}, sorted for {@see RefusedPosition::closed()}.
-     *
-     * @return list<string>
-     */
-    private static function sortedAllowedKeys(): array
-    {
-        $keys = self::canonicalAllowedKeys();
-        sort($keys);
+        $accepted = self::KEYS;
+        sort($accepted);
 
-        return $keys;
+        foreach (self::KEYS as $canonical) {
+            if (ConfigKeySpelling::sameWords($written, $canonical)) {
+                throw $entry->child($written)->refusal(
+                    \sprintf(
+                        "architecture.allow.%s[%d]: long-form key '%s' is not written in an accepted spelling; write '%s' (its snake_case, camelCase and kebab-case spellings are accepted).",
+                        $source,
+                        $index,
+                        $written,
+                        $canonical,
+                    ),
+                    $accepted,
+                );
+            }
+        }
+
+        throw $entry->child($written)->refusal(
+            \sprintf(
+                "architecture.allow.%s[%d]: unknown long-form key '%s'. Allowed keys: %s.",
+                $source,
+                $index,
+                $written,
+                implode(', ', array_map(static fn(string $key): string => "'" . $key . "'", self::KEYS)),
+            ),
+            $accepted,
+        );
     }
 }

@@ -44,11 +44,11 @@ declare(strict_types=1);
 namespace Qualimetrix\PromiseEffect;
 
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
+use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use ReflectionMethod;
 use Symfony\Component\Yaml\Yaml;
 
 final readonly class CrossCheckReport
@@ -176,12 +176,8 @@ final class CrossCheck
 
                 if ($planted === null && $resolved === null && $framework === null) {
                     if (\in_array($normalizedOption, self::frameworkKeys(), true)) {
-                        // A framework key the framework itself answers for in
-                        // its own words: `RuleOptionKeyRecognition` judges the
-                        // form of `suppress-paths` and deliberately leaves the
-                        // two namespace keys to the provider that reads them.
-                        // Declared, and with no declared FORM — a bucket, not
-                        // an agreement.
+                        // A known framework key with no form declaration remains
+                        // visible as a separate bucket, never as an agreement.
                         $formless[] = $row->key() . ': "' . $option . '" is a framework key whose form no declaration states';
 
                         continue;
@@ -320,15 +316,8 @@ final class CrossCheck
     /**
      * The form the FRAMEWORK declares for a framework key.
      *
-     * The declaration side of these three keys is not `acceptedOptionKeys()`
-     * and never will be — the factory takes them out of the config before
-     * `fromArray()` is called, and no options class declares them. It is
-     * `RuleOptionKeyRecognition`, which states a shape for `suppress-paths`
-     * and deliberately none for the two namespace keys, so that the provider
-     * reading those can answer about them in its own words.
-     *
-     * Read off the product's own private declaration rather than copied into
-     * a table here: a copy would go out of step in silence.
+     * Framework-owned options have one public form declaration. The ledger
+     * reads its shape rather than copying the accepted forms into this probe.
      */
     private function frameworkShapeOf(string $normalizedKey): ?RuleOptionShape
     {
@@ -336,18 +325,7 @@ final class CrossCheck
             return null;
         }
 
-        $method = new ReflectionMethod(
-            \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionKeyRecognition::class,
-            'frameworkKeyShapes',
-        );
-        /** @var mixed $shapes */
-        $shapes = $method->invoke(null);
-
-        if (!$shapes instanceof RuleOptionKeySet) {
-            throw new LedgerError('RuleOptionKeyRecognition::frameworkKeyShapes() no longer yields a key set');
-        }
-
-        return $shapes->shapeOf($normalizedKey);
+        return FrameworkOptionKeys::declared()->shapeOf($normalizedKey);
     }
 
     /**

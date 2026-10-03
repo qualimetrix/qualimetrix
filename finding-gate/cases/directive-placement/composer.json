@@ -1,0 +1,10 @@
+{
+    "name": "finding-gate-corpus/directive-placement",
+    "description": "Declaration directives bind before and after attributes and to a closure passed as an argument; a threshold in a line comment is explicitly refused.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Corpus\\DirectivePlacement\\": "src/"
+        }
+    }
+}

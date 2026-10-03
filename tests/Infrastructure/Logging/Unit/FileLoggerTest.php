@@ -8,14 +8,22 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
-use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
+use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Logging\FileLogger;
-use RuntimeException;
+use Qualimetrix\Subprocess\ChildProcess;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(FileLogger::class)]
 final class FileLoggerTest extends TestCase
 {
     private string $tempDir;
+
+    /** @var list<HeldTarget> */
+    private array $targets = [];
 
     protected function setUp(): void
     {
@@ -27,6 +35,10 @@ final class FileLoggerTest extends TestCase
 
     protected function tearDown(): void
     {
+        foreach ($this->targets as $target) {
+            $target->release();
+        }
+        $this->targets = [];
         // Cleanup temp directory recursively
         if (is_dir($this->tempDir)) {
             chmod($this->tempDir, 0755);
@@ -59,6 +71,8 @@ final class FileLoggerTest extends TestCase
         $logger = new FileLogger($path);
 
         $logger->info('Test message');
+        self::assertFileDoesNotExist($path);
+        $this->attach($logger, $path);
 
         self::assertFileExists($path);
         $content = file_get_contents($path);
@@ -67,14 +81,15 @@ final class FileLoggerTest extends TestCase
     }
 
     #[Test]
-    public function itCreatesDirectory(): void
+    public function itLeavesMissingDirectoriesUntouchedUntilTheTargetIsJudged(): void
     {
         $path = $this->tempDir . '/nested/dir/log.log';
         $logger = new FileLogger($path);
 
         $logger->info('Test');
-
-        self::assertFileExists($path);
+        self::assertDirectoryDoesNotExist(\dirname($path));
+        $this->expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        RunTargets::judgement('--log-file', $path);
     }
 
     #[Test]
@@ -82,6 +97,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('Test message', ['key' => 'value']);
 
@@ -103,6 +119,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('Processing {file}', ['file' => 'test.php', 'extra' => 'data']);
 
@@ -122,6 +139,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path, LogLevel::WARNING);
+        $this->attach($logger, $path);
 
         $logger->debug('Debug message');
         $logger->info('Info message');
@@ -142,6 +160,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('First');
         $logger->info('Second');
@@ -169,11 +188,13 @@ final class FileLoggerTest extends TestCase
 
         // First logger writes one entry
         $logger1 = new FileLogger($path);
+        $this->attach($logger1, $path);
         $logger1->info('First');
         unset($logger1);
 
         // Second logger appends another entry
         $logger2 = new FileLogger($path);
+        $this->attach($logger2, $path);
         $logger2->info('Second');
         unset($logger2);
 
@@ -192,6 +213,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('No context');
 
@@ -208,6 +230,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('Test');
 
@@ -237,10 +260,11 @@ final class FileLoggerTest extends TestCase
         chmod($this->tempDir, 0555);
         $path = $this->tempDir . '/sub/qmx.log';
 
-        $refusal = self::refusalWithoutDiagnostics(static fn() => new FileLogger($path));
+        $refusal = self::refusalWithoutDiagnostics(static fn() => RunTargets::judgement('--log-file', $path));
 
-        self::assertSame($path, $refusal->path);
-        self::assertSame(\sprintf('whose directory "%s" cannot be created: Permission denied', $this->tempDir . '/sub'), $refusal->reason);
+        self::assertStringContainsString($path, $refusal->summary());
+        self::assertStringContainsString('--log-file', $refusal->summary());
+        self::assertFileDoesNotExist($path);
     }
 
     #[Test]
@@ -251,10 +275,11 @@ final class FileLoggerTest extends TestCase
         touch($path);
         chmod($path, 0444);
 
-        $refusal = self::refusalWithoutDiagnostics(static fn() => new FileLogger($path));
+        $refusal = self::refusalWithoutDiagnostics(static fn() => RunTargets::judgement('--log-file', $path));
 
-        self::assertSame($path, $refusal->path);
-        self::assertSame('which cannot be opened for appending: Permission denied', $refusal->reason);
+        self::assertStringContainsString($path, $refusal->summary());
+        self::assertStringContainsString('not writable', $refusal->summary());
+        self::assertSame('', file_get_contents($path));
     }
 
     /**
@@ -268,6 +293,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('before');
         $logger->warning('Failed to parse file', ['file' => "src/\xB1\x31.php"]);
@@ -288,6 +314,7 @@ final class FileLoggerTest extends TestCase
     {
         $path = $this->tempDir . '/test.log';
         $logger = new FileLogger($path);
+        $this->attach($logger, $path);
 
         $logger->info('Measured {what}', ['what' => 'ratio', 'value' => \NAN]);
 
@@ -298,50 +325,51 @@ final class FileLoggerTest extends TestCase
         self::assertSame('Inf and NaN cannot be JSON encoded', $records[0]['context_error']);
     }
 
-    /**
-     * A full disk takes part of a record; the rest of the run would append
-     * after a truncated line, which no JSON Lines reader can split again.
-     */
+    /** A short native append is latched; later log calls count loss without throwing into collection. */
     #[Test]
     public function itRefusesToLeaveATruncatedRecord(): void
     {
-        $device = new class {
-            public static int $room = 10;
-
-            /** @var resource|null */
-            public $context;
-
-            public function stream_open(string $path, string $mode, int $options, ?string &$openedPath): bool
-            {
-                return true;
+        $path = $this->tempDir . '/partial.log';
+        file_put_contents($path, '');
+        $script = <<<'PHP'
+            namespace Qualimetrix\Core\FileTarget {
+                function fwrite($stream, string $bytes): int|false
+                {
+                    ++$GLOBALS['qmx_native_hits'];
+                    return $GLOBALS['qmx_native_hits'] === 1
+                        ? \fwrite($stream, substr($bytes, 0, 10))
+                        : 0;
+                }
             }
-
-            public function stream_write(string $data): int
-            {
-                $taken = min(\strlen($data), self::$room);
-                self::$room -= $taken;
-
-                return $taken;
+            namespace {
+                require $argv[1];
+                $GLOBALS['qmx_native_hits'] = 0;
+                $held = \Qualimetrix\Core\FileTarget\HeldTarget::claim(
+                    \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]),
+                );
+                $logger = new \Qualimetrix\Infrastructure\Logging\FileLogger($argv[2]);
+                $logger->attach($held);
+                $logger->info('a record longer than ten bytes');
+                $logger->info('later record');
+                try {
+                    $logger->settle();
+                    $failure = null;
+                } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $caught) {
+                    $failure = [$caught->kind->name, $caught->spelling, $caught->getMessage()];
+                }
+                $held->release();
+                echo json_encode(['hits' => $GLOBALS['qmx_native_hits'], 'failure' => $failure, 'bytes' => file_get_contents($argv[2])]);
             }
+            PHP;
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 4) . '/vendor/autoload.php', $path]);
 
-            /** @return array{mode: int} */
-            public function url_stat(string $path, int $flags): array
-            {
-                return ['mode' => 0o040755];
-            }
-        };
-        stream_wrapper_register('qmx-full-disk', $device::class);
-
-        try {
-            $logger = new FileLogger('qmx-full-disk://volume/qmx.log');
-
-            $this->expectException(RuntimeException::class);
-            $this->expectExceptionMessageMatches('~^Failed to write the log file qmx-full-disk://volume/qmx\.log: 10 of \d+ bytes of a record were written\.$~');
-
-            $logger->info('a record longer than the room left');
-        } finally {
-            stream_wrapper_unregister('qmx-full-disk');
-        }
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        $result = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(2, $result['hits']);
+        self::assertSame('PartialWrite', $result['failure'][0]);
+        self::assertSame($path, $result['failure'][1]);
+        self::assertStringContainsString('2 log record(s) lost', $result['failure'][2]);
+        self::assertSame(10, \strlen($result['bytes']));
     }
 
     /** @return list<array<string, mixed>> */
@@ -360,8 +388,8 @@ final class FileLoggerTest extends TestCase
         return $records;
     }
 
-    /** @param callable(): mixed $construct */
-    private static function refusalWithoutDiagnostics(callable $construct): LogFileUnavailable
+    /** @param callable(): mixed $operation */
+    private static function refusalWithoutDiagnostics(callable $operation): RefusalInterface
     {
         $diagnostics = [];
         // PHPUnit runs tests with `E_WARNING` outside `error_reporting()`, so
@@ -378,8 +406,8 @@ final class FileLoggerTest extends TestCase
         });
 
         try {
-            $construct();
-        } catch (LogFileUnavailable $refusal) {
+            $operation();
+        } catch (RefusalInterface $refusal) {
             return $refusal;
         } finally {
             restore_error_handler();
@@ -387,7 +415,14 @@ final class FileLoggerTest extends TestCase
             self::assertSame([], $diagnostics);
         }
 
-        self::fail('The logger accepted a path it cannot write.');
+        self::fail('The log target accepted a path it cannot write.');
+    }
+
+    private function attach(FileLogger $logger, string $path): void
+    {
+        $target = HeldTarget::claim(TargetPath::resolve($path));
+        $this->targets[] = $target;
+        $logger->attach($target);
     }
 
     private static function skipAsRoot(): void

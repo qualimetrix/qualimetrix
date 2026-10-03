@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
-use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 /**
  * Every hierarchical rule, every level of it, switched off one at a time.
@@ -106,7 +105,7 @@ final class HierarchicalLevelActivityTest extends TestCase
             }
 
             ++$found;
-            $options = $metadata->optionsClass::fromArray([]);
+            $options = $metadata->optionsClass::fromResolved(ResolvedOptionsFixture::values($metadata->optionsClass, []));
             self::assertInstanceOf(HierarchicalRuleOptionsInterface::class, $options);
 
             $cases[$metadata->name] = [
@@ -135,11 +134,12 @@ final class HierarchicalLevelActivityTest extends TestCase
 
         $configuration = $container->get(RuleConfigurationInterface::class);
         self::assertInstanceOf(RuleConfigurationInterface::class, $configuration);
-        $configuration->replace(new FindingConfiguration(
-            new RuleOptionsDocument($options),
-            new FindingCliOverrides([]),
-            new RuleSelection(),
-        ));
+        $builder = $container->get(RuleOptionsBuild::class);
+        self::assertInstanceOf(RuleOptionsBuild::class, $builder);
+        $execution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $execution);
+        $input = ResolvedOptionsFixture::authoredConfiguration(['rules' => $options], $execution->allRules());
+        $configuration->replace(ResolvedOptionsFixture::ready($input, $execution->allRules()));
 
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);

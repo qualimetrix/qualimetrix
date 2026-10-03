@@ -6,18 +6,28 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
+use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\OptionActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
-use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
-use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
+use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
+use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Core\Symbol\SymbolLevel;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
 /**
  * A {@see RunRuleCoverage} with a known answer, where every channel is
@@ -54,12 +64,32 @@ final class StubRuleCoverage
      */
     private static function execution(array $notSelected, array $disabledEverywhere): RuleExecutionInterface
     {
-        return new readonly class ($notSelected, $disabledEverywhere) implements RuleExecutionInterface {
+        $decisions = [];
+        $universe = self::universe();
+        foreach ($universe->channels() as $channel) {
+            $producer = $universe->producerOf($channel->code);
+            if ($producer === null) {
+                continue;
+            }
+            foreach (SymbolLevel::cases() as $level) {
+                $decisions[] = new EnablementDecision(
+                    new SelectionCellAddress($producer, $channel, $level, ChannelSelectionRole::Selectable),
+                    new AuthoredCellDecision(
+                        CellSwitch::On,
+                        \in_array($producer, $notSelected, true) ? CellAdmission::Filtered : CellAdmission::Direct,
+                    ),
+                    new OptionActivity(!\in_array($producer, $disabledEverywhere, true)),
+                );
+            }
+        }
+        $enablement = new RuleEnablement($decisions, null);
+
+        return new readonly class ($notSelected, $disabledEverywhere, $enablement) implements RuleExecutionInterface {
             /**
              * @param list<string> $notSelected
              * @param list<string> $disabledEverywhere
              */
-            public function __construct(private array $notSelected, private array $disabledEverywhere) {}
+            public function __construct(private array $notSelected, private array $disabledEverywhere, private RuleEnablement $enablement) {}
 
             public function execute(AnalysisContext $context, ?string $restrictToProducer = null): RuleExecutionResult
             {
@@ -73,11 +103,7 @@ final class StubRuleCoverage
 
             public function publication(): ChannelPublication
             {
-                return new ChannelPublication(
-                    new RuleSelector(new InMemoryRuleChannelRegistry()),
-                    new RuleSelection(disabled: $this->notSelected),
-                    $this->levelActivity(),
-                );
+                return new ChannelPublication($this->enablement);
             }
 
             public function allRules(): array
@@ -93,6 +119,17 @@ final class StubRuleCoverage
                 return LevelActivity::fromMap(array_fill_keys($this->disabledEverywhere, ['callable' => false]));
             }
         };
+    }
+
+    private static function universe(): ChannelUniverseInterface
+    {
+        static $universe = null;
+        if ($universe === null) {
+            $factory = (new ContainerFactory())->create()->get(ChannelUniverseInterface::class);
+            \assert($factory instanceof RuleChannelSnapshotFactoryInterface);
+            $universe = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
+        }
+        return $universe;
     }
 
     private static function channelIsItsOwnProducer(): ChannelIdentityInterface

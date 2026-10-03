@@ -57,7 +57,8 @@
     "suggest": {
         "ext-igbinary": "For faster serialization in parallel processing",
         "ext-pcntl": "Required for parallel processing on Unix (alternative to ext-parallel)",
-        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)"
+        "ext-parallel": "For true parallel processing with threads (alternative to ext-pcntl)",
+        "ext-posix": "For effective process ownership checks without a temporary-file probe"
     },
     "autoload": {
         "psr-4": {
@@ -133,6 +134,8 @@
         "html-bundle:check": "php scripts/check-html-bundle-freshness.php",
         "input-doors:grid": "php scripts/generate-input-door-table.php",
         "input-doors:grid:check": "php scripts/generate-input-door-table.php --check",
+        "configuration:merge-table": "php scripts/generate-configuration-merge-table.php",
+        "configuration:merge-table:check": "php scripts/generate-configuration-merge-table.php --check",
         "input-doors": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/input-doors.php"
@@ -179,10 +182,18 @@
         ],
         "selfcheck:analysis": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
         "check-leaks": "bash scripts/check-private-leaks.sh",
-        "gate:self-test": "php scripts/finding-gate.php --self-test",
+        "gate:self-test": [
+            "Composer\\Config::disableProcessTimeout",
+            "php scripts/finding-gate.php --self-test",
+            "php scripts/finding-gate-controls.php --self-test"
+        ],
         "gate": [
             "Composer\\Config::disableProcessTimeout",
             "php scripts/finding-gate.php"
+        ],
+        "gate:phar": [
+            "Composer\\Config::disableProcessTimeout",
+            "python3 scripts/finding-gate-phar.py"
         ],
         "gate:controls": [
             "Composer\\Config::disableProcessTimeout",
@@ -234,19 +245,24 @@
             "@suppression-snapshot:check",
             "@html-bundle:check",
             "@input-doors:grid:check",
+            "@configuration:merge-table:check",
             "@promise-effect:p1-set:check",
             "@promise-effect:grid:check"
         ],
         "check:self": [
-            "@gate:self-test",
             "@selfcheck:analysis",
             "@directives:audit"
+        ],
+        "check:gate": [
+            "Composer\\Config::disableProcessTimeout",
+            "phpunit --configuration=phpunit.xml.dist --no-coverage --group=finding-gate-e2e",
+            "@gate:self-test"
         ]
     },
     "scripts-descriptions": {
         "setup-hooks": "Configure git to use project hooks from .githooks/",
         "test": "Run PHPUnit tests",
-        "test:aggregate": "Run verified PHPUnit suite shards for composer check, excluding live freshness oracles that check:artifacts runs",
+        "test:aggregate": "Run verified PHPUnit suite shards for composer check, excluding live freshness oracles and gate end-to-end cases run by dedicated groups",
         "test:coverage": "Run PHPUnit tests with HTML and clover coverage reports (needs an active coverage driver)",
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
@@ -276,14 +292,17 @@
         "check": "Everything below, in the order a failure is cheapest to read",
         "check:code": "What a code change invalidates: style, the dangling-name census, static analysis, tests",
         "check:docs": "What a website change invalidates: a strict mkdocs build",
+        "configuration:merge-table": "Regenerate the table of how each configuration key combines across layers in website/docs/getting-started/configuration.md (EN and RU) from the section declarations",
+        "configuration:merge-table:check": "Fail if that table differs from what the section declarations generate",
         "check:artifacts": "What a manifest, config or corpus change invalidates: every generated artifact against a fresh measurement",
-        "check:self": "What the product says about this repository: the gate self-test, the qmx ratchet and the directive audit",
+        "check:self": "What the product says about this repository: the qmx ratchet and the directive audit",
         "directives:controls": "Plant one breakage at a time in the threshold audit and prove the suite goes red for it, then run directives:controls:coverage",
         "directives:controls:coverage": "Prove the negative-controls stand's own coverage arithmetic: removing a case's declaration makes exactly that case read as guarded by nothing, and a declaration naming a case absent from the run is a distinct stale-declaration refusal",
         "tautology:controls": "Plant, one at a time, the production edit each repaired tautology is supposed to reject, and prove that repair's own case goes red and no undeclared case does; runs tautology:controls:coverage first",
         "tautology:controls:coverage": "Prove the tautology stand's own arithmetic: removing a repaired case's declaration leaves exactly that case guarded by nothing, and a declaration naming a case the run never carried is a distinct stale-declaration refusal",
         "directives:narrow-control": "Prove --sweep=narrow and --sweep=full agree verdict for verdict: the seeded fixture whole (every verdict and every refusal), its Silenced/ half (where a wrong-producer defect reaches the comparison), then src/. Cheapest signal first, because composer stops at the first run that fails",
-        "directives:audit": "Fail if any inline @qmx directive over src/ does nothing"
+        "directives:audit": "Fail if any inline @qmx directive over src/ does nothing",
+        "check:gate": "Gate end-to-end tests and observed witnesses; required for finding-gate changes"
     },
     "config": {
         "sort-packages": true,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Ast\Unit;
 
 use FilesystemIterator;
+use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,7 +23,6 @@ use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Cache\FileCache;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use RuntimeException;
 use SplFileInfo;
 
 #[CoversClass(CachedFileParser::class)]
@@ -52,17 +52,17 @@ final class CachedFileParserTest extends TestCase
         $file = new SplFileInfo($this->tempFile);
         $cachedAst = [new Class_('CachedTest')];
         $keyGenerator = new CacheKeyGenerator();
-        $key = $keyGenerator->generate($file);
+        $key = $keyGenerator->generateForContent((string) file_get_contents($file->getPathname()));
 
         $inner = $this->createMock(FileParserInterface::class);
-        $inner->expects(self::never())->method('parse');
+        $inner->expects(self::never())->method('parseContent');
 
         $cache = self::createStub(CacheInterface::class);
         $cache->method('get')->willReturn($cachedAst);
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
-        $result = $parser->parse($file);
+        $result = $this->parseFile($parser, $file);
 
         self::assertSame($cachedAst, $result);
     }
@@ -73,7 +73,7 @@ final class CachedFileParserTest extends TestCase
         $file = new SplFileInfo($this->tempFile);
         $freshAst = [new Class_('FreshTest')];
         $keyGenerator = new CacheKeyGenerator();
-        $key = $keyGenerator->generate($file);
+        $key = $keyGenerator->generateForContent((string) file_get_contents($file->getPathname()));
 
         $inner = $this->createMock(FileParserInterface::class);
         $inner->expects(self::once())->method('parseContent')->willReturn($freshAst);
@@ -84,31 +84,9 @@ final class CachedFileParserTest extends TestCase
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
-        $result = $parser->parse($file);
+        $result = $this->parseFile($parser, $file);
 
         self::assertSame($freshAst, $result);
-    }
-
-    #[Test]
-    public function itDelegatesForNonExistentFileWithoutUsingCache(): void
-    {
-        // A missing file has no content hash, so CachedFileParser bypasses cache.
-        $file = new SplFileInfo('/non/existent/file.php');
-        $ast = [new Class_('Test')];
-        $keyGenerator = new CacheKeyGenerator();
-
-        $inner = $this->createMock(FileParserInterface::class);
-        $inner->expects(self::once())->method('parse')->willReturn($ast);
-
-        $cache = $this->createMock(CacheInterface::class);
-        $cache->expects(self::never())->method('get');
-        $cache->expects(self::never())->method('set');
-
-        $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
-
-        $result = $parser->parse($file);
-
-        self::assertSame($ast, $result);
     }
 
     #[Test]
@@ -117,7 +95,7 @@ final class CachedFileParserTest extends TestCase
         $file = new SplFileInfo($this->tempFile);
         $freshAst = [new Class_('FreshTest')];
         $keyGenerator = new CacheKeyGenerator();
-        $key = $keyGenerator->generate($file);
+        $key = $keyGenerator->generateForContent((string) file_get_contents($file->getPathname()));
 
         $inner = $this->createMock(FileParserInterface::class);
         $inner->expects(self::once())->method('parseContent')->willReturn($freshAst);
@@ -128,7 +106,7 @@ final class CachedFileParserTest extends TestCase
 
         $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
-        $result = $parser->parse($file);
+        $result = $this->parseFile($parser, $file);
 
         self::assertSame($freshAst, $result);
     }
@@ -148,11 +126,11 @@ final class CachedFileParserTest extends TestCase
         $parser = new CachedFileParser($inner, $cache, $keyGenerator, self::enabledStore());
 
         // First parse - should call inner
-        $result1 = $parser->parse($file);
+        $result1 = $this->parseFile($parser, $file);
         self::assertCount(1, $result1);
 
         // Second parse - should use cache
-        $result2 = $parser->parse($file);
+        $result2 = $this->parseFile($parser, $file);
         self::assertCount(1, $result2);
     }
 
@@ -172,16 +150,6 @@ final class CachedFileParserTest extends TestCase
                 private readonly string $sourceB,
             ) {}
 
-            public function parse(SplFileInfo $file): array
-            {
-                $content = file_get_contents($file->getPathname());
-                if ($content === false) {
-                    throw new RuntimeException('Unable to read test fixture');
-                }
-
-                return $this->parseContent($file, $content);
-            }
-
             public function parseContent(SplFileInfo $file, string $content): array
             {
                 ++$this->calls;
@@ -198,9 +166,9 @@ final class CachedFileParserTest extends TestCase
             self::enabledStore(),
         );
 
-        $first = $parser->parse(new SplFileInfo($this->tempFile));
+        $first = $this->parseFile($parser, new SplFileInfo($this->tempFile));
         file_put_contents($this->tempFile, $sourceA);
-        $second = $parser->parse(new SplFileInfo($this->tempFile));
+        $second = $this->parseFile($parser, new SplFileInfo($this->tempFile));
 
         self::assertInstanceOf(Class_::class, $first[0] ?? null);
         self::assertInstanceOf(Class_::class, $second[0] ?? null);
@@ -223,14 +191,14 @@ final class CachedFileParserTest extends TestCase
         );
 
         try {
-            $directParser->parse($file);
+            $this->parseFile($directParser, $file);
             self::fail('Expected direct parser to throw ParseException');
         } catch (ParseException $directError) {
             // Captured below for comparison with the cached path.
         }
 
         try {
-            $cachedParser->parse($file);
+            $this->parseFile($cachedParser, $file);
             self::fail('Expected cached parser to throw ParseException');
         } catch (ParseException $cachedError) {
             // Captured below for assertions.
@@ -239,6 +207,15 @@ final class CachedFileParserTest extends TestCase
         self::assertSame($directError->filePath->value(), $cachedError->filePath->value());
         self::assertStringContainsString($directError->filePath->value(), $cachedError->getMessage());
         self::assertStringNotContainsString('qmx-ast-', $cachedError->getMessage());
+    }
+
+    /** @return array<Node> */
+    private function parseFile(FileParserInterface $parser, SplFileInfo $file): array
+    {
+        $content = file_get_contents($file->getPathname());
+        self::assertIsString($content);
+
+        return $parser->parseContent($file, $content);
     }
 
     private static function enabledStore(): CacheConfigurationStoreInterface

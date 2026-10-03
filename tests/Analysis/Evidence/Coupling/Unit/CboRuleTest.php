@@ -23,7 +23,6 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -31,6 +30,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CboRule::class)]
 #[CoversClass(CboOptions::class)]
@@ -53,7 +53,7 @@ final class CboRuleTest extends TestCase
 
         self::assertSame(
             'Checks CBO (Coupling Between Objects) at class and namespace levels',
-            $rule->getDescription(),
+            $rule::getDescription(),
         );
     }
 
@@ -627,11 +627,11 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itParsesClassOptionsFromArray(): void
     {
-        $options = ClassCboOptions::fromArray([
+        $options = ClassCboOptions::fromResolved(ResolvedOptionsFixture::values(ClassCboOptions::class, [
             'enabled' => false,
             'warning' => 10,
             'error' => 15,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(10, $options->warning);
@@ -641,7 +641,7 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itUsesClassOptionDefaults(): void
     {
-        $options = ClassCboOptions::fromArray([]);
+        $options = ClassCboOptions::fromResolved(ResolvedOptionsFixture::values(ClassCboOptions::class, []));
 
         self::assertTrue($options->enabled);
         self::assertSame(14, $options->warning);
@@ -651,11 +651,11 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceOptionsFromArray(): void
     {
-        $options = NamespaceCboOptions::fromArray([
+        $options = NamespaceCboOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceCboOptions::class, [
             'enabled' => false,
             'warning' => 10,
             'error' => 16,
-        ]);
+        ]));
 
         self::assertFalse($options->enabled);
         self::assertSame(10, $options->warning);
@@ -665,7 +665,7 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itParsesCboOptionsFromHierarchicalArray(): void
     {
-        $options = CboOptions::fromArray([
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, [
             'class' => [
                 'warning' => 10,
                 'error' => 15,
@@ -674,7 +674,7 @@ final class CboRuleTest extends TestCase
                 'warning' => 12,
                 'error' => 18,
             ],
-        ]);
+        ]));
 
         self::assertTrue($options->isEnabled());
         self::assertTrue($options->class->isEnabled());
@@ -726,9 +726,9 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinClassCountFromArray(): void
     {
-        $options = NamespaceCboOptions::fromArray([
+        $options = NamespaceCboOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceCboOptions::class, [
             'min_class_count' => 5,
-        ]);
+        ]));
 
         self::assertSame(5, $options->minClassCount);
     }
@@ -736,9 +736,9 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itDefaultsNamespaceMinClassCountToThree(): void
     {
-        $options = NamespaceCboOptions::fromArray([
+        $options = NamespaceCboOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceCboOptions::class, [
             'enabled' => true,
-        ]);
+        ]));
 
         self::assertSame(3, $options->minClassCount);
     }
@@ -746,9 +746,9 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itParsesNamespaceMinClassCountCamelCaseAlias(): void
     {
-        $options = NamespaceCboOptions::fromArray([
+        $options = NamespaceCboOptions::fromResolved(ResolvedOptionsFixture::values(NamespaceCboOptions::class, [
             'minClassCount' => 7,
-        ]);
+        ]));
 
         self::assertSame(7, $options->minClassCount);
     }
@@ -1052,13 +1052,13 @@ final class CboRuleTest extends TestCase
     public function itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutRefusingTheKey(): void
     {
         $registry = new RuleOptionsRegistry();
-        $factory = new RuleOptionsFactory($registry);
-        $registry->setConfigFileOptions([
+        $factory = new ResolvedOptionsFixture($registry);
+        $factory->inputs(['rules' => [
             'coupling.cbo' => [
                 'scope' => 'application',
                 'class' => ['warning' => 5, 'error' => 10],
             ],
-        ]);
+        ]]);
 
         /** @var CboOptions $options */
         $options = $factory->create('coupling.cbo', CboOptions::class);
@@ -1206,9 +1206,9 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itParsesScopeInClassCboOptions(): void
     {
-        $options = ClassCboOptions::fromArray([
+        $options = ClassCboOptions::fromResolved(ResolvedOptionsFixture::values(ClassCboOptions::class, [
             'scope' => 'application',
-        ]);
+        ]));
 
         self::assertSame('application', $options->scope);
     }
@@ -1216,49 +1216,43 @@ final class CboRuleTest extends TestCase
     #[Test]
     public function itDefaultsClassCboScopeToAll(): void
     {
-        $options = ClassCboOptions::fromArray([]);
+        $options = ClassCboOptions::fromResolved(ResolvedOptionsFixture::values(ClassCboOptions::class, []));
 
         self::assertSame('all', $options->scope);
     }
 
     #[Test]
-    public function itRefusesAnUnknownScopeEvenWhenFromArrayIsCalledDirectly(): void
+    public function itRefusesAnUnknownScopeInTheAuthoredDocument(): void
     {
-        // The option-key seam (RuleOptionsFactory/RuleOptionKeyRecognition)
-        // already refuses an unknown `scope` word before fromArray() runs on
-        // the door path; this proves the same refusal holds for a caller
-        // that reaches fromArray() directly, bypassing that seam — a silent
-        // fallback to 'all' would be exactly the silent-acceptance defect
-        // closed word sets exist to remove.
         self::expectException(ConfigurationRefusal::class);
-        self::expectExceptionMessage('coupling.cbo');
+        self::expectExceptionMessage('"rules.fixture.scope" in configuration file "/project/qmx.yaml" must be one of all, application, got "invalid".');
 
-        ClassCboOptions::fromArray([
+        ClassCboOptions::fromResolved(ResolvedOptionsFixture::values(ClassCboOptions::class, [
             'scope' => 'invalid',
-        ]);
+        ]));
     }
 
     #[Test]
     public function itPropagatesTopLevelScopeToClassOptions(): void
     {
-        $options = CboOptions::fromArray([
+        $options = CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, [
             'scope' => 'application',
-        ]);
+        ]));
 
         self::assertSame('application', $options->class->scope);
     }
 
     #[Test]
-    public function itAllowsClassLevelScopeToOverrideTopLevel(): void
+    public function itRefusesTheRootScopeOverlappingTheClassScope(): void
     {
-        $options = CboOptions::fromArray([
+        self::expectException(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal::class);
+        self::expectExceptionMessage('"rules.fixture" in configuration file "/project/qmx.yaml" writes both "scope" and "class.scope" in one layer; "scope" is shorthand for "class.scope" — write either the shorthand or the full keys in one layer.');
+        CboOptions::fromResolved(ResolvedOptionsFixture::values(CboOptions::class, [
             'scope' => 'application',
             'class' => [
                 'scope' => 'all',
             ],
-        ]);
-
-        self::assertSame('all', $options->class->scope);
+        ]));
     }
 
     #[Test]

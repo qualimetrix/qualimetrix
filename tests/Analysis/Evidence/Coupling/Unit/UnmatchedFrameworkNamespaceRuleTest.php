@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
@@ -16,6 +16,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -23,6 +25,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 /**
  * The branches where the rule must say nothing.
@@ -152,12 +155,13 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
     private function rule(array $prefixes, ?UnmatchedFrameworkNamespaceOptions $options = null): UnmatchedFrameworkNamespaceRule
     {
         $coupling = new CouplingAnalysis();
-        $coupling->replace($coupling->resolve(new ConfigurationDocument(
+        $coupling->replace($coupling->resolve(LayeredDocument::of(
             [[
                 'source' => 'test',
                 'values' => ['coupling' => ['frameworkNamespaces' => array_map(static fn(string $prefix): array => ['subtree' => $prefix], $prefixes)]],
             ]],
             AbsolutePath::fromString('/project'),
+            new CouplingSection(),
         )));
 
         return new UnmatchedFrameworkNamespaceRule(
@@ -184,7 +188,7 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
             static fn(SymbolPath $path): bool => \in_array($path->toCanonical(), $canonical, true),
         );
 
-        return new AnalysisContext($metrics, $graph, coversProjectScope: $coversProjectScope);
+        return new AnalysisContext($metrics, $graph, projectScope: new ProjectScopeJudgement($coversProjectScope ? [] : [ProjectScopeDoor::Paths]));
     }
 
     /** One edge: `Sample\Service` depends on `Symfony\Component\Console\Command\Command`. */
