@@ -42,6 +42,12 @@ Console/
 ├── CheckScopeResolver.php           # Pure transfer of the initial measurement after Git resolution
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
+├── Refusal/
+│   ├── ConsoleExitCode.php             # shared terminal exit vocabulary
+│   ├── MachineReadableFormats.php      # formats that publish a structured refusal
+│   ├── EnvironmentRefusal.php          # storage and delivery refusal wording
+│   ├── FileTargetRefusal.php           # Core failure kind to refusal family
+│   └── RefusalPresenter.php            # terminal classification and stream publication
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
 ├── ChannelExclusionKeyValidator.php  # Whether one suppress_namespace_channels key can exclude anything
 ├── ChannelExclusionKeyHints.php      # What to say when it cannot
@@ -534,3 +540,18 @@ effective-band preflight.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+### Terminal refusals
+
+The final application and command catch branches use `RefusalPresenter::unhandled()`
+to classify configuration refusals, environment refusals and raw Core environment
+failures. Refusals exit with code 3; unrelated exceptions remain internal errors
+with code 1. Configuration source metadata, including import chains, survives
+the shared `RefusalInterface`. A failure after report publication is written to
+stderr so stdout retains one report document.
+
+For a stream output, the JSON refusal writer verifies every write and the final
+flush. If stdout cannot accept the envelope, the same terminal diagnostic is
+published on stderr. Partial delivery can leave incomplete JSON on stdout; the
+stderr diagnostic still explains the refusal. Buffered outputs retain their raw
+quiet output semantics.

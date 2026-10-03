@@ -1251,10 +1251,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
         },
         {
@@ -1291,10 +1287,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
         },
         {
@@ -1324,6 +1316,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunPathSelection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal"
         }
       ]
     },
@@ -1384,6 +1380,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\EnvironmentRefusal"
         }
       ]
     },
@@ -21842,6 +21842,14 @@
         {
           "owner": "Core.FileTarget",
           "source_fqcn": "Qualimetrix\\Core\\FileTarget\\FileTargetFailure"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\EnvironmentRefusal"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
         }
       ]
     },
@@ -21884,15 +21892,29 @@
       "path": "src/Core/FileTarget/FileTargetFailure.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\FileTargetFailureKind": {
       "path": "src/Core/FileTarget/FileTargetFailureKind.php",
       "kind": "enum",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\HeldLock": {
       "path": "src/Core/FileTarget/HeldLock.php",
@@ -21982,6 +22004,48 @@
       "path": "src/Core/FileTarget/TargetClaim.php",
       "kind": "class",
       "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Configuration\\Contract\\Refusal\\RefusalInterface": {
+      "path": "src/Analysis/Configuration/Contract/Refusal/RefusalInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Configuration",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Application"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\EnvironmentRefusal"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Refusal\\EnvironmentRefusal": {
+      "path": "src/Infrastructure/Console/Refusal/EnvironmentRefusal.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal": {
+      "path": "src/Infrastructure/Console/Refusal/FileTargetRefusal.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
       "visibility": "internal",
       "consumers": []
     }

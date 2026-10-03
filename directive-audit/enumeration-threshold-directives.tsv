@@ -55,7 +55,7 @@ src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php	112	code-smell
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	23	code-smell.long-parameter-list	warning=9 error=12 -- These fields describe one
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	43	code-smell.long-parameter-list	warning=9 error=12 -- Independent measured facts
 src/Infrastructure/Console/RuntimeConfigurator.php	25	code-smell.long-parameter-list	warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
-src/Infrastructure/Console/Application.php	40	cohesion.lcom	6 -- this is the composition root: wiring
+src/Infrastructure/Console/Application.php	41	cohesion.lcom	6 -- this is the composition root: wiring
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.ccn	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
 src/Core/Symbol/MetricSubjectCodec.php	68	complexity.ccn	warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	137	complexity.ccn	warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
@@ -77,7 +77,7 @@ src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.c
 src/Core/ProductIdentity.php	17	coupling.cbo	24 -- Every output channel reads its documentation address from here
 src/Reporting/FormatterContext.php	15	coupling.cbo	warning=33 error=33 -- Formatter context is the immutable Reporting input boundary every formatter's `format(Report, FormatterContext)` signature depends on. `Infrastructure\Console\ResultPresenter` also names it directly to refuse a `--namespace` or `--class` value that selects nothing, and the bound namespace selector is now part of that stable boundary. Raw CBO 32 gets one-edge headroom from the inclusive threshold of 33.
 src/Reporting/Report.php	19	coupling.cbo	warning=32 error=32 -- Report is the transport VO every formatter's
-src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	34	coupling.class-rank	warning=0.03 -- The paragraph above is the
+src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	33	coupling.class-rank	warning=0.03 -- The paragraph above is the
 src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php	16	coupling.class-rank	warning=0.025 -- ClassRank hands a zero-Ce enum
 src/Analysis/Evidence/Measurement/Contract/MetricBag.php	15	coupling.class-rank	warning=0.035 error=0.035 -- Intentional Measurement
 src/Analysis/Evidence/ComputedMetrics/ComputedMetricFormulaValidator.php	22	coupling.instability	warning=0.81 -- Ca=2, Ce=8: the eighth efferent

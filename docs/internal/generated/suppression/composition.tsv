@@ -56,7 +56,7 @@ rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symb
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolPath.php	Qualimetrix\Core\Symbol\SymbolPath	error	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Core/Symbol/SymbolType.php	Qualimetrix\Core\Symbol\SymbolType	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/ConfigKeySpelling.php	Qualimetrix\Analysis\Configuration	error	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/ConfigurationDocument.php	Qualimetrix\Analysis\Configuration\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/Document/ConfigurationDiagnostic.php	Qualimetrix\Analysis\Configuration\Contract\Document	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/Document/Schema/BareElementPolicy.php	Qualimetrix\Analysis\Configuration\Contract\Document\Schema	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Configuration/Contract/Refusal/ConfigurationOrigin.php	Qualimetrix\Analysis\Configuration\Contract\Refusal	error	1
@@ -78,6 +78,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Poli
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Run/Contract/Configuration/AuthoredExclude.php	Qualimetrix\Analysis\Run\Contract\Configuration	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/FileTarget/DirectoryFacts.php	Qualimetrix\Core\FileTarget	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Core/ProductIdentity.php	Qualimetrix\Core	error	1
@@ -196,6 +197,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/DependencyInj
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php	Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/DependencyInjection/ContainerFactory.php	Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory	error	1
 rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface	warning	1
+rule-path-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Configuration/Document/LayerReading.php	Qualimetrix\Analysis\Configuration\Document\LayerReading	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php	Qualimetrix\Analysis\Evidence\CodeSmell\UsageTrackingTrait	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php	Qualimetrix\Analysis\Evidence\Complexity\ClassCognitiveComplexityOptions	warning	1

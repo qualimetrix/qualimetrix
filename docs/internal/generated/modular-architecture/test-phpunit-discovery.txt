@@ -10044,6 +10044,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"-vvv"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ErrorStreamPseudoTerminalTest::itLeavesNoProgressFrameBehind"default"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtApplicationExit
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\FileTargetRefusalCommandTest::itClassifiesEnvironmentFailureAtLayerAssignmentExit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itAcceptsAKeyReadOnlyByAnotherFormatter
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itAcceptsTheAllFlag
  - Qualimetrix\Tests\Infrastructure\Console\Functional\FormatOptionKeyRefusalTest::itNamesEveryKnownKeyInTheRefusal
@@ -10310,6 +10312,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itAppendsTheDocumentationPointerToTheListCommandsOwnHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itBeginsANewManifestSnapshotAfterWorkingDirectorySelectionForEachInvocation
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itChangesTheWorkingDirectoryWhenWorkingDirIsGiven
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itClassifiesRawFileTargetFailureAtTheApplicationExit
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itDemotesSilentVerbosityToQuiet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itFoldsTheMessageIntoAnOutputWithNoErrorChannelRatherThanDroppingIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itIgnoresTheCaughtThrowablesOwnCode
@@ -10621,7 +10624,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAFallbackRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAppendsTheDocumentationPointerOnAnInternalError
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itCarriesANullPositionWhenTheRunEndedWithoutOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itClassifiesEveryFileTargetFailureKindIntoItsRefusalFamily
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itFramesAFallbackRefusalLikeACarriedOne
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsAnEnvironmentFailureAfterPublishedReportOnStderr
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsStdoutToThePublishedReportWhenTheRunEndsAfterIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerOutOfTheJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerVisibleUnderQuiet
@@ -10637,6 +10642,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPrintsTheTraceFromVerboseUpwardsForAnInternalErrorOnly
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesEverySourceARefusalNames
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itPublishesTheRefusedPositionInTheEnvelope
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itReportsAJsonRefusalOnStderrWhenStdoutCannotBeWritten
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itStopsALiveProgressFrameBeforePresenting
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ReportCoverageProjectionTest::itProjectsNamedExclusionsFromProductionCoverage
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ReportCoverageProjectionTest::itRelativizesProjectPathsInAFailureMessageAndKeepsOutsidersAbsolute

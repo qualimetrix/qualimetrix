@@ -83,6 +83,7 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition'
         - 'Qualimetrix\Analysis\Configuration\DocumentRoots'
         - 'Qualimetrix\Analysis\Configuration\Document\AuthoredLayer'
@@ -1122,6 +1123,8 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter'
         - 'Qualimetrix\Infrastructure\Console\ProjectSourceConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
@@ -1551,6 +1554,8 @@ architecture:
       - analysis-policy-inline
       - analysis-projectmanifest
       - analysis-run
+      - core-environment
+      - core-filetarget
       - core-neutral
       - core-path
       - core-profiler
@@ -1896,6 +1901,9 @@ rules:
       # The shared read port has 29 inbound readers; ClassRank 0.00624447
       # against 0.00607457 measures that intended contract popularity.
       - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
+      # Refusal position metadata has 17 inbound classes; ClassRank 0.00584299
+      # against 0.00572598 measures intended shared contract popularity.
+      - exact: src/Analysis/Configuration/Contract/Refusal/RefusedPosition.php
     suppress_namespaces:
       - subtree: Qualimetrix\Analysis\Finding\Contract
       # Same reconfirmation as for the CBO channel above: the level vocabulary now

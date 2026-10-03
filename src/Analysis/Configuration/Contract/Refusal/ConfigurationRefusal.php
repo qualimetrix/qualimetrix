@@ -11,7 +11,7 @@ use Throwable;
  * A configuration refusal caused by user input: a key, a value, a file, a
  * selector, a form — anything the configuration's author is responsible for.
  *
- * The single carried kind for exit code 3. There is no
+ * The carried kind for configuration refusals. There is no
  * public constructor: every refusal is one of the four named forms below —
  * `at()`, `aboutDocument()`, `aboutInput()` and `acrossLayers()` — each built
  * through a named factory rather than a shared one with a boolean flag.
@@ -25,17 +25,16 @@ use Throwable;
  * for the sites that compute their source or forward an origin they were given.
  *
  * ClassRank measures how much of the graph flows into a type, and for the one
- * carried kind of exit code 3 that number counts the places the product refuses
- * bad input instead of accepting it. CLI doors must use this carrier instead of
+ * carried configuration kind that number counts the places the product refuses
+ * bad input instead of accepting it. CLI doors use this carrier instead of
  * folding empty values into defaults. Splitting the kind to lower the rank would
- * buy a number and a second way to spell a refusal, which is what the
- * single-kind design exists to prevent.
+ * buy a number and a second way to spell a configuration refusal.
  *
  * @qmx-threshold coupling.class-rank warning=0.03 -- The paragraph above is the
  * reason. The original calibration at 1027 classes was raw rank 0.0079, or
  * 0.0252 before scaling, against the default 0.02; the error bound stays the default.
  */
-final class ConfigurationRefusal extends RuntimeException
+final class ConfigurationRefusal extends RuntimeException implements RefusalInterface
 {
     /** @param list<ConfigurationOrigin> $contributors */
     private function __construct(

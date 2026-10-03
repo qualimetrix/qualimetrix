@@ -26,9 +26,10 @@ Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite	Analys
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	6	5
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	46	8
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	45	8
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	5	4
-Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	6	3
+Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	5	1
+Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	7	3
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
@@ -282,8 +283,10 @@ Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	4	2
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	9	3
-Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	1	1
+Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	3	2
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
+Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	2	1
+Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	1	1
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	77	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
