@@ -16,7 +16,10 @@ use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use ReflectionProperty;
 use Symfony\Component\Console\Application;
@@ -69,7 +72,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -110,7 +113,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -126,6 +129,7 @@ final class GraphExportCommandTest extends TestCase
         // Assert success
         self::assertSame(0, $commandTester->getStatusCode());
         self::assertFileExists($outputFile);
+        self::assertSame('', $commandTester->getDisplay(), 'A file export must leave the report stream empty.');
 
         $content = file_get_contents($outputFile);
         self::assertIsString($content);
@@ -146,7 +150,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -181,7 +185,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -220,7 +224,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -256,7 +260,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -293,7 +297,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
 
@@ -873,7 +877,7 @@ final class GraphExportCommandTest extends TestCase
             new DependencyGraphProjector(),
             $this->preflight(),
             new ErrorStream(),
-            new RefusalPresenter(new ErrorStream()),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
             new NullLogger(),
         );
         $application = new Application();

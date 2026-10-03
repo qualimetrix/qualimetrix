@@ -8,6 +8,7 @@ use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Core\FileTarget\HeldTarget;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Stringable;
@@ -24,6 +25,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class LoggerFactory implements LoggerFactoryInterface
 {
+    private ?FileLogger $fileLogger = null;
+
     /**
      * Creates a logger based on output configuration.
      *
@@ -37,9 +40,10 @@ final class LoggerFactory implements LoggerFactoryInterface
      */
     public function create(
         OutputInterface $diagnostics,
-        ?string $logFile = null,
-        ?string $level = null,
+        ?string $logFile,
+        ?string $level,
     ): LoggerInterface {
+        $this->fileLogger = null;
         $loggers = [];
 
         if (!$diagnostics->isQuiet()) {
@@ -57,7 +61,8 @@ final class LoggerFactory implements LoggerFactoryInterface
                 );
             }
 
-            $loggers[] = new FileLogger($logFile, $level ?? LogLevel::INFO);
+            $this->fileLogger = new FileLogger($logFile, $level ?? LogLevel::INFO);
+            $loggers[] = $this->fileLogger;
         }
 
         if ($loggers === []) {
@@ -86,6 +91,21 @@ final class LoggerFactory implements LoggerFactoryInterface
                 }
             }
         };
+    }
+
+    public function attachFileTarget(HeldTarget $target): void
+    {
+        $this->fileLogger?->attach($target);
+    }
+
+    public function settle(): void
+    {
+        $this->fileLogger?->settle();
+    }
+
+    public function reset(): void
+    {
+        $this->fileLogger = null;
     }
 
     /**

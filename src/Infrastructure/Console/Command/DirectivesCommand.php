@@ -117,7 +117,7 @@ final class DirectivesCommand extends Command
                 '',
                 'Exit codes: <info>0</info> no publishable refusal or observable inert directive,',
                 '<info>2</info> at least one publishable refusal or observable inert directive,',
-                '<info>3</info> bad input or configuration, <info>4</info> incomplete run takes precedence',
+                '<info>3</info> input, configuration, or environment refusal, <info>4</info> incomplete run takes precedence',
                 'over those findings, and <info>1</info> if the command itself failed unexpectedly.',
                 '',
                 'Examples:',
@@ -178,13 +178,10 @@ final class DirectivesCommand extends Command
             // inherited deliberately.
             return $this->refusalPresenter->fallbackRefusal($output, $format, $failure);
         } catch (Exception $failure) {
-            // `Exception` and not `Throwable`: an `Error` is a bug in the tool,
-            // and swallowing it into an exit code would hide in CI exactly the
-            // failures CI exists to surface. Routed through the shared
-            // presenter's `internalError()` — the same envelope and
-            // `-q`/`--silent` survival every other command's internal error
-            // gets, not a local `reportError()`.
-            return $this->refusalPresenter->internalError($output, $format, $failure);
+            // `Exception` and not `Throwable`: an `Error` is a bug in the tool.
+            // The shared classifier distinguishes environment failures from
+            // unexpected exceptions while preserving the command's envelope.
+            return $this->refusalPresenter->unhandled($output, $format, $failure);
         }
     }
 

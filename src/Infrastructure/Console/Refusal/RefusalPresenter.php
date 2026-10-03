@@ -75,12 +75,6 @@ final class RefusalPresenter
         return $this->refusal($output, null, $refusal);
     }
 
-    /** Kept for terminal callers that have not yet moved to the classifier. */
-    public function internalErrorAfterPublishedReport(OutputInterface $output, Throwable $failure): int
-    {
-        return $this->internalError($output, null, $failure);
-    }
-
     public function unhandled(OutputInterface $output, ?string $format, Throwable $failure): int
     {
         if ($failure instanceof RefusalInterface) {
@@ -113,7 +107,7 @@ final class RefusalPresenter
      * refusal never gets, because a refusal is the user's problem to fix and
      * an internal error is ours.
      */
-    public function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
+    private function internalError(OutputInterface $output, ?string $format, Throwable $failure): int
     {
         $this->present($output, $format, \sprintf('Internal error: %s', $failure->getMessage()), ConsoleExitCode::InternalError, null, null);
 

@@ -44,6 +44,7 @@ use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
 use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
@@ -275,7 +276,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $errorStream = new ErrorStream();
 
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory)),
             new ProgressConfigurator(new SwitchableProgressReporter(), $errorStream),
             new ProfileSession(),
             new AnalysisRuntimeConfigurator(

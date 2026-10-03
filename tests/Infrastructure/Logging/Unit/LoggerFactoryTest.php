@@ -10,6 +10,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Logging\Contract\LogFileUnavailable;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -25,6 +27,9 @@ final class LoggerFactoryTest extends TestCase
 {
     private string $tempDir;
 
+    /** @var list<HeldTarget> */
+    private array $targets = [];
+
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx_test_' . bin2hex(random_bytes(6));
@@ -35,6 +40,10 @@ final class LoggerFactoryTest extends TestCase
 
     protected function tearDown(): void
     {
+        foreach ($this->targets as $target) {
+            $target->release();
+        }
+        $this->targets = [];
         if (is_dir($this->tempDir)) {
             $files = glob($this->tempDir . '/*');
             if ($files !== false) {
@@ -53,7 +62,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
 
-        $logger = (new LoggerFactory())->create($output);
+        $logger = (new LoggerFactory())->create($output, null, null);
 
         self::assertNotInstanceOf(NullLogger::class, $logger);
 
@@ -69,7 +78,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_QUIET);
 
-        $logger = (new LoggerFactory())->create($output);
+        $logger = (new LoggerFactory())->create($output, null, null);
 
         self::assertInstanceOf(NullLogger::class, $logger);
     }
@@ -79,7 +88,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = (new LoggerFactory())->create($output);
+        $logger = (new LoggerFactory())->create($output, null, null);
 
         $logger->info('Test message');
         self::assertStringContainsString('Test message', $output->fetch());
@@ -91,8 +100,11 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = (new LoggerFactory())->create($output, $logFile);
+        $factory = new LoggerFactory();
+        $logger = $factory->create($output, $logFile, null);
         $logger->info('Test');
+        self::assertFileDoesNotExist($logFile);
+        $this->attach($factory, $logFile);
 
         self::assertFileExists($logFile);
         $content = file_get_contents($logFile);
@@ -106,8 +118,10 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = (new LoggerFactory())->create($output, $logFile);
+        $factory = new LoggerFactory();
+        $logger = $factory->create($output, $logFile, null);
         $logger->info('Test message');
+        $this->attach($factory, $logFile);
 
         self::assertStringContainsString('Test message', $output->fetch());
         self::assertFileExists($logFile);
@@ -154,7 +168,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERY_VERBOSE);
 
-        (new LoggerFactory())->create($output)->debug('Debug message');
+        (new LoggerFactory())->create($output, null, null)->debug('Debug message');
 
         self::assertStringContainsString('Debug message', $output->fetch());
     }
@@ -165,13 +179,15 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = (new LoggerFactory())->create(
+        $factory = new LoggerFactory();
+        $logger = $factory->create(
             $output,
             $logFile,
             LogLevel::INFO,
         );
         $logger->debug('Debug message');
         $logger->info('Info message');
+        $this->attach($factory, $logFile);
 
         self::assertFileExists($logFile);
         $content = file_get_contents($logFile);
@@ -193,7 +209,7 @@ final class LoggerFactoryTest extends TestCase
         chdir($this->tempDir);
 
         try {
-            (new LoggerFactory())->create(new BufferedOutput(), $logFile);
+            (new LoggerFactory())->create(new BufferedOutput(), $logFile, null);
             self::fail('A blank log file path was accepted');
         } catch (LogFileUnavailable $unavailable) {
             self::assertSame($logFile, $unavailable->path);
@@ -219,7 +235,7 @@ final class LoggerFactoryTest extends TestCase
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = (new LoggerFactory())->create($output, null);
+        $logger = (new LoggerFactory())->create($output, null, null);
 
         $logger->info('Test');
         self::assertStringContainsString('Test', $output->fetch());
@@ -280,13 +296,23 @@ final class LoggerFactoryTest extends TestCase
     {
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = (new LoggerFactory())->create(new BufferedOutput(OutputInterface::VERBOSITY_QUIET), $logFile);
+        $factory = new LoggerFactory();
+        $logger = $factory->create(new BufferedOutput(OutputInterface::VERBOSITY_QUIET), $logFile, null);
         $logger->debug('Debug message');
         $logger->info('Info message');
+        $this->attach($factory, $logFile);
 
         $content = file_get_contents($logFile);
         self::assertIsString($content);
         self::assertStringNotContainsString('Debug message', $content);
         self::assertStringContainsString('Info message', $content);
+    }
+
+    private function attach(LoggerFactory $factory, string $path): void
+    {
+        $target = HeldTarget::claim(TargetPath::resolve($path));
+        $this->targets[] = $target;
+        $factory->attachFileTarget($target);
+        $factory->settle();
     }
 }

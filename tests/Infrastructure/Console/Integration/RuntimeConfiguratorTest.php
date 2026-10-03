@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -33,12 +34,15 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\RuntimeLimits;
 use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
@@ -110,6 +114,7 @@ final class RuntimeConfiguratorTest extends TestCase
         ?string $failingOwner = null,
         ?ComputedMetricConfiguratorInterface $computedMetricsOverride = null,
         ?RuleChannelSnapshotFactoryInterface $snapshotFactoryOverride = null,
+        ?LoggerFactoryInterface $loggerFactoryOverride = null,
     ): RuntimeConfigurator {
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $architectureToken = new class implements ResolvedArchitecturePolicyInterface {
@@ -139,8 +144,9 @@ final class RuntimeConfiguratorTest extends TestCase
             $coupling->method('resolve')->willThrowException($failure);
         }
 
-        $loggerFactory = self::createStub(LoggerFactoryInterface::class);
-        $loggerFactory->method('create')->willReturn(new NullLogger());
+        $defaultLoggerFactory = self::createStub(LoggerFactoryInterface::class);
+        $defaultLoggerFactory->method('create')->willReturn(new NullLogger());
+        $loggerFactory = $loggerFactoryOverride ?? $defaultLoggerFactory;
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([LcomRule::class]);
         // The universe carries the addressable names, which is what the
@@ -173,7 +179,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $errorStream = new ErrorStream();
 
         return new RuntimeConfigurator(
-            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream),
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder(), $errorStream, new RunTargets($loggerFactory)),
             new ProgressConfigurator($this->progress, $errorStream),
             $this->profile,
             $analysis,
@@ -207,6 +213,43 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertSame(['getName'], $this->lcomStore->current()->excludedMethods);
         self::assertTrue($this->rules->capturesExcludedFindings());
         self::assertTrue($this->profile->isEnabled());
+    }
+
+    #[Test]
+    public function itRefusesAnIncompleteCacheClearWithTheDirectoryAndReason(): void
+    {
+        $directory = $this->projectRoot . '/cache-file';
+        file_put_contents($directory, 'KEEP');
+        $this->cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString($directory)));
+
+        try {
+            $this->configurator->clearCacheIfRequested($this->input(['--clear-cache' => true]));
+            self::fail('An incomplete cache clear must refuse the run.');
+        } catch (EnvironmentRefusal $refusal) {
+            self::assertStringContainsString($directory, $refusal->summary());
+            self::assertStringContainsString('Cache directory is not a directory', $refusal->summary());
+            self::assertSame('KEEP', file_get_contents($directory));
+        }
+    }
+
+    #[Test]
+    public function itWarnsOnceWhenTheDefaultCacheIsDisabledForAnUnusableDirectory(): void
+    {
+        $reason = 'Default cache disabled: cache directory cannot be searched.';
+        $logger = self::createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('warning')->with($reason);
+        $factory = self::createStub(LoggerFactoryInterface::class);
+        $factory->method('create')->willReturn($logger);
+        $configurator = $this->createConfigurator(loggerFactoryOverride: $factory);
+        $document = $this->customDocument();
+        $root = AbsolutePath::fromString($this->projectRoot);
+        $run = new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration(
+            $this->runConfigurationFor($document),
+            new CacheConfiguration(AbsolutePath::fromString($this->projectRoot . '/cache'), false, $reason),
+            (new ParallelConfigurationResolver())->resolve($document),
+        );
+
+        $configurator->configure($document, $run, $this->findingConfigurationFor($document), $this->input(), new BufferedOutput());
     }
 
     #[Test]
@@ -655,6 +698,7 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
             new InputOption('show-suppressed', null, InputOption::VALUE_NONE),
             new InputOption('profile', null, InputOption::VALUE_OPTIONAL, '', false),
             new InputOption('no-progress', null, InputOption::VALUE_NONE),
+            new InputOption('clear-cache', null, InputOption::VALUE_NONE),
         ]));
     }
 

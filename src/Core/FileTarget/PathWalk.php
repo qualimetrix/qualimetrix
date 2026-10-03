@@ -209,6 +209,6 @@ final class PathWalk
     /** @param list<string> $parts */
     private static function hasRemainingComponents(array $parts): bool
     {
-        return array_any($parts, static fn(string $part): bool => $part !== '' && $part !== '.');
+        return $parts !== [];
     }
 }

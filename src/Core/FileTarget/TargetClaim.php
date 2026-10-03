@@ -32,7 +32,7 @@ final class TargetClaim
     private static function createName(ResolvedTarget $target): array
     {
         $path = $target->path?->value() ?? throw new LogicException('Absent target has no path');
-        $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+        $temporary = self::prepareTemporary($target, $path);
         try {
             [$linked, $linkWarning] = NativeCall::attempt(static fn() => link($temporary->path()->value(), $path));
             if (!$linked) {
@@ -57,6 +57,20 @@ final class TargetClaim
         }
     }
 
+    private static function prepareTemporary(ResolvedTarget $target, string $path): TemporarySibling
+    {
+        try {
+            return TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+        } catch (FileTargetFailure $failure) {
+            throw new FileTargetFailure(
+                $failure->kind,
+                $target->spelling,
+                $failure->reason,
+                $failure->spelling . ($failure->detail === '' ? '' : ': ' . $failure->detail),
+            );
+        }
+    }
+
     /** @return array{ResolvedTarget, resource, bool} */
     private static function openExisting(ResolvedTarget $target): array
     {
@@ -70,6 +84,7 @@ final class TargetClaim
         }
 
         try {
+            self::enableBlocking($target, $handle);
             if ($target->kind !== TargetKind::Descriptor) {
                 self::verifyOpenedIdentity($target, $path, $handle);
             }
@@ -78,6 +93,18 @@ final class TargetClaim
         } catch (Throwable $error) {
             fclose($handle);
             throw $error;
+        }
+    }
+
+    /** @param resource $handle */
+    private static function enableBlocking(ResolvedTarget $target, mixed $handle): void
+    {
+        if (!\in_array($target->kind, [TargetKind::Descriptor, TargetKind::Stream], true)) {
+            return;
+        }
+        [$blocking, $warning] = NativeCall::attempt(static fn() => stream_set_blocking($handle, true));
+        if (!$blocking) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $target->spelling, 'cannot enable blocking writes', $warning ?? 'unknown error');
         }
     }
 

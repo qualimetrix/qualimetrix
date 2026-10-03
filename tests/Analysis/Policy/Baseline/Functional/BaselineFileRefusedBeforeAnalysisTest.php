@@ -279,7 +279,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
             $property('checkScopeResolver'),
             $property('configurationInputAdapter'),
             $property('configurationResolvers'),
-            $property('refusalPresenter'),
+            $property('runTargetSession'),
         );
 
         $tester = new CommandTester($command);

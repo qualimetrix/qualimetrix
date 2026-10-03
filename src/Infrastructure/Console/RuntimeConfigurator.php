@@ -7,8 +7,10 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Infrastructure\Cache\CacheClearOutcome;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressConfigurator;
+use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -82,6 +84,9 @@ final class RuntimeConfigurator
         // analysis; committed stores are reset at the next invocation entry.
         $this->runtimeLimitsController->apply($runtimeLimits);
         $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
+        if ($run->cacheConfiguration->disabledBecause !== null) {
+            $logger->warning($run->cacheConfiguration->disabledBecause);
+        }
         if ($prepared !== null) {
             foreach ($prepared->architecturePolicy->warnings() as $warning) {
                 $logger->warning($warning->message, $warning->context);
@@ -105,9 +110,23 @@ final class RuntimeConfigurator
             return false;
         }
 
-        $this->cacheFactory->create()->clear();
+        $outcome = $this->cacheFactory->create()->clear();
+        self::refuseIncompleteCacheClear($outcome);
 
         return true;
+    }
+
+    private static function refuseIncompleteCacheClear(CacheClearOutcome $outcome): void
+    {
+        if ($outcome->complete) {
+            return;
+        }
+
+        throw EnvironmentRefusal::aboutFile(
+            $outcome->directory,
+            'clear cache in',
+            \sprintf('%d cache entries remain: %s', $outcome->remaining, $outcome->reason ?? 'unknown reason'),
+        );
     }
 
     /**
