@@ -57,8 +57,9 @@ final class HeldLockTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'qmx-lock-');
         self::assertIsString($path);
+        file_put_contents($path, 'sentinel');
         $judged = TargetPath::resolve($path);
-        unlink($path);
+        rename($path, $path . '.original');
         file_put_contents($path, 'different lock');
 
         try {
@@ -68,7 +69,10 @@ final class HeldLockTest extends TestCase
             } catch (FileTargetFailure $failure) {
                 self::assertSame(FileTargetFailureKind::IdentityChanged, $failure->kind);
             }
+            self::assertSame('different lock', file_get_contents($path));
+            self::assertSame('sentinel', file_get_contents($path . '.original'));
         } finally {
+            unlink($path . '.original');
             unlink($path);
         }
     }
