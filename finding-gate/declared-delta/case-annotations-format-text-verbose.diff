@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -21,1 +21,1 @@
--Qualimetrix dev-main: 6 error(s), 1 warning(s) in 1 file(s)
-+Qualimetrix dev-main: 6 error(s), 0 warning(s), 1 info in 1 file(s)
