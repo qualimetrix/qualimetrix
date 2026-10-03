@@ -66,3 +66,19 @@ Component swaps still have windows between inspection and use. In particular,
 a FIFO opened with we can be replaced by another process of the same effective
 uid before open, causing truncation before the subsequent identity refusal.
 No guarantee of zero filesystem effects is made for these residual races.
+
+Baseline prepares both absent and existing destinations before analysis and
+requires an existing writable/searchable parent. Its writer receives that
+`ResolvedTarget`, keeps the loaded content hash for compare-and-swap and holds
+a judged sibling lock across validation and replacement. Closed links retain
+the link entry and publish their resolved referent; there is no second blanket
+symlink policy. Hook backup publication preserves the source mode; restoration
+uses a subject-owned rename to preserve its inode and consume the backup name.
+These native unlink/rename operations retain an inspection/use race.
+
+Cache resolution inspects without creating directories. An unusable explicit
+path refuses with authored provenance; an unusable default disables caching.
+Clear returns completion, remaining recognizable entries, directory and reason;
+uninspectable shards cannot establish completion. Entry replacement delegates
+complete-write and cleanup semantics to Core. Serializer-marker publication
+retains its separate implementation.

@@ -107,6 +107,7 @@ src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCach
 src/Infrastructure/Composer/ComposerAutoloadMap.php	Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap	Infrastructure.Composer	"adapter session or cache"	-	classmap,loaded,omissions,psr4,roots	addPsr4
 src/Infrastructure/Composer/ComposerManifestReader.php	Qualimetrix\Infrastructure\Composer\ComposerManifestReader	Infrastructure.Composer	"invocation snapshot cache"	-	snapshots	beginInvocation
 src/Infrastructure/Composer/DeclaredParentReader.php	Qualimetrix\Infrastructure\Composer\DeclaredParentReader	Infrastructure.Composer	"adapter session or cache"	-	answers	-
+src/Infrastructure/Console/Command/AbstractHookCommand.php	Qualimetrix\Infrastructure\Console\Command\AbstractHookCommand	Infrastructure.Console	"adapter session or cache"	-	reportedExposure	configure,execute
 src/Infrastructure/Console/Command/BaselineCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	"adapter session or cache"	-	refusalPresenter	execute,setRefusalPresenter
 src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	configure,execute
 src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	"adapter session or cache"	-	boundTo,diagnostics,progress,sectionable,sections	bind,reset

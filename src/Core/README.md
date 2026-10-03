@@ -949,8 +949,10 @@ support these operations. `NativeCall` captures the warning of one filesystem
 call and restores the previous PHP error handler even when the call throws.
 `FileTargetFailure` carries an explicit kind, path,
 reason and optional detail. Its failure carrier and kind vocabulary are public
-only to the declared Console classification consumers; filesystem policy remains
-with its subject.
+only to declared exact consumers; publication and lifecycle policy remain
+with each consuming subject. A failed temporary-sibling preparation retains the
+requested destination and the native temporary-path cause. An inaccessible
+existing parent cannot establish that the final name is absent.
 
 Existing regular files open without truncation and are checked against their
 judged inode before a write. An unwritten exclusive name is removed on release

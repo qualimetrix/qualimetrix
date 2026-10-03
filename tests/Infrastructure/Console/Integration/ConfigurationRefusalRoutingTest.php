@@ -304,12 +304,14 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     #[Test]
     public function itAnswersTheCarrierWithExitThreeInBaselineGenerate(): void
     {
+        $errorStream = new ErrorStream();
         $command = new BaselineGenerateCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineGenerator'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
+            $errorStream,
         );
-        $command->setRefusalPresenter($this->freshPresenter());
+        $command->setRefusalPresenter(new RefusalPresenter($errorStream));
 
         $tester = new CommandTester($command);
         $code = $tester->execute(

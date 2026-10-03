@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Baseline writers now require a prepared `ResolvedTarget` instead of a string
+  destination. `destinationSnapshot()` returns `{target, hash}` for both absent
+  and existing targets. Prepare the destination before analysis and pass the
+  returned target to `BaselineWriter::write()`. Create parent directories
+  explicitly: baseline publication no longer creates them. Existing modes are
+  preserved. Closed, Core-judged symbolic links write their resolved referents;
+  exposed links refuse. `--force` still authorizes replacing occupied names.
+- `BaselineGenerateCommand` requires its fourth `ErrorStream` argument, and
+  hook commands require the third. Use the same stream as `RefusalPresenter`.
+  Unreadable hooks now refuse with environment exit 3. Hook backups preserve
+  mode; restoring a backup moves its inode and consumes the backup name.
+- `CacheInterface::clear()` now returns `CacheClearOutcome`, with completion,
+  remaining-entry count, directory and reason. Inspect completion rather than
+  assuming every entry was removed. Cache configuration resolution no longer
+  creates directories; an unusable default disables caching, while an explicit
+  unusable directory refuses with its authored provenance.
+
+
 **Inline directives are authored sites with bounded declaration reach.**
 Previously midline tags could become live controls, quote handling depended on
 a tick immediately before the tag, and binding followed the parser's outer

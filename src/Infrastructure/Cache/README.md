@@ -29,7 +29,16 @@ Parsing PHP into AST is the most expensive operation. Caching avoids repeated pa
 - `set(string $key, mixed $value): void`
 - `has(string $key): bool`
 - `delete(string $key): void`
-- `clear(): void`
+- `clear(): CacheClearOutcome`
+
+### CacheDirectoryContents and CacheDirectoryEligibility
+
+These internal operations keep directory contents and path eligibility with the
+Cache subject. Contents owns removal, owned-entry residue inspection and
+marker-last completion. Eligibility inspects the nearest existing directory
+through Core and requires write and search permission without creating it.
+`FileCache` retains serialization and entry publication; the resolver retains
+authored provenance and explicit/default configuration decisions.
 
 ### CacheKeyGenerator
 
@@ -79,7 +88,7 @@ unverified AST.
 
 File-based implementation of `CacheInterface`.
 
-**Constructor:** `__construct(string $directory)`
+**Constructor:** `__construct(AbsolutePath $directory, ?SerializerInterface $serializer = null)`
 
 **Features:**
 - **Sharding:** first 2 characters of the key as a subdirectory
@@ -97,40 +106,36 @@ a process today, but the parallel transport this cache is declared safe for
 admits threads, and two threads writing one key would agree on a pid and
 disagree on bytes.
 
-`clear()` survives a subdirectory it cannot enter. It runs from `get()` and
-`set()`, so an escaping exception would turn a cache problem into a failed
-file.
+`CacheClearOutcome` reports `complete`, `remaining`, `directory` and nullable
+`reason`. A second inspection counts recognizable cache entries after the
+removal walk; unreadable or linked shards make completion unknown and therefore
+incomplete. Unrelated residue does not falsely report surviving cache entries.
+The serializer marker is removed last, only after complete inspection. Internal
+serializer changes retain the previous marker after incomplete clear.
 
-**The marker is written only over an empty directory.** A clear can fall short
-three ways — the directory refuses to open, a subdirectory refuses to open, or
-an unlink is refused — and the serializer marker is a claim about what the
-directory holds, so writing it after a clear that fell short states a format
-the surviving entries do not have. Whether the directory ended up empty is
-therefore measured by looking at it again, not tallied from the walk:
-`CATCH_GET_CHILD` drops an unreadable subtree entirely, so every removal in
-the walk can succeed over a directory that is not empty.
-
-The marker is also kept back from the walk and removed last, once everything
-else is gone. Deleting it beside a surviving entry is the same lie one process
-later: the next process would read "nothing says", skip the clear on that
-ground and write its own name over the old format.
+Entry publication uses Core's judged `FileReplacement`: the complete payload
+is flushed before atomic replacement, an existing mode is preserved, and a
+failed write cleans its owned temporary sibling. Serializer-marker publication
+retains its separate implementation.
 
 **Storage structure:**
 ```
 .qmx-cache/
 ├── ab/
-│   └── cdef1234567890abcdef.cache
+│   └── abcdef1234567890abcdef.cache
 ├── 12/
-│   └── 34567890abcdef1234.cache
+│   └── 1234567890abcdef1234.cache
 └── ...
 ```
 
 ### CacheFactory
 
 Lazy cache creation based on runtime configuration. `CacheConfigurationResolver`
-first reads the resolved `cache.dir` and `cache.enabled` leaves; their declared
-forms and provenance decide a configuration refusal before the factory stores
-the resulting cache configuration.
+first reads the resolved `cache.dir` and `cache.enabled` leaves. Resolution
+inspects the nearest existing directory without creating a cache. An unusable
+explicit directory refuses with its authored provenance; an unusable default
+disables caching and carries `CacheConfiguration::disabledBecause` for the
+runtime warning. A disabled cache leaves its path inert.
 
 **Method:**
 - `create(): CacheInterface` — creates FileCache with the path from the current

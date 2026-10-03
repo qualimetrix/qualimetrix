@@ -555,3 +555,18 @@ flush. If stdout cannot accept the envelope, the same terminal diagnostic is
 published on stderr. Partial delivery can leave incomplete JSON on stdout; the
 stderr diagnostic still explains the refusal. Buffered outputs retain their raw
 quiet output semantics.
+
+## Hook publication
+
+Hook commands receive the shared `ErrorStream` as their third constructor
+argument. Core judgement precedes writing and reports the first writable exposure
+for each hook or backup target. An unreadable existing hook refuses with
+environment exit 3 rather than being reported healthy or replaced as foreign.
+Installing a foreign-hook backup preserves its mode; restoring it moves the inode
+back and consumes the backup name. Content publication uses a complete temporary
+sibling. The subject-owned unlink and restore rename repeat entry identities
+immediately beforehand, with a remaining inspection/use race.
+
+`BaselineGenerateCommand` requires the same stream as its fourth argument and
+reports destination exposure before measurement. It passes a prepared target to
+the Baseline writer; parent creation is the caller's responsibility.

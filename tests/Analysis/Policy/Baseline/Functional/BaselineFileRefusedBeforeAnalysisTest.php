@@ -295,7 +295,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
     {
         (new BaselineWriter())->write(
             new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: []),
-            $path,
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
     }

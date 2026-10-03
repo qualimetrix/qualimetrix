@@ -1118,10 +1118,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeDefaults"
         },
         {
-          "owner": "Infrastructure.Cache",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheConfigurationResolver"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
         },
@@ -1183,10 +1179,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
         },
         {
@@ -1196,10 +1188,6 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopePaths"
-        },
-        {
-          "owner": "Infrastructure.Cache",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheConfigurationResolver"
         },
         {
           "owner": "Infrastructure.Console",
@@ -1228,10 +1216,6 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
         },
         {
           "owner": "Infrastructure.Console",
@@ -1336,10 +1320,6 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ProjectScopeDefaults"
-        },
-        {
-          "owner": "Infrastructure.Cache",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheConfigurationResolver"
         },
         {
           "owner": "Infrastructure.Console",
@@ -15665,6 +15645,10 @@
         {
           "owner": "Core.FileTarget",
           "source_fqcn": "Qualimetrix\\Core\\FileTarget\\TargetClaim"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         }
       ]
     },
@@ -21878,15 +21862,33 @@
       "path": "src/Core/FileTarget/FileIdentity.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\FileReplacement": {
       "path": "src/Core/FileTarget/FileReplacement.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\FileCache"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\FileTargetFailure": {
       "path": "src/Core/FileTarget/FileTargetFailure.php",
@@ -21901,6 +21903,30 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\FileCache"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         }
       ]
     },
@@ -21913,6 +21939,26 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\FileTargetRefusal"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         }
       ]
     },
@@ -21920,22 +21966,45 @@
       "path": "src/Core/FileTarget/HeldLock.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\HeldTarget": {
       "path": "src/Core/FileTarget/HeldTarget.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\NewName": {
       "path": "src/Core/FileTarget/NewName.php",
       "kind": "enum",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\FileCache"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\PathExposure": {
       "path": "src/Core/FileTarget/PathExposure.php",
@@ -21955,22 +22024,89 @@
       "path": "src/Core/FileTarget/ResolvedTarget.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\TargetKind": {
       "path": "src/Core/FileTarget/TargetKind.php",
       "kind": "enum",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\TargetPath": {
       "path": "src/Core/FileTarget/TargetPath.php",
       "kind": "class",
       "owner": "Core.FileTarget",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\FileCache"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+        },
+        {
+          "owner": "Infrastructure.Cache",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
+        }
+      ]
     },
     "Qualimetrix\\Core\\FileTarget\\TemporarySibling": {
       "path": "src/Core/FileTarget/TemporarySibling.php",
@@ -22032,6 +22168,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
         }
       ]
     },
@@ -22046,6 +22186,27 @@
       "path": "src/Infrastructure/Console/Refusal/FileTargetRefusal.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Cache\\CacheClearOutcome": {
+      "path": "src/Infrastructure/Cache/CacheClearOutcome.php",
+      "kind": "class",
+      "owner": "Infrastructure.Cache",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryContents": {
+      "path": "src/Infrastructure/Cache/CacheDirectoryContents.php",
+      "kind": "class",
+      "owner": "Infrastructure.Cache",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility": {
+      "path": "src/Infrastructure/Cache/CacheDirectoryEligibility.php",
+      "kind": "class",
+      "owner": "Infrastructure.Cache",
       "visibility": "internal",
       "consumers": []
     }

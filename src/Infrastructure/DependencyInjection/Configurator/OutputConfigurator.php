@@ -396,6 +396,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
 
@@ -404,6 +405,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
 
@@ -412,6 +414,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
+                new Reference(ErrorStream::class),
             ])
             ->setPublic(true);
     }
@@ -505,6 +508,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineRun::class),
                 new Reference(BaselineGenerator::class),
                 new Reference(BaselineWriter::class),
+                new Reference(ErrorStream::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);

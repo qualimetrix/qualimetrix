@@ -1029,8 +1029,11 @@ architecture:
         - 'Qualimetrix\Infrastructure\Ast\WorkerParserFactory'
     - name: infrastructure-cache
       patterns:
+        - 'Qualimetrix\Infrastructure\Cache\CacheClearOutcome'
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver'
         - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationStore'
+        - 'Qualimetrix\Infrastructure\Cache\CacheDirectoryContents'
+        - 'Qualimetrix\Infrastructure\Cache\CacheDirectoryEligibility'
         - 'Qualimetrix\Infrastructure\Cache\CacheFactory'
         - 'Qualimetrix\Infrastructure\Cache\CacheInterface'
         - 'Qualimetrix\Infrastructure\Cache\CacheKeyGenerator'
@@ -1481,6 +1484,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding
+      - core-filetarget
       - core-neutral
       - core-path
       - core-symbol
@@ -1533,6 +1537,7 @@ architecture:
       - external
     infrastructure-cache:
       - analysis-configuration
+      - core-filetarget
       - core-path
       - infrastructure-serializer
       - external
@@ -2051,6 +2056,12 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # Two cache readers consume this storage adapter (Ca=2, Ce=11).
+      # Instability reflects the reader population after separating directory operations.
+      - exact: src/Infrastructure/Cache/FileCache.php
+      # Two Baseline writers consume this document guard (Ca=2, Ce=10).
+      # Instability reflects the small reader population; other signals remain active.
+      - exact: src/Analysis/Policy/Baseline/BaselineDocumentWriter.php
       # The policy composes ten dependencies for two run-level readers (Ca=2).
       - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
       # These exact vocabulary, document, specificity and DI declarations have Ca=2.
@@ -2343,6 +2354,10 @@ rules:
       - exact: src/Infrastructure/Console/Application.php
       - exact: src/Infrastructure/Console/Command/GraphExportCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
+      # Private extraction takes these commands from five methods to six: TCC is
+      # absent and LCOM stays 2, so the formula alone drops health from 75.36 to 40.
+      - exact: src/Infrastructure/Console/Command/HookInstallCommand.php
+      - exact: src/Infrastructure/Console/Command/HookUninstallCommand.php
       # TCC=0/LCOM=3 measure three independent refusal facts, not its static
       # factories; health 30 stays unchanged when those factories are moved.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php

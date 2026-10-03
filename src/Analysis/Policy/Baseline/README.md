@@ -33,7 +33,7 @@ Baseline/
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
-├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws ConfigurationRefusal
+├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws Core FileTargetFailure
 ├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
 ├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
@@ -581,23 +581,23 @@ check. The provenance is a property of the guard, never a field of the file.
 `write()` returns the token for the bytes it wrote, and
 `Baseline::withSourceContentHash()` carries it back — without which a caller writing one
 instance twice would be refused by its own first write.
-A caller that replaces a file it never loaded — `baseline:generate --force` — takes the
-token from `BaselineWriter::destinationSnapshot()` before the analysis; a destination
-that is not a regular file (a directory, a symbolic link) or cannot be read has no token
-the guard could compare, and is refused there as input rather than after the run.
+`BaselineWriter::destinationSnapshot()` returns `{target: ResolvedTarget, hash:
+?string}` before analysis, including an explicitly absent target. Pass that target
+as the second argument of `write()`; the writer does not resolve an independent
+string again. Existing targets must be readable and claimable without truncation.
+The parent directory must already exist and permit sibling publication: create it
+before invoking the command. Replacement preserves an existing file's mode.
+Closed symbolic links retain their own entry and publish their resolved referent;
+exposed links refuse through Core. An occupied name still needs `--force` when
+generating, including a dangling link. Update and cleanup keep the loaded content
+hash as their compare-and-swap expectation.
 
-The wait for the lock is bounded (10 seconds by default): a crashed writer releases
-through the OS, but a hung one would otherwise stop the next `qmx` invocation with no
-output at all, which in CI reads as a job timeout rather than a baseline problem.
-Its deadline uses monotonic `hrtime` readings in seconds, so adjusting the system
-date cannot extend or shorten the wait.
-
-A path that cannot be written — a directory that cannot be created, a lock file that
-cannot be opened, a temporary file that cannot be written, a target the rename cannot
-replace — is refused as the baseline file with `ConfigurationRefusal` (exit code 3),
-quoting the reason the system gave. The filesystem call's own PHP warning is kept out of
-the output. A lock held past the wait stays a `RuntimeException`: it is contention, not
-input.
+The sibling lock is held across the identity/content check and publication. Its
+wait is bounded (10 seconds by default) with monotonic `hrtime`, and its named
+entry is retained after release. FileTarget failures preserve the requested path
+and available system cause without printing PHP warnings; Console classifies
+storage and lock contention as environment exit 3. Configuration refusal remains
+the loader's response to an invalid document.
 
 **Every entry read is an entry written.** The writer never groups entries under a key two
 of them can share, because resolving such a clash by overwriting would delete a line
