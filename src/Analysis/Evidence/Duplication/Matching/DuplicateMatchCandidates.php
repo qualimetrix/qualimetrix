@@ -27,6 +27,13 @@ final class DuplicateMatchCandidates
         $chunk = intdiv($this->count, 1024);
         $this->recordChunks[$chunk] ??= '';
         $this->recordChunks[$chunk] .= pack('q3', $length, \count($copies), $this->copySize);
+        $this->appendCopies(self::encodeCopies($copies));
+        $this->count++;
+    }
+
+    /** @param list<int> $copies */
+    private static function encodeCopies(array $copies): string
+    {
         $payload = "\1";
         $previous = 0;
         $previousFile = 0;
@@ -44,8 +51,8 @@ final class DuplicateMatchCandidates
             $previousFile = $file;
             $previousOffset = $offset;
         }
-        $this->appendCopies($payload);
-        $this->count++;
+
+        return $payload;
     }
 
     private static function appendUnsigned(string &$payload, int $value): void
@@ -66,8 +73,7 @@ final class DuplicateMatchCandidates
      */
     public function withoutSubsumed(Closure $span): array
     {
-        $order = $this->count === 0 ? [] : range(0, $this->count - 1);
-        $this->sortOrder($order);
+        $order = $this->orderedMatches();
 
         $index = new CopyCoverIndex();
         $kept = [];
@@ -81,13 +87,19 @@ final class DuplicateMatchCandidates
 
             $keptId = \count($kept);
             $kept[] = [$length, $copies];
-            foreach ($copies as $copy) {
-                [$file, $start, $end] = $span($copy, $length);
-                $index->add($keptId, $file, $start, $end);
-            }
+            $index->addCopies($keptId, $copies, $length, $span);
         }
 
         return $kept;
+    }
+
+    /** @return array<int, int> */
+    private function orderedMatches(): array
+    {
+        $order = $this->count === 0 ? [] : range(0, $this->count - 1);
+        $this->sortOrder($order);
+
+        return $order;
     }
 
     private function compare(int $a, int $b): int

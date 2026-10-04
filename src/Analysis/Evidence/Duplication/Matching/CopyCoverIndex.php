@@ -34,6 +34,18 @@ final class CopyCoverIndex
         array_splice($this->ranges[$fileIndex], $low, 0, [[$start, $end, $keptId]]);
     }
 
+    /**
+     * @param list<int> $copies
+     * @param Closure(int, int): array{int, int, int} $span
+     */
+    public function addCopies(int $keptId, array $copies, int $length, Closure $span): void
+    {
+        foreach ($copies as $copy) {
+            [$file, $start, $end] = $span($copy, $length);
+            $this->add($keptId, $file, $start, $end);
+        }
+    }
+
     /** @param list<int> $out Replaced with retained ids containing [start, end). */
     public function containing(int $fileIndex, int $start, int $end, array &$out): void
     {
