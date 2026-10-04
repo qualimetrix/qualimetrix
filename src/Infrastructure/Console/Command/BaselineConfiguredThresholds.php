@@ -64,12 +64,15 @@ use Throwable;
  * **A channel whose options hold no such number is left out of the map, not
  * guessed.** {@see \Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary::$configuredThreshold}
  * is then `null`, which `explain` prints as "not resolvable" — distinct from a
- * configured `0`. Two shapes reach that outcome, and they are different
+ * configured `0`. Three shapes reach that outcome, and they are different
  * statements even though the column cannot show the difference:
  *
  * - the options are not {@see ThresholdAwareOptionsInterface} at all, which is
  *   every occurrence detector: severity there comes from "more than zero
  *   occurrences", a comparison no configuration moves;
+ * - `duplication.clone` reports every copy of an admitted block, and its
+ *   configured `error` changes severity rather than whether the channel
+ *   reports, so it declares no configured warning boundary;
  * - the class answers
  *   {@see \Qualimetrix\Analysis\Finding\Contract\Rule\NoConfiguredBoundary::MoreThanOneBoundary},
  *   holding two and unable to tell which was applied. **A wrong number is

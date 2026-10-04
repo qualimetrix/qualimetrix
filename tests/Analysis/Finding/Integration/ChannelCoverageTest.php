@@ -266,8 +266,8 @@ final class ChannelCoverageTest extends TestCase
         $resultProvider->replace([
             new DuplicateBlock(
                 locations: [
-                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
-                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, null),
+                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 11, null),
+                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 11, null),
                 ],
                 tokens: 200,
                 contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
@@ -284,6 +284,7 @@ final class ChannelCoverageTest extends TestCase
         foreach ($findings as $finding) {
             self::assertDeclared($finding->channel());
             self::assertSame(SymbolLevel::File, $finding->level());
+            self::assertSame(11, $finding->metricValue);
         }
     }
 

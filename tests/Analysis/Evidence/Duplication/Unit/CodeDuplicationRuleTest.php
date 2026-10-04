@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
@@ -16,6 +17,8 @@ use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -50,6 +53,8 @@ final class CodeDuplicationRuleTest extends TestCase
     public function itDeclaresCodeDuplicationOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeDuplicationOptions::class, CodeDuplicationRule::getOptionsClass());
+        self::assertFalse(ThresholdOverrideSupportReader::read(CodeDuplicationRule::class));
+        self::assertFalse(CodeDuplicationRule::channelDeclarations()[CodeDuplicationRule::NAME]->usesProducerWarningBoundary);
     }
 
     #[Test]
@@ -120,7 +125,7 @@ final class CodeDuplicationRuleTest extends TestCase
             self::assertSame(MetricSubject::aggregate($filePath)->toCanonical(), $v->subject->toCanonical());
             self::assertSame($filePath->toCanonical(), $v->symbolPath->toCanonical());
             self::assertNotNull($v->occurrenceKey);
-            self::assertStringContainsString('16 lines', $v->message);
+            self::assertStringContainsString('16 code lines', $v->message);
             self::assertStringContainsString('2 occurrences', $v->message);
         }
 
@@ -245,7 +250,7 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertCount(2, $findings);
         // No hint means no quotes in the message
         self::assertStringNotContainsString('"', $findings[0]->message);
-        self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $findings[0]->message);
+        self::assertStringContainsString('(16 code lines, 2 occurrences) — also at', $findings[0]->message);
     }
 
     #[Test]
@@ -411,8 +416,7 @@ final class CodeDuplicationRuleTest extends TestCase
 
     /**
      * `min_lines` admits a block by its longest copy, and every copy of an
-     * admitted block is reported at its own value: a shorter copy too, below
-     * `warning` and so as a warning.
+     * admitted block is reported at its own covered code-line value.
      */
     #[Test]
     public function itReportsACopyShorterThanMinLinesAtItsOwnValue(): void
@@ -431,15 +435,12 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertSame(['src/A.php', 16, Severity::Warning], [$onA->location->pathString(), $onA->metricValue, $onA->severity]);
         self::assertSame(['src/B.php', 4, Severity::Warning], [$onB->location->pathString(), $onB->metricValue, $onB->severity]);
-        self::assertStringContainsString('(4 lines, 2 occurrences)', $onB->message);
+        self::assertStringContainsString('(4 code lines, 2 occurrences)', $onB->message);
     }
 
-    /**
-     * `min_lines` and `warning` are separate options: a copy that clears the
-     * first but not the second is still reported, as a warning.
-     */
+    /** A copy below the severity boundary remains a finding with Warning severity. */
     #[Test]
-    public function itReportsACopyBelowTheWarningThresholdAsAWarning(): void
+    public function itReportsACopyBelowTheErrorBoundaryAsAWarning(): void
     {
         $block = new DuplicateBlock(
             locations: [
@@ -451,7 +452,7 @@ final class CodeDuplicationRuleTest extends TestCase
         );
         $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
 
-        $findings = $this->createRule(new CodeDuplicationOptions(min_lines: 3, warning: 10))->analyze($context);
+        $findings = $this->createRule(new CodeDuplicationOptions(min_lines: 3, error: 10))->analyze($context);
 
         self::assertCount(2, $findings);
         self::assertSame([Severity::Warning, Severity::Warning], array_map(static fn($finding) => $finding->severity, $findings));
@@ -470,19 +471,17 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray(): void
+    public function itReadsResolvedDuplicationOptions(): void
     {
         $options = CodeDuplicationOptions::fromResolved(ResolvedOptionsFixture::values(CodeDuplicationOptions::class, [
             'enabled' => false,
             'min_lines' => 10,
             'min_tokens' => 100,
-            'warning' => 8,
             'error' => 40,
         ]));
         self::assertFalse($options->isEnabled());
         self::assertSame(10, $options->min_lines);
         self::assertSame(100, $options->min_tokens);
-        self::assertSame(8, $options->warning);
         self::assertSame(40, $options->error);
 
         // camelCase support
@@ -495,27 +494,74 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds(): void
+    public function itUsesPositiveResolvedOptionDefaults(): void
+    {
+        $options = CodeDuplicationOptions::fromResolved(ResolvedOptionsFixture::values(CodeDuplicationOptions::class, []));
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(5, $options->min_lines);
+        self::assertSame(70, $options->min_tokens);
+        self::assertSame(50, $options->error);
+    }
+
+    #[Test]
+    public function itClassifiesDuplicateSeverityByCoveredCodeLinesUsingTheDefaultErrorBoundary(): void
     {
         $options = new CodeDuplicationOptions();
 
-        self::assertNull($options->getSeverity(0));
-        self::assertNull($options->getSeverity(4));
-        self::assertSame(Severity::Warning, $options->getSeverity(5));
+        self::assertSame(Severity::Warning, $options->getSeverity(0));
+        self::assertSame(Severity::Warning, $options->getSeverity(4));
         self::assertSame(Severity::Warning, $options->getSeverity(49));
         self::assertSame(Severity::Error, $options->getSeverity(50));
         self::assertSame(Severity::Error, $options->getSeverity(100));
     }
 
     #[Test]
-    public function itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds(): void
+    public function itClassifiesDuplicateSeverityByCoveredCodeLinesUsingOnlyTheErrorBoundary(): void
     {
-        $options = new CodeDuplicationOptions(warning: 10, error: 30);
+        $options = new CodeDuplicationOptions(error: 30);
 
-        self::assertNull($options->getSeverity(9));
+        self::assertSame(Severity::Warning, $options->getSeverity(9));
         self::assertSame(Severity::Warning, $options->getSeverity(10));
         self::assertSame(Severity::Warning, $options->getSeverity(29));
         self::assertSame(Severity::Error, $options->getSeverity(30));
+    }
+
+    #[Test]
+    public function itRefusesRetiredWarningAndThresholdConfigurationKeysAtTheirAuthoredAddresses(): void
+    {
+        $metadata = [new RuleMetadata(CodeDuplicationRule::NAME, CodeDuplicationOptions::class, '', [], false)];
+
+        foreach (['warning', 'threshold'] as $key) {
+            try {
+                ResolvedOptionsFixture::authoredConfiguration(
+                    ['rules' => [CodeDuplicationRule::NAME => [$key => 20]]],
+                    $metadata,
+                );
+                self::fail('A retired duplication option must refuse the authored document.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertStringContainsString('rules.duplication.clone.' . $key, $refusal->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itRequiresPositiveAuthoredMinimumsAndErrorBoundary(): void
+    {
+        $metadata = [new RuleMetadata(CodeDuplicationRule::NAME, CodeDuplicationOptions::class, '', [], false)];
+
+        foreach (['min_lines', 'min_tokens', 'error'] as $key) {
+            try {
+                ResolvedOptionsFixture::authoredConfiguration(
+                    ['rules' => [CodeDuplicationRule::NAME => [$key => 0]]],
+                    $metadata,
+                );
+                self::fail('A zero duplication minimum or error boundary must be refused.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertStringContainsString('rules.duplication.clone.' . $key, $refusal->getMessage());
+                self::assertStringContainsString('at least 1', $refusal->getMessage());
+            }
+        }
     }
 
     private function createRule(?CodeDuplicationOptions $options = null): CodeDuplicationRule
@@ -557,8 +603,8 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertSame([5, 2], array_column($findings, 'metricValue'));
         self::assertSame([Severity::Error, Severity::Warning], array_column($findings, 'severity'));
-        self::assertStringContainsString('(5 lines, 2 occurrences): "first source"', $findings[0]->message);
-        self::assertStringContainsString('(2 lines, 2 occurrences): "second source"', $findings[1]->message);
+        self::assertStringContainsString('(5 code lines, 2 occurrences): "first source"', $findings[0]->message);
+        self::assertStringContainsString('(2 code lines, 2 occurrences): "second source"', $findings[1]->message);
     }
 
     /** @param array<string, list<int>> $copies */

@@ -75,8 +75,8 @@ final class DuplicateCopyIdentityTest extends TestCase
 
         self::assertSame(17, $onA['value']);
         self::assertSame(17, $onB['value']);
-        self::assertStringContainsString('(17 lines, 2 occurrences)', $onA['message']);
-        self::assertStringContainsString('(17 lines, 2 occurrences)', $onB['message']);
+        self::assertStringContainsString('(17 code lines, 2 occurrences)', $onA['message']);
+        self::assertStringContainsString('(17 code lines, 2 occurrences)', $onB['message']);
     }
 
     #[Test]
@@ -101,7 +101,7 @@ final class DuplicateCopyIdentityTest extends TestCase
         $onB = self::onlyCopyIn($analysis, 'src/B.php');
         self::assertSame(5, $onA['value']);
         self::assertSame(4, $onB['value']);
-        self::assertStringContainsString('(4 lines, 2 occurrences)', $onB['message']);
+        self::assertStringContainsString('(4 code lines, 2 occurrences)', $onB['message']);
         self::assertStringEndsWith('also at src/A.php:2-6', $onB['message']);
     }
 

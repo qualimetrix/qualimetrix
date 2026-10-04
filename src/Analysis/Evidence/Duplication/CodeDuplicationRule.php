@@ -82,7 +82,7 @@ final class CodeDuplicationRule extends AbstractRule
         $findings = [];
 
         foreach ($this->resultProvider->all() as $block) {
-            array_push($findings, ...$this->copyFindings($context, $block));
+            array_push($findings, ...$this->copyFindings($block));
         }
 
         return $findings;
@@ -95,22 +95,18 @@ final class CodeDuplicationRule extends AbstractRule
 
     /**
      * `duplication.clone` reports the code lines one copy covers as its
-     * `metricValue`, judged worse the higher it goes:
-     * {@see CodeDuplicationOptions::getSeverity()} compares that number with
-     * `warning` and `error`. Emission itself is unconditional — every copy of
-     * every `DuplicateBlock` produces a `Finding` whatever its size, with
-     * `Severity::Warning` as the fallback below `warning`, which a copy
-     * shorter than `min_lines` in a block admitted by its longest copy
-     * reaches — but the threshold comparison genuinely gates *severity*, and
-     * severity is monotone in the copy's covered lines, so `higher` is a real
-     * fact about the code.
+     * `metricValue`, judged worse the higher it goes. Its `error` option
+     * selects Error at and above the boundary and Warning below it. Admission
+     * is separate: every copy of an admitted block is reported, including a
+     * shorter copy below `min_lines`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File)
+                ->withoutConfiguredWarningBoundary(),
         ];
     }
 
@@ -124,7 +120,7 @@ final class CodeDuplicationRule extends AbstractRule
      *
      * @return list<Finding>
      */
-    private function copyFindings(AnalysisContext $context, DuplicateBlock $block): array
+    private function copyFindings(DuplicateBlock $block): array
     {
         $locations = array_map(
             static fn(DuplicateLocation $copy): Location => new Location($copy->file, $copy->startLine, precise: true),
@@ -152,14 +148,14 @@ final class CodeDuplicationRule extends AbstractRule
                 ruleName: $this->getName(),
                 code: $this->getName(),
                 message: \sprintf(
-                    'Duplicated code block (%d lines, %d occurrences)%s — also at %s%s',
+                    'Duplicated code block (%d code lines, %d occurrences)%s — also at %s%s',
                     $lines,
                     $block->occurrences(),
                     $hintPart,
                     implode(', ', array_map(static fn(int $other): string => $block->locations[$other]->toString(), $named)),
                     $unnamed > 0 ? \sprintf(' and %d more', $unnamed) : '',
                 ),
-                severity: $this->getEffectiveSeverity($context, $this->options, $subject, $lines) ?? Severity::Warning,
+                severity: $this->options->getSeverity($lines) ?? Severity::Warning,
                 metricValue: $lines,
                 relatedLocations: array_map(static fn(int $other): Location => $locations[$other], $named),
                 recommendation: 'Extract duplicated code into a shared method or class.',
@@ -212,10 +208,10 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * Declared, never inferred from the options class: `@qmx-threshold` can
+     * Declared, never inferred from the options class: `@qmx-threshold` cannot
      * retune this rule. See
      * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader},
      * which also explains why this is a constant and why it is declared last.
      */
-    public const bool SUPPORTS_THRESHOLD_OVERRIDE = true;
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
 }

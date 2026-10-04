@@ -3,5 +3,4 @@ rules:
   duplication.clone:
     min_lines: 5
     min_tokens: 20
-    warning: 5
     error: 50
