@@ -163,7 +163,7 @@ final class HarnessSelfTest
             if ($factory['exit'] === 0) {
                 $metadata = json_decode($factory['stdout'], true, 512, \JSON_THROW_ON_ERROR);
                 $ids = $metadata['ids'];
-                $this->same(31, \count($ids), 'the prepared tree retains all 31 controls');
+                $this->same(30, \count($ids), 'the prepared tree retains all 30 controls');
                 $this->same('positive', $ids[0] ?? null, 'the first control keeps its place');
                 $this->same('report-value-no-row', $ids[20] ?? null, 'the fixed factories keep their order');
                 $this->same(
