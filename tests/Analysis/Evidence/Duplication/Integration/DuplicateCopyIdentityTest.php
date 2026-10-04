@@ -62,13 +62,9 @@ final class DuplicateCopyIdentityTest extends TestCase
         rmdir($this->tmpDir);
     }
 
-    /**
-     * A comment or a blank line inside one copy widens that copy alone; the
-     * other copies still span what they spanned, and their value — the one a
-     * baseline compares — must not move with a file nobody touched.
-     */
+    /** Comments widen physical spans without changing either copy's code value. */
     #[Test]
-    public function itValuesEachCopyByTheLinesThatCopySpans(): void
+    public function itValuesEachCopyByItsCoveredCodeLines(): void
     {
         $this->write('A', self::classWith('A', self::withComment(self::BODY)));
         $this->write('B', self::classWith('B', self::BODY));
@@ -77,25 +73,30 @@ final class DuplicateCopyIdentityTest extends TestCase
         $onA = self::onlyCopyIn($analysis, 'src/A.php');
         $onB = self::onlyCopyIn($analysis, 'src/B.php');
 
-        self::assertSame(18, $onA['value']);
+        self::assertSame(17, $onA['value']);
         self::assertSame(17, $onB['value']);
-        self::assertStringContainsString('(18 lines, 2 occurrences)', $onA['message']);
+        self::assertStringContainsString('(17 lines, 2 occurrences)', $onA['message']);
         self::assertStringContainsString('(17 lines, 2 occurrences)', $onB['message']);
     }
 
-    /**
-     * `min_lines` admits a block by its longest copy. A comment lifting one
-     * copy past it admits the block, and the copy in the file nobody touched
-     * is reported too, at the lines it spans itself.
-     */
     #[Test]
-    public function itReportsEveryCopyOnceTheLongestReachesMinLines(): void
+    public function itDoesNotAdmitABlockWhenOnlyACommentReachesMinLines(): void
     {
         $this->write('A', self::shortFunction('runA', '    // a note'));
         $this->write('B', self::shortFunction('runB', ''));
 
-        $analysis = $this->analyze();
+        self::assertSame([], $this->analyze()['copies']);
+    }
 
+    #[Test]
+    public function itReportsEveryCopyOnceTheLongestCodeCoverageReachesMinLines(): void
+    {
+        $long = str_replace('11 * $a', "strlen(\"first\nsecond\") * \$a", self::shortFunction('runA', ''));
+        $short = str_replace('11 * $a', 'strlen("first") * $a', self::shortFunction('runB', ''));
+        $this->write('A', $long);
+        $this->write('B', $short);
+
+        $analysis = $this->analyze();
         $onA = self::onlyCopyIn($analysis, 'src/A.php');
         $onB = self::onlyCopyIn($analysis, 'src/B.php');
         self::assertSame(5, $onA['value']);
@@ -338,10 +339,7 @@ final class DuplicateCopyIdentityTest extends TestCase
         return $body;
     }
 
-    /**
-     * Four lines and over 70 tokens: one line short of the default
-     * `min_lines`, until `$extra` lands inside it.
-     */
+    /** Four code lines and over 70 tokens; a comment widens only the physical span. */
     private static function shortFunction(string $name, string $extra): string
     {
         return implode("\n", [

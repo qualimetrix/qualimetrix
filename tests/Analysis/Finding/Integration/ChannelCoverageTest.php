@@ -266,10 +266,9 @@ final class ChannelCoverageTest extends TestCase
         $resultProvider->replace([
             new DuplicateBlock(
                 locations: [
-                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, null),
                 ],
-                lines: 100,
                 tokens: 200,
                 contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
             ),

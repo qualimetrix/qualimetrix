@@ -79,6 +79,30 @@ final class DuplicateBlockFinderTest extends TestCase
         self::assertCount(1, $blocks, 'Two copies must yield their duplicate block');
     }
 
+    #[Test]
+    public function itKeepsDifferentMatchesWithTheSamePhysicalLineSpan(): void
+    {
+        $sources = ['<?php first($a); uniqueA() + second($a);', '<?php first($b); uniqueB() - second($b);'];
+        $normalizer = new TokenNormalizer();
+        $request = new DuplicateSearchRequest(
+            hashIndex: [
+                1 => [PackedPosition::pack(0, 0), PackedPosition::pack(1, 0)],
+                2 => [PackedPosition::pack(0, 9), PackedPosition::pack(1, 9)],
+            ],
+            retokenized: new RetokenizedFiles(array_map($normalizer->normalize(...), $sources), $sources),
+            filePaths: ['first.php', 'second.php'],
+            minTokens: 5,
+            minLines: 1,
+        );
+
+        $blocks = (new DuplicateBlockFinder())->find($request);
+
+        self::assertCount(2, $blocks);
+        self::assertNotSame($blocks[0]->contentHash, $blocks[1]->contentHash);
+        self::assertSame('first($a);', $blocks[0]->locations[0]->hint);
+        self::assertSame('second($a);', $blocks[1]->locations[0]->hint);
+    }
+
     /**
      * Builds a search request over files whose token streams all match, so
      * any group of offset-0 positions yields a real duplicate block.

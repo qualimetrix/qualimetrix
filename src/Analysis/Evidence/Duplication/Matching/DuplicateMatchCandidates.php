@@ -5,30 +5,33 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Duplication\Matching;
 
 use Closure;
+use LogicException;
 
-/**
- * The matches {@see DuplicateBlockFinder} has found in one run, before the
- * ones whose copies all lie inside a longer match are dropped.
- *
- * Highly repetitive input yields a match at every point where its copies
- * stop agreeing, and nearly all of them are dropped: 30 files of `echo N;`
- * runs yielded 34 582 matches with 545 526 copies, of which 335 matches with
- * 5 145 copies survive. Held as blocks until then they exhausted a 128M
- * limit, so a match is held here as its length and its copies' packed
- * positions only, in parallel lists with each match's copies packed into one
- * string — an int and a string per match rather than two arrays.
- */
+/** Verified matches held as packed positions until retained covers are known. */
 final class DuplicateMatchCandidates
 {
-    /** @var list<int> match => its length in tokens */
+    /** @var list<int> */
     private array $lengths = [];
 
-    /** @var list<string> match => its copies' packed positions, `pack('q*')` */
+    /** @var list<string> Copies packed with pack('q*'). */
     private array $packedCopies = [];
 
-    /**
-     * @param list<int> $copies packed positions of the match's copies
-     */
+    /** @var array<int, int> */
+    private array $parents = [];
+
+    /** @var array<int, int> */
+    private array $sizes = [];
+
+    /** @var list<int> */
+    private array $touched = [];
+
+    /** @var list<int> */
+    private array $covers = [];
+
+    /** @var list<int> */
+    private array $anchors = [];
+
+    /** @param list<int> $copies */
     public function add(int $length, array $copies): void
     {
         $this->lengths[] = $length;
@@ -36,39 +39,39 @@ final class DuplicateMatchCandidates
     }
 
     /**
-     * The matches of which at least one copy lies outside every longer match
-     * kept before it, longest first; matches of equal length keep the order
-     * they were added in.
+     * A candidate disappears only when retained matches connect all its copies.
      *
-     * @param Closure(int, int): array{string, int, int} $span a copy's file, first and last
-     *                                                         line, given the copy and the
-     *                                                         match length
+     * @param Closure(int, int): array{int, int, int} $span File index and half-open token interval
      *
-     * @return list<array{int, list<int>}> each kept match's length and copies
+     * @return list<array{int, list<int>}>
      */
     public function withoutSubsumed(Closure $span): array
     {
-        $lengths = $this->lengths;
-        $order = array_keys($lengths);
-        usort($order, static fn(int $a, int $b): int => [$lengths[$b], $a] <=> [$lengths[$a], $b]);
+        $order = array_keys($this->lengths);
+        usort($order, function (int $a, int $b): int {
+            $length = $this->lengths[$b] <=> $this->lengths[$a];
+            if ($length !== 0) {
+                return $length;
+            }
+            $copies = \strlen($this->packedCopies[$b]) <=> \strlen($this->packedCopies[$a]);
 
-        /** @var array<string, list<array{int, int}>> $covered file => covered line ranges */
-        $covered = [];
+            return $copies !== 0 ? $copies : $a <=> $b;
+        });
+
+        $index = new CopyCoverIndex();
         $kept = [];
-
         foreach ($order as $match) {
-            $length = $lengths[$match];
+            $length = $this->lengths[$match];
             $copies = self::unpack($this->packedCopies[$match]);
-            $spans = array_map(static fn(int $copy): array => $span($copy, $length), $copies);
-
-            if (self::allCovered($covered, $spans)) {
+            if ($this->isConnectedCover($index, $copies, $length, $span)) {
                 continue;
             }
 
+            $keptId = \count($kept);
             $kept[] = [$length, $copies];
-
-            foreach ($spans as [$file, $start, $end]) {
-                $covered[$file][] = [$start, $end];
+            foreach ($copies as $copy) {
+                [$file, $start, $end] = $span($copy, $length);
+                $index->add($keptId, $file, $start, $end);
             }
         }
 
@@ -76,28 +79,82 @@ final class DuplicateMatchCandidates
     }
 
     /**
-     * @param array<string, list<array{int, int}>> $covered
-     * @param list<array{string, int, int}> $spans
+     * @param list<int> $copies
+     * @param Closure(int, int): array{int, int, int} $span
      */
-    private static function allCovered(array $covered, array $spans): bool
+    private function isConnectedCover(CopyCoverIndex $index, array $copies, int $length, Closure $span): bool
     {
-        foreach ($spans as [$file, $start, $end]) {
-            if (!array_any($covered[$file] ?? [], static fn(array $range): bool => $range[0] <= $start && $range[1] >= $end)) {
-                return false;
-            }
-        }
+        $this->anchors = [];
+        try {
+            foreach ($copies as $copy) {
+                [$file, $start, $end] = $span($copy, $length);
+                $index->containing($file, $start, $end, $this->covers);
+                if ($this->covers === []) {
+                    return false;
+                }
 
-        return true;
+                $anchor = $this->covers[0];
+                $this->anchors[] = $anchor;
+                foreach ($this->covers as $id) {
+                    if (!isset($this->parents[$id])) {
+                        $this->parents[$id] = $id;
+                        $this->sizes[$id] = 1;
+                        $this->touched[] = $id;
+                    }
+                    $this->join($anchor, $id);
+                }
+            }
+
+            $root = $this->root($this->anchors[0]);
+            foreach ($this->anchors as $anchor) {
+                if ($this->root($anchor) !== $root) {
+                    return false;
+                }
+            }
+
+            return true;
+        } finally {
+            foreach ($this->touched as $id) {
+                unset($this->parents[$id], $this->sizes[$id]);
+            }
+            $this->touched = [];
+            $this->covers = [];
+            $this->anchors = [];
+        }
     }
 
-    /**
-     * @return list<int>
-     */
+    private function root(int $id): int
+    {
+        while ($this->parents[$id] !== $id) {
+            $this->parents[$id] = $this->parents[$this->parents[$id]];
+            $id = $this->parents[$id];
+        }
+
+        return $id;
+    }
+
+    private function join(int $left, int $right): void
+    {
+        $left = $this->root($left);
+        $right = $this->root($right);
+        if ($left === $right) {
+            return;
+        }
+        if ($this->sizes[$left] < $this->sizes[$right]) {
+            [$left, $right] = [$right, $left];
+        }
+        $this->parents[$right] = $left;
+        $this->sizes[$left] += $this->sizes[$right];
+    }
+
+    /** @return list<int> */
     private static function unpack(string $packed): array
     {
         $copies = unpack('q*', $packed);
-
+        if ($copies === false) {
+            throw new LogicException('Cannot unpack the verified match copies');
+        }
         /** @var list<int> */
-        return $copies === false ? [] : array_values($copies);
+        return array_values($copies);
     }
 }

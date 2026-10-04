@@ -126,10 +126,10 @@ YAML);
     /**
      * Runs of one repeated statement, each of its own length, match one
      * another at every offset, and the matches stop agreeing at every run's
-     * end: 20 files of ten runs yield 13 788 matches with 167 510 copies, of
-     * which 214 blocks with 2 141 copies survive. Holding every match as a
-     * block until the longer ones were known exhausted a 64M limit; the same
-     * 2 141 copies must now be reported within it.
+     * end. Twenty files of ten runs retain 364 blocks with 3 617 copies after
+     * connected coverage and balanced segmentation. Holding every match as
+     * a block until the longer ones were known exhausted a 64M limit; all
+     * retained copies and their JSON output must complete within it.
      */
     #[Test]
     public function itReportsRunsOfARepeatedStatementUnderALowMemoryLimit(): void
@@ -158,7 +158,7 @@ YAML);
         /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string}>} $report */
         $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
         self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
-        self::assertCount(2141, $report['violations'] ?? []);
+        self::assertCount(3617, $report['violations'] ?? []);
     }
 
     private function copiedClass(string $className): string

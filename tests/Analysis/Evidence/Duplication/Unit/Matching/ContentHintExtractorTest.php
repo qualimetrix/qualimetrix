@@ -33,7 +33,7 @@ final class ContentHintExtractorTest extends TestCase
         }
         PHP;
 
-        $hint = $this->extractor->extract($source, 2, 8);
+        $hint = $this->extractLines($source, 2, 8);
 
         self::assertNotNull($hint);
         self::assertStringContainsString('function processItems', $hint);
@@ -44,7 +44,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "\n\n\nfunction foo() {\n    return 1;\n}\n";
 
-        $hint = $this->extractor->extract($source, 1, 6);
+        $hint = $this->extractLines($source, 1, 6);
 
         self::assertNotNull($hint);
         self::assertStringContainsString('function foo()', $hint);
@@ -55,7 +55,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "{\n{\n    \$x = 1;\n    \$y = 2;\n}\n}\n";
 
-        $hint = $this->extractor->extract($source, 1, 6);
+        $hint = $this->extractLines($source, 1, 6);
 
         self::assertNotNull($hint);
         self::assertStringContainsString('$x = 1', $hint);
@@ -66,10 +66,10 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "<?php\nfunction veryLongFunctionNameThatExceedsTheMaximumAllowedHintLength(\$parameterOne, \$parameterTwo, \$parameterThree, \$parameterFour) {\n    return true;\n}\n";
 
-        $hint = $this->extractor->extract($source, 2, 4);
+        $hint = $this->extractLines($source, 2, 4);
 
         self::assertNotNull($hint);
-        self::assertLessThanOrEqual(83, \strlen($hint)); // 80 + "..." = max 83 in practice
+        self::assertLessThanOrEqual(80, \strlen($hint));
         self::assertStringEndsWith('...', $hint);
     }
 
@@ -78,7 +78,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "<?php\n\$x = 1;\n\$y = 2;\n";
 
-        $hint = $this->extractor->extract($source, 2, 3);
+        $hint = $this->extractLines($source, 2, 3);
 
         self::assertNotNull($hint);
         self::assertStringNotContainsString('...', $hint);
@@ -90,7 +90,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "\n\n\n\n\n";
 
-        $hint = $this->extractor->extract($source, 1, 5);
+        $hint = $this->extractLines($source, 1, 5);
 
         self::assertNull($hint);
     }
@@ -100,7 +100,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "{\n}\n{\n}\n";
 
-        $hint = $this->extractor->extract($source, 1, 4);
+        $hint = $this->extractLines($source, 1, 4);
 
         self::assertNull($hint);
     }
@@ -110,8 +110,8 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "<?php\n\$x = 1;\n";
 
-        self::assertNull($this->extractor->extract($source, 0, 2));
-        self::assertNull($this->extractor->extract($source, 100, 200));
+        self::assertNull($this->extractLines($source, 0, 2));
+        self::assertNull($this->extractLines($source, 100, 200));
     }
 
     #[Test]
@@ -119,7 +119,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "<?php\n\$x   =   1;\n  \$y    =    2;\n";
 
-        $hint = $this->extractor->extract($source, 2, 3);
+        $hint = $this->extractLines($source, 2, 3);
 
         self::assertNotNull($hint);
         // Should not contain multiple consecutive spaces
@@ -138,7 +138,7 @@ final class ContentHintExtractorTest extends TestCase
         ];
         PHP;
 
-        $hint = $this->extractor->extract($source, 2, 6);
+        $hint = $this->extractLines($source, 2, 6);
 
         self::assertNotNull($hint);
         self::assertStringContainsString('return [', $hint);
@@ -149,7 +149,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "<?php\nline1_code();\nline2_code();\nline3_code();\nline4_code();\nline5_code();\n";
 
-        $hint = $this->extractor->extract($source, 2, 6);
+        $hint = $this->extractLines($source, 2, 6);
 
         self::assertNotNull($hint);
         self::assertStringContainsString('line1_code()', $hint);
@@ -165,10 +165,10 @@ final class ContentHintExtractorTest extends TestCase
         $longLine = '$result = array_map(fn($item) => $item->transform()->validate()->serialize()->compress()->encrypt(), $items);';
         $source = "<?php\n{$longLine}\n";
 
-        $hint = $this->extractor->extract($source, 2, 2);
+        $hint = $this->extractLines($source, 2, 2);
 
         self::assertNotNull($hint);
-        self::assertLessThanOrEqual(83, \strlen($hint));
+        self::assertLessThanOrEqual(80, \strlen($hint));
         self::assertStringEndsWith('...', $hint);
     }
 
@@ -177,7 +177,7 @@ final class ContentHintExtractorTest extends TestCase
     {
         $source = "<?php\n\$x = 'hello \"world\"';\n\$y = \"it's \\\\done\";\n";
 
-        $hint = $this->extractor->extract($source, 2, 3);
+        $hint = $this->extractLines($source, 2, 3);
 
         self::assertNotNull($hint);
         // Should contain the code as-is (no escaping needed for display)
@@ -190,9 +190,50 @@ final class ContentHintExtractorTest extends TestCase
         $source = "<?php\n\$x = 1;\n";
 
         // endLine beyond file length should not crash
-        $hint = $this->extractor->extract($source, 2, 1000);
+        $hint = $this->extractLines($source, 2, 1000);
 
         self::assertNotNull($hint);
         self::assertStringContainsString('$x = 1', $hint);
     }
+
+    #[Test]
+    public function itCountsUnicodeCodePointsIncludingTheEllipsis(): void
+    {
+        $exact = str_repeat('Ж', 80);
+        self::assertSame($exact, $this->extractor->extract($exact, 0, \strlen($exact)));
+        $long = $exact . 'Я';
+        self::assertSame(str_repeat('Ж', 77) . '...', $this->extractor->extract($long, 0, \strlen($long)));
+    }
+
+    #[Test]
+    public function itTruncatesAtTheLastWordBoundaryInsideTheUnicodeLimit(): void
+    {
+        $source = str_repeat('Ж', 45) . ' ' . str_repeat('Я', 35) . ' ' . str_repeat('Ю', 10);
+
+        self::assertSame(str_repeat('Ж', 45) . '...', $this->extractor->extract($source, 0, \strlen($source)));
+    }
+
+    #[Test]
+    public function itFallsBackToBytesForInvalidUtf8(): void
+    {
+        $source = str_repeat("\xff", 81);
+
+        self::assertSame(str_repeat("\xff", 77) . '...', $this->extractor->extract($source, 0, \strlen($source)));
+    }
+
+    private function extractLines(string $source, int $startLine, int $endLine): ?string
+    {
+        $lines = explode("\n", $source);
+        if ($startLine < 1 || $startLine > \count($lines)) {
+            return null;
+        }
+        $start = \strlen(implode("\n", \array_slice($lines, 0, $startLine - 1)));
+        if ($startLine > 1) {
+            $start++;
+        }
+        $end = \strlen(implode("\n", \array_slice($lines, 0, $endLine)));
+
+        return $this->extractor->extract($source, $start, $end);
+    }
+
 }

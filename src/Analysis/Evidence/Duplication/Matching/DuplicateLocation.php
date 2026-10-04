@@ -15,6 +15,8 @@ final readonly class DuplicateLocation
         public RelativePath $file,
         public int $startLine,
         public int $endLine,
+        public int $codeLines,
+        public ?string $hint,
     ) {}
 
     public function lineCount(): int

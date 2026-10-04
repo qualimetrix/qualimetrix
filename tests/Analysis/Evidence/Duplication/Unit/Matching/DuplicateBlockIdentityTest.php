@@ -21,13 +21,13 @@ final class DuplicateBlockIdentityTest extends TestCase
     public function itKeepsContentIdentityWhenPresentationLocationsArePermuted(): void
     {
         $locations = [
-            new DuplicateLocation(RelativePath::fromString('src/C.php'), 30, 45),
-            new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-            new DuplicateLocation(RelativePath::fromString('src/B.php'), 20, 35),
+            new DuplicateLocation(RelativePath::fromString('src/C.php'), 30, 45, 16, null),
+            new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+            new DuplicateLocation(RelativePath::fromString('src/B.php'), 20, 35, 16, null),
         ];
 
-        $forward = new DuplicateBlock($locations, 16, 80, self::CONTENT_HASH);
-        $reverse = new DuplicateBlock(array_reverse($locations), 16, 80, self::CONTENT_HASH);
+        $forward = new DuplicateBlock($locations, 80, self::CONTENT_HASH);
+        $reverse = new DuplicateBlock(array_reverse($locations), 80, self::CONTENT_HASH);
 
         self::assertSame(self::CONTENT_HASH, $forward->contentHash);
         self::assertSame($forward->contentHash, $reverse->contentHash);
@@ -41,8 +41,8 @@ final class DuplicateBlockIdentityTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         new DuplicateBlock([
-            new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-            new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
-        ], 16, 80, 'truncated');
+            new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+            new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, null),
+        ], 80, 'truncated');
     }
 }

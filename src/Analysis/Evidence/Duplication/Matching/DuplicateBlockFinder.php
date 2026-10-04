@@ -32,9 +32,9 @@ use Qualimetrix\Core\Path\RelativePath;
  * bucket of that preceding window holds the same members one token
  * earlier and yields a block that contains this one.
  *
- * A match is held in {@see DuplicateMatchCandidates} until every match
- * whose copies all lie inside a longer one is dropped; only the survivors
- * become {@see DuplicateBlock}s.
+ * Retained covers must connect all copies before a candidate is dropped.
+ * Balanced segments are admitted separately, with the whole match retained
+ * when none passes; a second coverage reduction precedes block allocation.
  *
  * {@see find()} holds the current request/scratch state as instance
  * properties for the duration of one call so the nested helpers below
@@ -74,9 +74,33 @@ final class DuplicateBlockFinder
                 $this->evaluateBucket($positions);
             }
 
+            $segments = new DuplicateMatchCandidates();
+            foreach ($this->candidates->withoutSubsumed($this->coverSpan(...)) as [$length, $copies]) {
+                $admitted = false;
+                $first = $copies[0];
+                foreach (BalancedSegments::of($this->tokensAt($first), PackedPosition::offset($first), $length) as [$shift, $segmentLength]) {
+                    if ($segmentLength < $request->minTokens) {
+                        continue;
+                    }
+                    $shifted = array_map(
+                        static fn(int $copy): int => PackedPosition::pack(PackedPosition::fileIndex($copy), PackedPosition::offset($copy) + $shift),
+                        $copies,
+                    );
+                    $reportable = $this->reportableCopies($shifted, $segmentLength);
+                    if ($reportable !== null) {
+                        $segments->add($segmentLength, $reportable);
+                        $admitted = true;
+                    }
+                }
+                if (!$admitted) {
+                    $segments->add($length, $copies);
+                }
+            }
+            unset($this->candidates);
+
             return array_map(
                 fn(array $match): DuplicateBlock => $this->buildBlock(...$match),
-                $this->candidates->withoutSubsumed($this->span(...)),
+                $segments->withoutSubsumed($this->coverSpan(...)),
             );
         } finally {
             // Release scratch state — see class docblock for why this
@@ -248,11 +272,10 @@ final class DuplicateBlockFinder
             return null;
         }
 
-        $longest = max(array_map(function (int $copy) use ($length): int {
-            [, $start, $end] = $this->span($copy, $length);
-
-            return $end - $start + 1;
-        }, $copies));
+        $longest = 0;
+        foreach ($copies as $copy) {
+            $longest = max($longest, $this->codeLines($copy, $length));
+        }
 
         return $longest < $this->request->minLines ? null : $copies;
     }
@@ -262,39 +285,34 @@ final class DuplicateBlockFinder
      */
     private function buildBlock(int $length, array $copies): DuplicateBlock
     {
-        $locations = array_map(
-            function (int $copy) use ($length): DuplicateLocation {
-                [$file, $start, $end] = $this->span($copy, $length);
-
-                return new DuplicateLocation(RelativePath::fromString($file), $start, $end);
-            },
-            $copies,
-        );
-
-        $lines = 0;
-        foreach ($locations as $location) {
-            $lines = max($lines, $location->lineCount());
+        $locations = [];
+        foreach ($copies as $copy) {
+            $fileIndex = PackedPosition::fileIndex($copy);
+            $offset = PackedPosition::offset($copy);
+            $tokens = $this->tokensAt($copy);
+            $last = $offset + $length - 1;
+            $source = $this->request->retokenized->sources[$fileIndex] ?? null;
+            $locations[] = new DuplicateLocation(
+                file: RelativePath::fromString($this->request->filePaths[$fileIndex]),
+                startLine: $tokens->startLines[$offset],
+                endLine: $tokens->endLines[$last],
+                codeLines: $this->codeLines($copy, $length),
+                hint: $source !== null ? $this->hintExtractor->extract($source, $tokens->startBytes[$offset], $tokens->endBytes[$last]) : null,
+            );
         }
 
         $first = $copies[0];
-        $source = $this->request->retokenized->sources[PackedPosition::fileIndex($first)] ?? null;
 
         return new DuplicateBlock(
             locations: $locations,
-            lines: $lines,
             tokens: $length,
             contentHash: $this->contentHash($this->tokensAt($first), PackedPosition::offset($first), $length),
-            hint: $source !== null ? $this->hintExtractor->extract($source, $locations[0]->startLine, $locations[0]->endLine) : null,
         );
     }
 
     /**
-     * Same-file occurrences that share a line are one repetitive structure
-     * matching itself at a shifted offset, not two copies: only the first
-     * of them is kept. Occurrences that merely touch — one ends on the line
-     * before the other starts — are two copies and both stay.
-     *
-     * Members arrive in bucket order: by file index, then by offset.
+     * Members arrive in file/offset order. Half-open token intervals keep
+     * adjacent copies even when both touch the same physical line.
      *
      * @param list<int> $members
      *
@@ -302,41 +320,40 @@ final class DuplicateBlockFinder
      */
     private function distinctCopies(array $members, int $length): array
     {
+        $lastEndByFile = [];
         $copies = [];
-        /** @var array<int, int> $lastEndLineByFile */
-        $lastEndLineByFile = [];
-
         foreach ($members as $packed) {
-            $fileIdx = PackedPosition::fileIndex($packed);
-
-            [, $start, $end] = $this->span($packed, $length);
-
-            if (isset($lastEndLineByFile[$fileIdx]) && $start <= $lastEndLineByFile[$fileIdx]) {
+            $file = PackedPosition::fileIndex($packed);
+            $offset = PackedPosition::offset($packed);
+            if (isset($lastEndByFile[$file]) && $offset < $lastEndByFile[$file]) {
                 continue;
             }
-
-            $lastEndLineByFile[$fileIdx] = $end;
+            $lastEndByFile[$file] = $offset + $length;
             $copies[] = $packed;
         }
 
         return $copies;
     }
 
-    /**
-     * The file a copy of `$length` tokens is in, and its first and last line.
-     *
-     * @return array{string, int, int}
-     */
-    private function span(int $packed, int $length): array
+    /** @return array{int, int, int} File and half-open token interval. */
+    private function coverSpan(int $packed, int $length): array
+    {
+        $offset = PackedPosition::offset($packed);
+
+        return [PackedPosition::fileIndex($packed), $offset, $offset + $length];
+    }
+
+    private function codeLines(int $packed, int $length): int
     {
         $tokens = $this->tokensAt($packed);
         $offset = PackedPosition::offset($packed);
+        $last = $offset + $length - 1;
+        if ($offset < 1) {
+            return $tokens->coveredPrefix[$last];
+        }
 
-        return [
-            $this->request->filePaths[PackedPosition::fileIndex($packed)],
-            $tokens->startLines[$offset],
-            $tokens->startLines[$offset + $length - 1],
-        ];
+        return $tokens->coveredPrefix[$last] - $tokens->coveredPrefix[$offset - 1]
+            + (int) ($tokens->endLines[$offset - 1] === $tokens->startLines[$offset]);
     }
 
     private function tokensAt(int $packed): TokenStream
