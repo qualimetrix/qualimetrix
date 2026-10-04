@@ -284,6 +284,7 @@ final class ChannelCoverageTest extends TestCase
 
         foreach ($findings as $finding) {
             self::assertDeclared($finding->channel());
+            self::assertSame(SymbolLevel::File, $finding->level());
         }
     }
 

@@ -41,7 +41,7 @@ final class StubChannelDeclarationRegistry implements ChannelDeclarationRegistry
     {
         return new self([
             'complexity.ccn' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable, SymbolLevel::Class_),
-            'duplication.clone' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            'duplication.clone' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File),
             'maintainability.index.class' => ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Class_),
             'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::Callable),
             'architecture.layer-violation' => ChannelDeclaration::occurrence(SymbolLevel::Class_),

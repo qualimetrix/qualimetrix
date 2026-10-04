@@ -113,12 +113,14 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertCount(2, $findings);
 
-        foreach ($findings as $v) {
+        foreach ($findings as $index => $v) {
             self::assertSame('duplication.clone', $v->ruleName);
             self::assertSame(Severity::Warning, $v->severity);
             self::assertSame(16, $v->metricValue);
-            self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
-            self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
+            $file = RelativePath::fromString($index === 0 ? 'src/A.php' : 'src/B.php');
+            $filePath = SymbolPath::forFile($file);
+            self::assertSame(MetricSubject::aggregate($filePath)->toCanonical(), $v->subject->toCanonical());
+            self::assertSame($filePath->toCanonical(), $v->symbolPath->toCanonical());
             self::assertNotNull($v->occurrenceKey);
             self::assertStringContainsString('16 lines', $v->message);
             self::assertStringContainsString('2 occurrences', $v->message);
@@ -167,11 +169,28 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertCount(2, $findings);
         self::assertSame(
             [
-                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'file' => 'src/A.php', 'copyInFile' => 0])->value,
-                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'file' => 'src/B.php', 'copyInFile' => 0])->value,
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'copyInFile' => 0])->value,
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'copyInFile' => 0])->value,
             ],
             array_map(static fn($finding): ?string => $finding->occurrenceKey?->value, $findings),
         );
+    }
+
+    #[Test]
+    public function itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity(): void
+    {
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [
+            self::block(['src/A.php' => [10, 60], 'src/B.php' => [30]]),
+        ]);
+
+        [$firstA, $secondA, $firstB] = $this->createRule()->analyze($context);
+
+        self::assertSame('file:src/A.php', $firstA->subject->toCanonical());
+        self::assertSame('file:src/A.php', $secondA->subject->toCanonical());
+        self::assertSame('file:src/B.php', $firstB->subject->toCanonical());
+        self::assertSame($firstA->occurrenceKey?->value, $firstB->occurrenceKey?->value);
+        self::assertNotSame($firstA->occurrenceKey?->value, $secondA->occurrenceKey?->value);
+        self::assertCount(3, array_unique([$firstA->getFingerprint(), $secondA->getFingerprint(), $firstB->getFingerprint()]));
     }
 
     #[Test]

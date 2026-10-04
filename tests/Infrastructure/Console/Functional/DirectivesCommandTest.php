@@ -670,11 +670,11 @@ final class DirectivesCommandTest extends TestCase
 
     /**
      * `duplication.clone` reports one finding on each copy of a duplicate
-     * block, each copy under a project-level identity of its own
+     * block, each copy under its file aggregate
      * ({@see \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule::channelDeclarations()}
-     * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::Project} and
-     * nothing else). A symbol directive binds to the declaration it
-     * decorates, never the project; a file or next-line directive would
+     * declares {@see \Qualimetrix\Core\Symbol\SymbolLevel::File}).
+     * A symbol directive binds to the declaration it decorates, never the
+     * file aggregate; a file or next-line directive would
      * silence the copy it is written beside while the other copy still
      * reports the block. {@see DirectiveChannelBan} refuses every reachable form where
      * it is written; an unreachable explicit symbol level is refused earlier. Both `check` and `directives` are asked about the same
@@ -752,10 +752,10 @@ final class DirectivesCommandTest extends TestCase
         foreach (['file', 'next-line', 'symbol'] as $tag) {
             foreach ([
                 'the exact name' => 'duplication.clone',
-                'the exact name at project level' => 'duplication.clone:project',
+                'the exact name at file level' => 'duplication.clone:file',
                 'a group that covers it' => 'duplication.*',
             ] as $shape => $target) {
-                $reachRefusal = $tag === 'symbol' && $target === 'duplication.clone:project'
+                $reachRefusal = $tag === 'symbol' && $target === 'duplication.clone:file'
                     ? \sprintf(
                         'Suppression "%s" asks for a level that is not reachable from method work;'
                         . ' move it to a declaration at that level or remove the level suffix.',
@@ -802,6 +802,33 @@ final class DirectivesCommandTest extends TestCase
                 . json_encode($report['violations'], \JSON_PRETTY_PRINT),
         );
         self::assertContains('annotation.unresolved-directive', $channels);
+    }
+
+    #[Test]
+    public function itKeepsFileOwnedUnusedDirectivesUnderBroadNamespaceExclusions(): void
+    {
+        mkdir($this->tempDir . '/src/Shop');
+        $this->writeSource('Shop/X.php', "<?php\n// @qmx-ignore-file code-smell.eval -- unused\nnamespace Shop;\nfinal class X {}\n");
+        $this->writeSource('plain.php', "<?php\n// @qmx-ignore-file code-smell.eval -- unused\nfunction plain(): void {}\n");
+
+        foreach (['.*', '^(?!Shop).*'] as $expression) {
+            $config = $this->writeConfig(self::WITHOUT_COUPLING
+                . "suppress_namespaces: [{regex: '" . $expression . "'}]\n");
+            $check = $this->runCheck([
+                'paths' => [$this->tempDir . '/src'],
+                '--config' => $config,
+                '--format' => 'json',
+            ]);
+            $report = self::decode($check->getDisplay());
+            $unused = array_values(array_filter(
+                $report['violations'],
+                static fn(array $violation): bool => $violation['channel'] === 'annotation.unused-directive',
+            ));
+
+            $files = array_map(static fn(array $violation): string => (string) $violation['file'], $unused);
+            sort($files);
+            self::assertSame(['src/Shop/X.php', 'src/plain.php'], $files, $check->getDisplay());
+        }
     }
 
     /**

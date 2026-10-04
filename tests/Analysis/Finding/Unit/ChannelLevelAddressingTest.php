@@ -28,7 +28,7 @@ final class ChannelLevelAddressingTest extends TestCase
     private const array UNIVERSE = [
         'coupling.cbo' => [SymbolLevel::Class_, SymbolLevel::Namespace_],
         'coupling.class-rank' => [SymbolLevel::Class_],
-        'duplication.clone' => [SymbolLevel::Project],
+        'duplication.clone' => [SymbolLevel::File],
         'computed.debt' => [],
     ];
 
@@ -87,7 +87,7 @@ final class ChannelLevelAddressingTest extends TestCase
     public function itSaysAPairAddressesNothingInTheSetRatherThanNamingLevels(): void
     {
         $problem = $this->addressing()->problemWithAmong(
-            'duplication.*:project',
+            'duplication.*:file',
             [new FindingChannel('coupling.cbo')],
             'the channels rule "coupling.cbo" produces',
         );
@@ -162,7 +162,7 @@ final class ChannelLevelAddressingTest extends TestCase
         $addressing = $this->addressing();
 
         self::assertTrue($addressing->selectorsCoverEveryDeclaredLevelOf(
-            ['duplication.clone:project'],
+            ['duplication.clone:file'],
             ['duplication.clone'],
         ));
         self::assertTrue($addressing->selectorsCoverEveryDeclaredLevelOf(

@@ -4660,9 +4660,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itKeepsBothFileCopiesUnderBroadNamespaceRegexes
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itKeepsTheAcceptedCopiesAcceptedWhenANewCopySpansMoreLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itRefusesTheRetiredProjectSelectorAndDisablesTheFileProducer
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itReportsADenselyWrittenNewCopyOfAnAcceptedBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itReportsEveryCopyWhenACommentLiftsTheLongestPastMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itSuppressesOnlyTheDuplicateCopyInTheExcludedPath
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itTellsTheExplainedCopiesApartByOccurrenceAndFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnGitLabFingerprint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnSarifPartialFingerprint
@@ -4677,6 +4680,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysOnlyTheCopyMovedToAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsEveryCopyOnceTheLongestReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsNoCopyWhileNoCopyReachesMinLines
@@ -4725,6 +4729,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerCopyOfEveryBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheWarningThresholdAsAWarning
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
@@ -4769,6 +4774,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itAssignsAnOpeningBraceOnItsOwnLineThatLine
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itDoesNotNormalizeFunctionNames
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsASingleCharacterTokenOnTheLineOfAPrecedingTokenThatSharesIt
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsOriginalCoordinatesAndCoveredLinesAlignedAfterRemovingPhpBarriers
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"CR"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"CRLF"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"LF"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itNormalizesNumbers
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itNormalizesStringLiterals
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itNormalizesVariables
@@ -4778,6 +4787,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itProducesSameTokensForIdenticalStructureWithDifferentVariablesAndLiterals
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itReturnsEmptyTokensForEmptyFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itStripsWhitespaceAndComments
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"coveredPrefix"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"dataMask"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"endBytes"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"endLines"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"startBytes"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"startLines"
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itAttributesPromotedParameterCaptureDefaultOnlyToConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itCalculatesExactHalsteadValuesForSimpleAddMethod
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itCalculatesMetricsForArrowFunction
@@ -6425,12 +6440,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureRuleEvenWhenItIsAFileSymbolFindingInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsFileAggregatesWhenARegexMatchesTheEmptyString
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsLayerViolationRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itNeverComparesTheProjectAggregateDisplayValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWhoseSubjectNamespaceDoesNotMatch
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWithoutDeclaringNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesNonMatchingNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesWhenNoPatterns
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itStillFiltersADeclarationInTheGlobalNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itStillFiltersANamespaceLevelFindingItsPatternNames
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
@@ -10009,6 +10026,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsTwoOnAnInertDirective
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsFileOwnedUnusedDirectivesUnderBroadNamespaceExclusions
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
@@ -10044,13 +10062,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, a group that covers it"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, a group that covers it"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, a group that covers it"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert

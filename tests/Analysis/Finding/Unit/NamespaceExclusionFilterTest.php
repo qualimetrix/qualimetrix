@@ -147,6 +147,45 @@ final class NamespaceExclusionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($finding), 'File-symbol violation without a declaring namespace should not be filtered');
     }
 
+    #[Test]
+    public function itKeepsFileAggregatesWhenARegexMatchesTheEmptyString(): void
+    {
+        $file = RelativePath::fromString('src/helpers.php');
+        $symbol = SymbolPath::forFile($file);
+
+        foreach (['duplication.clone', 'annotation.unused-directive'] as $channel) {
+            $finding = new Finding(
+                location: new Location($file, 2),
+                symbolPath: $symbol,
+                subject: MetricSubject::aggregate($symbol),
+                ruleName: $channel,
+                code: $channel,
+                message: 'File finding',
+                severity: Severity::Warning,
+            );
+
+            foreach (['.*', '^$', '^(?!Shop).*'] as $expression) {
+                $filter = new NamespaceExclusionFilter(
+                    new NamespaceMatcher([self::namespace(SelectorKind::Regex, $expression)]),
+                    self::declaredFileScope(),
+                );
+
+                self::assertTrue($filter->shouldInclude($finding), $channel . ' must survive ' . $expression);
+            }
+        }
+    }
+
+    #[Test]
+    public function itStillFiltersADeclarationInTheGlobalNamespace(): void
+    {
+        $filter = new NamespaceExclusionFilter(
+            new NamespaceMatcher([self::namespace(SelectorKind::Regex, '^$')]),
+            self::declaredFileScope(),
+        );
+
+        self::assertFalse($filter->shouldInclude($this->createFinding('', 'complexity.ccn')));
+    }
+
     /**
      * The project aggregate publishes `(project)` where a namespace would be.
      * Compared, that display value let `exact: '(project)'` — or any pattern

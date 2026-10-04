@@ -110,7 +110,7 @@ final class CodeDuplicationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File),
         ];
     }
 
@@ -131,8 +131,6 @@ final class CodeDuplicationRule extends AbstractRule
      */
     private function copyFindings(AnalysisContext $context, DuplicateBlock $block): array
     {
-        $projectPath = SymbolPath::forProject();
-        $subject = MetricSubject::aggregate($projectPath);
         $hintPart = $block->hint !== null ? \sprintf(': "%s"', $block->hint) : '';
 
         $locations = array_map(
@@ -146,6 +144,8 @@ final class CodeDuplicationRule extends AbstractRule
         foreach ($locations as $index => $location) {
             $copy = $block->locations[$index];
             $file = $copy->pathString();
+            $filePath = SymbolPath::forFile($copy->file);
+            $subject = MetricSubject::aggregate($filePath);
             $lines = $copy->lineCount();
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
             $named = self::namedOthers($block->occurrences(), $index);
@@ -154,7 +154,7 @@ final class CodeDuplicationRule extends AbstractRule
             $findings[] = new Finding(
                 location: $location,
                 subject: $subject,
-                symbolPath: $projectPath,
+                symbolPath: $filePath,
                 ruleName: $this->getName(),
                 code: $this->getName(),
                 message: \sprintf(
@@ -169,7 +169,7 @@ final class CodeDuplicationRule extends AbstractRule
                 metricValue: $lines,
                 relatedLocations: array_map(static fn(int $other): Location => $locations[$other], $named),
                 recommendation: 'Extract duplicated code into a shared method or class.',
-                occurrenceKey: self::copyOccurrenceKey($block->contentHash, $file, $copyInFile),
+                occurrenceKey: self::copyOccurrenceKey($block->contentHash, $copyInFile),
             );
         }
 
@@ -177,10 +177,11 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * A copy is the block's content, the file holding the copy and the
-     * copy's place among the block's copies in that file, counted in line
-     * order. No line number enters it, so lines added or removed outside the
-     * matched tokens re-key nothing while the detector finds the same block.
+     * The subject identifies the file. The occurrence identifies the block's
+     * content and the copy's place among that block's copies in the file,
+     * counted in line order. No line number enters it, so lines added or
+     * removed outside the matched tokens re-key nothing while the detector
+     * finds the same block.
      *
      * The block is the longest token run all of its copies agree on, and the
      * match takes in whatever context the copies share around the copied
@@ -195,11 +196,10 @@ final class CodeDuplicationRule extends AbstractRule
      * takes the lower place, and the one it displaced reads as the new copy —
      * the count of new copies stays right.
      */
-    private static function copyOccurrenceKey(string $contentHash, string $file, int $copyInFile): OccurrenceKey
+    private static function copyOccurrenceKey(string $contentHash, int $copyInFile): OccurrenceKey
     {
         return OccurrenceKey::semantic(self::OCCURRENCE_KIND, [
             'contentHash' => $contentHash,
-            'file' => $file,
             'copyInFile' => $copyInFile,
         ]);
     }

@@ -133,6 +133,23 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     #[Test]
+    public function itRekeysOnlyTheCopyMovedToAnotherFile(): void
+    {
+        $this->write('A', self::classWith('A', self::BODY));
+        $this->write('B', self::classWith('B', self::BODY));
+        $before = $this->analyze();
+
+        rename($this->tmpDir . '/src/B.php', $this->tmpDir . '/src/C.php');
+        $after = $this->analyze();
+
+        self::assertSame($before['hashes'], $after['hashes']);
+        self::assertSame(self::onlyCopyIn($before, 'src/A.php')['key'], self::onlyCopyIn($after, 'src/A.php')['key']);
+        self::assertSame(self::onlyCopyIn($before, 'src/B.php')['occurrence'], self::onlyCopyIn($after, 'src/C.php')['occurrence']);
+        self::assertNotSame(self::onlyCopyIn($before, 'src/B.php')['key'], self::onlyCopyIn($after, 'src/C.php')['key']);
+        self::assertSame(['src/C.php'], self::filesWithNewKeys($before, $after));
+    }
+
+    #[Test]
     public function itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded(): void
     {
         $this->write('A', self::classWith('A', self::BODY));
@@ -248,9 +265,9 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     /**
-     * @param array{copies: list<array{file: string, key: string, value: int|float|null, message: string}>} $analysis
+     * @param array{copies: list<array{file: string, key: string, occurrence: string, value: int|float|null, message: string}>} $analysis
      *
-     * @return array{file: string, key: string, value: int|float|null, message: string}
+     * @return array{file: string, key: string, occurrence: string, value: int|float|null, message: string}
      */
     private static function onlyCopyIn(array $analysis, string $file): array
     {
@@ -261,7 +278,7 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     /**
-     * @return array{hashes: list<string>, copies: list<array{file: string, key: string, value: int|float|null, message: string}>}
+     * @return array{hashes: list<string>, copies: list<array{file: string, key: string, occurrence: string, value: int|float|null, message: string}>}
      */
     private function analyze(): array
     {
@@ -281,7 +298,8 @@ final class DuplicateCopyIdentityTest extends TestCase
         foreach ($findings as $finding) {
             $copies[] = [
                 'file' => $finding->location->pathString(),
-                'key' => (string) $finding->occurrenceKey?->value,
+                'key' => $finding->getFingerprint(),
+                'occurrence' => (string) $finding->occurrenceKey?->value,
                 'value' => $finding->metricValue,
                 'message' => $finding->message,
             ];
