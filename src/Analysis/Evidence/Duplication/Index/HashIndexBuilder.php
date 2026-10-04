@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use SplFileInfo;
@@ -56,7 +57,7 @@ final class HashIndexBuilder
             return new HashIndexBuildResult($filePaths, $ioPaths, []);
         }
 
-        $hashIndex = $this->collectCandidatePositions($ioPaths, $minTokens, $candidates);
+        $hashIndex = $this->collectCandidatePositions($ioPaths, $projectRoot, $minTokens, $candidates);
         $this->pruneUniqueHashes($hashIndex);
 
         return new HashIndexBuildResult($filePaths, $ioPaths, $hashIndex);
@@ -77,7 +78,10 @@ final class HashIndexBuilder
         $ioPath = $file->getPathname();
         $source = @file_get_contents($ioPath);
         if ($source === false) {
-            return;
+            throw new FileSetInspectionFailure([[
+                'input' => PathFactory::fromCliArgument($ioPath, $projectRoot),
+                'message' => 'Cannot read selected file during duplication hash observation.',
+            ]]);
         }
 
         $tokens = $this->normalizer->normalize($source);
@@ -133,14 +137,17 @@ final class HashIndexBuilder
      *
      * @return array<int, list<int>> hash → strictly increasing unique packed positions
      */
-    private function collectCandidatePositions(array $ioPaths, int $minTokens, SaturatingCandidateFilter $candidates): array
+    private function collectCandidatePositions(array $ioPaths, AbsolutePath $projectRoot, int $minTokens, SaturatingCandidateFilter $candidates): array
     {
         $index = [];
 
         foreach ($ioPaths as $fileIdx => $ioPath) {
             $source = @file_get_contents($ioPath);
             if ($source === false) {
-                continue;
+                throw new FileSetInspectionFailure([[
+                    'input' => PathFactory::fromCliArgument($ioPath, $projectRoot),
+                    'message' => 'Cannot read selected file during duplication candidate indexing.',
+                ]]);
             }
 
             $tokens = $this->normalizer->normalize($source);
@@ -165,6 +172,8 @@ final class HashIndexBuilder
         array &$index,
     ): void {
         $tokenCount = $tokens->count();
+        // Validate the farthest stored offset once; the loop can then use packed-base OR cheaply.
+        PackedPosition::pack($fileIdx, $tokenCount - $minTokens);
         $packedBase = PackedPosition::pack($fileIdx, 0);
         $hash = 0;
         $highPow = 1;

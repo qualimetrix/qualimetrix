@@ -54,8 +54,8 @@ final class DataDeclarationTagger
      * Sentinel token type {@see TokenNormalizer} uses to mark the exact
      * position of a `?>` PHP-close-tag boundary, which otherwise leaves no
      * trace in the token stream (`TokenNormalizer` discards the real
-     * `T_CLOSE_TAG`/`T_OPEN_TAG`/`T_INLINE_HTML` tokens entirely — see its
-     * class docblock). Without a marker, a forward scan started before the
+     * `T_CLOSE_TAG`/`T_OPEN_TAG` tokens and retains inline HTML as a digest).
+     * Without a marker, a forward scan started before the
      * boundary (e.g. {@see findStatementEnd()} for an unterminated `const`)
      * would run straight through it and mis-tag unrelated code in the next
      * PHP block as data — a false negative for real duplication there (the

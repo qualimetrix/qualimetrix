@@ -7,16 +7,23 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\SaturatingCandidateFilter;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use ReflectionMethod;
 use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
@@ -768,7 +775,82 @@ PHP;
         self::assertSame([], $this->inspect($detector, $files));
     }
 
-    private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
+    #[Test]
+    public function itRefusesASelectedFileLostBeforeHashObservationAndClearsPriorResult(): void
+    {
+        $lostDirectory = $this->tmpDir . '/lost';
+        mkdir($lostDirectory);
+        $code = '<?php function same($value) { return $value + 1; }';
+        $gone = $this->createFile('lost/Gone.php', $code);
+        $other = $this->createFile('Other.php', $code);
+        $third = $this->createFile('Third.php', $code);
+        $logger = self::createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('info')->with('Duplication detection completed');
+        $detector = $this->createDetector(minTokens: 3, minLines: 1, logger: $logger);
+        self::assertNotEmpty($this->inspect($detector, [$gone, $other, $third]));
+
+        unlink($gone->getPathname());
+        rmdir($lostDirectory);
+        try {
+            $this->inspect($detector, [$gone, $other, $third]);
+            self::fail('The missing selected file was accepted as an empty duplication result.');
+        } catch (FileSetInspectionFailure $failure) {
+            self::assertCount(1, $failure->failures);
+            self::assertSame(
+                PathFactory::fromCliArgument($gone->getPathname(), AbsolutePath::fromString($this->tmpDir))->value(),
+                $failure->failures[0]['input']->value(),
+            );
+            self::assertSame('Cannot read selected file during duplication hash observation.', $failure->failures[0]['message']);
+            self::assertSame([], $this->resultProvider->all());
+        }
+    }
+
+    #[Test]
+    public function itRefusesASelectedFileLostBeforeCandidateIndexing(): void
+    {
+        $gone = $this->createFile('Gone.php', '<?php echo 1;');
+        unlink($gone->getPathname());
+        $candidates = new SaturatingCandidateFilter(4);
+        $candidates->observe(1);
+        $candidates->observe(1);
+
+        try {
+            (new ReflectionMethod(HashIndexBuilder::class, 'collectCandidatePositions'))->invoke(
+                new HashIndexBuilder(),
+                [$gone->getPathname()],
+                AbsolutePath::fromString($this->tmpDir),
+                1,
+                $candidates,
+            );
+            self::fail('The missing candidate source was accepted.');
+        } catch (FileSetInspectionFailure $failure) {
+            self::assertCount(1, $failure->failures);
+            self::assertSame($gone->getPathname(), $failure->failures[0]['input']->value());
+        }
+    }
+
+    #[Test]
+    public function itRefusesASelectedFileLostBeforeRetokenization(): void
+    {
+        $gone = $this->createFile('Gone.php', '<?php echo 1;');
+        unlink($gone->getPathname());
+        $detector = $this->createDetector(minTokens: 1, minLines: 1);
+
+        try {
+            (new ReflectionMethod(DuplicationDetector::class, 'retokenizeNeeded'))->invoke(
+                $detector,
+                [$gone->getPathname()],
+                [0 => true],
+                AbsolutePath::fromString($this->tmpDir),
+            );
+            self::fail('The missing retokenization source was accepted.');
+        } catch (FileSetInspectionFailure $failure) {
+            self::assertCount(1, $failure->failures);
+            self::assertSame($gone->getPathname(), $failure->failures[0]['input']->value());
+        }
+    }
+
+    private function createDetector(int $minTokens = 70, int $minLines = 5, ?LoggerInterface $logger = null): DuplicationDetector
     {
         $ruleConfiguration = new RuleOptionsRegistry();
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions::class, '', [], false)];
@@ -779,7 +861,7 @@ PHP;
 
         $this->resultProvider = new DuplicationResultProvider();
 
-        return new DuplicationDetector($ruleConfiguration, $this->resultProvider);
+        return new DuplicationDetector($ruleConfiguration, $this->resultProvider, $logger ?? new NullLogger());
     }
 
     /**

@@ -8,9 +8,9 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult;
 
 /**
- * Output of pass 2 (re-tokenization): the token streams and raw source of
- * only the files that {@see HashIndexBuildResult::neededFileIndices()}
- * flagged as participating in a hash match.
+ * Output of re-tokenization: the token streams and raw source of only the
+ * files that {@see HashIndexBuildResult::neededFileIndices()} flagged as
+ * participating in a hash match. A failed re-read aborts this output.
  *
  * Bundles what used to be two separate local variables inside
  * {@see DuplicationDetector::inspect()} — no additional data is retained

@@ -89,6 +89,49 @@ PHP;
     }
 
     #[Test]
+    public function itKeepsOneInlineHtmlDigestWithOriginalByteAndLineSpans(): void
+    {
+        $source = "<?php echo 1; ?>\n<div>\nRaw</div>";
+        $stream = $this->normalizer->normalize($source);
+        $html = array_values(array_filter($stream->values, static fn(string $value): bool => str_starts_with($value, 'html:')));
+
+        self::assertCount(1, $html);
+        self::assertSame('html:' . hash('xxh128', '<div> Raw</div>'), $html[0]);
+        $index = array_search($html[0], $stream->values, true);
+        self::assertIsInt($index);
+        self::assertSame(strpos($source, '<div>'), $stream->startBytes[$index]);
+        self::assertSame(\strlen($source), $stream->endBytes[$index]);
+        self::assertSame(2, $stream->startLines[$index]);
+        self::assertSame(3, $stream->endLines[$index]);
+    }
+
+    #[Test]
+    public function itCollapsesOnlyAsciiWhitespaceInsideHtmlAndKeepsInvalidUtf8OutOfTokenValues(): void
+    {
+        $withAsciiWhitespace = $this->normalizer->normalize("A\t\n\v B<?php");
+        $collapsed = $this->normalizer->normalize('A B<?php');
+        $nonAsciiSpace = $this->normalizer->normalize("A\xc2\xa0B<?php");
+        $rawCp1251 = $this->normalizer->normalize("\xcf\xf0<?php");
+
+        self::assertSame($collapsed->values, $withAsciiWhitespace->values);
+        self::assertNotSame($collapsed->values, $nonAsciiSpace->values);
+        self::assertSame('html:' . hash('xxh128', "\xcf\xf0"), $rawCp1251->values[0]);
+        self::assertIsString(json_encode($rawCp1251->values, \JSON_THROW_ON_ERROR));
+    }
+
+    #[Test]
+    public function itFoldsKeywordCastMagicConstantAndBuiltinLiteralCaseButKeepsIdentifiers(): void
+    {
+        $upper = $this->normalizer->normalize('<?php FuNcTiOn Foo() { ReTuRn TRUE; } (INT)$x; __dIr__; STRTOUPPER(1);');
+        $lower = $this->normalizer->normalize('<?php function Foo() { return true; } (int)$x; __DIR__; STRTOUPPER(1);');
+        $differentIdentifier = $this->normalizer->normalize('<?php function foo() { return true; } (int)$x; __DIR__; strtoupper(1);');
+
+        self::assertSame($lower->values, $upper->values);
+        self::assertNotSame($lower->values, $differentIdentifier->values);
+        self::assertContains('STRTOUPPER', $upper->values);
+    }
+
+    #[Test]
     public function itProducesSameTokensForIdenticalStructureWithDifferentVariablesAndLiterals(): void
     {
         // Only variables and literals differ — should produce same tokens
@@ -212,25 +255,25 @@ PHP;
     }
 
     #[Test]
-    public function itKeepsOriginalCoordinatesAndCoveredLinesAlignedAfterRemovingPhpBarriers(): void
+    public function itKeepsOriginalCoordinatesAndCoveredLinesAlignedAcrossPhpBarriers(): void
     {
         $source = "<?php\nconst X = 'a\nb' ?>\nignored\n<?php\n// ignored\n\$x = 9;\n";
         $tokens = $this->normalizer->normalize($source);
 
-        self::assertSame(['const', 'X', '=', "'_'", '$_', '=', '0', ';'], $tokens->values);
-        self::assertSame(8, $tokens->count());
-        self::assertSame([2, 2, 2, 2, 7, 7, 7, 7], $tokens->startLines);
-        self::assertSame([2, 2, 2, 3, 7, 7, 7, 7], $tokens->endLines);
-        self::assertSame([1, 1, 1, 2, 3, 3, 3, 3], $tokens->coveredPrefix);
-        self::assertSame('11110000', $tokens->dataMask);
-        self::assertSame([6, 12, 14, 16, 50, 53, 55, 56], $tokens->startBytes);
-        self::assertSame([11, 13, 15, 21, 52, 54, 56, 57], $tokens->endBytes);
+        self::assertSame(['const', 'X', '=', "'_'", 'html:232024ebfa870075eec12fa52c8fa11c', '$_', '=', '0', ';'], $tokens->values);
+        self::assertSame(9, $tokens->count());
+        self::assertSame([2, 2, 2, 2, 4, 7, 7, 7, 7], $tokens->startLines);
+        self::assertSame([2, 2, 2, 3, 5, 7, 7, 7, 7], $tokens->endLines);
+        self::assertSame([1, 1, 1, 2, 4, 5, 5, 5, 5], $tokens->coveredPrefix);
+        self::assertSame('111100000', $tokens->dataMask);
+        self::assertSame([6, 12, 14, 16, 25, 50, 53, 55, 56], $tokens->startBytes);
+        self::assertSame([11, 13, 15, 21, 33, 52, 54, 56, 57], $tokens->endBytes);
 
         $untagged = (new TokenNormalizer(tagDataDeclarations: false))->normalize($source);
         self::assertSame($tokens->values, $untagged->values);
         self::assertSame($tokens->startBytes, $untagged->startBytes);
         self::assertSame($tokens->endBytes, $untagged->endBytes);
-        self::assertSame('00000000', $untagged->dataMask);
+        self::assertSame('000000000', $untagged->dataMask);
     }
 
     #[Test]

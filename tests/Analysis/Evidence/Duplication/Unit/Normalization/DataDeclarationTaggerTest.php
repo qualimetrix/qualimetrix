@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
@@ -301,6 +302,22 @@ PHP;
     }
 
     #[Test]
+    #[TestWith(['static private'])]
+    #[TestWith(['private static'])]
+    public function itTagsBothModifierOrdersAroundAPropertyArrayInitializer(string $modifiers): void
+    {
+        $stream = $this->normalizer->normalize("<?php final class Config { {$modifiers} array \$values = [1, 2]; }");
+        $static = $this->indexOfValue($stream, 'static');
+        $private = $this->indexOfValue($stream, 'private');
+        $start = min($static, $private);
+        $end = $this->indexOfFirstValueAfter($stream, $start, ';');
+
+        for ($i = $start; $i <= $end; $i++) {
+            self::assertSame('1', $stream->dataMask[$i]);
+        }
+    }
+
+    #[Test]
     public function itTagsAPhp84AsymmetricVisibilityPropertyArrayInitializerAsData(): void
     {
         // PHP 8.4 asymmetric visibility (`public(set)`, ...) tokenizes as
@@ -364,10 +381,8 @@ PHP;
     {
         $tokens = $this->normalizer->normalize('plain text, no PHP here');
 
-        // Pure T_INLINE_HTML is skipped entirely by TokenNormalizer, so no
-        // tokens survive to be scanned — this exercises the tagger against
-        // an empty token list rather than actually finding a match.
-        self::assertSame([], $tokens->values);
+        self::assertSame(['html:b94fb94c052888fd1f745280f09027e0'], $tokens->values);
+        self::assertSame('0', $tokens->dataMask);
     }
 
     #[Test]

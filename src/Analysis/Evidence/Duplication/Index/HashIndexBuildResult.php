@@ -20,7 +20,7 @@ final readonly class HashIndexBuildResult
 {
     /**
      * @param list<string> $filePaths maps fileIdx → project-relative path (identifier surface for DuplicateLocation)
-     * @param list<string> $ioPaths maps fileIdx → path as supplied by the file source (used only for re-read I/O in pass 2)
+     * @param list<string> $ioPaths maps fileIdx → original path supplied by the file source for both later reads; failure reports its lexical absolute identity
      * @param array<int, list<int>> $hashIndex candidate hash → all packed positions, pruned to hashes with 2+ occurrences
      */
     public function __construct(

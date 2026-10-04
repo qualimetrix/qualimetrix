@@ -16,8 +16,10 @@ use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use SplFileInfo;
 
 /**
@@ -72,6 +74,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
      */
     public function inspect(array $files, AbsolutePath $projectRoot): void
     {
+        $this->resultProvider->reset();
         $this->detect($files, $projectRoot);
         $this->logger->info('Duplication detection completed');
     }
@@ -106,7 +109,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
             return;
         }
 
-        $retokenized = $this->retokenizeNeeded($indexResult->ioPaths, $indexResult->neededFileIndices());
+        $retokenized = $this->retokenizeNeeded($indexResult->ioPaths, $indexResult->neededFileIndices(), $projectRoot);
 
         $blocks = $this->blockFinder->find(new DuplicateSearchRequest(
             hashIndex: $indexResult->hashIndex,
@@ -127,7 +130,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
      * @param list<string> $ioPaths fileIdx → path as supplied by the file source
      * @param array<int, true> $neededFileIndices fileIdx → true
      */
-    private function retokenizeNeeded(array $ioPaths, array $neededFileIndices): RetokenizedFiles
+    private function retokenizeNeeded(array $ioPaths, array $neededFileIndices, AbsolutePath $projectRoot): RetokenizedFiles
     {
         /** @var array<int, TokenStream> $fileTokens fileIdx → tokens */
         $fileTokens = [];
@@ -135,9 +138,13 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
         $fileSources = [];
 
         foreach ($neededFileIndices as $fileIdx => $_) {
-            $source = @file_get_contents($ioPaths[$fileIdx]);
+            $ioPath = $ioPaths[$fileIdx] ?? throw new LogicException('Duplication retokenization referenced an unknown selected file index.');
+            $source = @file_get_contents($ioPath);
             if ($source === false) {
-                continue;
+                throw new FileSetInspectionFailure([[
+                    'input' => PathFactory::fromCliArgument($ioPath, $projectRoot),
+                    'message' => 'Cannot read selected file during duplication retokenization.',
+                ]]);
             }
             $fileTokens[$fileIdx] = $this->normalizer->normalize($source);
             $fileSources[$fileIdx] = $source;
