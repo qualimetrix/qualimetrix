@@ -73,26 +73,18 @@ final class DuplicateBlockFinder
             }
 
             $segments = new DuplicateMatchCandidates();
+            $reportable = $this->reportableCopies(...);
             foreach ($this->candidates->withoutSubsumed($this->coverSpan(...)) as [$length, $copies]) {
-                $admitted = false;
                 $first = $copies[0];
-                foreach (BalancedSegments::of($this->tokensAt($first), PackedPosition::offset($first), $length) as [$shift, $segmentLength]) {
-                    if ($segmentLength < $request->minTokens) {
-                        continue;
-                    }
-                    $shifted = array_map(
-                        static fn(int $copy): int => PackedPosition::pack(PackedPosition::fileIndex($copy), PackedPosition::offset($copy) + $shift),
-                        $copies,
-                    );
-                    $reportable = $this->reportableCopies($shifted, $segmentLength);
-                    if ($reportable !== null) {
-                        $segments->add($segmentLength, $reportable);
-                        $admitted = true;
-                    }
-                }
-                if (!$admitted) {
-                    $segments->add($length, $copies);
-                }
+                BalancedSegments::addAdmittedTo(
+                    $this->tokensAt($first),
+                    PackedPosition::offset($first),
+                    $length,
+                    $copies,
+                    $request->minTokens,
+                    $segments,
+                    $reportable,
+                );
             }
             unset($this->candidates);
 
@@ -101,12 +93,7 @@ final class DuplicateBlockFinder
                 $segments->withoutSubsumed($this->coverSpan(...)),
             );
         } finally {
-            // Release scratch state — see class docblock for why this
-            // matters. Must run even if evaluateBucket() throws: otherwise
-            // the full hash index and every re-tokenized file's tokens
-            // stay reachable via this long-lived instance for the rest of
-            // the process (see the "Measured impact" note in the class
-            // docblock).
+            // Exceptions must also release the dataset held by this long-lived instance.
             unset($this->request, $this->hintExtractor, $this->candidates);
         }
     }
@@ -240,9 +227,10 @@ final class DuplicateBlockFinder
         $groups = [];
 
         foreach ($members as $packed) {
-            $token = $this->tokensAt($packed)->values[PackedPosition::offset($packed) + $length] ?? null;
-            if ($token !== null) {
-                $groups[$token][] = $packed;
+            $tokens = $this->tokensAt($packed);
+            $position = PackedPosition::offset($packed) + $length;
+            if (isset($tokens->values[$position])) {
+                $groups[$tokens->values[$position]][] = $packed;
             }
         }
 
@@ -272,7 +260,7 @@ final class DuplicateBlockFinder
 
         $longest = 0;
         foreach ($copies as $copy) {
-            $longest = max($longest, $this->codeLines($copy, $length));
+            $longest = max($longest, $this->tokensAt($copy)->coveredLines(PackedPosition::offset($copy), $length));
         }
 
         return $longest < $this->request->minLines ? null : $copies;
@@ -294,7 +282,7 @@ final class DuplicateBlockFinder
                 file: RelativePath::fromString($this->request->filePaths[$fileIndex]),
                 startLine: $tokens->startLine($offset),
                 endLine: $tokens->endLine($last),
-                codeLines: $this->codeLines($copy, $length),
+                codeLines: $tokens->coveredLines($offset, $length),
                 hint: $source !== null ? $this->hintExtractor->extract($source, $tokens->startByte($offset), $tokens->endByte($last)) : null,
             );
         }
@@ -341,19 +329,6 @@ final class DuplicateBlockFinder
         return [PackedPosition::fileIndex($packed), $offset, $offset + $length];
     }
 
-    private function codeLines(int $packed, int $length): int
-    {
-        $tokens = $this->tokensAt($packed);
-        $offset = PackedPosition::offset($packed);
-        $last = $offset + $length - 1;
-        if ($offset < 1) {
-            return $tokens->coveredPrefix($last);
-        }
-
-        return $tokens->coveredPrefix($last) - $tokens->coveredPrefix($offset - 1)
-            + (int) ($tokens->endLine($offset - 1) === $tokens->startLine($offset));
-    }
-
     private function tokensAt(int $packed): TokenStream
     {
         return $this->request->retokenized->streams[PackedPosition::fileIndex($packed)];
@@ -368,10 +343,7 @@ final class DuplicateBlockFinder
      */
     private function contentHash(TokenStream $tokens, int $offset, int $length): string
     {
-        $values = [];
-        for ($i = 0; $i < $length; $i++) {
-            $values[] = $tokens->values[$offset + $i];
-        }
+        $values = \array_slice($tokens->values, $offset, $length);
 
         return hash('sha256', json_encode(
             ['tokenCount' => $length, 'tokens' => $values],
@@ -395,10 +367,8 @@ final class DuplicateBlockFinder
             $tokens = $this->tokensAt($packed);
             $offset = PackedPosition::offset($packed);
 
-            for ($i = 0; $i < $length; $i++) {
-                if ($tokens->dataMask[$offset + $i] !== '1') {
-                    return false;
-                }
+            if (strspn($tokens->dataMask, '1', $offset, $length) !== $length) {
+                return false;
             }
         }
 

@@ -73,6 +73,17 @@ final readonly class TokenStream
         return $this->coordinate($index, 4);
     }
 
+    public function coveredLines(int $offset, int $length): int
+    {
+        $last = $offset + $length - 1;
+        if ($offset < 1) {
+            return $this->coveredPrefix($last);
+        }
+
+        return $this->coveredPrefix($last) - $this->coveredPrefix($offset - 1)
+            + (int) ($this->endLine($offset - 1) === $this->startLine($offset));
+    }
+
     /** @return array{int, list<int>} Record width and field offsets */
     private function fieldOffsets(string $formats): array
     {

@@ -21,50 +21,28 @@ final class DuplicateMatchCandidates
 
     private int $count = 0;
 
-    /** @var array<int, int> */
-    private array $parents = [];
-
-    /** @var array<int, int> */
-    private array $sizes = [];
-
-    /** @var list<int> */
-    private array $touched = [];
-
-    /** @var list<int> */
-    private array $covers = [];
-
-    /** @var list<int> */
-    private array $anchors = [];
-
     /** @param list<int> $copies */
     public function add(int $length, array $copies): void
     {
         $chunk = intdiv($this->count, 1024);
         $this->recordChunks[$chunk] ??= '';
         $this->recordChunks[$chunk] .= pack('q3', $length, \count($copies), $this->copySize);
+        $payload = "\1";
         $previous = 0;
-        $ordered = true;
+        $previousFile = 0;
+        $previousOffset = 0;
         foreach ($copies as $copy) {
             if ($copy < $previous) {
-                $ordered = false;
+                $payload = "\0" . pack('q*', ...$copies);
                 break;
             }
+            $file = PackedPosition::fileIndex($copy);
+            $offset = PackedPosition::offset($copy);
+            self::appendUnsigned($payload, $file - $previousFile);
+            self::appendUnsigned($payload, $file === $previousFile ? $offset - $previousOffset : $offset);
             $previous = $copy;
-        }
-        $payload = $ordered ? "\1" : "\0";
-        if (!$ordered) {
-            $payload .= pack('q*', ...$copies);
-        } else {
-            $previousFile = 0;
-            $previousOffset = 0;
-            foreach ($copies as $copy) {
-                $file = PackedPosition::fileIndex($copy);
-                $offset = PackedPosition::offset($copy);
-                self::appendUnsigned($payload, $file - $previousFile);
-                self::appendUnsigned($payload, $file === $previousFile ? $offset - $previousOffset : $offset);
-                $previousFile = $file;
-                $previousOffset = $offset;
-            }
+            $previousFile = $file;
+            $previousOffset = $offset;
         }
         $this->appendCopies($payload);
         $this->count++;
@@ -97,7 +75,7 @@ final class DuplicateMatchCandidates
             $record = $this->record($match);
             $length = $record[1];
             $copies = $this->readCopies($record[2], $record[3]);
-            if ($this->isConnectedCover($index, $copies, $length, $span)) {
+            if ($index->connects($copies, $length, $span)) {
                 continue;
             }
 
@@ -241,75 +219,6 @@ final class DuplicateMatchCandidates
             $shift += 7;
         } while ($byte >= 128);
         return $value;
-    }
-
-    /**
-     * @param list<int> $copies
-     * @param Closure(int, int): array{int, int, int} $span
-     */
-    private function isConnectedCover(CopyCoverIndex $index, array $copies, int $length, Closure $span): bool
-    {
-        $this->anchors = [];
-        try {
-            foreach ($copies as $copy) {
-                [$file, $start, $end] = $span($copy, $length);
-                $index->containing($file, $start, $end, $this->covers);
-                if ($this->covers === []) {
-                    return false;
-                }
-
-                $anchor = $this->covers[0];
-                $this->anchors[] = $anchor;
-                foreach ($this->covers as $id) {
-                    if (!isset($this->parents[$id])) {
-                        $this->parents[$id] = $id;
-                        $this->sizes[$id] = 1;
-                        $this->touched[] = $id;
-                    }
-                    $this->join($anchor, $id);
-                }
-            }
-
-            $root = $this->root($this->anchors[0]);
-            foreach ($this->anchors as $anchor) {
-                if ($this->root($anchor) !== $root) {
-                    return false;
-                }
-            }
-
-            return true;
-        } finally {
-            foreach ($this->touched as $id) {
-                unset($this->parents[$id], $this->sizes[$id]);
-            }
-            $this->touched = [];
-            $this->covers = [];
-            $this->anchors = [];
-        }
-    }
-
-    private function root(int $id): int
-    {
-        while ($this->parents[$id] !== $id) {
-            $this->parents[$id] = $this->parents[$this->parents[$id]];
-            $id = $this->parents[$id];
-        }
-
-        return $id;
-    }
-
-    private function join(int $left, int $right): void
-    {
-        $left = $this->root($left);
-        $right = $this->root($right);
-        if ($left === $right) {
-            return;
-        }
-        if ($this->sizes[$left] < $this->sizes[$right]) {
-            [$left, $right] = [$right, $left];
-        }
-        $this->parents[$right] = $left;
-        $this->sizes[$left] += $this->sizes[$right];
     }
 
 }

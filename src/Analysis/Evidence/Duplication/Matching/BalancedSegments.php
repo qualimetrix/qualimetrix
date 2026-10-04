@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication\Matching;
 
+use Closure;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 
 final class BalancedSegments
@@ -24,6 +26,39 @@ final class BalancedSegments
         }
 
         return $segments;
+    }
+
+    /**
+     * @param list<int> $copies
+     * @param Closure(list<int>, int): ?list<int> $reportable
+     */
+    public static function addAdmittedTo(
+        TokenStream $stream,
+        int $offset,
+        int $length,
+        array $copies,
+        int $minTokens,
+        DuplicateMatchCandidates $target,
+        Closure $reportable,
+    ): void {
+        $admitted = false;
+        foreach (self::of($stream, $offset, $length) as [$shift, $segmentLength]) {
+            if ($segmentLength < $minTokens) {
+                continue;
+            }
+            $shifted = array_map(
+                static fn(int $copy): int => PackedPosition::pack(PackedPosition::fileIndex($copy), PackedPosition::offset($copy) + $shift),
+                $copies,
+            );
+            $accepted = $reportable($shifted, $segmentLength);
+            if ($accepted !== null) {
+                $target->add($segmentLength, $accepted);
+                $admitted = true;
+            }
+        }
+        if (!$admitted) {
+            $target->add($length, $copies);
+        }
     }
 
     private static function skipLeadingClosers(TokenStream $stream, int $offset, int $length, int $index): int
