@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 use PHPUnit\Framework\Attributes\Group;
 
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
@@ -26,6 +27,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
@@ -39,9 +41,13 @@ use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
@@ -65,6 +71,10 @@ use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Discovery\ScopeFacts;
@@ -158,7 +168,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new CollectionPhaseOutput([], $failures),
             [],
             [],
-            AbsolutePath::fromString(sys_get_temp_dir()),
+            [],
         );
 
         self::assertSame(3, $coverage->failedFilesCount());
@@ -172,6 +182,173 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             'processing.php' => [AnalysisFailureKind::Processing, 'processing error'],
             'unreadable.php' => [AnalysisFailureKind::UnreadableFile, 'read error'],
         ], $mapped);
+    }
+
+    #[Test]
+    public function itKeepsCollectionFailurePrecedenceAndUnfailedSurvivorsWhenInspectionAlsoFails(): void
+    {
+        $collectedFailure = RelativePath::fromString('collected.php');
+        $lateFailure = RelativePath::fromString('late.php');
+        $survivor = RelativePath::fromString('survivor.php');
+
+        $coverage = (new ReflectionMethod(AnalysisPipeline::class, 'buildCoverage'))->invoke(
+            null,
+            [$collectedFailure, $lateFailure, $survivor],
+            [],
+            new CollectionPhaseOutput(
+                [$lateFailure, $survivor],
+                [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
+            ),
+            [],
+            [],
+            [
+                new AnalysisFailure($collectedFailure, AnalysisFailureKind::UnreadableFile, 'later read'),
+                new AnalysisFailure($lateFailure, AnalysisFailureKind::UnreadableFile, 'first read'),
+                new AnalysisFailure($lateFailure, AnalysisFailureKind::UnreadableFile, 'repeated read'),
+            ],
+        );
+
+        self::assertSame([$survivor], $coverage->analyzedFiles);
+        self::assertSame(2, $coverage->failedFilesCount());
+        self::assertSame($collectedFailure, $coverage->failures[0]->path);
+        self::assertSame(AnalysisFailureKind::Parse, $coverage->failures[0]->kind);
+        self::assertSame('collection parse', $coverage->failures[0]->message);
+        self::assertSame($lateFailure, $coverage->failures[1]->path);
+        self::assertSame('first read', $coverage->failures[1]->message);
+    }
+
+    #[Test]
+    #[TestWith(['analyze'])]
+    #[TestWith(['audit'])]
+    public function itRetainsPublishedSelectedAndSkippedPathsAfterCollectionRemovesTheirParent(string $entryPoint): void
+    {
+        $fixtureRoot = sys_get_temp_dir() . '/qmx-late-inspection-' . bin2hex(random_bytes(6));
+        $lostDirectory = $fixtureRoot . '/lost';
+        mkdir($lostDirectory, 0o755, true);
+        file_put_contents($lostDirectory . '/Bad.php', '<?php');
+        file_put_contents($lostDirectory . '/Skipped.php', '<?php');
+        file_put_contents($fixtureRoot . '/Keep.php', '<?php');
+
+        $root = AbsolutePath::fromString($fixtureRoot);
+        $state = new class {
+            public bool $removeAfterCollection = true;
+        };
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturnCallback(
+            static fn(): DiscoveredProjectFiles => new DiscoveredProjectFiles(
+                [new SplFileInfo($lostDirectory . '/Bad.php'), new SplFileInfo($fixtureRoot . '/Keep.php')],
+                [],
+                [],
+                $state->removeAfterCollection
+                        ? [SkippedEntry::nonRegular(AbsolutePath::fromString($lostDirectory . '/Skipped.php'), 'not regular')]
+                        : [],
+                [],
+                new ScopeFacts([], [], [], false),
+                $state->removeAfterCollection ? 3 : 2,
+            ),
+        );
+        $orchestrator = self::createStub(CollectionOrchestratorInterface::class);
+        $orchestrator->method('collect')->willReturnCallback(
+            static function () use ($state, $lostDirectory): CollectionPhaseOutput {
+                if ($state->removeAfterCollection) {
+                    unlink($lostDirectory . '/Bad.php');
+                    unlink($lostDirectory . '/Skipped.php');
+                    rmdir($lostDirectory);
+                }
+
+                return new CollectionPhaseOutput([
+                    RelativePath::fromString('lost/Bad.php'),
+                    RelativePath::fromString('Keep.php'),
+                ], []);
+            },
+        );
+        $participant = new class implements FileSetInspectionParticipantInterface {
+            public bool $fail = true;
+            public int $resets = 0;
+
+            public static function participantId(): string
+            {
+                return 'late-read';
+            }
+
+            public static function producerRuleName(): string
+            {
+                return 'duplication.clone';
+            }
+
+            public function resetForRun(): void
+            {
+                ++$this->resets;
+            }
+
+            public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void
+            {
+                if ($this->fail) {
+                    throw new FileSetInspectionFailure([[
+                        'input' => PathFactory::fromCliArgument($eligibleFiles[0]->getPathname(), $projectRoot),
+                        'message' => 'late read failed',
+                    ]]);
+                }
+            }
+        };
+        $metadata = new RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false);
+        $registry = new RuleOptionsRegistry();
+        $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::none(), [$metadata]));
+        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
+        $ruleExecutor->method('allRules')->willReturn([$metadata]);
+        $ruleExecutor->method('execute')->willReturn(new RuleExecutionResult(
+            [],
+            [],
+            new RuleExclusionStats(),
+            LevelActivity::empty(),
+        ));
+        $ruleExecutor->method('publishable')->willReturn([]);
+        $producerGate = new RuleSelectorProducerGate($registry);
+        $pipeline = TestPipelineBuilder::create()
+            ->withProjectFiles($discovery)
+            ->withCollectionOrchestrator($orchestrator)
+            ->withRuleExecution($ruleExecutor)
+            ->withRuleConfiguration($registry)
+            ->withMeasurementAggregation(new MeasurementAggregationService(
+                [],
+                new CompositeCollector([], new DeclarationRegistrarFactory()),
+                $this->profiler,
+            ))
+            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withFileSetInspection(new FileSetInspectionComposite([$participant], $producerGate, $this->profiler), $producerGate)
+            ->withProfiler($this->profiler)
+            ->build();
+
+        try {
+            $run = self::runConfiguration($root);
+            $coverage = $entryPoint === 'analyze'
+                ? $pipeline->analyze($run)->measured->coverage
+                : $pipeline->auditDirectives($run)->coverage;
+
+            self::assertFalse($coverage->isComplete());
+            self::assertSame(['Keep.php'], array_map(static fn(RelativePath $path): string => $path->value(), $coverage->analyzedFiles));
+            self::assertSame(2, $coverage->failedFilesCount());
+            self::assertSame('lost/Bad.php', $coverage->failures[0]->path->value());
+            self::assertSame(AnalysisFailureKind::UnreadableFile, $coverage->failures[0]->kind);
+            self::assertSame('late read failed', $coverage->failures[0]->message);
+            self::assertSame('lost/Skipped.php', $coverage->failures[1]->path->value());
+            self::assertSame(AnalysisFailureKind::NotRegularFile, $coverage->failures[1]->kind);
+
+            mkdir($lostDirectory, 0o755, true);
+            file_put_contents($lostDirectory . '/Bad.php', '<?php');
+            $state->removeAfterCollection = false;
+            $participant->fail = false;
+            $nextCoverage = $entryPoint === 'analyze'
+                ? $pipeline->analyze($run)->measured->coverage
+                : $pipeline->auditDirectives($run)->coverage;
+
+            self::assertTrue($nextCoverage->isComplete());
+            self::assertSame(2, $nextCoverage->analyzedFilesCount());
+            self::assertSame(2, $participant->resets);
+        } finally {
+            self::removeFixtureDirectory($fixtureRoot);
+        }
     }
 
     /**

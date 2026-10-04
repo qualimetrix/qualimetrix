@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection;
 
+use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -13,16 +15,21 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use ReflectionClass;
 use RuntimeException;
 use SplFileInfo;
 
 #[CoversClass(FileSetInspectionComposite::class)]
+#[CoversClass(FileSetInspectionFailure::class)]
 final class FileSetInspectionCompositeTest extends TestCase
 {
     #[Test]
@@ -32,7 +39,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $alpha = new AlphaParticipant($events);
         $beta = new BetaParticipant($events);
 
-        $this->composite([$alpha, $beta], disabled: ['alpha.rule'])->inspect([], $this->root());
+        $this->composite([$alpha, $beta], disabled: ['alpha.rule'])->inspect([], $this->root(), []);
 
         self::assertSame(['alpha.reset', 'beta.reset', 'beta.inspect'], $events);
         self::assertSame($events, $alpha->events());
@@ -45,7 +52,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
         $participant = new AlphaParticipant($events);
 
-        $this->composite([$participant], disabled: ['alpha.rule'])->inspect([new SplFileInfo(__FILE__)], $this->root());
+        $this->composite([$participant], disabled: ['alpha.rule'])->inspect([new SplFileInfo(__FILE__)], $this->root(), []);
 
         self::assertSame(['alpha.reset'], $events);
     }
@@ -57,7 +64,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $participant = new AlphaParticipant($events);
         $registry = new RuleOptionsRegistry();
         $composite = $this->composite([$participant], registry: $registry);
-        $composite->inspect([new SplFileInfo(__FILE__)], $this->root());
+        $composite->inspect([new SplFileInfo(__FILE__)], $this->root(), []);
         self::assertTrue($participant->hasResult);
 
         $metadata = [new RuleMetadata('alpha.rule', CodeDuplicationOptions::class, '', [], false)];
@@ -65,7 +72,7 @@ final class FileSetInspectionCompositeTest extends TestCase
             'disabled_rules' => ['alpha.rule'],
         ]]], $this->root(), $metadata);
         $registry->replace(ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata));
-        $composite->inspect([], $this->root());
+        $composite->inspect([], $this->root(), []);
 
         self::assertFalse($participant->hasResult);
     }
@@ -76,10 +83,10 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
         $participant = new AlphaParticipant($events);
         $composite = $this->composite([$participant]);
-        $composite->inspect([new SplFileInfo(__FILE__)], $this->root());
+        $composite->inspect([new SplFileInfo(__FILE__)], $this->root(), []);
         self::assertTrue($participant->hasResult);
 
-        $composite->inspect([], $this->root());
+        $composite->inspect([], $this->root(), []);
 
         self::assertFalse($participant->hasResult);
     }
@@ -87,7 +94,7 @@ final class FileSetInspectionCompositeTest extends TestCase
     #[Test]
     public function itAcceptsAnEmptyParticipantSet(): void
     {
-        $this->composite([])->inspect([], $this->root());
+        $this->composite([])->inspect([], $this->root(), []);
 
         self::addToAssertionCount(1);
     }
@@ -98,7 +105,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
 
         $this->composite([new AlphaParticipant($events), new BetaParticipant($events)])
-            ->inspect([], $this->root());
+            ->inspect([], $this->root(), []);
 
         self::assertSame(['alpha.reset', 'beta.reset', 'alpha.inspect', 'beta.inspect'], $events);
     }
@@ -110,7 +117,113 @@ final class FileSetInspectionCompositeTest extends TestCase
         $profiler->expects(self::once())->method('start')->with('file-set-inspection.throwing', 'pipeline');
         $profiler->expects(self::once())->method('stop')->with('file-set-inspection.throwing');
         $this->expectException(RuntimeException::class);
-        $this->composite([new ThrowingParticipant()], $profiler)->inspect([], $this->root());
+        $this->composite([new ThrowingParticipant()], $profiler)->inspect([], $this->root(), []);
+    }
+
+    #[Test]
+    public function itPublishesOneUnreadableFailureForRepeatedSelectedInputAndResetsNextRun(): void
+    {
+        $root = $this->root();
+        $input = PathFactory::fromCliArgument(__FILE__, $root);
+        $published = PathFactory::published($input, $root);
+        $participant = new class ($input) implements FileSetInspectionParticipantInterface {
+            public bool $fail = true;
+            public int $resets = 0;
+
+            public function __construct(private AbsolutePath $input) {}
+
+            public static function participantId(): string
+            {
+                return 'throwing';
+            }
+
+            public static function producerRuleName(): string
+            {
+                return 'throwing.rule';
+            }
+
+            public function resetForRun(): void
+            {
+                ++$this->resets;
+            }
+
+            public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void
+            {
+                if ($this->fail) {
+                    throw new FileSetInspectionFailure([
+                        ['input' => $this->input, 'message' => 'first read failed'],
+                        ['message' => 'second read failed', 'input' => $this->input],
+                    ]);
+                }
+            }
+        };
+        $composite = $this->composite([$participant]);
+        $roster = [$input->value() => $published];
+
+        $failures = $composite->inspect([new SplFileInfo(__FILE__)], $root, $roster);
+
+        self::assertCount(1, $failures);
+        self::assertSame($published->value(), $failures[0]->path->value());
+        self::assertSame(AnalysisFailureKind::UnreadableFile, $failures[0]->kind);
+        self::assertSame('first read failed', $failures[0]->message);
+
+        $participant->fail = false;
+        self::assertSame([], $composite->inspect([new SplFileInfo(__FILE__)], $root, $roster));
+        self::assertSame(2, $participant->resets);
+    }
+
+    #[Test]
+    public function itRejectsAnUnreadableInputOutsideTheSelectedRoster(): void
+    {
+        $root = $this->root();
+        $input = PathFactory::fromCliArgument(__FILE__, $root);
+        $foreign = $root->joinRelative(\Qualimetrix\Core\Path\RelativePath::fromString('not-selected.php'));
+        $participant = new class ($foreign) implements FileSetInspectionParticipantInterface {
+            public function __construct(private AbsolutePath $foreign) {}
+
+            public static function participantId(): string
+            {
+                return 'throwing';
+            }
+
+            public static function producerRuleName(): string
+            {
+                return 'throwing.rule';
+            }
+
+            public function resetForRun(): void {}
+
+            public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void
+            {
+                throw new FileSetInspectionFailure([['input' => $this->foreign, 'message' => 'read failed']]);
+            }
+        };
+        $profiler = $this->createMock(ProfilerInterface::class);
+        $profiler->expects(self::once())->method('stop')->with('file-set-inspection.throwing');
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('outside the selected file set');
+        $this->composite([$participant], $profiler)->inspect(
+            [new SplFileInfo(__FILE__)],
+            $root,
+            [$input->value() => PathFactory::published($input, $root)],
+        );
+    }
+
+    #[Test]
+    public function itRejectsAnEmptyInspectionFailurePayload(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        (new ReflectionClass(FileSetInspectionFailure::class))->newInstanceArgs([[]]);
+    }
+
+    #[Test]
+    public function itRejectsABlankInspectionFailureMessage(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        (new ReflectionClass(FileSetInspectionFailure::class))->newInstanceArgs([[
+            ['input' => $this->root(), 'message' => '   '],
+        ]]);
     }
 
     #[Test]
@@ -120,7 +233,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $profiler = $this->createMock(ProfilerInterface::class);
         $profiler->expects(self::once())->method('start')->with('file-set-inspection.alpha', 'pipeline');
         $profiler->expects(self::once())->method('stop')->with('file-set-inspection.alpha');
-        $this->composite([new AlphaParticipant($events)], $profiler)->inspect([], $this->root());
+        $this->composite([new AlphaParticipant($events)], $profiler)->inspect([], $this->root(), []);
     }
 
     /**
@@ -137,7 +250,7 @@ final class FileSetInspectionCompositeTest extends TestCase
         $events = [];
 
         $this->composite([new AlphaParticipant($events), new BetaParticipant($events)], ruleOptions: $ruleOptions)
-            ->inspect([new SplFileInfo(__FILE__)], $this->root());
+            ->inspect([new SplFileInfo(__FILE__)], $this->root(), []);
 
         self::assertSame(['alpha.reset', 'beta.reset', 'beta.inspect'], $events);
     }
@@ -161,7 +274,7 @@ final class FileSetInspectionCompositeTest extends TestCase
 
         try {
             $this->composite([new AlphaParticipant($events)], ruleOptions: $ruleOptions)
-                ->inspect([new SplFileInfo(__FILE__)], $this->root());
+                ->inspect([new SplFileInfo(__FILE__)], $this->root(), []);
         } catch (ConfigurationRefusal $refusal) {
             if (!$invalidEnabled) {
                 throw $refusal;

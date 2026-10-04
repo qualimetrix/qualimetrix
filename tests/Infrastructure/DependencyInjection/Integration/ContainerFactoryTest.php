@@ -408,6 +408,7 @@ PHP;
         $fileSetInspection->inspect(
             $duplicateFiles,
             AbsolutePath::fromString($this->tempDir),
+            [],
         );
         $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
@@ -420,6 +421,7 @@ PHP;
         $fileSetInspection->inspect(
             $duplicateFiles,
             AbsolutePath::fromString($this->tempDir),
+            [],
         );
 
         self::assertSame([], $resultProvider->all());
@@ -432,6 +434,7 @@ PHP;
         $fileSetInspection->inspect(
             $duplicateFiles,
             AbsolutePath::fromString($this->tempDir),
+            [],
         );
 
         self::assertNotEmpty($resultProvider->all());
@@ -439,6 +442,7 @@ PHP;
         $fileSetInspection->inspect(
             [new SplFileInfo($firstPath)],
             AbsolutePath::fromString($this->tempDir),
+            [],
         );
 
         self::assertSame([], $resultProvider->all());

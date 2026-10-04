@@ -43,7 +43,6 @@ use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use SplFileInfo;
 
 /**
  * Main analysis pipeline orchestrator.
@@ -89,7 +88,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $this->logger->info('Analysis complete', [
             'total_duration' => \sprintf('%.2fs', $duration),
             'violations' => \count($prepared->ruleExecution->published) + \count($latePublished),
-            'files_analyzed' => $prepared->collection->filesAnalyzed,
+            'files_analyzed' => $prepared->coverage->analyzedFilesCount(),
             'files_skipped' => $prepared->coverage->skippedFilesCount(),
         ]);
 
@@ -181,6 +180,23 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $files = $discoveredFiles->eligibleFiles;
         $generatedExcludedFiles = $discoveredFiles->generatedExcludedFiles;
 
+        $eligiblePaths = [];
+        $publishedByInput = [];
+        foreach ($files as $file) {
+            $input = PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot);
+            $published = PathFactory::published($input, $configuration->projectRoot);
+            $eligiblePaths[] = $published;
+            $publishedByInput[$input->value()] = $published;
+        }
+        $skippedFailures = array_map(
+            static fn(SkippedEntry $skip): AnalysisFailure => new AnalysisFailure(
+                $skip->relativeTo($configuration->projectRoot),
+                $skip->reason,
+                $skip->detail,
+            ),
+            $discoveredFiles->skippedEntries,
+        );
+
         $profiler->stop('discovery');
 
         $this->logger->info('Discovered files', ['count' => $discoveredFiles->discoveredCount]);
@@ -242,7 +258,11 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         );
 
         // Phase 6: File-set inspection.
-        $this->ruleProducerPreparation->inspectFiles($files, $configuration->projectRoot);
+        $inspectionFailures = $this->ruleProducerPreparation->inspectFiles(
+            $files,
+            $configuration->projectRoot,
+            $publishedByInput,
+        );
 
         // Phase 6.5: hand this run's inline directives to their owning
         // capability, so the rule that reports on them reads prepared state
@@ -274,14 +294,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'duration' => \sprintf('%.2fs', $analysisTime),
         ]);
 
-        $eligiblePaths = array_map(
-            static fn(SplFileInfo $file): RelativePath => PathFactory::published(
-                PathFactory::fromCliArgument($file->getPathname(), $configuration->projectRoot),
-                $configuration->projectRoot,
-            ),
-            $files,
-        );
-
         $profiler->stop('analysis');
 
         return [new PreparedRun(
@@ -293,9 +305,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                 $eligiblePaths,
                 $generatedExcludedFiles,
                 $collectionResult,
-                $discoveredFiles->skippedEntries,
+                $skippedFailures,
                 $discoveredFiles->namedExcluded,
-                $configuration->projectRoot,
+                $inspectionFailures,
             ),
             unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
         ), $measuredScope];
@@ -381,16 +393,17 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
     /**
      * @param list<RelativePath> $eligiblePaths
      * @param list<RelativePath> $generatedExcludedFiles
-     * @param list<SkippedEntry> $skippedEntries
+     * @param list<AnalysisFailure> $skippedFailures published during discovery
      * @param list<RelativePath> $namedExcluded
+     * @param list<AnalysisFailure> $inspectionFailures
      */
     private static function buildCoverage(
         array $eligiblePaths,
         array $generatedExcludedFiles,
         CollectionPhaseOutput $collectionResult,
-        array $skippedEntries,
+        array $skippedFailures,
         array $namedExcluded,
-        AbsolutePath $projectRoot,
+        array $inspectionFailures,
     ): AnalysisCoverage {
         $failures = array_map(
             static function ($failure): AnalysisFailure {
@@ -407,10 +420,28 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             $collectionResult->failures,
         );
 
-        $coverage = new AnalysisCoverage(
+        $collectionFailurePaths = [];
+        foreach ($failures as $failure) {
+            $collectionFailurePaths[$failure->path->value()] = true;
+        }
+
+        $lateFailures = [];
+        foreach ($inspectionFailures as $failure) {
+            $key = $failure->path->value();
+            if (!isset($collectionFailurePaths[$key])) {
+                $lateFailures[$key] ??= $failure;
+            }
+        }
+
+        $analyzed = array_values(array_filter(
             $collectionResult->analyzedFiles,
+            static fn(RelativePath $path): bool => !isset($lateFailures[$path->value()]),
+        ));
+
+        $coverage = new AnalysisCoverage(
+            $analyzed,
             $generatedExcludedFiles,
-            $failures,
+            [...$failures, ...array_values($lateFailures)],
             $namedExcluded,
         );
 
@@ -418,10 +449,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         // belongs on both sides of the invariant below — not only in the
         // coverage it is recorded in.
         $skippedPaths = [];
-        foreach ($skippedEntries as $skip) {
-            $path = $skip->relativeTo($projectRoot);
-            $skippedPaths[] = $path;
-            $coverage = $coverage->withSkipped($path, $skip->reason, $skip->detail);
+        foreach ($skippedFailures as $skip) {
+            $skippedPaths[] = $skip->path;
+            $coverage = $coverage->withSkipped($skip->path, $skip->kind, $skip->message);
         }
 
         self::assertCoverageMatchesDiscovery($coverage, [...$eligiblePaths, ...$skippedPaths]);

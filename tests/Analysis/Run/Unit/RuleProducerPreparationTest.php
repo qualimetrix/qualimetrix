@@ -89,7 +89,7 @@ final class RuleProducerPreparationTest extends TestCase
             self::createStub(DependencyGraphInterface::class),
             self::createStub(ProfilerInterface::class),
         );
-        $preparation->inspectFiles([], AbsolutePath::fromString('/project'));
+        $preparation->inspectFiles([], AbsolutePath::fromString('/project'), []);
 
         self::assertSame(1, $participant->resetCalls);
         self::assertSame(0, $participant->inspectCalls);
@@ -271,7 +271,7 @@ final class RuleProducerPreparationTest extends TestCase
         $this->preparation(
             participants: [$participant],
             ruleOptions: ['duplication.clone' => ['enabled' => false]],
-        )->inspectFiles([], AbsolutePath::fromString('/project'));
+        )->inspectFiles([], AbsolutePath::fromString('/project'), []);
 
         self::assertSame(1, $participant->resetCalls);
         self::assertSame(0, $participant->inspectCalls);
