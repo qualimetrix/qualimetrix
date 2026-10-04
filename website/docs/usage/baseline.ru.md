@@ -81,7 +81,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Без `--remove` команда `baseline:cleanup <baseline> [<paths>...]` только выводит кандидатов и никогда не меняет файл. У каждого кандидата названа причина: `nothing reported for this identity` — канал был активен на уровне субъекта, но ничего не сообщил; это ещё не доказывает измерение excluded-субъекта (ограничение metadata-coverage ниже); `not measured: this invocation did not run the rule for this channel at this level` — прогон не измерял этот канал на этом уровне, и отсутствие записи ничего не говорит о коде. Уровень берётся из самой записи: `--disable-rule=coupling.cbo:namespace` делает запись `coupling.cbo` уровня неймспейса неизмеренной, а записи уровня класса по-прежнему судятся; так же действует уровень, выключенный в опциях правила (`class: { enabled: false }`), и `--only-rule`, `--disable-rule` или `enabled: false` для правила целиком. Копия дублированного блока, которую больше ничто не сообщает, названа своим хешем occurrence, а не файлом — `project: duplication.clone [<occurrence>]`, — потому что baseline хранит для неё только этот хеш; у каждой копии свой селектор. Повторяй `--remove=<selector>` ровно для проверенных записей. Массового удаления нет: отсутствие может быть вызвано сменой конфигурации, а не только исправлением. `--force` имеет то же значение проверки области, что и у `baseline:update`.
+Без `--remove` команда `baseline:cleanup <baseline> [<paths>...]` только выводит кандидатов и никогда не меняет файл. У каждого кандидата названа причина: `nothing reported for this identity` — канал был активен на уровне субъекта, но ничего не сообщил; это ещё не доказывает измерение excluded-субъекта (ограничение metadata-coverage ниже); `not measured: this invocation did not run the rule for this channel at this level` — прогон не измерял этот канал на этом уровне, и отсутствие записи ничего не говорит о коде. Уровень берётся из самой записи: `--disable-rule=coupling.cbo:namespace` делает запись `coupling.cbo` уровня неймспейса неизмеренной, а записи уровня класса по-прежнему судятся; так же действует уровень, выключенный в опциях правила (`class: { enabled: false }`), и `--only-rule`, `--disable-rule` или `enabled: false` для правила целиком. Новые записи Duplication используют subject уровня File, поэтому cleanup определяет копию по `file:<path>` и occurrence канала `duplication.clone`. Старая запись v13 с subject Project остаётся читаемой, но cleanup сообщает `level-not-declared`; `baseline:explain project:` сохраняет её принятые значения и помечает старый уровень как неизмеренный. Текущий селектор `duplication.clone:project` отклоняется с кодом 3, потому что правило теперь объявляет только File. Старая запись не хранит путь к файлу, поэтому автоматически преобразовать subject невозможно. Повторяй `--remove=<selector>` ровно для проверенных записей. Массового удаления нет: отсутствие может быть вызвано сменой конфигурации, а не только исправлением. `--force` имеет то же значение проверки области, что и у `baseline:update`.
 
 ### Перенос baseline на переименованные каналы
 
@@ -163,7 +163,7 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=
 bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=complexity.ccn
 ```
 
-`baseline:explain <symbol> [<paths>...]` показывает принятую величину, текущее нарушение, порог из конфигурации и override `@qmx-threshold`. Используй `--baseline=BASELINE`, чтобы включить принятую величину, и `--channel=CHANNEL`, чтобы сузить ответ.
+`baseline:explain <symbol> [<paths>...]` показывает принятую величину, текущее нарушение, порог из конфигурации и override `@qmx-threshold`. Используй `--baseline=BASELINE`, чтобы включить принятую величину, и `--channel=CHANNEL`, чтобы сузить ответ. У Duplication нет локального `@qmx-threshold`, а текущий канал существует только на уровне File. Старую сохранённую запись Project всё ещё можно объяснить как принятую, но неизмеренную; это не делает `duplication.clone:project` допустимым текущим селектором.
 
 За исключением полного намеренно пустого исключённого набора, символ, отсутствующий и в текущем анализе, и в baseline, считается неверным input,
 а не чистым результатом. Baseline-only символ остаётся объяснимым и помечается как отсутствующий
@@ -412,6 +412,8 @@ final class ComplexStateMachine
 @qmx-threshold <rule> <number> [-- <reason>]
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
+
+Duplication — отдельное исключение: `@qmx-threshold duplication.clone` отклоняется с `annotation.unsupported-threshold`, поскольку правило не поддерживает локальные переопределения.
 
 `@qmx-threshold` адресует **правило** по точному имени — никогда канал и никогда уровень. Порог принадлежит единственному объекту опций правила, а не отдельному уровню, поэтому `@qmx-threshold complexity.ccn:callable` — ошибка, даже несмотря на то, что `complexity.ccn` сообщает на двух уровнях; используй имя правила `complexity.ccn`, а для настройки только одного уровня — `--rule-opt`:
 

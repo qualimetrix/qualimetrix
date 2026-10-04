@@ -566,7 +566,11 @@ to classify configuration refusals, environment refusals and raw Core environmen
 failures. Refusals exit with code 3; unrelated exceptions remain internal errors
 with code 1. Configuration source metadata, including import chains, survives
 the shared `RefusalInterface`. A failure after report publication is written to
-stderr so stdout retains one report document.
+stderr so stdout retains one report document. If the Duplication detector
+exhausts PHP memory, its shutdown hint writes a short diagnostic to stderr with
+the failure site, current `memory_limit`, and `--memory-limit`/`qmx.yaml`
+remediation, then uses environment exit 4. Fatal OOM can interrupt a streamed
+report, so the adapter does not promise valid or complete JSON in that case.
 
 For a stream output, the JSON refusal writer verifies every write and the final
 flush. If stdout cannot accept the envelope, the same terminal diagnostic is

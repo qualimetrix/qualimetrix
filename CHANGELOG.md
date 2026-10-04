@@ -818,34 +818,32 @@ in the inline-directive Breaking entry above.
   regenerate baselines. The breakdown no longer lists `closure` or `??`
   increments, labels `nested ternary`, and shows an `else if` as one `elseif`
   increment. `complexity.ccn` still counts `??`.
-- **`duplication.clone` reports one finding on each copy of a duplicated
-  block**, each copy under an identity of its own and valued by the lines that
-  copy spans, instead of one finding per pair valued by the longest copy. Each
-  names up to ten other copies (message and SARIF `relatedLocations`) and
-  counts the rest, and there is no upper limit on copies any more. A copy is
-  keyed by the block's content, its file and its place among the block's
-  copies in that file — never by a line number — so GitLab Code Quality and
-  SARIF show one entry per copy. A new copy that agrees with the whole of an
-  accepted block is a new finding on that copy alone, `--report=git:*`
-  reports it in the file it was pasted into, a deleted copy leaves a stale
-  baseline entry, and a copy moved to another file (or a renamed file) is a
-  new finding. A copy agreeing with only part of an accepted block, an edit
-  inside one copy, or code inserted between a copy and the code around it
-  that the copies share changes the block: its other copies get new findings
-  too, in files the change never touched. `min_lines` admits a block by its
-  longest copy, and every copy of an admitted block is reported, a shorter one
-  at its own value below `min_lines` (as a warning below `warning`). A comment
-  or blank line inside one copy changes that copy's value only — unless it
-  moves the longest copy across `min_lines`, which adds or removes the block
-  and every copy's finding with it. Check what you rely on: a block of N
-  copies is N findings (v0.27.0 reported N − 1), so the violation count and
-  the technical debt grow by one finding per block; `suppress_paths` (global
-  or per rule) now silences only the copies inside its paths — list every
-  file a block has a copy in to silence it. A baseline captured before this
-  change matches none of the new findings — regenerate it with
-  `baseline:generate`. Inline directives on the channel stay refused, and the
-  refusal now says why: a file or next-line directive would silence one copy
-  while the others still report the block.
+- **`duplication.clone` now reports File-level findings valued by each copy's
+  covered code lines.** A block is admitted by its greatest covered-code-line
+  count and token count; every admitted copy is reported, with Warning below
+  its own `error` boundary and Error at or above it. `min_lines`, `min_tokens`
+  and `error` must be positive integers (defaults 5, 70 and 50). The former
+  `warning`, `threshold` and local `@qmx-threshold` forms are removed; authored
+  configuration keys refuse with exit 3 and a targeted annotation refuses as
+  `annotation.unsupported-threshold`. The finding subject and `symbolPath` are
+  the copy's file; occurrence identifies its block digest and order in that
+  file. GitLab/SARIF fingerprints and baseline identities may therefore need a
+  one-time rebase, but the baseline format remains v13. Existing v13 Project
+  subjects remain readable for explanation and cleanup, where their old level
+  is reported as `level-not-declared`; current `duplication.clone:project`
+  selectors are refused. Replace project selectors with `file:<path>` and
+  review/regenerate baseline entries; use `suppress_paths` instead of namespace
+  suppression for file findings. Connected balanced segments are reported, with
+  a whole-match fallback when none meet admission minima; connected file-pair
+  evidence is retained during containment reduction. Some nested matching multiplicity remains an acknowledged behavior. CR, LF
+  and CRLF
+  token rows are counted correctly; HTML normalization uses collapsed ASCII
+  whitespace and `xxh128`, PHP keyword identifiers ignore case, and hints come
+  from each copy's own byte range, use up to three meaningful excerpts from the
+  first ten lines, and have an 80-codepoint limit with invalid-UTF-8 fallback.
+  A false read during inspection or detector OOM makes the run
+  incomplete and exits 4; neither an empty result nor a partial report proves
+  that no copies exist.
 - **`size.loc` no longer counts a file's final line break as a line of its
   own**, so `size.loc` (and `size.loc.sum`/`.avg`) is one lower per file that
   ends with a newline; a last line without a line break still counts, which

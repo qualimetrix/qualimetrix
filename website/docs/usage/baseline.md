@@ -88,7 +88,7 @@ bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
-Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the channel was active at the subject level and reported nothing; this does not yet prove an excluded subject was measured (see the metadata-coverage limitation below); `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. A copy of a duplicate block that nothing reports any more is named by its occurrence hash rather than by a file — `project: duplication.clone [<occurrence>]` — because that hash is all the baseline stores for it; each copy has a selector of its own. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Each candidate names its reason: `nothing reported for this identity` means the channel was active at the subject level and reported nothing; this does not yet prove an excluded subject was measured (see the metadata-coverage limitation below); `not measured: this invocation did not run the rule for this channel at this level` means the run left that channel out at that level, so its absence says nothing about the code. The level is the entry's own: `--disable-rule=coupling.cbo:namespace` marks a namespace entry of `coupling.cbo` as not measured while its class entries are still judged, and so does a level switched off in the rule's options (`class: { enabled: false }`), as well as `--only-rule`, `--disable-rule` or `enabled: false` for the whole rule. New Duplication entries use a File subject, so cleanup identifies a copy by `file:<path>` plus its `duplication.clone` occurrence. An older v13 Project-subject entry remains readable, but cleanup reports `level-not-declared`; `baseline:explain project:` preserves its accepted values and marks that old level not measured. A current `duplication.clone:project` selector is refused with exit 3 because the rule now declares only File. The old stored subject does not reveal a file path, so it cannot be translated automatically. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
 
 ### Carry a baseline onto renamed channels
 
@@ -168,7 +168,7 @@ bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=
 bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel=complexity.ccn
 ```
 
-`baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
+`baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer. Duplication has no local `@qmx-threshold` and its current channel exists only at File level. An old stored Project entry can still be explained as accepted but not measured; that does not make `duplication.clone:project` a valid current selector.
 
 Except for a complete intentionally empty excluded set, a symbol absent from both the current analysis and the baseline is invalid input,
 not a clean result. A baseline-only symbol remains explainable and is labelled as
@@ -420,6 +420,8 @@ final class ComplexStateMachine
 @qmx-threshold <rule> <number> [-- <reason>]
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
+
+Duplication is an explicit exception: `@qmx-threshold duplication.clone` is refused with `annotation.unsupported-threshold` because that rule does not support local overrides.
 
 `@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a level. A threshold belongs to the rule's one options object, not to an individual level, so `@qmx-threshold complexity.ccn:callable` is an error even though `complexity.ccn` reports at two levels; use the rule name `complexity.ccn` instead, or narrow with `--rule-opt` if only one level's options need to change:
 

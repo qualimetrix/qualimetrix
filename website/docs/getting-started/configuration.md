@@ -247,7 +247,7 @@ rules:
 bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 ```
 
-The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.ccn`'s `callable:`/`class:`).
+The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.ccn`'s `callable:`/`class:`). Duplication is an exception: `duplication.clone` accepts positive `min_lines`, `min_tokens`, and `error` only; `warning` and `threshold` are refused, and severity uses each copy's covered code lines. Its option schema is listed in the rule table below.
 
 **Hierarchical shorthand is a per-layer form.** A top `threshold` changes the
 callable band of CCN/cognitive/NPath and preserves the class band's values and defaults.
