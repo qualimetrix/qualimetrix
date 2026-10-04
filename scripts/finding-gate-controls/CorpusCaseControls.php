@@ -15,11 +15,11 @@ final class CorpusCaseControls
             'src/Analysis/Evidence/Duplication/Matching/DuplicateBlockFinder.php',
             '$longest = 0;
         foreach ($copies as $copy) {
-            $longest = max($longest, $this->codeLines($copy, $length));
+            $longest = max($longest, $this->tokensAt($copy)->coveredLines(PackedPosition::offset($copy), $length));
         }',
             '$longest = \PHP_INT_MAX;
         foreach ($copies as $copy) {
-            $longest = min($longest, $this->codeLines($copy, $length));
+            $longest = min($longest, $this->tokensAt($copy)->coveredLines(PackedPosition::offset($copy), $length));
         }',
             [
                 FailureClass::CASE_CLAIM_MISMATCH => [
@@ -39,7 +39,6 @@ final class CorpusCaseControls
                     'case:duplication-size|format:checkstyle',
                     'case:duplication-size|format:github',
                     'case:duplication-size|format:gitlab',
-                    'case:duplication-size|format:html',
                     'case:duplication-size|format:json',
                     'case:duplication-size|format:metrics',
                     'case:duplication-size|format:sarif',
