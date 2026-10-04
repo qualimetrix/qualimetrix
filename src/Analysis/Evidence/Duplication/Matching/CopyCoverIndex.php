@@ -24,21 +24,11 @@ final class CopyCoverIndex
     /** @var list<int> */
     private array $covers = [];
 
-    /** @var list<int> */
-    private array $anchors = [];
+    private int $componentCount = 0;
 
     public function add(int $keptId, int $fileIndex, int $start, int $end): void
     {
-        $low = 0;
-        $high = \count($this->ranges[$fileIndex] ?? []);
-        while ($low < $high) {
-            $middle = intdiv($low + $high, 2);
-            if ($this->ranges[$fileIndex][$middle][0] <= $start) {
-                $low = $middle + 1;
-            } else {
-                $high = $middle;
-            }
-        }
+        $low = $this->upperBound($fileIndex, $start);
 
         $this->ranges[$fileIndex] ??= [];
         array_splice($this->ranges[$fileIndex], $low, 0, [[$start, $end, $keptId]]);
@@ -48,6 +38,17 @@ final class CopyCoverIndex
     public function containing(int $fileIndex, int $start, int $end, array &$out): void
     {
         $out = [];
+        $low = $this->upperBound($fileIndex, $start);
+
+        for ($index = 0; $index < $low; $index++) {
+            if ($this->ranges[$fileIndex][$index][1] >= $end) {
+                $out[] = $this->ranges[$fileIndex][$index][2];
+            }
+        }
+    }
+
+    private function upperBound(int $fileIndex, int $start): int
+    {
         $low = 0;
         $high = \count($this->ranges[$fileIndex] ?? []);
         while ($low < $high) {
@@ -59,11 +60,7 @@ final class CopyCoverIndex
             }
         }
 
-        for ($index = 0; $index < $low; $index++) {
-            if ($this->ranges[$fileIndex][$index][1] >= $end) {
-                $out[] = $this->ranges[$fileIndex][$index][2];
-            }
-        }
+        return $low;
     }
 
     /**
@@ -72,7 +69,6 @@ final class CopyCoverIndex
      */
     public function connects(array $copies, int $length, Closure $span): bool
     {
-        $this->anchors = [];
         try {
             foreach ($copies as $copy) {
                 [$file, $start, $end] = $span($copy, $length);
@@ -82,25 +78,17 @@ final class CopyCoverIndex
                 }
 
                 $anchor = $this->covers[0];
-                $this->anchors[] = $anchor;
                 $this->joinContaining($anchor);
             }
 
-            $root = $this->root($this->anchors[0]);
-            foreach ($this->anchors as $anchor) {
-                if ($this->root($anchor) !== $root) {
-                    return false;
-                }
-            }
-
-            return true;
+            return $this->componentCount === 1;
         } finally {
             foreach ($this->touched as $id) {
                 unset($this->parents[$id], $this->sizes[$id]);
             }
             $this->touched = [];
             $this->covers = [];
-            $this->anchors = [];
+            $this->componentCount = 0;
         }
     }
 
@@ -111,6 +99,7 @@ final class CopyCoverIndex
                 $this->parents[$id] = $id;
                 $this->sizes[$id] = 1;
                 $this->touched[] = $id;
+                $this->componentCount++;
             }
             $this->join($anchor, $id);
         }
@@ -137,6 +126,7 @@ final class CopyCoverIndex
             [$left, $right] = [$right, $left];
         }
         $this->parents[$right] = $left;
+        $this->componentCount--;
         $this->sizes[$left] += $this->sizes[$right];
     }
 
