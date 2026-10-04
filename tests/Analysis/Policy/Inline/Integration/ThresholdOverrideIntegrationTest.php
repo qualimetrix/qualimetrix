@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\PropertyTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ReturnTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
-use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -62,7 +61,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(ClassCboOptions::class)]
 #[CoversClass(DistanceOptions::class)]
 #[CoversClass(NamespaceInstabilityOptions::class)]
-#[CoversClass(CodeDuplicationOptions::class)]
 #[CoversClass(MaintainabilityOptions::class)]
 #[CoversClass(PropertyCountOptions::class)]
 #[CoversClass(LcomOptions::class)]
@@ -327,19 +325,6 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         $nsiOverridden = $nsi->withOverride(0.75, 0.85);
         self::assertFalse($nsiOverridden->enabled, 'NSI: enabled must be preserved');
         self::assertSame(5, $nsiOverridden->minClassCount, 'NSI: minClassCount must be preserved');
-
-        // CodeDuplicationOptions — has min_lines, min_tokens
-        $dup = new CodeDuplicationOptions(
-            enabled: false,
-            min_lines: 10,
-            min_tokens: 100,
-            warning: 3,
-            error: 20,
-        );
-        $dupOverridden = $dup->withOverride(5, 30);
-        self::assertFalse($dupOverridden->enabled, 'Dup: enabled must be preserved');
-        self::assertSame(10, $dupOverridden->min_lines, 'Dup: min_lines must be preserved');
-        self::assertSame(100, $dupOverridden->min_tokens, 'Dup: min_tokens must be preserved');
 
         // PropertyCountOptions — has excludeReadonly, excludePromotedOnly
         $prop = new PropertyCountOptions(

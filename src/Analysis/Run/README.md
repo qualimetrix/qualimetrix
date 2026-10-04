@@ -275,6 +275,12 @@ participant ordering is deterministic, and two sequential runs reset state.
   analysis facts.
 - A failed file produces an incomplete `AnalysisResult`, while generated-file
   exclusion remains intentional and complete.
+- A late FileSet inspection read refusal is matched to the input identity
+  captured before inspection, becomes an unreadable-file failure and makes the
+  run incomplete with exit 4. The participant's partial Duplication result is
+  cleared rather than published. Its absence in that result is not evidence
+  that the project contains no duplicate copies; stale-entry absence authority
+  remains a separate policy boundary.
 - An entry discovery refused — a directory symlink met inside a walked tree, a
   non-regular file, a directory that would not list before or during the
   descent — carries a terminal state of its own and makes the run incomplete;

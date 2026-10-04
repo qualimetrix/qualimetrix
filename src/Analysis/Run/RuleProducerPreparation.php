@@ -7,9 +7,11 @@ namespace Qualimetrix\Analysis\Run;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
@@ -87,12 +89,16 @@ final readonly class RuleProducerPreparation
 
     /**
      * @param list<SplFileInfo> $eligibleFiles
+     * @param array<string, RelativePath> $publishedByInput
+     *
+     * @return list<AnalysisFailure>
      */
-    public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void
+    public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot, array $publishedByInput): array
     {
-        $this->fileSetInspection->inspect(
+        return $this->fileSetInspection->inspect(
             $eligibleFiles,
             $projectRoot,
+            $publishedByInput,
         );
     }
 }

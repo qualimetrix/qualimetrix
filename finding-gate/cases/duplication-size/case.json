@@ -8,6 +8,6 @@
     "config": "qmx.yaml",
     "args": [],
     "channels": [
-        "duplication.clone@project"
+        "duplication.clone@file"
     ]
 }

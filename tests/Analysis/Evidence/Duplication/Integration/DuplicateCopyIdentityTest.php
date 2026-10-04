@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -62,13 +62,9 @@ final class DuplicateCopyIdentityTest extends TestCase
         rmdir($this->tmpDir);
     }
 
-    /**
-     * A comment or a blank line inside one copy widens that copy alone; the
-     * other copies still span what they spanned, and their value — the one a
-     * baseline compares — must not move with a file nobody touched.
-     */
+    /** Comments widen physical spans without changing either copy's code value. */
     #[Test]
-    public function itValuesEachCopyByTheLinesThatCopySpans(): void
+    public function itValuesEachCopyByItsCoveredCodeLines(): void
     {
         $this->write('A', self::classWith('A', self::withComment(self::BODY)));
         $this->write('B', self::classWith('B', self::BODY));
@@ -77,30 +73,35 @@ final class DuplicateCopyIdentityTest extends TestCase
         $onA = self::onlyCopyIn($analysis, 'src/A.php');
         $onB = self::onlyCopyIn($analysis, 'src/B.php');
 
-        self::assertSame(18, $onA['value']);
+        self::assertSame(17, $onA['value']);
         self::assertSame(17, $onB['value']);
-        self::assertStringContainsString('(18 lines, 2 occurrences)', $onA['message']);
-        self::assertStringContainsString('(17 lines, 2 occurrences)', $onB['message']);
+        self::assertStringContainsString('(17 code lines, 2 occurrences)', $onA['message']);
+        self::assertStringContainsString('(17 code lines, 2 occurrences)', $onB['message']);
     }
 
-    /**
-     * `min_lines` admits a block by its longest copy. A comment lifting one
-     * copy past it admits the block, and the copy in the file nobody touched
-     * is reported too, at the lines it spans itself.
-     */
     #[Test]
-    public function itReportsEveryCopyOnceTheLongestReachesMinLines(): void
+    public function itDoesNotAdmitABlockWhenOnlyACommentReachesMinLines(): void
     {
         $this->write('A', self::shortFunction('runA', '    // a note'));
         $this->write('B', self::shortFunction('runB', ''));
 
-        $analysis = $this->analyze();
+        self::assertSame([], $this->analyze()['copies']);
+    }
 
+    #[Test]
+    public function itReportsEveryCopyOnceTheLongestCodeCoverageReachesMinLines(): void
+    {
+        $long = str_replace('11 * $a', "strlen(\"first\nsecond\") * \$a", self::shortFunction('runA', ''));
+        $short = str_replace('11 * $a', 'strlen("first") * $a', self::shortFunction('runB', ''));
+        $this->write('A', $long);
+        $this->write('B', $short);
+
+        $analysis = $this->analyze();
         $onA = self::onlyCopyIn($analysis, 'src/A.php');
         $onB = self::onlyCopyIn($analysis, 'src/B.php');
         self::assertSame(5, $onA['value']);
         self::assertSame(4, $onB['value']);
-        self::assertStringContainsString('(4 lines, 2 occurrences)', $onB['message']);
+        self::assertStringContainsString('(4 code lines, 2 occurrences)', $onB['message']);
         self::assertStringEndsWith('also at src/A.php:2-6', $onB['message']);
     }
 
@@ -129,6 +130,23 @@ final class DuplicateCopyIdentityTest extends TestCase
         self::assertSame($before['hashes'], $after['hashes'], 'the detector must return the same block');
         self::assertSame(self::onlyCopyIn($before, 'src/A.php')['key'], self::onlyCopyIn($after, 'src/A.php')['key']);
         self::assertSame(self::onlyCopyIn($before, 'src/B.php')['key'], self::onlyCopyIn($after, 'src/B.php')['key']);
+        self::assertSame(['src/C.php'], self::filesWithNewKeys($before, $after));
+    }
+
+    #[Test]
+    public function itRekeysOnlyTheCopyMovedToAnotherFile(): void
+    {
+        $this->write('A', self::classWith('A', self::BODY));
+        $this->write('B', self::classWith('B', self::BODY));
+        $before = $this->analyze();
+
+        rename($this->tmpDir . '/src/B.php', $this->tmpDir . '/src/C.php');
+        $after = $this->analyze();
+
+        self::assertSame($before['hashes'], $after['hashes']);
+        self::assertSame(self::onlyCopyIn($before, 'src/A.php')['key'], self::onlyCopyIn($after, 'src/A.php')['key']);
+        self::assertSame(self::onlyCopyIn($before, 'src/B.php')['occurrence'], self::onlyCopyIn($after, 'src/C.php')['occurrence']);
+        self::assertNotSame(self::onlyCopyIn($before, 'src/B.php')['key'], self::onlyCopyIn($after, 'src/C.php')['key']);
         self::assertSame(['src/C.php'], self::filesWithNewKeys($before, $after));
     }
 
@@ -248,9 +266,9 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     /**
-     * @param array{copies: list<array{file: string, key: string, value: int|float|null, message: string}>} $analysis
+     * @param array{copies: list<array{file: string, key: string, occurrence: string, value: int|float|null, message: string}>} $analysis
      *
-     * @return array{file: string, key: string, value: int|float|null, message: string}
+     * @return array{file: string, key: string, occurrence: string, value: int|float|null, message: string}
      */
     private static function onlyCopyIn(array $analysis, string $file): array
     {
@@ -261,7 +279,7 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     /**
-     * @return array{hashes: list<string>, copies: list<array{file: string, key: string, value: int|float|null, message: string}>}
+     * @return array{hashes: list<string>, copies: list<array{file: string, key: string, occurrence: string, value: int|float|null, message: string}>}
      */
     private function analyze(): array
     {
@@ -281,7 +299,8 @@ final class DuplicateCopyIdentityTest extends TestCase
         foreach ($findings as $finding) {
             $copies[] = [
                 'file' => $finding->location->pathString(),
-                'key' => (string) $finding->occurrenceKey?->value,
+                'key' => $finding->getFingerprint(),
+                'occurrence' => (string) $finding->occurrenceKey?->value,
                 'value' => $finding->metricValue,
                 'message' => $finding->message,
             ];
@@ -320,10 +339,7 @@ final class DuplicateCopyIdentityTest extends TestCase
         return $body;
     }
 
-    /**
-     * Four lines and over 70 tokens: one line short of the default
-     * `min_lines`, until `$extra` lands inside it.
-     */
+    /** Four code lines and over 70 tokens; a comment widens only the physical span. */
     private static function shortFunction(string $name, string $extra): string
     {
         return implode("\n", [

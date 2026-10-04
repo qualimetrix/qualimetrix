@@ -930,19 +930,23 @@ final class FindingProjectorTest extends TestCase
             message: 'Project health',
             severity: Severity::Warning,
         );
+        $unchangedFile = RelativePath::fromString('src/unchanged.php');
+        $changedFile = RelativePath::fromString('src/changed.php');
+        $unchangedCopyPath = SymbolPath::forFile($unchangedFile);
+        $changedCopyPath = SymbolPath::forFile($changedFile);
         $unchangedCopy = new Finding(
-            location: new Location(RelativePath::fromString('src/unchanged.php')),
-            subject: MetricSubject::aggregate($projectSubject),
-            symbolPath: $projectSubject,
+            location: new Location($unchangedFile),
+            subject: MetricSubject::aggregate($unchangedCopyPath),
+            symbolPath: $unchangedCopyPath,
             ruleName: 'duplication.clone',
             code: 'duplication.clone',
             message: 'Unchanged copy',
             severity: Severity::Warning,
         );
         $changedCopy = new Finding(
-            location: new Location(RelativePath::fromString('src/changed.php')),
-            subject: MetricSubject::aggregate($projectSubject),
-            symbolPath: $projectSubject,
+            location: new Location($changedFile),
+            subject: MetricSubject::aggregate($changedCopyPath),
+            symbolPath: $changedCopyPath,
             ruleName: 'duplication.clone',
             code: 'duplication.clone',
             message: 'Changed copy',

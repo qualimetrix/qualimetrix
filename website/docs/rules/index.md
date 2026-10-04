@@ -113,9 +113,9 @@ These rules measure how tightly your classes depend on each other. Tightly coupl
 
 These rules detect duplicated code blocks across your codebase using token-stream analysis.
 
-| Rule                               | ID                  | What it detects                                 | Default Warning | Default Error |
-| ---------------------------------- | ------------------- | ----------------------------------------------- | --------------- | ------------- |
-| [Code Duplication](duplication.md) | `duplication.clone` | Structurally identical code blocks across files | < 50 lines      | >= 50 lines   |
+| Rule                               | ID                  | What it detects                                 | Default Warning | Default Error    |
+| ---------------------------------- | ------------------- | ----------------------------------------------- | --------------- | ---------------- |
+| [Code Duplication](duplication.md) | `duplication.clone` | Structurally identical code blocks across files | < 50 code lines | >= 50 code lines |
 
 [Read more about Duplication rules --&gt;](duplication.md)
 

@@ -1760,9 +1760,9 @@ final class Probes
                 // does not match any of the three `annotation.*` names this
                 // claim is about.
                 ["        return \$code === InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME
-            || \$code === self::PROJECT_ONLY_DUPLICATION_NAME;"
+            || \$code === self::INTERFILE_DUPLICATION_NAME;"
                     => "        return str_starts_with(\$code, 'annotation.')
-            || \$code === self::PROJECT_ONLY_DUPLICATION_NAME;", ],
+            || \$code === self::INTERFILE_DUPLICATION_NAME;", ],
                 [
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "an unresolvable name"',
                     'Qualimetrix.Tests.Infrastructure.Console.Functional.DirectivesCommandTest::itDoesNotCallASuppressionOfAConfigurationErrorEffective with data set "a rule that declares no override support"',

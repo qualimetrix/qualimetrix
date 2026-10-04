@@ -300,7 +300,6 @@
   # — Duplication —
   # Code duplication detection (memory-intensive, skipped when disabled).
   # duplication.clone:
-  #   warning: 5                 # duplicate block count
   #   error: 50
   #   min_lines: 5
   #   min_tokens: 70

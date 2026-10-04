@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Subprocess\ChildProcess;
@@ -126,15 +127,46 @@ YAML);
     /**
      * Runs of one repeated statement, each of its own length, match one
      * another at every offset, and the matches stop agreeing at every run's
-     * end: 20 files of ten runs yield 13 788 matches with 167 510 copies, of
-     * which 214 blocks with 2 141 copies survive. Holding every match as a
-     * block until the longer ones were known exhausted a 64M limit; the same
-     * 2 141 copies must now be reported within it.
+     * end. Twenty files of ten runs retain 364 blocks with 3 617 copies after
+     * connected coverage and balanced segmentation. Holding every match as
+     * a block until the longer ones were known exhausted a 64M limit; all
+     * retained copies and their JSON output must complete within it.
      */
     #[Test]
     public function itReportsRunsOfARepeatedStatementUnderALowMemoryLimit(): void
     {
-        for ($file = 0; $file < 20; $file++) {
+        $this->createRepeatedRuns(20);
+        $configPath = $this->tmpDir . '/qmx.yaml';
+        file_put_contents($configPath, "onlyRules: ['duplication.clone']\nfailOn: none\n");
+
+        [$exitCode, $stdout, $stderr] = $this->runQmx($configPath, '64M');
+
+        self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
+
+        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string}>} $report */
+        $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
+        self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
+        self::assertCount(3617, $report['violations'] ?? []);
+    }
+
+    #[Test]
+    #[Group('benchmark')]
+    public function itCompletesTheDuplicationLifetimePipelineUnder128M(): void
+    {
+        $this->createRepeatedRuns(60);
+        $configPath = $this->tmpDir . '/qmx.yaml';
+        file_put_contents($configPath, "onlyRules: ['duplication.clone']\nfailOn: none\nrules:\n  duplication.clone:\n    min_tokens: 70\n    min_lines: 5\n    error: 50\n");
+        [$exitCode, $stdout, $stderr] = $this->runQmx($configPath, '128M', 'summary');
+
+        self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
+        self::assertStringContainsString('Analysis complete: 60 analyzed, 0 generated file(s) excluded.', $stdout);
+        self::assertStringNotContainsString('failed', strtolower($stderr . $stdout));
+        self::assertMatchesRegularExpression('/\b34657 violations \(/', $stdout);
+    }
+
+    private function createRepeatedRuns(int $files): void
+    {
+        for ($file = 0; $file < $files; $file++) {
             $methods = [];
             for ($run = 0; $run < 10; $run++) {
                 $statements = implode("\n", array_map(
@@ -148,17 +180,6 @@ YAML);
                 \sprintf("<?php\n\nfinal class Runs%02d\n{\n%s}\n", $file, implode("\n", $methods)),
             );
         }
-        $configPath = $this->tmpDir . '/qmx.yaml';
-        file_put_contents($configPath, "onlyRules: ['duplication.clone']\nfailOn: none\n");
-
-        [$exitCode, $stdout, $stderr] = $this->runQmx($configPath, '64M');
-
-        self::assertSame(0, $exitCode, $stderr . "\n" . $stdout);
-
-        /** @var array{coverage?: array{complete?: bool}, violations?: list<array{rule?: string}>} $report */
-        $report = json_decode($stdout, true, flags: \JSON_THROW_ON_ERROR);
-        self::assertTrue($report['coverage']['complete'] ?? false, $stdout);
-        self::assertCount(2141, $report['violations'] ?? []);
     }
 
     private function copiedClass(string $className): string
@@ -200,7 +221,7 @@ declare(strict_types=1);
 
 require $argv[1];
 
-use Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 $sourceDirectory = $argv[2];
@@ -258,7 +279,7 @@ PHP;
     /**
      * @return array{int, string, string}
      */
-    private function runQmx(string $configPath, string $memoryLimit = '128M'): array
+    private function runQmx(string $configPath, string $memoryLimit = '128M', string $format = 'json'): array
     {
         $projectRoot = $this->projectRoot();
 
@@ -272,7 +293,7 @@ PHP;
             'check',
             $this->tmpDir . '/src',
             '--config=' . $configPath,
-            '--format=json',
+            '--format=' . $format,
             '--no-progress',
             '--no-cache',
             '--workers=0',

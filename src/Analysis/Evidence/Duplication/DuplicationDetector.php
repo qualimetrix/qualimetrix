@@ -7,9 +7,19 @@ namespace Qualimetrix\Analysis\Evidence\Duplication;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use SplFileInfo;
 
 /**
@@ -24,8 +34,8 @@ use SplFileInfo;
  *    in a hash match
  * 3. {@see DuplicateBlockFinder} verifies token matches, extends every
  *    group of copies into one match, computes line ranges, applies the
- *    data-table / self-duplication / minLines filters, and drops every
- *    match whose copies all lie inside a longer one
+ *    data-table / self-duplication / minLines filters, and drops a match
+ *    only when all its copies lie in one connected component of retained covers
  *
  * Memory optimizations:
  * - Two-pass avoids holding all tokens + full hash index simultaneously
@@ -64,6 +74,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
      */
     public function inspect(array $files, AbsolutePath $projectRoot): void
     {
+        $this->resultProvider->reset();
         $this->detect($files, $projectRoot);
         $this->logger->info('Duplication detection completed');
     }
@@ -98,7 +109,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
             return;
         }
 
-        $retokenized = $this->retokenizeNeeded($indexResult->ioPaths, $indexResult->neededFileIndices());
+        $retokenized = $this->retokenizeNeeded($indexResult->ioPaths, $indexResult->neededFileIndices(), $projectRoot);
 
         $blocks = $this->blockFinder->find(new DuplicateSearchRequest(
             hashIndex: $indexResult->hashIndex,
@@ -109,6 +120,8 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
         ));
 
         unset($indexResult, $retokenized);
+        // Later finding phases need the allocator pages of the released dataset.
+        gc_mem_caches();
 
         $this->resultProvider->replace($blocks);
     }
@@ -119,17 +132,21 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
      * @param list<string> $ioPaths fileIdx → path as supplied by the file source
      * @param array<int, true> $neededFileIndices fileIdx → true
      */
-    private function retokenizeNeeded(array $ioPaths, array $neededFileIndices): RetokenizedFiles
+    private function retokenizeNeeded(array $ioPaths, array $neededFileIndices, AbsolutePath $projectRoot): RetokenizedFiles
     {
-        /** @var array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens */
+        /** @var array<int, TokenStream> $fileTokens fileIdx → tokens */
         $fileTokens = [];
         /** @var array<int, string> $fileSources fileIdx → source content (for hint extraction) */
         $fileSources = [];
 
         foreach ($neededFileIndices as $fileIdx => $_) {
-            $source = @file_get_contents($ioPaths[$fileIdx]);
+            $ioPath = $ioPaths[$fileIdx] ?? throw new LogicException('Duplication retokenization referenced an unknown selected file index.');
+            $source = @file_get_contents($ioPath);
             if ($source === false) {
-                continue;
+                throw new FileSetInspectionFailure([[
+                    'input' => PathFactory::fromCliArgument($ioPath, $projectRoot),
+                    'message' => 'Cannot read selected file during duplication retokenization.',
+                ]]);
             }
             $fileTokens[$fileIdx] = $this->normalizer->normalize($source);
             $fileSources[$fileIdx] = $source;

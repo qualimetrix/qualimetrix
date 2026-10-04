@@ -2428,6 +2428,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0094-analysis-results-publish-subject-owned-values.md' => 'Analysis.Run',
         'docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md' => 'Analysis.Policy.Inline',
         'docs/adr/0096-file-target-claims.md' => 'Core.FileTarget',
+        'docs/adr/0097-duplication-copy-evidence.md' => 'Analysis.Evidence.Duplication',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

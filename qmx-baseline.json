@@ -234,10 +234,10 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector@src/Analysis/Evidence/Coupling/CouplingCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/DataDeclarationTagger.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php": [
       {"channel":"complexity.wmc","magnitudes":[57]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\SaturatingCandidateFilter@src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\SaturatingCandidateFilter@src/Analysis/Evidence/Duplication/Index/SaturatingCandidateFilter.php": [
       {"channel":"design.data-class","magnitudes":[33]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\AggregationStrategy@src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php": [
@@ -318,6 +318,32 @@
     "declaration:class:Qualimetrix\\Reporting\\Health\\SummaryEnricher@src/Reporting/Health/SummaryEnricher.php": [
       {"channel":"coupling.instability","magnitudes":[0.818182]}
     ],
+    "file:src/Analysis/Evidence/Cohesion/LcomVisitor.php": [
+      {"channel":"duplication.clone","occurrence":"28b4254836c6dbd3","magnitudes":[23]},
+      {"channel":"duplication.clone","occurrence":"32b57d5adfade308","magnitudes":[22]}
+    ],
+    "file:src/Analysis/Evidence/Cohesion/TccLccVisitor.php": [
+      {"channel":"duplication.clone","occurrence":"28b4254836c6dbd3","magnitudes":[23]},
+      {"channel":"duplication.clone","occurrence":"32b57d5adfade308","magnitudes":[22]}
+    ],
+    "file:src/Analysis/Evidence/Coupling/RfcCollector.php": [
+      {"channel":"duplication.clone","occurrence":"cefc013a6edbedf0","magnitudes":[25]}
+    ],
+    "file:src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php": [
+      {"channel":"duplication.clone","occurrence":"9860184dcb71d29b","magnitudes":[27]}
+    ],
+    "file:src/Analysis/Evidence/Size/MethodCountCollector.php": [
+      {"channel":"duplication.clone","occurrence":"cefc013a6edbedf0","magnitudes":[25]}
+    ],
+    "file:src/Analysis/Evidence/Size/MethodCountVisitor.php": [
+      {"channel":"duplication.clone","occurrence":"9860184dcb71d29b","magnitudes":[27]}
+    ],
+    "file:src/Infrastructure/DependencyInjection/Configurator/CodeSmellConfigurator.php": [
+      {"channel":"duplication.clone","occurrence":"64c438da29a6276a","magnitudes":[20]}
+    ],
+    "file:src/Infrastructure/DependencyInjection/Configurator/SecurityConfigurator.php": [
+      {"channel":"duplication.clone","occurrence":"64c438da29a6276a","magnitudes":[20]}
+    ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage": [
       {"channel":"health.cohesion","magnitudes":[25]}
     ],
@@ -341,9 +367,6 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
       {"channel":"coupling.instability","magnitudes":[0.941176]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Duplication": [
-      {"channel":"size.class-count","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Maintainability": [
       {"channel":"coupling.cbo","magnitudes":[16]}
@@ -374,35 +397,7 @@
     ],
     "project:": [
       {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]},
-      {"channel":"architecture.circular-dependency","occurrence":"63813cd71327da6f","magnitudes":[4]},
-      {"channel":"duplication.clone","occurrence":"031824eba3cbd977","magnitudes":[17]},
-      {"channel":"duplication.clone","occurrence":"1937eefedb68de6f","magnitudes":[43]},
-      {"channel":"duplication.clone","occurrence":"22f9b02a385ac3d1","magnitudes":[24]},
-      {"channel":"duplication.clone","occurrence":"3053cf69493df084","magnitudes":[44]},
-      {"channel":"duplication.clone","occurrence":"41e3a64147e48681","magnitudes":[29]},
-      {"channel":"duplication.clone","occurrence":"4a2a1c4969262dd4","magnitudes":[21]},
-      {"channel":"duplication.clone","occurrence":"4f11276562970622","magnitudes":[32]},
-      {"channel":"duplication.clone","occurrence":"53f63ab91de36f02","magnitudes":[31]},
-      {"channel":"duplication.clone","occurrence":"553db3e9369b7df3","magnitudes":[22]},
-      {"channel":"duplication.clone","occurrence":"5c5466db17de528d","magnitudes":[21]},
-      {"channel":"duplication.clone","occurrence":"603a58625e33b9b1","magnitudes":[46]},
-      {"channel":"duplication.clone","occurrence":"60c77e4a73734ab5","magnitudes":[40]},
-      {"channel":"duplication.clone","occurrence":"944bc35c83ba58f8","magnitudes":[31]},
-      {"channel":"duplication.clone","occurrence":"9b117d4037f4d1ea","magnitudes":[24]},
-      {"channel":"duplication.clone","occurrence":"9ceae9b5ce70bdc1","magnitudes":[24]},
-      {"channel":"duplication.clone","occurrence":"9eb77eaf4034da1d","magnitudes":[17]},
-      {"channel":"duplication.clone","occurrence":"a2d47b5d218ba759","magnitudes":[29]},
-      {"channel":"duplication.clone","occurrence":"af3a1bee5443101d","magnitudes":[22]},
-      {"channel":"duplication.clone","occurrence":"b7196a0d77cbd0ce","magnitudes":[41]},
-      {"channel":"duplication.clone","occurrence":"b78b98893b2c9c5f","magnitudes":[17]},
-      {"channel":"duplication.clone","occurrence":"c5769a5d1afb3d89","magnitudes":[29]},
-      {"channel":"duplication.clone","occurrence":"df94300e7ab82051","magnitudes":[21]},
-      {"channel":"duplication.clone","occurrence":"e18bbd4835d3dfba","magnitudes":[21]},
-      {"channel":"duplication.clone","occurrence":"e5419d1d54cd4abe","magnitudes":[32]},
-      {"channel":"duplication.clone","occurrence":"f4e6ab689fc486f3","magnitudes":[17]},
-      {"channel":"duplication.clone","occurrence":"f9dc80c1760b3333","magnitudes":[45]},
-      {"channel":"duplication.clone","occurrence":"fb9569882bab1ffa","magnitudes":[24]},
-      {"channel":"duplication.clone","occurrence":"ff7b0d855d48be89","magnitudes":[17]}
+      {"channel":"architecture.circular-dependency","occurrence":"63813cd71327da6f","magnitudes":[4]}
     ]
   }
 }

@@ -276,7 +276,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
         'tests/Analysis/Evidence/Security/Unit/SecurityPatternVisitorTest.php:357' => 'PHP source inside that '
             . 'case\'s fixture string — embedded source, never executed by this process.',
 
-        'tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php:363' => 'Not a spawn and not the '
+        'tests/Analysis/Evidence/Duplication/Unit/Normalization/DataDeclarationTaggerTest.php:380' => 'Not a spawn and not the '
             . 'name: a test method whose camelCase seam spells the single-stream spawner once case is folded — the '
             . '`p` ends one word and `Open` begins the next. It is the only occurrence in the tree that the '
             . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '

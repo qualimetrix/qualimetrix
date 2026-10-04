@@ -831,8 +831,14 @@ bin/qmx check src/ --disable-rule=complexity.* --disable-rule=cohesion.lcom
 bin/qmx check src/ --disable-rule=health.complexity
 ```
 
-!!! tip "Memory optimization"
-    Disabling the `duplication.clone` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.clone` if you encounter out-of-memory errors. The level-narrowed spelling `--disable-rule=duplication.clone:project` skips it too: the channel reports at that one level, so silencing the level silences the rule. A producer stops as soon as the disable selectors together cover every level of every channel it emits — one level of a two-level channel leaves it running, since the other level still has findings to report.
+!!! tip "Duplication memory failure"
+    If PHP exhausts memory during `duplication.clone`, the detector emits a short
+    stderr diagnostic with the failure site and current `memory_limit`, recommends
+    `--memory-limit` or `memory_limit` in `qmx.yaml`, and exits with code 4. A
+    fatal OOM may interrupt report delivery; valid or complete JSON is not promised.
+    A late false read also makes the run incomplete with exit 4 and clears partial
+    Duplication output. An empty result from that run is not evidence of zero copies.
+    To skip detection deliberately, disable `duplication.clone` itself.
 
 ### `--only-rule`
 

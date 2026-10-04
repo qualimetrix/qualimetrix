@@ -31,11 +31,10 @@ final readonly class BaselineCleaner
 
     /**
      * Every entry `cleanup` would offer to remove, with its reason and
-     * selector. A valid entry is offered for one of four reasons — stale,
-     * absent because this invocation did not measure its channel at its
-     * subject's level, its channel is
-     * no longer declared, or its channel reports a configuration error and
-     * may never be accepted — and every inert entry
+     * selector. A valid entry is offered when absent from a measured run,
+     * when its channel-level pair was not measured or is no longer declared,
+     * when its channel is no longer declared, or when its channel reports a
+     * configuration error and may never be accepted. Every inert entry
      * is offered too, since it already has a selector and the user is
      * entitled to delete an unreadable line (ADR 0017).
      *
@@ -47,9 +46,8 @@ final readonly class BaselineCleaner
      * and the more specific, more permanent cause is the more useful answer.
      *
      * @param list<Finding> $measured the run's measured set (ADR 0017)
-     * @param array<string, true> $unmeasuredIdentities keys of the identities
-     *                                                  this invocation would not have published, as
-     *                                                  {@see RunRuleCoverage} answers them
+     * @param array<string, RunCoverageGap> $coverageGaps identities this run
+     *                                                    could not publish, as {@see RunRuleCoverage} answers them
      *
      * @return list<BaselineCleanupCandidate>
      */
@@ -57,7 +55,7 @@ final readonly class BaselineCleaner
         Baseline $baseline,
         array $measured,
         ChannelDeclarationRegistryInterface $declarations,
-        array $unmeasuredIdentities,
+        array $coverageGaps,
     ): array {
         $measuredKeys = [];
         foreach ($measured as $finding) {
@@ -104,9 +102,7 @@ final readonly class BaselineCleaner
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    isset($unmeasuredIdentities[$entry->identity->key()])
-                        ? BaselineCleanupReason::ProducerDidNotRun
-                        : BaselineCleanupReason::Stale,
+                    $this->absentEntryReason($coverageGaps[$entry->identity->key()] ?? null),
                 );
             }
         }
@@ -121,6 +117,15 @@ final readonly class BaselineCleaner
         }
 
         return $candidates;
+    }
+
+    private function absentEntryReason(?RunCoverageGap $gap): BaselineCleanupReason
+    {
+        return match ($gap) {
+            RunCoverageGap::NotMeasured => BaselineCleanupReason::ProducerDidNotRun,
+            RunCoverageGap::LevelNotDeclared => BaselineCleanupReason::LevelNotDeclared,
+            null => BaselineCleanupReason::Stale,
+        };
     }
 
     /**

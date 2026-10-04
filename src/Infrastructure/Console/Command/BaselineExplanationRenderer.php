@@ -118,7 +118,7 @@ final class BaselineExplanationRenderer
         if ($source->currentCount === 0) {
             return $source->producerRan
                 ? 'nothing reported'
-                : 'not measured (this invocation did not run the rule for this channel at this level)';
+                : 'not measured (this invocation did not measure this channel at this subject level)';
         }
 
         if ($source->currentMagnitudes === null) {

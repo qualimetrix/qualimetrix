@@ -1330,7 +1330,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.method-count::"
@@ -1358,7 +1357,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.param::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.property::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.return::(top)#0"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"duplication.clone::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"maintainability.mi::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.class-count::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.method-count::(top)#0"
@@ -1389,7 +1387,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.method-count::"
@@ -1417,7 +1414,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"size.method-count::"
@@ -1521,9 +1517,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"design.type-coverage.return::(top)#0[error]=error"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"design.type-coverage.return::(top)#0[threshold]=threshold"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"design.type-coverage.return::(top)#0[warning]=warning"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"duplication.clone::(top)#0[error]=error"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"duplication.clone::(top)#0[threshold]=threshold"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"duplication.clone::(top)#0[warning]=warning"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"maintainability.mi::(top)#0[error]=error"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"maintainability.mi::(top)#0[threshold]=threshold"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"maintainability.mi::(top)#0[warning]=warning"
@@ -1558,7 +1551,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"size.method-count::"
@@ -1590,8 +1582,8 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\ThresholdValidatorAssignmentTest::itRequiresANonStandardValidatorWhenDefaultsAreInverted
  - Qualimetrix\Governance\ThresholdKeys\ThresholdValidatorAssignmentTest::itReturnsAValidatorForEveryThresholdAwareOptionsClass
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itChangesSeverityExactlyAtEveryDeclaredWarningBoundary
+ - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itFindsNoHiddenWarningBoundaryInPlainOptions
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itFindsNoHierarchicalParentClaimingToHoldABoundary
- - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itFindsNoSeverityChangeInOptionsThatDenyHavingABoundary
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itLimitsUndetectableBoundaryDecisionsToThePinnedClasses
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itReportsTheOverriddenNumberFromAnOverriddenCopy
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itRequiresASecondSeverityDecisionWhereverMoreThanOneBoundaryIsClaimed
@@ -4660,30 +4652,37 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"param"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"property"
  - Qualimetrix\Tests\Analysis\Evidence\Design\Unit\TypeCoverage\TypeCoverageRuleTest::itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects"return"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itDoesNotAdmitCopiesWhenACommentOnlyWidensTheirPhysicalSpan
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itKeepsBothFileCopiesUnderBroadNamespaceRegexes
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itKeepsTheAcceptedCopiesAcceptedWhenANewCopySpansMoreLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itRefusesTheRetiredProjectSelectorAndDisablesTheFileProducer
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itReportsADenselyWrittenNewCopyOfAnAcceptedBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itReportsEveryCopyWhenACommentLiftsTheLongestPastMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itSuppressesOnlyTheDuplicateCopyInTheExcludedPath
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyBaselineProcessTest::itTellsTheExplainedCopiesApartByOccurrenceAndFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnGitLabFingerprint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationCopyFingerprintProcessTest::itGivesEachCopyItsOwnSarifPartialFingerprint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsADenselyWrittenNewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsANewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itBuildsTheExactCandidateIndexWithinABoundedMemoryLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itCompletesTheDuplicationLifetimePipelineUnder128M
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itFindsADuplicateWithCompleteCoverageUnderTheMemoryLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"100 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"101 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"99 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsRunsOfARepeatedStatementUnderALowMemoryLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itDoesNotAdmitABlockWhenOnlyACommentReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysOnlyTheCopyMovedToAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsEveryCopyOnceTheLongestReachesMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsEveryCopyOnceTheLongestCodeCoverageReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsNoCopyWhileNoCopyReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itStalesOnlyTheEditedCopyWhenTheOthersStillAgreeOnTheBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itValuesEachCopyByTheLinesThatCopySpans
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itValuesEachCopyByItsCoveredCodeLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinLinesFilter
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinTokensFilter
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itCountsAllRowsOfAMultilineHeredocToken
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsExactDuplicateAcrossFiles
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsNearMissDuplication
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsSameFileDuplication
@@ -4696,17 +4695,31 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itHandlesEmptyFileList
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itHashesTheCompleteNormalizedTokenSequenceRatherThanBlockSize
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itKeepsTheLongerMatchOfTwoCopiesWhenAThirdCopyDivergesEarlier
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itKeepsTheWholeMatchWhenNoBalancedSegmentIsEligible
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itKeepsTokenAdjacentCopiesAtASemicolonAndForeachBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itLeavesASmallTailUnreportedBesideAnEligibleFollowingMethod
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itPreservesSixFilePairsAcrossDisconnectedLongerMatches
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReadsTheCurrentTypedThresholdsOnEachInspectionWithoutTheRawDoor
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itRefusesASelectedFileLostBeforeCandidateIndexing
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itRefusesASelectedFileLostBeforeHashObservationAndClearsPriorResult
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itRefusesASelectedFileLostBeforeRetokenization
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsABlockRepeatedMoreThanAHundredTimes
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsAdjacentTokenCopiesThatShareAClosingBraceLine
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsBothEligibleSegmentsAcrossAnUnmatchedMethodCloser
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsDataMatchedWithExecutableCodeInBothFileOrders
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsDuplicationCrossingTheDataCodeBoundary
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsDuplicationInMethodBodyArrayLiterals
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsEveryCopyOfARepeatedBlockInOneBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsIdenticalBlocksInOneFileThatTouchWithoutSharingALine
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsTheLinesTheMatchedTokensActuallyOccupy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itRetainsDistantFirstAndAllSubsequentDuplicateOccurrences
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itUsesEachCopysOriginalByteRangeForItsHint
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itDetectsCp1251HtmlWithAStableHexContentHash
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itMatchesEqualHtmlButExcludesADifferentMarkupCopy
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itMatchesKeywordCastAndMagicConstantCaseThroughTheDetector
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesALargeDuplicateAsAnError
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByCoveredCodeLinesUsingOnlyTheErrorBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByCoveredCodeLinesUsingTheDefaultErrorBoundary
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itDeclaresCodeDuplicationOptionsAsItsOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itExposesItsRuleNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itGivesEveryCopyOfABlockAnIdentityOfItsOwn
@@ -4718,66 +4731,113 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itListsEveryOtherOccurrenceInTheMessage
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itNamesTheFirstTenOtherOccurrencesAndCountsTheRestInTheMessage
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itOmitsTheHintSnippetFromTheMessageWhenNoHintIsGiven
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesAFindingOnEachCopyNamingTheOtherCopy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenNoDuplicateBlockWasCollected
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerCopyOfEveryBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheWarningThresholdAsAWarning
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReadsResolvedDuplicationOptions
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRefusesRetiredWarningAndThresholdConfigurationKeysAtTheirAuthoredAddresses
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheErrorBoundaryAsAWarning
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itClampsAnEndLineBeyondTheFileLength
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itCollapsesRunsOfWhitespaceIntoASingleSpace
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itExtractsAHintFromAnArrayConstantBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itExtractsTheFirstMeaningfulLinesOfTheBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itLeavesAShortHintUntruncated
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsAHintForASourceWithQuotesAndBackslashes
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsNullForABlockContainingOnlyBraces
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsNullForABlockWithNoMeaningfulContent
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itReturnsNullForAnInvalidStartLine
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itSkipsBlankLinesWhenLookingForMeaningfulContent
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itSkipsLinesThatContainOnlyBraces
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itTruncatesALongHintWithAnEllipsis
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\ContentHintExtractorTest::itTruncatesASingleLineThatExceedsTheHintLength
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itDoesNotTagAMultiPropertyDeclarationAtAll
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itDoesNotTagBareStaticLocalVariableAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itDoesNotTagConstructorPromotedPropertyArrayDefaultAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itDoesNotTagExecutableCodeAfterACloseTagTerminatedConstDeclaration
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itDoesNotTagExecutableCodeAfterACloseTagTerminatedConstDeclarationWhenTheFollowingBlockHasNoVariables
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itDoesNotTagMethodBodyArrayAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itHandlesAnEmptySourceStringWithoutError
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itHandlesSourceContainingOnlyAnOpenTagWithoutError
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itHandlesSourceWithNoPhpOpenTagWithoutError
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itReturnsOriginalTokensWhenNothingIsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsALegacyVarPropertyArrayInitializerAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsAPhp84AsymmetricVisibilityPropertyArrayInitializerAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsAPropertyArrayInitializerTerminatedByACloseTagAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsEntireConstArrayDeclarationAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsPropertyArrayInitializerAsData
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itCountsARepeatedPositionOnce
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itLeavesAWindowThatContinuesAnEarlierMatchToThatMatch
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itReportsEveryCopyInALargeBucketAsOneBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itReportsTwoCopiesAsOneBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateMatchCandidatesTest::itDropsAMatchWhoseCopiesAllLieInsideALongerOne
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateMatchCandidatesTest::itJudgesMatchesOfEqualLengthInTheOrderTheyWereAdded
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateMatchCandidatesTest::itKeepsAShorterMatchWithACopyOutsideEveryLongerOne
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itAssignsASingleCharacterTokenTheLineItStandsOnAfterAMultiLineGap
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itAssignsAnOpeningBraceOnItsOwnLineThatLine
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itDoesNotNormalizeFunctionNames
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itKeepsASingleCharacterTokenOnTheLineOfAPrecedingTokenThatSharesIt
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itNormalizesNumbers
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itNormalizesStringLiterals
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itNormalizesVariables
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itPreservesLineNumbers
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itPreservesStructuralTokens
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itProducesDifferentTokensForDifferentStructure
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itProducesSameTokensForIdenticalStructureWithDifferentVariablesAndLiterals
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itReturnsEmptyTokensForEmptyFile
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\TokenNormalizerTest::itStripsWhitespaceAndComments
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRequiresPositiveAuthoredMinimumsAndErrorBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReusesFileSubjectsWithinOneInvocationWithoutSharingCopyOccurrences
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesEachCopysCoveredCodeLinesAndHintInItsFinding
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesPositiveResolvedOptionDefaults
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsNegativePackedValuesBeforeReadingTheOffset
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsNegativePackedValuesBeforeUnpacking
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsPositionsOutsideThePackedRange#0
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsPositionsOutsideThePackedRange#1
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsPositionsOutsideThePackedRange#2
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsPositionsOutsideThePackedRange#3
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRoundTripsTheFullPackedPositionRange#0
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRoundTripsTheFullPackedPositionRange#1
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRoundTripsTheFullPackedPositionRange#2
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\BalancedSegmentsTest::itKeepsAnUnclosedOpenerAtTheEndOfTheRequestedRange
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\BalancedSegmentsTest::itSplitsUnmatchedClosersAndSkipsLeadingPunctuation
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itClampsAnEndLineBeyondTheFileLength
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCollapsesRunsOfWhitespaceIntoASingleSpace
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCountsUnicodeCodePointsIncludingTheEllipsis
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itExtractsAHintFromAnArrayConstantBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itExtractsTheFirstMeaningfulLinesOfTheBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itFallsBackToBytesForInvalidUtf8
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itLeavesAShortHintUntruncated
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itReturnsAHintForASourceWithQuotesAndBackslashes
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itReturnsNullForABlockContainingOnlyBraces
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itReturnsNullForABlockWithNoMeaningfulContent
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itReturnsNullForAnInvalidStartLine
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itSkipsBlankLinesWhenLookingForMeaningfulContent
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itSkipsLinesThatContainOnlyBraces
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesALongHintWithAnEllipsis
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesASingleLineThatExceedsTheHintLength
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesAtTheLastWordBoundaryInsideTheUnicodeLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\CopyCoverIndexTest::itFindsOnlyWholeTokenCoversInTheRequestedFile
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itCountsARepeatedPositionOnce
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itKeepsDifferentMatchesWithTheSamePhysicalLineSpan
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itLeavesAWindowThatContinuesAnEarlierMatchToThatMatch
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsEveryCopyInALargeBucketAsOneBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsTwoCopiesAsOneBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAMatchWhoseCopiesAllLieInsideALongerOne
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAShorterMatchCoveredByOneConnectedComponent
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itJudgesEqualLengthMatchesWithMoreCopiesFirst
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itJudgesMatchesOfEqualLengthInTheOrderTheyWereAdded
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsAShorterMatchWithACopyOutsideEveryLongerOne
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsAllSixFilePairsWhenLongerMatchesCoverDisconnectedGroups
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsRetainedCandidatesWithinTheAllocationBudget
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itPreservesCopyOrderAcrossStorageSegmentsAndTheIntegerRange
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itResetsConnectivityAfterAnUncoveredCopyKeepsACandidate
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagAMultiPropertyDeclarationAtAll
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagBareStaticLocalVariableAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagConstructorPromotedPropertyArrayDefaultAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagExecutableCodeAfterACloseTagTerminatedConstDeclaration
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagExecutableCodeAfterACloseTagTerminatedConstDeclarationWhenTheFollowingBlockHasNoVariables
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagMethodBodyArrayAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itHandlesAnEmptySourceStringWithoutError
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itHandlesSourceContainingOnlyAnOpenTagWithoutError
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itHandlesSourceWithNoPhpOpenTagWithoutError
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itReturnsOriginalTokensWhenNothingIsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsALegacyVarPropertyArrayInitializerAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsAPhp84AsymmetricVisibilityPropertyArrayInitializerAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsAPropertyArrayInitializerTerminatedByACloseTagAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsBothModifierOrdersAroundAPropertyArrayInitializer#0
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsBothModifierOrdersAroundAPropertyArrayInitializer#1
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsEntireConstArrayDeclarationAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itTagsPropertyArrayInitializerAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itAssignsASingleCharacterTokenTheLineItStandsOnAfterAMultiLineGap
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itAssignsAnOpeningBraceOnItsOwnLineThatLine
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itCollapsesOnlyAsciiWhitespaceInsideHtmlAndKeepsInvalidUtf8OutOfTokenValues
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itDoesNotNormalizeFunctionNames
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itFoldsKeywordCastMagicConstantAndBuiltinLiteralCaseButKeepsIdentifiers
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsASingleCharacterTokenOnTheLineOfAPrecedingTokenThatSharesIt
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsCoordinatesAlignedWithNativeTokensAcrossStorageWidths
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsOneInlineHtmlDigestWithOriginalByteAndLineSpans
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsOriginalCoordinatesAndCoveredLinesAlignedAcrossPhpBarriers
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsRetainedCoordinatesWithinTheAllocationBudget
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"CR"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"CRLF"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"LF"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itNormalizesNumbers
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itNormalizesStringLiterals
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itNormalizesVariables
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itPreservesLineNumbers
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itPreservesStructuralTokens
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itProducesDifferentTokensForDifferentStructure
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itProducesSameTokensForIdenticalStructureWithDifferentVariablesAndLiterals
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itReturnsEmptyTokensForEmptyFile
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itStripsWhitespaceAndComments
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itReadsEveryPackedCoordinateWithoutNarrowingTheIntegerRange
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"empty values with coordinates"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"extra record"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"incomplete record"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"long mask"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"missing record"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"short mask"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesOffsetsOutsideThePackedTokenStream
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itAttributesPromotedParameterCaptureDefaultOnlyToConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itCalculatesExactHalsteadValuesForSimpleAddMethod
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itCalculatesMetricsForArrowFunction
@@ -6425,12 +6485,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureRuleEvenWhenItIsAFileSymbolFindingInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsFileAggregatesWhenARegexMatchesTheEmptyString
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsLayerViolationRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itNeverComparesTheProjectAggregateDisplayValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWhoseSubjectNamespaceDoesNotMatch
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWithoutDeclaringNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesNonMatchingNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesWhenNoPatterns
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itStillFiltersADeclarationInTheGlobalNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itStillFiltersANamespaceLevelFindingItsPatternNames
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
@@ -7948,6 +8010,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesExcludeCannotBeDecided
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itExplainsAnOldProjectCopyAsAChannelLevelNoLongerDeclared
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesARunThatDoesNotCoverTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesAValueThatIsNotASelectorAtAll
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRemovesOnlyTheNamedEntryEvenWhenTwoDifferOnlyByEdge
@@ -7983,6 +8046,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itNoLongerLetsCheckWriteABaseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itAcceptsAChannelTheRegistryNoLongerDeclaresWhenTheLoadedBaselineStillCarriesIt
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itExplainsAnOldProjectCopyWithoutClaimingTheFileProducerDidNotRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itExplainsThatABaselineOnlySubjectIsAbsentFromTheCurrentRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itNamesAnEntryItCannotApplyInsteadOfDenyingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itNamesAnUnreadableEntryForTheSubject
@@ -8045,6 +8109,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itLeavesEveryExistingDestinationByteUnchangedOnIncompleteAnalysis"baseline:generate partial"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itLeavesEveryExistingDestinationByteUnchangedOnIncompleteAnalysis"baseline:update all failed"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itLeavesEveryExistingDestinationByteUnchangedOnIncompleteAnalysis"baseline:update partial"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineIncompleteAnalysisTest::itRefusesAllBaselineLifecycleOperationsAfterARealLateDuplicationReadFailure
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itKeepsTheBuildGreenAfterDeletingOneOfTwoBaselinedDuplicateBlocks
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itListsSeveralManualRepairsAndRemovesOnlyTheirNamedSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineLifecycleTest::itReKeysADuplicateWhoseMatchedTokensChangeInEveryCopy
@@ -8227,7 +8292,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itPromotesEveryMemberOfAMeasuredBreachAndNamesTheAcceptedMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itReportsFourErrorsWhenAGroupOfFourExceedsACountOfThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itCarriesTheSourceContentHashForward
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesADisabledFileCopyAsNotMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesOnlyTheMissingLevelOfAMultilevelChannelAndIgnoresAnUnknownProducer
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itDoesNotListAnEntryThatIsStillMeasuredAndDeclared
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAStaleEntryWhoseIdentityDidNotAppearInTheRun
@@ -8235,6 +8302,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnEntryWhoseRuleDidNotRunUnderItsOwnReason"disabled at every level by configuration"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnEntryWhoseRuleDidNotRunUnderItsOwnReason"left out by a selector"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnInertEntryWithItsOwnReason
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNamesTheRetiredProjectCopyLevelAndKeepsAPresentFileCopy
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNeverRemovesAnythingWhenOnlyListingCandidates
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
@@ -8412,6 +8480,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itFindsTheAnnotationForASymbolThatViolatesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itIndexesEveryTypedRepositorySourceOnceWithoutCollapsingExactDeclarations
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itKeepsAZeroConfiguredThresholdDistinctFromAnAbsentOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itMarksARetiredProjectCopyUnmeasuredWithoutMarkingADeclaredFileCopy
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itPrintsBothTheStoredMagnitudeAndTheCurrentlyComparedOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsAbsentSourcesAsNullRatherThanAsZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsNoAnnotationForASymbolTheRunNeverMeasured
@@ -9008,6 +9077,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itStaysSilentWhenTheCommandLineExcludeMatched
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itAggregatesGlobalCollectorMetricsToNamespaceLevel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itKeepsCollectionFailurePrecedenceAndUnfailedSurvivorsWhenInspectionAlsoFails
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itMapsEveryCollectionFailureKindToItsCoverageFailureKind
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPassesTheDependencyGraphToAnalysisContext
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip
@@ -9015,6 +9085,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itProducesIdenticalDependenciesSequentiallyAndThroughARealAmpWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itReadsTheSameInlineControlsFromACachedAstAsFromAFreshParse
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itRetainsPublishedSelectedAndSkippedPathsAfterCollectionRemovesTheirParent#0
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itRetainsPublishedSelectedAndSkippedPathsAfterCollectionRemovesTheirParent#1
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itKeepsThePathExclusionInertOnTheLateChannelWhileItStillReachesTheEarlySibling
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itLetsDisableSelectorsReachTheLateChannelExactlyAsTheGridSays"channel:level"
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itLetsDisableSelectorsReachTheLateChannelExactlyAsTheGridSays"exact channel name"
@@ -9335,6 +9407,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itPublishesOneUnreadableFailureForRepeatedSelectedInputAndResetsNextRun
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRejectsABlankInspectionFailureMessage
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRejectsAnEmptyInspectionFailurePayload
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRejectsAnUnreadableInputOutsideTheSelectedRoster
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itReplacesPriorCapabilityStateOnAnEnabledThenNoMatchRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itResetsAllParticipantsBeforeTheFirstSelectionCheck
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itResolvesWrittenEnablementBeforeInspectingParticipants#0
@@ -10009,6 +10085,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsTwoOnAnInertDirective
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsFileOwnedUnusedDirectivesUnderBroadNamespaceExclusions
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the whole rule"
@@ -10044,13 +10121,13 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheBannedChannel"symbol, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, a group that covers it"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"file, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, a group that covers it"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"next-line, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, a group that covers it"
- - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name at project level"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name at file level"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesEveryDirectiveFormThatReachesTheDuplicationBan"symbol, the exact name"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itRefusesOneDirectiveWithoutTouchingAnotherStaleOneBesideIt
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itReportsAnEmptyWildcardSuppressionAsInert
@@ -10137,6 +10214,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itRefusesABlankLogFileBeforeAnalysis"space"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogFileBlankValueRefusalTest::itStillWritesANamedLogFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogTargetFailureTest::itReportsACollectionLogWriteFailureInsteadOfACompletedRun
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\OutOfMemoryHintProcessTest::itLeavesAnUnrelatedFatalOutsideTheMemoryHint
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\OutOfMemoryHintProcessTest::itReportsAControlledMemoryFatalOnStderrWithExitFour
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer

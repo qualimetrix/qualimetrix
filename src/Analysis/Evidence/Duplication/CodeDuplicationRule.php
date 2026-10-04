@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -78,9 +80,10 @@ final class CodeDuplicationRule extends AbstractRule
         }
 
         $findings = [];
+        $fileSubjects = [];
 
         foreach ($this->resultProvider->all() as $block) {
-            array_push($findings, ...$this->copyFindings($context, $block));
+            array_push($findings, ...$this->copyFindings($block, $fileSubjects));
         }
 
         return $findings;
@@ -92,23 +95,19 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * `duplication.clone` reports the lines one copy spans as its
-     * `metricValue`, judged worse the higher it goes:
-     * {@see CodeDuplicationOptions::getSeverity()} compares that number with
-     * `warning` and `error`. Emission itself is unconditional — every copy of
-     * every `DuplicateBlock` produces a `Finding` whatever its size, with
-     * `Severity::Warning` as the fallback below `warning`, which a copy
-     * shorter than `min_lines` in a block admitted by its longest copy
-     * reaches — but the threshold comparison genuinely gates *severity*, and
-     * severity is monotone in the copy's line span, so `higher` is a real
-     * fact about the code.
+     * `duplication.clone` reports the code lines one copy covers as its
+     * `metricValue`, judged worse the higher it goes. Its `error` option
+     * selects Error at and above the boundary and Warning below it. Admission
+     * is separate: every copy of an admitted block is reported, including a
+     * shorter copy below `min_lines`.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File)
+                ->withoutConfiguredWarningBoundary(),
         ];
     }
 
@@ -116,23 +115,16 @@ final class CodeDuplicationRule extends AbstractRule
      * The block's copies are turned into locations once and every finding
      * shares them rather than building its own.
      *
-     * A copy's value is the lines that copy spans, not the block's longest
-     * copy: comments and blank lines are no tokens, so one copy can widen
-     * without changing the block, and a value shared by every copy would move
-     * copies in files nobody touched — a baseline would then promote them
-     * past what it accepted. Every copy of an admitted block is reported,
-     * one shorter than `min_lines` too: judged by its own lines, a copy
-     * pasted without its blank lines would be seen nowhere but in the files
-     * it was copied from.
+     * Each copy supplies its own covered code lines and source hint.
+     * Every copy of an admitted block is reported, including a copy below
+     * min_lines; the longest copy admits the block, not each finding.
+     *
+     * @param array<string, MetricSubject> $fileSubjects
      *
      * @return list<Finding>
      */
-    private function copyFindings(AnalysisContext $context, DuplicateBlock $block): array
+    private function copyFindings(DuplicateBlock $block, array &$fileSubjects): array
     {
-        $projectPath = SymbolPath::forProject();
-        $subject = MetricSubject::aggregate($projectPath);
-        $hintPart = $block->hint !== null ? \sprintf(': "%s"', $block->hint) : '';
-
         $locations = array_map(
             static fn(DuplicateLocation $copy): Location => new Location($copy->file, $copy->startLine, precise: true),
             $block->locations,
@@ -144,7 +136,10 @@ final class CodeDuplicationRule extends AbstractRule
         foreach ($locations as $index => $location) {
             $copy = $block->locations[$index];
             $file = $copy->pathString();
-            $lines = $copy->lineCount();
+            $subject = $fileSubjects[$file] ??= MetricSubject::aggregate(SymbolPath::forFile($copy->file));
+            $filePath = $subject->toSymbolPath();
+            $lines = $copy->codeLines;
+            $hintPart = $copy->hint !== null ? \sprintf(': "%s"', $copy->hint) : '';
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;
             $named = self::namedOthers($block->occurrences(), $index);
             $unnamed = $block->occurrences() - 1 - \count($named);
@@ -152,22 +147,22 @@ final class CodeDuplicationRule extends AbstractRule
             $findings[] = new Finding(
                 location: $location,
                 subject: $subject,
-                symbolPath: $projectPath,
+                symbolPath: $filePath,
                 ruleName: $this->getName(),
                 code: $this->getName(),
                 message: \sprintf(
-                    'Duplicated code block (%d lines, %d occurrences)%s — also at %s%s',
+                    'Duplicated code block (%d code lines, %d occurrences)%s — also at %s%s',
                     $lines,
                     $block->occurrences(),
                     $hintPart,
                     implode(', ', array_map(static fn(int $other): string => $block->locations[$other]->toString(), $named)),
                     $unnamed > 0 ? \sprintf(' and %d more', $unnamed) : '',
                 ),
-                severity: $this->getEffectiveSeverity($context, $this->options, $subject, $lines) ?? Severity::Warning,
+                severity: $this->options->getSeverity($lines) ?? Severity::Warning,
                 metricValue: $lines,
                 relatedLocations: array_map(static fn(int $other): Location => $locations[$other], $named),
                 recommendation: 'Extract duplicated code into a shared method or class.',
-                occurrenceKey: self::copyOccurrenceKey($block->contentHash, $file, $copyInFile),
+                occurrenceKey: self::copyOccurrenceKey($block->contentHash, $copyInFile),
             );
         }
 
@@ -175,10 +170,11 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * A copy is the block's content, the file holding the copy and the
-     * copy's place among the block's copies in that file, counted in line
-     * order. No line number enters it, so lines added or removed outside the
-     * matched tokens re-key nothing while the detector finds the same block.
+     * The subject identifies the file. The occurrence identifies the block's
+     * content and the copy's place among that block's copies in the file,
+     * counted in line order. No line number enters it, so lines added or
+     * removed outside the matched tokens re-key nothing while the detector
+     * finds the same block.
      *
      * The block is the longest token run all of its copies agree on, and the
      * match takes in whatever context the copies share around the copied
@@ -193,11 +189,10 @@ final class CodeDuplicationRule extends AbstractRule
      * takes the lower place, and the one it displaced reads as the new copy —
      * the count of new copies stays right.
      */
-    private static function copyOccurrenceKey(string $contentHash, string $file, int $copyInFile): OccurrenceKey
+    private static function copyOccurrenceKey(string $contentHash, int $copyInFile): OccurrenceKey
     {
         return OccurrenceKey::semantic(self::OCCURRENCE_KIND, [
             'contentHash' => $contentHash,
-            'file' => $file,
             'copyInFile' => $copyInFile,
         ]);
     }
@@ -216,10 +211,10 @@ final class CodeDuplicationRule extends AbstractRule
     }
 
     /**
-     * Declared, never inferred from the options class: `@qmx-threshold` can
+     * Declared, never inferred from the options class: `@qmx-threshold` cannot
      * retune this rule. See
      * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader},
      * which also explains why this is a constant and why it is declared last.
      */
-    public const bool SUPPORTS_THRESHOLD_OVERRIDE = true;
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = false;
 }

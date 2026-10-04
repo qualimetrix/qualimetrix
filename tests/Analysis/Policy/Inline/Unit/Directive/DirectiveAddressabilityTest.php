@@ -170,7 +170,7 @@ final class DirectiveAddressabilityTest extends TestCase
 
     /**
      * `duplication.clone:class` names an
-     * impossible pair (the channel reports at project level only) AND reaches
+     * impossible pair (the channel reports at file level only) AND reaches
      * the ban, and {@see DirectiveAddressability::problemWithSuppression()}
      * asks the pair grammar first. Reordering the two checks would silently
      * swap the published refusal text — and pass this test only if it were
@@ -341,7 +341,7 @@ final class DirectiveAddressabilityTest extends TestCase
                 'coupling.cbo' => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
                 'duplication.clone' => ChannelDeclaration::magnitude(
                     WorseDirection::Higher,
-                    SymbolLevel::Project,
+                    SymbolLevel::File,
                 ),
                 'code-smell.long-parameter-list' => ChannelDeclaration::judging(
                     WorseDirection::Higher,

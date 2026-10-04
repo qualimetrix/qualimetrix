@@ -133,6 +133,8 @@ What follows from the decision: trade-offs, constraints, and implications.
 
 - [0096 — File Target Claims](0096-file-target-claims.md) — neutral filesystem judgement, held writes, publication and explicit descriptor/race limits.
 
+- [0097 — Duplication Copy Evidence](0097-duplication-copy-evidence.md) — connected token coverage, copy-owned values, File identity and explicit incomplete-run limits.
+
 ## Superseded history
 
 - [0008 — ArchitectureProcessor Service](0008-architecture-processor-service.md) — replaced by the capability-oriented topology in ADR 0022.

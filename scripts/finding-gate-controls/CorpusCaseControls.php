@@ -8,44 +8,6 @@ use QmxFindingGate\{FailureClass, Normalization};
 
 final class CorpusCaseControls
 {
-    public static function duplicationSize(): Control
-    {
-        return self::product(
-            'duplication-size',
-            'src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php',
-            '$longest = max(array_map(function (int $copy) use ($length): int {',
-            '$longest = min(array_map(function (int $copy) use ($length): int {',
-            [
-                FailureClass::CASE_CLAIM_MISMATCH => [
-                    'case:duplication-size',
-                ],
-                FailureClass::FINDING_COUNT_MISMATCH => [
-                    'case:duplication-size',
-                ],
-                FailureClass::RECORD_UNDECLARED => [
-                    'case:duplication-size|format:json',
-                ],
-                FailureClass::SURFACE_MISMATCH => [
-                    'candidate / case:duplication-size|format:github',
-                    'case:duplication-size|baseline-file',
-                    'case:duplication-size|check:output:file',
-                    'case:duplication-size|directives',
-                    'case:duplication-size|format:checkstyle',
-                    'case:duplication-size|format:github',
-                    'case:duplication-size|format:gitlab',
-                    'case:duplication-size|format:html',
-                    'case:duplication-size|format:json',
-                    'case:duplication-size|format:metrics',
-                    'case:duplication-size|format:sarif',
-                    'case:duplication-size|format:summary',
-                    'case:duplication-size|format:text',
-                    'case:duplication-size|format:text-verbose',
-                    'case:duplication-size|show-suppressed',
-                ],
-            ],
-        );
-    }
-
     public static function configPrecedence(): Control
     {
         return self::product(

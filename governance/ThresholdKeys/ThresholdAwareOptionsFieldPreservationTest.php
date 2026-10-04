@@ -86,8 +86,8 @@ final class ThresholdAwareOptionsFieldPreservationTest extends TestCase
             }
         }
 
-        // Sanity: we should have tested all 27 classes
-        self::assertGreaterThanOrEqual(27, $testedClasses, 'Expected at least 27 ThresholdAwareOptions classes');
+        // Sanity: we should have tested all 26 classes
+        self::assertGreaterThanOrEqual(26, $testedClasses, 'Expected at least 26 ThresholdAwareOptions classes');
     }
 
     /**

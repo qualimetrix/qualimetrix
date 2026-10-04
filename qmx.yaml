@@ -378,22 +378,24 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions'
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\ContentHintExtractor'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateMatchCandidates'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuildResult'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\PackedPosition'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\SaturatingCandidateFilter'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\SaturatingCandidateFilter'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\BalancedSegments'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\ContentHintExtractor'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\CopyCoverIndex'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateMatchCandidates'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream'
     - name: analysis-evidence-maintainability
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector'
@@ -799,6 +801,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertEntryReason'
+        - 'Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunScope'
         - 'Qualimetrix\Analysis\Policy\Baseline\UncapturedGroup'
@@ -913,6 +916,7 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry'
+        - 'Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure'
         - 'Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure'
@@ -1128,6 +1132,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal'
         - 'Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
@@ -1938,6 +1943,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Private token representation stays inside one duplication owner; local D=1 is not a module boundary.
+      - exact: 'Qualimetrix\Analysis\Evidence\Duplication\Normalization'
       # Five concrete refusal adapters intentionally share framing: A=0, Ca=14/Ce=13, D=0.518519.
       - exact: 'Qualimetrix\Infrastructure\Console\Refusal'
       # The same concrete authored directive contract has intentional distance 0.52.
@@ -2071,6 +2078,8 @@ rules:
       # Two Baseline writers consume this document guard (Ca=2, Ce=10).
       # Instability reflects the small reader population; other signals remain active.
       - exact: src/Analysis/Policy/Baseline/BaselineDocumentWriter.php
+      # Cleanup composes ten dependencies for two readers; instability reflects that small population.
+      - exact: src/Analysis/Policy/Baseline/BaselineCleaner.php
       # The policy composes ten dependencies for two run-level readers (Ca=2).
       - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
       # These exact vocabulary, document, specificity and DI declarations have Ca=2.
@@ -2213,6 +2222,12 @@ rules:
 
   # --- Code Smells ---
 
+  code-smell.exit:
+    suppress_paths:
+      # An OOM shutdown is already terminal; throwing cannot recover it or
+      # select the environment outcome required by the memory-fatal tests.
+      - exact: src/Infrastructure/Console/Refusal/OutOfMemoryHint.php
+
   # No exclusions needed: the rule itself no longer flags promoted constructor
   # properties (a promoted param is a field declaration, not a behavior switch),
   # so the whole-tree exclusions this block used to carry — src/Core, src/Reporting,
@@ -2310,6 +2325,8 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # Immutable rule options separate static declaration/factory from independent enabled and error fields.
+      - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
       # The readonly snapshot has independent live and provenance observations over coherent facts.
       - exact: src/Analysis/Finding/Contract/EnablementDecision.php
       # A console command shares no fields by construction: `configure()` touches

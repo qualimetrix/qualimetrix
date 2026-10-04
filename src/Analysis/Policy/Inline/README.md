@@ -201,8 +201,10 @@ namespace suppression does not match its file subject, and the producer's
 closed exclusion ledger does not account for findings assembled afterwards.
 
 `DirectiveChannelBan` still forbids addressing `annotation.unused-directive`
-or `duplication.clone`. Reach and channel-level admission happen before the
-ban. Blanket `*` or a bare file directive is not refused: usage judges it
+or `duplication.clone`. Duplication also declares
+`SUPPORTS_THRESHOLD_OVERRIDE = false`, so `@qmx-threshold duplication.clone`
+produces the existing `annotation.unsupported-threshold` refusal. Reach and
+channel-level admission happen before the ban. Blanket `*` or a bare file directive is not refused: usage judges it
 Effective/Inert against the real produced findings, while matching continues
 to exclude those banned channels and configuration errors.
 

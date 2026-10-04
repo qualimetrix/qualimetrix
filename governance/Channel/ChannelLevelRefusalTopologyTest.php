@@ -85,6 +85,8 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
      * @var array<string, string>
      */
     private const array LEVEL_READERS = [
+        'src/Analysis/Policy/Baseline/RunRuleCoverage.php' =>
+            'classifies historical baseline identities at their stored levels; it judges no authored pair and refuses nothing',
         'src/Analysis/Finding/Contract/Rule/ChannelLevelAddressing.php' =>
             'the seam itself: the one place that judges an authored channel:level pair',
         'src/Infrastructure/Rule/ChannelUniverse.php' =>

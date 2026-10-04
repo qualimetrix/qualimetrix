@@ -126,7 +126,7 @@ design.type-coverage.param lower class judges:design.type-coverage.param
 design.type-coverage.property lower class judges:design.type-coverage.property
 design.type-coverage.return lower class judges:design.type-coverage.return
 discovery.unmatched-exclude - project
-duplication.clone higher project
+duplication.clone higher file no-warning-boundary
 maintainability.mi lower callable judges:maintainability.mi
 security.command-injection - callable
 security.hardcoded-credentials - class

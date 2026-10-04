@@ -162,11 +162,11 @@ These rules detect specific patterns that are usually bad practice. Most do not 
 
 Rules that detect duplicated code.
 
-| Rule             | ID                  | Warning   | Error      | Scope  |
-| ---------------- | ------------------- | --------- | ---------- | ------ |
-| Code Duplication | `duplication.clone` | <50 lines | >=50 lines | Method |
+| Rule             | ID                  | Warning        | Error           | Scope |
+| ---------------- | ------------------- | -------------- | --------------- | ----- |
+| Code Duplication | `duplication.clone` | <50 code lines | >=50 code lines | File  |
 
-**Code Duplication** detects duplicate code blocks. Configured with `min_lines: 5` and `min_tokens: 70` -- a block under `min_tokens` tokens is ignored, and so is a block whose longest copy spans fewer than `min_lines` lines; every copy of a checked block is reported, a shorter one too. Duplicates under 50 lines produce a warning; 50 lines or more produce an error.
+**Code Duplication** detects duplicate code blocks. Positive defaults are `min_lines: 5`, `min_tokens: 70`, and `error: 50`. The first two admit a matching block by its greatest covered-code-line count and token count. Every admitted copy is reported with its own covered `codeLines`; that copy is Warning below `error` and Error at or above it. `warning`, `threshold`, and local `@qmx-threshold` are not supported.
 
 ## Security Rules
 

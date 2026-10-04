@@ -26,9 +26,9 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\ParamTypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
@@ -266,10 +266,9 @@ final class ChannelCoverageTest extends TestCase
         $resultProvider->replace([
             new DuplicateBlock(
                 locations: [
-                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 11, null),
+                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 11, null),
                 ],
-                lines: 100,
                 tokens: 200,
                 contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
             ),
@@ -284,6 +283,8 @@ final class ChannelCoverageTest extends TestCase
 
         foreach ($findings as $finding) {
             self::assertDeclared($finding->channel());
+            self::assertSame(SymbolLevel::File, $finding->level());
+            self::assertSame(11, $finding->metricValue);
         }
     }
 

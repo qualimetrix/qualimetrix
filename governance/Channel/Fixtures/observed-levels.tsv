@@ -57,7 +57,7 @@ design.type-coverage.param#design.type-coverage.param	class
 design.type-coverage.property#design.type-coverage.property	class
 design.type-coverage.return#design.type-coverage.return	class
 discovery.unmatched-exclude#discovery.unmatched-exclude	project
-duplication.clone#duplication.clone	project
+duplication.clone#duplication.clone	file
 maintainability.mi#maintainability.mi	callable
 security.command-injection#security.command-injection	callable
 security.hardcoded-credentials#security.hardcoded-credentials	class

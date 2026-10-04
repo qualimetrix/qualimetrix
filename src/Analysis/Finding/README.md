@@ -153,7 +153,14 @@ nothing in the question says which applied. Options that hold no boundary at all
 express that by not implementing the interface. `baseline:explain` reads it
 instead of guessing property names; `getSeverity()` witnesses the declaration
 only for rules that delegate to it. See
-`docs/adr/0038-an-options-class-names-its-own-warning-boundary.md`.
+`docs/adr/0038-an-options-class-names-its-own-warning-boundary.md`. Duplication
+is a concrete exception to the common pattern: `duplication.clone` declares
+only the File channel, publishes one finding per copy with that copy's covered
+`codeLines`, and has no configured warning boundary. Its
+`SUPPORTS_THRESHOLD_OVERRIDE` metadata is false; Finding rejects
+`@qmx-threshold duplication.clone` through the existing unsupported-threshold
+diagnostic. The subject and symbol identify the copy's project-relative file;
+occurrence distinguishes copies within that file.
 
 `RuleOptionKeySet` is how an options class states which option keys it answers
 for, at the rule's own depth and inside each level slot, instead of the reader

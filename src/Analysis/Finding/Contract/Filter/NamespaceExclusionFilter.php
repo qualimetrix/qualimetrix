@@ -32,6 +32,9 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * to `subject->toSymbolPath()->namespace` when the symbol path has none. That keeps
  * the per-occurrence declaration namespace authoritative even in a file that
  * declares multiple namespaces.
+ * A file aggregate has no declaration namespace. When both symbol and subject
+ * namespaces are null, no namespace pattern can suppress it; a declaration in
+ * the global namespace carries the distinct value `''` and is compared.
  *
  * A finding on the project aggregate has no namespace to compare. Its symbol
  * path carries the display value `(project)` in that field, and comparing it
@@ -58,8 +61,11 @@ final readonly class NamespaceExclusionFilter implements FindingFilterInterface
         }
 
         $namespace = $finding->symbolPath->namespace
-            ?? $finding->subject->toSymbolPath()->namespace
-            ?? '';
+            ?? $finding->subject->toSymbolPath()->namespace;
+
+        if ($namespace === null) {
+            return true;
+        }
 
         return $this->namespaceMatcher->matches($namespace) === null;
     }

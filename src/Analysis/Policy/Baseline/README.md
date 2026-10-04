@@ -37,7 +37,8 @@ Baseline/
 ├── BaselineEntryOrder.php       # Where an entry sorts among its siblings, computed identically by the writer and the carry
 ├── BaselineEntryPayload.php     # One entry line as the file spells it: the identity and ordering the document alone decides, built from the real types
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
-├── RunRuleCoverage.php          # The rule axis beside RunScope: which entries' channel, at the level of their subject, this invocation did not publish
+├── RunRuleCoverage.php          # Classifies whether an identity's producer did not run or its stored level is no longer declared
+├── RunCoverageGap.php           # Enum: NotMeasured / LevelNotDeclared
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
@@ -47,7 +48,7 @@ Baseline/
 │
 ├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
 ├── BaselineCleanupCandidate.php # VO: one removal candidate — selector, description, reason
-├── BaselineCleanupReason.php    # Enum: stale / producer did not run / channel no longer declared / configuration-error channel / inert
+├── BaselineCleanupReason.php    # Enum: stale / producer did not run / level not declared / channel no longer declared / configuration-error channel / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
 ├── BaselineChannelRenamer.php   # `baseline:rename-channels`: carries a raw document onto renamed channels, analysing nothing
@@ -319,21 +320,24 @@ every later narrow run would cover it and the guard would never fire again.
 
 ### `BaselineCleaner` — candidate enumeration and selector removal
 
-`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations, array<string, true> $unmeasuredIdentities): list<BaselineCleanupCandidate>`
+`BaselineCleaner::candidates(Baseline $baseline, list<Finding> $measured, ChannelDeclarationRegistryInterface $declarations, array<string, RunCoverageGap> $coverageGaps): list<BaselineCleanupCandidate>`
 lists every entry `cleanup` would offer to remove — **and changes nothing**.
 A valid entry is offered for `Stale` (absent from the measured set, via
-`Baseline::staleEntries()`), `ProducerDidNotRun`, `ChannelNotDeclared`, or
-`ChannelIsConfigurationError`. `ProducerDidNotRun` is the absent entry whose
-channel this invocation did not publish at the level of the entry's subject —
+`Baseline::staleEntries()`), `ProducerDidNotRun`, `LevelNotDeclared`,
+`ChannelNotDeclared`, or `ChannelIsConfigurationError`. `ProducerDidNotRun` is
+the absent entry whose channel this invocation did not publish at the level of
+the entry's subject —
 `--only-rule`, `--disable-rule` (a level-narrowed `X:namespace` included),
 `enabled: false`, or a level switched off in the rule's options — as answered
 by `RunRuleCoverage`, the rule axis beside `RunScope`'s path axis: such an
 entry is absent because nothing looked, and "nothing reported" would state a
-measurement that was not made. The level is read off the entry's subject key
-by `MetricSubject::levelOfCanonical()`, and the question is put to
-`RuleExecutionInterface::publishesAt()`, which asks both the selection and the
-rule's own level configuration. A subject key no subject is written as is
-refused at load as a malformed, inert entry.
+measurement that was not made. A different gap, `LevelNotDeclared`, applies
+when the stored subject level is no longer among the channel's declared
+levels. `RunRuleCoverage::classify()` returns these causes by exact identity;
+it reads the canonical level from the subject and asks current execution
+publication whether that producer/channel/level ran. A channel no producer
+declares is omitted from this classification and has its own
+`ChannelNotDeclared` cause. A malformed subject key is refused at load.
 
 An entry whose channel is no longer declared is reported as
 `ChannelNotDeclared` even when it is also stale, since a channel nothing
@@ -404,15 +408,26 @@ rather than left for the reader to infer from an absence:
   such a group instead of comparing it. The members that do measure are still
   listed — this is a report, not a re-judgement of acceptance.
 
+`RunRuleCoverage::classify()` is the rule-axis explanation for absent findings:
+it returns `RunCoverageGap::NotMeasured` when a declared producer/channel/level
+did not run, and `RunCoverageGap::LevelNotDeclared` when a stored identity uses
+a level the current channel no longer declares. Unknown channels are omitted
+because `ChannelNotDeclared` is the more direct cause. Cleanup and explanation
+preserve this distinction; neither gap implies that the underlying code has
+improved. This coverage classification does not provide a general absence
+authority for incomplete runs.
+
 **An identity with an occurrence names it, and where its findings sit now.**
 Several identities of one channel and subject can differ only in an
-occurrence hash — every copy of a duplicate block is one under the project
-subject — and their sections would otherwise read the same.
-`EffectiveBoundary::$currentLocations` carries the `file:line` of each current
-finding in the identity's group, and `baseline:explain` prints it beside the
-occurrence. An entry nothing reports any more has no current location: its
-occurrence hash is all the baseline stores, so `baseline:explain`,
-`baseline:cleanup` and the stale-entry list can name no file for it.
+occurrence hash. Duplication now uses a File subject and an occurrence derived
+from the block digest and copy order within that file; the finding location and
+subject together identify the copy. Older v13 Project-subject duplication
+entries remain readable, but their old level is no longer declared: cleanup
+classifies them as `level-not-declared`, and explain preserves their accepted
+values while marking the producer as not measured at that level. A current
+`duplication.clone:project` selector is refused because the rule now declares
+only File. This stored-entry classification does not prove that missing
+Duplication findings mean zero copies.
 
 ## Entry Identity
 

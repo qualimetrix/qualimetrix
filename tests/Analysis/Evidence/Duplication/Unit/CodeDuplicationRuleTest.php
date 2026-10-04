@@ -8,14 +8,17 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -50,6 +53,8 @@ final class CodeDuplicationRuleTest extends TestCase
     public function itDeclaresCodeDuplicationOptionsAsItsOptionsClass(): void
     {
         self::assertSame(CodeDuplicationOptions::class, CodeDuplicationRule::getOptionsClass());
+        self::assertFalse(ThresholdOverrideSupportReader::read(CodeDuplicationRule::class));
+        self::assertFalse(CodeDuplicationRule::channelDeclarations()[CodeDuplicationRule::NAME]->usesProducerWarningBoundary);
     }
 
     #[Test]
@@ -62,8 +67,7 @@ final class CodeDuplicationRuleTest extends TestCase
             $repository,
             [
                 new DuplicateBlock(
-                    [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10)],
-                    10,
+                    [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10, 10, null), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10, 10, null)],
                     50,
                     self::CONTENT_HASH,
                 ),
@@ -99,10 +103,9 @@ final class CodeDuplicationRuleTest extends TestCase
             [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, null),
                     ],
-                    lines: 16,
                     tokens: 80,
                     contentHash: self::CONTENT_HASH,
                 ),
@@ -113,14 +116,16 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertCount(2, $findings);
 
-        foreach ($findings as $v) {
+        foreach ($findings as $index => $v) {
             self::assertSame('duplication.clone', $v->ruleName);
             self::assertSame(Severity::Warning, $v->severity);
             self::assertSame(16, $v->metricValue);
-            self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
-            self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
+            $file = RelativePath::fromString($index === 0 ? 'src/A.php' : 'src/B.php');
+            $filePath = SymbolPath::forFile($file);
+            self::assertSame(MetricSubject::aggregate($filePath)->toCanonical(), $v->subject->toCanonical());
+            self::assertSame($filePath->toCanonical(), $v->symbolPath->toCanonical());
             self::assertNotNull($v->occurrenceKey);
-            self::assertStringContainsString('16 lines', $v->message);
+            self::assertStringContainsString('16 code lines', $v->message);
             self::assertStringContainsString('2 occurrences', $v->message);
         }
 
@@ -152,10 +157,9 @@ final class CodeDuplicationRuleTest extends TestCase
             [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, null),
                     ],
-                    lines: 16,
                     tokens: 80,
                     contentHash: self::CONTENT_HASH,
                 ),
@@ -167,11 +171,28 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertCount(2, $findings);
         self::assertSame(
             [
-                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'file' => 'src/A.php', 'copyInFile' => 0])->value,
-                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'file' => 'src/B.php', 'copyInFile' => 0])->value,
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'copyInFile' => 0])->value,
+                OccurrenceKey::semantic('duplication.code-duplication', ['contentHash' => self::CONTENT_HASH, 'copyInFile' => 0])->value,
             ],
             array_map(static fn($finding): ?string => $finding->occurrenceKey?->value, $findings),
         );
+    }
+
+    #[Test]
+    public function itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity(): void
+    {
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [
+            self::block(['src/A.php' => [10, 60], 'src/B.php' => [30]]),
+        ]);
+
+        [$firstA, $secondA, $firstB] = $this->createRule()->analyze($context);
+
+        self::assertSame('file:src/A.php', $firstA->subject->toCanonical());
+        self::assertSame('file:src/A.php', $secondA->subject->toCanonical());
+        self::assertSame('file:src/B.php', $firstB->subject->toCanonical());
+        self::assertSame($firstA->occurrenceKey?->value, $firstB->occurrenceKey?->value);
+        self::assertNotSame($firstA->occurrenceKey?->value, $secondA->occurrenceKey?->value);
+        self::assertCount(3, array_unique([$firstA->getFingerprint(), $secondA->getFingerprint(), $firstB->getFingerprint()]));
     }
 
     #[Test]
@@ -185,13 +206,11 @@ final class CodeDuplicationRuleTest extends TestCase
             [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, 'function processItems($items) { $result = [];'),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, 'function processItems($items) { $result = [];'),
                     ],
-                    lines: 16,
                     tokens: 80,
                     contentHash: self::CONTENT_HASH,
-                    hint: 'function processItems($items) { $result = [];',
                 ),
             ],
         );
@@ -217,13 +236,11 @@ final class CodeDuplicationRuleTest extends TestCase
             [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45, 16, null),
                     ],
-                    lines: 16,
                     tokens: 80,
                     contentHash: self::CONTENT_HASH,
-                    hint: null,
                 ),
             ],
         );
@@ -233,7 +250,7 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertCount(2, $findings);
         // No hint means no quotes in the message
         self::assertStringNotContainsString('"', $findings[0]->message);
-        self::assertStringContainsString('(16 lines, 2 occurrences) — also at', $findings[0]->message);
+        self::assertStringContainsString('(16 code lines, 2 occurrences) — also at', $findings[0]->message);
     }
 
     #[Test]
@@ -247,10 +264,9 @@ final class CodeDuplicationRuleTest extends TestCase
             [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation(RelativePath::fromString('a.php'), 1, 60),
-                        new DuplicateLocation(RelativePath::fromString('b.php'), 1, 60),
+                        new DuplicateLocation(RelativePath::fromString('a.php'), 1, 60, 60, null),
+                        new DuplicateLocation(RelativePath::fromString('b.php'), 1, 60, 60, null),
                     ],
-                    lines: 60,
                     tokens: 300,
                     contentHash: self::CONTENT_HASH,
                 ),
@@ -273,14 +289,12 @@ final class CodeDuplicationRuleTest extends TestCase
             $repository,
             [
                 new DuplicateBlock(
-                    [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10)],
-                    10,
+                    [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10, 10, null), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10, 10, null)],
                     50,
                     self::CONTENT_HASH,
                 ),
                 new DuplicateBlock(
-                    [new DuplicateLocation(RelativePath::fromString('c.php'), 5, 20), new DuplicateLocation(RelativePath::fromString('d.php'), 5, 20)],
-                    16,
+                    [new DuplicateLocation(RelativePath::fromString('c.php'), 5, 20, 16, null), new DuplicateLocation(RelativePath::fromString('d.php'), 5, 20, 16, null)],
                     80,
                     'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
                 ),
@@ -306,11 +320,10 @@ final class CodeDuplicationRuleTest extends TestCase
             [
                 new DuplicateBlock(
                     locations: [
-                        new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10),
-                        new DuplicateLocation(RelativePath::fromString('b.php'), 5, 14),
-                        new DuplicateLocation(RelativePath::fromString('c.php'), 20, 29),
+                        new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10, 10, null),
+                        new DuplicateLocation(RelativePath::fromString('b.php'), 5, 14, 10, null),
+                        new DuplicateLocation(RelativePath::fromString('c.php'), 20, 29, 10, null),
                     ],
-                    lines: 10,
                     tokens: 50,
                     contentHash: self::CONTENT_HASH,
                 ),
@@ -331,12 +344,12 @@ final class CodeDuplicationRuleTest extends TestCase
     {
         $locations = [];
         for ($copy = 0; $copy < 100; $copy++) {
-            $locations[] = new DuplicateLocation(RelativePath::fromString(\sprintf('c%03d.php', $copy)), 1, 10);
+            $locations[] = new DuplicateLocation(RelativePath::fromString(\sprintf('c%03d.php', $copy)), 1, 10, 10, null);
         }
 
         $findings = $this->createRule()->analyze($this->contextWithBlocks(
             self::createStub(MetricRepositoryInterface::class),
-            [new DuplicateBlock(locations: $locations, lines: 10, tokens: 50, contentHash: self::CONTENT_HASH)],
+            [new DuplicateBlock(locations: $locations, tokens: 50, contentHash: self::CONTENT_HASH)],
         ));
 
         self::assertCount(100, $findings);
@@ -403,18 +416,16 @@ final class CodeDuplicationRuleTest extends TestCase
 
     /**
      * `min_lines` admits a block by its longest copy, and every copy of an
-     * admitted block is reported at its own value: a shorter copy too, below
-     * `warning` and so as a warning.
+     * admitted block is reported at its own covered code-line value.
      */
     #[Test]
     public function itReportsACopyShorterThanMinLinesAtItsOwnValue(): void
     {
         $block = new DuplicateBlock(
             locations: [
-                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33),
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25, 16, null),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33, 4, null),
             ],
-            lines: 16,
             tokens: 80,
             contentHash: self::CONTENT_HASH,
         );
@@ -424,28 +435,24 @@ final class CodeDuplicationRuleTest extends TestCase
 
         self::assertSame(['src/A.php', 16, Severity::Warning], [$onA->location->pathString(), $onA->metricValue, $onA->severity]);
         self::assertSame(['src/B.php', 4, Severity::Warning], [$onB->location->pathString(), $onB->metricValue, $onB->severity]);
-        self::assertStringContainsString('(4 lines, 2 occurrences)', $onB->message);
+        self::assertStringContainsString('(4 code lines, 2 occurrences)', $onB->message);
     }
 
-    /**
-     * `min_lines` and `warning` are separate options: a copy that clears the
-     * first but not the second is still reported, as a warning.
-     */
+    /** A copy below the severity boundary remains a finding with Warning severity. */
     #[Test]
-    public function itReportsACopyBelowTheWarningThresholdAsAWarning(): void
+    public function itReportsACopyBelowTheErrorBoundaryAsAWarning(): void
     {
         $block = new DuplicateBlock(
             locations: [
-                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 13),
-                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33),
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 13, 4, null),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 33, 4, null),
             ],
-            lines: 4,
             tokens: 80,
             contentHash: self::CONTENT_HASH,
         );
         $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
 
-        $findings = $this->createRule(new CodeDuplicationOptions(min_lines: 3, warning: 10))->analyze($context);
+        $findings = $this->createRule(new CodeDuplicationOptions(min_lines: 3, error: 10))->analyze($context);
 
         self::assertCount(2, $findings);
         self::assertSame([Severity::Warning, Severity::Warning], array_map(static fn($finding) => $finding->severity, $findings));
@@ -464,19 +471,17 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray(): void
+    public function itReadsResolvedDuplicationOptions(): void
     {
         $options = CodeDuplicationOptions::fromResolved(ResolvedOptionsFixture::values(CodeDuplicationOptions::class, [
             'enabled' => false,
             'min_lines' => 10,
             'min_tokens' => 100,
-            'warning' => 8,
             'error' => 40,
         ]));
         self::assertFalse($options->isEnabled());
         self::assertSame(10, $options->min_lines);
         self::assertSame(100, $options->min_tokens);
-        self::assertSame(8, $options->warning);
         self::assertSame(40, $options->error);
 
         // camelCase support
@@ -489,27 +494,116 @@ final class CodeDuplicationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds(): void
+    public function itUsesPositiveResolvedOptionDefaults(): void
+    {
+        $options = CodeDuplicationOptions::fromResolved(ResolvedOptionsFixture::values(CodeDuplicationOptions::class, []));
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(5, $options->min_lines);
+        self::assertSame(70, $options->min_tokens);
+        self::assertSame(50, $options->error);
+    }
+
+    #[Test]
+    public function itClassifiesDuplicateSeverityByCoveredCodeLinesUsingTheDefaultErrorBoundary(): void
     {
         $options = new CodeDuplicationOptions();
 
-        self::assertNull($options->getSeverity(0));
-        self::assertNull($options->getSeverity(4));
-        self::assertSame(Severity::Warning, $options->getSeverity(5));
+        self::assertSame(Severity::Warning, $options->getSeverity(0));
+        self::assertSame(Severity::Warning, $options->getSeverity(4));
         self::assertSame(Severity::Warning, $options->getSeverity(49));
         self::assertSame(Severity::Error, $options->getSeverity(50));
         self::assertSame(Severity::Error, $options->getSeverity(100));
     }
 
     #[Test]
-    public function itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds(): void
+    public function itClassifiesDuplicateSeverityByCoveredCodeLinesUsingOnlyTheErrorBoundary(): void
     {
-        $options = new CodeDuplicationOptions(warning: 10, error: 30);
+        $options = new CodeDuplicationOptions(error: 30);
 
-        self::assertNull($options->getSeverity(9));
+        self::assertSame(Severity::Warning, $options->getSeverity(9));
         self::assertSame(Severity::Warning, $options->getSeverity(10));
         self::assertSame(Severity::Warning, $options->getSeverity(29));
         self::assertSame(Severity::Error, $options->getSeverity(30));
+    }
+
+    #[Test]
+    public function itRefusesRetiredWarningAndThresholdConfigurationKeysAtTheirAuthoredAddresses(): void
+    {
+        $metadata = [new RuleMetadata(CodeDuplicationRule::NAME, CodeDuplicationOptions::class, '', [], false)];
+
+        foreach (['warning', 'threshold'] as $key) {
+            try {
+                ResolvedOptionsFixture::authoredConfiguration(
+                    ['rules' => [CodeDuplicationRule::NAME => [$key => 20]]],
+                    $metadata,
+                );
+                self::fail('A retired duplication option must refuse the authored document.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertStringContainsString('rules.duplication.clone.' . $key, $refusal->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itRequiresPositiveAuthoredMinimumsAndErrorBoundary(): void
+    {
+        $metadata = [new RuleMetadata(CodeDuplicationRule::NAME, CodeDuplicationOptions::class, '', [], false)];
+
+        foreach (['min_lines', 'min_tokens', 'error'] as $key) {
+            try {
+                ResolvedOptionsFixture::authoredConfiguration(
+                    ['rules' => [CodeDuplicationRule::NAME => [$key => 0]]],
+                    $metadata,
+                );
+                self::fail('A zero duplication minimum or error boundary must be refused.');
+            } catch (ConfigurationRefusal $refusal) {
+                self::assertStringContainsString('rules.duplication.clone.' . $key, $refusal->getMessage());
+                self::assertStringContainsString('at least 1', $refusal->getMessage());
+            }
+        }
+    }
+
+    #[Test]
+    public function itReusesFileSubjectsWithinOneInvocationWithoutSharingCopyOccurrences(): void
+    {
+        $a = RelativePath::fromString('src/A.php');
+        $b = RelativePath::fromString('src/B.php');
+        $blocks = [
+            new DuplicateBlock([
+                new DuplicateLocation($a, 10, 25, 5, 'first'),
+                new DuplicateLocation($a, 60, 80, 2, 'second'),
+                new DuplicateLocation($b, 30, 40, 3, 'third'),
+            ], 80, self::CONTENT_HASH),
+            new DuplicateBlock([
+                new DuplicateLocation($a, 90, 100, 7, 'fourth'),
+                new DuplicateLocation($b, 100, 110, 4, 'fifth'),
+            ], 81, str_repeat('b', 64)),
+        ];
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), $blocks);
+        $rule = $this->createRule(new CodeDuplicationOptions(error: 5));
+        $findings = $rule->analyze($context);
+        self::assertCount(5, $findings);
+        self::assertSame($findings[0]->subject, $findings[1]->subject);
+        self::assertSame($findings[0]->subject, $findings[3]->subject);
+        self::assertSame($findings[2]->subject, $findings[4]->subject);
+        self::assertNotSame($findings[0]->subject, $findings[2]->subject);
+        self::assertSame($findings[0]->symbolPath, $findings[3]->symbolPath);
+        self::assertSame($findings[0]->subject->toSymbolPath(), $findings[0]->symbolPath);
+        self::assertSame(['file:src/A.php', 'file:src/A.php', 'file:src/B.php', 'file:src/A.php', 'file:src/B.php'], array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings));
+        self::assertSame([10, 60, 30, 90, 100], array_map(static fn($finding): ?int => $finding->location->line, $findings));
+        self::assertSame([5, 2, 3, 7, 4], array_column($findings, 'metricValue'));
+        self::assertSame([Severity::Error, Severity::Warning, Severity::Warning, Severity::Error, Severity::Warning], array_column($findings, 'severity'));
+        self::assertCount(5, array_unique(array_map(static fn($finding): string => $finding->getFingerprint(), $findings)));
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[3]->occurrenceKey?->value);
+        foreach (['first', 'second', 'third', 'fourth', 'fifth'] as $index => $hint) {
+            self::assertStringContainsString(': "' . $hint . '"', $findings[$index]->message);
+        }
+        $again = $rule->analyze($context);
+        self::assertNotSame($findings[0]->subject, $again[0]->subject);
+        self::assertSame($again[0]->subject, $again[3]->subject);
+        self::assertSame(array_map(static fn($finding): string => $finding->getFingerprint(), $findings), array_map(static fn($finding): string => $finding->getFingerprint(), $again));
     }
 
     private function createRule(?CodeDuplicationOptions $options = null): CodeDuplicationRule
@@ -538,19 +632,34 @@ final class CodeDuplicationRuleTest extends TestCase
         );
     }
 
-    /**
-     * @param array<string, list<int>> $copies file => start line of each copy in it
-     */
+    #[Test]
+    public function itUsesEachCopysCoveredCodeLinesAndHintInItsFinding(): void
+    {
+        $block = new DuplicateBlock([
+            new DuplicateLocation(RelativePath::fromString('a.php'), 1, 40, 5, 'first source'),
+            new DuplicateLocation(RelativePath::fromString('b.php'), 2, 60, 2, 'second source'),
+        ], 80, self::CONTENT_HASH);
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), [$block]);
+
+        $findings = $this->createRule(new CodeDuplicationOptions(error: 5))->analyze($context);
+
+        self::assertSame([5, 2], array_column($findings, 'metricValue'));
+        self::assertSame([Severity::Error, Severity::Warning], array_column($findings, 'severity'));
+        self::assertStringContainsString('(5 code lines, 2 occurrences): "first source"', $findings[0]->message);
+        self::assertStringContainsString('(2 code lines, 2 occurrences): "second source"', $findings[1]->message);
+    }
+
+    /** @param array<string, list<int>> $copies */
     private static function block(array $copies, string $contentHash = self::CONTENT_HASH): DuplicateBlock
     {
         $locations = [];
         foreach ($copies as $file => $startLines) {
             foreach ($startLines as $startLine) {
-                $locations[] = new DuplicateLocation(RelativePath::fromString($file), $startLine, $startLine + 15);
+                $locations[] = new DuplicateLocation(RelativePath::fromString($file), $startLine, $startLine + 15, ($startLine + 15) - ($startLine) + 1, null);
             }
         }
 
-        return new DuplicateBlock(locations: $locations, lines: 16, tokens: 80, contentHash: $contentHash);
+        return new DuplicateBlock(locations: $locations, tokens: 80, contentHash: $contentHash);
     }
 
     /**

@@ -118,6 +118,27 @@ final class BaselineCleanupCommandTest extends TestCase
     }
 
     #[Test]
+    public function itExplainsAnOldProjectCopyAsAChannelLevelNoLongerDeclared(): void
+    {
+        $entry = new BaselineEntry(
+            new BaselineIdentity(SymbolPath::forProject()->toCanonical(), new FindingChannel('duplication.clone')),
+            [40],
+            1,
+        );
+        $this->writeBaseline([$entry], ['src']);
+
+        $tester = $this->execute([]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('project: duplication.clone', $tester->getDisplay());
+        self::assertStringContainsString(
+            '(level not declared: this channel does not report at the level of this baseline entry)',
+            $tester->getDisplay(),
+        );
+        self::assertStringNotContainsString('nothing reported for this identity', $tester->getDisplay());
+    }
+
+    #[Test]
     public function itRemovesOnlyTheNamedEntryEvenWhenTwoDifferOnlyByEdge(): void
     {
         $doomed = self::edgeIdentity('class:App\\Db\\Connection');

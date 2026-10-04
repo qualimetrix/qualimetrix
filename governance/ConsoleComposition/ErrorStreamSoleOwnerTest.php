@@ -45,6 +45,8 @@ final class ErrorStreamSoleOwnerTest extends TestCase
      *                            is not the owner's business
      */
     private const array ALLOWED = [
+        'src/Infrastructure/Console/Refusal/OutOfMemoryHint.php'
+            => 'fatal memory shutdown after the normal composition is unavailable; writes one bounded emergency diagnostic',
         'src/Infrastructure/Console/ErrorStream.php'
             => 'the owner itself',
         'src/Infrastructure/Git/GitClient.php'

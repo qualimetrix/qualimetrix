@@ -1,1 +1,37 @@
 surface	file	reason
+case:annotations|directives	declared-delta/case-annotations-directives.diff	The declared refusal value replacement retains its exact compact JSON formatting remainder.
+case:annotations|rules	declared-delta/case-annotations-rules.diff	Duplication listing removes warning and threshold.
+case:applied-threshold|rules	declared-delta/case-applied-threshold-rules.diff	Duplication listing removes warning and threshold.
+case:baseline-cycle|rules	declared-delta/case-baseline-cycle-rules.diff	Duplication listing removes warning and threshold.
+case:complexity|rules	declared-delta/case-complexity-rules.diff	Duplication listing removes warning and threshold.
+case:config-precedence|rules	declared-delta/case-config-precedence-rules.diff	Duplication listing removes warning and threshold.
+case:coupling|rules	declared-delta/case-coupling-rules.diff	Duplication listing removes warning and threshold.
+case:cycle|rules	declared-delta/case-cycle-rules.diff	Duplication listing removes warning and threshold.
+case:design|rules	declared-delta/case-design-rules.diff	Duplication listing removes warning and threshold.
+case:directive-placement|rules	declared-delta/case-directive-placement-rules.diff	Duplication listing removes warning and threshold.
+case:disabled-rule-duplication|rules	declared-delta/case-disabled-rule-duplication-rules.diff	Duplication listing removes warning and threshold.
+case:disabled-rule|rules	declared-delta/case-disabled-rule-rules.diff	Duplication listing removes warning and threshold.
+case:discovery|rules	declared-delta/case-discovery-rules.diff	Duplication listing removes warning and threshold.
+case:duplicate-declaration|rules	declared-delta/case-duplicate-declaration-rules.diff	Duplication listing removes warning and threshold.
+case:duplication-size|format:html	declared-delta/case-duplication-size-format-html.diff	File copy evidence moves HTML placement and aggregate values.
+case:duplication-size|rules	declared-delta/case-duplication-size-rules.diff	Duplication listing removes warning and threshold.
+case:duplication|explain:file:src/ReportBuilder.php	declared-delta/case-duplication-explain-file-src-ReportBuilder-php.diff	File copy explain now publishes the copy evidence instead of an empty measured subject.
+case:duplication|explain:file:src/SummaryBuilder.php	declared-delta/case-duplication-explain-file-src-SummaryBuilder-php.diff	File copy explain now publishes the copy evidence instead of an empty measured subject.
+case:duplication|format:html	declared-delta/case-duplication-format-html.diff	File copy evidence moves HTML placement and aggregate values.
+case:duplication|rules	declared-delta/case-duplication-rules.diff	Duplication listing removes warning and threshold.
+case:excluded-path|rules	declared-delta/case-excluded-path-rules.diff	Duplication listing removes warning and threshold.
+case:external-parent|rules	declared-delta/case-external-parent-rules.diff	Duplication listing removes warning and threshold.
+case:health|rules	declared-delta/case-health-rules.diff	Duplication listing removes warning and threshold.
+case:incomplete-directory-symlink|rules	declared-delta/case-incomplete-directory-symlink-rules.diff	Duplication listing removes warning and threshold.
+case:layered-threshold|rules	declared-delta/case-layered-threshold-rules.diff	Duplication listing removes warning and threshold.
+case:layers|rules	declared-delta/case-layers-rules.diff	Duplication listing removes warning and threshold.
+case:only-rules|rules	declared-delta/case-only-rules-rules.diff	Duplication listing removes warning and threshold.
+case:parallel-files|rules	declared-delta/case-parallel-files-rules.diff	Duplication listing removes warning and threshold.
+case:rule-exclusion-ledger|rules	declared-delta/case-rule-exclusion-ledger-rules.diff	Duplication listing removes warning and threshold.
+case:scoped-layers|rules	declared-delta/case-scoped-layers-rules.diff	Duplication listing removes warning and threshold.
+case:security|rules	declared-delta/case-security-rules.diff	Duplication listing removes warning and threshold.
+case:smells|rules	declared-delta/case-smells-rules.diff	Duplication listing removes warning and threshold.
+case:stderr-warning|rules	declared-delta/case-stderr-warning-rules.diff	Duplication listing removes warning and threshold.
+case:suppression|rules	declared-delta/case-suppression-rules.diff	Duplication listing removes warning and threshold.
+case:threshold-raising|rules	declared-delta/case-threshold-raising-rules.diff	Duplication listing removes warning and threshold.
+tree|rules	declared-delta/tree-rules.diff	Duplication listing removes warning and threshold.

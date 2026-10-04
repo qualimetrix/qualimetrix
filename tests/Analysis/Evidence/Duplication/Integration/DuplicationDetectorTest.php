@@ -7,21 +7,28 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
-use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\SaturatingCandidateFilter;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use ReflectionMethod;
 use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
 #[CoversClass(TokenNormalizer::class)]
-#[CoversClass(NormalizedToken::class)]
+#[CoversClass(TokenStream::class)]
 #[CoversClass(DuplicateBlock::class)]
 #[CoversClass(DuplicateLocation::class)]
 final class DuplicationDetectorTest extends TestCase
@@ -68,7 +75,7 @@ PHP;
 
         $block = $blocks[0];
         self::assertCount(2, $block->locations);
-        self::assertGreaterThanOrEqual(3, $block->lines);
+        self::assertGreaterThanOrEqual(3, $block->locations[0]->codeLines);
     }
 
     #[Test]
@@ -152,7 +159,7 @@ PHP;
         ]);
 
         self::assertCount(2, $blocks);
-        self::assertSame($blocks[0]->lines, $blocks[1]->lines);
+        self::assertSame($blocks[0]->locations[0]->codeLines, $blocks[1]->locations[0]->codeLines);
         self::assertSame($blocks[0]->tokens, $blocks[1]->tokens);
         self::assertNotSame($blocks[0]->contentHash, $blocks[1]->contentHash);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $blocks[0]->contentHash);
@@ -457,7 +464,7 @@ PHP;
     {
         // The two files differ only in the return type on line 4, so the
         // match starts at the `{` alone on line 5 and ends at the class's
-        // closing `}` alone on line 14.
+        // closing method brace on line 13; the unmatched class brace is excluded.
         $body = <<<'PHP'
     {
         $out = [];
@@ -480,12 +487,12 @@ PHP;
 
         self::assertCount(1, $blocks);
         self::assertSame(
-            ['first.php:5-14', 'second.php:5-14'],
+            ['first.php:5-13', 'second.php:5-13'],
             array_map($this->shortLocation(...), $blocks[0]->locations),
         );
-        self::assertSame(10, $blocks[0]->lines);
-        self::assertNotNull($blocks[0]->hint);
-        self::assertStringStartsWith('$out = [];', $blocks[0]->hint);
+        self::assertSame(9, $blocks[0]->locations[0]->codeLines);
+        self::assertNotNull($blocks[0]->locations[0]->hint);
+        self::assertStringStartsWith('$out = [];', $blocks[0]->locations[0]->hint);
     }
 
     #[Test]
@@ -507,7 +514,7 @@ PHP;
             ['touching.php:3-7', 'touching.php:8-12'],
             array_map($this->shortLocation(...), $blocks[0]->locations),
         );
-        self::assertSame(5, $blocks[0]->lines);
+        self::assertSame(5, $blocks[0]->locations[0]->codeLines);
     }
 
     #[Test]
@@ -580,15 +587,149 @@ PHP;
     }
 
     #[Test]
+    public function itReportsBothEligibleSegmentsAcrossAnUnmatchedMethodCloser(): void
+    {
+        $blocks = $this->inspectSegmentFixture(4, 4);
+
+        self::assertSame(
+            [['segment_a.php:11-17', 'segment_b.php:11-17'], ['segment_a.php:6-9', 'segment_b.php:6-9']],
+            array_map(fn(DuplicateBlock $block): array => array_map($this->shortLocation(...), $block->locations), $blocks),
+        );
+    }
+
+    #[Test]
+    public function itPreservesSixFilePairsAcrossDisconnectedLongerMatches(): void
+    {
+        $common = implode("\n", array_map(static fn(int $i): string => "    \$value = common{$i}(\$input, 1, 2);", range(1, 4)));
+        $files = [];
+        foreach (['a' => 'left', 'b' => 'left', 'c' => 'right', 'd' => 'right'] as $name => $side) {
+            $tail = implode("\n", array_map(static fn(int $i): string => "    \$value = {$side}{$i}(\$input, 3, 4);", range(1, 4)));
+            $files[] = $this->createFile("{$name}.php", "<?php\nfunction run(\$input) {\n{$common}\n{$tail}\n    return \$value;\n}\n");
+        }
+        $blocks = $this->inspect($this->createDetector(minTokens: 30, minLines: 4), $files);
+
+        self::assertSame([2, 2, 4], array_map(static fn(DuplicateBlock $block): int => $block->occurrences(), $blocks));
+        $pairs = [];
+        foreach ($blocks as $block) {
+            foreach ($block->locations as $i => $left) {
+                foreach (\array_slice($block->locations, $i + 1) as $right) {
+                    $pairs[basename($left->pathString()) . ':' . basename($right->pathString())] = true;
+                }
+            }
+        }
+        $pairs = array_keys($pairs);
+        sort($pairs);
+        self::assertSame(['a.php:b.php', 'a.php:c.php', 'a.php:d.php', 'b.php:c.php', 'b.php:d.php', 'c.php:d.php'], $pairs);
+    }
+
+    #[Test]
+    public function itKeepsTokenAdjacentCopiesAtASemicolonAndForeachBoundary(): void
+    {
+        $statementCopy = "\$x = alpha(\$input, 1, 2);\n\$y = beta(\$x, 3, 4);\n\$z = gamma(\$y, 5, 6);";
+        $loopCopy = "foreach (\$rows as \$row) {\n    \$x = alpha(\$row, 1, 2);\n    \$y = beta(\$x, 3, 4);\n}";
+        foreach ([[$statementCopy, ['boundary.php:2-4', 'boundary.php:4-6']], [$loopCopy, ['boundary.php:2-5', 'boundary.php:5-8']]] as [$copy, $expected]) {
+            $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 3), [
+                $this->createFile('boundary.php', "<?php\n{$copy} {$copy}\n"),
+            ]);
+            self::assertCount(1, $blocks);
+            self::assertSame($expected, array_map($this->shortLocation(...), $blocks[0]->locations));
+        }
+    }
+
+    #[Test]
+    public function itKeepsTheWholeMatchWhenNoBalancedSegmentIsEligible(): void
+    {
+        $blocks = $this->inspectSegmentFixture(2, 1);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(['segment_a.php:5-13', 'segment_b.php:5-13'], array_map($this->shortLocation(...), $blocks[0]->locations));
+        self::assertSame(9, $blocks[0]->locations[0]->codeLines);
+    }
+
+    #[Test]
+    public function itLeavesASmallTailUnreportedBesideAnEligibleFollowingMethod(): void
+    {
+        $blocks = $this->inspectSegmentFixture(1, 4);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(['segment_a.php:8-14', 'segment_b.php:8-14'], array_map($this->shortLocation(...), $blocks[0]->locations));
+    }
+
+    #[Test]
+    public function itReportsAdjacentTokenCopiesThatShareAClosingBraceLine(): void
+    {
+        $copy = "if (\$ready) {\n    \$x = alpha(\$input, 1, 2);\n    \$y = beta(\$x, 3, 4);\n}";
+        $source = "<?php\n{$copy} {$copy}\n";
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 3), [$this->createFile('adjacent.php', $source)]);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(['adjacent.php:2-5', 'adjacent.php:5-8'], array_map($this->shortLocation(...), $blocks[0]->locations));
+    }
+
+    #[Test]
+    public function itUsesEachCopysOriginalByteRangeForItsHint(): void
+    {
+        $first = "<?php\n// one\n\$first = consume('first literal', 1, 2);\n\$next = finish(\$first, 3, 4);\n";
+        $second = "<?php\n// two\n\$second = consume('second literal', 8, 9);\n\$last = finish(\$second, 5, 6);\n";
+        $blocks = $this->inspect($this->createDetector(minTokens: 20, minLines: 2), [
+            $this->createFile('hint_a.php', $first),
+            $this->createFile('hint_b.php', $second),
+        ]);
+
+        self::assertCount(1, $blocks);
+        self::assertSame("\$first = consume('first literal', 1, 2); \$next = finish(\$first, 3, 4);", $blocks[0]->locations[0]->hint);
+        self::assertSame("\$second = consume('second literal', 8, 9); \$last = finish(\$second, 5, 6);", $blocks[0]->locations[1]->hint);
+    }
+
+    #[Test]
+    public function itReportsDataMatchedWithExecutableCodeInBothFileOrders(): void
+    {
+        $rows = "[\n    'first' => ['warning' => 1, 'error' => 2],\n    'second' => ['warning' => 3, 'error' => 4],\n    'third' => ['warning' => 5, 'error' => 6],\n]";
+        $data = $this->createFile('data.php', "<?php\nclass Data { const MAP = {$rows}; }\n");
+        $code = $this->createFile('code.php', "<?php\nfunction make() { return {$rows}[0]; }\n");
+        foreach ([[$data, $code], [$code, $data]] as $files) {
+            $blocks = $this->inspect($this->createDetector(minTokens: 30, minLines: 3), $files);
+            self::assertCount(1, $blocks);
+            self::assertSame(['code.php', 'data.php'], array_map(static fn(DuplicateLocation $copy): string => basename($copy->pathString()), $blocks[0]->locations));
+        }
+    }
+
+    #[Test]
+    public function itCountsAllRowsOfAMultilineHeredocToken(): void
+    {
+        $source = static fn(string $name): string => "<?php\nfunction {$name}() {\n    return <<<SQL\nSELECT id\nFROM records\nWHERE active = 1\nSQL;\n}\n";
+        $blocks = $this->inspect($this->createDetector(minTokens: 5, minLines: 7), [
+            $this->createFile('heredoc_a.php', $source('first')),
+            $this->createFile('heredoc_b.php', $source('second')),
+        ]);
+
+        self::assertCount(1, $blocks);
+        self::assertSame(['heredoc_a.php:2-8', 'heredoc_b.php:2-8'], array_map($this->shortLocation(...), $blocks[0]->locations));
+        self::assertSame([7, 7], array_map(static fn(DuplicateLocation $copy): int => $copy->codeLines, $blocks[0]->locations));
+    }
+
+    /** @return list<DuplicateBlock> */
+    private function inspectSegmentFixture(int $tailLines, int $summaryLines): array
+    {
+        $tail = implode("\n", array_map(static fn(int $i): string => "        \$x = tail{$i}(\$input, 1, 2);", range(1, $tailLines)));
+        $summary = implode("\n", array_map(static fn(int $i): string => "        \$y = summary{$i}(\$input, 3, 4);", range(1, $summaryLines)));
+        $source = static fn(string $name): string => "<?php\nfinal class {$name}\n{\n    public function prepare() {\n        \$prefix = unique{$name};\n{$tail}\n    }\n    public function summarize() {\n{$summary}\n        return \$input;\n    }\n}\n";
+
+        return $this->inspect($this->createDetector(minTokens: 30, minLines: 4), [
+            $this->createFile('segment_a.php', $source('A')),
+            $this->createFile('segment_b.php', $source('B')),
+        ]);
+    }
+
+    #[Test]
     public function itExercisesDuplicateBlockVoMethods(): void
     {
         $block = new DuplicateBlock(
             locations: [
-                new DuplicateLocation(RelativePath::fromString('a.php'), 10, 20),
-                new DuplicateLocation(RelativePath::fromString('b.php'), 30, 40),
-                new DuplicateLocation(RelativePath::fromString('c.php'), 50, 60),
+                new DuplicateLocation(RelativePath::fromString('a.php'), 10, 20, 11, null),
+                new DuplicateLocation(RelativePath::fromString('b.php'), 30, 40, 11, null),
+                new DuplicateLocation(RelativePath::fromString('c.php'), 50, 60, 11, null),
             ],
-            lines: 11,
             tokens: 50,
             contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         );
@@ -603,7 +744,7 @@ PHP;
     #[Test]
     public function itExercisesDuplicateLocationVo(): void
     {
-        $loc = new DuplicateLocation(RelativePath::fromString('src/Foo.php'), 10, 25);
+        $loc = new DuplicateLocation(RelativePath::fromString('src/Foo.php'), 10, 25, 16, null);
 
         self::assertSame(16, $loc->lineCount());
         self::assertSame('src/Foo.php:10-25', $loc->toString());
@@ -634,7 +775,82 @@ PHP;
         self::assertSame([], $this->inspect($detector, $files));
     }
 
-    private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
+    #[Test]
+    public function itRefusesASelectedFileLostBeforeHashObservationAndClearsPriorResult(): void
+    {
+        $lostDirectory = $this->tmpDir . '/lost';
+        mkdir($lostDirectory);
+        $code = '<?php function same($value) { return $value + 1; }';
+        $gone = $this->createFile('lost/Gone.php', $code);
+        $other = $this->createFile('Other.php', $code);
+        $third = $this->createFile('Third.php', $code);
+        $logger = self::createMock(LoggerInterface::class);
+        $logger->expects(self::once())->method('info')->with('Duplication detection completed');
+        $detector = $this->createDetector(minTokens: 3, minLines: 1, logger: $logger);
+        self::assertNotEmpty($this->inspect($detector, [$gone, $other, $third]));
+
+        unlink($gone->getPathname());
+        rmdir($lostDirectory);
+        try {
+            $this->inspect($detector, [$gone, $other, $third]);
+            self::fail('The missing selected file was accepted as an empty duplication result.');
+        } catch (FileSetInspectionFailure $failure) {
+            self::assertCount(1, $failure->failures);
+            self::assertSame(
+                PathFactory::fromCliArgument($gone->getPathname(), AbsolutePath::fromString($this->tmpDir))->value(),
+                $failure->failures[0]['input']->value(),
+            );
+            self::assertSame('Cannot read selected file during duplication hash observation.', $failure->failures[0]['message']);
+            self::assertSame([], $this->resultProvider->all());
+        }
+    }
+
+    #[Test]
+    public function itRefusesASelectedFileLostBeforeCandidateIndexing(): void
+    {
+        $gone = $this->createFile('Gone.php', '<?php echo 1;');
+        unlink($gone->getPathname());
+        $candidates = new SaturatingCandidateFilter(4);
+        $candidates->observe(1);
+        $candidates->observe(1);
+
+        try {
+            (new ReflectionMethod(HashIndexBuilder::class, 'collectCandidatePositions'))->invoke(
+                new HashIndexBuilder(),
+                [$gone->getPathname()],
+                AbsolutePath::fromString($this->tmpDir),
+                1,
+                $candidates,
+            );
+            self::fail('The missing candidate source was accepted.');
+        } catch (FileSetInspectionFailure $failure) {
+            self::assertCount(1, $failure->failures);
+            self::assertSame($gone->getPathname(), $failure->failures[0]['input']->value());
+        }
+    }
+
+    #[Test]
+    public function itRefusesASelectedFileLostBeforeRetokenization(): void
+    {
+        $gone = $this->createFile('Gone.php', '<?php echo 1;');
+        unlink($gone->getPathname());
+        $detector = $this->createDetector(minTokens: 1, minLines: 1);
+
+        try {
+            (new ReflectionMethod(DuplicationDetector::class, 'retokenizeNeeded'))->invoke(
+                $detector,
+                [$gone->getPathname()],
+                [0 => true],
+                AbsolutePath::fromString($this->tmpDir),
+            );
+            self::fail('The missing retokenization source was accepted.');
+        } catch (FileSetInspectionFailure $failure) {
+            self::assertCount(1, $failure->failures);
+            self::assertSame($gone->getPathname(), $failure->failures[0]['input']->value());
+        }
+    }
+
+    private function createDetector(int $minTokens = 70, int $minLines = 5, ?LoggerInterface $logger = null): DuplicationDetector
     {
         $ruleConfiguration = new RuleOptionsRegistry();
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata('duplication.clone', \Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions::class, '', [], false)];
@@ -645,7 +861,7 @@ PHP;
 
         $this->resultProvider = new DuplicationResultProvider();
 
-        return new DuplicationDetector($ruleConfiguration, $this->resultProvider);
+        return new DuplicationDetector($ruleConfiguration, $this->resultProvider, $logger ?? new NullLogger());
     }
 
     /**

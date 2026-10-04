@@ -638,6 +638,22 @@ final class BoundaryExplanationServiceTest extends TestCase
         ExplainedSubject::index($repository);
     }
 
+    #[Test]
+    public function itMarksARetiredProjectCopyUnmeasuredWithoutMarkingADeclaredFileCopy(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $project = new BaselineEntry(new BaselineIdentity('project:', $channel), [40], 1);
+        $file = new BaselineEntry(new BaselineIdentity('file:src/Foo.php', $channel), [40], 1);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$project, $file]);
+        $service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
+
+        $old = $service->explain('project:', $channel, $baseline, [], [], []);
+        $current = $service->explain('file:src/Foo.php', $channel, $baseline, [], [], []);
+
+        self::assertFalse($old->boundaries[0]->baseline?->producerRan);
+        self::assertTrue($current->boundaries[0]->baseline?->producerRan);
+    }
+
     /**
      * A repository retaining exactly one callable declaration subject.
      */

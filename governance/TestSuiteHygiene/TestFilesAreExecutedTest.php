@@ -113,6 +113,9 @@ final class TestFilesAreExecutedTest extends TestCase
      * than in an attribute nobody reads.
      */
     private const SILENTLY_EXCLUDED = [
+        // This full CLI lifetime probe takes about a minute and runs manually.
+        'Qualimetrix\\Tests\\Analysis\\Evidence\\Duplication\\Functional\\DuplicationMemoryLimitProcessTest'
+            . '::itCompletesTheDuplicationLifetimePipelineUnder128M',
         'Qualimetrix\Governance\ModularOwnership\ModularArchitectureGovernanceIntegrationTest'
             . '::itChecksEveryGeneratedProjectionWithoutWriting',
         'Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest'
