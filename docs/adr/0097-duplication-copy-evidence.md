@@ -29,6 +29,21 @@ prefix totals, a compact data mask, and half-open source byte offsets.
 Comments and whitespace do not contribute rows; multiline tokens contribute
 all rows they occupy. CR, LF and CRLF are counted consistently.
 
+Coordinates use one interleaved packed stream per file, with independent
+unsigned 8-, 16- or 32-bit field widths and a signed native 64-bit fallback.
+Scalar reads retain the full PHP integer domain and refuse invalid indexes.
+Candidate metadata and positions use bounded chunks without a population cap.
+Ordered nonnegative positions encode file and token-offset deltas separately;
+signed or unordered inputs preserve the original sequence through a 64-bit
+fallback. In-place heap ordering avoids the temporary sorting workspace while
+retaining the existing complete candidate order.
+
+The detector returns native allocator caches only after releasing the index
+and retokenized dataset. The rule reuses immutable file subjects only within
+one invocation, keyed by the exact published relative path; copy evidence and
+fingerprints remain individual. These lifetimes avoid retaining dataset pages
+and repeated identities into later finding analysis.
+
 Each reported copy owns its covered code-line count and original-source hint.
 A finding has a File subject and File symbol. The occurrence payload retains
 the normalized content digest and ordinal within that file; the subject
@@ -107,7 +122,12 @@ memory ceiling or output-completeness guard is raised to absorb the change.
 Regression tests cover geometry, normalization, bounds and real lifecycle
 refusal at their cheapest owning level. Each new test is demonstrated once
 on a planted source defect. No new permanent controls, gate forms, coverage
-stands or CI jobs are introduced.
+stands or CI jobs are introduced. The full 60-file memory regression
+uses the existing manual benchmark group and costs about 52 seconds on the
+development machine. It catches pipeline lifetime allocation that the cheaper
+retained-coordinate and retained-candidate unit guards cannot observe. It adds
+no default aggregate execution. The 100-file capacity run remains a one-off
+acceptance measurement.
 
 Property hooks, multi-property statements and ambiguous bare-static property
 syntax remain conservative data-tagging gaps. Multiplicity of overlapping

@@ -80,9 +80,10 @@ final class CodeDuplicationRule extends AbstractRule
         }
 
         $findings = [];
+        $fileSubjects = [];
 
         foreach ($this->resultProvider->all() as $block) {
-            array_push($findings, ...$this->copyFindings($block));
+            array_push($findings, ...$this->copyFindings($block, $fileSubjects));
         }
 
         return $findings;
@@ -118,9 +119,11 @@ final class CodeDuplicationRule extends AbstractRule
      * Every copy of an admitted block is reported, including a copy below
      * min_lines; the longest copy admits the block, not each finding.
      *
+     * @param array<string, MetricSubject> $fileSubjects
+     *
      * @return list<Finding>
      */
-    private function copyFindings(DuplicateBlock $block): array
+    private function copyFindings(DuplicateBlock $block, array &$fileSubjects): array
     {
         $locations = array_map(
             static fn(DuplicateLocation $copy): Location => new Location($copy->file, $copy->startLine, precise: true),
@@ -133,8 +136,8 @@ final class CodeDuplicationRule extends AbstractRule
         foreach ($locations as $index => $location) {
             $copy = $block->locations[$index];
             $file = $copy->pathString();
-            $filePath = SymbolPath::forFile($copy->file);
-            $subject = MetricSubject::aggregate($filePath);
+            $subject = $fileSubjects[$file] ??= MetricSubject::aggregate(SymbolPath::forFile($copy->file));
+            $filePath = $subject->toSymbolPath();
             $lines = $copy->codeLines;
             $hintPart = $copy->hint !== null ? \sprintf(': "%s"', $copy->hint) : '';
             $copyInFile = $copiesInFile[$file] = ($copiesInFile[$file] ?? -1) + 1;

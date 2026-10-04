@@ -111,6 +111,63 @@ final class DuplicateMatchCandidatesTest extends TestCase
         self::assertSame([[10, [100, 200, 300]]], $candidates->withoutSubsumed(self::spans()));
     }
 
+    #[Test]
+    public function itPreservesCopyOrderAcrossStorageSegmentsAndTheIntegerRange(): void
+    {
+        self::assertSame([], (new DuplicateMatchCandidates())->withoutSubsumed(self::spans()));
+        foreach ([[0, 0, 4294967295, PackedPosition::pack(1, 7), \PHP_INT_MAX], [7, 3, 7], [\PHP_INT_MIN, \PHP_INT_MAX, \PHP_INT_MIN]] as $copies) {
+            $candidates = new DuplicateMatchCandidates();
+            $candidates->add(\PHP_INT_MAX, $copies);
+            self::assertSame([[\PHP_INT_MAX, $copies]], $candidates->withoutSubsumed(self::spans()));
+        }
+        $ordered = array_fill(0, 32766, PackedPosition::pack(0, 128));
+        $ordered[] = PackedPosition::pack(0, 256);
+        $candidates = new DuplicateMatchCandidates();
+        $candidates->add(7, $ordered);
+        self::assertSame([[7, $ordered]], $candidates->withoutSubsumed(self::spans()), 'A two-byte offset delta crosses byte65536');
+
+        $fixed = array_fill(0, 8191, \PHP_INT_MIN);
+        $fixed[] = \PHP_INT_MAX;
+        $candidates = new DuplicateMatchCandidates();
+        $candidates->add(8, $fixed);
+        self::assertSame([[8, $fixed]], $candidates->withoutSubsumed(self::spans()), 'The last q64 word crosses byte65536');
+
+        $candidates = new DuplicateMatchCandidates();
+        $fillers = [];
+        for ($id = 0; $id < 1023; $id++) {
+            $copies = [$id * 4, $id * 4 + 1];
+            $candidates->add(1, $copies);
+            $fillers[] = [1, $copies];
+        }
+        $at1023 = [\PHP_INT_MIN, -1];
+        $at1024 = [\PHP_INT_MAX - 2, \PHP_INT_MAX - 1, \PHP_INT_MAX];
+        $candidates->add(\PHP_INT_MAX, $at1023);
+        $candidates->add(500, $at1024);
+        self::assertSame([[\PHP_INT_MAX, $at1023], [500, $at1024], ...$fillers], $candidates->withoutSubsumed(self::spans()), 'Adjacent metadata records retain their own length, count and payload offset');
+
+        $candidates = new DuplicateMatchCandidates();
+        $candidates->add(10, [\PHP_INT_MIN, -1]);
+        $candidates->add(10, [5000, 5001, 5002]);
+        $candidates->add(10, [6000, 6001, 6002]);
+        self::assertSame([[10, [5000, 5001, 5002]], [10, [6000, 6001, 6002]], [10, [\PHP_INT_MIN, -1]]], $candidates->withoutSubsumed(self::spans()), 'Copy count precedes payload size and insertion id breaks ties');
+    }
+
+    #[Test]
+    public function itKeepsRetainedCandidatesWithinTheAllocationBudget(): void
+    {
+        $warm = new DuplicateMatchCandidates();
+        $warm->add(10, [100, 200, 300]);
+        unset($warm);
+        $before = memory_get_usage();
+        $candidates = new DuplicateMatchCandidates();
+        for ($candidate = 0; $candidate < 20000; $candidate++) {
+            $candidates->add(10, [100, 200, 300]);
+        }
+        $retained = memory_get_usage() - $before;
+        self::assertLessThanOrEqual(1024 * 1024, $retained, 'Retained candidates must not allocate a PHP copy list or string per candidate');
+        self::assertSame([[10, [100, 200, 300]]], $candidates->withoutSubsumed(self::spans()));
+    }
+
     /** @return Closure(int, int): array{int, int, int} */
     private static function tokenSpans(): Closure
     {

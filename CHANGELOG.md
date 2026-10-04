@@ -1550,6 +1550,10 @@ directions. See
   starting or ending with a brace on its own line was shifted one line up),
   and reports two identical blocks in one file that touch without sharing a
   line.
+- Duplication retains packed coordinates and chunked candidates, releases
+  unused dataset allocation before finding analysis, and reuses immutable
+  file identities within each rule invocation. This reduces memory usage
+  without truncating candidates or copies.
 - `duplication.clone` no longer runs out of memory on long runs of one
   repeated statement across many files: 30 files of such runs needed 202 MB
   and exhausted the default 128M limit, and now peak at 75 MB with the same

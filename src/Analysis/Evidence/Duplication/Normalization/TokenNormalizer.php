@@ -111,7 +111,7 @@ final class TokenNormalizer
             $dataMask = str_replace(' ', '', $dataMask);
         }
 
-        return new TokenStream($values, $startLines, $endLines, $this->buildCoveredPrefix($startLines, $endLines), $dataMask, $startBytes, $endBytes);
+        return new TokenStream($values, $this->packCoordinates($startLines, $endLines, $startBytes, $endBytes), $dataMask);
     }
 
     /**
@@ -166,21 +166,34 @@ final class TokenNormalizer
     /**
      * @param list<int> $startLines
      * @param list<int> $endLines
-     *
-     * @return list<int>
+     * @param list<int> $startBytes
+     * @param list<int> $endBytes
      */
-    private function buildCoveredPrefix(array $startLines, array $endLines): array
+    private function packCoordinates(array $startLines, array $endLines, array $startBytes, array $endBytes): string
     {
-        $coveredPrefix = [];
+        $lineFormat = $this->coordinateFormat($endLines === [] ? 0 : max($endLines));
+        $byteFormat = $this->coordinateFormat($endBytes === [] ? 0 : max($endBytes));
+        $format = $lineFormat . $lineFormat . $lineFormat . $byteFormat . $byteFormat;
+        $packed = $format;
         $covered = 0;
         $previousEnd = 0;
         foreach ($startLines as $index => $start) {
             $end = $endLines[$index];
             $covered += $end - max($start, $previousEnd + 1) + 1;
-            $coveredPrefix[] = $covered;
+            $packed .= pack($format, $start, $end, $covered, $startBytes[$index], $endBytes[$index]);
             $previousEnd = $end;
         }
 
-        return $coveredPrefix;
+        return $packed;
+    }
+
+    private function coordinateFormat(int $maximum): string
+    {
+        return match (true) {
+            $maximum <= 255 => 'C',
+            $maximum <= 65535 => 'v',
+            $maximum <= 4294967295 => 'V',
+            default => 'q',
+        };
     }
 }

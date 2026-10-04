@@ -120,6 +120,8 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
         ));
 
         unset($indexResult, $retokenized);
+        // Later finding phases need the allocator pages of the released dataset.
+        gc_mem_caches();
 
         $this->resultProvider->replace($blocks);
     }

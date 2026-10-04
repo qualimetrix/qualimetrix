@@ -26,7 +26,9 @@ Duplication/
 │   ├── PackedPosition.php
 │   └── SaturatingCandidateFilter.php
 ├── Matching/
+│   ├── BalancedSegments.php
 │   ├── ContentHintExtractor.php
+│   ├── CopyCoverIndex.php
 │   ├── DuplicateBlock.php
 │   ├── DuplicateBlockFinder.php
 │   ├── DuplicateLocation.php
@@ -34,9 +36,9 @@ Duplication/
 │   └── DuplicateSearchRequest.php
 ├── Normalization/
 │   ├── DataDeclarationTagger.php
-│   ├── NormalizedToken.php
 │   ├── RetokenizedFiles.php
-│   └── TokenNormalizer.php
+│   ├── TokenNormalizer.php
+│   └── TokenStream.php
 ├── CodeDuplicationOptions.php
 └── CodeDuplicationRule.php
 ```
@@ -60,6 +62,13 @@ autoconfiguration and never publishes a Duplication alias.
 value. Replacement never appends to a previous run, and `all()` returns the
 typed list by PHP array value semantics, so consumers cannot mutate the
 provider's stored array.
+
+After matching, the detector releases the index and retokenized files, then
+returns unused native allocator caches before publishing blocks. The rule
+shares immutable file subjects and their symbol paths only within one
+`analyze()` invocation, keyed by the exact published relative path. Copy
+occurrences, locations and values remain independent; another invocation
+creates fresh identities.
 
 The provider is intentionally an instance-owned lifecycle state holder, not a
 DTO or public data surface. Its private array is available only through the
@@ -86,12 +95,12 @@ completion log through its implementation.
 The module owns test classes at three levels, and the level is decided by what
 the body does. Unit tests live below `Unit/`, where the owning test root is
 `Duplication`; subject folders group the classes within that root. `Unit/Index/`
-contains `SaturatingCandidateFilterTest`, `Unit/Matching/` contains
-`ContentHintExtractorTest`, `DuplicateBlockFinderTest`,
-`DuplicateMatchCandidatesTest`, and `DuplicateBlockIdentityTest`, and
-`Unit/Normalization/` contains `DataDeclarationTaggerTest` and
-`TokenNormalizerTest`. `CodeDuplicationRuleTest` stays directly under `Unit/`
-because the rule stays in the root. All eight run in memory.
+contains `PackedPositionTest` and `SaturatingCandidateFilterTest`.
+`Unit/Matching/` owns balanced segments, display hints, connected coverage,
+block finding, candidate storage and copy identity. `Unit/Normalization/`
+owns data tagging, normalization and packed coordinate alignment.
+`CodeDuplicationRuleTest` stays directly under `Unit/` because the rule stays
+in the root. These tests run in memory.
 
 Two Integration classes under `tests/Analysis/Evidence/Duplication/Integration/`,
 both writing real files into a temporary directory:
@@ -105,8 +114,11 @@ Four Functional classes under `tests/Analysis/Evidence/Duplication/Functional/`:
 `DuplicationMemoryLimitProcessTest`, which builds temporary projects and runs
 `bin/qmx` in real PHP subprocesses under a configured `memory_limit`. It covers
 the detector's memory-limited CLI path and highly repetitive inputs; these test
-limits are regression fixtures, not a general time or memory guarantee. It is
-the reason the module has a Functional level at all. `DuplicationGitScopeProcessTest`
+limits are regression fixtures, not a general time or memory guarantee. Its
+60-file lifecycle case runs only in the existing `benchmark` group; the ordinary
+20-file JSON memory guard remains in the default suite. Run the manual case
+with `vendor/bin/phpunit --no-coverage --group=benchmark --filter=itCompletesTheDuplicationLifetimePipelineUnder128M`.
+It is the reason the module has a Functional level at all. `DuplicationGitScopeProcessTest`
 runs `--report=git:staged` over a git repository in which only a new copy is
 staged, and pins that the copy is reported in its own file.
 `DuplicationCopyFingerprintProcessTest` runs `--format=gitlab` and
@@ -162,6 +174,21 @@ Each finding names at most ten other copies in its message and related
 locations, and counts the rest. `DuplicateBlockFinder` keeps candidate lengths
 and packed positions until non-reportable contained witnesses are removed,
 then constructs blocks from the retained connected evidence.
+
+`TokenStream` retains token values, a data mask and interleaved packed
+coordinates. `startLine(int)`, `endLine(int)`, `coveredPrefix(int)`,
+`startByte(int)` and `endByte(int)` expose individual integer coordinates;
+invalid token indexes refuse. Each field uses the smallest sufficient unsigned
+8-, 16- or 32-bit width, with signed native 64-bit storage preserving the full
+PHP integer range. Normalization builds and packs one file at a time.
+
+Candidates retain chunked metadata and copy positions. Ordered nonnegative
+positions encode file and token-offset deltas separately; signed or unordered
+inputs preserve their sequence through a 64-bit fallback. In-place heap
+ordering preserves descending length, descending copy count and insertion
+order without retaining a sorting workspace. There is no candidate cutoff.
+Work within one exact token-sequence group does not promise linear work over
+all nested matches in a varied corpus.
 
 `CodeDuplicationRule` is a `qmx.rule` implementation. Registration is delegated
 to the infrastructure `DuplicationConfigurator`; compiler passes inject its

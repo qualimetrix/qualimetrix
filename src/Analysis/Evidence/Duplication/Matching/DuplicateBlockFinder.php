@@ -23,7 +23,7 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * Every occurrence of one token sequence is evaluated as one group and
  * reported as one {@see DuplicateBlock} carrying all of its locations. Work
- * and retained blocks therefore grow linearly with the number of copies:
+ * and retained blocks for that exact sequence grow linearly with its copies:
  * comparing copies pairwise grows quadratically and, because every window
  * offset of a copied block is its own bucket, retains a block per pair per
  * offset — 99 copies of one 150-token class exhausted a 128M limit.
@@ -49,8 +49,6 @@ use Qualimetrix\Core\Path\RelativePath;
  * hash index and every re-tokenized file's tokens/source reachable via
  * `$blockFinder->request` for the rest of the process — silently defeating
  * the caller's own `unset()` of its equivalents right after find() returns.
- * Measured impact of getting this wrong: ~20 MB retained per run that
- * should have been freed immediately.
  */
 final class DuplicateBlockFinder
 {
@@ -294,10 +292,10 @@ final class DuplicateBlockFinder
             $source = $this->request->retokenized->sources[$fileIndex] ?? null;
             $locations[] = new DuplicateLocation(
                 file: RelativePath::fromString($this->request->filePaths[$fileIndex]),
-                startLine: $tokens->startLines[$offset],
-                endLine: $tokens->endLines[$last],
+                startLine: $tokens->startLine($offset),
+                endLine: $tokens->endLine($last),
                 codeLines: $this->codeLines($copy, $length),
-                hint: $source !== null ? $this->hintExtractor->extract($source, $tokens->startBytes[$offset], $tokens->endBytes[$last]) : null,
+                hint: $source !== null ? $this->hintExtractor->extract($source, $tokens->startByte($offset), $tokens->endByte($last)) : null,
             );
         }
 
@@ -349,11 +347,11 @@ final class DuplicateBlockFinder
         $offset = PackedPosition::offset($packed);
         $last = $offset + $length - 1;
         if ($offset < 1) {
-            return $tokens->coveredPrefix[$last];
+            return $tokens->coveredPrefix($last);
         }
 
-        return $tokens->coveredPrefix[$last] - $tokens->coveredPrefix[$offset - 1]
-            + (int) ($tokens->endLines[$offset - 1] === $tokens->startLines[$offset]);
+        return $tokens->coveredPrefix($last) - $tokens->coveredPrefix($offset - 1)
+            + (int) ($tokens->endLine($offset - 1) === $tokens->startLine($offset));
     }
 
     private function tokensAt(int $packed): TokenStream

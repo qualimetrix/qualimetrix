@@ -564,6 +564,48 @@ final class CodeDuplicationRuleTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itReusesFileSubjectsWithinOneInvocationWithoutSharingCopyOccurrences(): void
+    {
+        $a = RelativePath::fromString('src/A.php');
+        $b = RelativePath::fromString('src/B.php');
+        $blocks = [
+            new DuplicateBlock([
+                new DuplicateLocation($a, 10, 25, 5, 'first'),
+                new DuplicateLocation($a, 60, 80, 2, 'second'),
+                new DuplicateLocation($b, 30, 40, 3, 'third'),
+            ], 80, self::CONTENT_HASH),
+            new DuplicateBlock([
+                new DuplicateLocation($a, 90, 100, 7, 'fourth'),
+                new DuplicateLocation($b, 100, 110, 4, 'fifth'),
+            ], 81, str_repeat('b', 64)),
+        ];
+        $context = $this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), $blocks);
+        $rule = $this->createRule(new CodeDuplicationOptions(error: 5));
+        $findings = $rule->analyze($context);
+        self::assertCount(5, $findings);
+        self::assertSame($findings[0]->subject, $findings[1]->subject);
+        self::assertSame($findings[0]->subject, $findings[3]->subject);
+        self::assertSame($findings[2]->subject, $findings[4]->subject);
+        self::assertNotSame($findings[0]->subject, $findings[2]->subject);
+        self::assertSame($findings[0]->symbolPath, $findings[3]->symbolPath);
+        self::assertSame($findings[0]->subject->toSymbolPath(), $findings[0]->symbolPath);
+        self::assertSame(['file:src/A.php', 'file:src/A.php', 'file:src/B.php', 'file:src/A.php', 'file:src/B.php'], array_map(static fn($finding): string => $finding->subject->toCanonical(), $findings));
+        self::assertSame([10, 60, 30, 90, 100], array_map(static fn($finding): ?int => $finding->location->line, $findings));
+        self::assertSame([5, 2, 3, 7, 4], array_column($findings, 'metricValue'));
+        self::assertSame([Severity::Error, Severity::Warning, Severity::Warning, Severity::Error, Severity::Warning], array_column($findings, 'severity'));
+        self::assertCount(5, array_unique(array_map(static fn($finding): string => $finding->getFingerprint(), $findings)));
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[1]->occurrenceKey?->value);
+        self::assertNotSame($findings[0]->occurrenceKey?->value, $findings[3]->occurrenceKey?->value);
+        foreach (['first', 'second', 'third', 'fourth', 'fifth'] as $index => $hint) {
+            self::assertStringContainsString(': "' . $hint . '"', $findings[$index]->message);
+        }
+        $again = $rule->analyze($context);
+        self::assertNotSame($findings[0]->subject, $again[0]->subject);
+        self::assertSame($again[0]->subject, $again[3]->subject);
+        self::assertSame(array_map(static fn($finding): string => $finding->getFingerprint(), $findings), array_map(static fn($finding): string => $finding->getFingerprint(), $again));
+    }
+
     private function createRule(?CodeDuplicationOptions $options = null): CodeDuplicationRule
     {
         return new CodeDuplicationRule($options ?? new CodeDuplicationOptions(), $this->resultProvider);

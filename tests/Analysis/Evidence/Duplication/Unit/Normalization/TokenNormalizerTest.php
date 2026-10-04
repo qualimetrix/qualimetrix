@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization;
 
+use LogicException;
 use PhpToken;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -99,10 +100,10 @@ PHP;
         self::assertSame('html:' . hash('xxh128', '<div> Raw</div>'), $html[0]);
         $index = array_search($html[0], $stream->values, true);
         self::assertIsInt($index);
-        self::assertSame(strpos($source, '<div>'), $stream->startBytes[$index]);
-        self::assertSame(\strlen($source), $stream->endBytes[$index]);
-        self::assertSame(2, $stream->startLines[$index]);
-        self::assertSame(3, $stream->endLines[$index]);
+        self::assertSame(strpos($source, '<div>'), $stream->startByte($index));
+        self::assertSame(\strlen($source), $stream->endByte($index));
+        self::assertSame(2, $stream->startLine($index));
+        self::assertSame(3, $stream->endLine($index));
     }
 
     #[Test]
@@ -201,7 +202,7 @@ PHP;
 
         // First non-skipped token should have line 3 ($x)
         self::assertGreaterThan(0, $tokens->count());
-        self::assertSame(3, $tokens->startLines[0]);
+        self::assertSame(3, $tokens->startLine(0));
     }
 
     #[Test]
@@ -215,7 +216,7 @@ PHP;
         $closing = array_keys($tokens->values, '}', true);
 
         self::assertCount(1, $closing);
-        self::assertSame(6, $tokens->startLines[$closing[0]]);
+        self::assertSame(6, $tokens->startLine($closing[0]));
     }
 
     #[Test]
@@ -234,7 +235,7 @@ PHP;
         $lines = [];
         foreach ($tokens->values as $index => $value) {
             if ($value === '{' || $value === '}' || $value === ';') {
-                $lines[] = $value . '@' . $tokens->startLines[$index];
+                $lines[] = $value . '@' . $tokens->startLine($index);
             }
         }
 
@@ -248,7 +249,7 @@ PHP;
 
         $semicolons = [];
         foreach (array_keys($tokens->values, ';', true) as $index) {
-            $semicolons[] = $tokens->startLines[$index];
+            $semicolons[] = $tokens->startLine($index);
         }
 
         self::assertSame([2, 3], $semicolons);
@@ -262,17 +263,17 @@ PHP;
 
         self::assertSame(['const', 'X', '=', "'_'", 'html:232024ebfa870075eec12fa52c8fa11c', '$_', '=', '0', ';'], $tokens->values);
         self::assertSame(9, $tokens->count());
-        self::assertSame([2, 2, 2, 2, 4, 7, 7, 7, 7], $tokens->startLines);
-        self::assertSame([2, 2, 2, 3, 5, 7, 7, 7, 7], $tokens->endLines);
-        self::assertSame([1, 1, 1, 2, 4, 5, 5, 5, 5], $tokens->coveredPrefix);
+        self::assertSame([2, 2, 2, 2, 4, 7, 7, 7, 7], self::coordinates($tokens, 'startLine'));
+        self::assertSame([2, 2, 2, 3, 5, 7, 7, 7, 7], self::coordinates($tokens, 'endLine'));
+        self::assertSame([1, 1, 1, 2, 4, 5, 5, 5, 5], self::coordinates($tokens, 'coveredPrefix'));
         self::assertSame('111100000', $tokens->dataMask);
-        self::assertSame([6, 12, 14, 16, 25, 50, 53, 55, 56], $tokens->startBytes);
-        self::assertSame([11, 13, 15, 21, 33, 52, 54, 56, 57], $tokens->endBytes);
+        self::assertSame([6, 12, 14, 16, 25, 50, 53, 55, 56], self::coordinates($tokens, 'startByte'));
+        self::assertSame([11, 13, 15, 21, 33, 52, 54, 56, 57], self::coordinates($tokens, 'endByte'));
 
         $untagged = (new TokenNormalizer(tagDataDeclarations: false))->normalize($source);
         self::assertSame($tokens->values, $untagged->values);
-        self::assertSame($tokens->startBytes, $untagged->startBytes);
-        self::assertSame($tokens->endBytes, $untagged->endBytes);
+        self::assertSame(self::coordinates($tokens, 'startByte'), self::coordinates($untagged, 'startByte'));
+        self::assertSame(self::coordinates($tokens, 'endByte'), self::coordinates($untagged, 'endByte'));
         self::assertSame('000000000', $untagged->dataMask);
     }
 
@@ -289,10 +290,10 @@ PHP;
         ));
 
         self::assertSame(['{', '$_', '=', "'_'", ';', 'echo', '$_', ';', '}'], $tokens->values);
-        self::assertSame(2, $tokens->startLines[0], 'The opening tag must advance the first single-character token');
-        self::assertSame(array_map(static fn(PhpToken $token): int => $token->line, $native), $tokens->startLines);
-        self::assertSame([2, 3, 3, 4, 4, 5, 5, 5, 6], $tokens->endLines);
-        self::assertSame([1, 2, 2, 3, 3, 4, 4, 4, 5], $tokens->coveredPrefix);
+        self::assertSame(2, $tokens->startLine(0), 'The opening tag must advance the first single-character token');
+        self::assertSame(array_map(static fn(PhpToken $token): int => $token->line, $native), self::coordinates($tokens, 'startLine'));
+        self::assertSame([2, 3, 3, 4, 4, 5, 5, 5, 6], self::coordinates($tokens, 'endLine'));
+        self::assertSame([1, 2, 2, 3, 3, 4, 4, 4, 5], self::coordinates($tokens, 'coveredPrefix'));
     }
 
     /**
@@ -304,4 +305,60 @@ PHP;
         yield 'CRLF' => ["\r\n"];
         yield 'CR' => ["\r"];
     }
+
+    #[Test]
+    public function itKeepsCoordinatesAlignedWithNativeTokensAcrossStorageWidths(): void
+    {
+        foreach ([str_repeat(' ', 300), str_repeat(' ', 70000), str_repeat("\n", 300), str_repeat("\n", 70000)] as $padding) {
+            $source = '<?php ' . $padding . 'echo 1;';
+            $stream = $this->normalizer->normalize($source);
+            $native = array_values(array_filter(PhpToken::tokenize($source), static fn(PhpToken $token): bool => \in_array($token->text, ['echo', '1', ';'], true)));
+            self::assertSame(['echo', '0', ';'], $stream->values);
+            self::assertSame('000', $stream->dataMask);
+            self::assertCount($stream->count(), $native);
+            foreach ($native as $index => $token) {
+                self::assertSame([$token->line, $token->line, 1, $token->pos, $token->pos + \strlen($token->text)], [
+                    $stream->startLine($index), $stream->endLine($index), $stream->coveredPrefix($index), $stream->startByte($index), $stream->endByte($index),
+                ]);
+            }
+        }
+    }
+
+    #[Test]
+    public function itKeepsRetainedCoordinatesWithinTheAllocationBudget(): void
+    {
+        $source = "<?php\n" . str_repeat("echo 1;\n", 2000);
+        $warm = $this->normalizer->normalize($source);
+        self::assertSame(6000, $warm->count());
+        unset($warm);
+        $before = memory_get_usage();
+        $streams = [];
+        for ($file = 0; $file < 20; $file++) {
+            $streams[] = $this->normalizer->normalize($source);
+        }
+        $retained = memory_get_usage() - $before;
+        self::assertLessThanOrEqual(12 * 1024 * 1024, $retained, 'Retained token coordinates must not become five PHP integer arrays');
+        self::assertCount(20, $streams);
+        self::assertSame(2001, $streams[19]->endLine(5999));
+        self::assertSame(\strlen($source) - 1, $streams[19]->endByte(5999));
+    }
+
+    /** @return list<int> */
+    private static function coordinates(TokenStream $stream, string $method): array
+    {
+        $coordinates = [];
+        for ($index = 0; $index < $stream->count(); $index++) {
+            $coordinates[] = match ($method) {
+                'startLine' => $stream->startLine($index),
+                'endLine' => $stream->endLine($index),
+                'coveredPrefix' => $stream->coveredPrefix($index),
+                'startByte' => $stream->startByte($index),
+                'endByte' => $stream->endByte($index),
+                default => throw new LogicException('Unknown coordinate field'),
+            };
+        }
+
+        return $coordinates;
+    }
+
 }

@@ -1582,8 +1582,8 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\ThresholdValidatorAssignmentTest::itRequiresANonStandardValidatorWhenDefaultsAreInverted
  - Qualimetrix\Governance\ThresholdKeys\ThresholdValidatorAssignmentTest::itReturnsAValidatorForEveryThresholdAwareOptionsClass
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itChangesSeverityExactlyAtEveryDeclaredWarningBoundary
+ - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itFindsNoHiddenWarningBoundaryInPlainOptions
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itFindsNoHierarchicalParentClaimingToHoldABoundary
- - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itFindsNoSeverityChangeInOptionsThatDenyHavingABoundary
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itLimitsUndetectableBoundaryDecisionsToThePinnedClasses
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itReportsTheOverriddenNumberFromAnOverriddenCopy
  - Qualimetrix\Governance\ThresholdKeys\WarningBoundaryDeclarationTest::itRequiresASecondSeverityDecisionWhereverMoreThanOneBoundaryIsClaimed
@@ -4664,6 +4664,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsADenselyWrittenNewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationGitScopeProcessTest::itReportsANewCopyStagedAloneOnTheCopyItself
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itBuildsTheExactCandidateIndexWithinABoundedMemoryLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itCompletesTheDuplicationLifetimePipelineUnder128M
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itFindsADuplicateWithCompleteCoverageUnderTheMemoryLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"100 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"101 copies"
@@ -4739,6 +4740,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheErrorBoundaryAsAWarning
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRequiresPositiveAuthoredMinimumsAndErrorBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReusesFileSubjectsWithinOneInvocationWithoutSharingCopyOccurrences
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesEachCopysCoveredCodeLinesAndHintInItsFinding
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesPositiveResolvedOptionDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity
@@ -4786,6 +4788,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itJudgesMatchesOfEqualLengthInTheOrderTheyWereAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsAShorterMatchWithACopyOutsideEveryLongerOne
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsAllSixFilePairsWhenLongerMatchesCoverDisconnectedGroups
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsRetainedCandidatesWithinTheAllocationBudget
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itPreservesCopyOrderAcrossStorageSegmentsAndTheIntegerRange
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itResetsConnectivityAfterAnUncoveredCopyKeepsACandidate
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagAMultiPropertyDeclarationAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagBareStaticLocalVariableAsData
@@ -4810,8 +4814,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itDoesNotNormalizeFunctionNames
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itFoldsKeywordCastMagicConstantAndBuiltinLiteralCaseButKeepsIdentifiers
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsASingleCharacterTokenOnTheLineOfAPrecedingTokenThatSharesIt
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsCoordinatesAlignedWithNativeTokensAcrossStorageWidths
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsOneInlineHtmlDigestWithOriginalByteAndLineSpans
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsOriginalCoordinatesAndCoveredLinesAlignedAcrossPhpBarriers
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsRetainedCoordinatesWithinTheAllocationBudget
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"CR"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"CRLF"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itKeepsSourceLinesConsistentWithThePhpTokenizer"LF"
@@ -4824,12 +4830,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itProducesSameTokensForIdenticalStructureWithDifferentVariablesAndLiterals
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itReturnsEmptyTokensForEmptyFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenNormalizerTest::itStripsWhitespaceAndComments
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"coveredPrefix"
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"dataMask"
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"endBytes"
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"endLines"
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"startBytes"
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"startLines"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itReadsEveryPackedCoordinateWithoutNarrowingTheIntegerRange
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"empty values with coordinates"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"extra record"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"incomplete record"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"long mask"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"missing record"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesMisalignedTokenCoordinates"short mask"
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\TokenStreamTest::itRefusesOffsetsOutsideThePackedTokenStream
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itAttributesPromotedParameterCaptureDefaultOnlyToConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itCalculatesExactHalsteadValuesForSimpleAddMethod
  - Qualimetrix\Tests\Analysis\Evidence\Maintainability\Unit\HalsteadCollectorTest::itCalculatesMetricsForArrowFunction
