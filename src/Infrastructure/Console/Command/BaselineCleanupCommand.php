@@ -78,7 +78,8 @@ final class BaselineCleanupCommand extends BaselineCommand
             . "\n" . 'when the run did not measure its channel at the level of its subject'
             . "\n" . '(--only-rule, --disable-rule, including a selector narrowed to one'
             . "\n" . 'level such as X:namespace, enabled: false, or a level switched off in'
-            . "\n" . 'the rule\'s options), or when no rule declares its channel any more,'
+            . "\n" . 'the rule\'s options), when the channel no longer declares the entry\'s'
+            . "\n" . 'subject level, or when no rule declares its channel any more,'
             . "\n" . 'or when the entry could not be read at all. None of those proves the'
             . "\n" . 'debt is gone — a loosened threshold silences a finding just as'
             . "\n" . 'effectively as a fix — so removal is always yours to assert, one'
@@ -107,7 +108,7 @@ final class BaselineCleanupCommand extends BaselineCommand
             $baseline,
             $context->findings(),
             $this->declarations,
-            $this->ruleCoverage->unmeasured(array_map(
+            $this->ruleCoverage->classify(array_map(
                 static fn($entry) => $entry->identity,
                 $baseline->entries,
             )),
@@ -231,6 +232,8 @@ final class BaselineCleanupCommand extends BaselineCommand
             BaselineCleanupReason::Stale => 'nothing reported for this identity',
             BaselineCleanupReason::ProducerDidNotRun => 'not measured: this invocation did not run the rule for'
                 . ' this channel at this level',
+            BaselineCleanupReason::LevelNotDeclared => 'level not declared: this channel does not report at the'
+                . ' level of this baseline entry',
             BaselineCleanupReason::ChannelNotDeclared => 'no rule declares this channel',
             BaselineCleanupReason::ChannelIsConfigurationError => 'this channel reports a configuration error and'
                 . ' cannot be accepted as debt',

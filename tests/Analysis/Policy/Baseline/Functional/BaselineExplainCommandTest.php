@@ -486,9 +486,28 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'accepted 25; now not measured (this invocation did not run the rule for this channel at this level)',
+            'accepted 25; now not measured (this invocation did not measure this channel at this subject level)',
             $tester->getDisplay(),
         );
+    }
+
+    #[Test]
+    public function itExplainsAnOldProjectCopyWithoutClaimingTheFileProducerDidNotRun(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $project = SymbolPath::forProject()->toCanonical();
+        $this->writeBaseline([new BaselineEntry(new BaselineIdentity($project, $channel), [40], 1)]);
+
+        $tester = $this->execute(
+            [],
+            ['--baseline' => $this->baselinePath, '--channel' => $channel->code],
+            subjectKey: $project,
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('accepted 40; now not measured (this invocation did not measure this channel at this subject level)', $tester->getDisplay());
+        self::assertStringNotContainsString('nothing reported', $tester->getDisplay());
+        self::assertStringNotContainsString('did not run the rule', $tester->getDisplay());
     }
 
     /**
@@ -528,6 +547,7 @@ final class BaselineExplainCommandTest extends TestCase
         ?SymbolPath $symbol = null,
         ?MetricRepositoryInterface $metrics = null,
         ?RunRuleCoverage $coverage = null,
+        ?string $subjectKey = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
@@ -560,7 +580,7 @@ final class BaselineExplainCommandTest extends TestCase
         $tester = new CommandTester($command);
         $tester->execute(
             [
-                'subject' => self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
+                'subject' => $subjectKey ?? self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
                 'paths' => ['src'],
                 ...$options,
             ],

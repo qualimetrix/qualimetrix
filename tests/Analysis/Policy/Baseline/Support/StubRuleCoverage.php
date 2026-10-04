@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Support;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
-use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
@@ -15,7 +14,6 @@ use Qualimetrix\Analysis\Finding\Contract\EnablementDecision;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\OptionActivity;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -30,8 +28,8 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
 /**
- * A {@see RunRuleCoverage} with a known answer, where every channel is
- * produced by the rule of the same name.
+ * A {@see RunRuleCoverage} with known selection decisions and the current
+ * channel universe, including each channel's actual producer and levels.
  *
  * The baseline tests are about what a command says once it knows which rules
  * ran, not about how the run decided it; that decision belongs to rule
@@ -54,7 +52,7 @@ final class StubRuleCoverage
     {
         return new RunRuleCoverage(
             self::execution($notSelected, $disabledEverywhere),
-            self::channelIsItsOwnProducer(),
+            self::universe(),
         );
     }
 
@@ -130,50 +128,5 @@ final class StubRuleCoverage
             $universe = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
         }
         return $universe;
-    }
-
-    private static function channelIsItsOwnProducer(): ChannelIdentityInterface
-    {
-        return new class implements ChannelIdentityInterface {
-            public function ruleNames(): array
-            {
-                return [];
-            }
-
-            public function hasRule(string $ruleName): bool
-            {
-                return false;
-            }
-
-            public function channels(): array
-            {
-                return [];
-            }
-
-            public function hasChannel(string $code): bool
-            {
-                return false;
-            }
-
-            public function producerOf(string $code): string
-            {
-                return $code;
-            }
-
-            public function supportsThresholdOverride(string $ruleName): bool
-            {
-                return false;
-            }
-
-            public function expand(NameSelector $selector): array
-            {
-                return [];
-            }
-
-            public function levelsOf(string $code): array
-            {
-                return [];
-            }
-        };
     }
 }

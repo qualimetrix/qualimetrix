@@ -799,6 +799,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertEntryReason'
+        - 'Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunScope'
         - 'Qualimetrix\Analysis\Policy\Baseline\UncapturedGroup'

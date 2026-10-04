@@ -7965,6 +7965,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesExcludeCannotBeDecided
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itExplainsAnOldProjectCopyAsAChannelLevelNoLongerDeclared
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesARunThatDoesNotCoverTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesAValueThatIsNotASelectorAtAll
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRemovesOnlyTheNamedEntryEvenWhenTwoDifferOnlyByEdge
@@ -8000,6 +8001,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itDeclaresNoExclusionOrSuppressionOption"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest::itNoLongerLetsCheckWriteABaseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itAcceptsAChannelTheRegistryNoLongerDeclaresWhenTheLoadedBaselineStillCarriesIt
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itExplainsAnOldProjectCopyWithoutClaimingTheFileProducerDidNotRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itExplainsThatABaselineOnlySubjectIsAbsentFromTheCurrentRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itNamesAnEntryItCannotApplyInsteadOfDenyingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itNamesAnUnreadableEntryForTheSubject
@@ -8244,7 +8246,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itPromotesEveryMemberOfAMeasuredBreachAndNamesTheAcceptedMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itReportsFourErrorsWhenAGroupOfFourExceedsACountOfThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itCarriesTheSourceContentHashForward
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesADisabledFileCopyAsNotMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesOnlyTheMissingLevelOfAMultilevelChannelAndIgnoresAnUnknownProducer
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itDoesNotListAnEntryThatIsStillMeasuredAndDeclared
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAStaleEntryWhoseIdentityDidNotAppearInTheRun
@@ -8252,6 +8256,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnEntryWhoseRuleDidNotRunUnderItsOwnReason"disabled at every level by configuration"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnEntryWhoseRuleDidNotRunUnderItsOwnReason"left out by a selector"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnInertEntryWithItsOwnReason
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNamesTheRetiredProjectCopyLevelAndKeepsAPresentFileCopy
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNeverRemovesAnythingWhenOnlyListingCandidates
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
@@ -8429,6 +8434,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itFindsTheAnnotationForASymbolThatViolatesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itIndexesEveryTypedRepositorySourceOnceWithoutCollapsingExactDeclarations
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itKeepsAZeroConfiguredThresholdDistinctFromAnAbsentOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itMarksARetiredProjectCopyUnmeasuredWithoutMarkingADeclaredFileCopy
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itPrintsBothTheStoredMagnitudeAndTheCurrentlyComparedOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsAbsentSourcesAsNullRatherThanAsZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsNoAnnotationForASymbolTheRunNeverMeasured

@@ -170,7 +170,7 @@ final readonly class BoundaryExplanationService
         ?array $repositoryRecord,
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $group);
-        if ($baselineSource !== null && $this->ruleCoverage->unmeasured([$identity]) !== []) {
+        if ($baselineSource !== null && $this->ruleCoverage->classify([$identity]) !== []) {
             $baselineSource = $baselineSource->unmeasured();
         }
 

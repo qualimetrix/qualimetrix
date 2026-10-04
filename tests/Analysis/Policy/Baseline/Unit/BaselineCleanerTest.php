@@ -20,7 +20,9 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
@@ -33,6 +35,7 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
  */
 #[CoversClass(BaselineCleaner::class)]
 #[CoversClass(RunRuleCoverage::class)]
+#[CoversClass(RunCoverageGap::class)]
 final class BaselineCleanerTest extends TestCase
 {
     #[Test]
@@ -77,7 +80,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
-            $coverage->unmeasured([$entry->identity]),
+            $coverage->classify([$entry->identity]),
         );
 
         self::assertCount(1, $candidates);
@@ -100,11 +103,69 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
-            StubRuleCoverage::withSkipped(notSelected: ['code-smell.goto'])->unmeasured([$entry->identity]),
+            StubRuleCoverage::withSkipped(notSelected: ['code-smell.goto'])->classify([$entry->identity]),
         );
 
         self::assertCount(1, $candidates);
         self::assertSame(BaselineCleanupReason::Stale, $candidates[0]->reason);
+    }
+
+    #[Test]
+    public function itNamesTheRetiredProjectCopyLevelAndKeepsAPresentFileCopy(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $project = new BaselineEntry(new BaselineIdentity(SymbolPath::forProject()->toCanonical(), $channel), [40], 1);
+        $fileFinding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 40, $channel->code, $channel->code);
+        $file = new BaselineEntry(BaselineIdentity::forFinding($fileFinding), [40], 1);
+        $coverage = StubRuleCoverage::everyRuleRan()->classify([$project->identity, $file->identity]);
+
+        self::assertSame([$project->identity->key() => RunCoverageGap::LevelNotDeclared], $coverage);
+
+        $candidates = $this->cleaner()->candidates(
+            self::baselineOf($project, $file),
+            [$fileFinding],
+            StubChannelDeclarationRegistry::withDefaults(),
+            $coverage,
+        );
+
+        self::assertCount(1, $candidates);
+        self::assertSame($project->selector()->value, $candidates[0]->selector->value);
+        self::assertSame(BaselineCleanupReason::LevelNotDeclared, $candidates[0]->reason);
+    }
+
+    #[Test]
+    public function itClassifiesADisabledFileCopyAsNotMeasured(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $file = new BaselineEntry(new BaselineIdentity(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))->toCanonical(), $channel), [40], 1);
+        $coverage = StubRuleCoverage::withSkipped(notSelected: [$channel->code])->classify([$file->identity]);
+
+        self::assertSame([$file->identity->key() => RunCoverageGap::NotMeasured], $coverage);
+
+        $candidates = $this->cleaner()->candidates(
+            self::baselineOf($file),
+            [],
+            StubChannelDeclarationRegistry::withDefaults(),
+            $coverage,
+        );
+
+        self::assertCount(1, $candidates);
+        self::assertSame(BaselineCleanupReason::ProducerDidNotRun, $candidates[0]->reason);
+    }
+
+    #[Test]
+    public function itClassifiesOnlyTheMissingLevelOfAMultilevelChannelAndIgnoresAnUnknownProducer(): void
+    {
+        $channel = new FindingChannel('complexity.ccn');
+        $callable = new BaselineIdentity('callable:App\\Foo::bar', $channel);
+        $class = new BaselineIdentity('class:App\\Foo', $channel);
+        $project = new BaselineIdentity('project:', $channel);
+        $unknown = new BaselineIdentity('project:', new FindingChannel('legacy.unknown'));
+
+        self::assertSame(
+            [$project->key() => RunCoverageGap::LevelNotDeclared],
+            StubRuleCoverage::everyRuleRan()->classify([$callable, $class, $project, $unknown]),
+        );
     }
 
     #[Test]
@@ -117,7 +178,7 @@ final class BaselineCleanerTest extends TestCase
             self::baselineOf($entry),
             [$finding],
             new StubChannelDeclarationRegistry(),
-            [],
+            [$entry->identity->key() => RunCoverageGap::LevelNotDeclared],
         );
 
         self::assertCount(1, $candidates);

@@ -13059,6 +13059,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\RunCoverageGap": {
+      "path": "src/Analysis/Policy/Baseline/RunCoverageGap.php",
+      "kind": "enum",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage": {
       "path": "src/Analysis/Policy/Baseline/RunRuleCoverage.php",
       "kind": "class",
