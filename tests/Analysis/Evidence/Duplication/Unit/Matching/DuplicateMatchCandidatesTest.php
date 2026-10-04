@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching;
 
 use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateMatchCandidates;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateMatchCandidates;
 
 #[CoversClass(DuplicateMatchCandidates::class)]
 final class DuplicateMatchCandidatesTest extends TestCase

@@ -12,7 +12,7 @@ final class CorpusCaseControls
     {
         return self::product(
             'duplication-size',
-            'src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php',
+            'src/Analysis/Evidence/Duplication/Matching/DuplicateBlockFinder.php',
             '$longest = max(array_map(function (int $copy) use ($length): int {',
             '$longest = min(array_map(function (int $copy) use ($length): int {',
             [

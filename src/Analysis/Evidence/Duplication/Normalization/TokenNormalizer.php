@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Normalization;
 
 /**
  * Normalizes PHP token streams for duplication detection.

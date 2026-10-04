@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
-use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 
 #[CoversClass(TokenNormalizer::class)]
 #[CoversClass(NormalizedToken::class)]

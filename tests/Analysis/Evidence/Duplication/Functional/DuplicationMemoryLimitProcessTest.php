@@ -200,7 +200,7 @@ declare(strict_types=1);
 
 require $argv[1];
 
-use Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 $sourceDirectory = $argv[2];

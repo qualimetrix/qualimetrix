@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(DuplicateBlock::class)]

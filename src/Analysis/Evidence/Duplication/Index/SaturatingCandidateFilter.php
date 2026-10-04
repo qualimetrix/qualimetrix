@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 
 /**
  * Fixed-size, saturating pre-filter for rolling-hash candidates.

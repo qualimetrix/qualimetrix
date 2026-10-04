@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
 
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use SplFileInfo;

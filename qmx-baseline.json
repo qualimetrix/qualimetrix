@@ -234,10 +234,10 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector@src/Analysis/Evidence/Coupling/CouplingCollector.php": [
       {"channel":"design.god-class","magnitudes":[3]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/DataDeclarationTagger.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php": [
       {"channel":"complexity.wmc","magnitudes":[57]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\SaturatingCandidateFilter@src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php": [
+    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\SaturatingCandidateFilter@src/Analysis/Evidence/Duplication/Index/SaturatingCandidateFilter.php": [
       {"channel":"design.data-class","magnitudes":[33]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\AggregationStrategy@src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php": [
@@ -341,9 +341,6 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
       {"channel":"coupling.instability","magnitudes":[0.941176]}
-    ],
-    "ns:Qualimetrix\\Analysis\\Evidence\\Duplication": [
-      {"channel":"size.class-count","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Maintainability": [
       {"channel":"coupling.cbo","magnitudes":[16]}

@@ -3876,50 +3876,50 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\ContentHintExtractor": {
-      "path": "src/Analysis/Evidence/Duplication/ContentHintExtractor.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\ContentHintExtractor": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/ContentHintExtractor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger": {
-      "path": "src/Analysis/Evidence/Duplication/DataDeclarationTagger.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\DataDeclarationTagger": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateBlock": {
-      "path": "src/Analysis/Evidence/Duplication/DuplicateBlock.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateBlock": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/DuplicateBlock.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateBlockFinder": {
-      "path": "src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateBlockFinder": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/DuplicateBlockFinder.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateLocation": {
-      "path": "src/Analysis/Evidence/Duplication/DuplicateLocation.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateLocation": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/DuplicateLocation.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateMatchCandidates": {
-      "path": "src/Analysis/Evidence/Duplication/DuplicateMatchCandidates.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateMatchCandidates": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/DuplicateMatchCandidates.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateSearchRequest": {
-      "path": "src/Analysis/Evidence/Duplication/DuplicateSearchRequest.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateSearchRequest": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/DuplicateSearchRequest.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
@@ -3939,50 +3939,50 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuildResult": {
-      "path": "src/Analysis/Evidence/Duplication/HashIndexBuildResult.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\HashIndexBuildResult": {
+      "path": "src/Analysis/Evidence/Duplication/Index/HashIndexBuildResult.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuilder": {
-      "path": "src/Analysis/Evidence/Duplication/HashIndexBuilder.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\HashIndexBuilder": {
+      "path": "src/Analysis/Evidence/Duplication/Index/HashIndexBuilder.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\NormalizedToken": {
-      "path": "src/Analysis/Evidence/Duplication/NormalizedToken.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\NormalizedToken": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/NormalizedToken.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\PackedPosition": {
-      "path": "src/Analysis/Evidence/Duplication/PackedPosition.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\PackedPosition": {
+      "path": "src/Analysis/Evidence/Duplication/Index/PackedPosition.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\RetokenizedFiles": {
-      "path": "src/Analysis/Evidence/Duplication/RetokenizedFiles.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\RetokenizedFiles": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/RetokenizedFiles.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\SaturatingCandidateFilter": {
-      "path": "src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\SaturatingCandidateFilter": {
+      "path": "src/Analysis/Evidence/Duplication/Index/SaturatingCandidateFilter.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\TokenNormalizer": {
-      "path": "src/Analysis/Evidence/Duplication/TokenNormalizer.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\TokenNormalizer": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/TokenNormalizer.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
@@ -15356,7 +15356,7 @@
         },
         {
           "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuilder"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\HashIndexBuilder"
         },
         {
           "owner": "Analysis.Policy.Baseline",
@@ -15664,7 +15664,7 @@
       "consumers": [
         {
           "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuilder"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\HashIndexBuilder"
         },
         {
           "owner": "Analysis.Policy.Baseline",
@@ -15836,11 +15836,11 @@
         },
         {
           "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateBlockFinder"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateBlockFinder"
         },
         {
           "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateLocation"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateLocation"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",

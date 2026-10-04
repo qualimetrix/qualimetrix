@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Normalization;
+
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult;
 
 /**
  * Output of pass 2 (re-tokenization): the token streams and raw source of

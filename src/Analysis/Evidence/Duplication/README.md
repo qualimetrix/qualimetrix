@@ -20,20 +20,23 @@
 Duplication/
 ├── DuplicationDetector.php
 ├── DuplicationResultProvider.php
-├── ContentHintExtractor.php
-├── DataDeclarationTagger.php
-├── DuplicateBlockFinder.php
-├── DuplicateMatchCandidates.php
-├── DuplicateSearchRequest.php
-├── HashIndexBuildResult.php
-├── HashIndexBuilder.php
-├── NormalizedToken.php
-├── PackedPosition.php
-├── RetokenizedFiles.php
-├── SaturatingCandidateFilter.php
-├── TokenNormalizer.php
-├── DuplicateBlock.php
-├── DuplicateLocation.php
+├── Index/
+│   ├── HashIndexBuildResult.php
+│   ├── HashIndexBuilder.php
+│   ├── PackedPosition.php
+│   └── SaturatingCandidateFilter.php
+├── Matching/
+│   ├── ContentHintExtractor.php
+│   ├── DuplicateBlock.php
+│   ├── DuplicateBlockFinder.php
+│   ├── DuplicateLocation.php
+│   ├── DuplicateMatchCandidates.php
+│   └── DuplicateSearchRequest.php
+├── Normalization/
+│   ├── DataDeclarationTagger.php
+│   ├── NormalizedToken.php
+│   ├── RetokenizedFiles.php
+│   └── TokenNormalizer.php
 ├── CodeDuplicationOptions.php
 └── CodeDuplicationRule.php
 ```
@@ -81,19 +84,14 @@ completion log through its implementation.
 ## Test ownership
 
 The module owns test classes at three levels, and the level is decided by what
-the body does rather than by where the class started out.
-
-Eight Unit classes under `tests/Analysis/Evidence/Duplication/Unit/`, all of
-them in memory:
-
-- `ContentHintExtractorTest`
-- `DataDeclarationTaggerTest`
-- `DuplicateBlockFinderTest`
-- `DuplicateMatchCandidatesTest`
-- `SaturatingCandidateFilterTest`
-- `TokenNormalizerTest`
-- `DuplicateBlockIdentityTest`
-- `CodeDuplicationRuleTest`
+the body does. Unit tests live below `Unit/`, where the owning test root is
+`Duplication`; subject folders group the classes within that root. `Unit/Index/`
+contains `SaturatingCandidateFilterTest`, `Unit/Matching/` contains
+`ContentHintExtractorTest`, `DuplicateBlockFinderTest`,
+`DuplicateMatchCandidatesTest`, and `DuplicateBlockIdentityTest`, and
+`Unit/Normalization/` contains `DataDeclarationTaggerTest` and
+`TokenNormalizerTest`. `CodeDuplicationRuleTest` stays directly under `Unit/`
+because the rule stays in the root. All eight run in memory.
 
 Two Integration classes under `tests/Analysis/Evidence/Duplication/Integration/`,
 both writing real files into a temporary directory:

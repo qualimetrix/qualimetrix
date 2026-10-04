@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\SaturatingCandidateFilter;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\SaturatingCandidateFilter;
 
 #[CoversClass(SaturatingCandidateFilter::class)]
 final class SaturatingCandidateFilterTest extends TestCase

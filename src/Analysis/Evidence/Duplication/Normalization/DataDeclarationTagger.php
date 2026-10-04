@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Normalization;
+
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 
 /**
  * Marks tokens that lie inside a constant declaration or a property's

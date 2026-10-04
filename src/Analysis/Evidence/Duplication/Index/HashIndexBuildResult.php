@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
+
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 
 /**
  * Output of {@see HashIndexBuilder::build()}: the exact rolling-hash index

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Evidence\Duplication;
+namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
+
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 
 /**
  * Bit-packing for (fileIdx, tokenOffset) pairs into a single int.

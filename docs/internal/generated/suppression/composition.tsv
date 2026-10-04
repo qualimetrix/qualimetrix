@@ -64,6 +64,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Conf
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/CoverageUnit.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Metadata/HealthDecompositionCatalog.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/ComputedMetrics/Health/Offender/HealthReasonBuilder.php	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender	warning	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/Duplication/Normalization/DataDeclarationTagger.php	Qualimetrix\Analysis\Evidence\Duplication\Normalization	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/Prioritization/Debt/DebtCalculator.php	Qualimetrix\Analysis\Evidence\Prioritization	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Evidence/Prioritization/Debt/DebtCalculator.php	Qualimetrix\Analysis\Evidence\Prioritization\Debt	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/ChannelPresentationView.php	Qualimetrix\Analysis\Finding	warning	1

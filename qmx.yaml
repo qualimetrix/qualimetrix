@@ -378,22 +378,22 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions'
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\ContentHintExtractor'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateMatchCandidates'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuildResult'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\PackedPosition'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\SaturatingCandidateFilter'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Index\SaturatingCandidateFilter'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\ContentHintExtractor'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateMatchCandidates'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer'
     - name: analysis-evidence-maintainability
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector'
@@ -1938,6 +1938,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Private token representation stays inside one duplication owner; local D=1 is not a module boundary.
+      - exact: 'Qualimetrix\Analysis\Evidence\Duplication\Normalization'
       # Five concrete refusal adapters intentionally share framing: A=0, Ca=14/Ce=13, D=0.518519.
       - exact: 'Qualimetrix\Infrastructure\Console\Refusal'
       # The same concrete authored directive contract has intentional distance 0.52.

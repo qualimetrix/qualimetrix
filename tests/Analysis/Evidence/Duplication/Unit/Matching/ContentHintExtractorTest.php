@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\ContentHintExtractor;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\ContentHintExtractor;
 
 #[CoversClass(ContentHintExtractor::class)]
 final class ContentHintExtractorTest extends TestCase

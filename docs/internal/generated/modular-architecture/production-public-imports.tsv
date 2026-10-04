@@ -2063,7 +2063,7 @@ Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	Qualimetrix\Infrastruct
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	src/Analysis/Configuration/Contract/ConfigurationDocument.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	src/Analysis/Configuration/Contract/Pipeline/ConfigurationResolutionRequest.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/DuplicationDetector.php	ast-name
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/HashIndexBuilder.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/Index/HashIndexBuilder.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/BaselineWriter.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/RunScope.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestDecoder	Analysis.ProjectManifest	src/Analysis/ProjectManifest/Contract/ComposerManifestDecoder.php	ast-name
@@ -2138,7 +2138,7 @@ Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Parallel
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Infrastructure\Parallel\WorkerBootstrap	Infrastructure.Parallel	src/Infrastructure/Parallel/WorkerBootstrap.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest	Reporting	src/Reporting/FindingProjection/Contract/GitScopeRequest.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata	Reporting	src/Reporting/Formatter/Html/HtmlProjectMetadata.php	ast-name
-Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/HashIndexBuilder.php	ast-name
+Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/Index/HashIndexBuilder.php	ast-name
 Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/BaselineWriter.php	ast-name
 Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/RunScope.php	ast-name
 Qualimetrix\Core\Path\PathFactory	Core.Path	Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator	Analysis.Run	src/Analysis/Run/Collection/CollectionOrchestrator.php	ast-name
@@ -2179,8 +2179,8 @@ Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Depen
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceDepthCollector	Analysis.Evidence.Design	src/Analysis/Evidence/Design/Inheritance/InheritanceDepthCollector.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageCollector	Analysis.Evidence.Design	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageCollector.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor	Analysis.Evidence.Design	src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageVisitor.php	ast-name
-Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php	ast-name
-Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/DuplicateLocation.php	ast-name
+Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/Matching/DuplicateBlockFinder.php	ast-name
+Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation	Analysis.Evidence.Duplication	src/Analysis/Evidence/Duplication/Matching/DuplicateLocation.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector	Analysis.Evidence.Maintainability	src/Analysis/Evidence/Maintainability/HalsteadCollector.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor	Analysis.Evidence.Maintainability	src/Analysis/Evidence/Maintainability/HalsteadVisitor.php	ast-name
 Qualimetrix\Core\Path\RelativePath	Core.Path	Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule	Analysis.Evidence.Maintainability	src/Analysis/Evidence/Maintainability/MaintainabilityRule.php	ast-name

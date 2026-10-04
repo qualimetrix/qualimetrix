@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
+namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder;
-use Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest;
-use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
-use Qualimetrix\Analysis\Evidence\Duplication\PackedPosition;
-use Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles;
+use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
 
 #[CoversClass(DuplicateBlockFinder::class)]
 final class DuplicateBlockFinderTest extends TestCase
