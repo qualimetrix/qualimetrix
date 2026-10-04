@@ -113,7 +113,7 @@ return [
             'tests/Analysis/Policy/Baseline/Functional/BaselineRenameChannelsCommandTest.php' => 'is filed under Analysis.Policy.Baseline and covers only Infrastructure.Console',
             'tests/Analysis/Policy/Baseline/Functional/BaselineRunBeforeLoadTest.php' => 'is filed under Analysis.Policy.Baseline and covers only Infrastructure.Console',
             'tests/Analysis/Policy/Baseline/Functional/BaselineUpdateCommandTest.php' => 'is filed under Analysis.Policy.Baseline and covers only Infrastructure.Console',
-            'tests/Analysis/Policy/Inline/Integration/ThresholdOverrideIntegrationTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Evidence.CodeSmell + Analysis.Evidence.Cohesion + Analysis.Evidence.Complexity + Analysis.Evidence.Coupling + Analysis.Evidence.Design + Analysis.Evidence.Duplication + Analysis.Evidence.Maintainability + Analysis.Evidence.Size',
+            'tests/Analysis/Policy/Inline/Integration/ThresholdOverrideIntegrationTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Evidence.CodeSmell + Analysis.Evidence.Cohesion + Analysis.Evidence.Complexity + Analysis.Evidence.Coupling + Analysis.Evidence.Design + Analysis.Evidence.Maintainability + Analysis.Evidence.Size',
             'tests/Analysis/Policy/Inline/Unit/IndependentAxisValidatorTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Finding',
             'tests/Analysis/Policy/Inline/Unit/InvertedOverrideValidatorTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Finding',
             'tests/Analysis/Policy/Inline/Unit/StandardOverrideValidatorTest.php' => 'is filed under Analysis.Policy.Inline and covers only Analysis.Finding',
