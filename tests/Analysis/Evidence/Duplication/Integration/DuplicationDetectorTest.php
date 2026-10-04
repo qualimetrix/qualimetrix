@@ -679,7 +679,7 @@ PHP;
     {
         $rows = "[\n    'first' => ['warning' => 1, 'error' => 2],\n    'second' => ['warning' => 3, 'error' => 4],\n    'third' => ['warning' => 5, 'error' => 6],\n]";
         $data = $this->createFile('data.php', "<?php\nclass Data { const MAP = {$rows}; }\n");
-        $code = $this->createFile('code.php', "<?php\nfunction make() { return {$rows}; }\n");
+        $code = $this->createFile('code.php', "<?php\nfunction make() { return {$rows}[0]; }\n");
         foreach ([[$data, $code], [$code, $data]] as $files) {
             $blocks = $this->inspect($this->createDetector(minTokens: 30, minLines: 3), $files);
             self::assertCount(1, $blocks);
