@@ -210,6 +210,7 @@ rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Evi
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Coupling/NamespaceCboOptions.php	Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Evidence/Design/TypeCoverage/AbstractTypeCoverageRule.php	Qualimetrix\Analysis\Evidence\Design\TypeCoverage\AbstractTypeCoverageRule	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Finding/Selection/SelectionSpecificity.php	Qualimetrix\Analysis\Finding\Selection\SelectionSpecificity	warning	1
+rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Policy/Baseline/BaselineCleaner.php	Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Policy/Baseline/BaselineDocumentWriter.php	Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php	Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Cache/FileCache.php	Qualimetrix\Infrastructure\Cache\FileCache	warning	1
@@ -276,6 +277,7 @@ rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Evidence/Size/PropertyCountOptions.php	src/Analysis/Evidence/Size/PropertyCountOptions.php	warning	3
 rule-path-suppression	duplication.clone	duplication.clone	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php	src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	warning	1
+rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Finding/Contract/EnablementDecision.php	Qualimetrix\Analysis\Finding\Contract\EnablementDecision	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Application.php	Qualimetrix\Infrastructure\Console\Application	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineCleanupCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	warning	1

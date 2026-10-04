@@ -1,5 +1,5 @@
 # FROZEN PROMISE-CARRIER RANGES — companion to promise-ledger.tsv.
-# Tree 5f9031fe3d6cd8b2869cefa4ced367a1d017a305. Date: 2026-10-04.
+# Tree 8b3259e988fa53af5a8e6ba9067f734330df4b51. Date: 2026-10-04.
 #
 # Each ledger citation is frozen at line-range granularity with a hash of its
 # exact text. File granularity would prevent legitimate changes elsewhere in a
@@ -54,8 +54,8 @@ website/docs/getting-started/configuration.md	221	232	2fb2ec2aaace7ebf	P6 (websi
 website/docs/getting-started/configuration.md	225	225	9656feb8ed3488c0	P6 (website documentation)	complexity.ccn:
 website/docs/getting-started/configuration.md	226	226	b19015e7fa874b3f	P6 (website documentation)	callable:
 website/docs/getting-started/configuration.md	231	231	f1b901847390b0ed	P6 (website documentation)	```
-website/docs/getting-started/configuration.md	236	255	5bf139429c3dc758	P6 (website documentation)	
-website/docs/getting-started/configuration.md	242	250	06e360b89f5e5834	P6 (website documentation)	error: 20
+website/docs/getting-started/configuration.md	236	255	5e34dce64da519dd	P6 (website documentation)	
+website/docs/getting-started/configuration.md	242	250	73b772be6aa62f25	P6 (website documentation)	error: 20
 website/docs/getting-started/configuration.md	252	255	d086ca1788d5f48c	P6 (website documentation)	**Hierarchical shorthand is a per-layer form.** A top `threshold` chan
 website/docs/getting-started/configuration.md	263	263	bc7d6a12530bd298	P6 (website documentation)	class:
 website/docs/getting-started/configuration.md	265	265	85b43b031159c9a8	P6 (website documentation)	max_error: 3
@@ -87,17 +87,17 @@ website/docs/getting-started/configuration.md	759	759	4790bf028e2c1aa7	P6 (websi
 website/docs/getting-started/configuration.md	869	883	177ce41162260504	P6 (website documentation)	removing the entry.
 website/docs/getting-started/configuration.md	933	933	8e7ca724ec705d36	P6 (website documentation)	| `architecture.layers[].implements`                                  
 website/docs/getting-started/configuration.md	994	994	87824028ec8a83da	P6 (website documentation)	| `rules.architecture.circular-dependency.direct-as-error`            
-website/docs/getting-started/configuration.md	1482	1489	b5042f50d43eebc1	P6 (website documentation)	Configuration error: Unknown key "parallel.workes" in configuration fi
-website/docs/getting-started/configuration.md	1509	1509	f1b901847390b0ed	P6 (website documentation)	```
-website/docs/getting-started/configuration.md	1510	1510	20e2d68955bb65a0	P6 (website documentation)	Configuration error: Rule option owner "complexty.ccn" does not match 
-website/docs/getting-started/configuration.md	1521	1522	2d4a64274db78098	P6 (website documentation)	Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llm
-website/docs/getting-started/configuration.md	1527	1546	8ad8721fdaf14c69	P6 (website documentation)	```
-website/docs/getting-started/configuration.md	1527	1553	5dd0b09028773c62	P6 (website documentation)	```
-website/docs/getting-started/configuration.md	1557	1557	8d4496915327d731	P6 (website documentation)	Configuration error: "only_rules" in configuration file "qmx.yaml" mus
-website/docs/getting-started/configuration.md	1561	1562	4a425e983dca9977	P6 (website documentation)	These are three separate runs, one mistake apiece — a real run stops a
-website/docs/getting-started/configuration.md	1572	1576	fd3133c017dcf030	P6 (website documentation)	| a non-negative whole number | `15` or `0` — not `10.5`, not `"15"`, 
-website/docs/getting-started/configuration.md	1621	1635	cf889d95deced57d	P6 (website documentation)	`only_rules: [complexity.ccn]` and `exclude_methods: [getName]`. The s
-website/docs/getting-started/configuration.md	1707	1716	32c3576ec42c8dfc	P6 (website documentation)	
+website/docs/getting-started/configuration.md	1480	1487	0eeb896dd5b4e050	P6 (website documentation)	
+website/docs/getting-started/configuration.md	1507	1507	b23e681445de52c2	P6 (website documentation)	Misspelled rule names in the `rules:` section are rejected:
+website/docs/getting-started/configuration.md	1508	1508	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/getting-started/configuration.md	1519	1520	0680a371fde40fbe	P6 (website documentation)	```
+website/docs/getting-started/configuration.md	1525	1544	5af0b2af3504dbe6	P6 (website documentation)	level and not per rule:
+website/docs/getting-started/configuration.md	1525	1551	2e48f1d9486d039c	P6 (website documentation)	level and not per rule:
+website/docs/getting-started/configuration.md	1555	1555	f1b901847390b0ed	P6 (website documentation)	```
+website/docs/getting-started/configuration.md	1559	1560	47c06c561d5c3273	P6 (website documentation)	```
+website/docs/getting-started/configuration.md	1570	1574	6bd9216732fb1ee3	P6 (website documentation)	| --------------------------- | --------------------------------------
+website/docs/getting-started/configuration.md	1619	1633	7043076a3f027cc4	P6 (website documentation)	- **A list and a map are not interchangeable.** `only_rules: {a: compl
+website/docs/getting-started/configuration.md	1705	1714	45664ede5de24f15	P6 (website documentation)	
 website/docs/guides/architecture-investigation.md	92	92	12aa235fa78d1d70	P6 (website documentation)	--rule-opt='coupling.distance:include_namespaces=Doctrine\ORM'
 website/docs/reference/default-thresholds.md	100	100	186a9326f3dd5021	P6 (website documentation)	| Unreachable Layer         | `architecture.unreachable-layer`     | E
 website/docs/reference/default-thresholds.md	102	102	2716757696496ada	P6 (website documentation)	| Potential Shadow          | `architecture.potential-shadow`      | E
@@ -298,12 +298,12 @@ website/docs/rules/design.md	761	761	f86f4daf58ca9c4c	P6 (website documentation)
 website/docs/rules/design.md	762	762	1cb9bc34daaa5d10	P6 (website documentation)	min_criteria: 3
 website/docs/rules/design.md	764	764	d04a628b47d78158	P6 (website documentation)	exclude_readonly: true
 website/docs/rules/discovery.md	69	69	044ba26648fd7f1e	P6 (website documentation)	enabled: true
-website/docs/rules/duplication.md	189	189	f7c02dfc289106eb	P6 (website documentation)	### Configuration
-website/docs/rules/duplication.md	193	193	3de9d845afcc5a08	P6 (website documentation)	rules:
-website/docs/rules/duplication.md	194	194	32edd624c1439bd5	P6 (website documentation)	duplication.clone:
-website/docs/rules/duplication.md	195	195	044ba26648fd7f1e	P6 (website documentation)	enabled: true
-website/docs/rules/duplication.md	202	202	ad332335cfaa348c	P6 (website documentation)	```bash
-website/docs/rules/duplication.md	205	205	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/rules/duplication.md	198	206	a4571c8f438de82b	P6 (website documentation)	```yaml
+website/docs/rules/duplication.md	202	202	044ba26648fd7f1e	P6 (website documentation)	enabled: true
+website/docs/rules/duplication.md	203	203	d330731b526241e0	P6 (website documentation)	min_lines: 5
+website/docs/rules/duplication.md	204	204	f11cab179b4949ef	P6 (website documentation)	min_tokens: 70
+website/docs/rules/duplication.md	213	213	ad3cfeb2f719755a	P6 (website documentation)	bin/qmx check src/ --rule-opt="duplication.clone:min_lines=10"
+website/docs/rules/duplication.md	216	216	6f8899adad34d91e	P6 (website documentation)	bin/qmx check src/ --rule-opt="duplication.clone:min_tokens=100"
 website/docs/rules/index.md	225	225	ad332335cfaa348c	P6 (website documentation)	```bash
 website/docs/rules/maintainability.md	187	187	8f8e0b1e2de94ab6	P6 (website documentation)	```yaml
 website/docs/rules/maintainability.md	191	191	bc8a2327e43cfaab	P6 (website documentation)	warning: 40
@@ -337,86 +337,86 @@ website/docs/usage/cli-options.md	88	88	3239955f07e37368	P6 (website documentati
 website/docs/usage/cli-options.md	311	311	f1b901847390b0ed	P6 (website documentation)	```
 website/docs/usage/cli-options.md	331	331	e3b0c44298fc1c14	P6 (website documentation)	
 website/docs/usage/cli-options.md	447	457	e00f0b2e0a563d30	P6 (website documentation)	Filters violations to the specified class. Auto-enables `--detail`.
-website/docs/usage/cli-options.md	850	853	f224bdd234e7b534	P6 (website documentation)	bin/qmx check src/ --only-rule=complexity.ccn --only-rule=size.method-
-website/docs/usage/cli-options.md	851	851	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	852	852	58c2eff5a21e5f26	P6 (website documentation)	# Select one channel of a built-in health dimension: producer and chan
-website/docs/usage/cli-options.md	861	866	cc9508ac55bd7744	P6 (website documentation)	
-website/docs/usage/cli-options.md	877	877	574c4ac169a30cc2	P6 (website documentation)	subject-level applicability; they are not a second selection resolver.
-website/docs/usage/cli-options.md	877	878	c9f7b475af8293ea	P6 (website documentation)	subject-level applicability; they are not a second selection resolver.
-website/docs/usage/cli-options.md	878	878	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	879	879	38de548321dfa333	P6 (website documentation)	### `--rule-opt`
-website/docs/usage/cli-options.md	880	880	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	881	881	0b77549b15404e77	P6 (website documentation)	Override rule options from the command line. Format: `rule-name:option
-website/docs/usage/cli-options.md	881	882	63e5f0b24b989063	P6 (website documentation)	Override rule options from the command line. Format: `rule-name:option
-website/docs/usage/cli-options.md	882	882	e4e381d938fbd750	P6 (website documentation)	`rule-name` must be an exact producer rule — never a group, never a ch
-website/docs/usage/cli-options.md	883	883	00d0d88ef9b3ad3b	P6 (website documentation)	wildcard. The same exact-producer constraint governs the `rules:` YAML
-website/docs/usage/cli-options.md	884	884	5836781ee18e5805	P6 (website documentation)	level-qualified selection instead addresses a declared channel code. C
-website/docs/usage/cli-options.md	885	885	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	885	886	5f046190424d4104	P6 (website documentation)	
-website/docs/usage/cli-options.md	886	886	ad332335cfaa348c	P6 (website documentation)	```bash
-website/docs/usage/cli-options.md	887	887	b358bdedfab123c9	P6 (website documentation)	bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
-website/docs/usage/cli-options.md	888	888	178e9fe37d531eef	P6 (website documentation)	bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
-website/docs/usage/cli-options.md	889	889	f1b901847390b0ed	P6 (website documentation)	```
-website/docs/usage/cli-options.md	890	890	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	891	891	cc083036e3d57773	P6 (website documentation)	All three ways of getting it wrong are refused with exit 3, where the 
-website/docs/usage/cli-options.md	897	897	55d086e098b57c0a	P6 (website documentation)	`suppress_namespace_channels` is configured in YAML, not through `--ru
-website/docs/usage/cli-options.md	898	898	8c59ed677ab03d60	P6 (website documentation)	requires a non-empty list of namespace patterns, while channel-keyed d
-website/docs/usage/cli-options.md	899	899	6a4ff49431437b2b	P6 (website documentation)	keys are channel selectors and follow the same exact-or-`X.*` rule as 
-website/docs/usage/cli-options.md	900	900	4d95487512748c15	P6 (website documentation)	prefix like `health` is now an error, not a shorthand for `health.*`. 
-website/docs/usage/cli-options.md	901	901	217909003802befe	P6 (website documentation)	and no other level: the option is offered namespace aggregates only, s
-website/docs/usage/cli-options.md	902	902	eabae3dd652e22d1	P6 (website documentation)	name a filter that can never fire.
-website/docs/usage/cli-options.md	903	903	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	904	904	bb57f73ef6ba6323	P6 (website documentation)	<!-- llms:skip-begin -->
-website/docs/usage/cli-options.md	905	905	905b660b0239171b	P6 (website documentation)	### Rule-specific shortcut flags
-website/docs/usage/cli-options.md	906	906	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	907	907	430cb58fdb6529c6	P6 (website documentation)	Many rules have dedicated CLI flags for quick rule-option configuratio
-website/docs/usage/cli-options.md	908	908	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	914	914	0728a83db9867622	P6 (website documentation)	| `--cyclomatic-error=N`         | complexity.ccn       | callable.err
-website/docs/usage/cli-options.md	915	915	c579586653090cdc	P6 (website documentation)	| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_wa
-website/docs/usage/cli-options.md	916	916	18ddb42c71e25a9a	P6 (website documentation)	| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_er
-website/docs/usage/cli-options.md	917	917	ba3b9e135f94438a	P6 (website documentation)	| `--cognitive-warning=N`        | complexity.cognitive | callable.war
-website/docs/usage/cli-options.md	918	918	f9f1363ff7bf531c	P6 (website documentation)	| `--cognitive-error=N`          | complexity.cognitive | callable.err
-website/docs/usage/cli-options.md	919	919	e1b29daf3a9c3cdc	P6 (website documentation)	| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_wa
-website/docs/usage/cli-options.md	925	925	2132269dcdaf3320	P6 (website documentation)	| `--wmc-warning=N`              | complexity.wmc       | warning     
-website/docs/usage/cli-options.md	926	926	face7663c5678492	P6 (website documentation)	| `--wmc-error=N`                | complexity.wmc       | error       
-website/docs/usage/cli-options.md	927	927	86d7e6db46c56e62	P6 (website documentation)	| `--wmc-exclude-data-classes`   | complexity.wmc       | excludeDataC
-website/docs/usage/cli-options.md	928	928	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	929	929	d18880c5e2f063bc	P6 (website documentation)	=== "Coupling"
-website/docs/usage/cli-options.md	931	931	21c1236e1de7f719	P6 (website documentation)	| Flag                            | Rule                 | Option     
-website/docs/usage/cli-options.md	932	932	6eedb1e3a4867017	P6 (website documentation)	| ------------------------------- | -------------------- | -----------
-website/docs/usage/cli-options.md	933	933	41b42b3fe501908c	P6 (website documentation)	| `--cbo-warning=N`               | coupling.cbo         | class.warni
-website/docs/usage/cli-options.md	934	934	49b50d6c86772016	P6 (website documentation)	| `--cbo-error=N`                 | coupling.cbo         | class.error
-website/docs/usage/cli-options.md	935	935	2a14487f3f011650	P6 (website documentation)	| `--cbo-ns-warning=N`            | coupling.cbo         | namespace.w
-website/docs/usage/cli-options.md	936	936	20d33636455ae1aa	P6 (website documentation)	| `--cbo-ns-error=N`              | coupling.cbo         | namespace.e
-website/docs/usage/cli-options.md	937	937	6591991044f89078	P6 (website documentation)	| `--distance-warning=N`          | coupling.distance    | max_distanc
-website/docs/usage/cli-options.md	938	938	d2b44d6f97174524	P6 (website documentation)	| `--distance-error=N`            | coupling.distance    | max_distanc
-website/docs/usage/cli-options.md	939	939	fc3c7f87ff1a2733	P6 (website documentation)	| `--instability-class-warning=N` | coupling.instability | class.max_w
-website/docs/usage/cli-options.md	947	947	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	948	948	61c9d1778283bf5b	P6 (website documentation)	| Flag                         | Rule                | Option  |
-website/docs/usage/cli-options.md	949	949	a67648bdec7dd792	P6 (website documentation)	| ---------------------------- | ------------------- | ------- |
-website/docs/usage/cli-options.md	956	956	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	957	957	96772dd2910c0a98	P6 (website documentation)	=== "Design"
-website/docs/usage/cli-options.md	958	958	e3b0c44298fc1c14	P6 (website documentation)	
-website/docs/usage/cli-options.md	959	959	5d91d2410d5b771e	P6 (website documentation)	| Flag                                 | Rule                         
-website/docs/usage/cli-options.md	960	960	3eb934638505fa40	P6 (website documentation)	| ------------------------------------ | -----------------------------
-website/docs/usage/cli-options.md	963	963	27420fc86508edd8	P6 (website documentation)	| `--lcom-warning=N`                   | cohesion.lcom                
-website/docs/usage/cli-options.md	964	964	9c3b00c6b352c984	P6 (website documentation)	| `--lcom-error=N`                     | cohesion.lcom                
-website/docs/usage/cli-options.md	965	965	09b762914100ea99	P6 (website documentation)	| `--lcom-min-methods=N`               | cohesion.lcom                
-website/docs/usage/cli-options.md	966	966	91dc5629fd74607b	P6 (website documentation)	| `--lcom-exclude-readonly`            | cohesion.lcom                
-website/docs/usage/cli-options.md	967	967	78825f83211627fe	P6 (website documentation)	| `--lcom-exclude-methods='[NAME]'`    | cohesion.lcom                
-website/docs/usage/cli-options.md	968	968	31cf68ed0682459a	P6 (website documentation)	| `--noc-warning=N`                    | design.noc                   
-website/docs/usage/cli-options.md	969	969	89346bd575591c39	P6 (website documentation)	| `--noc-error=N`                      | design.noc                   
-website/docs/usage/cli-options.md	971	971	7e256ee280034eb6	P6 (website documentation)	| `--param-type-coverage-error=N`      | design.type-coverage.param   
-website/docs/usage/cli-options.md	972	972	49a7edbe831d83d3	P6 (website documentation)	| `--return-type-coverage-warning=N`   | design.type-coverage.return  
-website/docs/usage/cli-options.md	973	973	5cf3491dc785bc48	P6 (website documentation)	| `--return-type-coverage-error=N`     | design.type-coverage.return  
-website/docs/usage/cli-options.md	974	974	39447a8a652719e8	P6 (website documentation)	| `--property-type-coverage-warning=N` | design.type-coverage.property
-website/docs/usage/cli-options.md	975	975	5c73ca757c56652c	P6 (website documentation)	| `--property-type-coverage-error=N`   | design.type-coverage.property
-website/docs/usage/cli-options.md	976	976	f59b3accbc0db534	P6 (website documentation)	| `--property-exclude-readonly`        | size.property-count          
-website/docs/usage/cli-options.md	983	983	d1b6e70764d772a9	P6 (website documentation)	| `--mi-warning=N`        | maintainability.mi | warning       |
-website/docs/usage/cli-options.md	985	985	b1185faf01a9cb89	P6 (website documentation)	| `--mi-min-statements=N` | maintainability.mi | minStatements |
-website/docs/usage/cli-options.md	986	986	099cbee57fc958d3	P6 (website documentation)	| `--mi-exclude-tests`    | maintainability.mi | excludeTests  |
-website/docs/usage/cli-options.md	1246	1255	986da20845a0558f	P6 (website documentation)	```bash
-website/docs/usage/cli-options.md	1257	1264	dc6e539acdecfa73	P6 (website documentation)	# Restore the original hook from backup
+website/docs/usage/cli-options.md	856	859	f224bdd234e7b534	P6 (website documentation)	bin/qmx check src/ --only-rule=complexity.ccn --only-rule=size.method-
+website/docs/usage/cli-options.md	857	857	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	858	858	58c2eff5a21e5f26	P6 (website documentation)	# Select one channel of a built-in health dimension: producer and chan
+website/docs/usage/cli-options.md	867	872	cc9508ac55bd7744	P6 (website documentation)	
+website/docs/usage/cli-options.md	883	883	574c4ac169a30cc2	P6 (website documentation)	subject-level applicability; they are not a second selection resolver.
+website/docs/usage/cli-options.md	883	884	c9f7b475af8293ea	P6 (website documentation)	subject-level applicability; they are not a second selection resolver.
+website/docs/usage/cli-options.md	884	884	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	885	885	38de548321dfa333	P6 (website documentation)	### `--rule-opt`
+website/docs/usage/cli-options.md	886	886	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	887	887	0b77549b15404e77	P6 (website documentation)	Override rule options from the command line. Format: `rule-name:option
+website/docs/usage/cli-options.md	887	888	63e5f0b24b989063	P6 (website documentation)	Override rule options from the command line. Format: `rule-name:option
+website/docs/usage/cli-options.md	888	888	e4e381d938fbd750	P6 (website documentation)	`rule-name` must be an exact producer rule — never a group, never a ch
+website/docs/usage/cli-options.md	889	889	00d0d88ef9b3ad3b	P6 (website documentation)	wildcard. The same exact-producer constraint governs the `rules:` YAML
+website/docs/usage/cli-options.md	890	890	5836781ee18e5805	P6 (website documentation)	level-qualified selection instead addresses a declared channel code. C
+website/docs/usage/cli-options.md	891	891	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	891	892	5f046190424d4104	P6 (website documentation)	
+website/docs/usage/cli-options.md	892	892	ad332335cfaa348c	P6 (website documentation)	```bash
+website/docs/usage/cli-options.md	893	893	b358bdedfab123c9	P6 (website documentation)	bin/qmx check src/ --rule-opt=complexity.ccn:callable.warning=15
+website/docs/usage/cli-options.md	894	894	178e9fe37d531eef	P6 (website documentation)	bin/qmx check src/ --rule-opt=complexity.ccn:callable.error=30
+website/docs/usage/cli-options.md	895	895	f1b901847390b0ed	P6 (website documentation)	```
+website/docs/usage/cli-options.md	896	896	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	897	897	cc083036e3d57773	P6 (website documentation)	All three ways of getting it wrong are refused with exit 3, where the 
+website/docs/usage/cli-options.md	903	903	55d086e098b57c0a	P6 (website documentation)	`suppress_namespace_channels` is configured in YAML, not through `--ru
+website/docs/usage/cli-options.md	904	904	8c59ed677ab03d60	P6 (website documentation)	requires a non-empty list of namespace patterns, while channel-keyed d
+website/docs/usage/cli-options.md	905	905	6a4ff49431437b2b	P6 (website documentation)	keys are channel selectors and follow the same exact-or-`X.*` rule as 
+website/docs/usage/cli-options.md	906	906	4d95487512748c15	P6 (website documentation)	prefix like `health` is now an error, not a shorthand for `health.*`. 
+website/docs/usage/cli-options.md	907	907	217909003802befe	P6 (website documentation)	and no other level: the option is offered namespace aggregates only, s
+website/docs/usage/cli-options.md	908	908	eabae3dd652e22d1	P6 (website documentation)	name a filter that can never fire.
+website/docs/usage/cli-options.md	909	909	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	910	910	bb57f73ef6ba6323	P6 (website documentation)	<!-- llms:skip-begin -->
+website/docs/usage/cli-options.md	911	911	905b660b0239171b	P6 (website documentation)	### Rule-specific shortcut flags
+website/docs/usage/cli-options.md	912	912	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	913	913	430cb58fdb6529c6	P6 (website documentation)	Many rules have dedicated CLI flags for quick rule-option configuratio
+website/docs/usage/cli-options.md	914	914	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	920	920	0728a83db9867622	P6 (website documentation)	| `--cyclomatic-error=N`         | complexity.ccn       | callable.err
+website/docs/usage/cli-options.md	921	921	c579586653090cdc	P6 (website documentation)	| `--cyclomatic-class-warning=N` | complexity.ccn       | class.max_wa
+website/docs/usage/cli-options.md	922	922	18ddb42c71e25a9a	P6 (website documentation)	| `--cyclomatic-class-error=N`   | complexity.ccn       | class.max_er
+website/docs/usage/cli-options.md	923	923	ba3b9e135f94438a	P6 (website documentation)	| `--cognitive-warning=N`        | complexity.cognitive | callable.war
+website/docs/usage/cli-options.md	924	924	f9f1363ff7bf531c	P6 (website documentation)	| `--cognitive-error=N`          | complexity.cognitive | callable.err
+website/docs/usage/cli-options.md	925	925	e1b29daf3a9c3cdc	P6 (website documentation)	| `--cognitive-class-warning=N`  | complexity.cognitive | class.max_wa
+website/docs/usage/cli-options.md	931	931	2132269dcdaf3320	P6 (website documentation)	| `--wmc-warning=N`              | complexity.wmc       | warning     
+website/docs/usage/cli-options.md	932	932	face7663c5678492	P6 (website documentation)	| `--wmc-error=N`                | complexity.wmc       | error       
+website/docs/usage/cli-options.md	933	933	86d7e6db46c56e62	P6 (website documentation)	| `--wmc-exclude-data-classes`   | complexity.wmc       | excludeDataC
+website/docs/usage/cli-options.md	934	934	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	935	935	d18880c5e2f063bc	P6 (website documentation)	=== "Coupling"
+website/docs/usage/cli-options.md	937	937	21c1236e1de7f719	P6 (website documentation)	| Flag                            | Rule                 | Option     
+website/docs/usage/cli-options.md	938	938	6eedb1e3a4867017	P6 (website documentation)	| ------------------------------- | -------------------- | -----------
+website/docs/usage/cli-options.md	939	939	41b42b3fe501908c	P6 (website documentation)	| `--cbo-warning=N`               | coupling.cbo         | class.warni
+website/docs/usage/cli-options.md	940	940	49b50d6c86772016	P6 (website documentation)	| `--cbo-error=N`                 | coupling.cbo         | class.error
+website/docs/usage/cli-options.md	941	941	2a14487f3f011650	P6 (website documentation)	| `--cbo-ns-warning=N`            | coupling.cbo         | namespace.w
+website/docs/usage/cli-options.md	942	942	20d33636455ae1aa	P6 (website documentation)	| `--cbo-ns-error=N`              | coupling.cbo         | namespace.e
+website/docs/usage/cli-options.md	943	943	6591991044f89078	P6 (website documentation)	| `--distance-warning=N`          | coupling.distance    | max_distanc
+website/docs/usage/cli-options.md	944	944	d2b44d6f97174524	P6 (website documentation)	| `--distance-error=N`            | coupling.distance    | max_distanc
+website/docs/usage/cli-options.md	945	945	fc3c7f87ff1a2733	P6 (website documentation)	| `--instability-class-warning=N` | coupling.instability | class.max_w
+website/docs/usage/cli-options.md	953	953	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	954	954	61c9d1778283bf5b	P6 (website documentation)	| Flag                         | Rule                | Option  |
+website/docs/usage/cli-options.md	955	955	a67648bdec7dd792	P6 (website documentation)	| ---------------------------- | ------------------- | ------- |
+website/docs/usage/cli-options.md	962	962	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	963	963	96772dd2910c0a98	P6 (website documentation)	=== "Design"
+website/docs/usage/cli-options.md	964	964	e3b0c44298fc1c14	P6 (website documentation)	
+website/docs/usage/cli-options.md	965	965	5d91d2410d5b771e	P6 (website documentation)	| Flag                                 | Rule                         
+website/docs/usage/cli-options.md	966	966	3eb934638505fa40	P6 (website documentation)	| ------------------------------------ | -----------------------------
+website/docs/usage/cli-options.md	969	969	27420fc86508edd8	P6 (website documentation)	| `--lcom-warning=N`                   | cohesion.lcom                
+website/docs/usage/cli-options.md	970	970	9c3b00c6b352c984	P6 (website documentation)	| `--lcom-error=N`                     | cohesion.lcom                
+website/docs/usage/cli-options.md	971	971	09b762914100ea99	P6 (website documentation)	| `--lcom-min-methods=N`               | cohesion.lcom                
+website/docs/usage/cli-options.md	972	972	91dc5629fd74607b	P6 (website documentation)	| `--lcom-exclude-readonly`            | cohesion.lcom                
+website/docs/usage/cli-options.md	973	973	78825f83211627fe	P6 (website documentation)	| `--lcom-exclude-methods='[NAME]'`    | cohesion.lcom                
+website/docs/usage/cli-options.md	974	974	31cf68ed0682459a	P6 (website documentation)	| `--noc-warning=N`                    | design.noc                   
+website/docs/usage/cli-options.md	975	975	89346bd575591c39	P6 (website documentation)	| `--noc-error=N`                      | design.noc                   
+website/docs/usage/cli-options.md	977	977	7e256ee280034eb6	P6 (website documentation)	| `--param-type-coverage-error=N`      | design.type-coverage.param   
+website/docs/usage/cli-options.md	978	978	49a7edbe831d83d3	P6 (website documentation)	| `--return-type-coverage-warning=N`   | design.type-coverage.return  
+website/docs/usage/cli-options.md	979	979	5cf3491dc785bc48	P6 (website documentation)	| `--return-type-coverage-error=N`     | design.type-coverage.return  
+website/docs/usage/cli-options.md	980	980	39447a8a652719e8	P6 (website documentation)	| `--property-type-coverage-warning=N` | design.type-coverage.property
+website/docs/usage/cli-options.md	981	981	5c73ca757c56652c	P6 (website documentation)	| `--property-type-coverage-error=N`   | design.type-coverage.property
+website/docs/usage/cli-options.md	982	982	f59b3accbc0db534	P6 (website documentation)	| `--property-exclude-readonly`        | size.property-count          
+website/docs/usage/cli-options.md	989	989	d1b6e70764d772a9	P6 (website documentation)	| `--mi-warning=N`        | maintainability.mi | warning       |
+website/docs/usage/cli-options.md	991	991	b1185faf01a9cb89	P6 (website documentation)	| `--mi-min-statements=N` | maintainability.mi | minStatements |
+website/docs/usage/cli-options.md	992	992	099cbee57fc958d3	P6 (website documentation)	| `--mi-exclude-tests`    | maintainability.mi | excludeTests  |
+website/docs/usage/cli-options.md	1252	1261	986da20845a0558f	P6 (website documentation)	```bash
+website/docs/usage/cli-options.md	1263	1270	dc6e539acdecfa73	P6 (website documentation)	# Restore the original hook from backup
 website/docs/usage/usage-scenarios.md	20	20	8f8e0b1e2de94ab6	P6 (website documentation)	```yaml
 website/docs/usage/usage-scenarios.md	23	23	f67246882fa79a6e	P6 (website documentation)	only_rules:
 website/docs/usage/usage-scenarios.md	30	30	b19015e7fa874b3f	P6 (website documentation)	callable:

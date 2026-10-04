@@ -2078,6 +2078,8 @@ rules:
       # Two Baseline writers consume this document guard (Ca=2, Ce=10).
       # Instability reflects the small reader population; other signals remain active.
       - exact: src/Analysis/Policy/Baseline/BaselineDocumentWriter.php
+      # Cleanup composes ten dependencies for two readers; instability reflects that small population.
+      - exact: src/Analysis/Policy/Baseline/BaselineCleaner.php
       # The policy composes ten dependencies for two run-level readers (Ca=2).
       - exact: src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php
       # These exact vocabulary, document, specificity and DI declarations have Ca=2.
@@ -2317,6 +2319,8 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # Immutable rule options separate static declaration/factory from independent enabled and error fields.
+      - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
       # The readonly snapshot has independent live and provenance observations over coherent facts.
       - exact: src/Analysis/Finding/Contract/EnablementDecision.php
       # A console command shares no fields by construction: `configure()` touches
