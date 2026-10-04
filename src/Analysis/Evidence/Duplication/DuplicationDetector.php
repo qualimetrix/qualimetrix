@@ -34,8 +34,8 @@ use SplFileInfo;
  *    in a hash match
  * 3. {@see DuplicateBlockFinder} verifies token matches, extends every
  *    group of copies into one match, computes line ranges, applies the
- *    data-table / self-duplication / minLines filters, and drops every
- *    match whose copies all lie inside a longer one
+ *    data-table / self-duplication / minLines filters, and drops a match
+ *    only when all its copies lie in one connected component of retained covers
  *
  * Memory optimizations:
  * - Two-pass avoids holding all tokens + full hash index simultaneously
