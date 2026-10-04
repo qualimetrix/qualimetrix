@@ -1132,6 +1132,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal'
         - 'Qualimetrix\Infrastructure\Console\Refusal\FileTargetRefusal'
         - 'Qualimetrix\Infrastructure\Console\Refusal\MachineReadableFormats'
+        - 'Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint'
         - 'Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter'
         - 'Qualimetrix\Infrastructure\Console\ReportCoverageProjection'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'

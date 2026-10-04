@@ -1033,8 +1033,11 @@ Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule	Analysis.Evidence.Duplication	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure	Analysis.Run	contract
 Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface	Analysis.Run	contract
 Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	Analysis.Evidence.Duplication	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector	Analysis.Evidence.Duplication	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
+Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder	Analysis.Evidence.Duplication	Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure	Analysis.Run	contract
 Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder	Analysis.Evidence.Duplication	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuilder	Analysis.Evidence.Duplication	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder	Analysis.Evidence.Duplication	Qualimetrix\Core\Path\RelativePath	Core.Path	contract

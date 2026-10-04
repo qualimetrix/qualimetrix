@@ -36,6 +36,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Inline/
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Contract/Configuration/AuthoredExclude.php	Qualimetrix\Analysis\Run\Contract\Configuration	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/PathFactory.php	Qualimetrix\Core\Path\PathFactory	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1

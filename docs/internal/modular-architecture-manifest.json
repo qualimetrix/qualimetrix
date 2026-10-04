@@ -14751,8 +14751,17 @@
       "path": "src/Analysis/Run/Contract/FileSetInspectionFailure.php",
       "kind": "class",
       "owner": "Analysis.Run",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Duplication",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationDetector"
+        },
+        {
+          "owner": "Analysis.Evidence.Duplication",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\Index\\HashIndexBuilder"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\Contract\\FileSetInspectionParticipantInterface": {
       "path": "src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php",
@@ -15761,6 +15770,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Discovery\\WalkedEntrySelection"
+        },
+        {
+          "owner": "Analysis.Evidence.Duplication",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationDetector"
         }
       ]
     },
@@ -22389,6 +22402,13 @@
           ]
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Refusal\\OutOfMemoryHint": {
+      "path": "src/Infrastructure/Console/Refusal/OutOfMemoryHint.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

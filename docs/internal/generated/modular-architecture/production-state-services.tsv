@@ -115,6 +115,7 @@ src/Infrastructure/Console/ErrorStream.php	Qualimetrix\Infrastructure\Console\Er
 src/Infrastructure/Console/FilteredInputDefinition.php	Qualimetrix\Infrastructure\Console\FilteredInputDefinition	Infrastructure.Console	"adapter session or cache"	-	hiddenOptionNames	setHiddenOptionNames
 src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar	Infrastructure.Console	"adapter session or cache"	-	progressBar	setMessage
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	"adapter session or cache"	-	delegate	reset,setMessage
+src/Infrastructure/Console/Refusal/OutOfMemoryHint.php	Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint	Infrastructure.Console	"process-wide static"	registered,reserve	-	register
 src/Infrastructure/Console/RunTarget/RunTargetSession.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	"adapter session or cache"	-	outputPublished	-
 src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	held,judged,reportOnStandardOutput	settle
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	-
