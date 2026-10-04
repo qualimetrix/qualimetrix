@@ -2222,6 +2222,12 @@ rules:
 
   # --- Code Smells ---
 
+  code-smell.exit:
+    suppress_paths:
+      # An OOM shutdown is already terminal; throwing cannot recover it or
+      # select the environment outcome required by the memory-fatal tests.
+      - exact: src/Infrastructure/Console/Refusal/OutOfMemoryHint.php
+
   # No exclusions needed: the rule itself no longer flags promoted constructor
   # properties (a promoted param is a field declaration, not a behavior switch),
   # so the whole-tree exclusions this block used to carry — src/Core, src/Reporting,

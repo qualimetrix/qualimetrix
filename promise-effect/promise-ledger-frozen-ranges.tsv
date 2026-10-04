@@ -1,5 +1,5 @@
 # FROZEN PROMISE-CARRIER RANGES — companion to promise-ledger.tsv.
-# Tree 8b3259e988fa53af5a8e6ba9067f734330df4b51. Date: 2026-10-04.
+# Tree 5f77d564da60a983d419999971e58649db8cc14a. Date: 2026-10-04.
 #
 # Each ledger citation is frozen at line-range granularity with a hash of its
 # exact text. File granularity would prevent legitimate changes elsewhere in a

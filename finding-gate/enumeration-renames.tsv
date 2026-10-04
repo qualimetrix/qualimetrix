@@ -20,7 +20,7 @@ code-smell.debug-code	channel	?		1	46	0	0	0	14	0	4	0	0	1	1
 code-smell.empty-catch	channel	?		5	10	0	0	0	23	0	4	0	0	1	1
 code-smell.error-suppression	channel	?		7	14	1	2	2	20	0	4	0	0	1	1
 code-smell.eval	channel	?		1	33	0	0	0	16	0	10	0	0	1	1
-code-smell.exit	channel	?		1	9	0	0	0	17	0	4	0	0	1	1
+code-smell.exit	channel	?		1	9	0	1	0	17	0	4	0	0	1	1
 code-smell.goto	channel	?		2	139	0	0	0	12	0	6	0	0	1	1
 code-smell.identical-subexpression	channel	?		3	11	0	0	0	14	0	4	1	1	0	0
 code-smell.long-parameter-list	channel	?		18	102	2	2	2	40	0	17	0	0	0	0
@@ -159,7 +159,7 @@ code-smell.debug-code	producer	?		1	46	0	0	0	14	0	4	0	0	0	0
 code-smell.empty-catch	producer	?		5	10	0	0	0	23	0	4	0	0	0	0
 code-smell.error-suppression	producer	?		7	14	1	2	2	20	0	4	0	0	0	0
 code-smell.eval	producer	?		1	33	0	0	0	16	0	10	0	0	0	0
-code-smell.exit	producer	?		1	9	0	0	0	17	0	4	0	0	0	0
+code-smell.exit	producer	?		1	9	0	1	0	17	0	4	0	0	0	0
 code-smell.goto	producer	?		2	139	0	0	0	12	0	6	0	0	0	0
 code-smell.identical-subexpression	producer	?		3	11	0	0	0	14	0	4	0	0	0	0
 code-smell.long-parameter-list	producer	?		18	102	2	2	2	40	0	17	0	0	0	0

@@ -178,9 +178,10 @@ then constructs blocks from the retained connected evidence.
 `TokenStream` retains token values, a data mask and interleaved packed
 coordinates. `startLine(int)`, `endLine(int)`, `coveredPrefix(int)`,
 `startByte(int)` and `endByte(int)` expose individual integer coordinates;
-invalid token indexes refuse. Each field uses the smallest sufficient unsigned
-8-, 16- or 32-bit width, with signed native 64-bit storage preserving the full
-PHP integer range. Normalization builds and packs one file at a time.
+invalid token indexes refuse. `coveredLines(int, int)` derives an interval's
+covered rows from the same prefix and boundary coordinates. Each field uses
+the smallest sufficient unsigned 8-, 16- or 32-bit width, with signed native
+64-bit storage preserving the full PHP integer range. Normalization builds and packs one file at a time.
 
 Candidates retain chunked metadata and copy positions. Ordered nonnegative
 positions encode file and token-offset deltas separately; signed or unordered
@@ -189,6 +190,11 @@ ordering preserves descending length, descending copy count and insertion
 order without retaining a sorting workspace. There is no candidate cutoff.
 Work within one exact token-sequence group does not promise linear work over
 all nested matches in a varied corpus.
+
+`CopyCoverIndex` owns retained token intervals and reusable flat connectivity
+state. `BalancedSegments` admits eligible structural segments through the
+finder's reportability callback and retains the whole match only when none
+qualifies. The finder owns copy filtering and block allocation.
 
 `CodeDuplicationRule` is a `qmx.rule` implementation. Registration is delegated
 to the infrastructure `DuplicationConfigurator`; compiler passes inject its

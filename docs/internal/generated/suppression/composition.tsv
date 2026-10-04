@@ -98,6 +98,7 @@ rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructo
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php	Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing::__construct	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/FormatterContext.php	Qualimetrix\Reporting\FormatterContext::__construct	warning	1
 rule-path-suppression	code-smell.constructor-overinjection	code-smell.constructor-overinjection	src/Reporting/Report.php	Qualimetrix\Reporting\Report::__construct	error	1
+rule-path-suppression	code-smell.exit	code-smell.exit	src/Infrastructure/Console/Refusal/OutOfMemoryHint.php	src/Infrastructure/Console/Refusal/OutOfMemoryHint.php	warning	1
 rule-path-suppression	code-smell.long-parameter-list	code-smell.long-parameter-list	src/Analysis/Evidence/DependencyModel/DependencyGraph.php	Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph::__construct	warning	1
 rule-path-suppression	code-smell.long-parameter-list	code-smell.long-parameter-list	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding::__construct	error	1
 rule-path-suppression	code-smell.long-parameter-list	code-smell.long-parameter-list	src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php	Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression::__construct	warning	1
