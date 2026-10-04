@@ -1,0 +1,10 @@
+--- candidate
++++ reference (mapped)
+@@ -122,1 +122,6 @@
+-            "refusals": [{"channel":"annotation.unresolved-directive","message":"Suppression \"duplication.clone:class\" addresses \"duplication.clone\", and it does not report at level \"class\" — the levels available are \"project\". The pair can never match anything. A reason goes after \"--\"."}]
++            "refusals": [
++                {
++                    "channel": "annotation.unresolved-directive",
++                    "message": "Suppression \"duplication.clone:class\" addresses \"duplication.clone\", and it does not report at level \"class\" \u2014 the levels available are \"project\". The pair can never match anything. A reason goes after \"--\"."
++                }
++            ]

@@ -1,0 +1,10 @@
+--- candidate
++++ reference (mapped)
+@@ -3,6 +3,1 @@
+-  Channel: duplication.clone
+-    Occurrence: 595e92437b98f289
+-    Reported at: src/ReportBuilder.php:6
+-    baseline:      (none)
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
++  Nothing currently reports on this measured subject.

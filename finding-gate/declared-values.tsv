@@ -1,1 +1,2 @@
 kind	key	level	reason
+field	refusals	*	The impossible class suppression reports the declared File level instead of Project.
