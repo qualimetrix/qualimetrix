@@ -221,13 +221,13 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	4	2
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.Baseline	2	2
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus	Analysis.Policy.Baseline	2	1
+Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	2	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1
-Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	2	2
 Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	4	1
 Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface	Analysis.Policy.Inline	2	2

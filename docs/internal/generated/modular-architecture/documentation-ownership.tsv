@@ -90,6 +90,7 @@ docs/adr/0094-analysis-results-publish-subject-owned-values.md	Analysis.Run	"Mov
 docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md	Analysis.Policy.Inline	"Move or update atomically with the named subject owner."
 docs/adr/0096-file-target-claims.md	Core.FileTarget	"Move or update atomically with the named subject owner."
 docs/adr/0097-duplication-copy-evidence.md	Analysis.Evidence.Duplication	"Move or update atomically with the named subject owner."
+docs/adr/0098-baseline-entry-comparability.md	Analysis.Policy.Baseline	"Move or update atomically with the named subject owner."
 docs/adr/README.md	Architecture.Governance	"Repository-wide governance documentation; review with the manifest and generated topology."
 docs/internal/CLI_CONVENTIONS.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/COMPETITOR_COMPARISON.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."

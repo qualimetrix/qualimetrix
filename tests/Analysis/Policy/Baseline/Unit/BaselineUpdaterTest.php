@@ -309,7 +309,7 @@ final class BaselineUpdaterTest extends TestCase
      * disagrees with what the channel currently declares — the loader would
      * refuse such a line, but a lifecycle command building a `Baseline`
      * directly bypasses the loader entirely (mirrors
-     * {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage}'s identical
+     * {@see \Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage}'s identical
      * reachability note).
      */
     #[Test]

@@ -13,7 +13,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  * already refuses such entries on their way out of a file, because a
  * lifecycle command may assemble a {@see Baseline} in memory without going
  * through the loader at all — the same reachability
- * {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage} documents for its
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage} documents for its
  * own applicability checks.
  */
 enum BaselineUpdateRefusalReason: string

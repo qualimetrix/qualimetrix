@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Baseline\Filter;
+namespace Qualimetrix\Analysis\Policy\Baseline\Contract;
 
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 
 /**

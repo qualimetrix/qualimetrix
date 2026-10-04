@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Baseline\Filter;
+namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 

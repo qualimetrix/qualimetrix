@@ -6353,11 +6353,11 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\GroupCeilingVerdict"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCeilingVerdict"
         }
       ]
     },
@@ -6557,7 +6557,7 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Analysis.Policy.Inline",
@@ -7086,7 +7086,7 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Infrastructure.Console",
@@ -7118,7 +7118,7 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         }
       ]
     },
@@ -7130,11 +7130,11 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\CeilingOutcome"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\CeilingOutcome"
         }
       ]
     },
@@ -13000,8 +13000,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage": {
-      "path": "src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php",
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/BaselineCeilingStage.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
       "visibility": "contract",
@@ -13012,15 +13012,22 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\CeilingOutcome": {
-      "path": "src/Analysis/Policy/Baseline/Filter/CeilingOutcome.php",
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\CeilingOutcome": {
+      "path": "src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
+        }
+      ]
     },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\GroupCeilingVerdict": {
-      "path": "src/Analysis/Policy/Baseline/Filter/GroupCeilingVerdict.php",
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCeilingVerdict": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/GroupCeilingVerdict.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
       "visibility": "internal",
@@ -15335,7 +15342,7 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Analysis.Policy.Baseline",

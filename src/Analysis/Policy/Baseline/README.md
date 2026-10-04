@@ -63,9 +63,11 @@ Baseline/
 ├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol, plus the subject's lines whose identity could not be read — what the command prints
 ├── BoundaryExplanationStatus.php # Current, baseline-only, or unknown symbol classification
 │
-├── Filter/
+├── Ceiling/
 │   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
 │   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
+└── Contract/
+    └── CeilingOutcome.php      # VO: the ceiling result with stale and inert entries from one measured set
 ```
 
 ## Baseline Workflow

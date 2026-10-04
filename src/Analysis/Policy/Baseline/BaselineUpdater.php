@@ -29,7 +29,7 @@ use Qualimetrix\Core\Time\ClockInterface;
  *   ignored.
  * - **A measured group replaces the stored one exactly when
  *   {@see GroupAcceptance} accepts it against the stored one** — the same
- *   test {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage} applies at
+ *   test {@see \Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage} applies at
  *   `check` time, evaluated here instead. Every other measured group is
  *   refused and the entry is written back exactly as it was: a refusal never
  *   means "clamp to whatever is safe", because a partial write disguised as

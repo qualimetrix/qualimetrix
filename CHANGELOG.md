@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Baseline version 13 becomes version 14 with required
+  `exclusions: {patterns, generated}`. Preserve accepted entries and explicitly
+  record the definition under which they were accepted when migrating.
+  Unknown document keys refuse before analysis; channel and level semantics
+  are judged after configuration. PHP consumers must supply
+  `RecordedExclusions` to Baseline construction and generation. Ceiling types
+  move from `Baseline\Filter` to `Baseline\Ceiling`, with `CeilingOutcome`
+  under `Baseline\Contract`. See ADR 0098 for ownership and migration.
+- Baseline acceptance and resolved-entry reporting require comparable complete
+  measurement. Narrow scope, changed exclusions, unknown metadata and
+  incomplete analysis no longer imply repair or a measured breach. Update
+  preserves recorded scope and exclusions and reports equal payload as
+  unchanged. Stale and inert entries publish project warnings through
+  `baseline.unused-entry`; narrow hook and Git report invocations retain the
+  full ceiling evidence requirement. JSON and HTML distinguish `breached`
+  from `not-compared` through `baselineVerdict` and `baselineReason`; an
+  `acceptedLevel` alone no longer identifies a breach. See ADR 0098.
+
 - `ArtifactFile` is removed. Console report, profile and log delivery uses one
   shared `RunTargets`: judge destinations, claim after input checks, write through
   held targets and abandon on teardown. `CheckCommand` requires a shared
@@ -952,6 +970,12 @@ What changes for a configuration you already have:
   none. A consumer comparing the key set exactly must accept it.
 
 ### Changed
+
+- `baseline:update --accept-new=channel` adds comparable measured identities
+  only for explicitly named channels while preserving existing accepted
+  payloads. `--record-exclusions` deliberately records a new exclusion
+  definition and recaptures affected groups under the recorded path scope.
+  The two modes cannot be combined. See ADR 0098.
 
 - A configuration error names the layer that wrote the value — the preset,
   the file, the command-line option — and quotes the key as you spelled it; an
