@@ -3890,8 +3890,22 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\BalancedSegments": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/BalancedSegments.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateBlock": {
       "path": "src/Analysis/Evidence/Duplication/Matching/DuplicateBlock.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\CopyCoverIndex": {
+      "path": "src/Analysis/Evidence/Duplication/Matching/CopyCoverIndex.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
@@ -14733,6 +14747,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Run\\Contract\\FileSetInspectionFailure": {
+      "path": "src/Analysis/Run/Contract/FileSetInspectionFailure.php",
+      "kind": "class",
+      "owner": "Analysis.Run",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Run\\Contract\\FileSetInspectionParticipantInterface": {
       "path": "src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php",
       "kind": "interface",
@@ -15660,6 +15681,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\FileSetInspectionFailure"
         }
       ]
     },

@@ -1881,6 +1881,7 @@ Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface	Analysis.R
 Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry	Analysis.Run	Qualimetrix\Core\Path\PathFactory	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
+Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface	Analysis.Run	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure	Analysis.Run	Qualimetrix\Core\Path\RelativePath	Core.Path	contract

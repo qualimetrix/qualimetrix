@@ -4677,17 +4677,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"101 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"99 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsRunsOfARepeatedStatementUnderALowMemoryLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itDoesNotAdmitABlockWhenOnlyACommentReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysOnlyTheCopyMovedToAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itRekeysTheUntouchedCopyWhenCodeIsInsertedNextToAnotherCopy
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsEveryCopyOnceTheLongestReachesMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsEveryCopyOnceTheLongestCodeCoverageReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itReportsNoCopyWhileNoCopyReachesMinLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itStalesOnlyTheEditedCopyWhenTheOthersStillAgreeOnTheBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itValuesEachCopyByTheLinesThatCopySpans
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itValuesEachCopyByItsCoveredCodeLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinLinesFilter
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itAppliesMinTokensFilter
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itCountsAllRowsOfAMultilineHeredocToken
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsExactDuplicateAcrossFiles
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsNearMissDuplication
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itDetectsSameFileDuplication
@@ -4700,14 +4702,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itHandlesEmptyFileList
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itHashesTheCompleteNormalizedTokenSequenceRatherThanBlockSize
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itKeepsTheLongerMatchOfTwoCopiesWhenAThirdCopyDivergesEarlier
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itKeepsTheWholeMatchWhenNoBalancedSegmentIsEligible
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itKeepsTokenAdjacentCopiesAtASemicolonAndForeachBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itLeavesASmallTailUnreportedBesideAnEligibleFollowingMethod
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itPreservesSixFilePairsAcrossDisconnectedLongerMatches
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReadsTheCurrentTypedThresholdsOnEachInspectionWithoutTheRawDoor
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsABlockRepeatedMoreThanAHundredTimes
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsAdjacentTokenCopiesThatShareAClosingBraceLine
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsBothEligibleSegmentsAcrossAnUnmatchedMethodCloser
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsDataMatchedWithExecutableCodeInBothFileOrders
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsDuplicationCrossingTheDataCodeBoundary
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsDuplicationInMethodBodyArrayLiterals
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsEveryCopyOfARepeatedBlockInOneBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsIdenticalBlocksInOneFileThatTouchWithoutSharingALine
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itReportsTheLinesTheMatchedTokensActuallyOccupy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itRetainsDistantFirstAndAllSubsequentDuplicateOccurrences
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itUsesEachCopysOriginalByteRangeForItsHint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesALargeDuplicateAsAnError
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds
@@ -4729,14 +4739,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerCopyOfEveryBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheWarningThresholdAsAWarning
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesEachCopysCoveredCodeLinesAndHintInItsFinding
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itNeverDemotesATrueCandidateWhenACollisionOccurs
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\SaturatingCandidateFilterTest::itPromotesRepeatedHashesWithoutRetainingTheirPositions
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\BalancedSegmentsTest::itKeepsAnUnclosedOpenerAtTheEndOfTheRequestedRange
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\BalancedSegmentsTest::itSplitsUnmatchedClosersAndSkipsLeadingPunctuation
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCapsTheHintAtThreeMeaningfulLines
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itClampsAnEndLineBeyondTheFileLength
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCollapsesRunsOfWhitespaceIntoASingleSpace
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itCountsUnicodeCodePointsIncludingTheEllipsis
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itExtractsAHintFromAnArrayConstantBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itExtractsTheFirstMeaningfulLinesOfTheBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itFallsBackToBytesForInvalidUtf8
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itLeavesAShortHintUntruncated
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itReturnsAHintForASourceWithQuotesAndBackslashes
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itReturnsNullForABlockContainingOnlyBraces
@@ -4746,15 +4761,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itSkipsLinesThatContainOnlyBraces
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesALongHintWithAnEllipsis
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesASingleLineThatExceedsTheHintLength
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\ContentHintExtractorTest::itTruncatesAtTheLastWordBoundaryInsideTheUnicodeLimit
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\CopyCoverIndexTest::itFindsOnlyWholeTokenCoversInTheRequestedFile
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itCountsARepeatedPositionOnce
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itKeepsDifferentMatchesWithTheSamePhysicalLineSpan
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itLeavesAWindowThatContinuesAnEarlierMatchToThatMatch
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsEveryCopyInALargeBucketAsOneBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsTwoCopiesAsOneBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAMatchWhoseCopiesAllLieInsideALongerOne
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAShorterMatchCoveredByOneConnectedComponent
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itJudgesEqualLengthMatchesWithMoreCopiesFirst
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itJudgesMatchesOfEqualLengthInTheOrderTheyWereAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsAShorterMatchWithACopyOutsideEveryLongerOne
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itKeepsAllSixFilePairsWhenLongerMatchesCoverDisconnectedGroups
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itResetsConnectivityAfterAnUncoveredCopyKeepsACandidate
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagAMultiPropertyDeclarationAtAll
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagBareStaticLocalVariableAsData
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization\DataDeclarationTaggerTest::itDoesNotTagConstructorPromotedPropertyArrayDefaultAsData
@@ -9031,6 +9053,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\ExcludeBinding\UnmatchedDiscoveryExcludeIntegrationTest::itStaysSilentWhenTheCommandLineExcludeMatched
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itAggregatesGlobalCollectorMetricsToNamespaceLevel
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itKeepsCollectionFailurePrecedenceAndUnfailedSurvivorsWhenInspectionAlsoFails
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itMapsEveryCollectionFailureKindToItsCoverageFailureKind
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPassesTheDependencyGraphToAnalysisContext
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip
@@ -9038,6 +9061,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itProducesIdenticalDependenciesSequentiallyAndThroughARealAmpWorkerRoundTrip
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itReadsTheSameInlineControlsFromACachedAstAsFromAFreshParse
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itRetainsPublishedSelectedAndSkippedPathsAfterCollectionRemovesTheirParent#0
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\AnalysisPipelineIntegrationTest::itRetainsPublishedSelectedAndSkippedPathsAfterCollectionRemovesTheirParent#1
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itKeepsThePathExclusionInertOnTheLateChannelWhileItStillReachesTheEarlySibling
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itLetsDisableSelectorsReachTheLateChannelExactlyAsTheGridSays"channel:level"
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\LateChannelObeysSelectionTest::itLetsDisableSelectorsReachTheLateChannelExactlyAsTheGridSays"exact channel name"
@@ -9358,6 +9383,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itAcceptsAnEmptyParticipantSet
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itClearsPriorCapabilityStateOnAnEnabledThenDisabledRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itExecutesEnabledParticipantsInCompilerOrder
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itPublishesOneUnreadableFailureForRepeatedSelectedInputAndResetsNextRun
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRejectsABlankInspectionFailureMessage
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRejectsAnEmptyInspectionFailurePayload
+ - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itRejectsAnUnreadableInputOutsideTheSelectedRoster
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itReplacesPriorCapabilityStateOnAnEnabledThenNoMatchRun
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itResetsAllParticipantsBeforeTheFirstSelectionCheck
  - Qualimetrix\Tests\Analysis\Run\Unit\FileSetInspection\FileSetInspectionCompositeTest::itResolvesWrittenEnablementBeforeInspectingParticipants#0

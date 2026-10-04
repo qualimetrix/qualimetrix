@@ -2082,6 +2082,7 @@ Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Contract\C
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	src/Analysis/Run/Contract/Configuration/RunConfiguration.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface	Analysis.Run	src/Analysis/Run/Contract/Discovery/ProjectTreeQueryInterface.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Contract\Discovery\SkippedEntry	Analysis.Run	src/Analysis/Run/Contract/Discovery/SkippedEntry.php	ast-name
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Contract\FileSetInspectionFailure	Analysis.Run	src/Analysis/Run/Contract/FileSetInspectionFailure.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface	Analysis.Run	src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Discovery\ProjectFiles	Analysis.Run	src/Analysis/Run/Discovery/ProjectFiles.php	ast-name
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	Qualimetrix\Analysis\Run\Discovery\ProjectTree	Analysis.Run	src/Analysis/Run/Discovery/ProjectTree.php	ast-name

@@ -296,7 +296,7 @@ Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	8	2
 Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	7	2
 Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	7	3
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	78	14
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	79	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	91	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	8	4

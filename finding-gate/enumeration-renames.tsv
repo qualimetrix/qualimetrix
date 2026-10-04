@@ -46,7 +46,7 @@ design.type-coverage.param	channel	?		7	57	2	1	1	30	0	7	0	0	0	0
 design.type-coverage.property	channel	?		7	26	2	1	1	29	0	8	0	0	0	0
 design.type-coverage.return	channel	?		7	35	2	1	0	29	0	8	0	0	0	0
 discovery.unmatched-exclude	channel	?		8	14	0	0	0	23	0	3	0	0	0	0
-duplication.clone	channel	?		18	113	0	2	28	68	0	7	0	0	0	0
+duplication.clone	channel	?		18	115	0	2	28	68	0	7	0	0	0	0
 maintainability.mi	channel	?		17	193	2	2	0	35	0	5	0	0	0	0
 security.command-injection	channel	?		3	7	0	0	0	15	0	3	0	0	1	1
 security.hardcoded-credentials	channel	?		7	38	0	0	0	16	0	5	1	1	0	0
@@ -185,7 +185,7 @@ design.type-coverage.param	producer	?		7	57	2	1	1	30	0	7	0	0	0	0
 design.type-coverage.property	producer	?		7	26	2	1	1	29	0	8	0	0	0	0
 design.type-coverage.return	producer	?		7	35	2	1	0	29	0	8	0	0	0	0
 discovery.unmatched-exclude	producer	?		8	14	0	0	0	23	0	3	0	0	0	0
-duplication.clone	producer	?		18	113	0	2	28	68	0	7	0	0	0	0
+duplication.clone	producer	?		18	115	0	2	28	68	0	7	0	0	0	0
 health.cohesion	producer	?		39	155	0	3	13	43	0	30	0	0	0	0
 health.complexity	producer	?		55	252	0	1	0	28	0	30	0	0	0	0
 health.coupling	producer	?		48	63	0	0	0	21	0	30	0	0	0	0
