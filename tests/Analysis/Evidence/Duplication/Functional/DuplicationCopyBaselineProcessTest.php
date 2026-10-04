@@ -61,18 +61,17 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
         [$newCopy] = $report['violations'];
         self::assertSame('src/Gamma.php', $newCopy['file']);
         self::assertSame('warning', $newCopy['severity']);
-        self::assertSame(20, $newCopy['metricValue'], 'the new copy spans one line more than the accepted ones');
+        self::assertSame(19, $newCopy['metricValue'], 'the comment leaves the new copy with the same covered code lines');
         self::assertNull($newCopy['acceptedLevel']);
     }
 
     /**
-     * `min_lines` admits a block by its longest copy. A comment lifting the
-     * longest copy past it adds the block, so every copy is a new finding —
-     * the one in the file nobody touched too, at a value of its own below
-     * `min_lines` and reported as a warning.
+     * A comment widens the physical span without adding covered code lines.
+     * Neither short copy reaches min_lines, so adding the comment after
+     * baseline generation must not admit the block.
      */
     #[Test]
-    public function itReportsEveryCopyWhenACommentLiftsTheLongestPastMinLines(): void
+    public function itDoesNotAdmitCopiesWhenACommentOnlyWidensTheirPhysicalSpan(): void
     {
         file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', ''));
         file_put_contents($this->tmpDir . '/src/Beta.php', self::shortFunction('beta', ''));
@@ -83,8 +82,8 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
         file_put_contents($this->tmpDir . '/src/Alpha.php', self::shortFunction('alpha', '    // explain y'));
 
         $checked = $this->qmx('check', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--fail-on=warning', '--format=json', '--no-progress', '--no-cache', '--workers=0');
-        self::assertSame(1, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
-        self::assertSame([['src/Alpha.php', 5, 'warning'], ['src/Beta.php', 4, 'warning']], self::violations($checked['stdout']));
+        self::assertSame(0, $checked['exitCode'], $checked['stderr'] . "\n" . $checked['stdout']);
+        self::assertSame([], self::violations($checked['stdout']));
     }
 
     /**
@@ -263,8 +262,8 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
     }
 
     /**
-     * Four lines and over 70 tokens: one line short of the default
-     * `min_lines`, until `$extra` lands inside it.
+     * Four code lines and over 70 tokens; an inserted comment changes only
+     * the physical span.
      */
     private static function shortFunction(string $name, string $extra): string
     {
