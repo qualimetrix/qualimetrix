@@ -17,7 +17,14 @@ final class ContentHintExtractor
             return null;
         }
 
-        $lines = preg_split('/\r\n|\r|\n/', substr($source, $startByte, $endByte - $startByte), 11);
+        $hint = $this->firstMeaningfulExcerpt(substr($source, $startByte, $endByte - $startByte));
+
+        return $hint === null ? null : $this->truncateHint($hint);
+    }
+
+    private function firstMeaningfulExcerpt(string $slice): ?string
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $slice, 11);
         if ($lines === false) {
             throw new LogicException('Cannot split the hint source lines');
         }
@@ -40,7 +47,12 @@ final class ContentHintExtractor
         if ($collapsed === null) {
             throw new LogicException('Cannot collapse the hint whitespace');
         }
-        $hint = trim($collapsed);
+
+        return trim($collapsed);
+    }
+
+    private function truncateHint(string $hint): string
+    {
         $utf8 = mb_check_encoding($hint, 'UTF-8');
         $length = $utf8 ? mb_strlen($hint, 'UTF-8') : \strlen($hint);
         if ($length <= self::MAX_HINT_LENGTH) {

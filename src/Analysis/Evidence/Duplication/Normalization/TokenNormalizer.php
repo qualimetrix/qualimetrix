@@ -70,32 +70,18 @@ final class TokenNormalizer
             $startByte = $byte;
             $byte += \strlen($text);
 
-            if (\is_string($token)) {
-                $type = 0;
-                $line = $currentLine;
-                $value = $text;
-            } else {
-                [$type, $value, $line] = $token;
-                // Single-character tokens inherit the previous token's end, including skipped whitespace.
-                $currentLine = $line + substr_count($text, "\n") + substr_count($text, "\r") - substr_count($text, "\r\n");
-                if ($type === \T_CLOSE_TAG && $this->tagDataDeclarations) {
-                    // A closing PHP block terminates a declaration before the next block's code.
-                    $barriers[] = \count($values);
-                    $type = DataDeclarationTagger::PHP_CLOSE_TAG_BARRIER;
-                    $value = '';
-                } elseif (\in_array($type, self::SKIP_TOKENS, true)) {
-                    continue;
-                } elseif ($type === \T_INLINE_HTML) {
-                    $collapsedHtml = preg_replace('/[\x09-\x0D\x20]+/', ' ', $text)
-                        ?? throw new LogicException('Cannot normalize inline HTML whitespace.');
-                    $value = 'html:' . hash('xxh128', $collapsedHtml);
-                } else {
-                    $value = self::NORMALIZE_MAP[$type] ?? $value;
-                    if (\in_array($type, self::FOLD_CASE_TOKENS, true)
-                        || ($type === \T_STRING && \in_array(strtolower($value), ['true', 'false', 'null'], true))) {
-                        $value = strtolower($value);
-                    }
-                }
+            $type = 0;
+            $line = $currentLine;
+            $value = $text;
+            if (\is_array($token)) {
+                $line = $token[2];
+                $value = $this->normalizePhpToken($token, $type, $currentLine);
+            }
+            if ($value === null) {
+                continue;
+            }
+            if ($type === DataDeclarationTagger::PHP_CLOSE_TAG_BARRIER) {
+                $barriers[] = \count($values);
             }
 
             $values[] = $value;
@@ -109,9 +95,7 @@ final class TokenNormalizer
         }
 
         unset($rawTokens);
-        $dataMask = $this->tagDataDeclarations
-            ? $this->dataDeclarationTagger->tag($types, $values)
-            : str_repeat('0', \count($values));
+        $dataMask = $this->createDataMask($types, $values);
         unset($types);
 
         if ($barriers !== []) {
@@ -127,6 +111,66 @@ final class TokenNormalizer
             $dataMask = str_replace(' ', '', $dataMask);
         }
 
+        return new TokenStream($values, $startLines, $endLines, $this->buildCoveredPrefix($startLines, $endLines), $dataMask, $startBytes, $endBytes);
+    }
+
+    /**
+     * @param array{int, string, int} $token
+     */
+    private function normalizePhpToken(array $token, int &$type, int &$currentLine): ?string
+    {
+        [$type, $value, $line] = $token;
+        // Single-character tokens inherit the previous token's end, including skipped whitespace.
+        $currentLine = $line + substr_count($value, "\n") + substr_count($value, "\r") - substr_count($value, "\r\n");
+        if ($type === \T_CLOSE_TAG && $this->tagDataDeclarations) {
+            // A closing PHP block terminates a declaration before the next block's code.
+            $type = DataDeclarationTagger::PHP_CLOSE_TAG_BARRIER;
+
+            return '';
+        }
+        if (\in_array($type, self::SKIP_TOKENS, true)) {
+            return null;
+        }
+        if ($type === \T_INLINE_HTML) {
+            return $this->normalizeInlineHtml($value);
+        }
+
+        $value = self::NORMALIZE_MAP[$type] ?? $value;
+        if (\in_array($type, self::FOLD_CASE_TOKENS, true)
+            || ($type === \T_STRING && \in_array(strtolower($value), ['true', 'false', 'null'], true))) {
+            return strtolower($value);
+        }
+
+        return $value;
+    }
+
+    private function normalizeInlineHtml(string $text): string
+    {
+        $collapsedHtml = preg_replace('/[\x09-\x0D\x20]+/', ' ', $text)
+            ?? throw new LogicException('Cannot normalize inline HTML whitespace.');
+
+        return 'html:' . hash('xxh128', $collapsedHtml);
+    }
+
+    /**
+     * @param list<int> $types
+     * @param list<string> $values
+     */
+    private function createDataMask(array $types, array $values): string
+    {
+        return $this->tagDataDeclarations
+            ? $this->dataDeclarationTagger->tag($types, $values)
+            : str_repeat('0', \count($values));
+    }
+
+    /**
+     * @param list<int> $startLines
+     * @param list<int> $endLines
+     *
+     * @return list<int>
+     */
+    private function buildCoveredPrefix(array $startLines, array $endLines): array
+    {
         $coveredPrefix = [];
         $covered = 0;
         $previousEnd = 0;
@@ -137,6 +181,6 @@ final class TokenNormalizer
             $previousEnd = $end;
         }
 
-        return new TokenStream($values, $startLines, $endLines, $coveredPrefix, $dataMask, $startBytes, $endBytes);
+        return $coveredPrefix;
     }
 }

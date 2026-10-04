@@ -22,17 +22,22 @@ final class FileSetInspectionFailure extends RuntimeException
         }
 
         foreach ($failures as $failure) {
-            if (!\is_array($failure)
-                || \count($failure) !== 2
-                || !isset($failure['input'], $failure['message'])
-                || !$failure['input'] instanceof AbsolutePath
-                || !\is_string($failure['message'])
-                || trim($failure['message']) === '') {
-                throw new InvalidArgumentException('Each file-set inspection failure needs an absolute input and a non-empty message.');
-            }
+            self::assertValidFailureRow($failure);
         }
 
         $this->failures = $failures;
         parent::__construct('File-set inspection could not read selected input files.');
+    }
+
+    private static function assertValidFailureRow(mixed $failure): void
+    {
+        if (!\is_array($failure)
+            || \count($failure) !== 2
+            || !isset($failure['input'], $failure['message'])
+            || !$failure['input'] instanceof AbsolutePath
+            || !\is_string($failure['message'])
+            || trim($failure['message']) === '') {
+            throw new InvalidArgumentException('Each file-set inspection failure needs an absolute input and a non-empty message.');
+        }
     }
 }

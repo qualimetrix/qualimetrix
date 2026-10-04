@@ -14,21 +14,9 @@ final class BalancedSegments
         $segments = [];
         $index = 0;
         while ($index < $length) {
-            while ($index < $length && \in_array($stream->values[$offset + $index], [')', ']', '}', ';', ','], true)) {
-                $index++;
-            }
-
+            $index = self::skipLeadingClosers($stream, $offset, $length, $index);
             $start = $index;
-            $depth = 0;
-            while ($index < $length) {
-                $value = $stream->values[$offset + $index];
-                if (\in_array($value, ['{', '(', '[', '${'], true)) {
-                    $depth++;
-                } elseif (\in_array($value, ['}', ')', ']'], true) && --$depth < 0) {
-                    break;
-                }
-                $index++;
-            }
+            $index = self::scanSegmentEnd($stream, $offset, $length, $index);
 
             if ($index > $start) {
                 $segments[] = [$start, $index - $start];
@@ -36,5 +24,30 @@ final class BalancedSegments
         }
 
         return $segments;
+    }
+
+    private static function skipLeadingClosers(TokenStream $stream, int $offset, int $length, int $index): int
+    {
+        while ($index < $length && \in_array($stream->values[$offset + $index], [')', ']', '}', ';', ','], true)) {
+            $index++;
+        }
+
+        return $index;
+    }
+
+    private static function scanSegmentEnd(TokenStream $stream, int $offset, int $length, int $index): int
+    {
+        $depth = 0;
+        while ($index < $length) {
+            $value = $stream->values[$offset + $index];
+            if (\in_array($value, ['{', '(', '[', '${'], true)) {
+                $depth++;
+            } elseif (\in_array($value, ['}', ')', ']'], true) && --$depth < 0) {
+                break;
+            }
+            $index++;
+        }
+
+        return $index;
     }
 }

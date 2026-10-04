@@ -197,14 +197,8 @@ final class DataDeclarationTagger
         }
 
         $arrayStart = $j;
-        if ($values[$j] !== '[') {
-            if ($types[$j] !== \T_ARRAY) {
-                return null;
-            }
-            $j++;
-            if ($j >= $count || $values[$j] !== '(') {
-                return null;
-            }
+        if (!$this->startsArrayLiteral($types, $values, $arrayStart)) {
+            return null;
         }
 
         $closeIdx = $this->findMatchingClose($types, $values, $arrayStart);
@@ -223,6 +217,16 @@ final class DataDeclarationTagger
         }
 
         return $afterIdx;
+    }
+
+    /**
+     * @param list<int> $types
+     * @param list<string> $values
+     */
+    private function startsArrayLiteral(array $types, array $values, int $index): bool
+    {
+        return $values[$index] === '['
+            || ($types[$index] === \T_ARRAY && ($values[$index + 1] ?? null) === '(');
     }
 
     /**
