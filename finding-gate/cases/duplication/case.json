@@ -15,6 +15,7 @@
         "duplication.clone@file"
     ],
     "explainSubjects": [
-        "project:"
+        "file:src/ReportBuilder.php",
+        "file:src/SummaryBuilder.php"
     ]
 }

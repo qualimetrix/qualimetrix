@@ -2,3 +2,4 @@ old	new	reason
 # A root key ends in a colon; a nested leaf uses canonical JSON path arrays on both sides.
 # Example path: ["rules","complexity.ccn","warning"]. Only plain block key positions are editable.
 # Rule:option rows also name CLI tokens. Selector reach and metric formula rewrites are unsupported.
+duplication.clone:project	duplication.clone:file	The copied-code producer now publishes only File; both level-qualified disables select its entire publication.
