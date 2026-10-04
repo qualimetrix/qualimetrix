@@ -24,11 +24,16 @@ final class DuplicateMatchCandidates
     /** @param list<int> $copies */
     public function add(int $length, array $copies): void
     {
-        $chunk = intdiv($this->count, 1024);
-        $this->recordChunks[$chunk] ??= '';
-        $this->recordChunks[$chunk] .= pack('q3', $length, \count($copies), $this->copySize);
+        $this->appendRecord($length, \count($copies));
         $this->appendCopies(self::encodeCopies($copies));
         $this->count++;
+    }
+
+    private function appendRecord(int $length, int $copyCount): void
+    {
+        $chunk = intdiv($this->count, 1024);
+        $this->recordChunks[$chunk] ??= '';
+        $this->recordChunks[$chunk] .= pack('q3', $length, $copyCount, $this->copySize);
     }
 
     /** @param list<int> $copies */
