@@ -11,8 +11,8 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -21,7 +21,7 @@ use SplFileInfo;
 
 #[CoversClass(DuplicationDetector::class)]
 #[CoversClass(TokenNormalizer::class)]
-#[CoversClass(NormalizedToken::class)]
+#[CoversClass(TokenStream::class)]
 #[CoversClass(DuplicateBlock::class)]
 #[CoversClass(DuplicateLocation::class)]
 final class DuplicationDetectorTest extends TestCase

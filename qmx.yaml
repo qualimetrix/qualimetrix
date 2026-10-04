@@ -391,9 +391,9 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateMatchCandidates'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles'
         - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream'
     - name: analysis-evidence-maintainability
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector'

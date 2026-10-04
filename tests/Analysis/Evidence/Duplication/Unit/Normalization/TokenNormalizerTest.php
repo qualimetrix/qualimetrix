@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Normalization;
 
+use PhpToken;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 
 #[CoversClass(TokenNormalizer::class)]
-#[CoversClass(NormalizedToken::class)]
+#[CoversClass(TokenStream::class)]
 final class TokenNormalizerTest extends TestCase
 {
     private TokenNormalizer $normalizer;
@@ -33,7 +35,7 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $values = array_map(fn(NormalizedToken $t) => $t->value, $tokens);
+        $values = $tokens->values;
 
         self::assertNotContains('// comment', $values);
         self::assertNotContains('/* block comment */', $values);
@@ -46,10 +48,7 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $variables = array_filter($tokens, fn(NormalizedToken $t) => $t->type === \T_VARIABLE);
-        foreach ($variables as $var) {
-            self::assertSame('$_', $var->value);
-        }
+        self::assertSame(['$_', '=', '$_', ';'], $tokens->values);
     }
 
     #[Test]
@@ -59,10 +58,7 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $strings = array_filter($tokens, fn(NormalizedToken $t) => $t->type === \T_CONSTANT_ENCAPSED_STRING);
-        foreach ($strings as $str) {
-            self::assertSame("'_'", $str->value);
-        }
+        self::assertSame(['$_', '=', "'_'", ';'], $tokens->values);
     }
 
     #[Test]
@@ -72,10 +68,7 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $numbers = array_filter($tokens, fn(NormalizedToken $t) => \in_array($t->type, [\T_LNUMBER, \T_DNUMBER], true));
-        foreach ($numbers as $num) {
-            self::assertSame('0', $num->value);
-        }
+        self::assertSame(['$_', '=', '0', ';', '$_', '=', '0', ';'], $tokens->values);
     }
 
     #[Test]
@@ -85,7 +78,7 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
-        $values = array_map(fn(NormalizedToken $t) => $t->value, $tokens);
+        $values = $tokens->values;
 
         self::assertContains('function', $values);
         self::assertContains('return', $values);
@@ -105,8 +98,8 @@ PHP;
         $tokens1 = $this->normalizer->normalize($code1);
         $tokens2 = $this->normalizer->normalize($code2);
 
-        $values1 = array_map(fn(NormalizedToken $t) => $t->value, $tokens1);
-        $values2 = array_map(fn(NormalizedToken $t) => $t->value, $tokens2);
+        $values1 = $tokens1->values;
+        $values2 = $tokens2->values;
 
         self::assertSame($values1, $values2);
     }
@@ -121,8 +114,8 @@ PHP;
         $tokens1 = $this->normalizer->normalize($code1);
         $tokens2 = $this->normalizer->normalize($code2);
 
-        $values1 = array_map(fn(NormalizedToken $t) => $t->value, $tokens1);
-        $values2 = array_map(fn(NormalizedToken $t) => $t->value, $tokens2);
+        $values1 = $tokens1->values;
+        $values2 = $tokens2->values;
 
         self::assertNotSame($values1, $values2);
     }
@@ -136,8 +129,8 @@ PHP;
         $tokens1 = $this->normalizer->normalize($code1);
         $tokens2 = $this->normalizer->normalize($code2);
 
-        $values1 = array_map(fn(NormalizedToken $t) => $t->value, $tokens1);
-        $values2 = array_map(fn(NormalizedToken $t) => $t->value, $tokens2);
+        $values1 = $tokens1->values;
+        $values2 = $tokens2->values;
 
         self::assertNotSame($values1, $values2);
     }
@@ -147,7 +140,8 @@ PHP;
     {
         $tokens = $this->normalizer->normalize('<?php');
 
-        self::assertSame([], $tokens);
+        self::assertSame([], $tokens->values);
+        self::assertSame(0, $tokens->count());
     }
 
     #[Test]
@@ -163,8 +157,8 @@ PHP;
         $tokens = $this->normalizer->normalize($code);
 
         // First non-skipped token should have line 3 ($x)
-        self::assertGreaterThan(0, \count($tokens));
-        self::assertSame(3, $tokens[0]->line);
+        self::assertGreaterThan(0, $tokens->count());
+        self::assertSame(3, $tokens->startLines[0]);
     }
 
     #[Test]
@@ -175,10 +169,10 @@ PHP;
         // four lines too early.
         $tokens = $this->normalizer->normalize("<?php\nfoo();\n\n\n\n}\n");
 
-        $closing = array_values(array_filter($tokens, static fn(NormalizedToken $t): bool => $t->value === '}'));
+        $closing = array_keys($tokens->values, '}', true);
 
         self::assertCount(1, $closing);
-        self::assertSame(6, $closing[0]->line);
+        self::assertSame(6, $tokens->startLines[$closing[0]]);
     }
 
     #[Test]
@@ -195,9 +189,9 @@ PHP;
         $tokens = $this->normalizer->normalize($code);
 
         $lines = [];
-        foreach ($tokens as $token) {
-            if ($token->value === '{' || $token->value === '}' || $token->value === ';') {
-                $lines[] = $token->value . '@' . $token->line;
+        foreach ($tokens->values as $index => $value) {
+            if ($value === '{' || $value === '}' || $value === ';') {
+                $lines[] = $value . '@' . $tokens->startLines[$index];
             }
         }
 
@@ -209,11 +203,62 @@ PHP;
     {
         $tokens = $this->normalizer->normalize("<?php\n\$a = 1;\n\$b = 2;\n");
 
-        $semicolons = array_map(
-            static fn(NormalizedToken $t): int => $t->line,
-            array_values(array_filter($tokens, static fn(NormalizedToken $t): bool => $t->value === ';')),
-        );
+        $semicolons = [];
+        foreach (array_keys($tokens->values, ';', true) as $index) {
+            $semicolons[] = $tokens->startLines[$index];
+        }
 
         self::assertSame([2, 3], $semicolons);
+    }
+
+    #[Test]
+    public function itKeepsOriginalCoordinatesAndCoveredLinesAlignedAfterRemovingPhpBarriers(): void
+    {
+        $source = "<?php\nconst X = 'a\nb' ?>\nignored\n<?php\n// ignored\n\$x = 9;\n";
+        $tokens = $this->normalizer->normalize($source);
+
+        self::assertSame(['const', 'X', '=', "'_'", '$_', '=', '0', ';'], $tokens->values);
+        self::assertSame(8, $tokens->count());
+        self::assertSame([2, 2, 2, 2, 7, 7, 7, 7], $tokens->startLines);
+        self::assertSame([2, 2, 2, 3, 7, 7, 7, 7], $tokens->endLines);
+        self::assertSame([1, 1, 1, 2, 3, 3, 3, 3], $tokens->coveredPrefix);
+        self::assertSame('11110000', $tokens->dataMask);
+        self::assertSame([6, 12, 14, 16, 50, 53, 55, 56], $tokens->startBytes);
+        self::assertSame([11, 13, 15, 21, 52, 54, 56, 57], $tokens->endBytes);
+
+        $untagged = (new TokenNormalizer(tagDataDeclarations: false))->normalize($source);
+        self::assertSame($tokens->values, $untagged->values);
+        self::assertSame($tokens->startBytes, $untagged->startBytes);
+        self::assertSame($tokens->endBytes, $untagged->endBytes);
+        self::assertSame('00000000', $untagged->dataMask);
+    }
+
+    #[Test]
+    #[DataProvider('sourceNewlines')]
+    public function itKeepsSourceLinesConsistentWithThePhpTokenizer(string $newline): void
+    {
+        $source = '<?php' . $newline . '{' . $newline . '$x = "one' . $newline . 'two";'
+            . $newline . 'echo $x;' . $newline . '}';
+        $tokens = $this->normalizer->normalize($source);
+        $native = array_values(array_filter(
+            PhpToken::tokenize($source),
+            static fn(PhpToken $token): bool => !\in_array($token->id, [\T_OPEN_TAG, \T_WHITESPACE], true),
+        ));
+
+        self::assertSame(['{', '$_', '=', "'_'", ';', 'echo', '$_', ';', '}'], $tokens->values);
+        self::assertSame(2, $tokens->startLines[0], 'The opening tag must advance the first single-character token');
+        self::assertSame(array_map(static fn(PhpToken $token): int => $token->line, $native), $tokens->startLines);
+        self::assertSame([2, 3, 3, 4, 4, 5, 5, 5, 6], $tokens->endLines);
+        self::assertSame([1, 2, 2, 3, 3, 4, 4, 4, 5], $tokens->coveredPrefix);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function sourceNewlines(): iterable
+    {
+        yield 'LF' => ["\n"];
+        yield 'CRLF' => ["\r\n"];
+        yield 'CR' => ["\r"];
     }
 }

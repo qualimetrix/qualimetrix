@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Duplication\Index;
 
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use SplFileInfo;
@@ -34,10 +34,7 @@ final class HashIndexBuilder
 
     public function __construct()
     {
-        // Data-declaration tagging is switched off here on purpose: this pass hashes
-        // token values and throws the tokens away, and `isData` is only ever read in
-        // pass 2 ({@see DuplicateBlockFinder}). Tagging would rebuild the token array
-        // for every file containing a constant or property array and buy nothing.
+        // This pass consumes values only; declaration tagging cannot affect its hashes.
         $this->normalizer = new TokenNormalizer(tagDataDeclarations: false);
     }
 
@@ -84,7 +81,7 @@ final class HashIndexBuilder
         }
 
         $tokens = $this->normalizer->normalize($source);
-        if (\count($tokens) < $minTokens) {
+        if ($tokens->count() < $minTokens) {
             return;
         }
 
@@ -97,19 +94,17 @@ final class HashIndexBuilder
 
     /**
      * Runs the bounded pre-pass over one file without retaining positions.
-     *
-     * @param list<NormalizedToken> $tokens
      */
-    private function observeFileCandidates(array $tokens, int $minTokens, SaturatingCandidateFilter $candidates): void
+    private function observeFileCandidates(TokenStream $tokens, int $minTokens, SaturatingCandidateFilter $candidates): void
     {
-        $tokenCount = \count($tokens);
+        $tokenCount = $tokens->count();
 
         // Compute initial hash for the first window
         $hash = 0;
         $highPow = 1;
 
         for ($i = 0; $i < $minTokens; $i++) {
-            $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens[$i])) % self::HASH_MOD;
+            $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens->values[$i])) % self::HASH_MOD;
             if ($i < $minTokens - 1) {
                 $highPow = ($highPow * self::HASH_BASE) % self::HASH_MOD;
             }
@@ -119,8 +114,8 @@ final class HashIndexBuilder
 
         // Roll the hash forward
         for ($i = 1; $i <= $tokenCount - $minTokens; $i++) {
-            $outToken = $this->tokenHash($tokens[$i - 1]);
-            $inToken = $this->tokenHash($tokens[$i + $minTokens - 1]);
+            $outToken = $this->tokenHash($tokens->values[$i - 1]);
+            $inToken = $this->tokenHash($tokens->values[$i + $minTokens - 1]);
 
             $hash = (($hash - (($outToken * $highPow) % self::HASH_MOD) + self::HASH_MOD) * self::HASH_BASE + $inToken) % self::HASH_MOD;
 
@@ -136,7 +131,7 @@ final class HashIndexBuilder
      *
      * @param list<string> $ioPaths
      *
-     * @return array<int, list<int>> hash → all packed positions
+     * @return array<int, list<int>> hash → strictly increasing unique packed positions
      */
     private function collectCandidatePositions(array $ioPaths, int $minTokens, SaturatingCandidateFilter $candidates): array
     {
@@ -149,7 +144,7 @@ final class HashIndexBuilder
             }
 
             $tokens = $this->normalizer->normalize($source);
-            if (\count($tokens) < $minTokens) {
+            if ($tokens->count() < $minTokens) {
                 continue;
             }
 
@@ -160,23 +155,22 @@ final class HashIndexBuilder
     }
 
     /**
-     * @param list<NormalizedToken> $tokens
      * @param array<int, list<int>> $index modified by reference
      */
     private function addCandidatePositionsToIndex(
-        array $tokens,
+        TokenStream $tokens,
         int $fileIdx,
         int $minTokens,
         SaturatingCandidateFilter $candidates,
         array &$index,
     ): void {
-        $tokenCount = \count($tokens);
+        $tokenCount = $tokens->count();
         $packedBase = PackedPosition::pack($fileIdx, 0);
         $hash = 0;
         $highPow = 1;
 
         for ($i = 0; $i < $minTokens; $i++) {
-            $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens[$i])) % self::HASH_MOD;
+            $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens->values[$i])) % self::HASH_MOD;
             if ($i < $minTokens - 1) {
                 $highPow = ($highPow * self::HASH_BASE) % self::HASH_MOD;
             }
@@ -187,8 +181,8 @@ final class HashIndexBuilder
         }
 
         for ($i = 1; $i <= $tokenCount - $minTokens; $i++) {
-            $outToken = $this->tokenHash($tokens[$i - 1]);
-            $inToken = $this->tokenHash($tokens[$i + $minTokens - 1]);
+            $outToken = $this->tokenHash($tokens->values[$i - 1]);
+            $inToken = $this->tokenHash($tokens->values[$i + $minTokens - 1]);
             $hash = (($hash - (($outToken * $highPow) % self::HASH_MOD) + self::HASH_MOD) * self::HASH_BASE + $inToken) % self::HASH_MOD;
 
             if ($candidates->isCandidate($hash)) {
@@ -218,11 +212,10 @@ final class HashIndexBuilder
         }
     }
 
-    private function tokenHash(NormalizedToken $token): int
+    private function tokenHash(string $value): int
     {
         // Use a simple hash of the token value
         $hash = 0;
-        $value = $token->value;
         $len = min(\strlen($value), 16);
 
         for ($i = 0; $i < $len; $i++) {

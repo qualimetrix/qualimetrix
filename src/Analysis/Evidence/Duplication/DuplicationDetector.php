@@ -12,9 +12,9 @@ use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -129,7 +129,7 @@ final class DuplicationDetector implements FileSetInspectionParticipantInterface
      */
     private function retokenizeNeeded(array $ioPaths, array $neededFileIndices): RetokenizedFiles
     {
-        /** @var array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens */
+        /** @var array<int, TokenStream> $fileTokens fileIdx → tokens */
         $fileTokens = [];
         /** @var array<int, string> $fileSources fileIdx → source content (for hint extraction) */
         $fileSources = [];

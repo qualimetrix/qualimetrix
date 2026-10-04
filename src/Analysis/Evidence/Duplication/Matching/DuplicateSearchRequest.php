@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
 final readonly class DuplicateSearchRequest
 {
     /**
-     * @param array<int, list<int>> $hashIndex hash → list of packed positions
+     * @param array<int, list<int>> $hashIndex hash → strictly increasing unique packed positions
      * @param list<string> $filePaths fileIdx → project-relative path
      */
     public function __construct(

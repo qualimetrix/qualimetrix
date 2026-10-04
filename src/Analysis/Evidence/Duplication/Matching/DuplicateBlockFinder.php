@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\DataDeclarationTagger;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
@@ -113,13 +113,14 @@ final class DuplicateBlockFinder
     {
         $groups = [];
 
-        foreach (array_values(array_unique($positions)) as $packed) {
-            if (!isset($this->request->retokenized->tokens[PackedPosition::fileIndex($packed)])) {
+        foreach ($positions as $packed) {
+            if (!isset($this->request->retokenized->streams[PackedPosition::fileIndex($packed)])) {
                 continue;
             }
 
-            foreach ($groups as $index => $group) {
-                if ($this->windowsMatch($group[0], $packed)) {
+            // Holding a group value here would copy its growing array on every append.
+            foreach (array_keys($groups) as $index) {
+                if ($this->windowsMatch($groups[$index][0], $packed)) {
                     $groups[$index][] = $packed;
 
                     continue 2;
@@ -140,7 +141,7 @@ final class DuplicateBlockFinder
         $offsetB = PackedPosition::offset($packedB);
 
         for ($i = 0; $i < $this->request->minTokens; $i++) {
-            if ($tokensA[$offsetA + $i]->value !== $tokensB[$offsetB + $i]->value) {
+            if ($tokensA->values[$offsetA + $i] !== $tokensB->values[$offsetB + $i]) {
                 return false;
             }
         }
@@ -161,7 +162,7 @@ final class DuplicateBlockFinder
                 return false;
             }
 
-            $precedingValues[$this->tokensAt($packed)[$offset - 1]->value] = true;
+            $precedingValues[$this->tokensAt($packed)->values[$offset - 1]] = true;
         }
 
         return \count($precedingValues) === 1;
@@ -217,9 +218,9 @@ final class DuplicateBlockFinder
         $groups = [];
 
         foreach ($members as $packed) {
-            $token = $this->tokensAt($packed)[PackedPosition::offset($packed) + $length] ?? null;
+            $token = $this->tokensAt($packed)->values[PackedPosition::offset($packed) + $length] ?? null;
             if ($token !== null) {
-                $groups[$token->value][] = $packed;
+                $groups[$token][] = $packed;
             }
         }
 
@@ -333,17 +334,14 @@ final class DuplicateBlockFinder
 
         return [
             $this->request->filePaths[PackedPosition::fileIndex($packed)],
-            $tokens[$offset]->line,
-            $tokens[$offset + $length - 1]->line,
+            $tokens->startLines[$offset],
+            $tokens->startLines[$offset + $length - 1],
         ];
     }
 
-    /**
-     * @return list<NormalizedToken>
-     */
-    private function tokensAt(int $packed): array
+    private function tokensAt(int $packed): TokenStream
     {
-        return $this->request->retokenized->tokens[PackedPosition::fileIndex($packed)];
+        return $this->request->retokenized->streams[PackedPosition::fileIndex($packed)];
     }
 
     /**
@@ -352,14 +350,12 @@ final class DuplicateBlockFinder
      * The sequence is length-prefixed through JSON and carries its token count
      * explicitly, so neither source locations nor a shortened display hint can
      * influence the group identity.
-     *
-     * @param list<NormalizedToken> $tokens
      */
-    private function contentHash(array $tokens, int $offset, int $length): string
+    private function contentHash(TokenStream $tokens, int $offset, int $length): string
     {
         $values = [];
         for ($i = 0; $i < $length; $i++) {
-            $values[] = $tokens[$offset + $i]->value;
+            $values[] = $tokens->values[$offset + $i];
         }
 
         return hash('sha256', json_encode(
@@ -385,7 +381,7 @@ final class DuplicateBlockFinder
             $offset = PackedPosition::offset($packed);
 
             for ($i = 0; $i < $length; $i++) {
-                if (!$tokens[$offset + $i]->isData) {
+                if ($tokens->dataMask[$offset + $i] !== '1') {
                     return false;
                 }
             }

@@ -3953,8 +3953,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\NormalizedToken": {
-      "path": "src/Analysis/Evidence/Duplication/Normalization/NormalizedToken.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Normalization\\TokenStream": {
+      "path": "src/Analysis/Evidence/Duplication/Normalization/TokenStream.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",

@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
-use Qualimetrix\Analysis\Evidence\Duplication\Normalization\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
+use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
 
 #[CoversClass(DuplicateBlockFinder::class)]
 final class DuplicateBlockFinderTest extends TestCase
@@ -87,10 +87,7 @@ final class DuplicateBlockFinderTest extends TestCase
      */
     private function request(array $hashIndex, int $fileCount = 2, int $minTokens = 2): DuplicateSearchRequest
     {
-        $matching = [
-            new NormalizedToken(\T_STRING, 'foo', 1),
-            new NormalizedToken(\T_STRING, 'bar', 1),
-        ];
+        $matching = (new TokenNormalizer())->normalize('<?php foo bar');
 
         return new DuplicateSearchRequest(
             hashIndex: $hashIndex,

@@ -19,11 +19,11 @@ use Qualimetrix\Analysis\Evidence\Duplication\Index\HashIndexBuildResult;
 final readonly class RetokenizedFiles
 {
     /**
-     * @param array<int, list<NormalizedToken>> $tokens fileIdx → tokens
+     * @param array<int, TokenStream> $streams fileIdx → token stream
      * @param array<int, string> $sources fileIdx → source content (for hint extraction)
      */
     public function __construct(
-        public array $tokens,
+        public array $streams,
         public array $sources,
     ) {}
 }
