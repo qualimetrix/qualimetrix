@@ -13,8 +13,14 @@ final class CorpusCaseControls
         return self::product(
             'duplication-size',
             'src/Analysis/Evidence/Duplication/Matching/DuplicateBlockFinder.php',
-            '$longest = max(array_map(function (int $copy) use ($length): int {',
-            '$longest = min(array_map(function (int $copy) use ($length): int {',
+            '$longest = 0;
+        foreach ($copies as $copy) {
+            $longest = max($longest, $this->codeLines($copy, $length));
+        }',
+            '$longest = \PHP_INT_MAX;
+        foreach ($copies as $copy) {
+            $longest = min($longest, $this->codeLines($copy, $length));
+        }',
             [
                 FailureClass::CASE_CLAIM_MISMATCH => [
                     'case:duplication-size',

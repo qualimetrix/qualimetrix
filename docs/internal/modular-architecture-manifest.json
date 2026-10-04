@@ -8836,10 +8836,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions"
         },
         {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions"
-        },
-        {
           "owner": "Analysis.Evidence.Maintainability",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions"
         },
@@ -9293,10 +9289,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocOptions"
-        },
-        {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions"
         },
         {
           "owner": "Analysis.Evidence.Size",
@@ -9779,12 +9771,6 @@
           "owner": "Analysis.Evidence.Design",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
-        },
-        {
-          "owner": "Analysis.Evidence.Duplication",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
         },
         {
@@ -10316,10 +10302,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions"
         },
         {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions"
-        },
-        {
           "owner": "Analysis.Evidence.Maintainability",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions"
         },
@@ -10694,10 +10676,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions"
         },
         {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions"
-        },
-        {
           "owner": "Analysis.Evidence.Maintainability",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions"
         },
@@ -10820,10 +10798,6 @@
         {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverage\\TypeCoverageOptions"
-        },
-        {
-          "owner": "Analysis.Evidence.Duplication",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions"
         },
         {
           "owner": "Analysis.Evidence.Maintainability",

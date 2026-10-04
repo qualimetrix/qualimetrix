@@ -11,5 +11,4 @@ rules:
   duplication.clone:
     min_lines: 12
     min_tokens: 45
-    warning: 1
     error: 100

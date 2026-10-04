@@ -2039,22 +2039,6 @@ A	form|rule-opt|rules.duplication.clone.min-tokens|map	map	optionsObject	NOT OBS
 A	form|rule-opt|rules.duplication.clone.min-tokens|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.duplication.clone.min-tokens|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.duplication.clone.min-tokens|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.threshold|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.duplication.clone.warning|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.health.cohesion.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.health.cohesion.enabled|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.health.cohesion.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -4623,22 +4607,6 @@ A	form|yaml|rules.duplication.clone.suppress-paths|map	map	optionsObject	NOT OBS
 A	form|yaml|rules.duplication.clone.suppress-paths|null	null	optionsObject	OK	no	PROMISED	`~` behaved as an omitted key; lost at optionsObject
 A	form|yaml|rules.duplication.clone.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at nowhere
 A	form|yaml|rules.duplication.clone.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.duplication.clone.threshold|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.threshold|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|int	int	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at mergedDocument
-A	form|yaml|rules.duplication.clone.warning|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.duplication.clone.warning|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.health.cohesion.enabled|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.health.cohesion.enabled|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.health.cohesion.enabled|int	int	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -5692,18 +5660,9 @@ B	pair|design.type-coverage.return|threshold|warning|same-source|1-threshold-gro
 B	pair|duplication.clone|enabled|error|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|duplication.clone|enabled|min-lines|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|duplication.clone|enabled|min-tokens|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
-B	pair|duplication.clone|enabled|threshold|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
-B	pair|duplication.clone|enabled|warning|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the alternate magnitude, B the per-side magnitude, which no declared value here can improve on
 B	pair|duplication.clone|error|min-lines|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
 B	pair|duplication.clone|error|min-tokens|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
-B	pair|duplication.clone|error|threshold|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, B the per-side magnitude
-B	pair|duplication.clone|error|warning|same-source|1-threshold-group-declared	both	optionsObject	MISCOMPOSED	yes	DECIDED	one half alone is not writable: accepted/refused-framed; A wrote the canonical magnitude, B the per-side magnitude, which no declared value here can improve on
 B	pair|duplication.clone|min-lines|min-tokens|same-source|6-two-filters-one-subject	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
-B	pair|duplication.clone|min-lines|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
-B	pair|duplication.clone|min-lines|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the canonical magnitude, B the per-side magnitude, which no declared value here can improve on
-B	pair|duplication.clone|min-tokens|threshold|same-source|6-subject-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the per-side magnitude
-B	pair|duplication.clone|min-tokens|warning|same-source|6-subject-filter	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the canonical magnitude, B the per-side magnitude, which no declared value here can improve on
-B	pair|duplication.clone|threshold|warning|same-source|1-threshold-group-declared	both	optionsObject	COEXISTENCE_OK	no	PROMISED	refused, as promised; A wrote the canonical magnitude, B the per-side magnitude, which no declared value here can improve on
 B	pair|maintainability.mi|enabled|error|same-source|6-gate	both	optionsObject	MISCOMPOSED	yes	DECIDED	refused where the ledger promised composition: refused-framed; A wrote the alternate magnitude, B the per-side magnitude, which no declared value here can improve on
 B	pair|maintainability.mi|enabled|exclude-tests|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
 B	pair|maintainability.mi|enabled|min-statements|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
@@ -7111,33 +7070,15 @@ E	neighbourhood|design.type-coverage.return|warning|threshold|1-threshold-group-
 E	neighbourhood|duplication.clone|enabled|error|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|duplication.clone|enabled|min-lines|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
 E	neighbourhood|duplication.clone|enabled|min-tokens|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|enabled|threshold|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|enabled|warning|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|duplication.clone|error|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|duplication.clone|error|min-lines|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|duplication.clone|error|min-tokens|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|error|threshold|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|error|warning|1-threshold-group-declared	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|duplication.clone|min-lines|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|duplication.clone|min-lines|error|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|duplication.clone|min-lines|min-tokens|6-two-filters-one-subject	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-two-filters-one-subject; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|min-lines|threshold|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|min-lines|warning|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|duplication.clone|min-tokens|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|duplication.clone|min-tokens|error|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
 E	neighbourhood|duplication.clone|min-tokens|min-lines|6-two-filters-one-subject	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-two-filters-one-subject; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|min-tokens|threshold|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|min-tokens|warning|6-subject-filter	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude, which no declared value here can improve on
-E	neighbourhood|duplication.clone|threshold|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
-E	neighbourhood|duplication.clone|threshold|error|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|threshold|min-lines|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|threshold|min-tokens|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|threshold|warning|1-threshold-group-declared	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude, which no declared value here can improve on
-E	neighbourhood|duplication.clone|warning|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
-E	neighbourhood|duplication.clone|warning|error|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|warning|min-lines|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|warning|min-tokens|6-subject-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-filter; the neighbour wrote the canonical magnitude
-E	neighbourhood|duplication.clone|warning|threshold|1-threshold-group-declared	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 1-threshold-group-declared; the neighbour wrote the canonical magnitude
 E	neighbourhood|maintainability.mi|enabled|error|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|maintainability.mi|enabled|exclude-tests|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|maintainability.mi|enabled|min-statements|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude

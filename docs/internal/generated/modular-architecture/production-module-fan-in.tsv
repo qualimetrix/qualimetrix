@@ -149,7 +149,7 @@ Qualimetrix\Analysis\Finding\Contract\RuleOptionForms	Analysis.Finding	3	1
 Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	35	14
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	45	14
 Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	26	9
-Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection	Analysis.Finding	25	8
+Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection	Analysis.Finding	24	7
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelAddressing	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelLevelSelector	Analysis.Finding	2	1
@@ -166,7 +166,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator	An
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideAxis	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideSyntax	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface	Analysis.Finding	5	3
-Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	23	7
+Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	22	6
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest	Analysis.Finding	3	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\ProducerName	Analysis.Finding	1	1
@@ -180,14 +180,14 @@ Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	47	
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal	Analysis.Finding	6	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape	Analysis.Finding	39	12
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	29	10
+Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface	Analysis.Finding	28	9
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	42	16
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleRemediationMinutesReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleShapeReader	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	29	10
+Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	28	9
 Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	25	8
+Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	24	7
 Qualimetrix\Analysis\Finding\Contract\SelectionRecord	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver	Analysis.Finding	4	2
 Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge	Analysis.Finding	1	1

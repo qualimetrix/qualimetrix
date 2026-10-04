@@ -54,7 +54,6 @@ final class ConfiguredWarningBoundaryMapTest extends TestCase
         'design.type-coverage.param' => ['class' => 80.0],
         'design.type-coverage.property' => ['class' => 80.0],
         'design.type-coverage.return' => ['class' => 80.0],
-        'duplication.clone' => ['file' => 5],
         'maintainability.mi' => ['callable' => 40.0],
         'size.class-count' => ['namespace' => 15],
         'size.method-count' => ['class' => 20],

@@ -80,7 +80,7 @@ src/Analysis/Evidence/Design/GodClass/GodClassOptions.php	options-class	7	class-
 src/Analysis/Evidence/Design/Inheritance/InheritanceOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Design/Inheritance/NocOptions.php	options-class	3	error,threshold,warning	4	-	declares 3 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Design/TypeCoverage/TypeCoverageOptions.php	options-class	9	error,threshold,warning	4	-	declares 9 axis-A pairs over 3 key paths; carries 4 subject sites of form-deciding-sites.tsv
-src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	options-class	5	error,min-lines,min-tokens,threshold,warning	5	-	declares 5 axis-A pairs over 5 key paths; carries 5 subject sites of form-deciding-sites.tsv
+src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php	options-class (no subject site)	3	error,min-lines,min-tokens	0	-	declares 3 axis-A pairs over 3 key paths
 src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php	options-class	5	error,exclude-tests,min-statements,threshold,warning	6	-	declares 5 axis-A pairs over 5 key paths; carries 6 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
 src/Analysis/Evidence/Security/SecurityPatternOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv

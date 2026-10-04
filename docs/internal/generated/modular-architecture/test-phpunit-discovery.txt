@@ -1330,7 +1330,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itAgreesWithEveryCallSitesLiteralKeys"size.method-count::"
@@ -1358,7 +1357,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.param::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.property::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"design.type-coverage.return::(top)#0"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"duplication.clone::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"maintainability.mi::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.class-count::(top)#0"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itKeepsEveryWritableKeyAcceptedAndSameFormAsThreshold"size.method-count::(top)#0"
@@ -1389,7 +1387,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryCompletenessTest::itMakesEveryRegistryEntryCorrespondToARealCallSite"size.method-count::"
@@ -1417,7 +1414,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itGivesEveryThresholdParserCallSiteAMatchingRegistryEntry"size.method-count::"
@@ -1521,9 +1517,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"design.type-coverage.return::(top)#0[error]=error"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"design.type-coverage.return::(top)#0[threshold]=threshold"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"design.type-coverage.return::(top)#0[warning]=warning"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"duplication.clone::(top)#0[error]=error"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"duplication.clone::(top)#0[threshold]=threshold"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"duplication.clone::(top)#0[warning]=warning"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"maintainability.mi::(top)#0[error]=error"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"maintainability.mi::(top)#0[threshold]=threshold"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itKeepsEveryDeclaredKeyAffectingTheRealOptionsInstance"maintainability.mi::(top)#0[warning]=warning"
@@ -1558,7 +1551,6 @@ Available tests:
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"design.type-coverage.param::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"design.type-coverage.property::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"design.type-coverage.return::"
- - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"duplication.clone::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"maintainability.mi::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"size.class-count::"
  - Qualimetrix\Governance\ThresholdKeys\RuleThresholdKeyGroupRegistryDriftTest::itMakesEveryRegistryEntryCorrespondToARealThresholdParserCallSite"size.method-count::"
@@ -4725,8 +4717,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itMatchesEqualHtmlButExcludesADifferentMarkupCopy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itMatchesKeywordCastAndMagicConstantCaseThroughTheDetector
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesALargeDuplicateAsAnError
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingCustomThresholds
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByLineCountUsingDefaultThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByCoveredCodeLinesUsingOnlyTheErrorBoundary
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesDuplicateSeverityByCoveredCodeLinesUsingTheDefaultErrorBoundary
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itDeclaresCodeDuplicationOptionsAsItsOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itExposesItsRuleNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itGivesEveryCopyOfABlockAnIdentityOfItsOwn
@@ -4738,14 +4730,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itListsEveryOtherOccurrenceInTheMessage
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itNamesTheFirstTenOtherOccurrencesAndCountsTheRestInTheMessage
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itOmitsTheHintSnippetFromTheMessageWhenNoHintIsGiven
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itParsesSnakeCaseAndCamelCaseOptionKeysFromAnArray
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesAFindingOnEachCopyNamingTheOtherCopy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesNoFindingsWhenNoDuplicateBlockWasCollected
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itProducesOneFindingPerCopyOfEveryBlock
- - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheWarningThresholdAsAWarning
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReadsResolvedDuplicationOptions
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRefusesRetiredWarningAndThresholdConfigurationKeysAtTheirAuthoredAddresses
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheErrorBoundaryAsAWarning
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRequiresPositiveAuthoredMinimumsAndErrorBoundary
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesEachCopysCoveredCodeLinesAndHintInItsFinding
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesPositiveResolvedOptionDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesTheFileSubjectAndAnOrdinalWithinThatFileForCopyIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsNegativePackedValuesBeforeReadingTheOffset
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Index\PackedPositionTest::itRejectsNegativePackedValuesBeforeUnpacking
