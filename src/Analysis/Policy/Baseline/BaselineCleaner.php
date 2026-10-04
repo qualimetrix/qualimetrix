@@ -102,11 +102,7 @@ final readonly class BaselineCleaner
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    match ($coverageGaps[$entry->identity->key()] ?? null) {
-                        RunCoverageGap::NotMeasured => BaselineCleanupReason::ProducerDidNotRun,
-                        RunCoverageGap::LevelNotDeclared => BaselineCleanupReason::LevelNotDeclared,
-                        null => BaselineCleanupReason::Stale,
-                    },
+                    $this->absentEntryReason($coverageGaps[$entry->identity->key()] ?? null),
                 );
             }
         }
@@ -121,6 +117,15 @@ final readonly class BaselineCleaner
         }
 
         return $candidates;
+    }
+
+    private function absentEntryReason(?RunCoverageGap $gap): BaselineCleanupReason
+    {
+        return match ($gap) {
+            RunCoverageGap::NotMeasured => BaselineCleanupReason::ProducerDidNotRun,
+            RunCoverageGap::LevelNotDeclared => BaselineCleanupReason::LevelNotDeclared,
+            null => BaselineCleanupReason::Stale,
+        };
     }
 
     /**
