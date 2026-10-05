@@ -41,13 +41,11 @@ use ReflectionClass;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * A baseline file that is not there is refused before anything is analysed.
+ * An absent or grammatically invalid baseline is refused before analysis.
  *
- * Only the file's *contents* must wait for the run — a `computed.*` entry is
- * parsed against declarations the run resolves (see
- * {@see BaselineRunBeforeLoadTest}). Whether the file exists at all is not
- * such a question, and answering it after a full analysis costs the user the
- * analysis and then says what could have been said first.
+ * Only the entries' channel and level semantics wait for configured
+ * declarations (see {@see BaselineRunBeforeLoadTest}). The document grammar
+ * is independent of them, so a full analysis cannot precede that refusal.
  *
  * The evidence is a count of runs, not a timing: the analysis pipeline for
  * `check`, the measured run for the baseline commands.
@@ -85,6 +83,41 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Baseline file not found', $tester->getDisplay());
         self::assertSame(0, $pipeline->calls, 'The analysis ran before the missing baseline was refused.');
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideBrokenGrammar(): iterable
+    {
+        yield 'invalid JSON' => ['json'];
+        yield 'old version' => ['version'];
+        yield 'unknown envelope key' => ['key'];
+    }
+
+    #[Test]
+    #[DataProvider('provideBrokenGrammar')]
+    public function itRefusesInvalidBaselineInCheckBeforeAnalysis(string $defect): void
+    {
+        $path = $this->tempDir . '/invalid-check.json';
+        $this->writeBrokenBaseline($path, $defect);
+
+        [$tester, $pipeline] = $this->executeCheck($path);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame(0, $pipeline->calls, 'Check analysed before judging document grammar.');
+    }
+
+    #[Test]
+    #[DataProvider('provideBrokenGrammar')]
+    public function itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement(string $defect): void
+    {
+        $path = $this->tempDir . '/invalid-lifecycle.json';
+        $this->writeBrokenBaseline($path, $defect);
+
+        foreach (['update', 'cleanup', 'explain'] as $command) {
+            $tester = $this->executeBaselineCommand($command, $path);
+            self::assertSame(3, $tester->getStatusCode(), $command . ': ' . $tester->getDisplay() . $tester->getErrorOutput());
+            self::assertSame(0, $this->runs, $command . ' measured before judging document grammar.');
+        }
     }
 
     /**
@@ -175,7 +208,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         symlink($present, $link);
 
         BaselineLoader::assertReadable($link);
-        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load($link);
+        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($link));
 
         self::assertSame([], $baseline->entries);
     }
@@ -196,7 +229,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         }
 
         try {
-            (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load($this->missing);
+            (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->missing));
         } catch (ConfigurationRefusal $refusal) {
             $late = $refusal->getMessage();
         }
@@ -298,6 +331,20 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
+    }
+
+    private function writeBrokenBaseline(string $path, string $defect): void
+    {
+        $this->writeEmptyBaseline($path);
+        $valid = (string) file_get_contents($path);
+        $broken = match ($defect) {
+            'json' => '{ not json',
+            'version' => preg_replace('/"version"\s*:\s*14/', '"version": 13', $valid),
+            'key' => preg_replace('/^\{\n/', "{\n  \"mystery\": true,\n", $valid),
+            default => throw new LogicException('Unknown test defect'),
+        };
+        self::assertIsString($broken);
+        file_put_contents($path, $broken);
     }
 
     private static function emptyRuleRegistry(): RuleRegistryInterface

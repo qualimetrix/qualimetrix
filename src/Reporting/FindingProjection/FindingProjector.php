@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
@@ -30,6 +31,11 @@ final readonly class FindingProjector
         private ChannelDeclarationRegistryInterface $declarations,
         private GitScopeQueryInterface $gitScopeQuery,
     ) {}
+
+    public function preflightBaseline(string $path): BaselineDocument
+    {
+        return BaselineLoader::preflight($path);
+    }
 
     /**
      * Git keeps declared project-scoped channels, changed file locations,
@@ -69,10 +75,10 @@ final readonly class FindingProjector
         $inert = [];
         $baselineScope = null;
         $ceiling = null;
-        if ($options->baselinePath !== null && $options->baselinePath !== '') {
+        if ($options->baselineDocument !== null) {
             $coverage = $options->runCoverage ?? throw new LogicException('Baseline projection requires current run coverage');
             $ruleCoverage = $options->ruleCoverage ?? throw new LogicException('Baseline projection requires rule publication');
-            $baseline = $this->baselineLoader->load($options->baselinePath);
+            $baseline = $this->baselineLoader->load($options->baselineDocument);
             $stage = new BaselineCeilingStage(
                 $baseline,
                 $this->declarations,

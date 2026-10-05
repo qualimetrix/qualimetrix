@@ -78,7 +78,9 @@ final readonly class FindingFilterOrchestrator
         $baselinePath = CommandLineSpelling::option($input, 'baseline');
 
         return new FindingProjectionOptions(
-            baselinePath: $baselinePath !== '' ? $baselinePath : null,
+            baselineDocument: $baselinePath !== null && $baselinePath !== ''
+                ? $this->findingProjector->preflightBaseline($baselinePath)
+                : null,
             suppressPaths: $exclusions->suppressPaths,
             suppressNamespaces: $exclusions->suppressNamespaces,
             annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
@@ -99,7 +101,7 @@ final readonly class FindingFilterOrchestrator
     ): FindingProjectionResult {
         $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
-        if ($options->baselinePath !== null) {
+        if ($options->baselineDocument !== null) {
             $options = $options->withRunCoverage(new RunCoverage(
                 RunScope::record($configuration->paths, $configuration->projectRoot),
                 $result->measured->coverage,

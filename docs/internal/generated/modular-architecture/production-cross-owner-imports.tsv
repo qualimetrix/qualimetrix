@@ -1650,6 +1650,8 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator	Analysis.Policy.Baseline	
 Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
+Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
+Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	contract
@@ -1682,6 +1684,7 @@ Qualimetrix\Analysis\Policy\Baseline\Ceiling\Region	Analysis.Policy.Baseline	Qua
 Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ValueReach	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion	Analysis.Policy.Baseline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract
+Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions	Analysis.Policy.Baseline	Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude	Analysis.Run	contract
 Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions	Analysis.Policy.Baseline	Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	contract
@@ -2154,10 +2157,10 @@ Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	contract
-Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
@@ -2193,9 +2196,11 @@ Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	Infrastructur
 Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineRun	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
@@ -2217,12 +2222,10 @@ Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	contract
-Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	contract
-Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	contract
@@ -2853,6 +2856,7 @@ Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Quali
 Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope	Analysis.Finding	contract
 Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels	Analysis.Finding	contract
 Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface	Analysis.Policy.Architecture	contract
+Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	Reporting	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	Reporting	Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage	Analysis.Policy.Baseline	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	Reporting	Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjectionResult	Reporting	Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage	Analysis.Finding	contract
@@ -2866,6 +2870,7 @@ Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\A
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Policy.Baseline	contract
+Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface	Analysis.Policy.Inline	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	contract
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	contract

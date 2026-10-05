@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Pattern\NamespacePattern;
@@ -18,7 +19,7 @@ final readonly class FindingProjectionOptions
      * @param list<NamespacePattern> $suppressNamespaces
      */
     public function __construct(
-        public ?string $baselinePath = null,
+        public ?BaselineDocument $baselineDocument = null,
         public array $suppressPaths = [],
         public array $suppressNamespaces = [],
         public bool $annotationSuppressionDisabled = false,
@@ -30,7 +31,7 @@ final readonly class FindingProjectionOptions
     public function withRunCoverage(RunCoverage $coverage, RunRuleCoverage $ruleCoverage): self
     {
         return new self(
-            baselinePath: $this->baselinePath,
+            baselineDocument: $this->baselineDocument,
             suppressPaths: $this->suppressPaths,
             suppressNamespaces: $this->suppressNamespaces,
             annotationSuppressionDisabled: $this->annotationSuppressionDisabled,

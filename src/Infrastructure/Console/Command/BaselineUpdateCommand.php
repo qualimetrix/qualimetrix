@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
-use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -73,7 +72,8 @@ final class BaselineUpdateCommand extends BaselineCommand
     {
         $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
 
-        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
+        $document = BaselineLoader::preflight($baselinePath);
+        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
         if ($measured === null) {
             return self::FAILURE;
@@ -99,7 +99,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($result->baseline, TargetPath::resolve($baselinePath), $context->projectRoot);
+        $this->writer->write($result->baseline, $document->target, $context->projectRoot);
 
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 

@@ -8086,6 +8086,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingFileInABaselineCommandBeforeItMeasures"explain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingFileInABaselineCommandBeforeItMeasures"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInOneVoiceWhetherAskedEarlyOrByTheLoader
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInCheckBeforeAnalysis"invalid JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInCheckBeforeAnalysis"old version"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInCheckBeforeAnalysis"unknown envelope key"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement"invalid JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement"old version"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement"unknown envelope key"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillAnalysesCheckOnceWithABaselineThatExists
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"cleanup"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"explain"
@@ -8144,6 +8150,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPreflightsGrammarBeforeMapCarry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPrintsTheDocsPointerInTextOutputButNotInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPublishesTheExactUnknownEntryPositionWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itLeavesAConfiguredComputedEntryAloneInCleanup
@@ -8165,6 +8172,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesAFileThatAlreadyHeldADuplicateIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesALineThisBuildCannotReadInsteadOfDroppingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesASubjectBlockThatIsNotAnArray
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesHeldBytesAndRefusesChangedTargetOnWrite
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itDropsAnEmptySubjectBlock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
@@ -8445,8 +8453,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itHashesTheFileTheSameWayOnEitherRoute
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsLoadingWhenOneEntryIsUnusable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsOnlyThePreflightBytesAfterSourceReplacement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsTheContractOfTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNormalizesAScopeTheFileSpelledLoosely
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"invalid JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"numeric entry object key"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"old version"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileAndAReflowedCopyOfItIdentically
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileWithNoEntries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecognisesTheCanonicalLayoutAndDeclinesAnyOther

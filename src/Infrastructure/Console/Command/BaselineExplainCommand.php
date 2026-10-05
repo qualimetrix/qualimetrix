@@ -100,15 +100,13 @@ final class BaselineExplainCommand extends BaselineCommand
         // applies on the same file. Whether the file exists needs no
         // declaration, so that alone is asked before the run.
         $baselinePath = self::baselinePath($input);
-        if ($baselinePath !== null) {
-            BaselineLoader::assertReadable($baselinePath);
-        }
+        $document = $baselinePath !== null ? BaselineLoader::preflight($baselinePath) : null;
 
         $context = $this->baselineRun->measure($input, $output);
         if ($context->result()->measured->coverage->isIntentionallyEmpty()) {
             return self::SUCCESS;
         }
-        $baseline = $baselinePath !== null ? $this->loader->load($baselinePath) : null;
+        $baseline = $document !== null ? $this->loader->load($document) : null;
 
         // Addressability is checked here, not in readChannel(): the registry
         // side needs the computed-metric definitions this run just resolved,

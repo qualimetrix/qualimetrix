@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use Qualimetrix\Core\FileTarget\ResolvedTarget;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use RuntimeException;
 
 /**
@@ -85,11 +85,9 @@ final readonly class BaselineChannelRenamer
      * @throws BaselineConflictException when the file changed between the read and the write
      * @throws RuntimeException when the file cannot be read or replaced
      */
-    public function carry(string $path, ChannelRenameMap $map): ChannelRenameReport
+    public function carry(BaselineDocument $source, ChannelRenameMap $map): ChannelRenameReport
     {
-        $destination = self::readDestination($path);
-
-        $document = BaselineFileShape::decode($destination['contents'], $path);
+        $document = BaselineFileShape::decode($source->bytes(), $source->path);
         $entries = self::readEntries($document);
         unset($document['entries']);
 
@@ -143,26 +141,12 @@ final readonly class BaselineChannelRenamer
         ksort($carried, \SORT_STRING);
 
         $this->documents->replace(
-            $destination['target'],
+            $source->target,
             BaselineDocumentLayout::render($document, $carried),
-            $destination['hash'],
+            $source->contentHash,
         );
 
         return new ChannelRenameReport($total, $renamed, $rowHits, $unreadable, written: true);
-    }
-
-    /** @return array{target: ResolvedTarget, hash: ?string, contents: string} */
-    private static function readDestination(string $path): array
-    {
-        $destination = BaselineDocumentWriter::snapshot($path);
-        $resolvedPath = $destination['target']->path?->value();
-        $contents = $resolvedPath === null ? false : @file_get_contents($resolvedPath);
-
-        if ($contents === false) {
-            throw new RuntimeException(\sprintf('Cannot read the baseline file %s.', $path));
-        }
-
-        return [...$destination, 'contents' => $contents];
     }
 
     /**

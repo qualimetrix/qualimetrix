@@ -145,6 +145,26 @@ final class BaselineRenameChannelsCommandTest extends TestCase
         self::assertSame($before, (string) file_get_contents($baseline));
     }
 
+    #[Test]
+    public function itPreflightsGrammarBeforeMapCarry(): void
+    {
+        $baseline = $this->tempDir . '/invalid.json';
+        file_put_contents($baseline, '{ not json');
+        $missingMap = $this->tempDir . '/missing.tsv';
+        $status = 0;
+
+        $output = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s --format=json',
+            escapeshellarg($baseline),
+            escapeshellarg($missingMap),
+        ), $status);
+
+        self::assertSame(3, $status, $output);
+        self::assertStringContainsString('Invalid JSON in baseline file', $output);
+        self::assertStringNotContainsString($missingMap, $output);
+        self::assertSame('{ not json', (string) file_get_contents($baseline));
+    }
+
     /**
      * A caller that asked for a machine format asked for every outcome in
      * it, in the same `{error, exit_code}` envelope every other

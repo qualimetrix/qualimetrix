@@ -100,7 +100,7 @@ final class FindingProjectorTest extends TestCase
         ));
 
         $options = new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([]),
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
             gitScope: $this->createGitScope(),
         );
 
@@ -128,7 +128,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
 
         $result = $this->project($pipeline, [], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([]),
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
         ));
 
         self::assertSame(
@@ -161,11 +161,11 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$ignored], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $ignored->subject->toCanonical() => [
                     ['channel' => $ignored->channel()->code, 'magnitudes' => [25]],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertSame([], $result->measuredFindings);
@@ -192,11 +192,11 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertSame([], $result->findings);
@@ -265,7 +265,7 @@ final class FindingProjectorTest extends TestCase
         // Nothing is staged, so the git-scope stage narrows the report to
         // nothing at all.
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $baselinePath,
+            baselineDocument: BaselineLoader::preflight($baselinePath),
             gitScope: $this->createGitScope(),
         ));
 
@@ -282,11 +282,11 @@ final class FindingProjectorTest extends TestCase
         $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertSame([], $result->findings);
@@ -317,11 +317,11 @@ final class FindingProjectorTest extends TestCase
         );
 
         $result = $this->project($this->createPipeline(), [$first, $second], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $first->subject->toCanonical() => [
                     ['channel' => $first->channel()->code, 'count' => 1],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertCount(2, $result->findings);
@@ -352,11 +352,11 @@ final class FindingProjectorTest extends TestCase
         // A magnitude list on an occurrence channel: the entry claims a
         // boundary the channel's findings cannot be compared against.
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [1]],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertCount(1, $result->findings);
@@ -380,7 +380,7 @@ final class FindingProjectorTest extends TestCase
     {
         $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(baselinePath: ''));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(baselineDocument: null));
 
         self::assertSame([$finding], $result->findings);
         self::assertSame(0, $result->removedCountBy(FindingFilterStage::Baseline));
@@ -401,11 +401,11 @@ final class FindingProjectorTest extends TestCase
         $subjectKey = self::subjectKey('App\\Nowhere', 'Ghost', 'src/Nowhere/Ghost.php');
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $subjectKey => [
                     ['channel' => 'nonexistent.channel', 'count' => 1],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertCount(1, $result->inertEntries);
@@ -433,7 +433,7 @@ final class FindingProjectorTest extends TestCase
         $finding = $this->makeFinding('src/Service/UserService.php');
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([]),
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
         ));
 
         self::assertSame(['src'], $result->baselineScope);
@@ -468,7 +468,7 @@ final class FindingProjectorTest extends TestCase
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions($baselinePath));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
         self::assertSame([], $result->findings);
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
@@ -499,7 +499,7 @@ final class FindingProjectorTest extends TestCase
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions($baselinePath));
+        $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
         self::assertSame([], $result->findings, 'The surviving entry must still suppress its finding.');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
@@ -551,11 +551,11 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipelineIgnoringLine21();
 
         $result = $this->project($pipeline, [$measured, $annotated], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $measured->subject->toCanonical() => [
                     ['channel' => $measured->channel()->code, 'count' => 1],
                 ],
-            ]),
+            ])),
             annotationSuppressionDisabled: true,
         ));
 
@@ -589,14 +589,14 @@ final class FindingProjectorTest extends TestCase
         $applied = $this->project(
             $this->createPipelineIgnoringLine21(),
             [$measured, $annotated],
-            new FindingProjectionOptions(baselinePath: $baselinePath),
+            new FindingProjectionOptions(baselineDocument: BaselineLoader::preflight($baselinePath)),
         );
 
         $disabled = $this->project(
             $this->createPipelineIgnoringLine21(),
             [$measured, $annotated],
             new FindingProjectionOptions(
-                baselinePath: $baselinePath,
+                baselineDocument: BaselineLoader::preflight($baselinePath),
                 annotationSuppressionDisabled: true,
             ),
         );
@@ -1103,15 +1103,15 @@ final class FindingProjectorTest extends TestCase
         FindingProjectionOptions $options,
     ): FindingProjectionResult {
         $options = new FindingProjectionOptions(
-            baselinePath: $options->baselinePath ?? $this->configuredOptions->baselinePath,
+            baselineDocument: $options->baselineDocument ?? $this->configuredOptions->baselineDocument,
             suppressPaths: $this->uniquePaths([...$this->configuredOptions->suppressPaths, ...$options->suppressPaths]),
             suppressNamespaces: $this->uniqueNamespaces([...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces]),
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         );
 
-        if ($options->baselinePath !== null && $options->baselinePath !== '') {
-            $baseline = (new BaselineLoader(new BaselineEntryParser($this->declarations)))->load($options->baselinePath);
+        if ($options->baselineDocument !== null) {
+            $baseline = (new BaselineLoader(new BaselineEntryParser($this->declarations)))->load($options->baselineDocument);
             $files = array_values(array_map(
                 static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
                 $findings,

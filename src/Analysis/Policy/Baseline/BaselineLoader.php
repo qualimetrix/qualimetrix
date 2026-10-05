@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
+use Qualimetrix\Core\FileTarget\FileIdentity;
+use Qualimetrix\Core\FileTarget\TargetPath;
 
 /** Reads the current baseline grammar, then judges entries against the configured channel declarations. */
 final readonly class BaselineLoader
@@ -12,20 +15,58 @@ final readonly class BaselineLoader
     public function __construct(private BaselineEntryParser $entryParser) {}
 
     /** @throws ConfigurationRefusal if the file is unreadable or its document grammar is invalid */
-    public function load(string $path): Baseline
+    public static function preflight(string $path): BaselineDocument
     {
         self::assertReadable($path);
-        $canonical = (new CanonicalBaselineReader($this->entryParser))->read($path);
-        if ($canonical !== null) {
-            return $this->assembleCanonical($canonical, $path);
+        $target = TargetPath::resolve($path);
+        $resolvedPath = $target->path?->value();
+        if ($resolvedPath === null || $target->identity === null) {
+            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
         }
 
-        $content = file_get_contents($path);
+        $handle = @fopen($resolvedPath, 'rb');
+        if ($handle === false) {
+            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
+        }
+        try {
+            $stat = fstat($handle);
+            if ($stat === false || !$target->identity->sameAs(FileIdentity::fromStat($stat))) {
+                throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline file changed before reading: {$path}");
+            }
+            $content = stream_get_contents($handle);
+        } finally {
+            fclose($handle);
+        }
+
         if ($content === false) {
             throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
         }
 
-        return $this->parseBaseline(BaselineFileShape::decode($content, $path), hash('sha256', $content), $path);
+        $canonical = CanonicalBaselineReader::grammarEnvelope($content, $path);
+        $data = $canonical === null ? BaselineFileShape::decode($content, $path) : [...$canonical, 'entries' => []];
+        $envelope = BaselineFileShape::envelope($data, $path);
+
+        return new BaselineDocument(
+            path: $path,
+            contentHash: hash('sha256', $content),
+            version: BaselineFormatVersion::CURRENT,
+            generated: $envelope['generated'],
+            scope: $envelope['scope'],
+            exclusions: $envelope['exclusions'],
+            target: $target,
+            bytes: $content,
+        );
+    }
+
+    /** Semantic entries are judged only after the current run has resolved configuration. */
+    public function load(BaselineDocument $document): Baseline
+    {
+        $canonical = (new CanonicalBaselineReader($this->entryParser))->read($document);
+        if ($canonical !== null) {
+            return $this->assembleCanonical($canonical, $document->path);
+        }
+
+        return $this->parseBaseline(BaselineFileShape::decode($document->bytes(), $document->path), $document->contentHash, $document->path);
     }
 
     /** @throws ConfigurationRefusal if the file is missing, not a regular file, or unreadable */

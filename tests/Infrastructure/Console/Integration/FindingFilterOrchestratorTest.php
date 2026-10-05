@@ -443,7 +443,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             $output,
             new ResolvedCheckScope($scopeResolution, [], $measurement),
             new FindingProjectionOptions(
-                baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
+                baselineDocument: \is_string($baselinePath) && $baselinePath !== '' ? BaselineLoader::preflight($baselinePath) : null,
             ),
             new RunConfiguration([], $scopeResolution->projectRoot, GeneratedFilePolicy::Exclude, $measurement, [], AutoloadDevPolicy::Exclude),
         );

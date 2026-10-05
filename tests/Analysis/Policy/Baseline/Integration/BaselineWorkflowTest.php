@@ -133,7 +133,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 3: Load baseline from file
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load($this->baselinePath);
+        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
 
         self::assertSame($baseline->count(), $loadedBaseline->count());
         self::assertSame(0, \count($loadedBaseline->inertEntries));
@@ -187,7 +187,7 @@ final class BaselineWorkflowTest extends TestCase
             . 'write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
-        $loader->load($this->baselinePath);
+        $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
     }
 
     #[Test]
@@ -236,7 +236,7 @@ final class BaselineWorkflowTest extends TestCase
         ], $subjectEntries);
         self::assertArrayNotHasKey('type', $subjectEntries[0]['edge']);
 
-        $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($this->baselinePath);
+        $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
         $expectedIdentities = [
             BaselineIdentity::forFinding($untyped),
             BaselineIdentity::forFinding($typed),
@@ -287,7 +287,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Load baseline
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load($this->baselinePath);
+        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);
 
         // Current findings: only method1 (method2 was fixed)
@@ -360,7 +360,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Load baseline — paths kept as-is (relative)
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load($this->baselinePath);
+        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
 
         // The ceiling should accept the original findings
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);

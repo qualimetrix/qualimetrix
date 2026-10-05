@@ -49,7 +49,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * Every command that reads a baseline file resolves the configuration first.
+ * Every measured baseline command resolves configuration before entry semantics.
  *
  * The order is not housekeeping. ADR 0017 leaves one channel family — `computed.*`
  * and `health.*` — undeclarable at compile time, because a user defines those
@@ -58,7 +58,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * registry answers such a lookup from
  * the configured definition catalog, which the run populates.
  *
- * So a file read *before* the run is read against an empty vocabulary:
+ * So a semantic load *before* the run is judged against an empty vocabulary:
  * {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser} finds no declaration for
  * the channel, and every entry on a computed metric loads inert. Nothing
  * fails; the entry simply stops meaning anything — while the `check` that

@@ -808,6 +808,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal'
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport'
         - 'Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument'
         - 'Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome'
         - 'Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions'
         - 'Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage'

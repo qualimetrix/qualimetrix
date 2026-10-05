@@ -35,6 +35,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -183,11 +184,11 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $configurationError = $this->makeConfigurationError();
 
         $result = $this->project([$configurationError], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $configurationError->subject->toCanonical() => [
                     ['channel' => $configurationError->channel()->code, 'count' => 1],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertSame([$configurationError], $result->findings);
@@ -272,6 +273,18 @@ final class ConfigurationErrorProjectionTest extends TestCase
             $declarations,
             new ReportingGitScopeQuery(),
         );
+
+        if ($options->baselineDocument !== null) {
+            $baseline = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($options->baselineDocument);
+            $files = array_values(array_map(
+                static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
+                $findings,
+            ));
+            $options = $options->withRunCoverage(
+                StubRuleCoverage::completeFor($baseline, $files),
+                StubRuleCoverage::everyRuleRan(),
+            );
+        }
 
         return $projector->project($findings, $this->suppressions, $options);
     }

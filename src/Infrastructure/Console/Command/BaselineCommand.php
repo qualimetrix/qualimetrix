@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\ProductIdentity;
@@ -183,13 +184,13 @@ abstract class BaselineCommand extends Command
 
     /**
      * The preamble `baseline:cleanup` and `baseline:update` share (ADR 0017):
-     * measure before loading — a `computed.*` / `health.*` declaration only
+     * preflight grammar, then measure before loading semantic entries — a `computed.*` / `health.*` declaration only
      * exists once the run has resolved configuration, so loading the file
      * first would leave every such entry inert, and each command would
      * answer differently than the `check` applying the very same entry —
      * then refuse when the run's scope does not cover what the file records.
-     * Only the file's existence is asked before the run: it needs no
-     * declaration, and a missing file should not cost a whole analysis.
+     * Document grammar needs no declaration, and an invalid file should not
+     * cost a whole analysis.
      *
      * Returns `null` when the caller must answer with `self::FAILURE`; the
      * scope guard has already written its own message to `$output`.
@@ -199,13 +200,12 @@ abstract class BaselineCommand extends Command
         BaselineLoader $loader,
         InputInterface $input,
         OutputInterface $output,
-        string $baselinePath,
+        BaselineDocument $document,
     ): ?LoadedBaselineRun {
         $force = $input->getOption('force') === true;
 
-        BaselineLoader::assertReadable($baselinePath);
         $context = $baselineRun->measure($input, $output);
-        $baseline = $loader->load($baselinePath);
+        $baseline = $loader->load($document);
 
         if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
             return null;

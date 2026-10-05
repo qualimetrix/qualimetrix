@@ -321,13 +321,53 @@ final class BaselineLoaderTest extends TestCase
         $this->loadJson('{ not json');
     }
 
+    /** @return iterable<string, array{string, string}> */
+    public static function provideInvalidPreflightDocuments(): iterable
+    {
+        yield 'invalid JSON' => ['{ not json', 'Invalid JSON'];
+        yield 'old version' => [str_replace('"version": 14', '"version": 13', self::canonicalDocument()), 'version 13'];
+        yield 'numeric entry object key' => [str_replace(
+            '{"channel":"complexity.ccn"',
+            '{"0":"unknown","channel":"complexity.ccn"',
+            self::canonicalDocument(),
+        ), 'Unknown baseline key "0"'];
+    }
+
+    #[Test]
+    #[DataProvider('provideInvalidPreflightDocuments')]
+    public function itPreflightsGrammarBeforeSemanticLoad(string $contents, string $reason): void
+    {
+        $path = $this->put($contents, 'preflight.json');
+
+        try {
+            BaselineLoader::preflight($path);
+            self::fail('Invalid document grammar was accepted before the run.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($reason, $refusal->getMessage());
+        }
+    }
+
+    #[Test]
+    public function itLoadsOnlyThePreflightBytesAfterSourceReplacement(): void
+    {
+        $original = self::canonicalDocument();
+        $path = $this->put($original, 'held.json');
+        $document = BaselineLoader::preflight($path);
+        file_put_contents($path, str_replace('["src","tests"]', '["changed"]', $original));
+
+        $loaded = $this->loader->load($document);
+
+        self::assertSame(['src', 'tests'], $loaded->scope);
+        self::assertSame(hash('sha256', $original), $loaded->sourceContentHash);
+    }
+
     #[Test]
     public function itRejectsAMissingFile(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/not found/');
 
-        $this->loader->load($this->tempDir . '/absent.json');
+        $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->tempDir . '/absent.json'));
     }
 
     /**
@@ -341,7 +381,7 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/absent.json';
 
         try {
-            $this->loader->load($path);
+            $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
             self::fail('Expected a ConfigurationRefusal.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertCount(1, $refusal->sources());
@@ -514,9 +554,8 @@ final class BaselineLoaderTest extends TestCase
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
         );
 
-        self::assertNotNull($reader->read($this->put($canonical, 'canonical.json')));
-        self::assertNull($reader->read($this->put($reflowed, 'reflowed.json')));
-        self::assertNull($reader->read($this->tempDir . '/absent.json'));
+        self::assertNotNull($reader->read(BaselineLoader::preflight($this->put($canonical, 'canonical.json'))));
+        self::assertNull($reader->read(BaselineLoader::preflight($this->put($reflowed, 'reflowed.json'))));
     }
 
     private function put(string $json, string $name): string
@@ -605,7 +644,7 @@ final class BaselineLoaderTest extends TestCase
         $broken = str_replace("    ],\n", "    ]\n", self::canonicalDocument());
 
         self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
-        self::assertNull($this->reader()->read($this->put($broken, 'no-comma.json')));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, 'no-comma.json')));
     }
 
     /**
@@ -619,7 +658,7 @@ final class BaselineLoaderTest extends TestCase
         $broken = self::replaceLast("    ]\n", "    ],\n", self::canonicalDocument());
 
         self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
-        self::assertNull($this->reader()->read($this->put($broken, 'extra-comma.json')));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, 'extra-comma.json')));
     }
 
     /**
@@ -631,7 +670,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $broken = str_replace("    ],\n", "    } ,\n", self::canonicalDocument());
 
-        self::assertNull($this->reader()->read($this->put($broken, 'bad-closer.json')));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, 'bad-closer.json')));
     }
 
     /**
@@ -645,7 +684,7 @@ final class BaselineLoaderTest extends TestCase
             $broken = self::canonicalDocument() . $suffix;
 
             self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
-            self::assertNull($this->reader()->read($this->put($broken, $name)), $name);
+            self::assertNull(CanonicalBaselineReader::grammarEnvelope($broken, $this->put($broken, $name)), $name);
         }
     }
 
@@ -676,9 +715,9 @@ final class BaselineLoaderTest extends TestCase
 
         $path = $this->put($repeated, 'repeated-subject.json');
 
-        self::assertNull($this->reader()->read($path));
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
 
-        $loaded = $this->loader->load($path);
+        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
 
         self::assertCount(1, $loaded->entries, 'the whole-document path keeps one of the two');
         self::assertSame(
@@ -705,8 +744,8 @@ final class BaselineLoaderTest extends TestCase
 
         $path = $this->put($repeated, 'repeated-envelope.json');
 
-        self::assertNull($this->reader()->read($path));
-        self::assertSame(['src', 'tests'], $this->loader->load($path)->scope);
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
+        self::assertSame(['src', 'tests'], $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path))->scope);
     }
 
     /**
@@ -722,7 +761,7 @@ final class BaselineLoaderTest extends TestCase
             $path = $this->put($document, 'deep-' . $nesting . '.json');
 
             $wholeDocument = json_decode($document, true) !== null;
-            $fastPath = $this->reader()->read($path) !== null;
+            $fastPath = CanonicalBaselineReader::grammarEnvelope($document, $path) !== null;
 
             self::assertSame($expected === 'accepted', $wholeDocument, "whole document, nesting {$nesting}");
             self::assertSame($wholeDocument, $fastPath, "the two paths must agree at nesting {$nesting}");
@@ -760,14 +799,7 @@ final class BaselineLoaderTest extends TestCase
     #[DataProvider('provideUnrecognisedShapes')]
     public function itDeclinesEveryShapeItDoesNotRecognise(string $document): void
     {
-        self::assertNull($this->reader()->read($this->put($document, 'shape.json')));
-    }
-
-    private function reader(): CanonicalBaselineReader
-    {
-        return new CanonicalBaselineReader(
-            new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()),
-        );
+        self::assertNull(CanonicalBaselineReader::grammarEnvelope($document, $this->put($document, 'shape.json')));
     }
 
     /**
@@ -859,6 +891,6 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/' . $name;
         file_put_contents($path, $json);
 
-        return $this->loader->load($path);
+        return $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
     }
 }

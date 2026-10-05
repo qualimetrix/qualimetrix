@@ -104,7 +104,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
             $baseline = (new BaselineLoader(new BaselineEntryParser(new StubChannelDeclarationRegistry([
                 'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::File),
-            ]))))->load($path);
+            ]))))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
             self::assertSame([
                 'patterns' => ['subtree:src/Legacy', 'subtree:src/Nothing'],
                 'generated' => 'included',
@@ -239,7 +239,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         // check
         $this->suppressions = $suppressions;
-        $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions($baselinePath));
+        $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
         self::assertSame([], $result->findings);
         self::assertSame(0, $result->staleEntryCount());
@@ -307,16 +307,16 @@ final class CaptureFromMeasuredSetTest extends TestCase
     private function project(FindingProjector $projector, array $findings, FindingProjectionOptions $options): \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult
     {
         $projectionOptions = new FindingProjectionOptions(
-            baselinePath: $options->baselinePath,
+            baselineDocument: $options->baselineDocument,
             suppressPaths: [...$this->configuredOptions->suppressPaths, ...$options->suppressPaths],
             suppressNamespaces: [...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces],
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         );
-        if ($options->baselinePath !== null) {
+        if ($options->baselineDocument !== null) {
             $declarations = StubChannelDeclarationRegistry::withDefaults();
             $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
-            $baseline = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($options->baselinePath);
+            $baseline = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($options->baselineDocument);
             $files = array_values(array_map(
                 static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
                 $findings,
