@@ -835,7 +835,7 @@ repository-governance step.
   point suppressions over adding findings to the ratchet. Baseline lifecycle
   and recalibration must be explicit and reviewed: regenerate
   `qmx-baseline.json` only after an intentional change to accepted residual
-  debt, and review the resulting v11 snapshot diff
+  debt, and review the resulting v14 snapshot diff
 - Never use suppress-mode or legacy baselines for dogfooding
 
 ---
@@ -930,3 +930,7 @@ Key rules:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — overall architecture
 - [website/docs/getting-started/quick-start.md](website/docs/getting-started/quick-start.md) — quick start
 - [website/docs/ci-cd/github-actions.md](website/docs/ci-cd/github-actions.md) — GitHub Action integration
+
+Baseline hook and Git reports apply the full ceiling before Git projection.
+Narrow run-dependent channels may be not-compared; project baseline audit
+findings remain visible beside the selected file findings.

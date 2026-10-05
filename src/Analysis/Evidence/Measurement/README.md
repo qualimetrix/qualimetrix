@@ -196,3 +196,18 @@ attribution, and sequential/parallel worker equivalence.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Measurement reach and baseline comparison
+
+Measurement publishes Members/Run reach through its metric declarations.
+Baseline owns RunCoverage and the comparability decision over AnalysisCoverage;
+this does not introduce a general invocation context or Run phase port. A
+nonfinite member makes the entire magnitude group unavailable for comparison
+and capture; diagnostic findings and total/missing counts remain available.
+Incomplete evidence establishes neither acceptance nor staleness.
+
+The catalogue also declares aggregate-derived `complexity.wmc` with Members
+reach alongside `size.symbol-method-count`, `size.symbol-class-count` and
+`size.symbol-declaring-namespace-count`;
+metric declarations are not limited to direct collectors. CallableToClassAggregator
+owns the WMC sum over callable CCN values.

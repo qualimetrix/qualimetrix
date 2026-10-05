@@ -47,3 +47,10 @@ The relationship with `src/` runs in both directions:
 Both hops are hardcoded distances to the repository root rather than
 configuration, so a directory move on either side requires updating the hop,
 not a path string.
+
+## Baseline verdicts
+
+The HTML payload and detail viewer retain acceptedLevel for both breached and
+not-compared findings. baselineVerdict and nullable baselineReason distinguish
+those states; an accepted cap alone never labels a finding as a breach. The
+project-level unused-entry warning remains visible after Git projection.

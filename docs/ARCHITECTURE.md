@@ -58,7 +58,7 @@ an uncovered project class fail even when it has no dependency edges.
 
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
-each. Self-analysis runs against the versioned v13 root baseline, whose
+each. Self-analysis runs against the versioned v14 root baseline, whose
 146 groups across 125 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
@@ -167,14 +167,16 @@ over `Analysis/Evidence/*`.
 
 ### 6. Baseline Ceiling
 
-The version 13 baseline retains the post-rule, reported-magnitude ceiling. It compares
-only groups of findings that currently fire, after source/configuration
-suppression and exclusions but before git report scoping. A measured breach is
-promoted to Error; a malformed, stale, or otherwise inapplicable entry is
-fail-safe and suppresses nothing. See [ADR 0017](adr/0017-baseline-ceiling.md)
-and [Baseline](../src/Analysis/Policy/Baseline/README.md) for the lifecycle and file contract.
+The version 14 baseline compares complete compatible identity groups after
+source/configuration suppression and before Git projection. Baseline-owned
+RunCoverage and one CeilingOutcome distinguish stale, unmeasured, outside and
+not-compared entries. A measured breach promotes to Error; present incomparable
+findings keep accepted caps and their normal severity. The project-level
+baseline.unused-entry audit follows the ceiling and survives Git projection.
+See [ADR 0098](adr/0098-baseline-entry-comparability.md) and
+[Baseline](../src/Analysis/Policy/Baseline/README.md).
 
-For full details (CompilerPasses, exclude patterns, autowiring constraints for rules), see [CLAUDE.md § Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration).
+
 
 ### 7. Analysis Coverage and Verdict
 

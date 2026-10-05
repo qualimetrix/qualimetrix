@@ -25,7 +25,7 @@ Console/
 ├── RuleListingPresenter.php        # producer rows, computed footer and selection sources
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
-├── BaselineFilterReporter.php     # Private stale, inert and scope-mismatch wording with the selected error writer
+├── BaselineFilterReporter.php     # Private count-only unused/uncompared diagnostics with the selected error writer
 ├── DirectiveAuditTextPresenter.php # Private text wording; the facade owns shared text/JSON values
 ├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
 ├── MemoryLimitSection.php           # every writing layer's memory_limit syntax, using RuntimeLimits
@@ -288,7 +288,7 @@ reconstruct.
 
 ### BaselineCleanupCommand
 
-Cleanup baseline from stale entries (findings that have already been fixed).
+Inspect stale candidates; comparable absence does not itself prove that code was fixed.
 
 **Name:** `baseline:cleanup`
 
@@ -400,35 +400,60 @@ not against the working directory `--working-dir` has since changed.
 
 ### `check`'s baseline reporting
 
-`FindingFilterOrchestrator` prints up to three unconditional, non-failing
-reports about the loaded baseline — each with its own header and its own
-explaining line, so they never run together. None of the three prints
-anything on a run without `--baseline`.
+`EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
+Warnings for stale and inert entries after the full ceiling and before Git
+projection. The rule's remediation estimate is 5 minutes. Audit findings never
+enter the measured set, capture or accept-new; authored path/namespace
+suppression and Git projection cannot hide them. When unselected, stderr reports
+counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
+Nine finding formats publish the audit; Metrics, Health and Suppressed retain
+their own subjects. All twelve preserve the ordinary failure policy: an isolated
+audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
+`--fail-on=warning`. Incomplete analysis has priority and exits 4.
 
-- **Stale entries** — an entry whose complete v11 identity (typed subject,
-  channel, optional semantic occurrence, and optional edge)
-  did not appear in the measured set. `--show-resolved` reads the same
-  list and reports the same predicate in a different unit — entries, not
-  findings. Because the predicate is keyed on the *full* identity rather
-  than the symbol, a group that shrank without vanishing (say five members
-  down to two) is neither stale nor "resolved": its identity still fired, so
-  it is invisible to `--show-resolved` by design (ADR 0017 residual-limitation
-  list, item 2) — not a bug to be fixed later.
-- **Inert entries** — an entry the loaded baseline could not apply at all:
-  malformed, addressing an undeclared channel, mismatching its channel's
-  shape in either direction, an unrecognized `mode`, or a duplicate identity
-  (ADR 0017). Each line names the symbol, the channel, the entry's selector and the
-  reason. An inert entry does not suppress anything and is not a load error —
-  the findings it was meant to cover are reported at their own severity, and
-  the run does not fail on it.
-- **Scope mismatch** — when this run's analysed paths do not cover the
-  baseline file's recorded `scope` (ADR 0017), `check` names the uncovered paths.
-  This never fails the run: a narrower run legitimately sees fewer
-  identities, and failing on it would punish the ordinary case of checking
-  one directory. The scope guard that *does* refuse to run is a precondition
-  of the writing commands (`baseline:update`, `baseline:cleanup`), not a
-  `check` behaviour — every identity under an uncovered path looks absent
-  from this run and is already counted among the stale entries above.
+The five document readers preflight once before analysis: check, update, cleanup,
+explain and rename-channels. Grammar refusal is early; configured entry semantics
+follow configuration. Incomplete lifecycle analysis exits 4 before mutation.
+
+Ordinary update only tightens existing accepted groups. It preserves recorded
+scope, exclusions, inert payload and modes. Equal acceptance is `unchanged`;
+a no-op does not publish, change generated time or acquire a writer lock.
+Absent or incomparable groups are retained rather than converted into zero.
+
+`--accept-new=channel` is repeatable and additive: only new complete comparable
+measured identities of named selected channels are admitted. Existing caps are
+not tightened by this mode. Exact channel admission follows configuration and
+precedes analysis; undeclared, wildcard, level-qualified, configuration-error
+and `baseline.unused-entry` names refuse with exit 3.
+
+`--record-exclusions` requires exactly the recorded paths even with `--force`.
+It records the complete current exclusion definition and recaptures only groups
+whose sole comparison obstacle is the exclusion change, preserving modes.
+Other entries follow ordinary tightening. Unknown delta, changed generated
+policy without sufficient proof, incomplete analysis or unavailable required
+groups refuses the whole write. The options cannot combine.
+
+Normalized accepted payload is preserved for arbitrary human JSON input.
+Exact unchanged entry bytes are guaranteed only for canonical writer-produced
+entries; arbitrary field order and numeric spelling may be normalized.
+
+`BoundaryExplanationService` answers one `EffectiveBoundary` per identity.
+Its mandatory `Contract\CurrentMeasurement now` is independent of its nullable
+baseline source, configured threshold and inline override. No baseline or an
+inert entry can still have a current measured group. Known valid entries read
+one full `CeilingOutcome`; stored acceptance does not cause a second absence
+classification or synthetic baseline.
+
+The renderer prints separate baseline and now lines. Current states are
+`reported`, `nothing-reported`, `not-measured`, `outside-coverage`,
+`not-compared` and `level-not-reported`. Undeclared subject levels are identified
+before coverage classification, with the currently declared levels. Current
+channel declarations determine shape; an inert payload does not. Unknown
+channels retain an unknown shape. A nonfinite magnitude group retains its total
+count and count without a finite magnitude, but no partial magnitude vector.
+Accepted caps, suppress mode and inert reason remain on the baseline source.
+Unreadable identities are listed separately. Exact subject/repository evidence
+continues to own annotation binding; logical identity never invents a declaration.
 
 ### Rules
 

@@ -192,7 +192,7 @@ Infrastructure/
         ├── BaselineRenameChannelsCommand.php # `baseline:rename-channels` — carries a baseline onto renamed channels along a declared TSV map; the one baseline command that runs no analysis
         ├── ChannelRenameReporter.php        # Renders a rename-channels outcome (refusal or ChannelRenameReport) in the caller's chosen format
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
-        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: entries present but not applied, unreadable entries, `mode: suppress`, a member without a finite value
+        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: separate baseline and independent CurrentMeasurement lines, inert reasons, suppress mode, whole-group unavailable magnitudes
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
         ├── RulesCommand.php           # Lists every option each rule accepts, its CLI aliases and judged metrics

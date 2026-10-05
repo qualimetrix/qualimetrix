@@ -181,9 +181,14 @@ The common outcome and narrow outward values add explicit evidence to callers
 without creating a shared runtime store, new Run port or alternate writer.
 Metadata remains conservative: unknown state can prevent comparison and is
 reported as such. Canonical entry byte stability does not extend to arbitrary
-human JSON spelling. Memory and preflight costs must be measured on the final
-implementation; the previous streaming-reader measurement does not establish
-the cost of retaining a document snapshot.
+human JSON spelling. A single local measurement on identical 185,517-entry inputs compared the old
+load(path) with preflight(path) plus configured load(document). Canonical input
+changed from 1.302083 to 1.443789 seconds and peak memory from 181,452,800 to
+205,586,432 bytes: 24,133,632 additional bytes, roughly 23 MiB of retained raw
+content. Pretty input changed from 45.362897 to 90.528244 seconds with the same
+436,125,696-byte peak. These are single samples, not statistical or portable
+performance promises. Acquisition happens once; grammar and semantic validation
+still walk the retained document separately in memory.
 
 A green finding-equivalence gate proves agreement only on its captured corpus
 and declared surface changes. It does not prove comparability for removed files,

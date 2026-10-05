@@ -403,3 +403,10 @@ an options boundary.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Stored acceptance and current verdict
+
+`Finding::$acceptedLevel` is stored acceptance, not a breach predicate.
+`baselineVerdict` is `breached`, `not-compared` or null; `baselineReason` is a
+nullable scalar reason. A comparable breach is promoted to Error; an incomparable
+current group keeps its own severity and may retain acceptedLevel.

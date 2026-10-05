@@ -286,3 +286,11 @@ internal, and unclassified Contract imports fail closed.
 ## Locality
 
 This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.
+
+## Formula reach for baseline comparison
+
+Reach is determined at the selected level from all transitive formula references.
+A Run-dependent input in any branch makes the formula Run-dependent, even when
+that branch does not execute for current values. Project-level baseline subjects
+always require the whole region. Baseline owns comparability; this capability
+provides formula evidence rather than another run lifecycle port.

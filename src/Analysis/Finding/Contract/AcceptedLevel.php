@@ -10,8 +10,9 @@ use InvalidArgumentException;
  * The level a finding's group was accepted at — what a report means by
  * "accepted at 25, now 31" (ADR 0017).
  *
- * A finding carries one only when it was measured against an applicable
- * baseline entry and exceeded it; see {@see Finding::reportedAsBreach()}.
+ * A finding may carry stored acceptance for a measured breach or an
+ * incomparable current group. Its baseline verdict and reason distinguish
+ * those states; an accepted level alone does not establish a breach.
  *
  * **Why this lives beside {@see Finding} rather than in `Baseline`.** The field
  * that holds it is a field of {@see Finding}, and `Finding` may not depend on
