@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -409,6 +410,136 @@ final class BaselineUpdaterTest extends TestCase
         $result = $this->update($baseline, [], RunScope::fromRecorded(['src']));
 
         self::assertSame('abc123', $result->baseline->sourceContentHash);
+    }
+
+    #[Test]
+    public function itOnlyAddsNewIdentitiesOfExplicitChannels(): void
+    {
+        $old = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 30);
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($old), [40], 1, BaselineEntryMode::Suppress);
+        $new = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'added'), 20);
+        $held = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'held'), 35);
+        $inert = InertBaselineEntry::forIdentity(BaselineIdentity::forFinding($held), InertEntryReason::Malformed, 'invalid count', ['channel' => 'complexity.ccn', 'count' => 0]);
+        $baseline = new Baseline(new DateTimeImmutable('2000-01-01'), ['src'], [$entry], self::fixtureExclusions(), [$inert], 'held-hash');
+        $other = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 100, 'duplication.clone', 'duplication.clone');
+
+        $occurrence = FindingFactory::occurrence(SymbolPath::forMethod('App', 'Foo', 'gotoMethod'));
+        $result = $this->updater()->acceptNew($baseline, [$old, $held, $other, $new, $occurrence], [new FindingChannel('complexity.ccn'), new FindingChannel('code-smell.goto')], StubRuleCoverage::completeFor($baseline), StubRuleCoverage::everyRuleRan());
+
+        self::assertTrue($result->changed);
+        self::assertCount(3, $result->baseline->entries);
+        self::assertNull($result->baseline->entries[2]->magnitudes);
+        self::assertSame(1, $result->baseline->entries[2]->count);
+        self::assertSame($entry, $result->baseline->entries[0]);
+        self::assertSame(BaselineIdentity::forFinding($new)->key(), $result->baseline->entries[1]->identity->key());
+        self::assertSame([$inert], $result->baseline->inertEntries);
+        self::assertSame($baseline->scope, $result->baseline->scope);
+        self::assertSame($baseline->exclusions, $result->baseline->exclusions);
+        self::assertSame('held-hash', $result->baseline->sourceContentHash);
+        self::assertNotEquals($baseline->generated, $result->baseline->generated);
+        self::assertSame(['existing-entry', 'inert-holds-identity', null, null], array_map(static fn($outcome) => $outcome->reasonCode, $result->outcomes));
+        self::assertSame([], $result->channelNotes);
+    }
+
+    #[Test]
+    public function itSkipsNewGroupsWithoutComparableCompleteEvidence(): void
+    {
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [], self::fixtureExclusions());
+        $channel = new FindingChannel('duplication.clone');
+        $finding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 20, 'duplication.clone', $channel->code);
+        $narrow = StubRuleCoverage::completeFor($baseline, ['src/Other.php'], scope: RunScope::fromRecorded(['src/Foo.php']));
+        $result = $this->updater()->acceptNew($baseline, [$finding], [$channel], $narrow, StubRuleCoverage::everyRuleRan());
+        self::assertFalse($result->changed);
+        self::assertSame('outside-coverage', $result->outcomes[0]->reasonCode);
+
+        foreach ([\NAN, \INF, -\INF] as $value) {
+            $invalid = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), $value, 'duplication.clone', $channel->code);
+            $result = $this->updater()->acceptNew($baseline, [$invalid], [$channel], StubRuleCoverage::completeFor($baseline), StubRuleCoverage::everyRuleRan());
+            self::assertFalse($result->changed);
+            self::assertSame('magnitude-unavailable', $result->outcomes[0]->reasonCode);
+        }
+        $missing = new Finding(location: $finding->location, subject: $finding->subject, symbolPath: $finding->symbolPath, ruleName: $finding->ruleName, code: $finding->code, message: $finding->message, severity: $finding->severity);
+        $result = $this->updater()->acceptNew($baseline, [$missing], [$channel], StubRuleCoverage::completeFor($baseline), StubRuleCoverage::everyRuleRan());
+        self::assertFalse($result->changed);
+        self::assertSame('magnitude-unavailable', $result->outcomes[0]->reasonCode);
+        $unknown = $this->coverageWithExclusions($baseline, ['exact:src/Foo.php'], unknown: true);
+        $result = $this->updater()->acceptNew($baseline, [$finding], [$channel], $unknown, StubRuleCoverage::everyRuleRan());
+        self::assertFalse($result->changed);
+        self::assertSame('metadata-unknown', $result->outcomes[0]->reasonCode);
+    }
+
+    #[Test]
+    public function itRerecordsOnlyExclusionAffectedGroupsWithTheirModes(): void
+    {
+        $affected = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 120, 'duplication.clone', 'duplication.clone');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($affected), [40], 1, BaselineEntryMode::Suppress);
+        $unaffected = FindingFactory::magnitude(SymbolPath::forMethod('App', 'New', 'bar'), 20);
+        $other = new BaselineEntry(BaselineIdentity::forFinding($unaffected), [30], 1);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$entry, $other], self::fixtureExclusions());
+        $coverage = $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php']);
+
+        $result = $this->updater()->recordExclusions($baseline, [$affected, $unaffected], $coverage, []);
+
+        self::assertTrue($result->changed);
+        self::assertNull($result->writeRefusal);
+        self::assertSame([120.0], $result->baseline->entries[0]->magnitudes);
+        self::assertSame(BaselineEntryMode::Suppress, $result->baseline->entries[0]->mode);
+        self::assertSame([20.0], $result->baseline->entries[1]->magnitudes);
+        self::assertSame(BaselineUpdateDisposition::ReRecorded, $result->outcomes[0]->disposition);
+        self::assertNotNull($result->outcomes[0]->previousLevel);
+        self::assertNotNull($result->outcomes[0]->currentLevel);
+        self::assertSame('40', $result->outcomes[0]->previousLevel->describe());
+        self::assertSame('120', $result->outcomes[0]->currentLevel->describe());
+        self::assertSame($coverage->exclusions, $result->baseline->exclusions);
+    }
+
+    #[Test]
+    public function itRefusesTheWholeExclusionRecordWhenItsProofIsUnavailable(): void
+    {
+        $finding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 100, 'duplication.clone', 'duplication.clone');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [40], 1);
+        $baseline = self::baselineOf($entry);
+        $coverage = $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php']);
+        foreach ([[], [FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), \INF, 'duplication.clone', 'duplication.clone')]] as $findings) {
+            $result = $this->updater()->recordExclusions($baseline, $findings, $coverage, []);
+            self::assertSame($baseline, $result->baseline);
+            self::assertFalse($result->changed);
+            self::assertSame(BaselineUpdateRefusalReason::RequiredGroupUnavailable, $result->writeRefusal);
+        }
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], unknown: true), []);
+        self::assertSame($baseline, $result->baseline);
+        self::assertSame(BaselineUpdateRefusalReason::ComparisonMetadataUnknown, $result->writeRefusal);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], includeGenerated: true), []);
+        self::assertSame($baseline, $result->baseline);
+        self::assertSame(BaselineUpdateRefusalReason::ComparisonMetadataUnknown, $result->writeRefusal);
+        $partial = new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], [new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure(RelativePath::fromString('src/Broken.php'), \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind::Parse, 'broken fixture')]);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $this->coverageWithExclusions($baseline, ['exact:src/Excluded.php'], analysis: $partial), []);
+        self::assertSame($baseline, $result->baseline);
+        self::assertFalse($result->changed);
+        self::assertNotNull($result->writeRefusal);
+        $result = $this->updater()->recordExclusions($baseline, [$finding], $coverage, [$entry->identity->key() => \Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap::NotMeasured]);
+        self::assertFalse($result->changed);
+        self::assertNotNull($result->writeRefusal);
+    }
+
+    /** @param list<string> $patterns */
+    private function coverageWithExclusions(Baseline $baseline, array $patterns, bool $unknown = false, bool $includeGenerated = false, ?\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage $analysis = null): \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage
+    {
+        $current = StubRuleCoverage::completeFor($baseline, ['src/Excluded.php'], analysis: $analysis);
+        $tree = new class ($unknown) implements \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface {
+            public function __construct(private bool $unknown) {}
+
+            public function snapshot(\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse $universe): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot
+            {
+                return new \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot([RelativePath::fromString('src/Foo.php'), RelativePath::fromString('src/Excluded.php')], [], !$this->unknown);
+            }
+
+            public function hasFile(AbsolutePath $root, RelativePath $file): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
+        };
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage($current->scope, $current->analysis, new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions($patterns, $includeGenerated ? \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include : \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude), $current->universe, $current->psr4Roots, $tree);
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured */

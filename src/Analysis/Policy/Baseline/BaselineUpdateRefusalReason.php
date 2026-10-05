@@ -21,6 +21,12 @@ enum BaselineUpdateRefusalReason: string
     /** No rule declares the channel any more, so nothing knows how to compare it. */
     case UndeclaredChannel = 'undeclared-channel';
 
+    case RecordedPathsDiffer = 'recorded-paths-differ';
+
+    case ComparisonMetadataUnknown = 'comparison-metadata-unknown';
+
+    case RequiredGroupUnavailable = 'required-group-unavailable';
+
     /**
      * The channel declares itself a configuration error: `update` refuses to
      * re-record it, exactly as `generate` refuses to capture it, so that a
@@ -54,6 +60,9 @@ enum BaselineUpdateRefusalReason: string
     public function description(): string
     {
         return match ($this) {
+            self::RecordedPathsDiffer => 'recording exclusions requires exactly the recorded paths, even under --force',
+            self::ComparisonMetadataUnknown => 'the exclusion comparison cannot be proved complete for every required group',
+            self::RequiredGroupUnavailable => 'an exclusion-affected group is absent or has no complete finite measurement',
             self::UndeclaredChannel => 'no rule declares the channel any more',
             self::ConfigurationErrorChannel => 'the channel reports a configuration error, which cannot be accepted as debt',
             self::ShapeMismatch => 'the entry no longer matches the channel\'s declared shape',

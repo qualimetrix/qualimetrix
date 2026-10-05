@@ -9,14 +9,27 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\EntryComparability;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCapture;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
- * `baseline:update`: a direction-aware monotonic tightening of an existing
- * baseline against a fresh measured run (ADR 0017).
+ * `baseline:update`: ordinary tightening plus explicit acceptance and
+ * exclusion recapture against a fresh measured run (ADR 0017).
+ *
+ * `acceptNew` preserves existing acceptance and captures only unoccupied,
+ * comparable identities of the named channels. `recordExclusions` recaptures
+ * an entry only when exclusions alone prevented comparison; its mode stays
+ * with the entry. The rules below govern ordinary `update`.
  *
  * Three rules, applied per entry, none of them a comparison this class
  * re-derives — {@see GroupAcceptance} already states the acceptance test for
@@ -68,61 +81,180 @@ final readonly class BaselineUpdater
     ) {}
 
     /**
-     * @param list<Finding> $measured the run's measured set
-     * @param array<string, RunCoverageGap> $ruleGaps identities not published by this run
+     * @param list<Finding> $measured
+     * @param array<string, RunCoverageGap> $ruleGaps
      */
     public function update(Baseline $baseline, array $measured, RunCoverage $coverage, array $ruleGaps): BaselineUpdateResult
     {
         $groups = self::groupByIdentity($measured);
         $judgement = (new BaselineCeilingStage($baseline, $this->declarations, $coverage, $ruleGaps))->judgeAll($measured);
-
-        $entries = [];
-        $outcomes = [];
-        $changed = false;
-
+        $entries = $outcomes = [];
         foreach ($baseline->entries as $entry) {
-            $group = $groups[$entry->identity->key()] ?? null;
-
-            $status = $judgement->statusFor($entry->identity);
-            if ($status === 'not-compared' || $status === 'unmeasured' || $status === 'outside-coverage') {
-                $entries[] = $entry;
-                $outcomes[] = BaselineEntryUpdateOutcome::notCompared(
-                    $entry->identity,
-                    $judgement->reasonFor($entry->identity) ?? 'metadata-unknown',
-                );
-
-                continue;
-            }
-
-            if ($group === null) {
-                $entries[] = $entry;
-                $outcomes[] = BaselineEntryUpdateOutcome::skipped($entry->identity);
-
-                continue;
-            }
-
-            [$written, $outcome] = $this->reconcile($entry, $group);
-            if ($outcome->disposition === BaselineUpdateDisposition::Updated && $written->toArray() === $entry->toArray()) {
-                $outcome = BaselineEntryUpdateOutcome::unchanged($entry->identity);
-            }
+            [$written, $outcome] = $this->reconcileJudged($entry, $groups[$entry->identity->key()] ?? null, $judgement);
             $entries[] = $written;
             $outcomes[] = $outcome;
-
-            if ($written->toArray() !== $entry->toArray()) {
-                $changed = true;
-            }
         }
 
+        return $this->result($baseline, $entries, $outcomes, $baseline->exclusions);
+    }
+
+    /**
+     * @param list<Finding> $measured
+     * @param list<FindingChannel> $channels
+     */
+    public function acceptNew(Baseline $baseline, array $measured, array $channels, RunCoverage $coverage, RunRuleCoverage $publication): BaselineUpdateResult
+    {
+        $occupied = [];
+        foreach ($baseline->entries as $entry) {
+            $occupied[$entry->identity->key()] = 'existing-entry';
+        }
+        foreach ($baseline->inertEntries as $entry) {
+            if ($entry->identity !== null) {
+                $occupied[$entry->identity->key()] = 'inert-holds-identity';
+            }
+        }
+        $selected = [];
+        $notes = [];
+        foreach ($channels as $channel) {
+            $declaration = $this->declarations->declarationFor($channel);
+            $published = $declaration !== null && array_any(
+                $declaration->levels,
+                static fn(SymbolLevel $level): bool => $publication->publishes($channel, $level),
+            );
+            $selected[$channel->code] = $published;
+            $notes[$channel->code] = $published ? 'no-finding' : 'not-measured';
+        }
+
+        $entries = $baseline->entries;
+        $outcomes = [];
+        $capture = new GroupCapture($this->declarations);
+        foreach (self::groupByIdentity($measured) as $key => $group) {
+            $identity = BaselineIdentity::forFinding($group[0]);
+            if (!isset($selected[$identity->channel->code]) || !$selected[$identity->channel->code]) {
+                continue;
+            }
+            $notes[$identity->channel->code] = 'no-comparable-new-identities';
+            if (isset($occupied[$key])) {
+                $outcomes[] = BaselineEntryUpdateOutcome::skipped($identity, $occupied[$key]);
+                continue;
+            }
+            $level = MetricSubject::levelOfCanonical($identity->subjectKey);
+            if (!\in_array($level, $this->declarations->declarationFor($identity->channel)->levels ?? [], true)
+                || !$publication->publishes($identity->channel, $level)) {
+                $outcomes[] = BaselineEntryUpdateOutcome::skipped($identity, 'not-measured');
+                continue;
+            }
+            $region = SubjectRegion::forIdentity($identity, $this->declarations->reachAt($identity->channel, $level), $coverage->psr4Roots, $group);
+            $comparison = EntryComparability::judge($region, $baseline, $coverage);
+            if (!$comparison->canCompare()) {
+                $outcomes[] = BaselineEntryUpdateOutcome::skipped($identity, $comparison->reason?->value);
+                continue;
+            }
+            $captured = $capture->capture($identity, $group);
+            if (!$captured instanceof BaselineEntry) {
+                $outcomes[] = BaselineEntryUpdateOutcome::skipped($identity, $captured->value);
+                continue;
+            }
+            $entries[] = $captured;
+            $outcomes[] = BaselineEntryUpdateOutcome::accepted($identity);
+            unset($notes[$identity->channel->code]);
+        }
+
+        foreach ($outcomes as $outcome) {
+            if ($outcome->disposition === BaselineUpdateDisposition::Accepted) {
+                unset($notes[$outcome->identity->channel->code]);
+            }
+        }
+        return $this->result($baseline, $entries, $outcomes, $baseline->exclusions, $notes);
+    }
+
+    /**
+     * @param list<Finding> $measured
+     * @param array<string, RunCoverageGap> $ruleGaps
+     */
+    public function recordExclusions(Baseline $baseline, array $measured, RunCoverage $coverage, array $ruleGaps): BaselineUpdateResult
+    {
+        if ($coverage->scope->paths() !== $baseline->scope) {
+            return new BaselineUpdateResult($baseline, [], false, writeRefusal: BaselineUpdateRefusalReason::RecordedPathsDiffer);
+        }
+        $groups = self::groupByIdentity($measured);
+        $judgement = (new BaselineCeilingStage($baseline, $this->declarations, $coverage, $ruleGaps))->judgeAll($measured);
+        $entries = $outcomes = [];
+        $refusal = null;
+        $capture = new GroupCapture($this->declarations);
+        foreach ($baseline->entries as $entry) {
+            $reason = $judgement->reasonFor($entry->identity);
+            $group = $groups[$entry->identity->key()] ?? null;
+            if ($reason === 'metadata-unknown' || $reason === 'analysis-incomplete'
+                || (!$baseline->exclusions->equals($coverage->exclusions) && $reason === 'producer-not-measured')) {
+                $refusal = BaselineUpdateRefusalReason::ComparisonMetadataUnknown;
+                $entries[] = $entry;
+                $outcomes[] = BaselineEntryUpdateOutcome::notCompared($entry->identity, $reason);
+                continue;
+            }
+            if ($reason === 'exclusions-differ') {
+                $captured = $group === null ? null : $capture->capture($entry->identity, $group);
+                if (!$captured instanceof BaselineEntry) {
+                    $refusal = BaselineUpdateRefusalReason::RequiredGroupUnavailable;
+                    $entries[] = $entry;
+                    $outcomes[] = BaselineEntryUpdateOutcome::refused($entry->identity, $refusal);
+                    continue;
+                }
+                $written = new BaselineEntry($captured->identity, $captured->magnitudes, $captured->count, $entry->mode);
+                $entries[] = $written;
+                $outcomes[] = BaselineEntryUpdateOutcome::reRecorded($entry, $written);
+                continue;
+            }
+            [$written, $outcome] = $this->reconcileJudged($entry, $group, $judgement);
+            $entries[] = $written;
+            $outcomes[] = $outcome;
+        }
+        if ($refusal !== null) {
+            return new BaselineUpdateResult($baseline, $outcomes, false, writeRefusal: $refusal);
+        }
+        return $this->result($baseline, $entries, $outcomes, $coverage->exclusions);
+    }
+
+    /**
+     * @param ?non-empty-list<Finding> $group
+     *
+     * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
+     */
+    private function reconcileJudged(BaselineEntry $entry, ?array $group, CeilingOutcome $judgement): array
+    {
+        $status = $judgement->statusFor($entry->identity);
+        if ($status === 'not-compared' || $status === 'unmeasured' || $status === 'outside-coverage') {
+            return [$entry, BaselineEntryUpdateOutcome::notCompared($entry->identity, $judgement->reasonFor($entry->identity) ?? 'metadata-unknown')];
+        }
+        if ($group === null) {
+            return [$entry, BaselineEntryUpdateOutcome::skipped($entry->identity)];
+        }
+        [$written, $outcome] = $this->reconcile($entry, $group);
+        if ($outcome->disposition === BaselineUpdateDisposition::Updated && $written->toArray() === $entry->toArray()) {
+            $outcome = BaselineEntryUpdateOutcome::unchanged($entry->identity);
+        }
+        return [$written, $outcome];
+    }
+
+    /**
+     * @param list<BaselineEntry> $entries
+     * @param list<BaselineEntryUpdateOutcome> $outcomes
+     * @param array<string, string> $notes
+     */
+    private function result(Baseline $baseline, array $entries, array $outcomes, RecordedExclusions $exclusions, array $notes = []): BaselineUpdateResult
+    {
+        $changed = !$baseline->exclusions->equals($exclusions)
+            || array_map(static fn(BaselineEntry $entry): array => $entry->toArray(), $entries)
+                !== array_map(static fn(BaselineEntry $entry): array => $entry->toArray(), $baseline->entries);
         $updated = new Baseline(
             generated: $changed ? $this->clock->now() : $baseline->generated,
             scope: $baseline->scope,
             entries: $entries,
-            exclusions: $baseline->exclusions,
+            exclusions: $exclusions,
             inertEntries: $baseline->inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );
-
-        return new BaselineUpdateResult($updated, $outcomes, $changed);
+        return new BaselineUpdateResult($updated, $outcomes, $changed, $notes);
     }
 
     /**

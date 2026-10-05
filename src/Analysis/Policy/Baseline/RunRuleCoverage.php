@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The rule axis of what a run measured, beside {@see RunScope}'s path axis.
@@ -29,6 +31,13 @@ final readonly class RunRuleCoverage
         private RuleExecutionInterface $execution,
         private ChannelIdentityInterface $channels,
     ) {}
+
+    public function publishes(FindingChannel $channel, SymbolLevel $level): bool
+    {
+        $producer = $this->channels->producerOf($channel->code);
+
+        return $producer !== null && $this->execution->publication()->publishes($producer, $channel, $level);
+    }
 
     /**
      * Classify identities this run could not publish. An identity on a

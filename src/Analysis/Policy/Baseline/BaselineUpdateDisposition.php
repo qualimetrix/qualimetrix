@@ -12,6 +12,10 @@ enum BaselineUpdateDisposition: string
     /** The entry's magnitudes and/or count were replaced by the measured group. */
     case Updated = 'updated';
 
+    case Accepted = 'accepted';
+
+    case ReRecorded = 're-recorded';
+
     /** The measured group has the same serialized acceptance as before. */
     case Unchanged = 'unchanged';
 

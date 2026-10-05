@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
@@ -11,6 +14,7 @@ use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterfac
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
+use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
@@ -77,6 +81,19 @@ final readonly class BaselineRun implements BaselineRunInterface
         );
         $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics);
         (new AnalysisInputPathValidator())->validate($configuration->paths, $document);
+
+        if ($input->hasOption('accept-new')) {
+            foreach (CommandLineSpelling::options($input, 'accept-new') as $code) {
+                $channel = new FindingChannel($code);
+                $declaration = $findingConfiguration->channels?->declarationFor($channel);
+                if ($declaration === null || $declaration->isConfigurationError() || $code === BaselineAuditChannels::UNUSED_ENTRY) {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        '--accept-new',
+                        \sprintf('Channel "%s" cannot be accepted: name an exact declared debt channel.', $code),
+                    );
+                }
+            }
+        }
 
         $run = $this->measuredFindingSet->run(
             $configuration,
