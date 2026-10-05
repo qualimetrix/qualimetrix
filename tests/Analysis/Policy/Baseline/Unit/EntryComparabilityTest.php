@@ -46,6 +46,44 @@ final class EntryComparabilityTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesWholeAbsenceOutsideTheSnapshotDenominator(): void
+    {
+        $file = RelativePath::fromString('src/A.php');
+        $baseline = self::baseline([], ['src', 'extras']);
+        $tree = self::tree([$file], true);
+        $coverage = self::coverage([$file], ['src'], $baseline->exclusions, $tree);
+
+        self::assertSame(
+            IncomparabilityReason::MetadataUnknown,
+            EntryComparability::judge(Region::whole(), $baseline, $coverage)->reason,
+        );
+
+        $entry = new BaselineEntry(new BaselineIdentity('file:src/A.php', new FindingChannel('duplication.clone')), [10], 1);
+        $recorded = new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), $baseline->scope, [$entry], $baseline->exclusions);
+        $outcome = (new BaselineCeilingStage($recorded, StubChannelDeclarationRegistry::withDefaults(), $coverage, []))->judgeAll([]);
+        self::assertSame([], $outcome->staleEntries);
+        self::assertSame([$entry], $outcome->notComparedEntries);
+        self::assertSame('metadata-unknown', $outcome->reasonFor($entry->identity));
+        self::assertSame(1, $tree->snapshots);
+    }
+
+    #[Test]
+    public function itRefusesNamespaceAbsenceOutsideTheSnapshotDenominator(): void
+    {
+        $file = RelativePath::fromString('src/A.php');
+        $baseline = self::baseline([], ['src', 'extras']);
+        $coverage = self::coverage([$file], ['src'], $baseline->exclusions, self::tree([$file], true));
+
+        foreach ([['extras'], ['src', 'extras']] as $roots) {
+            $region = Region::namespace(array_map(RelativePath::fromString(...), $roots));
+            self::assertSame(
+                IncomparabilityReason::MetadataUnknown,
+                EntryComparability::judge($region, $baseline, $coverage)->reason,
+            );
+        }
+    }
+
+    #[Test]
     public function itComparesAnExactAnalyzedPresentFileWithoutComposerOrSnapshot(): void
     {
         $file = RelativePath::fromString('src/Legacy.php');
@@ -168,7 +206,7 @@ final class EntryComparabilityTest extends TestCase
             RunScope::fromRecorded($scope),
             new AnalysisCoverage($analyzed, [], []),
             $exclusions,
-            new ProjectScopeUniverse($root, true, [], [], [], false, []),
+            new ProjectScopeUniverse($root, true, [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]], [], [], false, []),
             [],
             $tree,
         );

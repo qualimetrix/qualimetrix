@@ -108,7 +108,19 @@ final readonly class EntryComparability
             }
         }
 
-        return self::comparable();
+        return self::snapshotCoversRegion($region, $run)
+            ? self::comparable()
+            : self::refused(IncomparabilityReason::MetadataUnknown);
+    }
+
+    private static function snapshotCoversRegion(Region $region, RunCoverage $run): bool
+    {
+        if ($region->kind !== 'namespace' || $region->roots === []) {
+            return false;
+        }
+        $snapshotScope = RunScope::record(array_column($run->universe->denominator, 'path'), $run->universe->projectRoot);
+
+        return array_all($region->roots, static fn(RelativePath $root): bool => $snapshotScope->coversPath($root->value()));
     }
 
     private static function populationDifference(RelativePath $file, RunCoverage $run, RunScope $recordedScope, ExclusionDelta $delta): ?IncomparabilityReason

@@ -175,7 +175,11 @@ Exact files can be judged without a complete Composer roster; namespaces and
 run-dependent channels require their wider region. Unknown metadata does not
 mean absence. Equal path sets and exclusion definitions can establish equality
 without a metadata scan; changed definitions require evidence about their delta.
-A project subject always requires whole-region coverage.
+A project subject always requires whole-region coverage. A complete project-tree snapshot covers only the
+Composer denominator, not every explicitly analyzed path. When path or exclusion
+definitions differ, a whole region remains not-compared unless other evidence
+establishes equality; a namespace needs positive denominator coverage of all
+its roots before a snapshot can establish that its population is unchanged.
 
 A complete comparable missing group is **stale**. An absent unselected producer
 is **unmeasured**; an absent incomparable entry is **outside coverage**. A present

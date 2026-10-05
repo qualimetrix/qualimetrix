@@ -61,7 +61,12 @@ equal intersections even for a whole region without a Composer roster.
 Equal canonical exclusion definitions establish an empty exclusion delta
 without requesting a snapshot. Changed definitions require evidence that the
 delta does not intersect the region; unknown or incomplete metadata cannot
-prove that a broad delta is empty. A generated-policy change conservatively
+prove that a broad delta is empty. A complete project-tree snapshot enumerates
+only the Composer denominator. It can expose population differences but cannot
+prove equality for a whole region across changed definitions; namespace equality
+also requires positive denominator coverage of every namespace root. This avoids
+calling omitted explicit analysis paths stale without a new project-tree query.
+A generated-policy change conservatively
 affects every region wider than a file, because metadata alone cannot identify
 every generated marker when generated files were included.
 
