@@ -189,16 +189,17 @@ final readonly class BaselineWriter
         foreach ($grouped as $key => $items) {
             usort($items, static fn(array $a, array $b): int => strcmp($a['sort'], $b['sort']));
 
+            if (\count($items) !== 1 && array_any($items, static fn(array $item): bool => $item['payload'] instanceof stdClass)) {
+                throw new InvalidArgumentException(\sprintf(
+                    'Baseline subject %s contains a malformed object bucket alongside another entry; '
+                    . 'clean up the malformed bucket before adding entries to this subject.',
+                    $key,
+                ));
+            }
+
             $payloads = [];
             foreach ($items as $item) {
                 if ($item['payload'] instanceof stdClass) {
-                    if (\count($items) !== 1) {
-                        throw new InvalidArgumentException(\sprintf(
-                            'Baseline subject %s contains a malformed object bucket alongside another entry; '
-                            . 'clean up the malformed bucket before adding entries to this subject.',
-                            $key,
-                        ));
-                    }
                     $serialized[$key] = $item['payload'];
                     continue 2;
                 }
