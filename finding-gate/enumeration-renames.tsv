@@ -30,7 +30,7 @@ code-smell.unreachable-code	channel	?		6	52	0	1	0	31	0	23	0	0	0	0
 code-smell.unused-private	channel	?		3	10	0	0	0	16	0	199	0	0	0	0
 cohesion.lcom	channel	?		35	199	2	2	0	45	0	579	0	0	0	0
 cohesion.unmatched-exclude-method	channel	?		8	15	0	0	0	7	0	19	0	0	0	0
-complexity.ccn	channel	?		70	1480	2	3	25	198	0	2186	0	0	0	0
+complexity.ccn	channel	?		70	1482	2	3	25	198	0	2186	0	0	0	0
 complexity.cognitive	channel	?		20	106	2	2	12	55	0	207	0	0	0	0
 complexity.npath	channel	?		17	123	2	2	3	51	0	165	0	0	0	0
 complexity.wmc	channel	?		20	86	2	2	3	38	0	480	0	0	0	0
@@ -47,7 +47,7 @@ design.type-coverage.param	channel	?		7	57	2	1	1	30	0	411	0	0	0	0
 design.type-coverage.property	channel	?		7	26	2	1	0	29	0	146	0	0	0	0
 design.type-coverage.return	channel	?		7	35	2	1	0	29	0	480	0	0	0	0
 discovery.unmatched-exclude	channel	?		8	14	0	0	0	23	0	22	0	0	0	0
-duplication.clone	channel	?		21	134	0	2	10	63	0	92	0	0	0	0
+duplication.clone	channel	?		21	135	0	2	10	63	0	92	0	0	0	0
 maintainability.mi	channel	?		17	195	2	2	0	35	0	101	0	0	0	0
 security.command-injection	channel	?		3	7	0	0	0	15	0	21	0	0	1	1
 security.hardcoded-credentials	channel	?		7	38	0	0	0	16	0	41	1	1	0	0
@@ -72,7 +72,7 @@ cohesion.lcc	metric-key	?		7	50	0	0	0	6	0	92	0	0	0	0
 cohesion.lcom	metric-key	?		35	199	2	2	0	45	0	579	0	0	0	0
 cohesion.pure-method-count	metric-key	?		5	8	0	0	0	2	0	32	0	0	0	0
 cohesion.tcc	metric-key	?		26	114	0	0	0	16	0	155	0	0	0	0
-complexity.ccn	metric-key	?		70	1480	2	3	25	198	0	2186	0	0	0	0
+complexity.ccn	metric-key	?		70	1482	2	3	25	198	0	2186	0	0	0	0
 complexity.cognitive	metric-key	?		20	106	2	2	12	55	0	207	0	0	0	0
 complexity.npath	metric-key	?		17	123	2	2	3	51	0	165	0	0	0	0
 complexity.wmc	metric-key	?		20	86	2	2	3	38	0	480	0	0	0	0
@@ -169,7 +169,7 @@ code-smell.superglobals	producer	?		2	7	1	0	0	12	0	94	0	0	0	0
 code-smell.unreachable-code	producer	?		6	52	0	1	0	31	0	23	0	0	0	0
 code-smell.unused-private	producer	?		3	10	0	0	0	16	0	199	0	0	0	0
 cohesion.lcom	producer	?		35	199	2	2	0	45	0	579	0	0	0	0
-complexity.ccn	producer	?		70	1480	2	3	25	198	0	2186	0	0	0	0
+complexity.ccn	producer	?		70	1482	2	3	25	198	0	2186	0	0	0	0
 complexity.cognitive	producer	?		20	106	2	2	12	55	0	207	0	0	0	0
 complexity.npath	producer	?		17	123	2	2	3	51	0	165	0	0	0	0
 complexity.wmc	producer	?		20	86	2	2	3	38	0	480	0	0	0	0
@@ -187,7 +187,7 @@ design.type-coverage.param	producer	?		7	57	2	1	1	30	0	411	0	0	0	0
 design.type-coverage.property	producer	?		7	26	2	1	0	29	0	146	0	0	0	0
 design.type-coverage.return	producer	?		7	35	2	1	0	29	0	480	0	0	0	0
 discovery.unmatched-exclude	producer	?		8	14	0	0	0	23	0	22	0	0	0	0
-duplication.clone	producer	?		21	134	0	2	10	63	0	92	0	0	0	0
+duplication.clone	producer	?		21	135	0	2	10	63	0	92	0	0	0	0
 health.cohesion	producer	?		39	155	0	3	12	43	0	534	0	0	0	0
 health.complexity	producer	?		55	252	0	1	0	28	0	606	0	0	0	0
 health.coupling	producer	?		48	63	0	0	1	21	0	534	0	0	0	0
