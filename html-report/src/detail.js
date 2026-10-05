@@ -437,7 +437,7 @@ export function findingMessage(finding) {
   if (finding.baselineVerdict !== 'breached') return message;
   const current = finding.metricValue;
   const now = accepted.shape === 'magnitude' && Number.isFinite(current)
-    ? `, now ${current.toFixed(6).replace(/\.?0+$/, '')}`
+    ? `, now ${current.toFixed(6).replace(/\.0+$|(\.\d*?[1-9])0+$/, '$1')}`
     : '';
   return `${message} (accepted at ${accepted.describe}${now})`;
 }

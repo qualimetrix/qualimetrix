@@ -113,6 +113,16 @@ describe('findingMessage', () => {
     expect(rendered).not.toContain(', now ');
   });
 
+  it.each([
+    [1e30, '1e+30'],
+    [1e100, '1e+100'],
+    [-1.25e30, '-1.25e+30'],
+    [30, '30'],
+    [31.1234567, '31.123457'],
+  ])('preserves the magnitude of %s while trimming fractional zeros', (metricValue, displayed) => {
+    expect(findingMessage({ ...base, metricValue, baselineVerdict: 'breached' })).toBe(`Repair it (accepted at 25, now ${displayed})`);
+  });
+
   it('never invents a current count on an occurrence or nonfinite breach', () => {
     expect(findingMessage({ ...base, baselineVerdict: 'breached', acceptedLevel: { shape: 'occurrence', describe: '3 occurrences' } })).toBe('Repair it (accepted at 3 occurrences)');
     expect(findingMessage({ ...base, baselineVerdict: 'breached', metricValue: null })).toBe('Repair it (accepted at 25)');
