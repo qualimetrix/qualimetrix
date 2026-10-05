@@ -10,6 +10,7 @@ use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use RuntimeException;
+use stdClass;
 
 /**
  * Turns a {@see Baseline} into the bytes of a baseline file and puts them in
@@ -105,7 +106,7 @@ final readonly class BaselineWriter
      *     generated: string,
      *     scope: list<string>,
      *     exclusions: array{patterns: list<string>, generated: 'included'|'excluded'},
-     *     entries: array<string, list<mixed>>
+     *     entries: array<string, list<mixed>|stdClass>
      * }
      */
     private function serializeBaseline(Baseline $baseline, AbsolutePath $projectRoot): array
@@ -150,7 +151,7 @@ final readonly class BaselineWriter
      * @throws InvalidArgumentException when two entries collapse onto one identity after
      *                                  their subject keys are relativized
      *
-     * @return array<string, list<mixed>>
+     * @return array<string, list<mixed>|stdClass>
      */
     private function serializeEntries(Baseline $baseline, AbsolutePath $projectRoot): array
     {
@@ -190,6 +191,17 @@ final readonly class BaselineWriter
 
             $payloads = [];
             foreach ($items as $item) {
+                if ($item['payload'] instanceof stdClass) {
+                    if (\count($items) !== 1) {
+                        throw new InvalidArgumentException(\sprintf(
+                            'Baseline subject %s contains a malformed object bucket alongside another entry; '
+                            . 'clean up the malformed bucket before adding entries to this subject.',
+                            $key,
+                        ));
+                    }
+                    $serialized[$key] = $item['payload'];
+                    continue 2;
+                }
                 $payloads[] = $item['payload'];
             }
 

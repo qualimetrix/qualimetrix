@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Baseline version 13 becomes version 14 with required
   `exclusions: {patterns, generated}`. Preserve accepted entries and explicitly
   record the definition under which they were accepted when migrating.
+  Malformed subject buckets written as JSON objects now retain their container
+  on update instead of becoming entry lists. Combining such a bucket with another
+  entry at the same portable subject refuses before publication; review and remove
+  it with `baseline:cleanup --remove=<selector>` before accepting that entry.
+  Updates to other subjects remain available.
   Unknown document keys refuse before analysis; channel and level semantics
   are judged after configuration. PHP consumers must supply
   `RecordedExclusions` to Baseline construction and generation. Ceiling types

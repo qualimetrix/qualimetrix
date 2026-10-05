@@ -84,6 +84,11 @@ excluded. Do not infer the old acceptance definition from current configuration.
 Unknown envelope, entry, edge or exclusion keys refuse with their position.
 Known unusable entry values remain inert. Older identity formats require
 reviewed remapping; fresh generation accepts new debt rather than converting it.
+A malformed subject bucket written as a JSON object keeps its object container
+when other subjects are updated. Adding an entry at that same subject refuses
+before replacing the file. Review the cleanup candidates and remove that bucket
+with `baseline:cleanup --remove=<selector>` before accepting the new entry;
+cleanup only lists candidates by default.
 
 ### Tighten after repairs
 

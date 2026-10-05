@@ -87,6 +87,12 @@ the resolved run configuration. Unknown envelope, entry, edge or exclusion
 keys refuse with their exact position; an invalid value of a known entry key
 remains a raw-preserving inert entry. An undeclared subject level and the
 baseline audit channel are inert rather than quantitative coverage gaps.
+A malformed subject bucket that is a JSON object remains an object on rewrite;
+turning it into an entry list would make the next preflight reject its raw keys.
+An update may retain it while changing other subjects. A write that would combine
+it with another entry at the same portable subject refuses before publication.
+Review and remove that bucket through `baseline:cleanup --remove=<selector>`
+before accepting a new entry at that subject.
 
 Check, update, cleanup, explain and rename-channels preflight the document
 before analysis or carry. `BaselineDocument` retains one byte snapshot and

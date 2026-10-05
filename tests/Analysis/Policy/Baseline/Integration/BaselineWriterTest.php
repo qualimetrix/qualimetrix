@@ -29,6 +29,7 @@ use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
+use stdClass;
 
 #[CoversClass(BaselineWriter::class)]
 #[CoversClass(BaselineConflictException::class)]
@@ -651,6 +652,77 @@ final class BaselineWriterTest extends TestCase
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([$raw], $data['entries']['callable:App\Foo::bar']);
+
+        $malformedSubject = 'callable:App\Malformed::run';
+        foreach ([(object) [0 => ['channel' => 'complexity.ccn', 'magnitudes' => [20], 'unknown_key' => true]], new stdClass()] as $bucket) {
+            file_put_contents($path, json_encode([
+                'version' => 14,
+                'generated' => '2026-08-05T12:00:00+03:00',
+                'scope' => ['src'],
+                'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+                'entries' => [
+                    $malformedSubject => $bucket,
+                    'callable:App\Foo::bar' => [['channel' => 'complexity.ccn', 'magnitudes' => [20]]],
+                ],
+            ], \JSON_THROW_ON_ERROR));
+
+            $loaded = $this->loader->load(BaselineLoader::preflight($path));
+            self::assertCount(1, $loaded->entries);
+            self::assertSame([20.0], $loaded->entries[0]->magnitudes);
+            self::assertCount(1, $loaded->inertEntries);
+            self::assertSame(InertEntryReason::Malformed, $loaded->inertEntries[0]->reason);
+            self::assertInstanceOf(stdClass::class, $loaded->inertEntries[0]->raw);
+            self::assertSame(json_encode($bucket), json_encode($loaded->inertEntries[0]->raw));
+
+            $tightened = new Baseline(
+                generated: $loaded->generated,
+                scope: $loaded->scope,
+                entries: [new BaselineEntry($loaded->entries[0]->identity, [10], 1)],
+                inertEntries: $loaded->inertEntries,
+                sourceContentHash: $loaded->sourceContentHash,
+                exclusions: $loaded->exclusions,
+            );
+            $this->writer->write($tightened, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+
+            $rewritten = json_decode((string) file_get_contents($path), false, 512, \JSON_THROW_ON_ERROR);
+            self::assertInstanceOf(stdClass::class, $rewritten);
+            self::assertInstanceOf(stdClass::class, $rewritten->entries);
+            self::assertInstanceOf(stdClass::class, $rewritten->entries->{$malformedSubject});
+            self::assertSame(json_encode($bucket), json_encode($rewritten->entries->{$malformedSubject}));
+            $reloaded = $this->loader->load(BaselineLoader::preflight($path));
+            self::assertCount(1, $reloaded->entries);
+            self::assertSame([10.0], $reloaded->entries[0]->magnitudes);
+            self::assertCount(1, $reloaded->inertEntries);
+            self::assertSame(InertEntryReason::Malformed, $reloaded->inertEntries[0]->reason);
+            self::assertSame($loaded->inertEntries[0]->selector->value, $reloaded->inertEntries[0]->selector->value);
+            self::assertInstanceOf(stdClass::class, $reloaded->inertEntries[0]->raw);
+            self::assertSame(json_encode($bucket), json_encode($reloaded->inertEntries[0]->raw));
+
+            $beforeCollision = file_get_contents($path);
+            $collision = new Baseline(
+                generated: $reloaded->generated,
+                scope: $reloaded->scope,
+                entries: [...$reloaded->entries, new BaselineEntry(
+                    new BaselineIdentity($malformedSubject, new FindingChannel('complexity.ccn')),
+                    [10],
+                    1,
+                )],
+                inertEntries: $reloaded->inertEntries,
+                sourceContentHash: $reloaded->sourceContentHash,
+                exclusions: $reloaded->exclusions,
+            );
+            try {
+                $this->writer->write($collision, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+                self::fail('A malformed bucket cannot be combined with an entry under the same subject.');
+            } catch (InvalidArgumentException $e) {
+                self::assertSame(
+                    'Baseline subject ' . $malformedSubject . ' contains a malformed object bucket alongside another entry; '
+                    . 'clean up the malformed bucket before adding entries to this subject.',
+                    $e->getMessage(),
+                );
+            }
+            self::assertSame($beforeCollision, file_get_contents($path));
+        }
     }
 
     #[Test]

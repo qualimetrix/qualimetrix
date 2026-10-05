@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use RuntimeException;
+use stdClass;
 
 /**
  * The byte form of a baseline file: one entry per line, inside a single
@@ -57,8 +58,8 @@ final class BaselineDocumentLayout
      *
      * @param array<string, mixed> $envelope the document's fields in the order they are
      *                                       written, `entries` among them
-     * @param array<string, list<mixed>> $entries subject key => the payloads under it, each
-     *                                            payload written on its own line
+     * @param array<string, list<mixed>|stdClass> $entries subject key => the payloads under it, each
+     *                                                     payload written on its own line
      */
     public static function render(array $envelope, array $entries): string
     {
@@ -104,7 +105,7 @@ final class BaselineDocumentLayout
      * render valid.
      *
      * @param array<string, mixed> $envelope
-     * @param array<string, list<mixed>> $entries
+     * @param array<string, list<mixed>|stdClass> $entries
      */
     private static function layout(array $envelope, array $entries): string
     {
@@ -117,6 +118,11 @@ final class BaselineDocumentLayout
         $blocks = [];
 
         foreach ($entries as $subjectKey => $payloads) {
+            if ($payloads instanceof stdClass) {
+                $blocks[] = self::SUBJECT_INDENT . self::encode((string) $subjectKey) . ': ' . self::encode($payloads);
+                continue;
+            }
+
             // A subject with no payload is not a shape the writer produces —
             // {@see BaselineWriter::serializeEntries()} only opens a subject
             // key alongside at least one line — so a carry that read one from

@@ -405,6 +405,12 @@ carrying the identity key separator, or a duplicated identity makes an entry **i
 suppress, and it does not fail the load — refusing to load would punish a whole run
 for one bad line. An inert entry keeps its symbol, channel, selector and reason for
 reporting, and its raw payload so a rewrite preserves its normalized contents.
+A malformed subject bucket written as a JSON object retains that object container
+when another subject is updated. A valid entry cannot share its portable subject
+with that whole-bucket payload: the writer refuses before replacing the file.
+Review and remove the malformed bucket with `baseline:cleanup --remove=<selector>`
+before admitting an entry at the same subject. Updates to other subjects remain
+available.
 
 ### Reads
 
