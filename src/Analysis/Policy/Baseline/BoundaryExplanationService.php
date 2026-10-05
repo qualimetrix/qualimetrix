@@ -102,8 +102,6 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * @qmx-threshold code-smell.long-parameter-list 10 -- Nine independent invocation facts preserve exact subject, channel and coverage evidence; combining them introduces shared state. The next parameter reports again.
-     *
      * @param list<Finding> $measuredFindings
      * @param ?SubjectRecord $repositoryRecord
      */

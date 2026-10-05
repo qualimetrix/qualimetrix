@@ -55,7 +55,6 @@ src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php	112	code-smell
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	23	code-smell.long-parameter-list	warning=9 error=12 -- These fields describe one
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	43	code-smell.long-parameter-list	warning=9 error=12 -- Independent measured facts
 src/Analysis/Policy/Baseline/BoundaryExplanationService.php	44	code-smell.long-parameter-list	10 -- Nine independent invocation facts preserve exact subject, channel and coverage evidence; combining them introduces shared state. The next parameter reports again.
-src/Analysis/Policy/Baseline/BoundaryExplanationService.php	105	code-smell.long-parameter-list	10 -- Nine independent invocation facts preserve exact subject, channel and coverage evidence; combining them introduces shared state. The next parameter reports again.
 src/Infrastructure/Console/RuntimeConfigurator.php	27	code-smell.long-parameter-list	warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
 src/Infrastructure/Console/Application.php	41	cohesion.lcom	6 -- this is the composition root: wiring
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.ccn	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
