@@ -9,7 +9,11 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\TargetPath;
 
-/** Reads the current baseline grammar, then judges entries against the configured channel declarations. */
+/**
+ * Reads the current baseline grammar, then judges entries against the configured channel declarations.
+ *
+ * @qmx-threshold coupling.cbo 22 -- Held-file grammar and configured entry assembly require thirteen outgoing types; another facade relocates those edges. Raw CBO21 retains one-edge headroom.
+ */
 final readonly class BaselineLoader
 {
     public function __construct(private BaselineEntryParser $entryParser) {}

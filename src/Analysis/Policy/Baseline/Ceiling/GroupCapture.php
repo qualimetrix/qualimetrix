@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
@@ -31,7 +32,7 @@ final readonly class GroupCapture
             return UncapturedReason::ConfigurationErrorChannel;
         }
 
-        $measurement = GroupMeasurement::fromFindings($group, $declaration->direction === null);
+        $measurement = GroupMeasurement::fromFindings($group, $declaration->direction === null ? ChannelShape::Occurrence : ChannelShape::Magnitude);
         if (!$measurement->complete()) {
             return UncapturedReason::MagnitudeUnavailable;
         }

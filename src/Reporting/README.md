@@ -53,6 +53,8 @@ Reporting/
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
 │   ├── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── BaselineFindingProjection.php     # One held-document ceiling judgement and late baseline audit
+│   ├── ConfiguredExclusionProjection.php # Ordered path and namespace exclusion operations
 │   ├── GitScopeFindingFilter.php          # Private Git publication predicate; the projector retains query and order
 │   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
 │   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)

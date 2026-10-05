@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
@@ -151,6 +152,16 @@ final readonly class BaselineEntryParser
     {
         $values = BaselineEntryValues::decode($raw);
 
+        $declaration = $this->acceptanceDeclaration($identity);
+        $entry = self::entryFromValues($identity, $values);
+        self::assertShape($entry, $declaration);
+
+        return $entry;
+    }
+
+    /** @throws BaselineEntryRejection */
+    private function acceptanceDeclaration(BaselineIdentity $identity): ChannelDeclaration
+    {
         if ($identity->channel->code === BaselineAuditChannels::UNUSED_ENTRY) {
             throw new BaselineEntryRejection(
                 InertEntryReason::BaselineAuditChannel,
@@ -190,12 +201,22 @@ final readonly class BaselineEntryParser
             );
         }
 
+        return $declaration;
+    }
+
+    /** @throws BaselineEntryRejection */
+    private static function entryFromValues(BaselineIdentity $identity, BaselineEntryValues $values): BaselineEntry
+    {
         try {
-            $entry = new BaselineEntry($identity, $values->magnitudes, $values->count, $values->mode);
+            return new BaselineEntry($identity, $values->magnitudes, $values->count, $values->mode);
         } catch (InvalidArgumentException $e) {
             throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
         }
+    }
 
+    /** @throws BaselineEntryRejection */
+    private static function assertShape(BaselineEntry $entry, ChannelDeclaration $declaration): void
+    {
         // The channel's own shape is not stored here — it moved to the
         // producer (ADR 0031) — but `$declaration->direction` is null exactly
         // when the producer declared `occurrence`, since registry assembly
@@ -209,8 +230,6 @@ final readonly class BaselineEntryParser
                 $entry->magnitudes !== null ? 'magnitudes' : 'no magnitudes',
             ));
         }
-
-        return $entry;
     }
 
     /**

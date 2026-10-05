@@ -141,7 +141,7 @@ final class BaselineExplanationRenderer
 
     private static function describeReason(?string $reason): string
     {
-        return match ($reason) {
+        $descriptions = [
             'producer-not-measured' => 'this invocation did not measure this channel at this subject level',
             'analysis-incomplete' => 'analysis is incomplete',
             'paths-differ' => "this run's coverage differs from the recorded one",
@@ -149,8 +149,9 @@ final class BaselineExplanationRenderer
             'metadata-unknown' => 'project metadata is unknown',
             'magnitude-unavailable' => 'the group has members without a finite magnitude',
             'channel-not-declared' => 'the channel is not declared in this configuration',
-            default => $reason ?? 'the subject was not analyzed',
-        };
+        ];
+
+        return $descriptions[$reason ?? ''] ?? $reason ?? 'the subject was not analyzed';
     }
 
     private static function describeConfigured(EffectiveBoundary $boundary): string

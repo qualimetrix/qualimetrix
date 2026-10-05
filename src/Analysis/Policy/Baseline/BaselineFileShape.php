@@ -5,23 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use DateTimeImmutable;
-use InvalidArgumentException;
 use JsonException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Core\Pattern\PathPattern;
-use Qualimetrix\Core\Pattern\SelectorDefinition;
 use stdClass;
 
 /** The grammar shared by every baseline document reader; channel semantics are judged separately. */
 final class BaselineFileShape
 {
     public const array ENVELOPE = ['version', 'generated', 'scope', 'exclusions', 'entries'];
-    public const array ENTRY = ['channel', 'occurrence', 'edge', 'count', 'magnitudes', 'mode'];
-    public const array EDGE = ['target', 'type'];
-    public const array EXCLUSIONS = ['patterns', 'generated'];
+    public const array ENTRY = BaselineEntryShape::ENTRY;
+    public const array EDGE = BaselineEntryShape::EDGE;
+    public const array EXCLUSIONS = BaselineExclusionShape::KEYS;
 
     private const array GENERATED_FORMATS = ['Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP'];
 
@@ -78,17 +74,7 @@ final class BaselineFileShape
         self::envelope($document, $path);
         $entries = self::entryBlocks($document['entries'] ?? null, $path);
 
-        foreach ($entries as $subject => $block) {
-            if (!\is_array($block) || !array_is_list($block)) {
-                continue;
-            }
-
-            foreach ($block as $index => $raw) {
-                if ($raw instanceof stdClass) {
-                    self::assertEntryKeys((array) $raw, $path, (string) $subject, $index);
-                }
-            }
-        }
+        BaselineEntryShape::assertBlocks($entries, $path);
     }
 
     /**
@@ -106,7 +92,7 @@ final class BaselineFileShape
         return [
             'generated' => self::parseGenerated($document['generated'] ?? null, $path),
             'scope' => self::parseScope($document['scope'] ?? null, $path),
-            'exclusions' => self::parseExclusions($document['exclusions'] ?? null, $path),
+            'exclusions' => BaselineExclusionShape::parse($document['exclusions'] ?? null, $path),
         ];
     }
 
@@ -132,14 +118,7 @@ final class BaselineFileShape
     /** @param array<mixed, mixed> $entry */
     public static function assertEntryKeys(array $entry, string $path, string $subject, int $index): void
     {
-        $position = ['entries', $subject, (string) $index];
-        self::assertKeys($entry, self::ENTRY, $position, $path);
-        $edge = $entry['edge'] ?? null;
-        if ($edge instanceof stdClass) {
-            self::assertEdgeKeys((array) $edge, $path, [...$position, 'edge']);
-        } elseif (\is_array($edge) && !array_is_list($edge)) {
-            self::assertEdgeKeys($edge, $path, [...$position, 'edge']);
-        }
+        BaselineEntryShape::assertEntryKeys($entry, $path, $subject, $index);
     }
 
     /**
@@ -148,13 +127,13 @@ final class BaselineFileShape
      */
     public static function assertEdgeKeys(array $edge, string $path, array $position): void
     {
-        self::assertKeys($edge, self::EDGE, $position, $path);
+        BaselineEntryShape::assertEdgeKeys($edge, $path, $position);
     }
 
     /** @param array<mixed, mixed> $exclusions */
     public static function assertExclusionsKeys(array $exclusions, string $path): void
     {
-        self::assertKeys($exclusions, self::EXCLUSIONS, ['exclusions'], $path);
+        BaselineExclusionShape::assertKeys($exclusions, $path);
     }
 
     /**
@@ -224,54 +203,6 @@ final class BaselineFileShape
         return $scope;
     }
 
-    private static function parseExclusions(mixed $raw, string $path): RecordedExclusions
-    {
-        if ($raw instanceof stdClass) {
-            $raw = (array) $raw;
-        } elseif (!\is_array($raw) || array_is_list($raw)) {
-            throw self::valueRefusal($path, ['exclusions'], 'Baseline "exclusions" must be an object containing patterns and generated');
-        }
-        self::assertExclusionsKeys($raw, $path);
-        $patterns = $raw['patterns'] ?? null;
-        if (!\is_array($patterns) || !array_is_list($patterns)) {
-            throw self::valueRefusal($path, ['exclusions', 'patterns'], 'Baseline "exclusions.patterns" must be an array of explicit selectors');
-        }
-        foreach ($patterns as $index => $pattern) {
-            if (!\is_string($pattern)) {
-                throw self::valueRefusal($path, ['exclusions', 'patterns', (string) $index], 'Baseline exclusion selectors must be strings');
-            }
-            try {
-                $parts = explode(':', $pattern, 2);
-                if (\count($parts) !== 2) {
-                    throw new InvalidArgumentException('An exclusion must use exact:value, subtree:value, or regex:value');
-                }
-                new PathPattern(SelectorDefinition::fromKindAndValue($parts[0], $parts[1]));
-            } catch (InvalidArgumentException $e) {
-                throw self::valueRefusal($path, ['exclusions', 'patterns', (string) $index], $e->getMessage());
-            }
-        }
-
-        $generated = $raw['generated'] ?? null;
-        $policy = match ($generated) {
-            'included' => GeneratedFilePolicy::Include,
-            'excluded' => GeneratedFilePolicy::Exclude,
-            default => null,
-        };
-        if ($policy === null) {
-            throw ConfigurationRefusal::atBaselineFileKey(
-                $path,
-                RefusedPosition::closed(['exclusions', 'generated'], 'generated', ['included', 'excluded']),
-                'Baseline "exclusions.generated" must be "included" or "excluded"',
-            );
-        }
-
-        try {
-            return new RecordedExclusions($patterns, $policy);
-        } catch (InvalidArgumentException $e) {
-            throw self::valueRefusal($path, ['exclusions', 'patterns'], $e->getMessage());
-        }
-    }
-
     /** Normalize only after object-key checks, so numeric object keys cannot masquerade as list values. */
     public static function normalizeValues(mixed &$value): void
     {
@@ -296,9 +227,4 @@ final class BaselineFileShape
         }
     }
 
-    /** @param non-empty-list<string> $position */
-    private static function valueRefusal(string $path, array $position, string $summary): ConfigurationRefusal
-    {
-        return ConfigurationRefusal::atBaselineFileKey($path, RefusedPosition::open($position, $position[\count($position) - 1]), $summary);
-    }
 }

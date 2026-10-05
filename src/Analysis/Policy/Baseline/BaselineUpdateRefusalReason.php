@@ -57,19 +57,21 @@ enum BaselineUpdateRefusalReason: string
      */
     case WorsenedUnderSuppression = 'worsened-under-suppression';
 
+    private const array DESCRIPTIONS = [
+        'recorded-paths-differ' => 'recording exclusions requires exactly the recorded paths, even under --force',
+        'comparison-metadata-unknown' => 'the exclusion comparison cannot be proved complete for every required group',
+        'required-group-unavailable' => 'an exclusion-affected group is absent or has no complete finite measurement',
+        'undeclared-channel' => 'no rule declares the channel any more',
+        'configuration-error-channel' => 'the channel reports a configuration error, which cannot be accepted as debt',
+        'shape-mismatch' => 'the entry no longer matches the channel\'s declared shape',
+        'current-magnitude-unavailable' => 'the measured group reports no finite magnitude',
+        'worsened' => 'the measured group is not accepted against the stored one',
+        'worsened-under-suppression' => 'the measured group is not accepted against the stored one, '
+            . 'so the recorded numbers are kept; mode: suppress means this entry suppresses either way',
+    ];
+
     public function description(): string
     {
-        return match ($this) {
-            self::RecordedPathsDiffer => 'recording exclusions requires exactly the recorded paths, even under --force',
-            self::ComparisonMetadataUnknown => 'the exclusion comparison cannot be proved complete for every required group',
-            self::RequiredGroupUnavailable => 'an exclusion-affected group is absent or has no complete finite measurement',
-            self::UndeclaredChannel => 'no rule declares the channel any more',
-            self::ConfigurationErrorChannel => 'the channel reports a configuration error, which cannot be accepted as debt',
-            self::ShapeMismatch => 'the entry no longer matches the channel\'s declared shape',
-            self::CurrentMagnitudeUnavailable => 'the measured group reports no finite magnitude',
-            self::Worsened => 'the measured group is not accepted against the stored one',
-            self::WorsenedUnderSuppression => 'the measured group is not accepted against the stored one, '
-                . 'so the recorded numbers are kept; mode: suppress means this entry suppresses either way',
-        };
+        return self::DESCRIPTIONS[$this->value];
     }
 }

@@ -11,7 +11,7 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * @qmx-threshold code-smell.constructor-overinjection warning=17 error=17 — Finding is a flat immutable transport VO; its 15 constructor parameters mirror independent public fields that a parameter bundle would obscure.
+ * @qmx-threshold code-smell.constructor-overinjection warning=18 error=18 — Finding is a flat immutable transport VO; its 17 independent published fields do not form a service dependency group. The exclusive boundary allows those 17 fields while keeping the next field visible.
  */
 final readonly class Finding
 {

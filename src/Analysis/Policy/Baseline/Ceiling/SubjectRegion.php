@@ -27,26 +27,58 @@ final readonly class SubjectRegion
             return Region::file(RelativePath::fromString(substr($subject, 5)));
         }
         if (str_starts_with($subject, 'declaration:')) {
-            $separator = strpos($subject, '@', \strlen('declaration:'));
-            if ($separator !== false) {
-                $path = substr($subject, $separator + 1);
-                $path = preg_replace('/#[1-9][0-9]*$/D', '', $path) ?? $path;
-
-                return Region::file(RelativePath::fromString($path));
+            $file = self::declarationFile($subject);
+            if ($file !== null) {
+                return Region::file($file);
             }
         }
         if (!str_starts_with($subject, 'ns:')) {
             return Region::whole();
         }
 
-        $namespace = substr($subject, 3);
+        return self::namespaceRegion(substr($subject, 3), $psr4Roots, $observed);
+    }
+
+    private static function declarationFile(string $subject): ?RelativePath
+    {
+        $separator = strpos($subject, '@', \strlen('declaration:'));
+        if ($separator === false) {
+            return null;
+        }
+        $path = substr($subject, $separator + 1);
+        $path = preg_replace('/#[1-9][0-9]*$/D', '', $path) ?? $path;
+
+        return RelativePath::fromString($path);
+    }
+
+    /**
+     * @param array<string, list<string>> $psr4Roots
+     * @param list<Finding> $observed
+     */
+    private static function namespaceRegion(string $namespace, array $psr4Roots, array $observed): Region
+    {
+        $roots = self::namespaceRoots($namespace, $psr4Roots);
+        if ($roots === []) {
+            return Region::whole();
+        }
+        $region = Region::namespace($roots);
+
+        return self::containsObserved($region, $observed) ? $region : Region::whole();
+    }
+
+    /**
+     * @param array<string, list<string>> $psr4Roots
+     *
+     * @return list<RelativePath>
+     */
+    private static function namespaceRoots(string $namespace, array $psr4Roots): array
+    {
         $roots = [];
         foreach ($psr4Roots as $prefix => $paths) {
-            $stem = rtrim($prefix, '\\');
-            if ($stem !== '' && $namespace !== $stem && !str_starts_with($namespace, $stem . '\\')) {
+            $suffix = self::namespaceSuffix($namespace, $prefix);
+            if ($suffix === null) {
                 continue;
             }
-            $suffix = $stem === '' ? $namespace : ltrim(substr($namespace, \strlen($stem)), '\\');
             foreach ($paths as $path) {
                 $relative = trim($path . '/' . str_replace('\\', '/', $suffix), '/');
                 if ($relative !== '') {
@@ -54,17 +86,29 @@ final readonly class SubjectRegion
                 }
             }
         }
-        if ($roots === []) {
-            return Region::whole();
+
+        return array_values($roots);
+    }
+
+    private static function namespaceSuffix(string $namespace, string $prefix): ?string
+    {
+        $stem = rtrim($prefix, '\\');
+        if ($stem !== '' && $namespace !== $stem && !str_starts_with($namespace, $stem . '\\')) {
+            return null;
         }
 
-        $region = Region::namespace(array_values($roots));
+        return $stem === '' ? $namespace : ltrim(substr($namespace, \strlen($stem)), '\\');
+    }
+
+    /** @param list<Finding> $observed */
+    private static function containsObserved(Region $region, array $observed): bool
+    {
         foreach ($observed as $finding) {
             if ($finding->location->file === null || !$region->contains($finding->location->file)) {
-                return Region::whole();
+                return false;
             }
         }
 
-        return $region;
+        return true;
     }
 }

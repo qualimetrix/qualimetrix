@@ -8,7 +8,9 @@ src/Reporting/CoverageFailure.php	Qualimetrix\Reporting\CoverageFailure	"output 
 src/Reporting/DrillDown/DrillDownBinding.php	Qualimetrix\Reporting\DrillDown\DrillDownBinding	"output projection"	Reporting
 src/Reporting/DrillDown/FindingFilter.php	Qualimetrix\Reporting\DrillDown\FindingFilter	"output projection"	Reporting
 src/Reporting/DrillDown/OutOfScopeFindings.php	Qualimetrix\Reporting\DrillDown\OutOfScopeFindings	"output projection"	Reporting
+src/Reporting/FindingProjection/BaselineFindingProjection.php	Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection	"output projection"	Reporting
 src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php	Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver	"output projection"	Reporting
+src/Reporting/FindingProjection/ConfiguredExclusionProjection.php	Qualimetrix\Reporting\FindingProjection\ConfiguredExclusionProjection	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusions.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusionsResolverInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	"output projection"	Reporting
 src/Reporting/FindingProjection/Contract/GitScopeQueryInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface	"output projection"	Reporting

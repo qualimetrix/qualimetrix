@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
+use Qualimetrix\Core\Path\RelativePath;
 
 /** One proof that a recorded entry's population was measured again. */
 final readonly class EntryComparability
@@ -41,38 +42,51 @@ final readonly class EntryComparability
         $recordedScope = RunScope::fromRecorded($baseline->scope);
         $delta = new ExclusionDelta($baseline->exclusions, $run->exclusions);
 
-        if ($region->kind === 'file') {
-            $file = $region->file;
-            if ($file === null) {
-                return self::refused(IncomparabilityReason::MetadataUnknown);
-            }
-            $presence = $run->hasFile($file);
-            if ($presence === ProjectEntryPresence::Unknown) {
-                return self::refused(IncomparabilityReason::MetadataUnknown);
-            }
-            if ($presence === ProjectEntryPresence::Absent) {
-                return self::comparable();
-            }
-            $samePaths = $run->scope->paths() === $baseline->scope;
-            $current = $samePaths || $run->scope->coversPath($file->value());
-            $recorded = $samePaths || $recordedScope->coversPath($file->value());
-            if (!$current || !$recorded) {
-                return self::refused(IncomparabilityReason::OutsideCoverage);
-            }
-            if (!$run->analyzed($file)) {
-                return self::refused(IncomparabilityReason::OutsideCoverage);
-            }
-            if ($delta->differsAt($file)) {
-                return self::refused(IncomparabilityReason::ExclusionsDiffer);
-            }
-            if ($delta->currentlyExcluded($file)) {
-                return self::refused(IncomparabilityReason::OutsideCoverage);
-            }
+        return $region->kind === 'file'
+            ? self::judgeFile($region, $run, $recordedScope, $delta)
+            : self::judgeAggregate($region, $run, $recordedScope, $delta);
+    }
 
+    private static function judgeFile(Region $region, RunCoverage $run, RunScope $recordedScope, ExclusionDelta $delta): self
+    {
+        $file = $region->file;
+        if ($file === null) {
+            return self::refused(IncomparabilityReason::MetadataUnknown);
+        }
+        $presence = $run->hasFile($file);
+        if ($presence === ProjectEntryPresence::Unknown) {
+            return self::refused(IncomparabilityReason::MetadataUnknown);
+        }
+        if ($presence === ProjectEntryPresence::Absent) {
             return self::comparable();
         }
+        return self::judgePresentFile($file, $run, $recordedScope, $delta);
+    }
 
-        if ($run->scope->paths() === $baseline->scope && $delta->equalDefinitions()) {
+    private static function judgePresentFile(RelativePath $file, RunCoverage $run, RunScope $recordedScope, ExclusionDelta $delta): self
+    {
+        $samePaths = $run->scope->paths() === $recordedScope->paths();
+        $current = $samePaths || $run->scope->coversPath($file->value());
+        $recorded = $samePaths || $recordedScope->coversPath($file->value());
+        if (!$current || !$recorded) {
+            return self::refused(IncomparabilityReason::OutsideCoverage);
+        }
+        if (!$run->analyzed($file)) {
+            return self::refused(IncomparabilityReason::OutsideCoverage);
+        }
+        if ($delta->differsAt($file)) {
+            return self::refused(IncomparabilityReason::ExclusionsDiffer);
+        }
+        if ($delta->currentlyExcluded($file)) {
+            return self::refused(IncomparabilityReason::OutsideCoverage);
+        }
+
+        return self::comparable();
+    }
+
+    private static function judgeAggregate(Region $region, RunCoverage $run, RunScope $recordedScope, ExclusionDelta $delta): self
+    {
+        if ($run->scope->paths() === $recordedScope->paths() && $delta->equalDefinitions()) {
             return self::comparable();
         }
 
@@ -88,18 +102,26 @@ final readonly class EntryComparability
             if (!$region->contains($file)) {
                 continue;
             }
-            $current = $run->scope->coversPath($file->value());
-            $recorded = $recordedScope->coversPath($file->value());
-            if ($current !== $recorded) {
-                return self::refused($current
-                    ? IncomparabilityReason::PathsDiffer
-                    : IncomparabilityReason::OutsideCoverage);
-            }
-            if ($current && $delta->differsAt($file)) {
-                return self::refused(IncomparabilityReason::ExclusionsDiffer);
+            $reason = self::populationDifference($file, $run, $recordedScope, $delta);
+            if ($reason !== null) {
+                return self::refused($reason);
             }
         }
 
         return self::comparable();
+    }
+
+    private static function populationDifference(RelativePath $file, RunCoverage $run, RunScope $recordedScope, ExclusionDelta $delta): ?IncomparabilityReason
+    {
+        $current = $run->scope->coversPath($file->value());
+        $recorded = $recordedScope->coversPath($file->value());
+        if ($current !== $recorded) {
+            return $current ? IncomparabilityReason::PathsDiffer : IncomparabilityReason::OutsideCoverage;
+        }
+        if ($current && $delta->differsAt($file)) {
+            return IncomparabilityReason::ExclusionsDiffer;
+        }
+
+        return null;
     }
 }

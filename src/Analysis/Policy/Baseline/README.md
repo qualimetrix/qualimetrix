@@ -30,9 +30,12 @@ Baseline/
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
 ├── BaselineFileShape.php        # Shared closed document grammar
+├── BaselineExclusionShape.php   # Closed recorded-exclusion grammar and indexed refusals
+├── BaselineEntryShape.php       # Closed raw entry and edge keys before value normalization
 ├── GroupAcceptance.php          # Acceptance policy over complete groups
 ├── BaselineLoader.php           # Loads the exact typed-subject version 14 file; envelope failures throw ConfigurationRefusal (Analysis/Configuration)
-├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
+├── CanonicalBaselineReader.php  # Reads the held canonical bytes, or declines to the full-document decoder
+├── CanonicalEnvelope.php        # Pure canonical envelope-line recognition and depth-bounded decoding
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
 ├── BaselineDocumentWriter.php   # How a baseline file is replaced: sibling lock, compare-and-swap, atomic rename, the snapshot a forced replacement compares; an unusable path throws Core FileTargetFailure
@@ -43,6 +46,8 @@ Baseline/
 ├── RunCoverageGap.php           # Enum: producer/publication coverage gaps
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
+├── BaselineEntryTightening.php  # Reconciles one existing entry against the whole ceiling outcome
+├── NewIdentityAcceptance.php    # Captures complete comparable identities of explicitly selected channels
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
 ├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
 ├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / refused / skipped / accepted / re-recorded
@@ -58,7 +63,10 @@ Baseline/
 ├── ChannelRenameReport.php      # VO: what a carry did — entries moved, idle rows, lines this build cannot read
 ├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
 │
-├── BoundaryExplanationService.php # `baseline:explain`: builds a BoundaryExplanation from the baseline, qmx.yaml-configured thresholds, and @qmx-threshold annotations
+├── BoundaryExplanationService.php # `baseline:explain`: assembles the explained identities and sources
+├── CurrentBoundaryMeasurement.php # Projects independent current evidence and the whole ceiling verdict
+├── CurrentAbsentMeasurement.php # Proves file or aggregate absence only for unrecorded identities
+├── IdentityBoundaryExplanation.php # Joins one identity with its configured threshold and annotation
 ├── ExplainedSubject.php         # What the run knows about the explained symbol: its relevant identities, its typed repository index, its exact subject
 ├── EffectiveBoundary.php        # VO: one identity's boundary — mandatory current measurement plus nullable baseline, threshold and annotation
 ├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — inert state, mode, acceptance and comparison verdict/reason
@@ -69,6 +77,7 @@ Baseline/
 │   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
 │   ├── Absence.php              # Proven absence classification
 │   ├── EntryComparability.php   # Full-group comparison evidence
+│   ├── EntryJudgement.php       # Present-group acceptance and absent-entry classification
 │   ├── ExclusionDelta.php       # Changed discovery definition evidence
 │   ├── GroupCapture.php         # Complete finite-vector capture
 │   ├── GroupMeasurement.php     # Declared group measurement

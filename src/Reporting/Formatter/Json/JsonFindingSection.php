@@ -75,6 +75,7 @@ final class JsonFindingSection
         $file = $finding->location->file === null
             ? null
             : $context->relativizePath($finding->location->file);
+        $baseline = PublishedFinding::baselineFields($finding);
 
         return [
             'file' => $file,
@@ -93,7 +94,9 @@ final class JsonFindingSection
             'metricValue' => $this->sanitizer->sanitizeNumeric($finding->metricValue),
             'threshold' => $this->sanitizer->sanitizeNumeric($finding->threshold),
             'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForFinding($finding),
-            ...PublishedFinding::baselineFields($finding),
+            'acceptedLevel' => $baseline['acceptedLevel'],
+            'baselineVerdict' => $baseline['baselineVerdict'],
+            'baselineReason' => $baseline['baselineReason'],
         ];
     }
 

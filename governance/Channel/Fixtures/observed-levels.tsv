@@ -13,7 +13,6 @@ architecture.potential-shadow#architecture.potential-shadow	project
 architecture.unassigned-class#architecture.unassigned-class	project
 architecture.unmatched-exclude#architecture.unmatched-exclude	project
 architecture.unreachable-layer#architecture.unreachable-layer	project
-baseline.unused-entry#baseline.unused-entry	project
 code-smell.boolean-argument#code-smell.boolean-argument	callable
 code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable
 code-smell.count-in-loop#code-smell.count-in-loop	callable file

@@ -806,7 +806,7 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 ### Dogfooding: Finding Management Strategy
 
 We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
-versioned root `qmx-baseline.json`. That file is a v11 ratchet snapshot for
+versioned root `qmx-baseline.json`. That file is a v14 ratchet snapshot for
 residual, currently accepted warnings only; it is not a suppress-mode or legacy
 baseline. The generated qmx projection enforces coarse owner/seam topology.
 `composer selfcheck` first runs `composer architecture:check`, which validates

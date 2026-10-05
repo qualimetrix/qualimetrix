@@ -489,7 +489,6 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
                 ));
             }
 
-            self::assertReachHasOneSource($key, $class, $declaration);
             JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shapeByRule[$producerRuleName], $declaration);
             self::assertDescribedOnce($key, $class, $producerRuleName, $declaration);
@@ -601,7 +600,6 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
 
         foreach ($validatorDeclarations as $key => $declaration) {
             $this->assertUnclaimed($key, $class, $declarations, $producerByCode, $producerRuleName);
-            self::assertReachHasOneSource($key, $class, $declaration);
             JudgedMetricDeclarationGuard::assertDeclarable($key, $class, $producerRuleName, $shape, $declaration);
             $this->assertShapeAgreesWithDirection($key, $class, $producerRuleName, $shape, $declaration);
             self::assertDescribedOnce($key, $class, $producerRuleName, $declaration);
@@ -611,13 +609,6 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface, Con
             $producerByCode[$channel->code] = $producerRuleName;
             $declarations[$key] = $declaration->asConfigurationError();
             $channelKeysByProducer[$producerRuleName][] = $key;
-        }
-    }
-
-    private static function assertReachHasOneSource(string $key, string $class, ChannelDeclaration $declaration): void
-    {
-        if ($declaration->readsRunEvidence && $declaration->judges !== null) {
-            throw new LogicException(\sprintf('Channel "%s" declared by %s names catalog judges and explicit run evidence. Reach must have one source.', $key, $class));
         }
     }
 

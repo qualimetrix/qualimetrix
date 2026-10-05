@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use JsonException;
-use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use stdClass;
@@ -46,9 +45,6 @@ final class CanonicalBaselineReader
     /** `  "entries": {}` — the same field with nothing under it. */
     private const string ENTRIES_EMPTY = self::ENTRIES_OPEN . '}';
 
-    /** `  "<json string>": <json value>,` */
-    private const string ENVELOPE_LINE = '/^' . self::INDENT . '("(?:[^"\\\\]|\\\\.)*"): (.+),$/';
-
     /** `    "<json string>": [` */
     private const string SUBJECT_LINE = '/^' . self::SUBJECT_INDENT . '("(?:[^"\\\\]|\\\\.)*"): \\[$/';
 
@@ -60,7 +56,7 @@ final class CanonicalBaselineReader
      * the fallback path, and therefore the budget this reader has to spend
      * between them to mean the same thing.
      */
-    private const int DOCUMENT_DEPTH_LIMIT = 512;
+    private const int DOCUMENT_DEPTH_LIMIT = CanonicalEnvelope::DOCUMENT_DEPTH_LIMIT;
 
     /**
      * Containers standing between the document and one entry: the document
@@ -73,12 +69,7 @@ final class CanonicalBaselineReader
      */
     private const int ENTRY_ENCLOSING_CONTAINERS = 3;
 
-    /** Containers between the document and an envelope value: the document object. */
-    private const int ENVELOPE_ENCLOSING_CONTAINERS = 1;
-
     private const int ENTRY_DEPTH_LIMIT = self::DOCUMENT_DEPTH_LIMIT - self::ENTRY_ENCLOSING_CONTAINERS;
-
-    private const int ENVELOPE_DEPTH_LIMIT = self::DOCUMENT_DEPTH_LIMIT - self::ENVELOPE_ENCLOSING_CONTAINERS;
 
     private string $bytes;
 
@@ -93,7 +84,7 @@ final class CanonicalBaselineReader
     /** @return array<string, mixed>|null Canonical envelope, or null for full-document fallback. */
     public static function grammarEnvelope(string $bytes, string $path): ?array
     {
-        return (new self(null))->scanBytes($bytes, $path, grammarOnly: true, contentHash: '')['envelope'] ?? null;
+        return (new self(null))->scanBytes($bytes, $path, contentHash: '')['envelope'] ?? null;
     }
 
     /**
@@ -106,31 +97,18 @@ final class CanonicalBaselineReader
      */
     public function read(BaselineDocument $document): ?array
     {
-        return $this->scanBytes($document->bytes(), $document->path, grammarOnly: false, contentHash: $document->contentHash);
+        return $this->scanBytes($document->bytes(), $document->path, contentHash: $document->contentHash);
     }
 
     /**
      * @return array{envelope: array<string, mixed>, entries: list<BaselineEntry>, inert: list<InertBaselineEntry>, contentHash: string}|null
      */
-    private function scanBytes(string $bytes, string $path, bool $grammarOnly, string $contentHash): ?array
+    private function scanBytes(string $bytes, string $path, string $contentHash): ?array
     {
         $this->bytes = $bytes;
         $this->offset = 0;
         $this->path = $path;
 
-        return $this->scan($grammarOnly, $contentHash);
-    }
-
-    /**
-     * @return array{
-     *     envelope: array<string, mixed>,
-     *     entries: list<BaselineEntry>,
-     *     inert: list<InertBaselineEntry>,
-     *     contentHash: string
-     * }|null
-     */
-    private function scan(bool $grammarOnly, string $contentHash): ?array
-    {
         if ($this->readLine() !== '{') {
             return null;
         }
@@ -143,7 +121,7 @@ final class CanonicalBaselineReader
 
         [$fields, $hasSubjects] = $envelope;
 
-        $collected = $hasSubjects ? $this->readSubjects($grammarOnly) : [[], []];
+        $collected = $hasSubjects ? $this->readSubjects() : [[], []];
 
         if ($collected === null) {
             return null;
@@ -151,7 +129,7 @@ final class CanonicalBaselineReader
 
         // Bytes past the closing brace would belong to a different document
         // than the one just scanned.
-        if ($this->readLine() !== '}' || !$this->atEndOfFile()) {
+        if ($this->readLine() !== '}' || $this->offset !== \strlen($this->bytes)) {
             return null;
         }
 
@@ -192,7 +170,7 @@ final class CanonicalBaselineReader
                 return [$fields, true];
             }
 
-            $field = $this->parseEnvelopeLine($line);
+            $field = CanonicalEnvelope::parseLine($line);
 
             if ($field === null || \array_key_exists($field[0], $fields)) {
                 return null;
@@ -224,7 +202,7 @@ final class CanonicalBaselineReader
      *
      * @phpstan-impure
      */
-    private function readSubjects(bool $grammarOnly): ?array
+    private function readSubjects(): ?array
     {
         $entries = [];
         $inert = [];
@@ -239,7 +217,7 @@ final class CanonicalBaselineReader
 
             $seen[$subjectKey] = true;
 
-            $another = $this->readSubjectEntries($subjectKey, $entries, $inert, $grammarOnly);
+            $another = $this->readSubjectEntries($subjectKey, $entries, $inert);
 
             if ($another === null) {
                 return null;
@@ -265,7 +243,7 @@ final class CanonicalBaselineReader
      *
      * @phpstan-impure
      */
-    private function readSubjectEntries(string $subjectKey, array &$entries, array &$inert, bool $grammarOnly): ?bool
+    private function readSubjectEntries(string $subjectKey, array &$entries, array &$inert): ?bool
     {
         $index = 0;
         do {
@@ -283,24 +261,10 @@ final class CanonicalBaselineReader
                 return null;
             }
 
-            if ($decoded instanceof stdClass) {
-                try {
-                    BaselineFileShape::assertEntryKeys((array) $decoded, $this->path, $subjectKey, $index);
-                } catch (ConfigurationRefusal) {
-                    return null;
-                }
+            if (!$this->admitEntry($decoded, $subjectKey, $index)) {
+                return null;
             }
-
-            if (!$grammarOnly) {
-                BaselineFileShape::normalizeValues($decoded);
-                $entry = ($this->entryParser ?? throw new LogicException('Semantic baseline scan requires an entry parser'))->parse($subjectKey, $decoded);
-
-                if ($entry instanceof InertBaselineEntry) {
-                    $inert[] = $entry;
-                } else {
-                    $entries[] = $entry;
-                }
-            }
+            $this->collectEntry($decoded, $subjectKey, $entries, $inert);
             ++$index;
         } while (!$last);
 
@@ -311,23 +275,40 @@ final class CanonicalBaselineReader
         };
     }
 
-    /**
-     * @return array{string, mixed}|null
-     */
-    private function parseEnvelopeLine(?string $line): ?array
+    private function admitEntry(mixed $decoded, string $subjectKey, int $index): bool
     {
-        if ($line === null || preg_match(self::ENVELOPE_LINE, $line, $match) !== 1) {
-            return null;
+        if (!$decoded instanceof stdClass) {
+            return true;
+        }
+        try {
+            BaselineFileShape::assertEntryKeys((array) $decoded, $this->path, $subjectKey, $index);
+        } catch (ConfigurationRefusal) {
+            return false;
         }
 
-        $key = $this->decode($match[1], self::ENVELOPE_DEPTH_LIMIT);
-        $value = $this->decode($match[2], self::ENVELOPE_DEPTH_LIMIT);
+        return true;
+    }
 
-        if (!\is_string($key) || $value === self::UNDECODABLE) {
-            return null;
+    /**
+     * @param list<BaselineEntry> $entries
+     * @param list<InertBaselineEntry> $inert
+     *
+     * @param-out list<BaselineEntry> $entries
+     * @param-out list<InertBaselineEntry> $inert
+     */
+    private function collectEntry(mixed $decoded, string $subjectKey, array &$entries, array &$inert): void
+    {
+        if ($this->entryParser === null) {
+            return;
         }
+        BaselineFileShape::normalizeValues($decoded);
+        $entry = $this->entryParser->parse($subjectKey, $decoded);
+        if ($entry instanceof InertBaselineEntry) {
+            $inert[] = $entry;
 
-        return [$key, $value];
+            return;
+        }
+        $entries[] = $entry;
     }
 
     private function parseSubjectLine(?string $line): ?string
@@ -352,9 +333,6 @@ final class CanonicalBaselineReader
      */
     private function readLine(): ?string
     {
-        if ($this->offset >= \strlen($this->bytes)) {
-            return null;
-        }
         $end = strpos($this->bytes, "\n", $this->offset);
         if ($end === false) {
             return null;
@@ -363,14 +341,6 @@ final class CanonicalBaselineReader
         $this->offset = $end + 1;
 
         return $line;
-    }
-
-    /**
-     * A canonical document ends exactly after the closing brace's newline.
-     */
-    private function atEndOfFile(): bool
-    {
-        return $this->offset === \strlen($this->bytes);
     }
 
     /**

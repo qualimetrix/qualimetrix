@@ -72,6 +72,10 @@ final class JudgedMetricDeclarationGuard
         ChannelShape $declaredShape,
         ChannelDeclaration $declaration,
     ): void {
+        if ($declaration->readsRunEvidence && $declaration->judges !== null) {
+            throw new LogicException(\sprintf('Channel "%s" declared by %s names catalog judges and explicit run evidence. Reach must have one source.', $key, $class));
+        }
+
         $judges = $declaration->judges;
 
         if ($judges === null) {

@@ -4,26 +4,20 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
-use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
-use Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
-use Qualimetrix\Core\Symbol\MetricSubject;
 
-/** Judges present groups and absent entries against one measured run. */
+/** Groups findings and assembles the ceiling outcome for one measured run. */
 final readonly class BaselineCeilingStage implements FindingFilterStageInterface
 {
     /** @param array<string, RunCoverageGap> $ruleGaps Keyed by identity. */
@@ -48,9 +42,13 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
     public function judgeAll(array $findings): CeilingOutcome
     {
         $groups = self::groupByIdentity($findings);
+        $judgement = new EntryJudgement($this->baseline, $this->declarations, $this->coverage, $this->ruleGaps);
         $verdicts = $statuses = $reasons = [];
         foreach ($groups as $key => $group) {
-            $verdict = $this->judgePresent($group['identity'], $group['findings']);
+            $entry = $this->baseline->findByIdentity($group['identity']);
+            $verdict = $entry === null
+                ? GroupCeilingVerdict::reported()
+                : $judgement->judgePresent($entry, $group['identity'], $group['findings']);
             $verdicts[$key] = $verdict;
             $statuses[$key] = $verdict->status();
             if ($verdict->uncomparedReason !== null) {
@@ -58,6 +56,40 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
             }
         }
 
+        $result = self::selectFindings($findings, $verdicts);
+
+        $absent = ['stale' => [], 'unmeasured' => [], 'outside-coverage' => [], 'not-compared' => []];
+        foreach ($this->baseline->entries as $entry) {
+            $key = $entry->identity->key();
+            if (isset($groups[$key])) {
+                continue;
+            }
+            $absence = $judgement->classifyAbsent($entry);
+            $statuses[$key] = $absence->status;
+            if ($absence->reason !== null) {
+                $reasons[$key] = $absence->reason->value;
+            }
+            $absent[$absence->status][] = $entry;
+        }
+
+        return new CeilingOutcome(
+            result: $result,
+            staleEntries: $absent['stale'],
+            inertEntries: [...$this->baseline->inertEntries, ...$this->configurationErrorEntries()],
+            unmeasuredEntries: $absent['unmeasured'],
+            outsideCoverageEntries: $absent['outside-coverage'],
+            notComparedEntries: $absent['not-compared'],
+            statuses: $statuses,
+            reasons: $reasons,
+        );
+    }
+
+    /**
+     * @param list<Finding> $findings
+     * @param array<string, GroupCeilingVerdict> $verdicts
+     */
+    private static function selectFindings(array $findings, array $verdicts): FindingFilterStageResult
+    {
         $kept = $removed = [];
         foreach ($findings as $finding) {
             $verdict = $verdicts[BaselineIdentity::forFinding($finding)->key()];
@@ -74,129 +106,13 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
             };
         }
 
-        $stale = $unmeasured = $outside = $notCompared = [];
-        foreach ($this->baseline->entries as $entry) {
-            $key = $entry->identity->key();
-            if (isset($groups[$key])) {
-                continue;
-            }
-            $absence = $this->classifyAbsent($entry);
-            $statuses[$key] = $absence->status;
-            if ($absence->reason !== null) {
-                $reasons[$key] = $absence->reason->value;
-            }
-            switch ($absence->status) {
-                case 'stale': $stale[] = $entry;
-                    break;
-                case 'unmeasured': $unmeasured[] = $entry;
-                    break;
-                case 'outside-coverage': $outside[] = $entry;
-                    break;
-                default: $notCompared[] = $entry;
-            }
-        }
-
-        return new CeilingOutcome(
-            result: new FindingFilterStageResult(FindingFilterStage::Baseline, $kept, $removed),
-            staleEntries: $stale,
-            inertEntries: [...$this->baseline->inertEntries, ...$this->configurationErrorEntries()],
-            unmeasuredEntries: $unmeasured,
-            outsideCoverageEntries: $outside,
-            notComparedEntries: $notCompared,
-            statuses: $statuses,
-            reasons: $reasons,
-        );
+        return new FindingFilterStageResult(FindingFilterStage::Baseline, $kept, $removed);
     }
 
     /** @return list<string> */
     public function baselineScope(): array
     {
         return $this->baseline->scope;
-    }
-
-    /** @param non-empty-list<Finding> $group */
-    private function judgePresent(BaselineIdentity $identity, array $group): GroupCeilingVerdict
-    {
-        $entry = $this->baseline->findByIdentity($identity);
-        if ($entry === null) {
-            return GroupCeilingVerdict::reported();
-        }
-        if (!$this->coverage->analysis->isComplete()) {
-            return GroupCeilingVerdict::uncompared(self::levelOf($entry), IncomparabilityReason::AnalysisIncomplete);
-        }
-        if (isset($this->ruleGaps[$identity->key()])) {
-            return GroupCeilingVerdict::uncompared(self::levelOf($entry), IncomparabilityReason::ProducerNotMeasured);
-        }
-
-        $declaration = $this->declarations->declarationFor($identity->channel);
-        if ($declaration === null || $declaration->isConfigurationError()) {
-            return GroupCeilingVerdict::reported();
-        }
-        $level = MetricSubject::levelOfCanonical($identity->subjectKey);
-        if (!\in_array($level, $declaration->levels, true)) {
-            return GroupCeilingVerdict::uncompared(self::levelOf($entry), IncomparabilityReason::ProducerNotMeasured);
-        }
-        $occurrence = $declaration->direction === null;
-        if (($entry->magnitudes === null) !== $occurrence) {
-            return GroupCeilingVerdict::reported();
-        }
-        $region = SubjectRegion::forIdentity(
-            $identity,
-            $this->declarations->reachAt($identity->channel, $level),
-            $this->coverage->psr4Roots,
-            $group,
-        );
-        $comparison = EntryComparability::judge($region, $this->baseline, $this->coverage);
-        if (!$comparison->canCompare()) {
-            return GroupCeilingVerdict::uncompared(self::levelOf($entry), $comparison->reason ?? IncomparabilityReason::MetadataUnknown);
-        }
-        if ($entry->mode === BaselineEntryMode::Suppress) {
-            return GroupCeilingVerdict::accepted();
-        }
-
-        $measurement = GroupMeasurement::fromFindings($group, $occurrence);
-        if (!$measurement->complete()) {
-            return GroupCeilingVerdict::uncompared(self::levelOf($entry), IncomparabilityReason::MagnitudeUnavailable);
-        }
-        $accepted = $occurrence
-            ? GroupAcceptance::countWithin($measurement->count, $entry->count)
-            : GroupAcceptance::magnitudesWithin(
-                $measurement->magnitudes ?? [],
-                $entry->magnitudes ?? [],
-                $declaration->direction ?? throw new LogicException('Magnitude channel requires a direction'),
-            );
-
-        return $accepted ? GroupCeilingVerdict::accepted() : GroupCeilingVerdict::breached(self::levelOf($entry));
-    }
-
-    private function classifyAbsent(BaselineEntry $entry): Absence
-    {
-        if (!$this->coverage->analysis->isComplete()) {
-            return Absence::unmeasured(IncomparabilityReason::AnalysisIncomplete);
-        }
-        if (isset($this->ruleGaps[$entry->identity->key()])) {
-            return Absence::unmeasured(IncomparabilityReason::ProducerNotMeasured);
-        }
-        $declaration = $this->declarations->declarationFor($entry->identity->channel);
-        if ($declaration === null || $declaration->isConfigurationError()) {
-            return Absence::notCompared(IncomparabilityReason::ProducerNotMeasured);
-        }
-        $level = MetricSubject::levelOfCanonical($entry->identity->subjectKey);
-        if (!\in_array($level, $declaration->levels, true)) {
-            return Absence::notCompared(IncomparabilityReason::ProducerNotMeasured);
-        }
-        $region = SubjectRegion::forIdentity(
-            $entry->identity,
-            $this->declarations->reachAt($entry->identity->channel, $level),
-            $this->coverage->psr4Roots,
-        );
-        $comparison = EntryComparability::judge($region, $this->baseline, $this->coverage);
-        if ($comparison->canCompare()) {
-            return Absence::stale();
-        }
-        return $comparison->reason === IncomparabilityReason::OutsideCoverage
-            ? Absence::outsideCoverage()
-            : Absence::notCompared($comparison->reason ?? IncomparabilityReason::MetadataUnknown);
     }
 
     /** @return list<InertBaselineEntry> */
@@ -217,11 +133,6 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
         }
 
         return $inert;
-    }
-
-    private static function levelOf(BaselineEntry $entry): AcceptedLevel
-    {
-        return new AcceptedLevel($entry->magnitudes, $entry->count);
     }
 
     /**

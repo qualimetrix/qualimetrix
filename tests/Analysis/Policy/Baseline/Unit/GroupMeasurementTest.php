@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -22,7 +23,7 @@ final class GroupMeasurementTest extends TestCase
         $measurement = GroupMeasurement::fromFindings([
             FindingFactory::magnitude($symbol, 12),
             FindingFactory::magnitude($symbol, \INF),
-        ], false);
+        ], ChannelShape::Magnitude);
 
         self::assertSame(2, $measurement->count);
         self::assertSame(1, $measurement->membersWithoutMagnitude);
@@ -37,7 +38,7 @@ final class GroupMeasurementTest extends TestCase
         $measurement = GroupMeasurement::fromFindings([
             FindingFactory::magnitude($symbol, \NAN),
             FindingFactory::magnitude($symbol, 0),
-        ], true);
+        ], ChannelShape::Occurrence);
 
         self::assertSame(2, $measurement->count);
         self::assertSame(0, $measurement->membersWithoutMagnitude);

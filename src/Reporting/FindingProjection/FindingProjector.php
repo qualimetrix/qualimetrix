@@ -4,21 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
-use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
-use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
-use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Core\Pattern\NamespaceMatcher;
-use Qualimetrix\Core\Pattern\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
@@ -28,11 +22,15 @@ final readonly class FindingProjector
 {
     public function __construct(
         private AnnotationSuppressionInterface $annotationSuppression,
-        private BaselineLoader $baselineLoader,
+        BaselineLoader $baselineLoader,
         private ChannelDeclarationRegistryInterface $declarations,
         private GitScopeQueryInterface $gitScopeQuery,
-        private UnusedEntryAudit $unusedEntryAudit,
-    ) {}
+        UnusedEntryAudit $unusedEntryAudit,
+    ) {
+        $this->baselineProjection = new BaselineFindingProjection($baselineLoader, $declarations, $unusedEntryAudit);
+    }
+
+    private BaselineFindingProjection $baselineProjection;
 
     public function preflightBaseline(string $path): BaselineDocument
     {
@@ -58,7 +56,7 @@ final readonly class FindingProjector
         $restored = $annotation->suppressed;
         $removed = [FindingFilterStage::Suppression->value => $options->annotationSuppressionDisabled ? [] : $restored];
 
-        foreach ($this->exclusionStages($options) as $stage) {
+        foreach (ConfiguredExclusionProjection::stages($options) as $stage) {
             $outcome = $stage->apply($findings);
             $findings = $outcome->findings;
             $removed[$stage->stage()->value] = $outcome->removed;
@@ -79,24 +77,15 @@ final readonly class FindingProjector
         $ceiling = null;
         $unusedAuditPublished = true;
         if ($options->baselineDocument !== null) {
-            $coverage = $options->runCoverage ?? throw new LogicException('Baseline projection requires current run coverage');
-            $ruleCoverage = $options->ruleCoverage ?? throw new LogicException('Baseline projection requires rule publication');
-            $baseline = $this->baselineLoader->load($options->baselineDocument);
-            $stage = new BaselineCeilingStage(
-                $baseline,
-                $this->declarations,
-                $coverage,
-                $ruleCoverage->classify(array_map(static fn($entry) => $entry->identity, $baseline->entries)),
-            );
-            $ceiling = $stage->judgeAll($findings);
+            $baseline = $this->baselineProjection->project($findings, $options);
+            $ceiling = $baseline['ceiling'];
             $findings = $ceiling->result->findings;
             $removed[FindingFilterStage::Baseline->value] = $ceiling->result->removed;
             $stale = $ceiling->staleEntries;
             $inert = $ceiling->inertEntries;
-            $baselineScope = $stage->baselineScope();
-            $audit = $this->unusedEntryAudit->findings($ceiling, $options->baselineDocument->path);
-            $unusedAuditPublished = $audit !== [] || ($stale === [] && $inert === []);
-            $findings = [...$findings, ...$audit];
+            $baselineScope = $baseline['scope'];
+            $unusedAuditPublished = $baseline['auditPublished'];
+            $findings = [...$findings, ...$baseline['audit']];
         }
 
         if ($options->annotationSuppressionDisabled) {
@@ -107,7 +96,6 @@ final readonly class FindingProjector
             $git = $this->gitScopeQuery->resolve($options->gitScope);
             $pathSet = array_fill_keys($git->paths, true);
             $namespaceSet = array_fill_keys($git->namespaces, true);
-            // The same scope the exclusion stages read — see exclusionStages().
             $fileScope = DeclaredChannelFileScope::create();
             $filter = new GitScopeFindingFilter(
                 $pathSet,
@@ -185,52 +173,5 @@ final readonly class FindingProjector
     private function isConfigurationError(Finding $finding): bool
     {
         return $this->declarations->declarationFor($finding->channel())?->isConfigurationError() === true;
-    }
-
-    /**
-     * The exclusion stages, and with them the answer every narrowing stage of
-     * this projection shares: **a stage that selects findings by the file
-     * they sit in must not touch a finding that is not about a file.**
-     *
-     * Which channels those are is declared by the capabilities themselves and
-     * assembled by {@see DeclaredChannelFileScope}, so the guarantee extends
-     * to the next project-scoped channel without anyone editing this class.
-     * That one scope is what all three narrowing stages read — `suppress_paths`
-     * and `suppress_namespaces` here, and the git-range narrowing in
-     * {@see project()}. Letting each stage decide for itself is what produced
-     * two answers to one question: `architecture.unassigned-class` was exempt
-     * from the first two and silently dropped by the third, so
-     * `--report=git:staged` turned a gate the user had switched on into a
-     * green build.
-     *
-     * Deliberately not a guard on "the finding carries no location": that
-     * is an observation about one emission site, and reading scope out of it
-     * would reintroduce exactly the derived-from-a-convention rule
-     * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}
-     * exists to replace. A project-scoped channel that does print an example
-     * location — `architecture.layer-violation` names the offending edge's
-     * use site — is still a statement about the project, and is narrowed by
-     * none of the three.
-     *
-     * @return list<PredicateFilterStage>
-     */
-    private function exclusionStages(FindingProjectionOptions $options): array
-    {
-        $fileScope = DeclaredChannelFileScope::create();
-        $stages = [];
-        if ($options->suppressPaths !== []) {
-            $stages[] = new PredicateFilterStage(
-                FindingFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher($options->suppressPaths), $fileScope),
-            );
-        }
-        $matcher = new NamespaceMatcher($options->suppressNamespaces);
-        if (!$matcher->isEmpty()) {
-            $stages[] = new PredicateFilterStage(
-                FindingFilterStage::NamespaceExclusion,
-                new NamespaceExclusionFilter($matcher, $fileScope),
-            );
-        }
-        return $stages;
     }
 }

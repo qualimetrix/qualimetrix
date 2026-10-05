@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 
@@ -21,13 +22,19 @@ final readonly class GroupMeasurement
     /**
      * @param non-empty-list<Finding> $findings
      */
-    public static function fromFindings(array $findings, bool $occurrence): self
+    public static function fromFindings(array $findings, ChannelShape $shape): self
     {
         $count = \count($findings);
-        if ($occurrence) {
+        if ($shape === ChannelShape::Occurrence) {
             return new self($count, null, 0);
         }
 
+        return self::measureMagnitudes($findings);
+    }
+
+    /** @param non-empty-list<Finding> $findings */
+    private static function measureMagnitudes(array $findings): self
+    {
         $magnitudes = [];
         $missing = 0;
         foreach ($findings as $finding) {
@@ -44,7 +51,7 @@ final readonly class GroupMeasurement
             }
         }
 
-        return new self($count, $missing === 0 ? $magnitudes : null, $missing);
+        return new self(\count($findings), $missing === 0 ? $magnitudes : null, $missing);
     }
 
     public function complete(): bool
