@@ -22,6 +22,13 @@ not widen measurement. Audit and configuration-error channels are not captured.
 Magnitude entries store complete vectors; occurrence entries store counts.
 Identity includes typed subject, channel, optional occurrence and dependency edge.
 
+The configuration errors include the five layer-policy diagnostics (
+`architecture.coverage-gap`, `architecture.unreachable-layer`,
+`architecture.potential-shadow`, `architecture.empty-template`,
+`architecture.pending-layer-matched`) and the three inline-directive diagnostics (
+`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
+`annotation.invalid-threshold`).
+
 Comparison requires complete analysis and compatible evidence for the whole
 identity group. Baseline-owned `RunCoverage` combines current paths, recorded
 paths/exclusions, `AnalysisCoverage`, metadata and subject-region evidence.

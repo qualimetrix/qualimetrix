@@ -335,7 +335,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "metricValue": 15,
             "threshold": 10,
             "techDebtMinutes": 30,
-            "acceptedLevel": null
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null
         }
     ],
     "violationsMeta": {
@@ -367,7 +369,7 @@ Each violation carries nullable `acceptedLevel`, `baselineVerdict` and
 its cap and was promoted to Error. `"not-compared"` retains acceptedLevel and
 normal severity with a scalar reason. Null verdict establishes neither; a null
 acceptedLevel cannot distinguish no configured baseline from a new identity.
-The structured acceptedLevel is `{shape, describe, count}`; current metricValue
+A non-null acceptedLevel carries `{"shape":"magnitude","describe":"20, 30","count":2}`; current metricValue
 remains its own field. HTML carries the same judgement fields and renders both
 breached and not-compared states.
 

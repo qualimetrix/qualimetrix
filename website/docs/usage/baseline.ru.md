@@ -22,6 +22,13 @@ bin/qmx check src/ --baseline=baseline.json
 вектор; occurrence — число. Идентичность включает типизированный субъект, канал,
 необязательные occurrence и ребро зависимости.
 
+Configuration errors включают пять диагностик layer-policy (
+`architecture.coverage-gap`, `architecture.unreachable-layer`,
+`architecture.potential-shadow`, `architecture.empty-template`,
+`architecture.pending-layer-matched`) и три диагностики inline-директив (
+`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
+`annotation.invalid-threshold`).
+
 Сравнение требует полного анализа и совместимых свидетельств для всей группы.
 Baseline владеет RunCoverage: текущие/записанные пути и исключения, AnalysisCoverage,
 метаданные и область субъекта. Точный файл можно сравнить без полного списка Composer;

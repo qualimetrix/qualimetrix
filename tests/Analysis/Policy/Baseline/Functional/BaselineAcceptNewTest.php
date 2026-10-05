@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -35,6 +36,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(BaselineUpdateCommand::class)]
 #[CoversClass(BaselineRun::class)]
+#[CoversClass(BaselineUpdater::class)]
 final class BaselineAcceptNewTest extends TestCase
 {
     private string $root;

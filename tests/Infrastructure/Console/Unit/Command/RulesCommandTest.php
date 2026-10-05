@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 
 use Closure;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
@@ -15,7 +16,9 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineIn
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
@@ -464,11 +467,18 @@ final class RulesCommandTest extends TestCase
             }
         }
 
+        $metricReach = self::createStub(MetricReachCatalogInterface::class);
+        $metricReach->method('metricReach')->willThrowException(new LogicException('This fixture does not query measured-metric reach.'));
+        $computedReach = self::createStub(ComputedMetricReachInterface::class);
+        $computedReach->method('reachAt')->willThrowException(new LogicException('This fixture does not query computed-metric reach.'));
+
         $channels = new \Qualimetrix\Infrastructure\Rule\ChannelUniverse(
             $declarationByCode,
             $channelsByRule,
             array_fill_keys(array_column($metadata, 'name'), false),
             new ResolvedComputedMetricDefinitions([]),
+            $metricReach,
+            $computedReach,
         );
         $schema = new \Qualimetrix\Analysis\Configuration\Document\DocumentSchema([
             new \Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection($execution, 'rules'),

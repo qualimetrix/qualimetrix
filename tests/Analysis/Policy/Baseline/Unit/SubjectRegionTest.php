@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -14,6 +15,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
 
+#[CoversClass(SubjectRegion::class)]
 final class SubjectRegionTest extends TestCase
 {
     #[Test]

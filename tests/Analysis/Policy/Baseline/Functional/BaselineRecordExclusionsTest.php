@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
@@ -23,6 +24,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(BaselineUpdateCommand::class)]
+#[CoversClass(BaselineUpdater::class)]
 final class BaselineRecordExclusionsTest extends TestCase
 {
     private string $root;

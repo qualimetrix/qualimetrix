@@ -335,7 +335,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "metricValue": 15,
             "threshold": 10,
             "techDebtMinutes": 30,
-            "acceptedLevel": null
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null
         }
     ],
     "violationsMeta": {
@@ -367,7 +369,7 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 `baselineReason`. Verdict `breached` означает сравнимое превышение и Error;
 `not-compared` сохраняет принятую границу, обычную серьёзность и скалярную причину.
 Null не доказывает ни одно состояние. Null acceptedLevel не отличает отсутствие
-baseline от новой identity. Структура acceptedLevel — `{shape, describe, count}`;
+baseline от новой identity. Непустой acceptedLevel несёт `{"shape":"magnitude","describe":"20, 30","count":2}`;
 текущая metricValue остаётся отдельным полем. HTML передаёт те же поля и показывает
 оба состояния. Наличие acceptedLevel само по себе не доказывает превышение.
 

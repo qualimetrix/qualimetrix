@@ -445,6 +445,9 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 'UnboundSuppressionRule names the three channels but cannot emit them: whether a suppression'
                 . ' value bound to anything is known only after the run, at the reporting seam, so the findings'
                 . ' are assembled here and no rule class chain leads to this construction.',
+            'src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryAudit.php' =>
+                'Baseline usage is audited after measurement at the reporting seam, outside the rule chain;'
+                . ' UnusedEntryAuditTest checks its emitted channel and project scope.',
             'src/Analysis/Policy/Inline/Directive/Audit/StaleDirectiveFinding.php' =>
                 'The shape of the stale-directive finding, built for the usage accounting the policy state'
                 . ' delegates to and which UnusedDirectiveRule consults; the construction sits there, not'

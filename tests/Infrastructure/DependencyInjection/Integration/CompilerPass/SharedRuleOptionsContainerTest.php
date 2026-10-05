@@ -118,7 +118,7 @@ final class SharedRuleOptionsContainerTest extends TestCase
         self::assertInstanceOf(RuleOptionsRegistry::class, $registry);
         $execution = $container->get(RuleExecutionInterface::class);
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
-        self::assertCount(54, $execution->allRules());
+        self::assertCount(55, $execution->allRules());
         $command = $container->get(CheckCommand::class);
         self::assertInstanceOf(CheckCommand::class, $command);
         $preflight = $container->get(AnalysisPreflight::class);

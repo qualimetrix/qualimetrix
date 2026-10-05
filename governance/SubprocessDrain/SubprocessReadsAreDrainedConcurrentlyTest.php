@@ -282,7 +282,7 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
             . 'case-fold adds, and it is therefore also this control\'s witness that the fold is live: fold the '
             . 'match back to case-sensitive and this entry refuses as stale.',
 
-        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:635' => 'The parent holds the '
+        'tests/Analysis/Policy/Baseline/Integration/BaselineChannelRenamerTest.php:646' => 'The parent holds the '
             . 'lock the child blocks on, so the window opens before the parent is free to read anything and no read '
             . 'discipline closes it. Stderr goes to a file the failure message reads back, leaving stdout the only '
             . 'blocking stream.',

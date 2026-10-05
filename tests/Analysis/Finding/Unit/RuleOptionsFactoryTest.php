@@ -13,10 +13,12 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
 use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -1089,6 +1091,11 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         $metadata = [new RuleMetadata('computed.health', TestRuleOptions::class, '', [], false)];
+        $metricReach = self::createStub(MetricReachCatalogInterface::class);
+        $metricReach->method('metricReach')->willThrowException(new LogicException('This fixture does not query measured-metric reach.'));
+        $computedReach = self::createStub(ComputedMetricReachInterface::class);
+        $computedReach->method('reachAt')->willThrowException(new LogicException('This fixture does not query computed-metric reach.'));
+
         $channels = new \Qualimetrix\Infrastructure\Rule\ChannelUniverse(
             [
                 'health.cohesion' => \Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration::occurrence(\Qualimetrix\Core\Symbol\SymbolLevel::Namespace_),
@@ -1097,6 +1104,8 @@ final class RuleOptionsFactoryTest extends TestCase
             ['computed.health' => ['health.cohesion', 'health.typing']],
             ['computed.health' => false],
             new \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions([]),
+            $metricReach,
+            $computedReach,
         );
         $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => $this->configFileRules], $metadata);
         $this->registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata, channels: $channels));
