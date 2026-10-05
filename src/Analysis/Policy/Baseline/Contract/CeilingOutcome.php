@@ -37,10 +37,30 @@ final readonly class CeilingOutcome
      * @param list<InertBaselineEntry> $inertEntries every entry the loader read but could not
      *                                               apply, unconditional on what was measured —
      *                                               `check` names them so a user can act (ADR 0017)
+     * @param list<BaselineEntry> $unmeasuredEntries
+     * @param list<BaselineEntry> $outsideCoverageEntries
+     * @param list<BaselineEntry> $notComparedEntries
+     * @param array<string, string> $statuses Identity key to verdict.
+     * @param array<string, string> $reasons Identity key to exact reason code.
      */
     public function __construct(
         public FindingFilterStageResult $result,
         public array $staleEntries,
         public array $inertEntries,
+        public array $unmeasuredEntries = [],
+        public array $outsideCoverageEntries = [],
+        public array $notComparedEntries = [],
+        public array $statuses = [],
+        public array $reasons = [],
     ) {}
+
+    public function statusFor(\Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity $identity): ?string
+    {
+        return $this->statuses[$identity->key()] ?? null;
+    }
+
+    public function reasonFor(\Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity $identity): ?string
+    {
+        return $this->reasons[$identity->key()] ?? null;
+    }
 }

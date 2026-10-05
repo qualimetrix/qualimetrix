@@ -203,7 +203,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             ConfigurationOrigin::of(ConfigurationSource::ConfigFile, 'qmx.yaml'),
             'qmx.yaml was not found',
         ));
-        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream());
+        $baselineRun = new BaselineRun($runtime, self::withoutConstructor(MeasuredFindingSet::class), self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)), self::configurationInputAdapter($pipeline), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation(self::createStub(RunConfigurationResolverInterface::class), self::createStub(CacheConfigurationResolverInterface::class), self::createStub(ParallelConfigurationResolverInterface::class)), self::createStub(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), self::createStub(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
 
         try {
             $baselineRun->measure(new ArrayInput([]), new BufferedOutput());

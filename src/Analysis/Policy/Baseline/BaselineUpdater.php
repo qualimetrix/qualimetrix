@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -66,13 +68,13 @@ final readonly class BaselineUpdater
     ) {}
 
     /**
-     * @param list<Finding> $measured the run's measured set (ADR 0017)
-     * @param RunScope $scope the paths this run analysed; recorded only when it covers
-     *                        what the file already records — see {@see scopeToRecord()}
+     * @param list<Finding> $measured the run's measured set
+     * @param array<string, RunCoverageGap> $ruleGaps identities not published by this run
      */
-    public function update(Baseline $baseline, array $measured, RunScope $scope): BaselineUpdateResult
+    public function update(Baseline $baseline, array $measured, RunCoverage $coverage, array $ruleGaps): BaselineUpdateResult
     {
         $groups = self::groupByIdentity($measured);
+        $judgement = (new BaselineCeilingStage($baseline, $this->declarations, $coverage, $ruleGaps))->judgeAll($measured);
 
         $entries = [];
         $outcomes = [];
@@ -80,6 +82,17 @@ final readonly class BaselineUpdater
 
         foreach ($baseline->entries as $entry) {
             $group = $groups[$entry->identity->key()] ?? null;
+
+            $status = $judgement->statusFor($entry->identity);
+            if ($status === 'not-compared' || $status === 'unmeasured' || $status === 'outside-coverage') {
+                $entries[] = $entry;
+                $outcomes[] = BaselineEntryUpdateOutcome::notCompared(
+                    $entry->identity,
+                    $judgement->reasonFor($entry->identity) ?? 'metadata-unknown',
+                );
+
+                continue;
+            }
 
             if ($group === null) {
                 $entries[] = $entry;
@@ -89,21 +102,20 @@ final readonly class BaselineUpdater
             }
 
             [$written, $outcome] = $this->reconcile($entry, $group);
+            if ($outcome->disposition === BaselineUpdateDisposition::Updated && $written->toArray() === $entry->toArray()) {
+                $outcome = BaselineEntryUpdateOutcome::unchanged($entry->identity);
+            }
             $entries[] = $written;
             $outcomes[] = $outcome;
 
-            // An `Updated` disposition still writes back the same payload
-            // when the measured group reports exactly what the entry already
-            // recorded — comparing the serialized form, not the disposition,
-            // is what keeps that case from moving `generated` on every run.
             if ($written->toArray() !== $entry->toArray()) {
                 $changed = true;
             }
         }
 
         $updated = new Baseline(
-            generated: $this->clock->now(),
-            scope: self::scopeToRecord($baseline, $scope),
+            generated: $changed ? $this->clock->now() : $baseline->generated,
+            scope: $baseline->scope,
             entries: $entries,
             exclusions: $baseline->exclusions,
             inertEntries: $baseline->inertEntries,
@@ -114,36 +126,11 @@ final readonly class BaselineUpdater
     }
 
     /**
-     * The `scope` the updated file records: the run's own only when it covers
-     * what the file already records, and otherwise the recorded one, unchanged.
-     *
-     * **Why a narrower run must not overwrite it.** The scope guard (ADR 0017) is
-     * a precondition of this command, overridable with `--force` — and an
-     * overwrite would make one `--force` permanent. A user updating from
-     * `src/Legacy` once would leave the file claiming a narrow run produced
-     * it, after which every subsequent narrow run covers the recorded scope
-     * and the guard never fires again: the single override silently becomes a
-     * standing rule. Keeping the recorded scope means `--force` does exactly
-     * what it says — it lets *this* invocation write — while the file goes on
-     * remembering the breadth its entries were actually captured over.
-     *
-     * A run that *does* cover the recorded scope is recorded as-is: it is at
-     * least as wide, so the entries it wrote are backed by at least as much
-     * measurement, and widening the file's own claim is the honest direction.
-     *
-     * @return list<string>
-     */
-    private static function scopeToRecord(Baseline $baseline, RunScope $scope): array
-    {
-        return $scope->covers($baseline->scope) ? $scope->paths() : $baseline->scope;
-    }
-
-    /**
      * Decides one entry, in the order applicability requires: whether the
      * entry can be compared at all is settled before anything about the
      * measured group is read, mirroring the ceiling stage's own ordering.
      *
-     * @param list<Finding> $group every measured finding sharing the entry's identity
+     * @param non-empty-list<Finding> $group every measured finding sharing the entry's identity
      *
      * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
      */
@@ -185,13 +172,13 @@ final readonly class BaselineUpdater
      * One level, no magnitudes: {@see GroupAcceptance::countWithin()} is the
      * whole comparison.
      *
-     * @param list<Finding> $group
+     * @param non-empty-list<Finding> $group
      *
      * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
      */
     private function reconcileOccurrence(BaselineEntry $entry, array $group): array
     {
-        $currentCount = \count($group);
+        $currentCount = GroupMeasurement::fromFindings($group, true)->count;
 
         if (!GroupAcceptance::countWithin($currentCount, $entry->count)) {
             return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, self::worsenedReason($entry))];
@@ -203,7 +190,7 @@ final readonly class BaselineUpdater
     }
 
     /**
-     * @param list<Finding> $group
+     * @param non-empty-list<Finding> $group
      *
      * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
      */
@@ -227,7 +214,7 @@ final readonly class BaselineUpdater
             throw new LogicException('A magnitude ChannelDeclaration was built without a WorseDirection.');
         }
 
-        $current = self::currentMagnitudes($group);
+        $current = GroupMeasurement::fromFindings($group, false)->magnitudes;
 
         if ($current === null) {
             return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::CurrentMagnitudeUnavailable)];
@@ -261,37 +248,9 @@ final readonly class BaselineUpdater
     }
 
     /**
-     * The group's magnitudes, normalised the way the stored ones were, or
-     * `null` when some member reports no usable number.
-     *
-     * @param list<Finding> $group
-     *
-     * @return ?list<float>
-     */
-    private static function currentMagnitudes(array $group): ?array
-    {
-        $magnitudes = [];
-
-        foreach ($group as $finding) {
-            if ($finding->metricValue === null) {
-                return null;
-            }
-
-            try {
-                $magnitudes[] = BaselineEntry::normalizeMagnitude($finding->metricValue);
-            } catch (InvalidArgumentException) {
-                // NaN or infinity: not a boundary, so nothing to compare against.
-                return null;
-            }
-        }
-
-        return $magnitudes;
-    }
-
-    /**
      * @param list<Finding> $findings
      *
-     * @return array<string, list<Finding>> identity key => its group
+     * @return array<string, non-empty-list<Finding>> identity key => its group
      */
     private static function groupByIdentity(array $findings): array
     {

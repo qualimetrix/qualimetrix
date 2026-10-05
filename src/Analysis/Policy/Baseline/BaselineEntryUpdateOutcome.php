@@ -13,11 +13,22 @@ final readonly class BaselineEntryUpdateOutcome
         public BaselineIdentity $identity,
         public BaselineUpdateDisposition $disposition,
         public ?BaselineUpdateRefusalReason $refusalReason = null,
+        public ?string $reasonCode = null,
     ) {}
 
     public static function updated(BaselineIdentity $identity): self
     {
         return new self($identity, BaselineUpdateDisposition::Updated);
+    }
+
+    public static function unchanged(BaselineIdentity $identity): self
+    {
+        return new self($identity, BaselineUpdateDisposition::Unchanged);
+    }
+
+    public static function notCompared(BaselineIdentity $identity, string $reasonCode): self
+    {
+        return new self($identity, BaselineUpdateDisposition::NotCompared, reasonCode: $reasonCode);
     }
 
     public static function refused(BaselineIdentity $identity, BaselineUpdateRefusalReason $reason): self

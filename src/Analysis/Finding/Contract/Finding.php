@@ -19,10 +19,9 @@ final readonly class Finding
      * @param list<Location> $relatedLocations Additional locations (e.g., other copies of duplicated code)
      * @param ?SymbolPath $dependencyTarget Target symbol of the offending dependency edge (for dependency-based rules)
      * @param ?DependencyType $dependencyType Type of the offending dependency edge (for dependency-based rules)
-     * @param ?AcceptedLevel $acceptedLevel The level a baseline entry had accepted this finding's group at,
-     *                                      present only on a measured breach of that level. `null` on every
-     *                                      other finding, including one no baseline ever judged — see
-     *                                      {@see reportedAsBreach()}
+     * @param ?AcceptedLevel $acceptedLevel The recorded level on a measured breach or an explicitly
+     *                                      uncompared group. Null when no applicable entry was found.
+     * @param ?string $uncomparedReason Exact reason code when a recorded level could not be compared.
      */
     public function __construct(
         public Location $location,
@@ -41,6 +40,7 @@ final readonly class Finding
         public ?AcceptedLevel $acceptedLevel = null,
         public ?OccurrenceKey $occurrenceKey = null,
         public ?string $addressedProducer = null,
+        public ?string $uncomparedReason = null,
     ) {}
 
     /**
@@ -86,6 +86,30 @@ final readonly class Finding
             acceptedLevel: $acceptedLevel,
             occurrenceKey: $this->occurrenceKey,
             addressedProducer: $this->addressedProducer,
+            uncomparedReason: null,
+        );
+    }
+
+    public function reportedUncompared(AcceptedLevel $acceptedLevel, string $reason): self
+    {
+        return new self(
+            location: $this->location,
+            subject: $this->subject,
+            symbolPath: $this->symbolPath,
+            ruleName: $this->ruleName,
+            code: $this->code,
+            message: $this->message,
+            severity: $this->severity,
+            metricValue: $this->metricValue,
+            relatedLocations: $this->relatedLocations,
+            recommendation: $this->recommendation,
+            threshold: $this->threshold,
+            dependencyTarget: $this->dependencyTarget,
+            dependencyType: $this->dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $this->occurrenceKey,
+            addressedProducer: $this->addressedProducer,
+            uncomparedReason: $reason,
         );
     }
 

@@ -32,12 +32,16 @@ enum UncapturedReason: string
      */
     case MagnitudeUnavailable = 'magnitude-unavailable';
 
+    /** The baseline's own diagnostic cannot become accepted debt. */
+    case BaselineAuditChannel = 'baseline-audit-channel';
+
     public function describe(): string
     {
         return match ($this) {
             self::UndeclaredChannel => 'no rule declares the channel',
             self::ConfigurationErrorChannel => 'the channel reports a configuration error, which cannot be accepted as debt',
             self::MagnitudeUnavailable => 'a finding reported no finite magnitude',
+            self::BaselineAuditChannel => 'the baseline audit channel cannot be captured',
         };
     }
 }

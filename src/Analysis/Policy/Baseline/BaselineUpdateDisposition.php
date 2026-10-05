@@ -12,6 +12,12 @@ enum BaselineUpdateDisposition: string
     /** The entry's magnitudes and/or count were replaced by the measured group. */
     case Updated = 'updated';
 
+    /** The measured group has the same serialized acceptance as before. */
+    case Unchanged = 'unchanged';
+
+    /** Coverage did not justify comparing this entry with the current run. */
+    case NotCompared = 'not-compared';
+
     /**
      * The entry's identity was measured, but the measured group could not
      * replace it — see {@see BaselineUpdateRefusalReason} for why. The entry

@@ -491,7 +491,7 @@ PHP;
         self::assertNotNull($baselineRunConstructor);
         self::assertNotNull($measuredFindingSetConstructor);
         self::assertCount(9, $checkConstructor->getParameters());
-        self::assertCount(7, $baselineRunConstructor->getParameters());
+        self::assertCount(9, $baselineRunConstructor->getParameters());
         self::assertCount(2, $measuredFindingSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);

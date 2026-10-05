@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
@@ -21,5 +23,20 @@ final readonly class FindingProjectionOptions
         public array $suppressNamespaces = [],
         public bool $annotationSuppressionDisabled = false,
         public ?GitScopeRequest $gitScope = null,
+        public ?RunCoverage $runCoverage = null,
+        public ?RunRuleCoverage $ruleCoverage = null,
     ) {}
+
+    public function withRunCoverage(RunCoverage $coverage, RunRuleCoverage $ruleCoverage): self
+    {
+        return new self(
+            baselinePath: $this->baselinePath,
+            suppressPaths: $this->suppressPaths,
+            suppressNamespaces: $this->suppressNamespaces,
+            annotationSuppressionDisabled: $this->annotationSuppressionDisabled,
+            gitScope: $this->gitScope,
+            runCoverage: $coverage,
+            ruleCoverage: $ruleCoverage,
+        );
+    }
 }

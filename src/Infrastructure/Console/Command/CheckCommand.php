@@ -249,6 +249,7 @@ final class CheckCommand extends Command
             $output,
             $resolvedScope,
             $projectionOptions,
+            $scopedRunConfiguration,
         );
         $filteredFindings = $filterResult->findings;
         $this->runTargetSession->targets()->settle();

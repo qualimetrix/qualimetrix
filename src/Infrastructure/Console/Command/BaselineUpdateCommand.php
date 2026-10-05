@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -46,6 +47,7 @@ final class BaselineUpdateCommand extends BaselineCommand
         private readonly BaselineLoader $loader,
         private readonly BaselineUpdater $updater,
         private readonly BaselineWriter $writer,
+        private readonly RunRuleCoverage $ruleCoverage,
     ) {
         parent::__construct();
     }
@@ -79,7 +81,15 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         $context = $measured->context;
 
-        $result = $this->updater->update($measured->baseline, $context->findings(), $context->scope);
+        $result = $this->updater->update(
+            $measured->baseline,
+            $context->findings(),
+            $context->coverage,
+            $this->ruleCoverage->classify(array_map(
+                static fn($entry) => $entry->identity,
+                $measured->baseline->entries,
+            )),
+        );
 
         self::report($result, $output);
 
@@ -105,6 +115,12 @@ final class BaselineUpdateCommand extends BaselineCommand
 
             $line = match ($outcome->disposition) {
                 BaselineUpdateDisposition::Updated => \sprintf('  updated  %s', $outcome->identity->describe()),
+                BaselineUpdateDisposition::Unchanged => \sprintf('  unchanged  %s', $outcome->identity->describe()),
+                BaselineUpdateDisposition::NotCompared => \sprintf(
+                    '  not compared  %s (%s)',
+                    $outcome->identity->describe(),
+                    $outcome->reasonCode ?? 'unknown reason',
+                ),
                 BaselineUpdateDisposition::Skipped => \sprintf(
                     '  skipped  %s (not reported by this run)',
                     $outcome->identity->describe(),
@@ -120,8 +136,10 @@ final class BaselineUpdateCommand extends BaselineCommand
         }
 
         $output->writeln(\sprintf(
-            '%d updated, %d refused, %d skipped',
+            '%d updated, %d unchanged, %d not compared, %d refused, %d skipped',
             $counts[BaselineUpdateDisposition::Updated->value] ?? 0,
+            $counts[BaselineUpdateDisposition::Unchanged->value] ?? 0,
+            $counts[BaselineUpdateDisposition::NotCompared->value] ?? 0,
             $counts[BaselineUpdateDisposition::Refused->value] ?? 0,
             $counts[BaselineUpdateDisposition::Skipped->value] ?? 0,
         ));

@@ -12,7 +12,13 @@ use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\ValueScopeJudgement;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -43,6 +49,8 @@ final readonly class FindingFilterOrchestrator
         private UnboundSuppressionAudit $unboundSuppressionAudit,
         private ComposerManifestReaderInterface $composerReader,
         private ObservedProjectScopeReasons $observedProjectScopeReasons,
+        private ProjectTreeQueryInterface $projectTree,
+        private RunRuleCoverage $ruleCoverage,
     ) {}
 
     public function projectionOptions(
@@ -87,9 +95,20 @@ final readonly class FindingFilterOrchestrator
         OutputInterface $output,
         ResolvedCheckScope $resolvedScope,
         FindingProjectionOptions $options,
+        RunConfiguration $configuration,
     ): FindingProjectionResult {
         $scopeResolution = $resolvedScope->scope;
         $output = $this->errorStream->writer($output);
+        if ($options->baselinePath !== null) {
+            $options = $options->withRunCoverage(new RunCoverage(
+                RunScope::record($configuration->paths, $configuration->projectRoot),
+                $result->measured->coverage,
+                RecordedExclusions::fromRunConfiguration($configuration),
+                $configuration->projectScope->universe,
+                $this->composerReader->read($configuration->projectRoot)->psr4Roots(),
+                $this->projectTree,
+            ), $this->ruleCoverage);
+        }
         $filterResult = $this->findingProjector->project(
             [...$result->findings(), ...$this->unboundSuppressions($result, $options, $this->valueScope($result, $resolvedScope))],
             $result->directives->suppressions,

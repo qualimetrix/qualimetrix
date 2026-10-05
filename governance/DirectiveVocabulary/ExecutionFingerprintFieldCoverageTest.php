@@ -137,6 +137,10 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
             $f,
             acceptedLevel: new AcceptedLevel([7.0], 1),
         )];
+        yield 'uncomparedReason' => ['uncomparedReason', static fn(Finding $f): Finding => self::with(
+            $f,
+            uncomparedReason: 'analysis-incomplete',
+        )];
         yield 'occurrenceKey' => ['occurrenceKey', static fn(Finding $f): Finding => self::with(
             $f,
             occurrenceKey: OccurrenceKey::semantic('sample', ['seed' => 'a']),
@@ -196,6 +200,7 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
         ?AcceptedLevel $acceptedLevel = null,
         ?OccurrenceKey $occurrenceKey = null,
         ?string $addressedProducer = null,
+        ?string $uncomparedReason = null,
     ): Finding {
         return new Finding(
             location: $location ?? $finding->location,
@@ -214,6 +219,7 @@ final class ExecutionFingerprintFieldCoverageTest extends TestCase
             acceptedLevel: $acceptedLevel ?? $finding->acceptedLevel,
             occurrenceKey: $occurrenceKey ?? $finding->occurrenceKey,
             addressedProducer: $addressedProducer ?? $finding->addressedProducer,
+            uncomparedReason: $uncomparedReason ?? $finding->uncomparedReason,
         );
     }
 

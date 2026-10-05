@@ -8,5 +8,4 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 enum RunCoverageGap
 {
     case NotMeasured;
-    case LevelNotDeclared;
 }

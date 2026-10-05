@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
@@ -67,8 +68,17 @@ final readonly class FindingProjector
         $stale = [];
         $inert = [];
         $baselineScope = null;
+        $ceiling = null;
         if ($options->baselinePath !== null && $options->baselinePath !== '') {
-            $stage = new BaselineCeilingStage($this->baselineLoader->load($options->baselinePath), $this->declarations);
+            $coverage = $options->runCoverage ?? throw new LogicException('Baseline projection requires current run coverage');
+            $ruleCoverage = $options->ruleCoverage ?? throw new LogicException('Baseline projection requires rule publication');
+            $baseline = $this->baselineLoader->load($options->baselinePath);
+            $stage = new BaselineCeilingStage(
+                $baseline,
+                $this->declarations,
+                $coverage,
+                $ruleCoverage->classify(array_map(static fn($entry) => $entry->identity, $baseline->entries)),
+            );
             $ceiling = $stage->judgeAll($findings);
             $findings = $ceiling->result->findings;
             $removed[FindingFilterStage::Baseline->value] = $ceiling->result->removed;
@@ -106,6 +116,7 @@ final readonly class FindingProjector
             staleEntries: $stale,
             inertEntries: $inert,
             baselineScope: $baselineScope,
+            ceilingOutcome: $ceiling,
         );
     }
 

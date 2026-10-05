@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -36,6 +37,23 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     use CeilingStageFixtures;
 
     private const string DUPLICATION = 'duplication.clone';
+
+    #[Test]
+    public function itClearsAFormerUncomparedReasonWhenTheFindingBecomesAMeasuredBreach(): void
+    {
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 20);
+        $level = new AcceptedLevel([15.0], 1);
+
+        $uncompared = $finding->reportedUncompared($level, 'metadata-unknown');
+        $breach = $uncompared->reportedAsBreach($level);
+
+        self::assertSame('metadata-unknown', $uncompared->uncomparedReason);
+        self::assertSame(Severity::Error, $breach->severity);
+        self::assertSame($level, $breach->acceptedLevel);
+        self::assertNull($breach->uncomparedReason);
+        self::assertSame($finding->subject, $breach->subject);
+        self::assertSame($finding->occurrenceKey, $breach->occurrenceKey);
+    }
 
     #[Test]
     public function itIdentifiesItselfAsTheBaselineStage(): void

@@ -38,6 +38,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -305,13 +306,28 @@ final class CaptureFromMeasuredSetTest extends TestCase
     /** @param list<Finding> $findings */
     private function project(FindingProjector $projector, array $findings, FindingProjectionOptions $options): \Qualimetrix\Reporting\FindingProjection\FindingProjectionResult
     {
-        return $projector->project($findings, $this->suppressions, new FindingProjectionOptions(
+        $projectionOptions = new FindingProjectionOptions(
             baselinePath: $options->baselinePath,
             suppressPaths: [...$this->configuredOptions->suppressPaths, ...$options->suppressPaths],
             suppressNamespaces: [...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces],
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
-        ));
+        );
+        if ($options->baselinePath !== null) {
+            $declarations = StubChannelDeclarationRegistry::withDefaults();
+            $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
+            $baseline = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($options->baselinePath);
+            $files = array_values(array_map(
+                static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
+                $findings,
+            ));
+            $projectionOptions = $projectionOptions->withRunCoverage(
+                StubRuleCoverage::completeFor($baseline, $files),
+                StubRuleCoverage::everyRuleRan(),
+            );
+        }
+
+        return $projector->project($findings, $this->suppressions, $projectionOptions);
     }
 
     private static function path(string $value): PathPattern

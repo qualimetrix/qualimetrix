@@ -163,7 +163,12 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
 
-        self::assertReportedUntouched($stage->apply([$current])->findings, $current);
+        $reported = $stage->apply([$current])->findings;
+        self::assertCount(1, $reported);
+        self::assertSame($current->severity, $reported[0]->severity);
+        self::assertSame($current->metricValue, $reported[0]->metricValue);
+        self::assertSame([15.0], $reported[0]->acceptedLevel?->magnitudes);
+        self::assertSame('magnitude-unavailable', $reported[0]->uncomparedReason);
     }
 
     /**
@@ -189,10 +194,14 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $reported = $stage->apply([$withNumber, $withoutNumber])->findings;
 
-        self::assertSame([$withNumber, $withoutNumber], $reported, 'the whole group is reported, untouched');
+        self::assertCount(2, $reported, 'the whole group is reported');
+        self::assertSame([$withNumber->location, $withoutNumber->location], array_map(static fn(Finding $finding): mixed => $finding->location, $reported));
+        self::assertSame([$withNumber->metricValue, $withoutNumber->metricValue], array_map(static fn(Finding $finding): int|float|null => $finding->metricValue, $reported));
         self::assertSame([Severity::Warning, Severity::Warning], self::severitiesOf($reported));
-        self::assertNull($reported[0]->acceptedLevel, 'a fail-safe path must never promote');
-        self::assertNull($reported[1]->acceptedLevel);
+        self::assertSame([40.0, 100.0], $reported[0]->acceptedLevel?->magnitudes);
+        self::assertSame([40.0, 100.0], $reported[1]->acceptedLevel?->magnitudes);
+        self::assertSame('magnitude-unavailable', $reported[0]->uncomparedReason);
+        self::assertSame('magnitude-unavailable', $reported[1]->uncomparedReason);
     }
 
     #[Test]
@@ -209,7 +218,12 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [15])]));
 
-        self::assertReportedUntouched($stage->apply([$current])->findings, $current);
+        $reported = $stage->apply([$current])->findings;
+        self::assertCount(1, $reported);
+        self::assertSame($current->severity, $reported[0]->severity);
+        self::assertSame(serialize($current->metricValue), serialize($reported[0]->metricValue));
+        self::assertSame([15.0], $reported[0]->acceptedLevel?->magnitudes);
+        self::assertSame('magnitude-unavailable', $reported[0]->uncomparedReason);
     }
 
     #[Test]
@@ -280,7 +294,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     {
         $finding = FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')));
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable));
+        $declarations->declare('code-smell.goto', ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File));
 
         // The stored entry was captured while the channel was `occurrence`.
         $stage = self::stageOver(self::baselineOf([self::occurrenceEntry($finding, 1)]), $declarations);

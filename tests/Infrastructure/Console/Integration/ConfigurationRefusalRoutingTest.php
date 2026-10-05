@@ -341,6 +341,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage'),
         );
         $command->setRefusalPresenter($this->freshPresenter());
 
@@ -558,7 +559,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
 
     private function realBaselineRun(): BaselineRun
     {
-        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream());
+        return new BaselineRun($this->realRuntimeConfigurator(), $this->inert('Qualimetrix\\Infrastructure\\Console\\MeasuredFindingSet'), $this->inert('Qualimetrix\\Infrastructure\\Console\\RuleInputValidator'), $this->throwingConfigurationInputAdapter(), new \Qualimetrix\Infrastructure\Console\RunConfigurationPreparation($this->inert(RunConfigurationResolverInterface::class), $this->inert(CacheConfigurationResolverInterface::class), $this->inert(ParallelConfigurationResolverInterface::class)), $this->inert(ConfiguredFindingExclusionsResolverInterface::class), new ErrorStream(), $this->inert(\Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface::class), $this->inert(\Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface::class));
     }
 
     private function nonExistentBaselinePath(): string

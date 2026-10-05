@@ -221,7 +221,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
 
         $command = match ($name) {
             'cleanup' => new BaselineCleanupCommand($run, $loader, new BaselineCleaner($clock), new BaselineWriter(), $declarations, StubRuleCoverage::everyRuleRan()),
-            'update' => new BaselineUpdateCommand($run, $loader, new BaselineUpdater($declarations, $clock), new BaselineWriter()),
+            'update' => new BaselineUpdateCommand($run, $loader, new BaselineUpdater($declarations, $clock), new BaselineWriter(), StubRuleCoverage::everyRuleRan()),
             'explain' => new BaselineExplainCommand(
                 $run,
                 $loader,

@@ -185,12 +185,13 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileTargetFa
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/AnalysisInputPathValidator.php	Qualimetrix\Infrastructure\Console	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/AbstractHookCommand.php	Qualimetrix\Infrastructure\Console\Command	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/BaselineRun.php	Qualimetrix\Infrastructure\Console\Command\BaselineRun	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/DirectivesCommand.php	Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/GraphExportCommand.php	Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/CommandLineSpelling.php	Qualimetrix\Infrastructure\Console\CommandLineSpelling	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/ConfigurationInputAdapter.php	Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	warning	1
-rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/FindingFilterOrchestrator.php	Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	warning	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/FindingFilterOrchestrator.php	Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Refusal/RefusalPresenter.php	Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/ResultPresenter.php	Qualimetrix\Infrastructure\Console\ResultPresenter	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/RuntimeConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeConfigurator	warning	1

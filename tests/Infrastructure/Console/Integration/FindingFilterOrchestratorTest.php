@@ -23,9 +23,15 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+
+use Qualimetrix\Analysis\Run\Discovery\ProjectTree;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -44,6 +50,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -423,16 +430,22 @@ final class FindingFilterOrchestratorTest extends TestCase
     ): FindingProjectionResult {
         $baselinePath = $input->getOption('baseline');
 
+        $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure(
+            $scopeResolution->projectRoot,
+            $scopeResolution->paths,
+            AutoloadDevPolicy::Exclude,
+            \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
+        );
+
         return $orchestrator->filterAndReport(
             $result,
             $input,
             $output,
-            // Not a whole-project run, so the suppression-binding audit is not
-            // asked: it is not this file's subject.
-            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored)),
+            new ResolvedCheckScope($scopeResolution, [], $measurement),
             new FindingProjectionOptions(
                 baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
+            new RunConfiguration([], $scopeResolution->projectRoot, GeneratedFilePolicy::Exclude, $measurement, [], AutoloadDevPolicy::Exclude),
         );
     }
 
@@ -455,7 +468,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             },
         );
 
-        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), $reader, new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor));
+        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), $reader, new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor), new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan());
     }
 
     /**

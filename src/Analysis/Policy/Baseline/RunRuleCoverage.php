@@ -54,12 +54,6 @@ final readonly class RunRuleCoverage
 
             $level = MetricSubject::levelOfCanonical($identity->subjectKey);
 
-            if (!\in_array($level, $this->channels->levelsOf($identity->channel->code), true)) {
-                $gaps[$identity->key()] = RunCoverageGap::LevelNotDeclared;
-
-                continue;
-            }
-
             if (!$publication->publishes($producer, $identity->channel, $level)) {
                 $gaps[$identity->key()] = RunCoverageGap::NotMeasured;
             }

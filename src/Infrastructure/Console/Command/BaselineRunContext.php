@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -16,7 +17,7 @@ use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
  * performed.
  *
  * The measured set (ADR 0017) is the point of the
- * object, but four other things travel with it because they are facts about
+ * object, but five other things travel with it because they are facts about
  * *that* run and cannot be recomputed later without risking disagreement:
  *
  * - the **scope**, as a {@see RunScope} rather than a bare path list, so the
@@ -29,6 +30,8 @@ use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
  *   could disagree with the first;
  * - the **resolved configuration**, whose complete discovery exclusions must
  *   be recorded even when a selector matched no file in this run.
+ * - the **coverage**, whose analyzed paths, current exclusions and project
+ *   tree query are the facts the ceiling uses to compare this invocation.
  */
 final readonly class BaselineRunContext
 {
@@ -41,6 +44,7 @@ final readonly class BaselineRunContext
         public RunScope $scope,
         public AbsolutePath $projectRoot,
         public RunConfiguration $configuration,
+        public RunCoverage $coverage,
     ) {}
 
     /**

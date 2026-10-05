@@ -112,6 +112,7 @@ final class BaselineCleanupCommand extends BaselineCommand
                 static fn($entry) => $entry->identity,
                 $baseline->entries,
             )),
+            $context->coverage,
         );
         self::reportCandidates($candidates, $output);
 

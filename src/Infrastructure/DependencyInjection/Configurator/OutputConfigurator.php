@@ -528,6 +528,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineLoader::class),
                 new Reference(BaselineUpdater::class),
                 new Reference(BaselineWriter::class),
+                new Reference(RunRuleCoverage::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);

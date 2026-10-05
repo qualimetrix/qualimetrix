@@ -110,6 +110,11 @@ final readonly class RunScope
         return $this->uncoveredPaths($recordedScope) === [];
     }
 
+    public function coversPath(string $path): bool
+    {
+        return $this->isCovered($path);
+    }
+
     /**
      * The recorded paths this run does not cover.
      *

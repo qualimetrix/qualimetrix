@@ -9,14 +9,17 @@ use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
 /**
  * What the ceiling decided about one group of findings sharing an identity.
  *
- * There are exactly three outcomes, and the third is the one a reader is
- * most likely to collapse into the second:
+ * There are four outcomes, and the third is the one a reader is most likely
+ * to collapse into the second:
  *
  * - **accepted** — the group is within what an applicable entry accepted, so
  *   every member is removed from the output;
  * - **measured breach** — the group was compared against an applicable entry
  *   and exceeded it, so every member is reported and promoted to Error
  *   (ADR 0017);
+ * - **not compared** — an entry exists, but this invocation did not establish
+ *   a complete comparable group. The original severity and recorded level
+ *   reach reporting with the reason;
  * - **reported** — nothing bounded this group: there is no entry for it, or
  *   the entry could not be applied. Every member is reported at the severity
  *   its own rule gave it. This is *not* a breach; ADR 0017 governing invariant
@@ -33,6 +36,8 @@ final readonly class GroupCeilingVerdict
     private function __construct(
         private bool $suppresses,
         public ?AcceptedLevel $breachedLevel,
+        public ?AcceptedLevel $uncomparedLevel = null,
+        public ?IncomparabilityReason $uncomparedReason = null,
     ) {}
 
     /**
@@ -58,6 +63,21 @@ final readonly class GroupCeilingVerdict
     public static function breached(AcceptedLevel $acceptedLevel): self
     {
         return new self(false, $acceptedLevel);
+    }
+
+    public static function uncompared(AcceptedLevel $acceptedLevel, IncomparabilityReason $reason): self
+    {
+        return new self(false, null, $acceptedLevel, $reason);
+    }
+
+    public function status(): string
+    {
+        return match (true) {
+            $this->suppresses => 'accepted',
+            $this->breachedLevel !== null => 'breached',
+            $this->uncomparedLevel !== null => 'not-compared',
+            default => 'reported',
+        };
     }
 
     public function suppresses(): bool

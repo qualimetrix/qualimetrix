@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 
 use DateTimeImmutable;
+
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
@@ -33,6 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use SplFileInfo;
 
 /**
@@ -65,9 +67,9 @@ final class NpathSaturationCeilingTest extends TestCase
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
             'complexity.npath',
-            ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
         );
-        $stage = new BaselineCeilingStage($baseline, $declarations);
+        $stage = new BaselineCeilingStage($baseline, $declarations, StubRuleCoverage::completeFor($baseline), []);
 
         self::assertSame([], $stage->apply([$current])->findings);
     }

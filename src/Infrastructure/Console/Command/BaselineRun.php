@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
@@ -47,6 +51,8 @@ final readonly class BaselineRun implements BaselineRunInterface
         private RunConfigurationPreparation $runConfigurationPreparation,
         private ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
         private ErrorStream $errorStream,
+        private ProjectTreeQueryInterface $projectTree,
+        private ComposerManifestReaderInterface $composerReader,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
@@ -102,7 +108,17 @@ final readonly class BaselineRun implements BaselineRunInterface
 
         $projectRoot = $configuration->projectRoot;
 
-        return new BaselineRunContext($run, RunScope::record($configuration->paths, $projectRoot), $projectRoot, $configuration);
+        $scope = RunScope::record($configuration->paths, $projectRoot);
+        $runCoverage = new RunCoverage(
+            $scope,
+            $coverage,
+            RecordedExclusions::fromRunConfiguration($configuration),
+            $configuration->projectScope->universe,
+            $this->composerReader->read($projectRoot)->psr4Roots(),
+            $this->projectTree,
+        );
+
+        return new BaselineRunContext($run, $scope, $projectRoot, $configuration, $runCoverage);
     }
 
 }

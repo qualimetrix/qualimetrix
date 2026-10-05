@@ -31,6 +31,7 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -162,12 +163,15 @@ final class BaselineUpdateCommandTest extends TestCase
     #[Test]
     public function itAllowsARunWiderThanTheRecordedScope(): void
     {
-        $this->writeBaseline([self::entry(self::LOWER_CHANNEL, [60.0], 1)], ['src/Domain']);
+        $this->writeBaseline([self::entry(self::LOWER_CHANNEL, [60.0], 1, 'src/Domain/Legacy.php')], ['src/Domain']);
 
-        $tester = $this->execute([self::finding(self::LOWER_CHANNEL, 70.0)], [], ['src']);
+        $tester = $this->execute([self::finding(self::LOWER_CHANNEL, 70.0, 'src/Domain/Legacy.php')], [], ['src']);
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertSame([70.0], $this->storedMagnitudesOf(self::LOWER_CHANNEL));
+        /** @var array{scope: list<string>} $saved */
+        $saved = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['src/Domain'], $saved['scope']);
     }
 
     #[Test]
@@ -214,6 +218,7 @@ final class BaselineUpdateCommandTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
+            StubRuleCoverage::everyRuleRan(),
         );
 
         $tester = new CommandTester($command);
@@ -243,27 +248,27 @@ final class BaselineUpdateCommandTest extends TestCase
     /**
      * @param list<float> $magnitudes
      */
-    private static function entry(string $channelKey, array $magnitudes, int $count): BaselineEntry
+    private static function entry(string $channelKey, array $magnitudes, int $count, string $path = 'src/Legacy.php'): BaselineEntry
     {
-        return new BaselineEntry(self::identity($channelKey), $magnitudes, $count);
+        return new BaselineEntry(self::identity($channelKey, $path), $magnitudes, $count);
     }
 
-    private static function identity(string $channelKey): BaselineIdentity
+    private static function identity(string $channelKey, string $path = 'src/Legacy.php'): BaselineIdentity
     {
         $symbol = SymbolPath::forClass('App', 'Legacy');
 
         return new BaselineIdentity(
             MetricSubject::declaration(
-                DeclarationPath::of($symbol, RelativePath::fromString('src/Legacy.php'), DeclarationOrdinal::fromRank(0)),
+                DeclarationPath::of($symbol, RelativePath::fromString($path), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
             new FindingChannel($channelKey),
         );
     }
 
-    private static function finding(string $channelKey, float $magnitude): Finding
+    private static function finding(string $channelKey, float $magnitude, string $sourcePath = 'src/Legacy.php'): Finding
     {
         $channel = new FindingChannel($channelKey);
-        $path = RelativePath::fromString('src/Legacy.php');
+        $path = RelativePath::fromString($sourcePath);
         $symbol = SymbolPath::forClass('App', 'Legacy');
 
         return new Finding(

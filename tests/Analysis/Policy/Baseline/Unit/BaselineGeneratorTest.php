@@ -374,6 +374,24 @@ final class BaselineGeneratorTest extends TestCase
         self::assertSame(UncapturedReason::MagnitudeUnavailable, $capture->uncaptured[0]->reason);
     }
 
+    #[Test]
+    public function itNamesTheAuditChannelRefusalSeparatelyFromAnUndeclaredChannel(): void
+    {
+        $finding = FindingFactory::magnitude(
+            SymbolPath::forProject(),
+            1,
+            'baseline.unused-entry',
+            'baseline.unused-entry',
+        );
+
+        $capture = $this->generator->generate([$finding], ['src'], self::fixtureExclusions());
+
+        self::assertSame([], $capture->baseline->entries);
+        self::assertCount(1, $capture->uncaptured);
+        self::assertSame(UncapturedReason::BaselineAuditChannel, $capture->uncaptured[0]->reason);
+        self::assertSame(BaselineIdentity::forFinding($finding)->key(), $capture->uncaptured[0]->identity->key());
+    }
+
     private function findingWithoutMagnitude(): Finding
     {
         return new Finding(

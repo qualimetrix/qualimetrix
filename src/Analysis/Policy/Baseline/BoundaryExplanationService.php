@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
@@ -236,44 +236,18 @@ final readonly class BoundaryExplanationService
             return $inert !== null ? EffectiveBoundaryBaselineSource::inert($inert, \count($group)) : null;
         }
 
-        $currentMagnitudes = null;
-        $withoutMagnitude = 0;
-
-        if ($entry->magnitudes !== null) {
-            $currentMagnitudes = [];
-
-            foreach ($group as $finding) {
-                $magnitude = self::finiteMagnitude($finding);
-
-                if ($magnitude === null) {
-                    ++$withoutMagnitude;
-
-                    continue;
-                }
-
-                $currentMagnitudes[] = $magnitude;
-            }
+        if ($group === []) {
+            return EffectiveBoundaryBaselineSource::applicable($entry, null, 0, 0);
         }
 
-        return EffectiveBoundaryBaselineSource::applicable($entry, $currentMagnitudes, \count($group), $withoutMagnitude);
-    }
+        $measurement = GroupMeasurement::fromFindings($group, $entry->magnitudes === null);
 
-    /**
-     * The member's magnitude normalised as the stored ones were, or `null`
-     * when it reports none or a non-finite one — the members on which the
-     * ceiling declines to compare the group.
-     */
-    private static function finiteMagnitude(Finding $finding): ?float
-    {
-        if ($finding->metricValue === null) {
-            return null;
-        }
-
-        try {
-            return BaselineEntry::normalizeMagnitude($finding->metricValue);
-        } catch (InvalidArgumentException) {
-            return null;
-        }
+        return EffectiveBoundaryBaselineSource::applicable(
+            $entry,
+            $measurement->magnitudes,
+            $measurement->count,
+            $measurement->membersWithoutMagnitude,
+        );
     }
 
     /**

@@ -44,7 +44,7 @@ final class BaselineCleanerTest extends TestCase
         $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -76,7 +76,7 @@ final class BaselineCleanerTest extends TestCase
         $unmeasured = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($unmeasured), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -99,7 +99,7 @@ final class BaselineCleanerTest extends TestCase
         $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -119,9 +119,9 @@ final class BaselineCleanerTest extends TestCase
         $file = new BaselineEntry(BaselineIdentity::forFinding($fileFinding), [40], 1);
         $coverage = StubRuleCoverage::everyRuleRan()->classify([$project->identity, $file->identity]);
 
-        self::assertSame([$project->identity->key() => RunCoverageGap::LevelNotDeclared], $coverage);
+        self::assertSame([], $coverage);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($project, $file),
             [$fileFinding],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -142,7 +142,7 @@ final class BaselineCleanerTest extends TestCase
 
         self::assertSame([$file->identity->key() => RunCoverageGap::NotMeasured], $coverage);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($file),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -154,7 +154,7 @@ final class BaselineCleanerTest extends TestCase
     }
 
     #[Test]
-    public function itClassifiesOnlyTheMissingLevelOfAMultilevelChannelAndIgnoresAnUnknownProducer(): void
+    public function itLeavesUndeclaredLevelsToTheLoaderAndIgnoresAnUnknownProducer(): void
     {
         $channel = new FindingChannel('complexity.ccn');
         $callable = new BaselineIdentity('callable:App\\Foo::bar', $channel);
@@ -163,7 +163,7 @@ final class BaselineCleanerTest extends TestCase
         $unknown = new BaselineIdentity('project:', new FindingChannel('legacy.unknown'));
 
         self::assertSame(
-            [$project->key() => RunCoverageGap::LevelNotDeclared],
+            [],
             StubRuleCoverage::everyRuleRan()->classify([$callable, $class, $project, $unknown]),
         );
     }
@@ -174,11 +174,11 @@ final class BaselineCleanerTest extends TestCase
         $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [$finding],
             new StubChannelDeclarationRegistry(),
-            [$entry->identity->key() => RunCoverageGap::LevelNotDeclared],
+            [$entry->identity->key() => RunCoverageGap::NotMeasured],
         );
 
         self::assertCount(1, $candidates);
@@ -196,7 +196,7 @@ final class BaselineCleanerTest extends TestCase
         $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             new StubChannelDeclarationRegistry(),
@@ -213,7 +213,7 @@ final class BaselineCleanerTest extends TestCase
         $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [$finding],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -230,7 +230,7 @@ final class BaselineCleanerTest extends TestCase
 
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert], exclusions: self::fixtureExclusions());
 
-        $candidates = $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
+        $candidates = $this->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
         self::assertCount(1, $candidates);
         self::assertSame(BaselineCleanupReason::Inert, $candidates[0]->reason);
@@ -245,7 +245,7 @@ final class BaselineCleanerTest extends TestCase
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
         $baseline = self::baselineOf($entry);
 
-        $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
+        $this->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
         self::assertSame([$entry], $baseline->entries, 'candidates() must not mutate the baseline it was given');
     }
@@ -411,6 +411,27 @@ final class BaselineCleanerTest extends TestCase
         $result = $this->cleaner()->remove($baseline, []);
 
         self::assertSame('abc123', $result->baseline->sourceContentHash);
+    }
+
+    /**
+     * @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured
+     * @param array<string, RunCoverageGap> $gaps
+     *
+     * @return list<\Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate>
+     */
+    private function candidates(
+        Baseline $baseline,
+        array $measured,
+        \Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface $declarations,
+        array $gaps,
+    ): array {
+        return $this->cleaner()->candidates(
+            $baseline,
+            $measured,
+            $declarations,
+            $gaps,
+            StubRuleCoverage::completeFor($baseline),
+        );
     }
 
     private function cleaner(): BaselineCleaner

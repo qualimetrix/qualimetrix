@@ -39,6 +39,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -60,10 +61,13 @@ final class FindingProjectorTest extends TestCase
 
     private FindingProjectionOptions $configuredOptions;
 
+    private StubChannelDeclarationRegistry $declarations;
+
     protected function setUp(): void
     {
         $this->suppressions = [];
         $this->configuredOptions = new FindingProjectionOptions();
+        $this->declarations = StubChannelDeclarationRegistry::withDefaults();
     }
 
     protected function tearDown(): void
@@ -1055,6 +1059,7 @@ final class FindingProjectorTest extends TestCase
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
+        $this->declarations = $declarations;
 
         return new FindingProjector(
             new SuppressionFilter(),
@@ -1104,6 +1109,18 @@ final class FindingProjectorTest extends TestCase
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         );
+
+        if ($options->baselinePath !== null && $options->baselinePath !== '') {
+            $baseline = (new BaselineLoader(new BaselineEntryParser($this->declarations)))->load($options->baselinePath);
+            $files = array_values(array_map(
+                static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
+                $findings,
+            ));
+            $options = $options->withRunCoverage(
+                StubRuleCoverage::completeFor($baseline, $files),
+                StubRuleCoverage::everyRuleRan(),
+            );
+        }
 
         return $projector->project($findings, $this->suppressions, $options);
     }

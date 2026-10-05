@@ -8,14 +8,20 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
+use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Fixtures\CeilingStageFixtures;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FindingFactory;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 /**
  * {@see BaselineCeilingStage::judgeAll()} is the single call that replaced
@@ -114,5 +120,54 @@ final class BaselineCeilingStageJudgeAllTest extends TestCase
 
         self::assertSame([], $outcome->staleEntries);
         self::assertSame([], $outcome->inertEntries);
+    }
+
+    #[Test]
+    public function itKeepsPresentAndAbsentEntriesUncomparedAfterAnIncompleteRun(): void
+    {
+        $present = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $absent = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'other'), 10);
+        $presentEntry = self::magnitudeEntry($present, [15]);
+        $absentEntry = self::magnitudeEntry($absent, [10]);
+        $baseline = self::baselineOf([$presentEntry, $absentEntry]);
+        $coverage = StubRuleCoverage::completeFor(
+            $baseline,
+            analysis: new AnalysisCoverage(
+                [RelativePath::fromString('src/Foo.php')],
+                [],
+                [new AnalysisFailure(RelativePath::fromString('src/Broken.php'), AnalysisFailureKind::Parse, 'broken fixture')],
+            ),
+        );
+        $stage = new BaselineCeilingStage($baseline, \Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::withDefaults(), $coverage, []);
+
+        $outcome = $stage->judgeAll([$present]);
+
+        self::assertSame([$presentEntry->magnitudes], [$outcome->result->findings[0]->acceptedLevel?->magnitudes]);
+        self::assertSame($present->severity, $outcome->result->findings[0]->severity);
+        self::assertSame('analysis-incomplete', $outcome->result->findings[0]->uncomparedReason);
+        self::assertSame('not-compared', $outcome->statusFor(BaselineIdentity::forFinding($present)));
+        self::assertSame([], $outcome->staleEntries);
+        self::assertSame([$absentEntry], $outcome->unmeasuredEntries);
+        self::assertSame('analysis-incomplete', $outcome->reasonFor($absentEntry->identity));
+    }
+
+    #[Test]
+    public function itClassifiesAnUnselectedProducerAsUnmeasuredRatherThanStale(): void
+    {
+        $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $entry = self::magnitudeEntry($finding, [15]);
+        $baseline = self::baselineOf([$entry]);
+        $stage = new BaselineCeilingStage(
+            $baseline,
+            \Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::withDefaults(),
+            StubRuleCoverage::completeFor($baseline),
+            [$entry->identity->key() => RunCoverageGap::NotMeasured],
+        );
+
+        $outcome = $stage->judgeAll([]);
+
+        self::assertSame([], $outcome->staleEntries);
+        self::assertSame([$entry], $outcome->unmeasuredEntries);
+        self::assertSame('producer-not-measured', $outcome->reasonFor($entry->identity));
     }
 }

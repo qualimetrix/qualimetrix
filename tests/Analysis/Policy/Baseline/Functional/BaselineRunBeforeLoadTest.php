@@ -219,6 +219,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
+            StubRuleCoverage::everyRuleRan(),
         );
 
         return self::tester($command, ['baseline' => $this->baselinePath, 'paths' => ['src']]);
@@ -284,7 +285,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
             return null;
         });
 
-        return new ChannelUniverse([], [], [], $catalog, ...self::unusedReachPorts());
+        return new ChannelUniverse([], [], [], $catalog, ...self::reachPorts());
     }
 
     private static function definition(): ComputedMetricDefinition
@@ -415,7 +416,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
     }
 
     /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
-    private static function unusedReachPorts(): array
+    private static function reachPorts(): array
     {
         return [
             new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
@@ -430,7 +431,11 @@ final class BaselineRunBeforeLoadTest extends TestCase
                     \Qualimetrix\Core\Symbol\SymbolLevel $level,
                     \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
                 ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
-                    throw new LogicException('This fixture does not query computed-metric reach.');
+                    if ($metricName !== 'computed.debt-ratio' || $level !== \Qualimetrix\Core\Symbol\SymbolLevel::Class_) {
+                        throw new LogicException('Unexpected computed-metric reach query.');
+                    }
+
+                    return \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach::Members;
                 }
             },
         ];

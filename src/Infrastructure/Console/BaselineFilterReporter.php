@@ -23,8 +23,33 @@ final readonly class BaselineFilterReporter
         AbsolutePath $projectRoot,
     ): void {
         $this->reportBaselineEntries($filterResult);
+        $this->reportUncomparedEntries($filterResult);
         $this->reportInertEntries($filterResult);
         $this->reportScopeMismatch($filterResult, $paths, $projectRoot);
+    }
+
+    private function reportUncomparedEntries(FindingProjectionResult $filterResult): void
+    {
+        $outcome = $filterResult->ceilingOutcome;
+        if ($outcome === null) {
+            return;
+        }
+
+        foreach ([
+            'unmeasured' => $outcome->unmeasuredEntries,
+            'outside coverage' => $outcome->outsideCoverageEntries,
+            'not compared' => $outcome->notComparedEntries,
+        ] as $status => $entries) {
+            foreach ($entries as $entry) {
+                $this->output->writeln(\sprintf(
+                    '<comment>Baseline entry %s [%s] is %s (%s).</comment>',
+                    $entry->identity->describe(),
+                    $entry->selector()->value,
+                    $status,
+                    $outcome->reasonFor($entry->identity) ?? 'unknown reason',
+                ));
+            }
+        }
     }
 
     /**
@@ -167,8 +192,8 @@ final readonly class BaselineFilterReporter
             implode(', ', $uncovered),
         ));
         $this->output->writeln(
-            '<comment>Entries under an uncovered path look absent from this run and are counted among the '
-            . 'stale entries above — they are not resolved. Run against the recorded scope to see the '
+            '<comment>Entries under an uncovered path are outside this run and are not resolved. '
+            . 'Run against the recorded scope to see the '
             . 'baseline\'s full state.</comment>',
         );
     }

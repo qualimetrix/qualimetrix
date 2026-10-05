@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\FindingProjection;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 
@@ -55,6 +56,7 @@ final readonly class FindingProjectionResult
         public array $staleEntries = [],
         public array $inertEntries = [],
         public ?array $baselineScope = null,
+        public ?CeilingOutcome $ceilingOutcome = null,
     ) {}
 
     /**
