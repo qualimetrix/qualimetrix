@@ -197,16 +197,8 @@ final readonly class BaselineWriter
                 ));
             }
 
-            $payloads = [];
-            foreach ($items as $item) {
-                if ($item['payload'] instanceof stdClass) {
-                    $serialized[$key] = $item['payload'];
-                    continue 2;
-                }
-                $payloads[] = $item['payload'];
-            }
-
-            $serialized[$key] = $payloads;
+            $payloads = array_column($items, 'payload');
+            $serialized[$key] = $payloads[0] instanceof stdClass ? $payloads[0] : $payloads;
         }
 
         ksort($serialized, \SORT_STRING);
