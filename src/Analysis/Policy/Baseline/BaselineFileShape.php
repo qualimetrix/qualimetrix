@@ -62,7 +62,15 @@ final class BaselineFileShape
         unset($document);
         self::assertDocument($fields, $path);
 
+        // Numeric object keys must not turn a malformed subject bucket into an applicable list.
+        $objectBuckets = array_keys(array_filter(
+            self::entryBlocks($fields['entries'], $path),
+            static fn(mixed $bucket): bool => $bucket instanceof stdClass,
+        ));
         self::normalizeValues($fields);
+        foreach ($objectBuckets as $subject) {
+            $fields['entries'][$subject] = (object) $fields['entries'][$subject];
+        }
 
         /** @var array<string, mixed> $fields */
         return $fields;

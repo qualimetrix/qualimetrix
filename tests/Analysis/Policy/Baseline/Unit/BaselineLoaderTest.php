@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
+use stdClass;
 
 #[CoversClass(BaselineLoader::class)]
 #[CoversClass(CanonicalBaselineReader::class)]
@@ -430,19 +431,28 @@ final class BaselineLoaderTest extends TestCase
     #[Test]
     public function itTurnsAMalformedSymbolBucketInert(): void
     {
-        $baseline = $this->loadJson(<<<'JSON'
-            {
-                "version": 14,
-                "generated": "2026-08-05T12:00:00+03:00",
-                "scope": ["src"],
-                "exclusions": {"patterns": [], "generated": "excluded"},
-                "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto" } }
-            }
-            JSON);
+        foreach ([
+            '{"0":{"channel":"complexity.ccn","magnitudes":[25],"unknown_key":"retain me"}}',
+            '{"0":{"channel":"complexity.ccn","magnitudes":[25]}}',
+            '{"channel":"code-smell.goto"}',
+            '{}',
+        ] as $bucket) {
+            $baseline = $this->loadJson(str_replace('BUCKET', $bucket, <<<'JSON'
+                {
+                    "version": 14,
+                    "generated": "2026-08-05T12:00:00+03:00",
+                    "scope": ["src"],
+                    "exclusions": {"patterns": [], "generated": "excluded"},
+                    "entries": { "callable:App\\Foo::bar": BUCKET }
+                }
+                JSON));
 
-        self::assertSame(0, $baseline->count());
-        self::assertCount(1, $baseline->inertEntries);
-        self::assertSame(InertEntryReason::Malformed, $baseline->inertEntries[0]->reason);
+            self::assertSame(0, $baseline->count());
+            self::assertCount(1, $baseline->inertEntries);
+            self::assertSame(InertEntryReason::Malformed, $baseline->inertEntries[0]->reason);
+            self::assertInstanceOf(stdClass::class, $baseline->inertEntries[0]->raw);
+            self::assertSame($bucket, json_encode($baseline->inertEntries[0]->raw, \JSON_THROW_ON_ERROR));
+        }
     }
 
     /**
