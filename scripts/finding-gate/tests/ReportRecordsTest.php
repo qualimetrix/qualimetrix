@@ -1181,6 +1181,48 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
+    public function itRequiresExactCurrentHtmlBaselineFieldsAndPreservesLegacyProjection(): void
+    {
+        Fs::write($this->root . '/finding-gate/' . DeclaredFields::INDEX, Tsv::render(DeclaredFields::COLUMNS, [
+            ['added', 'json', 'format:json', 'baselineVerdict', 'Publish the baseline verdict.'],
+            ['added', 'json', 'format:json', 'baselineReason', 'Publish the baseline reason.'],
+        ]));
+        $legacy = self::finding();
+        $projection = ['subject' => $legacy['subject'], 'ruleName' => 'a.b', 'violationCode' => 'a.b', 'message' => 'M', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 'App\\A', 'occurrence' => null, 'file' => 'src/A.php', 'line' => 1];
+        self::assertSame($projection, ReportRecords::projection('format:html', $legacy));
+        foreach ([
+            ['acceptedLevel' => ['shape' => 'magnitude', 'describe' => '3', 'count' => 1], 'baselineVerdict' => 'breached', 'baselineReason' => null],
+            ['acceptedLevel' => ['shape' => 'magnitude', 'describe' => '3', 'count' => 1], 'baselineVerdict' => 'not-compared', 'baselineReason' => 'paths-differ'],
+            ['acceptedLevel' => null, 'baselineVerdict' => null, 'baselineReason' => null],
+        ] as $baseline) {
+            $record = array_replace($legacy, $baseline);
+            $expected = $projection + $baseline;
+            foreach (['valid', 'missing:acceptedLevel', 'missing:baselineVerdict', 'missing:baselineReason', 'changed:acceptedLevel', 'changed:baselineVerdict', 'changed:baselineReason', 'extra', 'duplicate'] as $shape) {
+                $node = $expected;
+                if (str_starts_with($shape, 'missing:')) {
+                    unset($node[substr($shape, 8)]);
+                } elseif (str_starts_with($shape, 'changed:')) {
+                    $node[substr($shape, 8)] = 'different';
+                } elseif ($shape === 'extra') {
+                    $node['extra'] = true;
+                }
+                $run = $this->context();
+                $artifacts = self::artifacts([$record]);
+                $sarif = ReportRecords::decode($artifacts['case:alpha|format:sarif']);
+                $sarif['runs'][0]['results'][0]['message']['text'] = ReportRecords::message($record);
+                $artifacts['case:alpha|format:sarif'] = ValueCheck::value($sarif);
+                $artifacts['case:alpha|format:html'] = '<script type="application/json" id="report-data">' . ValueCheck::value(['tree' => ['violations' => $shape === 'duplicate' ? [$node, $node] : [$node]]]) . '</script>';
+                $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+                if ($shape === 'valid') {
+                    self::assertSame([], $run->report->raised());
+                } else {
+                    self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses(), $shape);
+                }
+            }
+        }
+    }
+
+    #[Test]
     public function itReadsPublishedHtmlViolationsWithCompleteFieldsAndInstanceBudgets(): void
     {
         $record = self::finding();

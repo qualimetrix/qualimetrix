@@ -565,6 +565,7 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison"suppressed-extra-reference"
  - QmxFindingGate\Tests\ReportRecordsTest::itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison"suppressed-partial-candidate"
  - QmxFindingGate\Tests\ReportRecordsTest::itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison"suppressed-partial-reference"
+ - QmxFindingGate\Tests\ReportRecordsTest::itRequiresExactCurrentHtmlBaselineFieldsAndPreservesLegacyProjection
  - QmxFindingGate\Tests\ReportRecordsTest::itRewritesBaselineMagnitudesUsingTheSameSemanticEdgeJoin
  - QmxFindingGate\Tests\ReportRecordsTest::itRewritesMultilineAdviceAcrossLineCountsWithoutMovingNeighbourOwnership
  - QmxFindingGate\Tests\ReportRecordsTest::itRewritesOnlyLicensedFindingValuesOnEveryReadableProjection

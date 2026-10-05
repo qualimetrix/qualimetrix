@@ -205,7 +205,10 @@ final class ReportRecords
         $message = self::message($record);
         $severity = $record['severity'];
         return match ($surface) {
-            'format:html' => ['subject' => $record['subject'], 'ruleName' => $record['rule'], 'violationCode' => $record['code'], 'message' => $record['message'], 'recommendation' => $record['recommendation'], 'severity' => $severity, 'metricValue' => $record['metricValue'], 'symbolPath' => $record['symbol'], 'occurrence' => $record['occurrence'], 'file' => $record['file'], 'line' => $record['line']],
+            'format:html' => ['subject' => $record['subject'], 'ruleName' => $record['rule'], 'violationCode' => $record['code'], 'message' => $record['message'], 'recommendation' => $record['recommendation'], 'severity' => $severity, 'metricValue' => $record['metricValue'], 'symbolPath' => $record['symbol'], 'occurrence' => $record['occurrence'], 'file' => $record['file'], 'line' => $record['line']]
+                + (\array_key_exists('baselineVerdict', $record) && \array_key_exists('baselineReason', $record)
+                    ? ['acceptedLevel' => $record['acceptedLevel'], 'baselineVerdict' => $record['baselineVerdict'], 'baselineReason' => $record['baselineReason']]
+                    : []),
             'format:checkstyle' => ['file' => $record['file'] ?? '[project]', 'line' => $record['line'] ?? 1, 'severity' => $severity, 'code' => 'qmx.' . $record['code'], 'message' => $message],
             'format:gitlab' => ['description' => $message, 'check_name' => $record['code'], 'severity' => match ($severity) {
                 'error' => 'critical', 'warning' => 'major', default => 'info',
