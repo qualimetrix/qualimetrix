@@ -13,8 +13,8 @@ final class CorpusCaseControls
         return self::product(
             'config-precedence',
             'src/Analysis/Evidence/Complexity/ComplexityOptions.php',
-            "if (isset(\$config['threshold'])) {",
-            "if (isset(\$config['threshold']) && !isset(\$config['callable'])) {",
+            "])->withLevelSlots(self::levelOptionsClasses())->spreadingInto('threshold', ['callable.threshold']);",
+            '])->withLevelSlots(self::levelOptionsClasses());',
             [
                 FailureClass::CASE_CLAIM_MISMATCH => [
                     'case:config-precedence',

@@ -277,9 +277,9 @@ final class ChannelRenamePlants
             'src/Analysis/Evidence/Cohesion/LcomRule.php',
             [
                 'self::NAME => ChannelDeclaration::judging(' => "'cohesion.lcom4' => ChannelDeclaration::judging(",
-                "                SymbolLevel::Class_,\n            ),\n        ];"
+                "                SymbolLevel::Class_,\n            ),"
                     => "                SymbolLevel::Class_,\n            )->describedAs("
-                    . "'Checks Lack of Cohesion of Methods (high values indicate class should be split)'),\n        ];",
+                    . "'Checks Lack of Cohesion of Methods (high values indicate class should be split)'),",
                 'code: self::NAME,' => "code: 'cohesion.lcom4',",
             ],
             'channel cohesion.lcom -> cohesion.lcom4, described in its producer\'s own words, the producing rule name left alone',
