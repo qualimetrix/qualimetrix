@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 408
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 352
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -16,2 +15,2 @@
+-records 351
+-{"entries":{"declaration:callable:Corpus\\ConfigPrecedence\\Complex::score@src/Complex.php":[{"channel":"complexity.ccn","magnitudes":[8]},{"channel":"complexity.cognitive","magnitudes":[7]},{"channel":"complexity.npath","magnitudes":[128]}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 299
++{"entries":{"declaration:callable:Corpus\\ConfigPrecedence\\Complex::score@src/Complex.php":[{"channel":"complexity.ccn","magnitudes":[8]},{"channel":"complexity.cognitive","magnitudes":[7]},{"channel":"complexity.npath","magnitudes":[128]}]},"generated":"<normalized>","scope":["src"],"version":13}

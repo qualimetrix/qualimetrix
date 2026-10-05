@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 865
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 809
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -20,2 +19,2 @@
+-records 783
+-{"entries":{"declaration:class:Corpus\\Layers\\Repository\\UserRepository@src/Repository/UserRepository.php":[{"channel":"architecture.layer-violation","count":1,"edge":{"target":"class:Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"},"occurrence":"a9d65607f0609fe2"},{"channel":"architecture.layer-violation","count":1,"edge":{"target":"class:Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"},"occurrence":"ce4d6cebf13eb03c"}],"project:":[{"channel":"architecture.doubted-assignment","count":1},{"channel":"architecture.unassigned-class","magnitudes":[4]},{"channel":"architecture.unmatched-exclude","count":1,"occurrence":"815101d44d72ae22"}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 731
++{"entries":{"declaration:class:Corpus\\Layers\\Repository\\UserRepository@src/Repository/UserRepository.php":[{"channel":"architecture.layer-violation","count":1,"edge":{"target":"class:Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"},"occurrence":"a9d65607f0609fe2"},{"channel":"architecture.layer-violation","count":1,"edge":{"target":"class:Corpus\\Layers\\Repository\\UserRepository","type":"type_hint"},"occurrence":"ce4d6cebf13eb03c"}],"project:":[{"channel":"architecture.doubted-assignment","count":1},{"channel":"architecture.unassigned-class","magnitudes":[4]},{"channel":"architecture.unmatched-exclude","count":1,"occurrence":"815101d44d72ae22"}]},"generated":"<normalized>","scope":["src"],"version":13}

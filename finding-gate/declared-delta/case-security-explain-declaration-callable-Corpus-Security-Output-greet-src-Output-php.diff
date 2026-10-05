@@ -1,0 +1,6 @@
+--- candidate
++++ reference (mapped)
+@@ -7,1 +7,0 @@
+-    now:           1 occurrence
+@@ -15,1 +14,0 @@
+-    now:           1 occurrence

@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 315
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 259
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -14,2 +13,2 @@
+-records 272
+-{"entries":{"declaration:callable:Corpus\\OnlyRules\\Statements::run@src/Statements.php":[{"channel":"code-smell.eval","count":1,"occurrence":"cb4db382fbd60b86"}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 220
++{"entries":{"declaration:callable:Corpus\\OnlyRules\\Statements::run@src/Statements.php":[{"channel":"code-smell.eval","count":1,"occurrence":"cb4db382fbd60b86"}]},"generated":"<normalized>","scope":["src"],"version":13}
