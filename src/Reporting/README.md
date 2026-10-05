@@ -533,7 +533,7 @@ priority and its policy/health result is not authoritative.
 
 **`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
 
-**`acceptedLevel`:** `null` unless the finding is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
+**`acceptedLevel`:** `null` unless a baseline entry accompanies a measured breach or a present incomparable group (see [Accepted level and baseline verdict](#accepted-level-and-baseline-verdict) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. The sibling `baselineVerdict` distinguishes `breached` from `not-compared`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 
 **Identity fields:** `symbol` remains the logical/display projection. Stable
 machine identity is `channel + subject + optional occurrence + optional edge`:
