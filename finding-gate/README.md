@@ -95,6 +95,11 @@ not contribute to the coverage or ownership arithmetic. Empty `channels`
 are allowed only when `coverage` is explicitly `auxiliary` and the outcome
 is explicitly `refusal`; an analysing or incomplete case must claim evidence.
 
+The late baseline.unused-entry@project audit is outside this corpus coverage
+population. Its owning audit and real format/exit regressions cover it; the
+corpus does not accept a pre-existing baseline as a common input. All captured
+record and surface comparisons still apply.
+
 Coverage compares the observed pairs with the candidate's declarations.
 Static declarations come from both its container and the tracked channel-level
 fixture; their disagreement is `witness-disagreement`. Dynamic computed

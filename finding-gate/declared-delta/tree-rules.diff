@@ -1,5 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -172,1 +172,1 @@
--    options: error, min-lines, min-tokens
-+    options: error, min-lines, min-tokens, threshold, warning

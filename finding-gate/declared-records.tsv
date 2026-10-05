@@ -1,7 +1,1 @@
 change	case	report	view	selector	reason
-introduced	annotations	json	format:json	{"channel":"annotation.unresolved-directive","file":"src/Directives.php","line":67}	The impossible class suppression now names the declared File level instead of Project.
-withdrawn	annotations	json	format:json	{"channel":"annotation.unresolved-directive","file":"src/Directives.php","line":67}	The impossible class suppression now names the declared File level instead of Project.
-introduced	duplication	json	format:json	{"channel":"duplication.clone"}	Copy findings now carry File subjects, group occurrences and covered code lines with File ranking.
-withdrawn	duplication	json	format:json	{"channel":"duplication.clone"}	Copy findings now carry File subjects, group occurrences and covered code lines with File ranking.
-introduced	duplication-size	json	format:json	{"channel":"duplication.clone"}	Each copy now carries its File subject, group occurrence and covered code lines with File ranking.
-withdrawn	duplication-size	json	format:json	{"channel":"duplication.clone"}	Each copy now carries its File subject, group occurrence and covered code lines with File ranking.
