@@ -162,6 +162,8 @@ website/docs/rules/annotation.md	Analysis.Policy.Inline	"Move or update atomical
 website/docs/rules/annotation.ru.md	Analysis.Policy.Inline	"Move or update atomically with the named subject owner."
 website/docs/rules/architecture.md	Architecture.Governance	"Move or update atomically with the named subject owner."
 website/docs/rules/architecture.ru.md	Architecture.Governance	"Move or update atomically with the named subject owner."
+website/docs/rules/baseline.md	Analysis.Policy.Baseline	"Move or update atomically with the named subject owner."
+website/docs/rules/baseline.ru.md	Analysis.Policy.Baseline	"Move or update atomically with the named subject owner."
 website/docs/rules/code-smell.md	Analysis.Evidence.CodeSmell	"Move or update atomically with the named subject owner."
 website/docs/rules/code-smell.ru.md	Analysis.Evidence.CodeSmell	"Move or update atomically with the named subject owner."
 website/docs/rules/cohesion.md	Analysis.Evidence.Cohesion	"Move or update atomically with the named subject owner."

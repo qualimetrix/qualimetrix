@@ -2470,6 +2470,8 @@ function documentationDisposition(string $path): array
         'website/docs/reference/health-scores.ru.md' => 'Analysis.Evidence.ComputedMetrics',
         'website/docs/reference/remediation-time.md' => 'Analysis.Evidence.Prioritization',
         'website/docs/reference/remediation-time.ru.md' => 'Analysis.Evidence.Prioritization',
+        'website/docs/rules/baseline.md' => 'Analysis.Policy.Baseline',
+        'website/docs/rules/baseline.ru.md' => 'Analysis.Policy.Baseline',
         'website/docs/rules/duplication.md' => 'Analysis.Evidence.Duplication',
         'website/docs/rules/duplication.ru.md' => 'Analysis.Evidence.Duplication',
         'website/docs/rules/architecture.md' => 'Architecture.Governance',
