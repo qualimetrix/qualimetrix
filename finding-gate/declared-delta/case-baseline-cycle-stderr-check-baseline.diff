@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,3 @@
+-1 baseline entries are unused (1 stale, 0 inert); rule baseline.unused-entry is not selected in this run.
++1 baseline entries did not appear in this run:
++  - declaration:callable:Corpus\BaselineCycle\Stale::run@src/Stale.php complexity.ccn [34bf9f01b08b]
++An entry stops appearing when its finding was repaired, when configuration stopped producing it, or when the declaration it names is no longer that declaration: renamed, moved to another file, or renumbered because a sibling it is counted against was added, removed or moved — another declaration of the same logical identity, or, for a closure or a member of an anonymous class, another unnamed declaration of its kind in that file. Nothing is removed automatically; the remaining entries still apply.

@@ -142,7 +142,7 @@ final class ResolvedOptionsFixture
             $channelsByProducer[$producer->name] = [$producer->name];
             $support[$producer->name] = false;
         }
-        return new ChannelUniverse($declarations, $channelsByProducer, $support, new ResolvedComputedMetricDefinitions([]));
+        return new ChannelUniverse($declarations, $channelsByProducer, $support, new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
     }
 
     /**
@@ -308,6 +308,28 @@ final class ResolvedOptionsFixture
         return [
             'metadata' => new RuleMetadata($rule->getName(), $rule::getOptionsClass(), $rule::getDescription(), CliAliasReader::read($rule::class), false),
             'create' => static fn(): RuleInterface => $rule,
+        ];
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
         ];
     }
 }

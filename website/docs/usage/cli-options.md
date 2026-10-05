@@ -508,13 +508,13 @@ bin/qmx check src/ --baseline=baseline.json
 
 ### `--show-resolved`
 
-Count entries whose complete identity no longer appears in the measured set:
+Count complete comparable identities that no longer appear in the measured set:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
-Stale and inert entries are reported without failing the run or disabling other baseline entries. A group that still fires with fewer members is not resolved.
+Stale requires complete comparable absence. Stale and inert entries publish the project-level baseline.unused-entry Warning, subject to ordinary --fail-on policy. A group that still fires with fewer members is not resolved.
 
 ### Baseline lifecycle commands
 
@@ -522,7 +522,7 @@ The commands below are the complete baseline write and inspection surface:
 
 ```text
 bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
-bin/qmx baseline:update   <baseline> [<paths>...] [--force]
+bin/qmx baseline:update   <baseline> [<paths>...] [--force] [--accept-new=CHANNEL]... [--record-exclusions]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
 bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
@@ -534,10 +534,9 @@ The first four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-
 - `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
 - `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
 - `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
-- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Exit `1` covers a refusal on content or an unreadable baseline or map file; `2` is a malformed `--format` value. Either way the baseline is left byte-identical, and the refusal is reported in the chosen format — under `--format=json` as an object with an `error` key. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
+- `baseline:rename-channels` rewrites the `channel` field of the entries a declared tab-separated map names, and nothing else, without analysing anything. Content, grammar and environment refusals follow the command refusal policy (exit 3); no partial write is installed. See [Carry a baseline onto renamed channels](baseline.md#carry-a-baseline-onto-renamed-channels) — note that carrying an entry changes its selector.
 
-The four analysing commands refuse incomplete analysis with exit 4 before interpreting
-or writing a baseline. `--force` overrides file/scope guards only; it cannot make
+The five readers preflight present documents once before analysis/carry; closed grammar refuses early and configured semantics are loaded later. The four analysing commands refuse incomplete analysis with exit 4 before classification or writing. `--force` overrides file/scope guards only; it cannot make
 a partial measured set acceptable. Existing destinations remain byte-identical,
 and `baseline:generate` does not create a missing destination.
 
@@ -547,6 +546,18 @@ documented under [Replace an older baseline](baseline.md#replace-an-older-baseli
 The removed `--generate-baseline` and `--baseline-ignore-stale` options have no aliases. Use `baseline:generate` and explicit `baseline:cleanup --remove` instead.
 
 ---
+
+### `--accept-new=CHANNEL` and `--record-exclusions`
+
+These are mutually exclusive baseline:update modes. Repeat --accept-new with
+exact selected declared channels to add only new complete comparable measured
+identities, preserving existing caps/modes. Wildcards, levels, undeclared,
+configuration-error and audit channels refuse with exit 3 before analysis.
+--record-exclusions requires exactly recorded paths even with --force, writes the
+complete new exclusion definition and recaptures only affected full comparable
+groups with their modes. Unavailable required proof refuses the whole write.
+Ordinary update preserves scope/exclusions; equal acceptance is unchanged and
+no-op preserves bytes/generated. See [Baseline](baseline.md#tighten-after-repairs).
 
 ## Suppression options
 

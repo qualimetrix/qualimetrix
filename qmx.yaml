@@ -238,6 +238,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricReach'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver'
@@ -251,6 +252,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace'
@@ -438,6 +440,8 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface'
@@ -630,6 +634,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
+        - 'Qualimetrix\Analysis\Finding\Contract\ValueReach'
         - 'Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
@@ -773,8 +778,12 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryPayload'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryRejection'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryShape'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryTightening'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryUpdateOutcome'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryValues'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineExclusionShape'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineFileShape'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
@@ -788,19 +797,41 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService'
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus'
         - 'Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader'
+        - 'Qualimetrix\Analysis\Policy\Baseline\CanonicalEnvelope'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\Absence'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\EntryComparability'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\EntryJudgement'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\ExclusionDelta'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCapture'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCeilingVerdict'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\IncomparabilityReason'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\Region'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion'
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap'
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal'
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage'
+        - 'Qualimetrix\Analysis\Policy\Baseline\CurrentAbsentMeasurement'
+        - 'Qualimetrix\Analysis\Policy\Baseline\CurrentBoundaryMeasurement'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource'
+        - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit'
+        - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryOptions'
+        - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntrySelector'
         - 'Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject'
-        - 'Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage'
-        - 'Qualimetrix\Analysis\Policy\Baseline\Filter\CeilingOutcome'
-        - 'Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict'
         - 'Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance'
+        - 'Qualimetrix\Analysis\Policy\Baseline\IdentityBoundaryExplanation'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry'
         - 'Qualimetrix\Analysis\Policy\Baseline\InertEntryReason'
+        - 'Qualimetrix\Analysis\Policy\Baseline\NewIdentityAcceptance'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage'
         - 'Qualimetrix\Analysis\Policy\Baseline\RunScope'
@@ -1173,6 +1204,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\BaselineConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CircularDependencyConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CohesionConfigurator'
@@ -1278,7 +1310,9 @@ architecture:
         - 'Qualimetrix\Reporting\DrillDown\DrillDownBinding'
         - 'Qualimetrix\Reporting\DrillDown\FindingFilter'
         - 'Qualimetrix\Reporting\DrillDown\OutOfScopeFindings'
+        - 'Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection'
         - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
+        - 'Qualimetrix\Reporting\FindingProjection\ConfiguredExclusionProjection'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface'
@@ -1493,6 +1527,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding
+      - analysis-run
       - core-filetarget
       - core-neutral
       - core-path
@@ -1638,8 +1673,10 @@ architecture:
       - external
     infrastructure-rule:
       - analysis-evidence-computedmetrics
+      - analysis-evidence-measurement
       - analysis-finding
       - core-neutral
+      - core-symbol
       - external
     infrastructure-serializer:
       - external
@@ -1734,6 +1771,10 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # Baseline joins acceptance, scope, measurement and finding contracts; namespace union 19 follows those boundaries.
+        - exact: 'Qualimetrix\Analysis\Policy\Baseline'
+        # Projection joins typed filters, baseline audit and inline contracts; namespace union17 reflects those boundaries. Class CBO stays active.
+        - exact: 'Qualimetrix\Reporting\FindingProjection'
         # Authored directive values are shared contracts: inbound namespace union 17.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
         # Shared run policies and scope records: Ca=30, Ce=9, namespace CBO=16.
@@ -1853,6 +1894,15 @@ rules:
         # their own point threshold.
         - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
+      # Immutable run evidence is a shared contract (Ca=12, Ce=8, CBO=20).
+      - exact: src/Analysis/Policy/Baseline/Contract/RunCoverage.php
+      # These internal baseline vocabulary hubs have four outgoing types each.
+      # Their measured inbound populations are 19, 17 and 21 consumers.
+      - exact: src/Analysis/Policy/Baseline/Baseline.php
+      - exact: src/Analysis/Policy/Baseline/BaselineEntry.php
+      - exact: src/Analysis/Policy/Baseline/BaselineIdentity.php
+      # MetricName is an afferent vocabulary contract hub (raw CBO 73), not outbound entanglement.
+      - exact: src/Analysis/Evidence/Measurement/Contract/MetricName.php
       # The graph contract is intentionally a widely consumed type hub. Keep this
       # exact declaration measured by other rules without excluding its siblings.
       - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php
@@ -1915,6 +1965,8 @@ rules:
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
     suppress_paths:
+      # The shared refusal carrier has intentional ClassRank 0.005666 from its consumers.
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
       # The shared read port has 29 inbound readers; ClassRank 0.00624447
       # against 0.00607457 measures that intended contract popularity.
       - exact: src/Analysis/Configuration/Contract/Document/ResolvedValueInterface.php
@@ -1943,6 +1995,8 @@ rules:
   # leaf, so it has its own prefix.
   coupling.distance:
     suppress_namespaces:
+      # Baseline's concrete public facts form a contract hub (raw distance 0.659091).
+      - exact: 'Qualimetrix\Analysis\Policy\Baseline\Contract'
       # Private token representation stays inside one duplication owner; local D=1 is not a module boundary.
       - exact: 'Qualimetrix\Analysis\Evidence\Duplication\Normalization'
       # Five concrete refusal adapters intentionally share framing: A=0, Ca=14/Ce=13, D=0.518519.
@@ -2072,6 +2126,13 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # Each exact operation has only two readers; moving one edge relocates instability.
+      # Measured I: 0.857143, 0.8, 0.888889, 0.8 and 0.857143 respectively.
+      - exact: src/Analysis/Policy/Baseline/BaselineEntryParser.php
+      - exact: src/Analysis/Policy/Baseline/BaselineGenerator.php
+      - exact: src/Analysis/Policy/Baseline/BaselineUpdater.php
+      - exact: src/Analysis/Policy/Baseline/Ceiling/EntryComparability.php
+      - exact: src/Infrastructure/Rule/ChannelUniverse.php
       # Two cache readers consume this storage adapter (Ca=2, Ce=11).
       # Instability reflects the reader population after separating directory operations.
       - exact: src/Infrastructure/Cache/FileCache.php
@@ -2260,6 +2321,12 @@ rules:
     warning: 8
     error: 12
     suppress_paths:
+      # These immutable snapshots carry independent public facts, not injected service groups.
+      - exact: src/Analysis/Finding/Contract/ChannelDeclaration.php
+      - exact: src/Analysis/Policy/Baseline/Contract/BaselineDocument.php
+      - exact: src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php
+      - exact: src/Analysis/Policy/Baseline/Contract/CurrentMeasurement.php
+      - exact: src/Reporting/FindingProjection/FindingProjectionResult.php
       # Eight immutable authored/control facts, with no injected services.
       - exact: src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php
       - exact: src/Reporting/Report.php
@@ -2273,6 +2340,12 @@ rules:
 
   code-smell.constructor-overinjection:
     suppress_paths:
+      # These immutable snapshots carry independent public facts, not injected service groups.
+      - exact: src/Analysis/Finding/Contract/ChannelDeclaration.php
+      - exact: src/Analysis/Policy/Baseline/Contract/BaselineDocument.php
+      - exact: src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php
+      - exact: src/Analysis/Policy/Baseline/Contract/CurrentMeasurement.php
+      - exact: src/Reporting/FindingProjection/FindingProjectionResult.php
       # Eight immutable authored/control facts, with no injected services.
       - exact: src/Analysis/Policy/Inline/Contract/Suppression/Suppression.php
       - exact: src/Reporting/Report.php
@@ -2305,6 +2378,11 @@ rules:
     warning: 5
     error: 5
 
+  design.data-class:
+    suppress_paths:
+      # Invocation evidence intentionally publishes independent immutable facts (WOC=25%, WMC=7).
+      - exact: src/Analysis/Policy/Baseline/Contract/RunCoverage.php
+
   design.dit:
     warning: 4
     error: 4
@@ -2325,6 +2403,12 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # Immutable independent outcome facts share no fields between lookup methods (40).
+      - exact: src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php
+      # Static catalog operations and one aggregation lifecycle do not share fields (40).
+      - exact: src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php
+      # Command lifecycle and stateless narration reproduce the adjacent command precedent (40).
+      - exact: src/Infrastructure/Console/Command/BaselineUpdateCommand.php
       # Immutable rule options separate static declaration/factory from independent enabled and error fields.
       - exact: src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
       # The readonly snapshot has independent live and provenance observations over coherent facts.
@@ -2389,6 +2473,8 @@ rules:
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
     suppress_namespace_channels:
       health.cohesion:
+        # One audit, immutable options and rule metadata form a coherent three-class leaf (41.7).
+        - exact: 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding'
         # Stateless expansion algorithms and their immutable result do not share
         # fields; cohesion is structurally inapplicable only to this exact root.
         - exact: 'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion'

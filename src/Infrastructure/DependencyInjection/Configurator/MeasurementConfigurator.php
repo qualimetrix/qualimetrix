@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFacto
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
@@ -59,6 +60,7 @@ final class MeasurementConfigurator implements ContainerConfiguratorInterface
                 '$profiler' => new Reference(ProfilerInterface::class),
             ]);
         $container->setAlias(MeasurementAggregationInterface::class, self::MEASUREMENT_AGGREGATION);
+        $container->setAlias(MetricReachCatalogInterface::class, self::MEASUREMENT_AGGREGATION);
 
         $container->register(self::IN_MEMORY_METRIC_REPOSITORY, self::IN_MEMORY_METRIC_REPOSITORY_CLASS);
         $container->setAlias(MetricRepositoryInterface::class, self::IN_MEMORY_METRIC_REPOSITORY);

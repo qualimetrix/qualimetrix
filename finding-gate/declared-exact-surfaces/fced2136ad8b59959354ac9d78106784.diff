@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 422
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 366
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -17,2 +16,2 @@
+-records 361
+-{"entries":{"declaration:callable:Corpus\\BaselineCycle\\Breach::run@src/Breach.php":[{"channel":"complexity.ccn","magnitudes":[2]}],"declaration:callable:Corpus\\BaselineCycle\\Stale::run@src/Stale.php":[{"channel":"complexity.ccn","magnitudes":[2]}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 309
++{"entries":{"declaration:callable:Corpus\\BaselineCycle\\Breach::run@src/Breach.php":[{"channel":"complexity.ccn","magnitudes":[2]}],"declaration:callable:Corpus\\BaselineCycle\\Stale::run@src/Stale.php":[{"channel":"complexity.ccn","magnitudes":[2]}]},"generated":"<normalized>","scope":["src"],"version":13}

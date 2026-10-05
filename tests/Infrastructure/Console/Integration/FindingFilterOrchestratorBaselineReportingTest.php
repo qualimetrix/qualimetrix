@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -20,16 +21,24 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
+
+use Qualimetrix\Analysis\Run\Discovery\EntryInspector;
+use Qualimetrix\Analysis\Run\Discovery\ProjectTree;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
@@ -42,6 +51,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -55,13 +65,15 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * - ADR 0017 — a group that shrank without vanishing is not "resolved".
  * - An entry the loaded baseline could not apply is reported as inert,
- *   naming symbol, channel, selector and reason, and never fails the run.
+ *   naming symbol, channel, selector and reason, with Warning severity.
  * - ADR 0017 — a run narrower than the baseline's recorded `scope` is reported,
  *   never failed.
  *
  * A run with no `--baseline` is confirmed to print none of the three.
  */
 #[CoversClass(FindingFilterOrchestrator::class)]
+#[CoversClass(\Qualimetrix\Infrastructure\Console\BaselineFilterReporter::class)]
+#[CoversClass(FindingProjectionResult::class)]
 final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 {
     /** @var list<string> */
@@ -84,6 +96,56 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
      * design cannot tell which member repaired, only that the whole group
      * grew or shrank (ADR 0017).
      */
+    #[Test]
+    public function itReportsUncomparedReasonCountsAndOnlyStaleResolvedCounts(): void
+    {
+        $entry = static fn(string $path): \Qualimetrix\Analysis\Policy\Baseline\BaselineEntry => new \Qualimetrix\Analysis\Policy\Baseline\BaselineEntry(
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity('file:' . $path, new \Qualimetrix\Analysis\Finding\Contract\FindingChannel('code-smell.goto')),
+            null,
+            1,
+        );
+        $stale = $entry('src/StaleSecret.php');
+        $unmeasured = $entry('src/DisabledSecret.php');
+        $outside = $entry('tests/OutsideSecret.php');
+        $uncompared = $entry('src/IncompleteSecret.php');
+        $inert = \Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry::forRaw('secret invalid entry', null, \Qualimetrix\Analysis\Policy\Baseline\InertEntryReason::Malformed, 'invalid count', []);
+        $outcome = new \Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome(
+            new \Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult(\Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage::Baseline, [], []),
+            [$stale],
+            [$inert],
+            [$unmeasured],
+            [$outside],
+            [$uncompared],
+            reasons: [
+                $unmeasured->identity->key() => 'rule-disabled',
+                $outside->identity->key() => 'paths-differ',
+                $uncompared->identity->key() => 'analysis-incomplete',
+            ],
+        );
+        $result = new FindingProjectionResult(
+            [],
+            new \Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult([], [], []),
+            staleEntries: [$stale],
+            inertEntries: [$inert],
+            ceilingOutcome: $outcome,
+            unusedAuditPublished: false,
+        );
+        $output = new BufferedOutput();
+        (new \Qualimetrix\Infrastructure\Console\BaselineFilterReporter($output, true))->report($result, [], AbsolutePath::fromString('/project'));
+        $display = $output->fetch();
+        self::assertStringContainsString('1 baseline entries have been resolved', $display);
+        self::assertStringContainsString('2 baseline entries are unused (1 stale, 1 inert)', $display);
+        self::assertStringContainsString('1 baseline entries were not measured by this run: rule-disabled', $display);
+        self::assertStringContainsString("1 baseline entries lie outside this run's coverage: paths-differ", $display);
+        self::assertStringContainsString('1 baseline entries were not compared: analysis-incomplete', $display);
+        foreach ([$stale, $unmeasured, $outside, $uncompared] as $hidden) {
+            self::assertStringNotContainsString($hidden->identity->subjectKey, $display);
+            self::assertStringNotContainsString($hidden->selector()->value, $display);
+        }
+        self::assertStringNotContainsString($inert->selector->value, $display);
+        self::assertStringNotContainsString('secret invalid entry', $display);
+    }
+
     #[Test]
     public function itDoesNotCountAShrunkButPresentGroupAsResolved(): void
     {
@@ -144,12 +206,19 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 
         $display = $output->fetch();
 
-        self::assertStringContainsString('1 baseline entries could not be applied', $display);
-        self::assertStringContainsString($symbolKey, $display);
-        self::assertStringContainsString('retired.channel', $display);
-        self::assertStringContainsString('channel is not declared by any rule', $display);
-        self::assertMatchesRegularExpression('/\[[0-9a-f]{12}\]/', $display, 'The selector must be printed so a user can copy it.');
-        self::assertSame([], $result->findings, 'An inapplicable entry must not suppress anything, but it also has no finding to report here.');
+        self::assertSame('', $display);
+        self::assertCount(1, $result->findings);
+        $audit = $result->findings[0];
+        $entry = $result->inertEntries[0];
+        self::assertSame('baseline.unused-entry', $audit->channel()->code);
+        self::assertSame(Severity::Warning, $audit->severity);
+        self::assertStringContainsString($symbolKey, $audit->message);
+        self::assertStringContainsString('retired.channel', $audit->message);
+        self::assertStringContainsString('channel is not declared by any rule', $audit->message);
+        self::assertStringContainsString($entry->selector->value, $audit->message);
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('baseline-unused-entry', ['cause' => 'inert', 'selector' => $entry->selector->value])->value, $audit->occurrenceKey?->value);
+        self::assertSame([], $result->measuredFindings);
+        self::assertSame([], $result->removedBy(\Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage::Baseline));
     }
 
     /**
@@ -173,8 +242,8 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
 
         $display = $output->fetch();
 
-        self::assertStringContainsString('does not cover the baseline', $display);
-        self::assertStringContainsString('tests', $display);
+        self::assertStringContainsString('does not cover 1 recorded baseline paths', $display);
+        self::assertStringNotContainsString('tests', $display);
         self::assertStringNotContainsString('Error:', $display);
         self::assertSame([], $result->findings);
     }
@@ -280,9 +349,10 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => $scope,
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ], \JSON_THROW_ON_ERROR));
 
@@ -298,22 +368,29 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
     ): FindingProjectionResult {
         $baselinePath = $input->getOption('baseline');
 
+        $measurement = (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure(
+            $scopeResolution->projectRoot,
+            $scopeResolution->paths,
+            AutoloadDevPolicy::Exclude,
+            \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored,
+        );
+
         return $orchestrator->filterAndReport(
             $result,
             $input,
             $output,
-            // Not a whole-project run, so the suppression-binding audit is not
-            // asked: it is not this file's subject.
-            new ResolvedCheckScope($scopeResolution, [], (new \Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->measure($scopeResolution->projectRoot, $scopeResolution->paths, \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude, \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored)),
+            new ResolvedCheckScope($scopeResolution, [], $measurement),
             new FindingProjectionOptions(
-                baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
+                baselineDocument: \is_string($baselinePath) && $baselinePath !== '' ? BaselineLoader::preflight($baselinePath) : null,
             ),
+            new RunConfiguration([], $scopeResolution->projectRoot, GeneratedFilePolicy::Exclude, $measurement, [], AutoloadDevPolicy::Exclude),
         );
     }
 
     private function createOrchestrator(): FindingFilterOrchestrator
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
 
         $pipeline = new FindingProjector(
             new SuppressionFilter(),
@@ -325,9 +402,15 @@ final class FindingFilterOrchestratorBaselineReportingTest extends TestCase
                     return new GitScopeResult([], []);
                 }
             },
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
 
-        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())));
+        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader(), new \Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader())), new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan());
     }
 
     /**

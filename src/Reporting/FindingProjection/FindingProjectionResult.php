@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\FindingProjection;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult;
 
@@ -55,6 +56,8 @@ final readonly class FindingProjectionResult
         public array $staleEntries = [],
         public array $inertEntries = [],
         public ?array $baselineScope = null,
+        public ?CeilingOutcome $ceilingOutcome = null,
+        private bool $unusedAuditPublished = true,
     ) {}
 
     /**
@@ -70,6 +73,14 @@ final readonly class FindingProjectionResult
     public function removedCountBy(FindingFilterStage $stage): int
     {
         return \count($this->removedBy($stage));
+    }
+
+    /** @return array{stale: int, inert: int} */
+    public function unselectedUnusedEntries(): array
+    {
+        return $this->unusedAuditPublished
+            ? ['stale' => 0, 'inert' => 0]
+            : ['stale' => \count($this->staleEntries), 'inert' => \count($this->inertEntries)];
     }
 
     public function staleEntryCount(): int

@@ -335,7 +335,9 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
             "metricValue": 15,
             "threshold": 10,
             "techDebtMinutes": 30,
-            "acceptedLevel": null
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null
         }
     ],
     "violationsMeta": {
@@ -363,19 +365,14 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 `file` и `line` тоже могут быть `null` — у находки уровня проекта нет позиции
 в исходнике.
 
-Каждое нарушение несёт `acceptedLevel`: потолок baseline, относительно
-которого эта находка измерена, или `null`, когда у находки нет собственного
-принятого уровня. За этим значением стоят два разных случая, которые оно не
-различает: baseline вообще не настроен для прогона, либо baseline настроен,
-но именно эту находку он ещё не оценивал (новая находка). Ни JSON-payload, ни
-само поле `acceptedLevel` не говорят, какой из случаев перед вами.
+Каждая находка содержит nullable `acceptedLevel`, `baselineVerdict` и
+`baselineReason`. Verdict `breached` означает сравнимое превышение и Error;
+`not-compared` сохраняет принятую границу, обычную серьёзность и скалярную причину.
+Null не доказывает ни одно состояние. Null acceptedLevel не отличает отсутствие
+baseline от новой identity. Непустой acceptedLevel несёт `{"shape":"magnitude","describe":"20, 30","count":2}`;
+текущая metricValue остаётся отдельным полем. HTML передаёт те же поля и показывает
+оба состояния. Наличие acceptedLevel само по себе не доказывает превышение.
 
-Когда значение не равно null, `acceptedLevel` — это объект: находка, чья
-собственная группа идентичности превысила принятый уровень, публикуется как
-прорыв и несёт `{"shape": "occurrence", "describe": "2 occurrences", "count": 2}`.
-`shape` называет, что именно считает потолок, `count` — принятое количество,
-`describe` — то же число словами. Прорыв к тому же повышается до severity
-`error`, что бы ни сообщило правило само по себе.
 `violationsMeta` также сообщает `shown` — число нарушений, фактически
 включённых в этот payload; оно может быть меньше `total`, когда
 `--format-opt=violations=N` обрезает список. Обрезанный список — это первые N
@@ -1240,3 +1237,13 @@ Directive JSON сохраняет `selection.only` и `selection.disabled` ка�
 повторяющиеся cells удалены, нижние disables, снятые поздним enable, отсутствуют.
 qmx rules печатает реальные origins/layer indices отдельно в human listing;
 это не меняет молча форму directive JSON.
+
+## Baseline entry audit
+
+baseline.unused-entry — проектный Warning о stale/inert после полного ceiling
+и до Git-проекции. Не попадает в measured set, capture или accept-new; подавления
+путей/пространств имён и Git его не скрывают. Невыбранный аудит и несравнимые записи
+дают только счётчики stderr без списков путей. Девять форматов с находками публикуют
+аудит; metrics, health и suppressed сохраняют свой предмет. Во всех двенадцати
+форматах изолированное предупреждение даёт 0 по умолчанию/--fail-on=error/none,
+1 с --fail-on=warning. Неполный анализ приоритетен и даёт 4. Оценка исправления — 5 минут.

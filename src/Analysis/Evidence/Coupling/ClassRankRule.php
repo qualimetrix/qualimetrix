@@ -217,7 +217,7 @@ final class ClassRankRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence(),
         ];
     }
 

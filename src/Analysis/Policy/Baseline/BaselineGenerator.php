@@ -6,6 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCapture;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -45,7 +47,7 @@ final readonly class BaselineGenerator
      * @param list<string> $scope the analysed paths that produced this run; {@see Baseline}
      *                            normalizes it, so the caller passes what it analysed
      */
-    public function generate(array $findings, array $scope): BaselineCapture
+    public function generate(array $findings, array $scope, RecordedExclusions $exclusions): BaselineCapture
     {
         $groups = self::groupFindings($findings);
         $generated = $this->clock->now();
@@ -54,7 +56,7 @@ final readonly class BaselineGenerator
         $rejected = [];
 
         foreach ($groups as $group) {
-            $entry = $this->captureGroup($group['identity'], $group['findings']);
+            $entry = (new GroupCapture($this->declarations))->capture($group['identity'], $group['findings']);
 
             if ($entry instanceof BaselineEntry) {
                 $entries[] = $entry;
@@ -72,6 +74,7 @@ final readonly class BaselineGenerator
                 generated: $generated,
                 scope: $scope,
                 entries: $entries,
+                exclusions: $exclusions,
             ),
             $rejected,
         );
@@ -97,40 +100,4 @@ final readonly class BaselineGenerator
         return $groups;
     }
 
-    /**
-     * The entry for a group, or the reason there is none.
-     *
-     * @param non-empty-list<Finding> $group
-     */
-    private function captureGroup(BaselineIdentity $identity, array $group): BaselineEntry|UncapturedReason
-    {
-        $declaration = $this->declarations->declarationFor($identity->channel);
-
-        if ($declaration === null) {
-            return UncapturedReason::UndeclaredChannel;
-        }
-
-        // Declared, but as a configuration error: capturing it would record
-        // "the declared configuration does not describe this code" as an
-        // accepted amount of debt. The finding is reported instead, and the
-        // run stays red until the configuration is fixed.
-        if ($declaration->isConfigurationError()) {
-            return UncapturedReason::ConfigurationErrorChannel;
-        }
-
-        if ($declaration->direction === null) {
-            return new BaselineEntry($identity, null, \count($group));
-        }
-
-        $magnitudes = [];
-        foreach ($group as $finding) {
-            if ($finding->metricValue === null || !is_finite((float) $finding->metricValue)) {
-                return UncapturedReason::MagnitudeUnavailable;
-            }
-
-            $magnitudes[] = $finding->metricValue;
-        }
-
-        return new BaselineEntry($identity, $magnitudes, \count($group));
-    }
 }

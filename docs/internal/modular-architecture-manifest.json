@@ -1175,10 +1175,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineChannelRenamer"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
         },
         {
@@ -1308,6 +1304,30 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CanonicalBaselineReader"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryShape"
         }
       ]
     },
@@ -1368,6 +1388,18 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\EnvironmentRefusal"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryShape"
         }
       ]
     },
@@ -6353,11 +6385,15 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCeilingVerdict"
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\GroupCeilingVerdict"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryUpdateOutcome"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
         }
       ]
     },
@@ -6500,10 +6536,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassSummary"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater"
-        },
-        {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
         },
@@ -6526,6 +6558,26 @@
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryRule"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryParser"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryTightening"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentBoundaryMeasurement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
         }
       ]
     },
@@ -6557,7 +6609,7 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Analysis.Policy.Inline",
@@ -6602,6 +6654,38 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCapture"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryTightening"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentBoundaryMeasurement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\NewIdentityAcceptance"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\BaselineFindingProjection"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentAbsentMeasurement"
         }
       ]
     },
@@ -6646,6 +6730,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
         }
       ]
     },
@@ -6859,10 +6947,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntry"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater"
-        },
-        {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveValidator"
         },
@@ -6885,6 +6969,30 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\AcceptedLevelNarrator"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryRule"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryTightening"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCapture"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupMeasurement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentBoundaryMeasurement"
         }
       ]
     },
@@ -7086,7 +7194,7 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Infrastructure.Console",
@@ -7107,6 +7215,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionMechanism"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
         }
       ]
     },
@@ -7118,7 +7230,7 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         }
       ]
     },
@@ -7130,11 +7242,11 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\CeilingOutcome"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\CeilingOutcome"
         }
       ]
     },
@@ -7146,7 +7258,7 @@
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
         }
       ]
     },
@@ -7158,7 +7270,7 @@
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
         }
       ]
     },
@@ -7171,6 +7283,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
         }
       ]
     },
@@ -7471,6 +7587,14 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\DeclarationReach"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
         }
       ]
     },
@@ -7543,6 +7667,22 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirective"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
         }
       ]
     },
@@ -7847,6 +7987,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         }
       ]
     },
@@ -7907,6 +8051,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         }
       ]
     },
@@ -8220,6 +8368,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         }
       ]
     },
@@ -8446,6 +8598,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeRule"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryRule"
         }
       ]
     },
@@ -8634,6 +8790,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\InlineDirectiveRun"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryRule"
         }
       ]
     },
@@ -9541,6 +9701,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions"
         }
       ]
     },
@@ -10004,6 +10168,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\ExcludeBinding\\UnmatchedExcludeOptions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions"
         }
       ]
     },
@@ -10543,6 +10711,10 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleOptionsCompilerPass"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions"
         }
       ]
     },
@@ -11486,6 +11658,14 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions"
         }
       ]
     },
@@ -11495,10 +11675,6 @@
       "owner": "Analysis.Finding",
       "visibility": "contract",
       "consumers": [
-        {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService"
-        },
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EffectiveBoundary"
@@ -11526,6 +11702,10 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\RefusedDirectives"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
         }
       ]
     },
@@ -12782,16 +12962,20 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand"
-        },
-        {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         },
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\BaselineFindingProjection"
         }
       ]
     },
@@ -13000,27 +13184,38 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage": {
-      "path": "src/Analysis/Policy/Baseline/Filter/BaselineCeilingStage.php",
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/BaselineCeilingStage.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
       "visibility": "contract",
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\BaselineFindingProjection"
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\CeilingOutcome": {
-      "path": "src/Analysis/Policy/Baseline/Filter/CeilingOutcome.php",
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\CeilingOutcome": {
+      "path": "src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\BaselineFindingProjection",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\BaselineCeilingStage"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionResult"
+        }
+      ]
     },
-    "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\GroupCeilingVerdict": {
-      "path": "src/Analysis/Policy/Baseline/Filter/GroupCeilingVerdict.php",
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCeilingVerdict": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/GroupCeilingVerdict.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
       "visibility": "internal",
@@ -13067,6 +13262,18 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions"
         }
       ]
     },
@@ -13091,6 +13298,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\BaselineFilterReporter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         }
       ]
     },
@@ -13790,6 +14001,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
         }
       ]
     },
@@ -14267,8 +14482,13 @@
       "path": "src/Analysis/Run/Contract/Configuration/AuthoredExclude.php",
       "kind": "class",
       "owner": "Analysis.Run",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\AutoloadDevPolicy": {
       "path": "src/Analysis/Run/Contract/Configuration/AutoloadDevPolicy.php",
@@ -14288,6 +14508,14 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape"
         }
       ]
     },
@@ -14565,6 +14793,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Git\\GitScopeResolver",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage"
         }
       ]
     },
@@ -14605,6 +14837,18 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRunContext"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         }
       ]
     },
@@ -14661,6 +14905,18 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\ProjectTreeQueryInterface"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryComparability"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentAbsentMeasurement"
         }
       ]
     },
@@ -14697,6 +14953,18 @@
         {
           "owner": "Infrastructure.DependencyInjection",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
         }
       ]
     },
@@ -14711,6 +14979,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Discovery\\ProjectTreeQueryInterface"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage"
         }
       ]
     },
@@ -14766,6 +15038,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ReportCoverageProjection"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage"
         }
       ]
     },
@@ -15335,15 +15611,15 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\GroupAcceptance"
         },
         {
           "owner": "Infrastructure.Rule",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
         }
       ]
     },
@@ -16120,6 +16396,30 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\ExclusionDelta"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\Region"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\SubjectRegion"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryComparability"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentAbsentMeasurement"
         }
       ]
     },
@@ -16158,15 +16458,15 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
         },
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
         }
       ]
     },
@@ -16262,11 +16562,11 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\SuppressionCompositionBuilder"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
         }
       ]
     },
@@ -16311,6 +16611,18 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\AuthoredExclude"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\ExclusionDelta"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape"
         }
       ]
     },
@@ -16379,6 +16691,18 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliSelectorDecoder"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\ExclusionDelta"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape"
         }
       ]
     },
@@ -16996,10 +17320,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject"
         },
         {
@@ -17057,6 +17377,34 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationRanges"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentBoundaryMeasurement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\NewIdentityAcceptance"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentAbsentMeasurement"
         }
       ]
     },
@@ -17769,6 +18117,34 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryRule"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\NewIdentityAcceptance"
         }
       ]
     },
@@ -17791,16 +18167,16 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Finding"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService"
-        },
-        {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveLevels"
         },
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\ThresholdDirectiveEligibility"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation"
         }
       ]
     },
@@ -18121,6 +18497,10 @@
         {
           "owner": "Analysis.Evidence.Cohesion",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomExcludedMethods"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit"
         }
       ]
     },
@@ -21899,6 +22279,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
         }
       ]
     },
@@ -22125,6 +22509,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\BaselineDocument"
         }
       ]
     },
@@ -22183,20 +22571,16 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
-        },
-        {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
         }
       ]
     },
@@ -22381,6 +22765,366 @@
       "path": "src/Infrastructure/Console/Refusal/OutOfMemoryHint.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricReach.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricReachInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReach": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/MetricReach.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/MetricReachCatalogInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\ValueReach": {
+      "path": "src/Analysis/Finding/Contract/ValueReach.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\SubjectRegion"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape": {
+      "path": "src/Analysis/Policy/Baseline/BaselineFileShape.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\BaselineAuditChannels": {
+      "path": "src/Analysis/Policy/Baseline/Contract/BaselineAuditChannels.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\BaselineFilterReporter"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions": {
+      "path": "src/Analysis/Policy/Baseline/Contract/RecordedExclusions.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\Absence": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/Absence.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryComparability": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/EntryComparability.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\ExclusionDelta": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/ExclusionDelta.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupCapture": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/GroupCapture.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\GroupMeasurement": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/GroupMeasurement.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\IncomparabilityReason": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/IncomparabilityReason.php",
+      "kind": "enum",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\Region": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/Region.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\SubjectRegion": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/SubjectRegion.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RunCoverage": {
+      "path": "src/Analysis/Policy/Baseline/Contract/RunCoverage.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FindingFilterOrchestrator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRunContext"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\BaselineDocument": {
+      "path": "src/Analysis/Policy/Baseline/Contract/BaselineDocument.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\CurrentMeasurement": {
+      "path": "src/Analysis/Policy/Baseline/Contract/CurrentMeasurement.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplanationRenderer"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryAudit": {
+      "path": "src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryAudit.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\BaselineConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\BaselineFindingProjection"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions": {
+      "path": "src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryOptions.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryRule": {
+      "path": "src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryRule.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\BaselineConfigurator": {
+      "path": "src/Infrastructure/DependencyInjection/Configurator/BaselineConfigurator.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryTightening": {
+      "path": "src/Analysis/Policy/Baseline/BaselineEntryTightening.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\NewIdentityAcceptance": {
+      "path": "src/Analysis/Policy/Baseline/NewIdentityAcceptance.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\IdentityBoundaryExplanation": {
+      "path": "src/Analysis/Policy/Baseline/IdentityBoundaryExplanation.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentBoundaryMeasurement": {
+      "path": "src/Analysis/Policy/Baseline/CurrentBoundaryMeasurement.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineExclusionShape": {
+      "path": "src/Analysis/Policy/Baseline/BaselineExclusionShape.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\CanonicalEnvelope": {
+      "path": "src/Analysis/Policy/Baseline/CanonicalEnvelope.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement": {
+      "path": "src/Analysis/Policy/Baseline/Ceiling/EntryJudgement.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\BaselineFindingProjection": {
+      "path": "src/Reporting/FindingProjection/BaselineFindingProjection.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryShape": {
+      "path": "src/Analysis/Policy/Baseline/BaselineEntryShape.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\CurrentAbsentMeasurement": {
+      "path": "src/Analysis/Policy/Baseline/CurrentAbsentMeasurement.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection": {
+      "path": "src/Reporting/FindingProjection/ConfiguredExclusionProjection.php",
+      "kind": "class",
+      "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
     }

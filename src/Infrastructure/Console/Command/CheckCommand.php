@@ -6,7 +6,6 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\ProductIdentity;
@@ -226,10 +225,6 @@ final class CheckCommand extends Command
             $input,
             $scopeResolution,
         );
-        if ($projectionOptions->baselinePath !== null) {
-            BaselineLoader::assertReadable($projectionOptions->baselinePath);
-        }
-
         $this->claimRunTargets($input, $output);
 
         if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
@@ -249,6 +244,7 @@ final class CheckCommand extends Command
             $output,
             $resolvedScope,
             $projectionOptions,
+            $scopedRunConfiguration,
         );
         $filteredFindings = $filterResult->findings;
         $this->runTargetSession->targets()->settle();

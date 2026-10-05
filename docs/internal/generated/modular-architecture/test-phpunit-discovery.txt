@@ -565,6 +565,7 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison"suppressed-extra-reference"
  - QmxFindingGate\Tests\ReportRecordsTest::itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison"suppressed-partial-candidate"
  - QmxFindingGate\Tests\ReportRecordsTest::itReportsIncompletePublishedRecordsOnEitherSideDuringCaseComparison"suppressed-partial-reference"
+ - QmxFindingGate\Tests\ReportRecordsTest::itRequiresExactCurrentHtmlBaselineFieldsAndPreservesLegacyProjection
  - QmxFindingGate\Tests\ReportRecordsTest::itRewritesBaselineMagnitudesUsingTheSameSemanticEdgeJoin
  - QmxFindingGate\Tests\ReportRecordsTest::itRewritesMultilineAdviceAcrossLineCountsWithoutMovingNeighbourOwnership
  - QmxFindingGate\Tests\ReportRecordsTest::itRewritesOnlyLicensedFindingValuesOnEveryReadableProjection
@@ -970,6 +971,7 @@ Available tests:
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"subject"
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"symbolPath"
  - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"threshold"
+ - Qualimetrix\Governance\DirectiveVocabulary\ExecutionFingerprintFieldCoverageTest::itSeesEveryFieldItNames"uncomparedReason"
  - Qualimetrix\Governance\DistributedPackage\DockerBuildContextExcludesToolingTestRootsTest::itExcludesEveryDirectoryShapedToolingTestRootFromTheDockerBuildContext
  - Qualimetrix\Governance\DistributedPackage\GitScopeWorksFromTheDistPackageTest::itAnalysesTheStagedFileFromWhatTheDistPackageCarries
  - Qualimetrix\Governance\DistributedPackage\HookInstallWorksFromTheDistPackageTest::itInstallsAWorkingHookFromWhatTheDistPackageCarries
@@ -1205,6 +1207,7 @@ Available tests:
  - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions"
  - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions"
  - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions"
+ - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryOptions"
  - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions"
  - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDeclaresEveryKeyItReadsOutsideABranch"Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions"
  - Qualimetrix\Governance\RuleOptionKeys\DeclaredOptionKeysCoverReadKeysTest::itDoesNotCarryOneClassesLocalsIntoTheNext
@@ -3705,6 +3708,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRefusesToReadASectionTheDocumentCarriedUnread
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRemovesAPresetMetricByEnabledFalse
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itReplacesTheLevelListWhole
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itReadsEveryAstBranchAndIgnoresMetricLikeTextInStringValues
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesANonLiteralMetricAccessInsteadOfInventingMemberReach
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesAReportedLevelWithoutAFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesCircularComputedInputs
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesUnknownInputsEvenAfterAnInputAlreadyEstablishedRunReach
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itResolvesNestedInputsAtTheRequestedLevelWithProjectFormulaFallback
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itTreatsKnownInputsUnpublishedAtTheLevelAsAlwaysAbsent
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itUsesOnlyTheDefinitionsPassedToEachQuery
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itAlwaysReturnsNullSeverity
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itDisablesWhenEnabledFalse
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itHasCorrectConstructorDefaults
@@ -5040,8 +5051,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itRollsUpAGlobalFunctionsCcnToItsNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itSkipsGlobalFunctionsDuringMethodToClassAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itSumsClassAndGlobalFunctionCcnAtTheNamespaceLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itDeclaresAggregationOwnedSymbolPopulationsAsMemberEvidence
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itDerivesReachFromTheSameRegularDerivedAndGlobalCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itHandlesEmptyCollectorList
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itPreservesAggregationGlobalAndReaggregationSpansAndLogOrder
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRefusesAnUnknownMeasuredMetricInsteadOfInventingMemberReach
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRunsCollectorsInTopologicalOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRunsIndependentCollectorsInAnyOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itAcceptsIterableCollectors
@@ -6200,6 +6214,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheJudgedMetricsUnsetForTheTwoOlderFactories
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itOrdersDeclaredLevelsCanonicallySoTwoSpellingsOfOneChannelCompareEqual
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itPreservesBoundaryEligibilityWhenSelectingAChannelRole
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itPreservesExplicitRunEvidenceAndOtherFactsThroughEveryFluentCopy
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesABlankDescription
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
@@ -8008,6 +8023,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillDoubtsImplementsWhenAnInterfaceLeavesTheAnalysedSet
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesCriterionCannotBeDecided
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesExcludeCannotBeDecided
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itCarriesTheMigrationWithoutTighteningOldAcceptance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itLeavesTheFileUntouchedWhenTheNamedChannelWasNotMeasured
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itRefusesInvalidAcceptanceChannelsBeforeAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itExplainsAnOldProjectCopyAsAChannelLevelNoLongerDeclared
@@ -8051,6 +8069,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itNamesAnEntryItCannotApplyInsteadOfDenyingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itNamesAnUnreadableEntryForTheSubject
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsAllThreeSources
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsAnIndependentNowLineForEveryBoundary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheAnnotationForASymbolThatViolatesNothing
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsThePlainPairForAnApplicableEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itPrintsTheStoredAndTheCurrentNumberOnADriftingChannel
@@ -8073,6 +8092,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingFileInABaselineCommandBeforeItMeasures"explain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesAMissingFileInABaselineCommandBeforeItMeasures"update"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInOneVoiceWhetherAskedEarlyOrByTheLoader
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInCheckBeforeAnalysis"invalid JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInCheckBeforeAnalysis"old version"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInCheckBeforeAnalysis"unknown envelope key"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement"invalid JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement"old version"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itRefusesInvalidBaselineInLifecycleCommandsBeforeMeasurement"unknown envelope key"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillAnalysesCheckOnceWithABaselineThatExists
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"cleanup"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest::itStillMeasuresABaselineCommandOnceWithAFileThatExists"explain"
@@ -8121,8 +8146,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itAppliesDiscoveryExclusionBeforeEveryBaselineLifecycleMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itCapturesExactlyWhatCheckMeasuresOverTheSamePaths
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReadsBackACapturedComputedEntryAsAnApplicableOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReportsAnUnselectedProducerAsNotComparedOnUpdate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itValidatesDynamicComputedSelectorsForEveryBaselineLifecycleCommand
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRecordsTheDefinitionAndMakesTheAffectedAggregateComparable
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRefusesDifferentPathsEvenUnderForceWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersARefusalInTheChosenFormat
@@ -8130,7 +8158,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itCarriesAndReportsInJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPreflightsGrammarBeforeMapCarry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPrintsTheDocsPointerInTextOutputButNotInJson
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPublishesTheExactUnknownEntryPositionWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itLeavesAConfiguredComputedEntryAloneInCleanup
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itReportsAConfiguredComputedEntryInExplain
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itStillRefusesAnEntryOnAChannelNothingDeclares"cleanup"
@@ -8150,12 +8180,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesAFileThatAlreadyHeldADuplicateIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesALineThisBuildCannotReadInsteadOfDroppingIt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesASubjectBlockThatIsNotAnArray
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itCarriesHeldBytesAndRefusesChangedTargetOnWrite
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itChangesNothingButTheChannelValuesItWasToldTo
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itDropsAnEmptySubjectBlock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itQuotesANumericEnvelopeFieldName
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesACarryThatWouldGiveTwoEntriesOneIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a chain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a wrong header"
@@ -8170,6 +8200,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"no scope"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"scope of non-strings"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"unparseable generated"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnUnknownNumericEnvelopeKeyWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesToWriteOverAFileThatChangedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesWhenADistinctEntryJoinsAnExistingDuplicate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itReportsADeclaredRenameThatMatchedNothing
@@ -8223,6 +8254,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itWritesThroughAClosedSymlinkWhenItsReferentMatchesTheExpectedHash
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itWritesWhenTheTargetIsStillExpectedToBeAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itKeepsAGroupWithOneIgnoredMemberAcceptedAcrossGenerateAndCheck
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itNeverCapturesTheLateUnusedEntryAudit
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itRecordsTheCompleteResolvedExclusionDefinitionThroughGenerate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesAnEntryForAnArchitectureFindingInsideAnExcludedNamespace
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAFindingRemovedByAnIgnoreTag
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAFindingRemovedByPathExclusion
@@ -8279,10 +8312,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageFailSafeTest::itReportsAWholeMagnitudeGroupWhenOnlyOneOfItsMembersReportsNoNumber
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageFailSafeTest::itReportsAnOccurrenceGroupWhoseEntryStoresMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageJudgeAllTest::itCarriesTheBaselinesInertEntriesUnconditionally
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageJudgeAllTest::itClassifiesAnUnselectedProducerAsUnmeasuredRatherThanStale
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageJudgeAllTest::itKeepsPresentAndAbsentEntriesUncomparedAfterAnIncompleteRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageJudgeAllTest::itMakesApplyDelegateToJudgeAll
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageJudgeAllTest::itReportsAnEntryStaleWhenItsIdentityIsAbsentFromTheJudgedList
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStageJudgeAllTest::itReportsBothListsEmptyWhenTheBaselineHasNeitherStaleNorInertEntries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itChangesNothingButTheSeverityAndTheAcceptedLevel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itClearsAFormerUncomparedReasonWhenTheFindingBecomesAMeasuredBreach
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itIdentifiesItselfAsTheBaselineStage
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itLeavesAMultiMemberGroupsEntryOffTheStaleList
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCeilingStagePromotionTest::itLeavesAnEntryOffTheStaleListWhenItsGroupWasMeasured
@@ -8294,9 +8330,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itCarriesTheSourceContentHashForward
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesADisabledFileCopyAsNotMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesOnlyTheMissingLevelOfAMultilevelChannelAndIgnoresAnUnknownProducer
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itDoesNotListAnEntryThatIsStillMeasuredAndDeclared
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itLeavesUndeclaredLevelsToTheLoaderAndIgnoresAnUnknownProducer
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAStaleEntryWhoseIdentityDidNotAppearInTheRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnEntryWhoseChannelIsNoLongerDeclared
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnEntryWhoseRuleDidNotRunUnderItsOwnReason"disabled at every level by configuration"
@@ -8314,14 +8350,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itStillListsAnEntryWhoseRuleRanAsStale
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itGivesAnInertEntryWithAnIdentityThatIdentitysSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itGivesAnUnreadableEntryASelectorAnyway
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itJudgesTheConfiguredLevelsOfAComputedChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itKeepsKnownBadEntryValuesInertInBothFileLayouts
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itKeepsTheRawPayloadOfAnInertEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itNamesWhatIsWrongWithAMalformedEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesAMagnitudeEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesAnOccurrenceEntryWithAnEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesSemanticOccurrencesAsDistinctSelectorBearingIdentities
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesTheSuppressMode
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRefusesUnknownFileKeysAtTheSamePositionInCanonicalAndPrettyLayouts
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRefusesVersionThirteenAndLoadsItsExplicitlyMigratedEnvelope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRejectsAJsonListWhereEdgeRequiresAnObject
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRejectsWrongOptionalAndRequiredJsonShapesWithoutLosingRawInput
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRequiresACompleteAndValidExclusionDefinition
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsABaselineAuditChannelInertEvenWithoutADeclaration
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAJsonListAtTheEntryBoundaryInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAMagnitudeChannelWithoutMagnitudesInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonFiniteMagnitudeInert
@@ -8335,6 +8377,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithoutACountInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnOccurrenceChannelWithMagnitudesInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUndeclaredChannelInert
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUndeclaredSubjectLevelInertWithItsIdentityAndRawPayload
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUnknownEdgeTypeInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUnrecognizedModeInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itCollapsesNegativeZeroToPositiveZero
@@ -8361,6 +8404,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAbsentAndNullOptionalValuesAsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAnExplicitNullCountAlongsideMagnitudesAsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCapturesTheMagnitudeOfASingleFinding
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCarriesTheRecordedDefinitionThroughCaptureAndProvenanceCopies
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCollectsEveryMemberOfAGroupIntoOneEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCountsAnOccurrenceGroupWithoutStoringItsReportedNumber
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itKeepsSemanticOccurrencesOnTheSameSubjectAndChannelApart
@@ -8368,6 +8412,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itKeepsTwoEdgesOutOfOneClassApart
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itKeepsTypedAndUntypedEdgesToTheSameTargetApart
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itMaterializesRejectedGroupRecordsAtTheCaptureBoundary
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itNamesTheAuditChannelRefusalSeparatelyFromAnUndeclaredChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itNamesTheGroupsItRefusedToCapture
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itProducesEntriesAddressableByTheIdentityOfTheirFindings
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itQueriesTheRegistryOncePerIdentityGroupAndKeepsFirstGroupOrder
@@ -8417,8 +8462,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itHashesTheFileTheSameWayOnEitherRoute
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsLoadingWhenOneEntryIsUnusable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsOnlyThePreflightBytesAfterSourceReplacement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsTheContractOfTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNormalizesAScopeTheFileSpelledLoosely
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"invalid JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"numeric entry object key"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"old version"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileAndAReflowedCopyOfItIdentically
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileWithNoEntries
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecognisesTheCanonicalLayoutAndDeclinesAnyOther
@@ -8436,9 +8485,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnUnsupportedVersionWrittenInTheCanonicalLayout
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnyOtherVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsInvalidJson
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV13Baseline
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV13Review
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV13Guidance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV14Baseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV14Review
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV14Guidance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
@@ -8460,14 +8509,18 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itNamesASuppressedEntrysRefusalAfterTheSuppressionRatherThanAWorsening
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itNamesASuppressedOccurrenceEntrysRefusalTheSameWay
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itNeverAddsAnIdentityTheBaselineDidNotAlreadyHold
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itOnlyAddsNewIdentitiesOfExplicitChannels
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itPreservesModeOnAWrittenEntry
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRecordsTheRunScopeWhenTheRunCoversWhatTheFileRecords
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesALowerChannelGroupThatGrewInSizeThoughEveryMemberImproved
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAMagnitudeEntryWhoseMeasuredGroupReportsNoFiniteNumber
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryOnAChannelNoRuleDeclares
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryWhoseShapeDisagreesWithItsChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesTheWholeExclusionRecordWhenItsProofIsUnavailable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenAnUpdatedEntryWritesBackTheSamePayload
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenEveryEntryIsSkipped
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRerecordsOnlyExclusionAffectedGroupsWithTheirModes
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRetainsTheRecordedScopeWhenTheRunIsWiderAndTightensAnEntry
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itSkipsNewGroupsWithoutComparableCompleteEvidence
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itStampsTheResultFromTheInjectedClock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itStillNamesAnOrdinaryEntrysRefusalAWorsening
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itCarriesTheModeAndNoStateForAnOrdinaryEntry
@@ -8481,11 +8534,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itIndexesEveryTypedRepositorySourceOnceWithoutCollapsingExactDeclarations
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itKeepsAZeroConfiguredThresholdDistinctFromAnAbsentOne
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itMarksARetiredProjectCopyUnmeasuredWithoutMarkingADeclaredFileCopy
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itNamesAnUndeclaredSubjectLevelBeforeClassifyingCoverage
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itPrintsBothTheStoredMagnitudeAndTheCurrentlyComparedOne
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReadsKnownEntryNowFromTheCeilingOutcome
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsAbsentSourcesAsNullRatherThanAsZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsNoAnnotationForASymbolTheRunNeverMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsNoAnnotationWhenNoSourceLocatesTheSymbol
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itReportsNowIndependentlyOfAbsentAndInertBaselineSources
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesScopeThenFiniteSpanAndKeepsTheFirstExactTieAcrossRulePatterns
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheDeclaredChannelShapeForNowEvenWhenItsEntryIsInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheFirstExactMeasuredSubjectAcrossDifferentEdgeIdentities
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheFirstExactMeasuredSubjectAcrossDifferentOccurrenceIdentities
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"chain"
@@ -8507,6 +8564,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itAnswersTheSharedCorpusAsDeclared"wrong-header"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itReadsTheRowsItAccepted
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itRefusesAMapFileItCannotRead
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itDeclaresAnEnabledWarningProjectRuleThatEmitsNothingDuringMeasurement
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itHonoursTheCommittedAuditSelection
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itReportsOnlyStaleAndInertEntriesWithTheirOwnReasons
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itComparesAnExactAnalyzedPresentFileWithoutComposerOrSnapshot
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itComparesEqualWholePathsAndDefinitionsWithoutRequestingATreeSnapshot
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itDistinguishesAChangedExclusionOutsideTheRegionFromUnknownTreeMetadata
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itMarksAKnownAbsentFileStaleOnFullAndNarrowRunsIncludingMovesAndCaseRenames
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itRefusesNamespaceAbsenceOutsideTheSnapshotDenominator
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itRefusesUnknownFilePresenceInsteadOfTreatingItAsAbsence
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itRefusesWholeAbsenceOutsideTheSnapshotDenominator
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itComputesTwelveLowercaseHexCharacters
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itDiffersForDifferentKeys
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itIsDeterministicForOneKey
@@ -8525,6 +8592,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupAcceptanceTest::itRejectsAHigherChannelGroupThatWorsenedByOneStep
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupAcceptanceTest::itRejectsALowerChannelGroupThatGrewInSizeThoughEveryMemberImproved
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupAcceptanceTest::itRejectsAnOccurrenceCountLargerThanStored
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupMeasurementTest::itCountsOccurrenceMembersRegardlessOfMetricValue
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupMeasurementTest::itRefusesTheWholeMagnitudeGroupWhenOneMemberIsNotFinite
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itAllowsAnEqualScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itChecksEveryRecordedPathIndependently
@@ -8540,6 +8609,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itRefusesARunNarrowerThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itTreatsTheFilesystemRootAsCoveringEveryPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itTreatsTheProjectRootAsCoveringEveryProjectRelativePath
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\SubjectRegionTest::itUsesBothComposerSectionsAndWidensForObservedFilesOutsideTheMappedRoots
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itDoesNotTellTheAuthorToWriteTheBannedChannelWhenTheyAskedForItsDescendants
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itKeepsTheBannedChannelOutOfAnAnswerItIsCloseEnoughToEnter
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\BannedChannelIsNeverSuggestedTest::itLeavesTheBannedChannelOutOfTheChannelListOfItsOwnRule
@@ -9839,7 +9909,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itDoesNotPromoteWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itNamesUnusedCountsWhenTheAuditRuleIsNotSelected
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itPreservesTheIncompleteRunExitForEveryFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itPublishesUnusedEntriesInNineFormatsAndGatesAllTwelveFormats
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesBaselineVersionTenAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesCorruptBaselineJsonAsConfigError
@@ -10369,6 +10442,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::itPrintsNoneOfTheThreeBaselineMessagesWithoutABaselineOption
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::itReportsAScopeNarrowerThanTheBaselineWithoutFailing
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::itReportsAnInertEntryNamingSymbolChannelSelectorAndReasonWithoutFailing
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorBaselineReportingTest::itReportsUncomparedReasonCountsAndOnlyStaleResolvedCounts
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itDoesNotPrintExcludedFindingDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itDoesNotPrintRuleExclusionCountsWithoutVerboseFlag
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itNamesAMovedDeclarationAmongTheCausesOfStaleness
@@ -10876,8 +10950,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itCarriesTheDeclaredThresholdOverrideSupportRatherThanInferringIt
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itDoesNothingWhenTheRegistryIsNotRegistered
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itKeepsTheSixRunEvidenceEmittersExplicitAtTheirOwners
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itPairsACodeWithTheDeclaringRulesOwnName
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRefusesARuleChannelWithBothCatalogJudgesAndExplicitRunEvidence
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRefusesAValidatorChannelWithBothCatalogJudgesAndExplicitRunEvidence
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itSuppliesMandatoryReachPortsThroughTheExistingComposition
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAChannelJudgesAMetricTheCatalogDoesNotPublish
@@ -11305,15 +11383,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itExpandsAnEqualitySelectorIntoTheOneChannelItNames
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itExpandsOverConfiguredComputedMetricsTheSameWayAsStaticChannels
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itExposesExactlyTheStaticDeclarationsItWasGiven
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itHonorsExplicitRunEvidenceWithoutInventingItForOtherUnjudgedChannels
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itKnowsEveryRegisteredRuleIncludingOnesDeclaringNoChannel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itLetsNoRepeatedLevelReachTheChannelDeclaration
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itPreservesTheProducerOfStaticChannelsWithDifferentRuleNames
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itProjectsEveryDeclaredLevelOfAComputedMetricOntoTheChannel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itRefusesAComputedMetricNamedAfterARegisteredRule
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itRefusesAComputedMetricNamedAfterAStaticallyDeclaredChannel
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itRefusesReachQueriesOutsideTheDeclaredChannelLevelPopulation
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReportsThresholdOverrideSupportAsDeclaredAndDefaultsToNoSupport
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesABuiltInHealthChannelAtRunTimeFromTheDefinitionsInvertedFlag
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesAUserDefinedComputedMetricAtRunTimeAsHigherIsWorseByDefault
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesComputedReachAgainstTheCandidateCatalogRetainedByItsSnapshot
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesJudgedMetricsFromTheirReachAtEveryDeclaredLevel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReturnsNullForAComputedMetricChannelWithNoMatchingDefinition
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReturnsNullForAnUndeclaredChannel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReturnsTheDeclarationForAStaticallyDeclaredChannel
@@ -11710,6 +11792,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itDescribesAnOccurrenceBreachAsACountWithoutInventingANowValue
  - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itIgnoresAMetricValuePresentOnAnOccurrenceChannel
  - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itListsMultipleAcceptedMagnitudesForAGroupOfMoreThanOne
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itNarratesAnUncomparedAcceptedLevelWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itOmitsNowWhenTheCurrentMetricValueIsNonFinite
  - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itOmitsNowWhenTheMagnitudeChannelHasNoCurrentMetricValue
  - Qualimetrix\Tests\Reporting\Unit\Formatter\AcceptedLevelNarratorTest::itReturnsNullWhenNoAcceptedLevelIsPresent
@@ -11736,6 +11819,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itGroupsFindingsByFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itIncludesTheAcceptedLevelInTheMessageOnABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itIncludesXmlDeclaration
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itNamesAnUncomparedEntryWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itOmitsTheAcceptedLevelFragmentWhenAbsent
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itRendersInfoSeverityAsLowercaseInfo
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itReturnsCheckstyleAsName
@@ -11786,6 +11870,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itKeepsTheFingerprintStableWhenOnlyTheMessageChanges
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itMapsInfoSeverityToInfo
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itMapsSeverityCorrectly
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itNamesAnUncomparedEntryWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itProducesStructureMatchingGitLabSpec
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itReturnsGitlabAsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GitLabCodeQualityFormatterTest::itReturnsNoneAsDefaultGroupBy
@@ -11802,6 +11887,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itIncludesFilePathInOutput
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itIncludesLineNumberInOutput
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itIncludesTheAcceptedLevelInTheMessageOnABreach
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itNamesAnUncomparedEntryWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itReturnsEmptyStringForEmptyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itReturnsGithubAsName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\GithubActionsFormatterTest::itReturnsNoneAsDefaultGroupBy
@@ -11847,6 +11933,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPartitionsEmptyFindingsList
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPartitionsFindingsAcrossMultipleFilesAndTypes
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPartitionsNamespaceFinding
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPreservesBaselineStatusInTheHtmlPayload
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPreservesCanonicalSubjectAndOccurrenceInHtmlPayload
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPublishesNullFileWhenAttachingLocationNoneLikeTheJsonReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFindingPartitionerTest::itPutsAFileFindingWithoutASoleClassOnTheRoot
@@ -11919,6 +12006,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itIncludesTheAcceptedLevelOnAnOccurrenceBreachWithoutMetricValue
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itProjectsATargetOnlyEdgeWithoutInventingAType
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itProjectsCanonicalIdentityWithoutParsingTheSubject
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itPublishesTheVerdictAndReasonAlongsideTheAcceptedLevel
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itSanitizesNonFiniteMetricValues
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itSortsByCanonicalSubjectAfterChannel
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Json\JsonFindingSectionTest::itSortsByCanonicalSubjectInsteadOfExceedance
@@ -12040,6 +12128,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itMapsInfoSeverityToNote
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itMapsRuleHelpUriToDocsCategoryPage
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itMapsSeverityCorrectly
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itNamesAnUncomparedEntryWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itOmitsLocationsForProjectLevelFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itOmitsRelatedLocationsFieldWhenEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itPercentEncodesPathWithSpaces
@@ -12151,6 +12240,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itFormatsZeroFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itHidesTechDebtInScopedModeWithNoFindings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itIncludesAllRulesInDebtBreakdownWhenDetailLimitTruncates
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itNamesAnUncomparedEntryWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itRendersInAsciiMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itRendersNanScoreAsDash
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Summary\SummaryFormatterTest::itReturnsDefaultGroupByAsNone
@@ -12206,6 +12296,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itGroupsByFileInDetailMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itHandlesEmptyReportInDetailMode
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itIncludesAllRulesInDebtBreakdownWhenDetailLimitTruncates
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itNamesAnUncomparedEntryWithoutClaimingABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itNamesTheAcceptedLevelOnABreach
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itOmitsTheAcceptedLevelFragmentWhenAbsent
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itProducesColoredOutputWithAnsiCodes

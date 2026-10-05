@@ -16,3 +16,5 @@ metricValue	src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding
 threshold	src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding
 techDebtMinutes	src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding
 acceptedLevel	src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding
+baselineVerdict	src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding
+baselineReason	src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding

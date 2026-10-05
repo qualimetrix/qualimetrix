@@ -22,7 +22,17 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission;
 use Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch;
 use Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress;
+use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Policy\Baseline\RunScope;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
@@ -128,5 +138,63 @@ final class StubRuleCoverage
             $universe = $factory->snapshot(new ResolvedComputedMetricDefinitions([]));
         }
         return $universe;
+    }
+    /**
+     * @param list<string> $additionalFiles
+     */
+    public static function completeFor(Baseline $baseline, array $additionalFiles = [], ?RunScope $scope = null, ?AnalysisCoverage $analysis = null): RunCoverage
+    {
+        $files = [];
+        foreach (['src/Foo.php', ...$additionalFiles] as $path) {
+            $files[$path] = RelativePath::fromString($path);
+        }
+        foreach ($baseline->entries as $entry) {
+            $subject = $entry->identity->subjectKey;
+            if (str_starts_with($subject, 'file:')) {
+                $path = substr($subject, 5);
+                $files[$path] = RelativePath::fromString($path);
+            } elseif (str_starts_with($subject, 'declaration:') && str_contains($subject, '@')) {
+                $path = explode('#', explode('@', $subject, 2)[1], 2)[0];
+                $files[$path] = RelativePath::fromString($path);
+            }
+        }
+        $root = AbsolutePath::fromString('/tmp/qmx-ceiling-fixture');
+        $tree = new class (array_values($files)) implements ProjectTreeQueryInterface {
+            /** @param list<RelativePath> $files */
+            public function __construct(private array $files) {}
+
+            public function snapshot(ProjectScopeUniverse $universe): ProjectTreeSnapshot
+            {
+                return new ProjectTreeSnapshot($this->files, [], true);
+            }
+
+            public function hasFile(AbsolutePath $root, RelativePath $file): ProjectEntryPresence
+            {
+                foreach ($this->files as $present) {
+                    if ($present->equals($file)) {
+                        return ProjectEntryPresence::Present;
+                    }
+                }
+
+                return ProjectEntryPresence::Absent;
+            }
+        };
+
+        return new RunCoverage(
+            $scope ?? RunScope::fromRecorded($baseline->scope),
+            $analysis ?? new AnalysisCoverage(array_values($files), [], []),
+            $baseline->exclusions,
+            new ProjectScopeUniverse(
+                $root,
+                false,
+                [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]],
+                [],
+                [],
+                true,
+                [],
+            ),
+            ['App\\' => ['src/']],
+            $tree,
+        );
     }
 }

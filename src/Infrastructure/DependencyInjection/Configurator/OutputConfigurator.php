@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Run\Configuration\PathsSection;
@@ -198,9 +199,10 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 . 'BaselineConflictException.php,BaselineEntryRejection.php,'
                 . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
                 . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
-                . 'BaselineFormatVersion.php,'
+                . 'BaselineFormatVersion.php,BaselineFileShape.php,'
+                . 'BaselineExclusionShape.php,CanonicalEnvelope.php,BaselineEntryShape.php,CurrentAbsentMeasurement.php,'
                 . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
-                . 'ExplainedSubject.php}',
+                . 'ExplainedSubject.php,Ceiling/**,Contract/**,EntryBinding/**}',
         );
     }
 
@@ -265,6 +267,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineLoader::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(GitScopeQueryInterface::class),
+                new Reference(UnusedEntryAudit::class),
             ]);
 
         // MeasuredFindingSet — the single definition of the set a baseline
@@ -528,6 +531,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineLoader::class),
                 new Reference(BaselineUpdater::class),
                 new Reference(BaselineWriter::class),
+                new Reference(RunRuleCoverage::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);

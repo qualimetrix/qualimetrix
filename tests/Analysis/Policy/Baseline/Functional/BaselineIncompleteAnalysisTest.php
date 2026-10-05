@@ -51,7 +51,13 @@ final class BaselineIncompleteAnalysisTest extends TestCase
         string $commandName,
         string $coverage,
     ): void {
-        $before = '{"sentinel":"must remain byte-identical"}';
+        $before = " \n" . json_encode([
+            'version' => 14,
+            'generated' => '2026-09-01T00:00:00+00:00',
+            'scope' => [$coverage === 'all-failed' ? $this->tempDir . '/Broken.php' : $this->tempDir],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => [],
+        ], \JSON_THROW_ON_ERROR) . "\n ";
         file_put_contents($this->baselinePath, $before);
 
         $tester = $this->execute($commandName, [
@@ -111,7 +117,13 @@ final class BaselineIncompleteAnalysisTest extends TestCase
         unlink($this->tempDir . '/Broken.php');
         $lostDirectory = $this->tempDir . '/lost';
         $gone = $lostDirectory . '/Gone.php';
-        $before = '{"sentinel":"late refusal must preserve these bytes"}';
+        $before = " \n" . json_encode([
+            'version' => 14,
+            'generated' => '2026-09-01T00:00:00+00:00',
+            'scope' => [$this->tempDir],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => [],
+        ], \JSON_THROW_ON_ERROR) . "\n ";
 
         foreach (['baseline:generate', 'baseline:update', 'baseline:cleanup', 'baseline:explain', 'missing generate'] as $case) {
             mkdir($lostDirectory);

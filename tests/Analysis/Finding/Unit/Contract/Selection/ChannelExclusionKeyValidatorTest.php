@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -134,6 +135,29 @@ final class ChannelExclusionKeyValidatorTest extends TestCase
             ],
             ['coupling.cbo' => true, 'coupling.class-rank' => true],
             new ResolvedComputedMetricDefinitions([]),
+            ...self::unusedReachPorts(),
         );
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

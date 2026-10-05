@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use InvalidArgumentException;
-use LogicException;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupCapture;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
- * `baseline:update`: a direction-aware monotonic tightening of an existing
- * baseline against a fresh measured run (ADR 0017).
+ * `baseline:update`: ordinary tightening plus explicit acceptance and
+ * exclusion recapture against a fresh measured run (ADR 0017).
+ *
+ * `acceptNew` preserves existing acceptance and captures only unoccupied,
+ * comparable identities of the named channels. `recordExclusions` recaptures
+ * an entry only when exclusions alone prevented comparison; its mode stays
+ * with the entry. The rules below govern ordinary `update`.
  *
  * Three rules, applied per entry, none of them a comparison this class
  * re-derives — {@see GroupAcceptance} already states the acceptance test for
@@ -29,7 +36,7 @@ use Qualimetrix\Core\Time\ClockInterface;
  *   ignored.
  * - **A measured group replaces the stored one exactly when
  *   {@see GroupAcceptance} accepts it against the stored one** — the same
- *   test {@see \Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage} applies at
+ *   test {@see \Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage} applies at
  *   `check` time, evaluated here instead. Every other measured group is
  *   refused and the entry is written back exactly as it was: a refusal never
  *   means "clamp to whatever is safe", because a partial write disguised as
@@ -66,231 +73,132 @@ final readonly class BaselineUpdater
     ) {}
 
     /**
-     * @param list<Finding> $measured the run's measured set (ADR 0017)
-     * @param RunScope $scope the paths this run analysed; recorded only when it covers
-     *                        what the file already records — see {@see scopeToRecord()}
+     * @param list<Finding> $measured
+     * @param array<string, RunCoverageGap> $ruleGaps
      */
-    public function update(Baseline $baseline, array $measured, RunScope $scope): BaselineUpdateResult
+    public function update(Baseline $baseline, array $measured, RunCoverage $coverage, array $ruleGaps): BaselineUpdateResult
     {
         $groups = self::groupByIdentity($measured);
-
-        $entries = [];
-        $outcomes = [];
-        $changed = false;
-
+        $judgement = (new BaselineCeilingStage($baseline, $this->declarations, $coverage, $ruleGaps))->judgeAll($measured);
+        $entries = $outcomes = [];
+        $tightening = new BaselineEntryTightening($this->declarations);
         foreach ($baseline->entries as $entry) {
-            $group = $groups[$entry->identity->key()] ?? null;
-
-            if ($group === null) {
-                $entries[] = $entry;
-                $outcomes[] = BaselineEntryUpdateOutcome::skipped($entry->identity);
-
-                continue;
-            }
-
-            [$written, $outcome] = $this->reconcile($entry, $group);
+            [$written, $outcome] = $tightening->tighten($entry, $groups[$entry->identity->key()] ?? null, $judgement);
             $entries[] = $written;
             $outcomes[] = $outcome;
-
-            // An `Updated` disposition still writes back the same payload
-            // when the measured group reports exactly what the entry already
-            // recorded — comparing the serialized form, not the disposition,
-            // is what keeps that case from moving `generated` on every run.
-            if ($written->toArray() !== $entry->toArray()) {
-                $changed = true;
-            }
         }
 
+        return $this->result($baseline, $entries, $outcomes, $baseline->exclusions);
+    }
+
+    /**
+     * @param list<Finding> $measured
+     * @param list<FindingChannel> $channels
+     */
+    public function acceptNew(Baseline $baseline, array $measured, array $channels, RunCoverage $coverage, RunRuleCoverage $publication): BaselineUpdateResult
+    {
+        [$entries, $outcomes, $notes] = (new NewIdentityAcceptance($this->declarations))->accept($baseline, $measured, $channels, $coverage, $publication);
+
+        return $this->result($baseline, $entries, $outcomes, $baseline->exclusions, $notes);
+    }
+
+    /**
+     * @param list<Finding> $measured
+     * @param array<string, RunCoverageGap> $ruleGaps
+     */
+    public function recordExclusions(Baseline $baseline, array $measured, RunCoverage $coverage, array $ruleGaps): BaselineUpdateResult
+    {
+        if ($coverage->scope->paths() !== $baseline->scope) {
+            return new BaselineUpdateResult($baseline, [], false, writeRefusal: BaselineUpdateRefusalReason::RecordedPathsDiffer);
+        }
+        $groups = self::groupByIdentity($measured);
+        $judgement = (new BaselineCeilingStage($baseline, $this->declarations, $coverage, $ruleGaps))->judgeAll($measured);
+        $entries = $outcomes = [];
+        $tightening = new BaselineEntryTightening($this->declarations);
+        $refusal = null;
+        $capture = new GroupCapture($this->declarations);
+        foreach ($baseline->entries as $entry) {
+            [$written, $outcome, $entryRefusal] = $this->recordEntry($entry, $groups[$entry->identity->key()] ?? null, $baseline, $coverage->exclusions, $judgement, $tightening, $capture);
+            $entries[] = $written;
+            $outcomes[] = $outcome;
+            $refusal = $entryRefusal ?? $refusal;
+        }
+        if ($refusal !== null) {
+            return new BaselineUpdateResult($baseline, $outcomes, false, writeRefusal: $refusal);
+        }
+        return $this->result($baseline, $entries, $outcomes, $coverage->exclusions);
+    }
+
+    /**
+     * @param ?non-empty-list<Finding> $group
+     *
+     * @return array{BaselineEntry, BaselineEntryUpdateOutcome, ?BaselineUpdateRefusalReason}
+     */
+    private function recordEntry(
+        BaselineEntry $entry,
+        ?array $group,
+        Baseline $baseline,
+        RecordedExclusions $exclusions,
+        CeilingOutcome $judgement,
+        BaselineEntryTightening $tightening,
+        GroupCapture $capture,
+    ): array {
+        $reason = $judgement->reasonFor($entry->identity);
+        if ($reason === 'metadata-unknown' || $reason === 'analysis-incomplete'
+            || (!$baseline->exclusions->equals($exclusions) && $reason === 'producer-not-measured')) {
+            return [$entry, BaselineEntryUpdateOutcome::notCompared($entry->identity, $reason), BaselineUpdateRefusalReason::ComparisonMetadataUnknown];
+        }
+        if ($reason === 'exclusions-differ') {
+            return self::recaptureEntry($entry, $group, $capture);
+        }
+        [$written, $outcome] = $tightening->tighten($entry, $group, $judgement);
+
+        return [$written, $outcome, null];
+    }
+
+    /**
+     * @param ?non-empty-list<Finding> $group
+     *
+     * @return array{BaselineEntry, BaselineEntryUpdateOutcome, ?BaselineUpdateRefusalReason}
+     */
+    private static function recaptureEntry(BaselineEntry $entry, ?array $group, GroupCapture $capture): array
+    {
+        $captured = $group === null ? null : $capture->capture($entry->identity, $group);
+        if (!$captured instanceof BaselineEntry) {
+            $refusal = BaselineUpdateRefusalReason::RequiredGroupUnavailable;
+
+            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, $refusal), $refusal];
+        }
+        $written = new BaselineEntry($captured->identity, $captured->magnitudes, $captured->count, $entry->mode);
+
+        return [$written, BaselineEntryUpdateOutcome::reRecorded($entry, $written), null];
+    }
+
+    /**
+     * @param list<BaselineEntry> $entries
+     * @param list<BaselineEntryUpdateOutcome> $outcomes
+     * @param array<string, string> $notes
+     */
+    private function result(Baseline $baseline, array $entries, array $outcomes, RecordedExclusions $exclusions, array $notes = []): BaselineUpdateResult
+    {
+        $changed = !$baseline->exclusions->equals($exclusions)
+            || array_map(static fn(BaselineEntry $entry): array => $entry->toArray(), $entries)
+                !== array_map(static fn(BaselineEntry $entry): array => $entry->toArray(), $baseline->entries);
         $updated = new Baseline(
-            generated: $this->clock->now(),
-            scope: self::scopeToRecord($baseline, $scope),
+            generated: $changed ? $this->clock->now() : $baseline->generated,
+            scope: $baseline->scope,
             entries: $entries,
+            exclusions: $exclusions,
             inertEntries: $baseline->inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );
-
-        return new BaselineUpdateResult($updated, $outcomes, $changed);
-    }
-
-    /**
-     * The `scope` the updated file records: the run's own only when it covers
-     * what the file already records, and otherwise the recorded one, unchanged.
-     *
-     * **Why a narrower run must not overwrite it.** The scope guard (ADR 0017) is
-     * a precondition of this command, overridable with `--force` — and an
-     * overwrite would make one `--force` permanent. A user updating from
-     * `src/Legacy` once would leave the file claiming a narrow run produced
-     * it, after which every subsequent narrow run covers the recorded scope
-     * and the guard never fires again: the single override silently becomes a
-     * standing rule. Keeping the recorded scope means `--force` does exactly
-     * what it says — it lets *this* invocation write — while the file goes on
-     * remembering the breadth its entries were actually captured over.
-     *
-     * A run that *does* cover the recorded scope is recorded as-is: it is at
-     * least as wide, so the entries it wrote are backed by at least as much
-     * measurement, and widening the file's own claim is the honest direction.
-     *
-     * @return list<string>
-     */
-    private static function scopeToRecord(Baseline $baseline, RunScope $scope): array
-    {
-        return $scope->covers($baseline->scope) ? $scope->paths() : $baseline->scope;
-    }
-
-    /**
-     * Decides one entry, in the order applicability requires: whether the
-     * entry can be compared at all is settled before anything about the
-     * measured group is read, mirroring the ceiling stage's own ordering.
-     *
-     * @param list<Finding> $group every measured finding sharing the entry's identity
-     *
-     * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
-     */
-    private function reconcile(BaselineEntry $entry, array $group): array
-    {
-        $declaration = $this->declarations->declarationFor($entry->identity->channel);
-
-        if ($declaration === null) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::UndeclaredChannel)];
-        }
-
-        // Applicability, before anything about the measured group: a channel
-        // that reports a configuration error is never re-recorded, so
-        // `update` cannot turn a misconfigured run into a wider acceptance.
-        if ($declaration->isConfigurationError()) {
-            return [
-                $entry,
-                BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::ConfigurationErrorChannel),
-            ];
-        }
-
-        // The channel's own shape moved to the producer (ADR 0031);
-        // `$declaration->direction` is null exactly when the producer
-        // declared `occurrence`, since registry assembly refuses any other
-        // combination. Comparing nullability against the entry's
-        // self-derived shape is the same check as before.
-        $declarationIsOccurrence = $declaration->direction === null;
-
-        if ($declarationIsOccurrence !== ($entry->shape() === ChannelShape::Occurrence)) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::ShapeMismatch)];
-        }
-
-        return $declarationIsOccurrence
-            ? $this->reconcileOccurrence($entry, $group)
-            : $this->reconcileMagnitude($entry, $declaration, $group);
-    }
-
-    /**
-     * One level, no magnitudes: {@see GroupAcceptance::countWithin()} is the
-     * whole comparison.
-     *
-     * @param list<Finding> $group
-     *
-     * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
-     */
-    private function reconcileOccurrence(BaselineEntry $entry, array $group): array
-    {
-        $currentCount = \count($group);
-
-        if (!GroupAcceptance::countWithin($currentCount, $entry->count)) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, self::worsenedReason($entry))];
-        }
-
-        $written = new BaselineEntry($entry->identity, null, $currentCount, $entry->mode);
-
-        return [$written, BaselineEntryUpdateOutcome::updated($entry->identity)];
-    }
-
-    /**
-     * @param list<Finding> $group
-     *
-     * @return array{BaselineEntry, BaselineEntryUpdateOutcome}
-     */
-    private function reconcileMagnitude(BaselineEntry $entry, ChannelDeclaration $declaration, array $group): array
-    {
-        $stored = $entry->magnitudes;
-
-        if ($stored === null) {
-            // Unreachable: BaselineEntry::shape() is Magnitude exactly when
-            // magnitudes is non-null, and reconcile() already matched that
-            // against $declaration->direction being non-null before calling
-            // here. Kept only to narrow $stored's type for static analysis.
-            throw new LogicException('BaselineEntry::shape() reported Magnitude with no magnitudes stored.');
-        }
-
-        $direction = $declaration->direction;
-
-        if ($direction === null) {
-            // Unreachable: ChannelDeclaration's own constructor refuses to
-            // exist as a Magnitude declaration without a WorseDirection.
-            throw new LogicException('A magnitude ChannelDeclaration was built without a WorseDirection.');
-        }
-
-        $current = self::currentMagnitudes($group);
-
-        if ($current === null) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::CurrentMagnitudeUnavailable)];
-        }
-
-        if (!GroupAcceptance::magnitudesWithin($current, $stored, $direction)) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, self::worsenedReason($entry))];
-        }
-
-        $written = new BaselineEntry($entry->identity, $current, \count($current), $entry->mode);
-
-        return [$written, BaselineEntryUpdateOutcome::updated($entry->identity)];
-    }
-
-    /**
-     * Which refusal a declined comparison is, on this entry.
-     *
-     * The comparison itself is the same one on every entry — a suppressed
-     * entry is *not* exempt from it, or `update` would become a way to widen
-     * an acceptance (ADR 0017). What differs is what the refusal means to a user:
-     * on a `mode: suppress` entry the ceiling never compares these numbers at
-     * `check` time, so nothing observable worsened and the word "worsened"
-     * would send the user looking for a red build that is not there.
-     * Behaviour is identical in both branches; only the name is not.
-     */
-    private static function worsenedReason(BaselineEntry $entry): BaselineUpdateRefusalReason
-    {
-        return $entry->mode === BaselineEntryMode::Suppress
-            ? BaselineUpdateRefusalReason::WorsenedUnderSuppression
-            : BaselineUpdateRefusalReason::Worsened;
-    }
-
-    /**
-     * The group's magnitudes, normalised the way the stored ones were, or
-     * `null` when some member reports no usable number.
-     *
-     * @param list<Finding> $group
-     *
-     * @return ?list<float>
-     */
-    private static function currentMagnitudes(array $group): ?array
-    {
-        $magnitudes = [];
-
-        foreach ($group as $finding) {
-            if ($finding->metricValue === null) {
-                return null;
-            }
-
-            try {
-                $magnitudes[] = BaselineEntry::normalizeMagnitude($finding->metricValue);
-            } catch (InvalidArgumentException) {
-                // NaN or infinity: not a boundary, so nothing to compare against.
-                return null;
-            }
-        }
-
-        return $magnitudes;
+        return new BaselineUpdateResult($updated, $outcomes, $changed, $notes);
     }
 
     /**
      * @param list<Finding> $findings
      *
-     * @return array<string, list<Finding>> identity key => its group
+     * @return array<string, non-empty-list<Finding>> identity key => its group
      */
     private static function groupByIdentity(array $findings): array
     {

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use HashContext;
 use JsonException;
-use RuntimeException;
-use SplFileObject;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
+use stdClass;
 
 /**
- * Reads a baseline file written in the canonical layout — one entry per line
- * inside a single valid JSON document — without ever holding the decoded
- * document.
+ * Recognises canonical baseline layout from bytes held by preflight without
+ * holding the decoded document.
  *
  * **This is a recogniser, not a second parser.** Every layout it does not
  * recognise it declines, answering `null` so {@see BaselineLoader} can decode
@@ -21,17 +20,15 @@ use SplFileObject;
  * is what makes that safe to rely on — a false negative costs one full decode,
  * while a false positive would mean reading a file as something it is not.
  *
- * Entries go straight to the same {@see BaselineEntryParser} the whole-document
- * path uses, line by line. That is the point: what the file costs to read stops
- * growing with how many entries stand between its first line and its last.
+ * Entries go to the same {@see BaselineEntryParser} the whole-document path
+ * uses only on the configured semantic pass. The earlier grammar pass never
+ * interprets a channel or level.
  *
  * The envelope comes back as read, unvalidated. Which fields a baseline must
  * have and what they may say is {@see BaselineLoader}'s to decide, and both
  * paths have to answer that identically or they are two formats.
  *
- * **An instance reads one file.** The cursor and the running hash are the
- * object, which is why the loader builds one per read rather than holding a
- * shared reader.
+ * Each scan has a fresh cursor over one held document.
  */
 final class CanonicalBaselineReader
 {
@@ -48,9 +45,6 @@ final class CanonicalBaselineReader
     /** `  "entries": {}` — the same field with nothing under it. */
     private const string ENTRIES_EMPTY = self::ENTRIES_OPEN . '}';
 
-    /** `  "<json string>": <json value>,` */
-    private const string ENVELOPE_LINE = '/^' . self::INDENT . '("(?:[^"\\\\]|\\\\.)*"): (.+),$/';
-
     /** `    "<json string>": [` */
     private const string SUBJECT_LINE = '/^' . self::SUBJECT_INDENT . '("(?:[^"\\\\]|\\\\.)*"): \\[$/';
 
@@ -62,7 +56,7 @@ final class CanonicalBaselineReader
      * the fallback path, and therefore the budget this reader has to spend
      * between them to mean the same thing.
      */
-    private const int DOCUMENT_DEPTH_LIMIT = 512;
+    private const int DOCUMENT_DEPTH_LIMIT = CanonicalEnvelope::DOCUMENT_DEPTH_LIMIT;
 
     /**
      * Containers standing between the document and one entry: the document
@@ -75,40 +69,22 @@ final class CanonicalBaselineReader
      */
     private const int ENTRY_ENCLOSING_CONTAINERS = 3;
 
-    /** Containers between the document and an envelope value: the document object. */
-    private const int ENVELOPE_ENCLOSING_CONTAINERS = 1;
-
     private const int ENTRY_DEPTH_LIMIT = self::DOCUMENT_DEPTH_LIMIT - self::ENTRY_ENCLOSING_CONTAINERS;
 
-    private const int ENVELOPE_DEPTH_LIMIT = self::DOCUMENT_DEPTH_LIMIT - self::ENVELOPE_ENCLOSING_CONTAINERS;
+    private string $bytes;
 
-    private SplFileObject $file;
+    private int $offset;
 
-    private HashContext $hash;
+    private string $path;
 
     public function __construct(
-        private readonly BaselineEntryParser $entryParser,
+        private readonly ?BaselineEntryParser $entryParser,
     ) {}
 
-    /**
-     * @return array{
-     *     envelope: array<string, mixed>,
-     *     entries: list<BaselineEntry>,
-     *     inert: list<InertBaselineEntry>,
-     *     contentHash: string
-     * }|null
-     */
-    public function read(string $path): ?array
+    /** @return array<string, mixed>|null Canonical envelope, or null for full-document fallback. */
+    public static function grammarEnvelope(string $bytes, string $path): ?array
     {
-        try {
-            $this->file = new SplFileObject($path, 'rb');
-        } catch (RuntimeException) {
-            return null;
-        }
-
-        $this->hash = hash_init('sha256');
-
-        return $this->scan();
+        return (new self(null))->scanBytes($bytes, $path, contentHash: '')['envelope'] ?? null;
     }
 
     /**
@@ -119,8 +95,20 @@ final class CanonicalBaselineReader
      *     contentHash: string
      * }|null
      */
-    private function scan(): ?array
+    public function read(BaselineDocument $document): ?array
     {
+        return $this->scanBytes($document->bytes(), $document->path, contentHash: $document->contentHash);
+    }
+
+    /**
+     * @return array{envelope: array<string, mixed>, entries: list<BaselineEntry>, inert: list<InertBaselineEntry>, contentHash: string}|null
+     */
+    private function scanBytes(string $bytes, string $path, string $contentHash): ?array
+    {
+        $this->bytes = $bytes;
+        $this->offset = 0;
+        $this->path = $path;
+
         if ($this->readLine() !== '{') {
             return null;
         }
@@ -141,7 +129,13 @@ final class CanonicalBaselineReader
 
         // Bytes past the closing brace would belong to a different document
         // than the one just scanned.
-        if ($this->readLine() !== '}' || !$this->atEndOfFile()) {
+        if ($this->readLine() !== '}' || $this->offset !== \strlen($this->bytes)) {
+            return null;
+        }
+
+        try {
+            BaselineFileShape::envelope([...$fields, 'entries' => []], $this->path);
+        } catch (ConfigurationRefusal) {
             return null;
         }
 
@@ -149,7 +143,7 @@ final class CanonicalBaselineReader
             'envelope' => $fields,
             'entries' => $collected[0],
             'inert' => $collected[1],
-            'contentHash' => hash_final($this->hash),
+            'contentHash' => $contentHash,
         ];
     }
 
@@ -176,7 +170,7 @@ final class CanonicalBaselineReader
                 return [$fields, true];
             }
 
-            $field = $this->parseEnvelopeLine($line);
+            $field = CanonicalEnvelope::parseLine($line);
 
             if ($field === null || \array_key_exists($field[0], $fields)) {
                 return null;
@@ -251,6 +245,7 @@ final class CanonicalBaselineReader
      */
     private function readSubjectEntries(string $subjectKey, array &$entries, array &$inert): ?bool
     {
+        $index = 0;
         do {
             $line = $this->readLine();
 
@@ -266,13 +261,11 @@ final class CanonicalBaselineReader
                 return null;
             }
 
-            $entry = $this->entryParser->parse($subjectKey, $decoded);
-
-            if ($entry instanceof InertBaselineEntry) {
-                $inert[] = $entry;
-            } else {
-                $entries[] = $entry;
+            if (!$this->admitEntry($decoded, $subjectKey, $index)) {
+                return null;
             }
+            $this->collectEntry($decoded, $subjectKey, $entries, $inert);
+            ++$index;
         } while (!$last);
 
         return match ($this->readLine()) {
@@ -282,23 +275,40 @@ final class CanonicalBaselineReader
         };
     }
 
-    /**
-     * @return array{string, mixed}|null
-     */
-    private function parseEnvelopeLine(?string $line): ?array
+    private function admitEntry(mixed $decoded, string $subjectKey, int $index): bool
     {
-        if ($line === null || preg_match(self::ENVELOPE_LINE, $line, $match) !== 1) {
-            return null;
+        if (!$decoded instanceof stdClass) {
+            return true;
+        }
+        try {
+            BaselineFileShape::assertEntryKeys((array) $decoded, $this->path, $subjectKey, $index);
+        } catch (ConfigurationRefusal) {
+            return false;
         }
 
-        $key = $this->decode($match[1], self::ENVELOPE_DEPTH_LIMIT);
-        $value = $this->decode($match[2], self::ENVELOPE_DEPTH_LIMIT);
+        return true;
+    }
 
-        if (!\is_string($key) || $value === self::UNDECODABLE) {
-            return null;
+    /**
+     * @param list<BaselineEntry> $entries
+     * @param list<InertBaselineEntry> $inert
+     *
+     * @param-out list<BaselineEntry> $entries
+     * @param-out list<InertBaselineEntry> $inert
+     */
+    private function collectEntry(mixed $decoded, string $subjectKey, array &$entries, array &$inert): void
+    {
+        if ($this->entryParser === null) {
+            return;
         }
+        BaselineFileShape::normalizeValues($decoded);
+        $entry = $this->entryParser->parse($subjectKey, $decoded);
+        if ($entry instanceof InertBaselineEntry) {
+            $inert[] = $entry;
 
-        return [$key, $value];
+            return;
+        }
+        $entries[] = $entry;
     }
 
     private function parseSubjectLine(?string $line): ?string
@@ -313,11 +323,7 @@ final class CanonicalBaselineReader
     }
 
     /**
-     * Reads one line, feeds its raw bytes to the running hash, and answers
-     * with the line's content.
-     *
-     * The hash is built here rather than from the finished string, because
-     * holding the finished string is the one thing this reader exists to avoid.
+     * Reads one line from the held bytes without copying all lines at once.
      *
      * A line with no trailing newline is the last in the file, and this layout
      * never ends a line that way, so it is reported as absent rather than as
@@ -327,26 +333,14 @@ final class CanonicalBaselineReader
      */
     private function readLine(): ?string
     {
-        if ($this->file->eof()) {
+        $end = strpos($this->bytes, "\n", $this->offset);
+        if ($end === false) {
             return null;
         }
+        $line = substr($this->bytes, $this->offset, $end - $this->offset);
+        $this->offset = $end + 1;
 
-        $line = $this->file->fgets();
-
-        hash_update($this->hash, $line);
-
-        return str_ends_with($line, "\n") ? substr($line, 0, -1) : null;
-    }
-
-    /**
-     * `eof()` is only true once a read has come up empty, so asking it before
-     * the read would call every complete file truncated.
-     *
-     * @phpstan-impure
-     */
-    private function atEndOfFile(): bool
-    {
-        return $this->file->eof() || $this->file->fgets() === '';
+        return $line;
     }
 
     /**
@@ -358,7 +352,7 @@ final class CanonicalBaselineReader
     private function decode(string $json, int $depthLimit): mixed
     {
         try {
-            return json_decode($json, true, $depthLimit, \JSON_THROW_ON_ERROR);
+            return json_decode($json, false, $depthLimit, \JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             return self::UNDECODABLE;
         }

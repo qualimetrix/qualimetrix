@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 1834
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 1778
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -38,2 +37,2 @@
+-records 1641
+-{"entries":{"declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php":[{"channel":"security.sensitive-parameter","count":1,"occurrence":"9477b3c7e0459483"},{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"}],"declaration:callable:Corpus\\Security\\Output::greet@src/Output.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"027fd2fa8b3f15bd"},{"channel":"security.sql-injection","count":1,"occurrence":"4fe88e81e65b3378"}],"declaration:callable:Corpus\\Security\\Shell::listDir@src/Shell.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:class:Corpus\\Security\\Credentials@src/Credentials.php":[{"channel":"security.hardcoded-credentials","count":1,"occurrence":"0873d959de5f19b8"},{"channel":"security.hardcoded-credentials","count":1,"occurrence":"68e9ad114cb54a0d"}],"file:src/Queries.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 1589
++{"entries":{"declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php":[{"channel":"security.sensitive-parameter","count":1,"occurrence":"9477b3c7e0459483"},{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"}],"declaration:callable:Corpus\\Security\\Output::greet@src/Output.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:Corpus\\Security\\Queries::byId@src/Queries.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:Corpus\\Security\\Queries::byName@src/Queries.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"027fd2fa8b3f15bd"},{"channel":"security.sql-injection","count":1,"occurrence":"4fe88e81e65b3378"}],"declaration:callable:Corpus\\Security\\Shell::listDir@src/Shell.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:class:Corpus\\Security\\Credentials@src/Credentials.php":[{"channel":"security.hardcoded-credentials","count":1,"occurrence":"0873d959de5f19b8"},{"channel":"security.hardcoded-credentials","count":1,"occurrence":"68e9ad114cb54a0d"}],"file:src/Queries.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"}]},"generated":"<normalized>","scope":["src"],"version":13}

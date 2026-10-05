@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 280
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":["subtree:NoSuchDir"],"generated":"excluded"},
++visible 205
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -14,2 +13,2 @@
+-records 237
+-{"entries":{"project:":[{"channel":"discovery.unmatched-exclude","count":1,"occurrence":"30500196e002c8a7"}]},"exclusions":{"generated":"excluded","patterns":["subtree:NoSuchDir"]},"generated":"<normalized>","scope":["src"],"version":14}
++records 166
++{"entries":{"project:":[{"channel":"discovery.unmatched-exclude","count":1,"occurrence":"30500196e002c8a7"}]},"generated":"<normalized>","scope":["src"],"version":13}

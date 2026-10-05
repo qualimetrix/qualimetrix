@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -35,6 +36,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -183,14 +185,23 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $configurationError = $this->makeConfigurationError();
 
         $result = $this->project([$configurationError], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $configurationError->subject->toCanonical() => [
                     ['channel' => $configurationError->channel()->code, 'count' => 1],
                 ],
-            ]),
+            ])),
         ));
 
-        self::assertSame([$configurationError], $result->findings);
+        self::assertSame($configurationError, $result->findings[1]);
+        self::assertCount(2, $result->findings);
+        $audit = $result->findings[0];
+        self::assertSame('baseline.unused-entry', $audit->channel()->code);
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\Severity::Warning, $audit->severity);
+        $entry = $result->inertEntries[0];
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('baseline-unused-entry', ['cause' => 'inert', 'selector' => $entry->selector->value])->value, $audit->occurrenceKey?->value);
+        self::assertStringContainsString($entry->describe(), $audit->message);
+        self::assertStringContainsString($entry->reason->description(), $audit->message);
+        self::assertNotContains($audit, $result->measuredFindings);
         self::assertSame([], $result->removedBy(FindingFilterStage::Baseline));
     }
 
@@ -271,7 +282,25 @@ final class ConfigurationErrorProjectionTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             new ReportingGitScopeQuery(),
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
+
+        if ($options->baselineDocument !== null) {
+            $baseline = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($options->baselineDocument);
+            $files = array_values(array_map(
+                static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
+                $findings,
+            ));
+            $options = $options->withRunCoverage(
+                StubRuleCoverage::completeFor($baseline, $files),
+                StubRuleCoverage::everyRuleRan(),
+            );
+        }
 
         return $projector->project($findings, $this->suppressions, $options);
     }
@@ -285,9 +314,10 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ], \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT));
 

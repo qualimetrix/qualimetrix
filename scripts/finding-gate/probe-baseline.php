@@ -90,7 +90,27 @@ foreach ($groups as $identity => $values) {
         $findings[] = new Finding(Location::none(), $subject, $subject->toSymbolPath(), $channel, $channel, 'probe', Severity::Error, $value);
     }
 }
-$capture = $generator->generate($findings, []);
+$generation = new ReflectionMethod($generator, 'generate');
+$parameterTypes = [];
+foreach ($generation->getParameters() as $parameter) {
+    $type = $parameter->getType();
+    if (!$type instanceof ReflectionNamedType || $type->allowsNull() || $parameter->isOptional()
+        || $parameter->isVariadic() || $parameter->isPassedByReference()) {
+        throw new RuntimeException('The probe does not support this baseline generator signature.');
+    }
+    $parameterTypes[] = $type->getName();
+}
+$captureArguments = [$findings, []];
+if ($parameterTypes === ['array', 'array', \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions::class]) {
+    $captureArguments[] = new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+        [],
+        \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+    );
+} elseif ($parameterTypes !== ['array', 'array']) {
+    throw new RuntimeException('The probe does not support this baseline generator signature.');
+}
+/** @var object{baseline: object{entries: iterable<object{identity: object{subjectKey: string}}>}, uncaptured: iterable<object{identity: object{subjectKey: string}}>} $capture */
+$capture = $generation->invokeArgs($generator, $captureArguments);
 $decisions = array_fill_keys(array_keys($groups), null);
 foreach ($capture->baseline->entries as $entry) {
     $decisions[$identities[$entry->identity->subjectKey] ?? throw new RuntimeException('Unknown captured baseline group.')] = true;

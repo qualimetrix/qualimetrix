@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 579
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 523
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -20,2 +19,2 @@
+-records 500
+-{"entries":{"declaration:callable:Corpus\\ThresholdRaising\\Raised::neighbour@src/Raised.php":[{"channel":"complexity.ccn","magnitudes":[4]}],"declaration:class:Corpus\\ThresholdRaising\\DataRetuned@src/Design.php":[{"channel":"design.data-class","magnitudes":[25]}],"declaration:class:Corpus\\ThresholdRaising\\GodNeighbour@src/Design.php":[{"channel":"design.god-class","magnitudes":[3]}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 448
++{"entries":{"declaration:callable:Corpus\\ThresholdRaising\\Raised::neighbour@src/Raised.php":[{"channel":"complexity.ccn","magnitudes":[4]}],"declaration:class:Corpus\\ThresholdRaising\\DataRetuned@src/Design.php":[{"channel":"design.data-class","magnitudes":[25]}],"declaration:class:Corpus\\ThresholdRaising\\GodNeighbour@src/Design.php":[{"channel":"design.god-class","magnitudes":[3]}]},"generated":"<normalized>","scope":["src"],"version":13}

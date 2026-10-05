@@ -164,30 +164,52 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         file_put_contents($this->configPath, self::CONFIG_WITHOUT_EXCLUSIONS . "\n");
         $this->runGenerate(['--only-rule' => ['code-smell.eval']]);
         $subject = self::capturedSubject($this->baselinePath, self::EVAL_CHANNEL);
+        $before = (string) file_get_contents($this->baselinePath);
 
         file_put_contents($this->configPath, self::CONFIG . "\n");
 
         $update = $this->runUpdate(['--only-rule' => ['code-smell.eval']]);
         self::assertSame(0, $update->getStatusCode(), $update->getDisplay());
         self::assertMatchesRegularExpression(
-            '/skipped  ' . preg_quote($subject . ' ' . self::EVAL_CHANNEL, '/')
-            . ' \[[a-f0-9]{16}\] \(not reported by this run\)/',
+            '/not compared  ' . preg_quote($subject . ' ' . self::EVAL_CHANNEL, '/')
+            . ' \[[a-f0-9]{16}\] \(outside-coverage\)/',
             $update->getDisplay(),
         );
-        self::assertStringContainsString('0 updated, 0 refused, 1 skipped', $update->getDisplay());
+        self::assertStringContainsString('0 updated, 0 unchanged, 1 not compared, 0 refused, 0 skipped', $update->getDisplay());
         self::assertStringContainsString('No entry moved', $update->getDisplay());
+        self::assertSame($before, file_get_contents($this->baselinePath));
 
         $cleanup = $this->runCleanup();
         self::assertSame(0, $cleanup->getStatusCode(), $cleanup->getDisplay());
-        self::assertStringContainsString(self::EVAL_CHANNEL, $cleanup->getDisplay());
+        self::assertStringContainsString('No entry is a removal candidate', $cleanup->getDisplay());
 
         $explain = $this->runExplain($subject);
         self::assertSame(0, $explain->getStatusCode(), $explain->getDisplay());
         self::assertStringContainsString(self::EVAL_CHANNEL, $explain->getDisplay());
-        self::assertStringContainsString('nothing reported', $explain->getDisplay());
+        self::assertStringContainsString("now:           outside this run's coverage (outside-coverage)", $explain->getDisplay());
 
         $this->runGenerate(['--force' => true]);
         self::assertNotContains(self::EVAL_CHANNEL, self::capturedChannels($this->baselinePath));
+    }
+
+    #[Test]
+    public function itReportsAnUnselectedProducerAsNotComparedOnUpdate(): void
+    {
+        file_put_contents($this->configPath, self::CONFIG_WITHOUT_EXCLUSIONS . "\n");
+        $this->runGenerate(['--only-rule' => [self::EVAL_CHANNEL]]);
+        $subject = self::capturedSubject($this->baselinePath, self::EVAL_CHANNEL);
+        $before = (string) file_get_contents($this->baselinePath);
+
+        $update = $this->runUpdate(['--only-rule' => ['code-smell.goto']]);
+
+        self::assertSame(0, $update->getStatusCode(), $update->getDisplay());
+        self::assertMatchesRegularExpression(
+            '/not compared  ' . preg_quote($subject . ' ' . self::EVAL_CHANNEL, '/')
+            . ' \[[a-f0-9]{16}\] \(producer-not-measured\)/',
+            $update->getDisplay(),
+        );
+        self::assertStringContainsString('0 updated, 0 unchanged, 1 not compared, 0 refused, 0 skipped', $update->getDisplay());
+        self::assertSame($before, file_get_contents($this->baselinePath));
     }
 
     #[Test]

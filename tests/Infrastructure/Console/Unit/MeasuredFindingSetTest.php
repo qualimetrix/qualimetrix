@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
@@ -203,6 +204,12 @@ final class MeasuredFindingSetTest extends TestCase
                     return new GitScopeResult([], []);
                 }
             },
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
 
         return new MeasuredFindingSet($analyzer, $projector);

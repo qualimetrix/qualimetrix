@@ -14,8 +14,6 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
  *
  * The constant is the key upper-cased, so a constant cannot drift from the
  * family of its own value the way `STRUCTURE_LCOM = 'lcom'` did.
- *
- * @qmx-threshold coupling.cbo 73 -- Canonical names are an intentional Measurement contract hub, and this CBO is afferent: it counts adoption, not entanglement. Current raw CBO 72 gets one-edge headroom. ChannelDeclarationCompilerPass and ComputedMetricFormulaValidator read these constants by reflection to validate published metric keys; HealthDimensionCatalog uses them instead of spelling class-level keys as literals. Centralizing these readers prevents private copies of the metric vocabulary from drifting.
  */
 final class MetricName
 {

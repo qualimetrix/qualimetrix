@@ -187,7 +187,7 @@ final class CircularDependencyRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project),
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->readingRunEvidence(),
         ];
     }
 }

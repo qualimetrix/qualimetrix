@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
-use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -95,7 +94,8 @@ final class BaselineCleanupCommand extends BaselineCommand
         // refused beside the candidates it should have been copied from.
         $written = CommandLineSpelling::options($input, 'remove');
 
-        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
+        $document = BaselineLoader::preflight($baselinePath);
+        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
         if ($measured === null) {
             return self::FAILURE;
@@ -112,6 +112,7 @@ final class BaselineCleanupCommand extends BaselineCommand
                 static fn($entry) => $entry->identity,
                 $baseline->entries,
             )),
+            $context->coverage,
         );
         self::reportCandidates($candidates, $output);
 
@@ -142,7 +143,7 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($removal->baseline, TargetPath::resolve($baselinePath), $context->projectRoot);
+        $this->writer->write($removal->baseline, $document->target, $context->projectRoot);
 
         $output->writeln(\sprintf(
             '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',

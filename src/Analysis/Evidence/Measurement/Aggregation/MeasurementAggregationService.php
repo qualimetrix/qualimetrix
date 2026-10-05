@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -13,12 +14,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 
 /** Owns initial aggregation, global collection, and global re-aggregation. */
-final class MeasurementAggregationService implements MeasurementAggregationInterface
+final class MeasurementAggregationService implements MeasurementAggregationInterface, MetricReachCatalogInterface
 {
     /** @var list<GlobalContextCollectorInterface> */
     private readonly array $sortedCollectors;
@@ -29,6 +33,9 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
     /** @var list<MetricDefinition> */
     private readonly array $globalDefinitions;
 
+    /** @var array<string, MetricReach> */
+    private readonly array $reachByMetric;
+
     /** @param iterable<GlobalContextCollectorInterface> $collectors */
     public function __construct(
         iterable $collectors,
@@ -36,14 +43,33 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
+        $regularCollectors = $fileCollector->getCollectors();
+        $derivedCollectors = $fileCollector->getDerivedCollectors();
         $this->sortedCollectors = (new GlobalCollectorSorter())->sort(
             $collectors,
-            self::providedMetrics($fileCollector->getCollectors(), $fileCollector->getDerivedCollectors()),
+            self::providedMetrics($regularCollectors, $derivedCollectors),
         );
-        $regularDefinitions = AggregationHelper::collectDefinitions($fileCollector->getCollectors());
-        $derivedDefinitions = self::definitions($fileCollector->getDerivedCollectors());
+        $regularDefinitions = AggregationHelper::collectDefinitions($regularCollectors);
+        $derivedDefinitions = self::definitions($derivedCollectors);
         $this->globalDefinitions = self::definitions($this->sortedCollectors);
         $this->allDefinitions = [...$regularDefinitions, ...$derivedDefinitions, ...$this->globalDefinitions];
+        $reachByMetric = array_fill_keys(self::providedMetrics($regularCollectors, $derivedCollectors), MetricReach::Members);
+        // Aggregation writes these metrics directly rather than through a collector.
+        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, MetricName::COMPLEXITY_WMC] as $key) {
+            $reachByMetric[$key] = MetricReach::Members;
+        }
+        foreach ($this->sortedCollectors as $collector) {
+            foreach ($collector->provides() as $key) {
+                $reachByMetric[$key] = MetricReach::Run;
+            }
+        }
+        $this->reachByMetric = $reachByMetric;
+    }
+
+    public function metricReach(string $metricKey): MetricReach
+    {
+        return $this->reachByMetric[MetricName::base($metricKey)]
+            ?? throw new LogicException(\sprintf('Unknown measured metric "%s".', $metricKey));
     }
 
     public function aggregate(MetricRepositoryInterface $repository, DependencyGraphInterface $dependencies): NamespaceTree

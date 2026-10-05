@@ -4,20 +4,23 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Core\FileTarget\TargetPath;
+use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * `baseline:update` — moves every entry it can toward stricter, and nothing
- * toward more permissive (ADR 0017).
+ * `baseline:update` tightens acceptance by default (ADR 0017). Its explicit
+ * options add new identities or record a changed exclusion population.
  *
  * The rule is direction-aware and stated over the whole group, not per
  * position: a stored `[40, 100]` whose member at 40 has been repaired is
@@ -46,6 +49,7 @@ final class BaselineUpdateCommand extends BaselineCommand
         private readonly BaselineLoader $loader,
         private readonly BaselineUpdater $updater,
         private readonly BaselineWriter $writer,
+        private readonly RunRuleCoverage $ruleCoverage,
     ) {
         parent::__construct();
     }
@@ -56,6 +60,8 @@ final class BaselineUpdateCommand extends BaselineCommand
         BaselineCommandDefinition::addMeasuredRunInput($this);
 
         BaselineCommandDefinition::addScopeOverrideOption($this);
+        $this->addOption('accept-new', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Accept only new identities of an exact channel (repeatable)', []);
+        $this->addOption('record-exclusions', null, InputOption::VALUE_NONE, 'Record current exclusions and recapture only affected groups');
 
         $this->setHelp(self::withDocsPointer(
             'Replaces each entry with what its group reports now, but only where that'
@@ -71,7 +77,11 @@ final class BaselineUpdateCommand extends BaselineCommand
     {
         $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
 
-        $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $baselinePath);
+        [$channels, $recordExclusions] = self::updateOptions($input);
+        $document = BaselineLoader::preflight($baselinePath);
+        $measured = $channels !== [] || $recordExclusions
+            ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($document))
+            : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
         if ($measured === null) {
             return self::FAILURE;
@@ -79,7 +89,15 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         $context = $measured->context;
 
-        $result = $this->updater->update($measured->baseline, $context->findings(), $context->scope);
+        $gaps = $this->ruleCoverage->classify(array_map(static fn($entry) => $entry->identity, $measured->baseline->entries));
+        $result = match (true) {
+            $channels !== [] => $this->updater->acceptNew($measured->baseline, $context->findings(), $channels, $context->coverage, $this->ruleCoverage),
+            $recordExclusions => $this->updater->recordExclusions($measured->baseline, $context->findings(), $context->coverage, $gaps),
+            default => $this->updater->update($measured->baseline, $context->findings(), $context->coverage, $gaps),
+        };
+        if ($result->writeRefusal !== null) {
+            throw ConfigurationRefusal::aboutCommandLineInput('--record-exclusions', $result->writeRefusal->description());
+        }
 
         self::report($result, $output);
 
@@ -89,41 +107,83 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($result->baseline, TargetPath::resolve($baselinePath), $context->projectRoot);
+        $this->writer->write($result->baseline, $document->target, $context->projectRoot);
 
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 
         return self::SUCCESS;
     }
 
+    /** @return array{list<FindingChannel>, bool} */
+    private static function updateOptions(InputInterface $input): array
+    {
+        $channels = array_map(static fn(string $code): FindingChannel => new FindingChannel($code), CommandLineSpelling::options($input, 'accept-new'));
+        $recordExclusions = $input->getOption('record-exclusions') === true;
+        if ($channels !== [] && $recordExclusions) {
+            throw ConfigurationRefusal::aboutCommandLineInput('--accept-new', '--accept-new and --record-exclusions cannot be combined.');
+        }
+
+        return [$channels, $recordExclusions];
+    }
+
     private static function report(BaselineUpdateResult $result, OutputInterface $output): void
     {
         $counts = [];
 
-        foreach ($result->outcomes as $outcome) {
+        foreach ($result->outcomes as $index => $outcome) {
             $counts[$outcome->disposition->value] = ($counts[$outcome->disposition->value] ?? 0) + 1;
-
-            $line = match ($outcome->disposition) {
-                BaselineUpdateDisposition::Updated => \sprintf('  updated  %s', $outcome->identity->describe()),
-                BaselineUpdateDisposition::Skipped => \sprintf(
-                    '  skipped  %s (not reported by this run)',
-                    $outcome->identity->describe(),
-                ),
-                BaselineUpdateDisposition::Refused => \sprintf(
-                    '<comment>  refused  %s (%s)</comment>',
-                    $outcome->identity->describe(),
-                    $outcome->refusalReason?->description() ?? 'no reason given',
-                ),
-            };
-
-            $output->writeln($line);
+            $output->writeln(self::outcomeLine($result, $index));
         }
 
+        foreach ($result->channelNotes as $channel => $reason) {
+            $output->writeln(\sprintf('0 accepted: %s (%s)', $channel, $reason));
+        }
+        $output->writeln(\sprintf('%d accepted, %d re-recorded', $counts['accepted'] ?? 0, $counts['re-recorded'] ?? 0));
         $output->writeln(\sprintf(
-            '%d updated, %d refused, %d skipped',
+            '%d updated, %d unchanged, %d not compared, %d refused, %d skipped',
             $counts[BaselineUpdateDisposition::Updated->value] ?? 0,
+            $counts[BaselineUpdateDisposition::Unchanged->value] ?? 0,
+            $counts[BaselineUpdateDisposition::NotCompared->value] ?? 0,
             $counts[BaselineUpdateDisposition::Refused->value] ?? 0,
             $counts[BaselineUpdateDisposition::Skipped->value] ?? 0,
         ));
     }
+
+    private static function outcomeLine(BaselineUpdateResult $result, int $index): string
+    {
+        $outcome = $result->outcomes[$index];
+
+        return match ($outcome->disposition) {
+            BaselineUpdateDisposition::ReRecorded => self::reRecordedLine($result, $index),
+            BaselineUpdateDisposition::NotCompared => \sprintf(
+                '  not compared  %s (%s)',
+                $outcome->identity->describe(),
+                $outcome->reasonCode ?? 'unknown reason',
+            ),
+            BaselineUpdateDisposition::Skipped => \sprintf(
+                '  skipped  %s (%s)',
+                $outcome->identity->describe(),
+                $outcome->reasonCode ?? 'not reported by this run',
+            ),
+            BaselineUpdateDisposition::Refused => \sprintf(
+                '<comment>  refused  %s (%s)</comment>',
+                $outcome->identity->describe(),
+                $outcome->refusalReason?->description() ?? 'no reason given',
+            ),
+            default => \sprintf('  %s  %s', $outcome->disposition->value, $outcome->identity->describe()),
+        };
+    }
+
+    private static function reRecordedLine(BaselineUpdateResult $result, int $index): string
+    {
+        $outcome = $result->outcomes[$index];
+
+        return \sprintf(
+            '  re-recorded  %s (exclusions changed: %s -> %s)',
+            $outcome->identity->describe(),
+            $outcome->previousLevel?->describe() ?? '',
+            $outcome->currentLevel?->describe() ?? '',
+        );
+    }
+
 }

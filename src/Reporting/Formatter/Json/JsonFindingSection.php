@@ -75,6 +75,7 @@ final class JsonFindingSection
         $file = $finding->location->file === null
             ? null
             : $context->relativizePath($finding->location->file);
+        $baseline = PublishedFinding::baselineFields($finding);
 
         return [
             'file' => $file,
@@ -93,32 +94,9 @@ final class JsonFindingSection
             'metricValue' => $this->sanitizer->sanitizeNumeric($finding->metricValue),
             'threshold' => $this->sanitizer->sanitizeNumeric($finding->threshold),
             'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForFinding($finding),
-            'acceptedLevel' => $this->formatAcceptedLevel($finding),
-        ];
-    }
-
-    /**
-     * Structured form of the accepted level a measured breach carries under ADR 0017 —
-     * `null` on every other finding, including one no baseline ever
-     * judged. `describe` is the human string (e.g. "25" or "3 occurrences");
-     * `now` reuses the sibling `metricValue` field on purpose — an
-     * `occurrence` channel has no per-finding "now" to report, so this
-     * object never fabricates one.
-     *
-     * @return ?array{shape: string, describe: string, count: int}
-     */
-    private function formatAcceptedLevel(Finding $finding): ?array
-    {
-        $accepted = $finding->acceptedLevel;
-
-        if ($accepted === null) {
-            return null;
-        }
-
-        return [
-            'shape' => $accepted->shape()->value,
-            'describe' => $accepted->describe(),
-            'count' => $accepted->count,
+            'acceptedLevel' => $baseline['acceptedLevel'],
+            'baselineVerdict' => $baseline['baselineVerdict'],
+            'baselineReason' => $baseline['baselineReason'],
         ];
     }
 

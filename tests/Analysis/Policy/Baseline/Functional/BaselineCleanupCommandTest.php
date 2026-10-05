@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -26,6 +27,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -132,7 +134,7 @@ final class BaselineCleanupCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('project: duplication.clone', $tester->getDisplay());
         self::assertStringContainsString(
-            '(level not declared: this channel does not report at the level of this baseline entry)',
+            '(cannot be applied: subject level is not declared by this channel in this configuration)',
             $tester->getDisplay(),
         );
         self::assertStringNotContainsString('nothing reported for this identity', $tester->getDisplay());
@@ -254,6 +256,7 @@ final class BaselineCleanupCommandTest extends TestCase
         ?RunRuleCoverage $coverage = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare(self::OCCURRENCE_CHANNEL, ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File));
 
         $command = new BaselineCleanupCommand(
             new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
@@ -285,6 +288,7 @@ final class BaselineCleanupCommandTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: $scope,
                 entries: $entries,
+                exclusions: self::fixtureExclusions(),
             ),
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
@@ -367,5 +371,13 @@ final class BaselineCleanupCommandTest extends TestCase
         }
 
         return $entries;
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

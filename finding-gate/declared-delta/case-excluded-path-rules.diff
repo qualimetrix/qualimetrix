@@ -1,5 +1,8 @@
 --- candidate
 +++ reference (mapped)
-@@ -172,1 +172,1 @@
--    options: error, min-lines, min-tokens
-+    options: error, min-lines, min-tokens, threshold, warning
+@@ -1,1 +1,1 @@
+-55 rules available
++54 rules available
+@@ -18,2 +18,0 @@
+-Baseline
+-  baseline.unused-entry                    Reports baseline entries that no longer bind a measured finding or cannot be applied.

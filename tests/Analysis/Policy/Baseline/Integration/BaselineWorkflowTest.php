@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 
 use PHPUnit\Framework\Attributes\Test;
+
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
@@ -16,15 +19,19 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use RuntimeException;
 
 /**
@@ -77,7 +84,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
-                location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+                location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 45),
                 metricValue: 15,
             ),
             new Finding(
@@ -87,15 +94,16 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'goto statement found',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
-                location: new Location(RelativePath::fromString(basename(__FILE__)), 1),
+                location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 1),
                 occurrenceKey: $occurrenceKey,
             ),
         ];
 
         // Step 1: Generate baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
         $generator = new BaselineGenerator($declarations, new FixedClock());
-        $baseline = $generator->generate($findings, ['src'])->baseline;
+        $baseline = $generator->generate($findings, ['src'], self::fixtureExclusions())->baseline;
 
         self::assertSame(2, $baseline->count());
         $expectedIdentityKeys = array_map(
@@ -128,7 +136,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 3: Load baseline from file
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load($this->baselinePath);
+        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
 
         self::assertSame($baseline->count(), $loadedBaseline->count());
         self::assertSame(0, \count($loadedBaseline->inertEntries));
@@ -142,10 +150,26 @@ final class BaselineWorkflowTest extends TestCase
         );
 
         // Step 4: Apply the baseline as a ceiling over the same findings
-        $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
+        $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);
 
         // Both groups are within what was captured, so neither is reported
         self::assertSame([], $stage->apply($findings)->findings);
+
+        $channels = self::createStub(ChannelIdentityInterface::class);
+        $explanation = (new BoundaryExplanationService($channels, StubRuleCoverage::everyRuleRan()))->explain(
+            $findings[0]->subject->toCanonical(),
+            null,
+            $loadedBaseline,
+            $findings,
+            [],
+            [],
+            $declarations,
+            StubRuleCoverage::completeFor($loadedBaseline),
+        );
+        self::assertSame('accepted', $explanation->boundaries[0]->baseline?->verdict);
+        self::assertSame([15.0], $explanation->boundaries[0]->baseline->accepted?->magnitudes);
+        self::assertSame(CurrentMeasurement::REPORTED, $explanation->boundaries[0]->now->state);
+        self::assertSame([15.0], $explanation->boundaries[0]->now->magnitudes);
 
         // Step 5: Test new finding (not in baseline)
         $newFinding = new Finding(
@@ -155,7 +179,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 100),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 100),
             metricValue: 25,
         );
 
@@ -179,10 +203,10 @@ final class BaselineWorkflowTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 13 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
-        $loader->load($this->baselinePath);
+        $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
     }
 
     #[Test]
@@ -198,7 +222,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Forbidden dependency',
             severity: Severity::Error,
             symbolPath: $source,
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 11),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 11),
             dependencyTarget: $target,
             dependencyType: $type,
         );
@@ -206,7 +230,7 @@ final class BaselineWorkflowTest extends TestCase
         $untyped = $edgeFinding(null);
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $baseline = (new BaselineGenerator($declarations, new FixedClock()))
-            ->generate([$typed, $untyped], ['src'])
+            ->generate([$typed, $untyped], ['src'], self::fixtureExclusions())
             ->baseline;
 
         (new BaselineWriter())->write(
@@ -231,7 +255,7 @@ final class BaselineWorkflowTest extends TestCase
         ], $subjectEntries);
         self::assertArrayNotHasKey('type', $subjectEntries[0]['edge']);
 
-        $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load($this->baselinePath);
+        $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
         $expectedIdentities = [
             BaselineIdentity::forFinding($untyped),
             BaselineIdentity::forFinding($typed),
@@ -261,7 +285,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
-                location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
+                location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 10),
                 metricValue: 15,
             ),
             new Finding(
@@ -271,19 +295,19 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
-                location: new Location(RelativePath::fromString(basename(__FILE__)), 20),
+                location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 20),
                 metricValue: 20,
             ),
         ];
 
-        $baseline = $generator->generate($initialFindings, ['src'])->baseline;
+        $baseline = $generator->generate($initialFindings, ['src'], self::fixtureExclusions())->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
 
         // Load baseline
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load($this->baselinePath);
-        $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
+        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);
 
         // Current findings: only method1 (method2 was fixed)
         $currentFindings = [
@@ -294,7 +318,7 @@ final class BaselineWorkflowTest extends TestCase
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
-                location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
+                location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 10),
                 metricValue: 15,
             ),
         ];
@@ -306,7 +330,7 @@ final class BaselineWorkflowTest extends TestCase
         // Should detect that method2 was resolved
         self::assertCount(1, $resolved);
         self::assertSame(
-            'declaration:callable:App\Service\UserService::method2@BaselineWorkflowTest.php',
+            'declaration:callable:App\Service\UserService::method2@src/BaselineWorkflowTest.php',
             $resolved[0]->identity->subjectKey,
         );
     }
@@ -341,8 +365,9 @@ final class BaselineWorkflowTest extends TestCase
 
         // Generate and write baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
         $generator = new BaselineGenerator($declarations, new FixedClock());
-        $baseline = $generator->generate($findings, ['src'])->baseline;
+        $baseline = $generator->generate($findings, ['src'], self::fixtureExclusions())->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($projectRoot));
 
@@ -354,10 +379,10 @@ final class BaselineWorkflowTest extends TestCase
 
         // Load baseline — paths kept as-is (relative)
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load($this->baselinePath);
+        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
 
         // The ceiling should accept the original findings
-        $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
+        $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);
         self::assertSame(
             [],
             $stage->apply($findings)->findings,
@@ -376,7 +401,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 45),
             metricValue: 15,
         );
 
@@ -387,7 +412,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 100), // Different line
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 100), // Different line
             metricValue: 15,
         );
 
@@ -410,7 +435,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 45),
             metricValue: 15,
         );
 
@@ -421,7 +446,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 45),
             metricValue: 25,
         );
 
@@ -443,7 +468,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 45),
             metricValue: 15,
         );
 
@@ -454,7 +479,7 @@ final class BaselineWorkflowTest extends TestCase
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method
-            location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            location: new Location(RelativePath::fromString('src/' . basename(__FILE__)), 45),
             metricValue: 15,
         );
 
@@ -467,6 +492,14 @@ final class BaselineWorkflowTest extends TestCase
 
     private static function declarationSubject(SymbolPath $symbolPath, int $startFilePos): MetricSubject
     {
-        return MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString(basename(__FILE__)), DeclarationOrdinal::fromRank(0)));
+        return MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString('src/' . basename(__FILE__)), DeclarationOrdinal::fromRank(0)));
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

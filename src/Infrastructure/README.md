@@ -192,7 +192,7 @@ Infrastructure/
         ├── BaselineRenameChannelsCommand.php # `baseline:rename-channels` — carries a baseline onto renamed channels along a declared TSV map; the one baseline command that runs no analysis
         ├── ChannelRenameReporter.php        # Renders a rename-channels outcome (refusal or ChannelRenameReport) in the caller's chosen format
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
-        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: entries present but not applied, unreadable entries, `mode: suppress`, a member without a finite value
+        ├── BaselineExplanationRenderer.php # How `baseline:explain` spells a BoundaryExplanation: separate baseline and independent CurrentMeasurement lines, inert reasons, suppress mode, whole-group unavailable magnitudes
         ├── DirectivesCommand.php      # `directives` — what each inline @qmx directive still does; exits 2 on an inert one (ADR 0039)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
         ├── RulesCommand.php           # Lists every option each rule accepts, its CLI aliases and judged metrics
@@ -336,10 +336,11 @@ remain independent because configuration is keyed by producer rule name.
 - Rejects a channel declared by more than one producer, a validator that names a
   producer no rule answers to or declares no channels at all, and a tagged service
   whose definition names no class
-- Delegates the judged-metric half of the declaration check to
+- Delegates single-source reach and judged-metric declaration checks to
   `JudgedMetricDeclarationGuard`, which is the only class on this side that reads the
   metric catalog: a declared judged key must exist in `MetricName` (an aggregate
-  spelling counts) and only a `magnitude` producer may name one at all
+  spelling counts) and only a `magnitude` producer may name one at all. Run-evidence reach
+  and a judged metric cannot be declared together
 - **The one place a channel becomes a configuration error.** It applies
   `ChannelDeclaration::asConfigurationError()` to everything a validator declares and
   to nothing else, registering it under the validator's producer rule name so

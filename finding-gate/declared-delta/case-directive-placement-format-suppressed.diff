@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -351,6 +351,0 @@
+-            "producer": "baseline.unused-entry",
+-            "reason": "filtered",
+-            "statement": "only_rules: [complexity.ccn, annotation.directive, annotation.unused-directive]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {

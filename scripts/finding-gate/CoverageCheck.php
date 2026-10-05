@@ -75,6 +75,8 @@ final class CoverageCheck
 
         $this->checkSingleProducer($producers);
 
+        // The late baseline audit is covered by its owning regressions outside the corpus arithmetic.
+        $declared = array_values(array_filter($declared, static fn(string $pair): bool => $pair !== 'baseline.unused-entry@project'));
         ChannelCoverage::inspectCoverage($this->report, $declared, $observed, $this->options->incompleteCorpus);
     }
 

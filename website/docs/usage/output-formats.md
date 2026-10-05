@@ -335,7 +335,9 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
             "metricValue": 15,
             "threshold": 10,
             "techDebtMinutes": 30,
-            "acceptedLevel": null
+            "acceptedLevel": null,
+            "baselineVerdict": null,
+            "baselineReason": null
         }
     ],
     "violationsMeta": {
@@ -362,19 +364,14 @@ by impact"; no other format renders it. Each entry names the rule-specific
 rule producing the issue reads a coupling-hub signal; `file` and `line` are
 nullable too, because a project-level finding has no source position.
 
-Each violation carries `acceptedLevel`: the baseline ceiling this finding was
-measured against, or `null` whenever the finding has no accepted level of its
-own. That covers two distinct cases the value cannot tell apart: no baseline
-is configured for the run at all, or a baseline is configured but this
-particular finding is new and the baseline never judged it. Neither the JSON
-payload nor `acceptedLevel` itself exposes which case applies.
-
-When it is not null, `acceptedLevel` is an object — a finding whose own
-identity group exceeded its accepted level is reported as a breach and carries
-`{"shape": "occurrence", "describe": "2 occurrences", "count": 2}`. `shape`
-names what the ceiling counts, `count` is the accepted number, and `describe`
-is that number in words. A breach is also raised to `error` severity,
-whatever the rule would otherwise have reported.
+Each violation carries nullable `acceptedLevel`, `baselineVerdict` and
+`baselineReason`. `baselineVerdict: "breached"` means a compared group exceeded
+its cap and was promoted to Error. `"not-compared"` retains acceptedLevel and
+normal severity with a scalar reason. Null verdict establishes neither; a null
+acceptedLevel cannot distinguish no configured baseline from a new identity.
+A non-null acceptedLevel carries `{"shape":"magnitude","describe":"20, 30","count":2}`; current metricValue
+remains its own field. HTML carries the same judgement fields and renders both
+breached and not-compared states.
 
 `violationsMeta`
 also reports `shown` — the number of violations actually included in this
@@ -1236,3 +1233,16 @@ Only the effective filter and all tied decisive disabling texts are published;
 repeated cells are deduplicated and lower disables canceled by a later enable
 are omitted. qmx rules prints actual selection writer origins/layer indices on
 its separate human listing; these do not silently change the directive JSON shape.
+
+## Baseline entry audit
+
+`EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
+Warnings for stale and inert entries after the full ceiling and before Git
+projection. The rule's remediation estimate is 5 minutes. Audit findings never
+enter the measured set, capture or accept-new; authored path/namespace
+suppression and Git projection cannot hide them. When unselected, stderr reports
+counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
+Nine finding formats publish the audit; Metrics, Health and Suppressed retain
+their own subjects. All twelve preserve the ordinary failure policy: an isolated
+audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
+`--fail-on=warning`. Incomplete analysis has priority and exits 4.

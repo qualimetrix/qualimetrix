@@ -520,7 +520,7 @@ bin/qmx check src/ --baseline=baseline.json
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
-Stale- и inert-записи сообщаются, но не завершают прогон ошибкой и не отключают другие записи baseline. Группа, которая всё ещё срабатывает с меньшим числом элементов, не считается resolved.
+Stale требует полного сравнимого отсутствия. Stale/inert публикуют проектный Warning baseline.unused-entry с обычной политикой --fail-on. Группа, которая всё ещё срабатывает с меньшим числом элементов, не считается resolved.
 
 ### Lifecycle-команды baseline
 
@@ -528,7 +528,7 @@ Stale- и inert-записи сообщаются, но не завершают 
 
 ```text
 bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
-bin/qmx baseline:update   <baseline> [<paths>...] [--force]
+bin/qmx baseline:update   <baseline> [<paths>...] [--force] [--accept-new=CHANNEL]... [--record-exclusions]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
 bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
@@ -540,9 +540,9 @@ bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
 - `baseline:update` только ужесточает существующие записи. Его `--force` снимает проверку покрытия записанной области.
 - `baseline:cleanup` по умолчанию выводит кандидатов и удаляет только повторяемые селекторы `--remove=REMOVE`. Его `--force` также снимает проверку области.
 - `baseline:explain` показывает порог из конфигурации, принятую величину baseline и override из исходника для канонического символа; `--channel=CHANNEL` сужает ответ.
-- `baseline:rename-channels` переписывает поле `channel` записей, названных объявленной табличной картой, и больше ничего, не анализируя код. Код `1` покрывает и отказ по содержимому, и недоступный файл baseline или карты; `2` — некорректное значение `--format`. В обоих случаях baseline остаётся побайтово неизменным, а сам отказ сообщается в выбранном формате — при `--format=json` объектом с ключом `error`. См. [Перенос baseline на переименованные каналы](baseline.ru.md#перенос-baseline-на-переименованные-каналы) — учти, что перенос записи меняет её селектор.
+- `baseline:rename-channels` переписывает поле `channel` записей, названных объявленной табличной картой, и больше ничего, не анализируя код. Ошибки содержимого, грамматики и окружения следуют политике отказов команды (код 3); частичная запись не публикуется. См. [Перенос baseline на переименованные каналы](baseline.ru.md#перенос-baseline-на-переименованные-каналы) — учти, что перенос записи меняет её селектор.
 
-Четыре анализирующие команды отказываются интерпретировать или записывать baseline при
+Четыре анализирующие команды отказываются классифицировать или записывать baseline при
 неполном анализе и завершаются с кодом 4. `--force` снимает только ограничения
 файла/области; он не делает частичный набор измерений допустимым. Существующий
 файл остаётся побайтово неизменным, а `baseline:generate` не создаёт отсутствующий файл.
@@ -553,6 +553,20 @@ bin/qmx baseline:rename-channels <baseline> <map> [--format=FORMAT]
 Удалённые опции `--generate-baseline` и `--baseline-ignore-stale` не имеют алиасов. Используй вместо них `baseline:generate` и явный `baseline:cleanup --remove`.
 
 ---
+
+### `--accept-new=CHANNEL` и `--record-exclusions`
+
+Несовместимые режимы baseline:update. Повторяй --accept-new с точными выбранными
+объявленными каналами: добавляются только новые полные сравнимые измеренные identity,
+старые границы/modes сохраняются. Wildcard, уровни, необъявленные, configuration-error
+и audit каналы отклоняются с 3 до анализа. --record-exclusions требует точно записанные
+пути даже с --force, записывает полное определение и перезахватывает только затронутые
+полные сравнимые группы с modes. Недоступные доказательства запрещают всю запись.
+Обычный update сохраняет scope/exclusions; равное принятие unchanged, no-op сохраняет
+байты/generated. Пять читателей выполняют preflight документа один раз до анализа/
+переноса: грамматика рано, настроенная семантика позже. Неполный анализ — 4 до записи.
+Stale требует полного сравнимого отсутствия; stale/inert дают проектный Warning
+baseline.unused-entry с обычной политикой --fail-on.
 
 ## Опции подавления
 

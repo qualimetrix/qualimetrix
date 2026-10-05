@@ -106,7 +106,7 @@ final class CodeDuplicationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File)
+            self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::File)->readingRunEvidence()
                 ->withoutConfiguredWarningBoundary(),
         ];
     }

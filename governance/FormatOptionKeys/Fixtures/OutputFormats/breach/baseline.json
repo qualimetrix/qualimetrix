@@ -1,7 +1,8 @@
 {
-  "version": 13,
+  "version": 14,
   "generated": "2026-09-14T20:30:21+00:00",
   "scope": ["src"],
+  "exclusions": {"patterns": [], "generated": "excluded"},
   "entries": {
     "declaration:callable:Fixture\\Noisy::emit@src/Noisy.php": [
       {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":2}

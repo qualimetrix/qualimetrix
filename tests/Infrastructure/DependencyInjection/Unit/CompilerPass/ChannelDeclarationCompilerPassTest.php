@@ -9,10 +9,15 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -27,11 +32,16 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary;
+use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationValidatorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComputedMetricsConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -481,6 +491,69 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         // Stamped as a configuration error, and still carrying its own text.
         self::assertTrue($declarations['architecture.coverage-gap']->isConfigurationError());
         self::assertNotNull($declarations['architecture.coverage-gap']->description);
+    }
+
+    #[Test]
+    public function itRefusesARuleChannelWithBothCatalogJudgesAndExplicitRunEvidence(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleWithConflictingReach::class)
+            ->setClass(FixtureRuleWithConflictingReach::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('names catalog judges and explicit run evidence');
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itRefusesAValidatorChannelWithBothCatalogJudgesAndExplicitRunEvidence(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(FixtureRuleJudgingAnAggregate::class)
+            ->setClass(FixtureRuleJudgingAnAggregate::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(FixtureValidatorWithConflictingReach::class)
+            ->setClass(FixtureValidatorWithConflictingReach::class)
+            ->addTag(ConfigurationValidatorCompilerPass::TAG);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('names catalog judges and explicit run evidence');
+        (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itKeepsTheSixRunEvidenceEmittersExplicitAtTheirOwners(): void
+    {
+        foreach ([
+            ClassRankRule::channelDeclarations()[ClassRankRule::NAME],
+            LayerViolationRule::channelDeclarations()[LayerViolationRule::NAME],
+            UnassignedClassSummary::unassignedClassChannel(),
+            CircularDependencyRule::channelDeclarations()[CircularDependencyRule::NAME],
+            CodeDuplicationRule::channelDeclarations()[CodeDuplicationRule::NAME],
+            array_values(UnusedDirectiveRule::channelDeclarations())[0],
+        ] as $declaration) {
+            self::assertTrue($declaration->readsRunEvidence);
+            self::assertNull($declaration->judges);
+        }
+    }
+
+    #[Test]
+    public function itSuppliesMandatoryReachPortsThroughTheExistingComposition(): void
+    {
+        $container = new ContainerBuilder();
+        (new MeasurementConfigurator())->configure($container);
+        (new ComputedMetricsConfigurator())->configure($container);
+        (new RuleConfigurator())->configure($container);
+
+        $universe = $container->getDefinition(ChannelUniverse::class);
+        self::assertSame(MetricReachCatalogInterface::class, (string) $universe->getArgument('$metricReachCatalog'));
+        self::assertSame(ComputedMetricReachInterface::class, (string) $universe->getArgument('$computedMetricReach'));
+        self::assertSame('qmx.measurement.aggregation', (string) $container->getAlias(MetricReachCatalogInterface::class));
+        $reach = $container->getDefinition((string) $container->getAlias(ComputedMetricReachInterface::class));
+        self::assertSame(MetricReachCatalogInterface::class, (string) $reach->getArgument(0));
     }
 
     private static function registerUniverse(ContainerBuilder $container): void
@@ -1154,6 +1227,87 @@ final class FixtureValidatorWithUndescribedChannel implements ConfigurationValid
         return ['fixture.undescribed-diagnostic' => ChannelDeclaration::occurrence(SymbolLevel::Project)];
     }
 
+    public function validate(AnalysisContext $context): array
+    {
+        return [];
+    }
+}
+
+/** @internal Contradictory reach metadata for the assembly refusal. */
+final class FixtureRuleWithConflictingReach implements RuleInterface
+{
+    public const string NAME = 'fixture.conflicting-reach';
+
+    public const string DOCS_PAGE = 'rules/code-smell.md';
+
+    public const int REMEDIATION_MINUTES = 5;
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public static function getDescription(): string
+    {
+        return 'Fixture rule for the judged-metric half of registry assembly.';
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /**
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Finding>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return [self::NAME => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of('size.class-count.sum'),
+            SymbolLevel::Namespace_,
+        )->readingRunEvidence()];
+    }
+}
+
+/** @internal Shares the magnitude producer while contradicting its reach authority. */
+final class FixtureValidatorWithConflictingReach implements ConfigurationValidatorInterface
+{
+    public static function producerRuleName(): string
+    {
+        return FixtureRuleJudgingAnAggregate::NAME;
+    }
+
+    public static function shape(): ChannelShape
+    {
+        return ChannelShape::Magnitude;
+    }
+
+    /** @return array<string, ChannelDeclaration> */
+    public static function channelDeclarations(): array
+    {
+        return ['fixture.conflicting-diagnostic' => ChannelDeclaration::judging(
+            WorseDirection::Higher,
+            JudgedMetrics::of(MetricName::COMPLEXITY_CCN),
+            SymbolLevel::Class_,
+        )->readingRunEvidence()->describedAs('Reports conflicting evidence.')];
+    }
+
+    /** @return list<\Qualimetrix\Analysis\Finding\Contract\Finding> */
     public function validate(AnalysisContext $context): array
     {
         return [];

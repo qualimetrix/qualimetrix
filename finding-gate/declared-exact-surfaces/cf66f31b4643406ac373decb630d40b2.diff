@@ -1,0 +1,19 @@
+--- candidate
++++ reference (mapped)
+@@ -1,6 +1,5 @@
+-visible 442
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
++visible 386
++{
++  "version": 13,
++  "generated": "<normalized>",
++  "scope": ["src"],
+@@ -17,2 +16,2 @@
+-records 381
+-{"entries":{"declaration:callable:Corpus\\DirectivePlacement\\Placed::outsideDocblock@src/Placed.php":[{"channel":"complexity.ccn","magnitudes":[5]}],"declaration:func:Corpus\\DirectivePlacement::{closure#1}@src/Placed.php":[{"channel":"complexity.ccn","magnitudes":[3]}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++records 329
++{"entries":{"declaration:callable:Corpus\\DirectivePlacement\\Placed::outsideDocblock@src/Placed.php":[{"channel":"complexity.ccn","magnitudes":[5]}],"declaration:func:Corpus\\DirectivePlacement::{closure#1}@src/Placed.php":[{"channel":"complexity.ccn","magnitudes":[3]}]},"generated":"<normalized>","scope":["src"],"version":13}

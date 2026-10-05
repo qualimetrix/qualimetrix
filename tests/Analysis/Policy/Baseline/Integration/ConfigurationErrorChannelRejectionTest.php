@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 
 use DateTimeImmutable;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -23,16 +24,16 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateRefusalReason;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
-use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Policy\Baseline\UncapturedReason;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 
 /**
  * One place where the whole promise of
@@ -106,7 +107,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $generator = new BaselineGenerator(self::registry(), new FixedClock());
 
-        $capture = $generator->generate([self::finding()], ['src']);
+        $capture = $generator->generate([self::finding()], ['src'], self::fixtureExclusions());
 
         self::assertSame([], $capture->baseline->entries);
         self::assertCount(1, $capture->uncaptured);
@@ -120,7 +121,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $finding = self::finding();
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 5);
 
-        $result = $updater->update(self::baselineOf($entry), [$finding], RunScope::fromRecorded(['src']));
+        $result = $updater->update(self::baselineOf($entry), [$finding], StubRuleCoverage::completeFor(self::baselineOf($entry)), []);
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::ConfigurationErrorChannel, $result->outcomes[0]->refusalReason);
@@ -138,6 +139,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
             [$finding],
             self::registry(),
             [],
+            StubRuleCoverage::completeFor(self::baselineOf($entry)),
         );
 
         self::assertCount(1, $candidates);
@@ -155,7 +157,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $finding = self::finding();
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 10, BaselineEntryMode::Suppress);
-        $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry());
+        $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry(), StubRuleCoverage::completeFor(self::baselineOf($entry)), []);
 
         $outcome = $stage->judgeAll([$finding]);
 
@@ -175,7 +177,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $finding = self::finding('architecture.layer-violation', 'architecture.layer-violation');
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), null, 1);
-        $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry());
+        $stage = new BaselineCeilingStage(self::baselineOf($entry), self::registry(), StubRuleCoverage::completeFor(self::baselineOf($entry)), []);
 
         $outcome = $stage->judgeAll([$finding]);
 
@@ -190,6 +192,11 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
         $registry->declare(
             self::RULE_NAME,
             ChannelDeclaration::occurrence(SymbolLevel::Class_)->asConfigurationError(),
+        );
+
+        $registry->declare(
+            'architecture.layer-violation',
+            ChannelDeclaration::occurrence(SymbolLevel::Project)->readingRunEvidence(),
         );
 
         return $registry;
@@ -212,6 +219,14 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
 
     private static function baselineOf(BaselineEntry $entry): Baseline
     {
-        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry]);
+        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], exclusions: self::fixtureExclusions());
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

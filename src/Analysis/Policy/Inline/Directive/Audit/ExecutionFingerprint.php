@@ -70,6 +70,7 @@ final readonly class ExecutionFingerprint
         'dependencyTarget',
         'dependencyType',
         'acceptedLevel',
+        'uncomparedReason',
         'occurrenceKey',
     ];
 
@@ -135,6 +136,7 @@ final readonly class ExecutionFingerprint
             $finding->dependencyTarget?->toCanonical() ?? '',
             $finding->dependencyType->name ?? '',
             $finding->acceptedLevel?->describe() ?? '',
+            $finding->uncomparedReason ?? '',
             $finding->occurrenceKey->value ?? '',
         ]);
     }

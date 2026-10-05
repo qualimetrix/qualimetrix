@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 
 /**
  * The effective boundary for one identity, and where each part of it comes
@@ -39,6 +40,7 @@ final readonly class EffectiveBoundary
         public ?EffectiveBoundaryBaselineSource $baseline,
         public int|float|null $configuredThreshold,
         public ?ThresholdOverride $annotation,
+        public CurrentMeasurement $now,
         public array $currentLocations = [],
     ) {}
 }

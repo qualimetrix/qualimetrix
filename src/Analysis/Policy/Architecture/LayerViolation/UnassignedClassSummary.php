@@ -52,7 +52,7 @@ final class UnassignedClassSummary
      */
     public static function unassignedClassChannel(): ChannelDeclaration
     {
-        return ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project);
+        return ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Project)->readingRunEvidence();
     }
 
     /**

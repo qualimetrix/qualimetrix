@@ -75,7 +75,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringContainsString('1 baseline entries did not appear in this run', $checked->getErrorOutput());
+            self::assertStringContainsString('1 baseline entries are unused (1 stale, 0 inert); rule baseline.unused-entry is not selected in this run.', $checked->getErrorOutput());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();
@@ -111,7 +111,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertStringContainsString('3 violations (3 warnings)', $checked->getDisplay());
-            self::assertStringContainsString('3 baseline entries did not appear in this run', $checked->getErrorOutput());
+            self::assertStringContainsString('3 baseline entries are unused (3 stale, 0 inert); rule baseline.unused-entry is not selected in this run.', $checked->getErrorOutput());
         } finally {
             $project->remove();
         }
@@ -192,7 +192,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringContainsString('2 baseline entries did not appear in this run', $checked->getErrorOutput());
+            self::assertStringContainsString('2 baseline entries are unused (2 stale, 0 inert); rule baseline.unused-entry is not selected in this run.', $checked->getErrorOutput());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();

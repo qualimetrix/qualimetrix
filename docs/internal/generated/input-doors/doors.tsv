@@ -44,6 +44,7 @@ cli	baseline:rename-channels	--format	whole-value	option	yes		invariant:format
 cli	baseline:rename-channels	baseline	whole-value	argument	yes		
 cli	baseline:rename-channels	map	map-file	argument	yes		
 cli	baseline:rename-channels	map	map-row	argument	yes		
+cli	baseline:update	--accept-new	whole-value	option[]	yes		
 cli	baseline:update	--config	whole-value	option	yes		invariant:config
 cli	baseline:update	--disable-rule	whole-value	option[]	yes		
 cli	baseline:update	--memory-limit	whole-value	option	yes		

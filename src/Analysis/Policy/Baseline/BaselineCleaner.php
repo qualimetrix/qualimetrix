@@ -6,6 +6,9 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -56,16 +59,9 @@ final readonly class BaselineCleaner
         array $measured,
         ChannelDeclarationRegistryInterface $declarations,
         array $coverageGaps,
+        RunCoverage $coverage,
     ): array {
-        $measuredKeys = [];
-        foreach ($measured as $finding) {
-            $measuredKeys[] = BaselineIdentity::forFinding($finding)->key();
-        }
-
-        $staleKeys = [];
-        foreach ($baseline->staleEntries($measuredKeys) as $stale) {
-            $staleKeys[$stale->identity->key()] = true;
-        }
+        $judgement = (new BaselineCeilingStage($baseline, $declarations, $coverage, $coverageGaps))->judgeAll($measured);
 
         $candidates = [];
 
@@ -98,11 +94,22 @@ final readonly class BaselineCleaner
                 continue;
             }
 
-            if (isset($staleKeys[$entry->identity->key()])) {
+            if (!\in_array(MetricSubject::levelOfCanonical($entry->identity->subjectKey), $declaration->levels, true)) {
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    $this->absentEntryReason($coverageGaps[$entry->identity->key()] ?? null),
+                    BaselineCleanupReason::LevelNotDeclared,
+                );
+
+                continue;
+            }
+
+            $status = $judgement->statusFor($entry->identity);
+            if ($status === 'stale' || $status === 'unmeasured') {
+                $candidates[] = new BaselineCleanupCandidate(
+                    $entry->selector(),
+                    $entry->identity->describe(),
+                    $status === 'unmeasured' ? BaselineCleanupReason::ProducerDidNotRun : BaselineCleanupReason::Stale,
                 );
             }
         }
@@ -117,15 +124,6 @@ final readonly class BaselineCleaner
         }
 
         return $candidates;
-    }
-
-    private function absentEntryReason(?RunCoverageGap $gap): BaselineCleanupReason
-    {
-        return match ($gap) {
-            RunCoverageGap::NotMeasured => BaselineCleanupReason::ProducerDidNotRun,
-            RunCoverageGap::LevelNotDeclared => BaselineCleanupReason::LevelNotDeclared,
-            null => BaselineCleanupReason::Stale,
-        };
     }
 
     /**
@@ -196,6 +194,7 @@ final readonly class BaselineCleaner
             generated: $this->clock->now(),
             scope: $baseline->scope,
             entries: $entries,
+            exclusions: $baseline->exclusions,
             inertEntries: $inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );

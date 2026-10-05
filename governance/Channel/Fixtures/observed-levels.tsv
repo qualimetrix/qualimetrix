@@ -29,10 +29,10 @@ code-smell.unreachable-code#code-smell.unreachable-code	callable
 code-smell.unused-private#code-smell.unused-private	class
 cohesion.lcom#cohesion.lcom	class
 cohesion.unmatched-exclude-method#cohesion.unmatched-exclude-method	project
-complexity.cognitive#complexity.cognitive.callable	callable
-complexity.cognitive#complexity.cognitive.class	class
 complexity.ccn#complexity.ccn.callable	callable
 complexity.ccn#complexity.ccn.class	class
+complexity.cognitive#complexity.cognitive.callable	callable
+complexity.cognitive#complexity.cognitive.class	class
 complexity.npath#complexity.npath.callable	callable
 complexity.npath#complexity.npath.class	class
 complexity.wmc#complexity.wmc	class
@@ -50,8 +50,8 @@ coupling.instability#coupling.instability.class	class
 coupling.instability#coupling.instability.namespace	namespace
 coupling.unmatched-framework-namespace#coupling.unmatched-framework-namespace	project
 design.data-class#design.data-class	class
-design.god-class#design.god-class	class
 design.dit#design.dit	class
+design.god-class#design.god-class	class
 design.noc#design.noc	class
 design.type-coverage.param#design.type-coverage.param	class
 design.type-coverage.property#design.type-coverage.property	class

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -120,7 +121,11 @@ final class BaselineGenerateCommand extends BaselineCommand
         $this->reportExposure($destination['target'], $output);
 
         $context = $this->baselineRun->measure($input, $output);
-        $capture = $this->generator->generate($context->findings(), $context->scope->paths());
+        $capture = $this->generator->generate(
+            $context->findings(),
+            $context->scope->paths(),
+            RecordedExclusions::fromRunConfiguration($context->configuration),
+        );
         $baseline = $mode === BaselineEntryMode::Suppress
             ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
             : $capture->baseline;
@@ -216,6 +221,7 @@ final class BaselineGenerateCommand extends BaselineCommand
             generated: $baseline->generated,
             scope: $baseline->scope,
             entries: $entries,
+            exclusions: $baseline->exclusions,
             inertEntries: $baseline->inertEntries,
         );
     }

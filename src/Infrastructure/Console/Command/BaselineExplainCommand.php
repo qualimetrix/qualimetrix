@@ -77,7 +77,7 @@ final class BaselineExplainCommand extends BaselineCommand
                 'channel',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Restrict the answer to one channel, in "rule-name#violation-code" form',
+                'Restrict the answer to one exact channel identity',
             )
             ->setHelp(self::withDocsPointer(
                 'Prints, for every channel that either the baseline or the current run has'
@@ -93,22 +93,14 @@ final class BaselineExplainCommand extends BaselineCommand
 
         $channel = $this->readChannel($input);
 
-        // The run first, then the file's contents (ADR 0017). A `computed.*` /
-        // `health.*` channel's declaration is resolved from configuration this
-        // run resolves; a file read before it loads every such entry inert,
-        // and `explain` would then deny the existence of an acceptance `check`
-        // applies on the same file. Whether the file exists needs no
-        // declaration, so that alone is asked before the run.
         $baselinePath = self::baselinePath($input);
-        if ($baselinePath !== null) {
-            BaselineLoader::assertReadable($baselinePath);
-        }
+        $document = $baselinePath !== null ? BaselineLoader::preflight($baselinePath) : null;
 
         $context = $this->baselineRun->measure($input, $output);
         if ($context->result()->measured->coverage->isIntentionallyEmpty()) {
             return self::SUCCESS;
         }
-        $baseline = $baselinePath !== null ? $this->loader->load($baselinePath) : null;
+        $baseline = $document !== null ? $this->loader->load($document) : null;
 
         // Addressability is checked here, not in readChannel(): the registry
         // side needs the computed-metric definitions this run just resolved,
@@ -134,6 +126,8 @@ final class BaselineExplainCommand extends BaselineCommand
             $context->findings(),
             $context->result()->directives->thresholdOverrides,
             $this->configuredThresholds->resolve(),
+            $this->declarations,
+            $context->coverage,
             $context->result()->measured->repository,
         );
 

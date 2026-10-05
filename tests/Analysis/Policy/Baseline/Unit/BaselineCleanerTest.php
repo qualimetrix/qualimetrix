@@ -44,7 +44,7 @@ final class BaselineCleanerTest extends TestCase
         $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -76,7 +76,7 @@ final class BaselineCleanerTest extends TestCase
         $unmeasured = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($unmeasured), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -99,7 +99,7 @@ final class BaselineCleanerTest extends TestCase
         $repaired = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -119,9 +119,9 @@ final class BaselineCleanerTest extends TestCase
         $file = new BaselineEntry(BaselineIdentity::forFinding($fileFinding), [40], 1);
         $coverage = StubRuleCoverage::everyRuleRan()->classify([$project->identity, $file->identity]);
 
-        self::assertSame([$project->identity->key() => RunCoverageGap::LevelNotDeclared], $coverage);
+        self::assertSame([], $coverage);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($project, $file),
             [$fileFinding],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -142,7 +142,7 @@ final class BaselineCleanerTest extends TestCase
 
         self::assertSame([$file->identity->key() => RunCoverageGap::NotMeasured], $coverage);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($file),
             [],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -154,7 +154,7 @@ final class BaselineCleanerTest extends TestCase
     }
 
     #[Test]
-    public function itClassifiesOnlyTheMissingLevelOfAMultilevelChannelAndIgnoresAnUnknownProducer(): void
+    public function itLeavesUndeclaredLevelsToTheLoaderAndIgnoresAnUnknownProducer(): void
     {
         $channel = new FindingChannel('complexity.ccn');
         $callable = new BaselineIdentity('callable:App\\Foo::bar', $channel);
@@ -163,7 +163,7 @@ final class BaselineCleanerTest extends TestCase
         $unknown = new BaselineIdentity('project:', new FindingChannel('legacy.unknown'));
 
         self::assertSame(
-            [$project->key() => RunCoverageGap::LevelNotDeclared],
+            [],
             StubRuleCoverage::everyRuleRan()->classify([$callable, $class, $project, $unknown]),
         );
     }
@@ -174,11 +174,11 @@ final class BaselineCleanerTest extends TestCase
         $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [$finding],
             new StubChannelDeclarationRegistry(),
-            [$entry->identity->key() => RunCoverageGap::LevelNotDeclared],
+            [$entry->identity->key() => RunCoverageGap::NotMeasured],
         );
 
         self::assertCount(1, $candidates);
@@ -196,7 +196,7 @@ final class BaselineCleanerTest extends TestCase
         $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15, 'nobody.declares', 'this.channel');
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [],
             new StubChannelDeclarationRegistry(),
@@ -213,7 +213,7 @@ final class BaselineCleanerTest extends TestCase
         $finding = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [15], 1);
 
-        $candidates = $this->cleaner()->candidates(
+        $candidates = $this->candidates(
             self::baselineOf($entry),
             [$finding],
             StubChannelDeclarationRegistry::withDefaults(),
@@ -228,9 +228,9 @@ final class BaselineCleanerTest extends TestCase
     {
         $inert = self::inertEntry('file:src/Legacy.php', InertEntryReason::UnrecognizedMode);
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert], exclusions: self::fixtureExclusions());
 
-        $candidates = $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
+        $candidates = $this->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
         self::assertCount(1, $candidates);
         self::assertSame(BaselineCleanupReason::Inert, $candidates[0]->reason);
@@ -245,7 +245,7 @@ final class BaselineCleanerTest extends TestCase
         $entry = new BaselineEntry(BaselineIdentity::forFinding($repaired), [15], 1);
         $baseline = self::baselineOf($entry);
 
-        $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
+        $this->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
         self::assertSame([$entry], $baseline->entries, 'candidates() must not mutate the baseline it was given');
     }
@@ -300,7 +300,7 @@ final class BaselineCleanerTest extends TestCase
         $kept = self::inertEntry('file:kept.php', InertEntryReason::Malformed);
         $removed = self::inertEntry('file:gone.php', InertEntryReason::Malformed);
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$kept, $removed]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$kept, $removed], exclusions: self::fixtureExclusions());
 
         $result = $this->cleaner()->remove($baseline, [$removed->selector]);
 
@@ -337,7 +337,7 @@ final class BaselineCleanerTest extends TestCase
         $first = self::inertEntry('file:one.php', InertEntryReason::Malformed, $shared);
         $second = self::inertEntry('file:two.php', InertEntryReason::Malformed, $shared);
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$first, $second]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$first, $second], exclusions: self::fixtureExclusions());
 
         $result = $this->cleaner()->remove($baseline, [$shared]);
 
@@ -360,6 +360,7 @@ final class BaselineCleanerTest extends TestCase
             scope: ['src'],
             entries: [$removedEntry],
             inertEntries: [$first, $second],
+            exclusions: self::fixtureExclusions(),
         );
 
         $result = $this->cleaner()->remove($baseline, [
@@ -405,11 +406,32 @@ final class BaselineCleanerTest extends TestCase
     public function itCarriesTheSourceContentHashForward(): void
     {
         $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], sourceContentHash: 'abc123');
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], sourceContentHash: 'abc123', exclusions: self::fixtureExclusions());
 
         $result = $this->cleaner()->remove($baseline, []);
 
         self::assertSame('abc123', $result->baseline->sourceContentHash);
+    }
+
+    /**
+     * @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured
+     * @param array<string, RunCoverageGap> $gaps
+     *
+     * @return list<\Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate>
+     */
+    private function candidates(
+        Baseline $baseline,
+        array $measured,
+        \Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface $declarations,
+        array $gaps,
+    ): array {
+        return $this->cleaner()->candidates(
+            $baseline,
+            $measured,
+            $declarations,
+            $gaps,
+            StubRuleCoverage::completeFor($baseline),
+        );
     }
 
     private function cleaner(): BaselineCleaner
@@ -419,7 +441,7 @@ final class BaselineCleanerTest extends TestCase
 
     private static function baselineOf(BaselineEntry ...$entries): Baseline
     {
-        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: array_values($entries));
+        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: array_values($entries), exclusions: self::fixtureExclusions());
     }
 
     private static function gotoChannel(): FindingChannel
@@ -437,6 +459,14 @@ final class BaselineCleanerTest extends TestCase
             reason: $reason,
             detail: 'test fixture',
             raw: 'garbage',
+        );
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
         );
     }
 }

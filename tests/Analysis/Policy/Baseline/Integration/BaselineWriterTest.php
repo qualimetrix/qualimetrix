@@ -29,6 +29,7 @@ use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
+use stdClass;
 
 #[CoversClass(BaselineWriter::class)]
 #[CoversClass(BaselineConflictException::class)]
@@ -66,10 +67,11 @@ final class BaselineWriterTest extends TestCase
         /** @var array<string, mixed> $data */
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertSame(['version', 'generated', 'scope', 'entries'], array_keys($data));
-        self::assertSame(13, $data['version']);
+        self::assertSame(['version', 'generated', 'scope', 'exclusions', 'entries'], array_keys($data));
+        self::assertSame(14, $data['version']);
         self::assertSame('2026-08-05T12:00:00+03:00', $data['generated']);
         self::assertSame(['src'], $data['scope']);
+        self::assertSame(['patterns' => [], 'generated' => 'excluded'], $data['exclusions']);
     }
 
     #[Test]
@@ -94,6 +96,7 @@ final class BaselineWriterTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: [],
             entries: [],
+            exclusions: self::fixtureExclusions(),
         ));
 
         self::assertStringContainsString('"entries": {}', (string) file_get_contents($path));
@@ -116,7 +119,7 @@ final class BaselineWriterTest extends TestCase
     public function itRoundTripsEdgesAndMultiElementMagnitudes(): void
     {
         $path = $this->write($this->baseline());
-        $reloaded = $this->loader->load($path);
+        $reloaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
 
         self::assertSame(3, $reloaded->count());
         self::assertSame(
@@ -161,7 +164,7 @@ final class BaselineWriterTest extends TestCase
 
                 self::assertSame(
                     [0.1, 1.234568, 40.0, 1234.567891],
-                    $this->loader->load($path)->entries[0]->magnitudes,
+                    $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path))->entries[0]->magnitudes,
                     'serialize_precision=' . $precision,
                 );
             }
@@ -273,7 +276,7 @@ final class BaselineWriterTest extends TestCase
     {
         $path = $this->write($this->baseline());
 
-        $readByBoth = $this->loader->load($path);
+        $readByBoth = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
 
         // Writer A lands.
         $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
@@ -305,10 +308,10 @@ final class BaselineWriterTest extends TestCase
         self::assertTrue(is_link($path));
         self::assertSame($referent, readlink($path));
         self::assertNotSame($contents, file_get_contents($referent));
-        self::assertSame(3, $this->loader->load($referent)->count());
+        self::assertSame(3, $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($referent))->count());
         self::assertSame(0o600, fileperms($referent) & 0o7777);
 
-        $loaded = $this->loader->load($referent);
+        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($referent));
         $prepared = \Qualimetrix\Core\FileTarget\TargetPath::resolve($path);
         file_put_contents($referent, 'concurrent replacement');
 
@@ -424,7 +427,7 @@ final class BaselineWriterTest extends TestCase
     public function itRefusesWhenTheFileVanishedSinceItWasRead(): void
     {
         $path = $this->write($this->baseline());
-        $loaded = $this->loader->load($path);
+        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
         unlink($path);
 
         try {
@@ -445,7 +448,7 @@ final class BaselineWriterTest extends TestCase
     public function itAcceptsASecondWriteOfABaselineCarryingTheTokenOfTheFirst(): void
     {
         $path = $this->write($this->baseline());
-        $loaded = $this->loader->load($path);
+        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
 
         // Each step drops an entry, so each write really changes the file and
         // the previous reading genuinely goes out of date.
@@ -477,6 +480,7 @@ final class BaselineWriterTest extends TestCase
             entries: \array_slice($baseline->entries, 0, $keep),
             inertEntries: $baseline->inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -494,9 +498,10 @@ final class BaselineWriterTest extends TestCase
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => [
                 'callable:App\Foo::bar' => [
                     ['channel' => $duplicated, 'magnitudes' => [3]],
@@ -507,7 +512,7 @@ final class BaselineWriterTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
 
-        $loaded = $this->loader->load($path);
+        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
         self::assertCount(4, $loaded->inertEntries, 'Both duplicates and both unreadable lines are inert.');
 
         $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
@@ -547,6 +552,7 @@ final class BaselineWriterTest extends TestCase
                 new BaselineEntry(new BaselineIdentity('file:' . $this->tempDir . '/src/Foo.php', $channel), null, 7),
                 new BaselineEntry(new BaselineIdentity('file:src/Foo.php', $channel), null, 3),
             ],
+            exclusions: self::fixtureExclusions(),
         );
 
         self::assertSame(2, $baseline->count(), 'The two are distinct identities in memory.');
@@ -566,9 +572,10 @@ final class BaselineWriterTest extends TestCase
     {
         $path = $this->tempDir . '/mixed.json';
         file_put_contents($path, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => [
                 'class:App\Foo' => [
                     ['channel' => 'zzz.undeclared', 'count' => 1],
@@ -578,7 +585,7 @@ final class BaselineWriterTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
 
-        $this->writer->write($this->loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
@@ -597,7 +604,7 @@ final class BaselineWriterTest extends TestCase
     public function itAcceptsAWriteWhenTheFileStillHoldsWhatWasRead(): void
     {
         $path = $this->write($this->baseline());
-        $loaded = $this->loader->load($path);
+        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
 
         $hash = $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
@@ -613,7 +620,7 @@ final class BaselineWriterTest extends TestCase
         // No source hash: nothing was read, so there is nothing to conflict with.
         $this->writer->write($this->baseline(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
-        self::assertStringContainsString('"version": 13', (string) file_get_contents($path));
+        self::assertStringContainsString('"version": 14', (string) file_get_contents($path));
     }
 
     /**
@@ -638,12 +645,84 @@ final class BaselineWriterTest extends TestCase
                 detail: 'no rule declares it',
                 raw: $raw,
             )],
+            exclusions: self::fixtureExclusions(),
         ));
 
         /** @var array{entries: array<string, list<mixed>>} $data */
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([$raw], $data['entries']['callable:App\Foo::bar']);
+
+        $malformedSubject = 'callable:App\Malformed::run';
+        foreach ([(object) [0 => ['channel' => 'complexity.ccn', 'magnitudes' => [20], 'unknown_key' => true]], new stdClass()] as $bucket) {
+            file_put_contents($path, json_encode([
+                'version' => 14,
+                'generated' => '2026-08-05T12:00:00+03:00',
+                'scope' => ['src'],
+                'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+                'entries' => [
+                    $malformedSubject => $bucket,
+                    'callable:App\Foo::bar' => [['channel' => 'complexity.ccn', 'magnitudes' => [20]]],
+                ],
+            ], \JSON_THROW_ON_ERROR));
+
+            $loaded = $this->loader->load(BaselineLoader::preflight($path));
+            self::assertCount(1, $loaded->entries);
+            self::assertSame([20.0], $loaded->entries[0]->magnitudes);
+            self::assertCount(1, $loaded->inertEntries);
+            self::assertSame(InertEntryReason::Malformed, $loaded->inertEntries[0]->reason);
+            self::assertInstanceOf(stdClass::class, $loaded->inertEntries[0]->raw);
+            self::assertSame(json_encode($bucket), json_encode($loaded->inertEntries[0]->raw));
+
+            $tightened = new Baseline(
+                generated: $loaded->generated,
+                scope: $loaded->scope,
+                entries: [new BaselineEntry($loaded->entries[0]->identity, [10], 1)],
+                inertEntries: $loaded->inertEntries,
+                sourceContentHash: $loaded->sourceContentHash,
+                exclusions: $loaded->exclusions,
+            );
+            $this->writer->write($tightened, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+
+            $rewritten = json_decode((string) file_get_contents($path), false, 512, \JSON_THROW_ON_ERROR);
+            self::assertInstanceOf(stdClass::class, $rewritten);
+            self::assertInstanceOf(stdClass::class, $rewritten->entries);
+            self::assertInstanceOf(stdClass::class, $rewritten->entries->{$malformedSubject});
+            self::assertSame(json_encode($bucket), json_encode($rewritten->entries->{$malformedSubject}));
+            $reloaded = $this->loader->load(BaselineLoader::preflight($path));
+            self::assertCount(1, $reloaded->entries);
+            self::assertSame([10.0], $reloaded->entries[0]->magnitudes);
+            self::assertCount(1, $reloaded->inertEntries);
+            self::assertSame(InertEntryReason::Malformed, $reloaded->inertEntries[0]->reason);
+            self::assertSame($loaded->inertEntries[0]->selector->value, $reloaded->inertEntries[0]->selector->value);
+            self::assertInstanceOf(stdClass::class, $reloaded->inertEntries[0]->raw);
+            self::assertSame(json_encode($bucket), json_encode($reloaded->inertEntries[0]->raw));
+
+            $beforeCollision = file_get_contents($path);
+            $collision = new Baseline(
+                generated: $reloaded->generated,
+                scope: $reloaded->scope,
+                entries: [...$reloaded->entries, new BaselineEntry(
+                    new BaselineIdentity($malformedSubject, new FindingChannel('complexity.ccn')),
+                    [10],
+                    1,
+                )],
+                inertEntries: $reloaded->inertEntries,
+                sourceContentHash: $reloaded->sourceContentHash,
+                exclusions: $reloaded->exclusions,
+            );
+            try {
+                $this->writer->write($collision, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+                self::fail('A malformed bucket cannot be combined with an entry under the same subject.');
+            } catch (InvalidArgumentException $e) {
+                self::assertSame(
+                    'Baseline subject ' . $malformedSubject . ' contains a malformed object bucket alongside another entry; '
+                    . 'clean up the malformed bucket before adding entries to this subject.',
+                    $e->getMessage(),
+                );
+            }
+            self::assertSame($beforeCollision, file_get_contents($path));
+        }
     }
 
     #[Test]
@@ -660,6 +739,7 @@ final class BaselineWriterTest extends TestCase
                 null,
                 1,
             )],
+            exclusions: self::fixtureExclusions(),
         ));
 
         /** @var array{entries: array<string, list<mixed>>} $data */
@@ -689,6 +769,7 @@ final class BaselineWriterTest extends TestCase
                 generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
                 scope: RunScope::record([$projectRoot], $projectRoot)->paths(),
                 entries: [],
+                exclusions: self::fixtureExclusions(),
             ),
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             $projectRoot,
@@ -732,11 +813,12 @@ final class BaselineWriterTest extends TestCase
         $lines = explode("\n", (string) file_get_contents($path));
 
         self::assertSame('{', $lines[0]);
-        self::assertSame('  "version": 13,', $lines[1]);
+        self::assertSame('  "version": 14,', $lines[1]);
         self::assertSame('  "scope": ["src"],', $lines[3]);
-        self::assertSame('  "entries": {', $lines[4]);
-        self::assertSame('    "callable:App\\\\Foo::bar": [', $lines[5]);
-        self::assertSame('    ],', $lines[7]);
+        self::assertSame('  "exclusions": {"patterns":[],"generated":"excluded"},', $lines[4]);
+        self::assertSame('  "entries": {', $lines[5]);
+        self::assertSame('    "callable:App\\\\Foo::bar": [', $lines[6]);
+        self::assertSame('    ],', $lines[8]);
     }
 
     /**
@@ -749,7 +831,7 @@ final class BaselineWriterTest extends TestCase
         $path = $this->write($this->baseline());
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load($path), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertSame($first, (string) file_get_contents($path));
     }
@@ -838,6 +920,7 @@ final class BaselineWriterTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: ['src'],
             entries: $reversed ? array_reverse($entries) : $entries,
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -854,6 +937,7 @@ final class BaselineWriterTest extends TestCase
                 [0.1, 1.2345678, 40.0, 1234.5678912],
                 4,
             )],
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -875,5 +959,13 @@ final class BaselineWriterTest extends TestCase
         }
 
         rmdir($dir);
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

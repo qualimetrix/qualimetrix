@@ -162,6 +162,18 @@ final class RenameControls
                 )),
             [new Expectation(FailureClass::MAP_STALE, 'code-smell.never-emitted'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:smells|format:json', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:baseline-cycle|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:config-precedence|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:directive-placement|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:discovery|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:duplication-size|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:incomplete-directory-symlink|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:only-rules|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:parallel-files|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:scoped-layers|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:stderr-warning|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:suppression|format:suppressed', exactScope: true),
+                new Expectation(FailureClass::SURFACE_MISMATCH, 'case:threshold-raising|format:suppressed', exactScope: true),
                 ...ChannelRenamePlants::caseListingFailures('smells')],
             // `tree|rules` moves here too — the mutation renames a producer and
             // the listing prints producer names — and whether that shows up as

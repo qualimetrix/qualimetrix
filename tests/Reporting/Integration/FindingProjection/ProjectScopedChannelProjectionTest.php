@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -119,6 +120,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
             ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...ProjectScopeChannels::PROJECT_SCOPED_CHANNELS,
+            ...\Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels::PROJECT_SCOPED_CHANNELS,
         ];
     }
 
@@ -134,6 +136,12 @@ final class ProjectScopedChannelProjectionTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             new ReportingGitScopeQuery(),
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
     }
 

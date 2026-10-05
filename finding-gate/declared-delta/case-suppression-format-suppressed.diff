@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -333,6 +333,0 @@
+-            "producer": "baseline.unused-entry",
+-            "reason": "filtered",
+-            "statement": "only_rules: [suppression.configuration]",
+-            "layer": "configuration file \"qmx.yaml\""
+-        },
+-        {

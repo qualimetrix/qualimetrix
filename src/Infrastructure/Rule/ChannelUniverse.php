@@ -7,11 +7,16 @@ namespace Qualimetrix\Infrastructure\Rule;
 use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\ValueReach;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
 /**
@@ -58,6 +63,8 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
         private array $staticChannelKeysByProducer,
         private array $thresholdOverrideSupportByRule,
         private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private MetricReachCatalogInterface $metricReachCatalog,
+        private ComputedMetricReachInterface $computedMetricReach,
     ) {
         $producerByCode = [];
 
@@ -99,6 +106,38 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             $definition->inverted ? WorseDirection::Lower : WorseDirection::Higher,
             ...$levels,
         );
+    }
+
+    public function reachAt(FindingChannel $channel, SymbolLevel $level): ValueReach
+    {
+        $declaration = $this->declarationFor($channel)
+            ?? throw new LogicException(\sprintf('Unknown finding channel "%s".', $channel->code));
+        if (!\in_array($level, $declaration->levels, true)) {
+            throw new LogicException(\sprintf('Channel "%s" does not report at level "%s".', $channel->code, $level->value));
+        }
+
+        if ($declaration->readsRunEvidence) {
+            return ValueReach::Run;
+        }
+
+        if ($declaration->judges !== null) {
+            $reach = ValueReach::Members;
+            foreach ($declaration->judges->keys as $key) {
+                if ($this->metricReachCatalog->metricReach($key) === MetricReach::Run) {
+                    $reach = ValueReach::Run;
+                }
+            }
+
+            return $reach;
+        }
+
+        if (!isset($this->staticDeclarations[$channel->code])) {
+            return $this->computedMetricReach->reachAt($channel->code, $level, $this->definitionCatalog) === MetricReach::Run
+                ? ValueReach::Run
+                : ValueReach::Members;
+        }
+
+        return ValueReach::Members;
     }
 
     public function staticDeclarations(): array
@@ -218,6 +257,8 @@ final readonly class ChannelUniverse implements ChannelUniverseInterface, RuleCh
             $this->staticChannelKeysByProducer,
             $this->thresholdOverrideSupportByRule,
             $definitions,
+            $this->metricReachCatalog,
+            $this->computedMetricReach,
         );
     }
 

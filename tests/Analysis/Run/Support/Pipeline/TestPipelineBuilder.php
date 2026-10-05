@@ -246,7 +246,7 @@ final class TestPipelineBuilder
      */
     private function resolveInlineDirectivePolicy(RuleConfigurationInterface $configuration): InlineDirectivePolicyInterface
     {
-        $universe = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
+        $universe = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
 
         $refused = new RefusedDirectives($universe);
 
@@ -338,5 +338,27 @@ final class TestPipelineBuilder
         $processor->bind($this->architectureConfiguration ?? ArchitectureConfiguration::empty());
 
         return $processor;
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

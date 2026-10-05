@@ -34,7 +34,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 final class PublishedFinding
 {
     /**
-     * The message with the accepted level of a measured breach appended — for
+     * The message with the baseline comparison status appended — for
      * a surface with a single free-text slot.
      */
     public static function annotatedMessage(Finding $finding): string
@@ -74,7 +74,23 @@ final class PublishedFinding
         ];
     }
 
-    /** " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017). */
+    /** @return array{acceptedLevel: ?array{shape: string, describe: string, count: int}, baselineVerdict: ?string, baselineReason: ?string} */
+    public static function baselineFields(Finding $finding): array
+    {
+        $accepted = $finding->acceptedLevel;
+
+        return [
+            'acceptedLevel' => $accepted === null ? null : [
+                'shape' => $accepted->shape()->value,
+                'describe' => $accepted->describe(),
+                'count' => $accepted->count,
+            ],
+            'baselineVerdict' => $accepted === null ? null : ($finding->uncomparedReason === null ? 'breached' : 'not-compared'),
+            'baselineReason' => $accepted === null ? null : $finding->uncomparedReason,
+        ];
+    }
+
+    /** Appends the accepted level and comparison status when a baseline addressed the finding. */
     private static function breachSuffix(Finding $finding): string
     {
         $breach = AcceptedLevelNarrator::describe($finding);

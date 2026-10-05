@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**
@@ -167,6 +168,7 @@ final readonly class HtmlFindingPartitioner
                         ? null
                         : $context->relativizePath($finding->location->file),
                     'line' => $finding->location->line,
+                    ...PublishedFinding::baselineFields($finding),
                 ];
             }
         }

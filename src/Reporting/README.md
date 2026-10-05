@@ -53,6 +53,8 @@ Reporting/
 │   ├── FindingProjectionOptions.php      # Immutable projection controls
 │   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
 │   ├── FindingProjector.php              # Authoritative suppression/filtering order
+│   ├── BaselineFindingProjection.php     # One held-document ceiling judgement and late baseline audit
+│   ├── ConfiguredExclusionProjection.php # Ordered path and namespace exclusion operations
 │   ├── GitScopeFindingFilter.php          # Private Git publication predicate; the projector retains query and order
 │   ├── SuppressionMechanism.php           # Closed 7-value vocabulary: 5 FindingFilterStage cases + the 2 per-rule ledger halves
 │   ├── SuppressedFinding.php              # One finding x mechanism x suppressor pairing (multiset unit, not a finding-level fact)
@@ -77,7 +79,7 @@ Reporting/
     ├── CheckstyleFormatter.php             # Checkstyle XML
     ├── GithubActionsFormatter.php          # GitHub Actions annotation output
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
-    ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a measured breach
+    ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a breach or not-compared group
     ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
     ├── Ansi/                                # ANSI escape sequences
     │   └── AnsiColor.php                   # Lightweight ANSI color wrapper
@@ -531,7 +533,7 @@ priority and its policy/health result is not authoritative.
 
 **`invalidUtf8Replaced`:** present only when strings from the analysed source were not valid UTF-8; each invalid byte was replaced by U+FFFD and the key counts the strings repaired. `metrics`, `suppressed` and the HTML payload publish the same key; `sarif`, `gitlab` and `checkstyle` publish the repair in their own diagnostic channel (see `Formatter\PublishedUtf8`). SARIF repairs a path before percent-encoding it, because `%FF` is valid ASCII the encoder would never refuse.
 
-**`acceptedLevel`:** `null` unless the finding is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
+**`acceptedLevel`:** `null` unless a baseline entry accompanies a measured breach or a present incomparable group (see [Accepted level and baseline verdict](#accepted-level-and-baseline-verdict) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. The sibling `baselineVerdict` distinguishes `breached` from `not-compared`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 
 **Identity fields:** `symbol` remains the logical/display projection. Stable
 machine identity is `channel + subject + optional occurrence + optional edge`:
@@ -780,8 +782,9 @@ $finding->code // Stable finding code for identification
 $finding->symbolPath    // SymbolPath object
 $finding->location      // Location object (file, line); check isNone() for architectural findings
 $finding->metricValue   // int|float|null
-$finding->acceptedLevel // ?AcceptedLevel — set only on a measured baseline breach (ADR 0017); null on every other finding, including one
-                          // no baseline ever judged. See "Accepted level" below.
+$finding->acceptedLevel // ?AcceptedLevel — stored cap for breached or not-compared groups
+$finding->baselineVerdict // ?string — breached / not-compared
+$finding->baselineReason  // ?string — scalar comparison reason
 
 $report->findings       // list<Finding>
 $report->filesAnalyzed    // int
@@ -816,35 +819,29 @@ BaselineRun, GraphExportCommand and DirectiveAuditPresenter construct
 ReportCoverage and reuse that sentence for complete intentionally empty results.
 The manifest names these exact adapter consumers.
 
-## Accepted level (baseline breach)
+## Accepted level and baseline verdict
 
-`Finding::$acceptedLevel` is set only when a finding is a **measured breach**
-of a baseline entry (ADR 0017): the group
-was checked against an applicable entry and exceeded it, and severity was
-already promoted to `Error` via `Finding::reportedAsBreach()`. It is `null`
-on every other finding, including one no baseline ever judged.
+`Finding::$acceptedLevel` can accompany a measured breach or a present
+incomparable group. `baselineVerdict` and nullable scalar `baselineReason`
+provide the judgement: `breached` promotes to Error, `not-compared` keeps normal
+severity, null establishes neither. AcceptedLevel alone is never a breach flag.
 
-`Formatter\AcceptedLevelNarrator::describe(Finding $v): ?string`
-renders the human fragment — `"accepted at 25, now 31"` for a `magnitude`
-channel, `"accepted at 3 occurrences"` for an `occurrence` channel (no
-fabricated "now": the mechanism compares a group size no single `Finding`
-carries). Returns `null` when `$acceptedLevel` is absent.
+`AcceptedLevelNarrator` renders accepted/current breach values or the explicit
+not-compared reason. Text/detail, Summary/detail, Checkstyle, GitLab, GitHub and
+SARIF carry that narration. JSON and HTML carry structured acceptedLevel,
+baselineVerdict and baselineReason; the HTML viewer renders both states.
+Metrics, Health and Suppressed do not publish this baseline audit.
 
-Per-format decision — whether the accepted level is carried, and how:
-
-| Format                  | Carries it? | Mechanism                                                                                                                                                          |
-| ----------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `text` / `text-verbose` | Yes         | Appended to the message via `AcceptedLevelNarrator`                                                                                                                |
-| `summary --detail`      | Yes         | Shares `DetailedFindingRenderer` with `text --detail`                                                                                                              |
-| `checkstyle`            | Yes         | Appended to the `message` attribute (schema has no dedicated field)                                                                                                |
-| `gitlab`                | Yes         | Appended to `description` (fingerprint still hashes the unmodified message)                                                                                        |
-| `github`                | Yes         | Appended to the annotation message, before escaping                                                                                                                |
-| `sarif`                 | Yes         | Appended to `message.text`; `result.level` and the rule's run-level default already derive from `Finding::severity`, so promotion propagates without extra mapping |
-| `suppressed`            | No          | An audit of suppression, not of measurement; the entry's identity reaches the finding's own record                                                                 |
-| `json`                  | Yes         | Structured `acceptedLevel: {shape, describe, count} \| null` field per finding; `now` is the existing sibling `metricValue` field, not duplicated                  |
-| `metrics`               | No          | Carries no findings at all — only raw collected metric values                                                                                                      |
-| `health`                | No          | Renders health-dimension scores, never individual findings                                                                                                         |
-| `html`                  | No          | Would need viewer (JS) changes in `html-report/` to render; left for a dedicated follow-up rather than shipping an inert data field                                |
+`EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
+Warnings for stale and inert entries after the full ceiling and before Git
+projection. The rule's remediation estimate is 5 minutes. Audit findings never
+enter the measured set, capture or accept-new; authored path/namespace
+suppression and Git projection cannot hide them. When unselected, stderr reports
+counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
+Nine finding formats publish the audit; Metrics, Health and Suppressed retain
+their own subjects. All twelve preserve the ordinary failure policy: an isolated
+audit warning exits 0 by default, with `--fail-on=error` or `none`, and 1 with
+`--fail-on=warning`. Incomplete analysis has priority and exits 4.
 
 ## Formatter Comparison
 

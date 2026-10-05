@@ -161,6 +161,16 @@ final class ConfigurationRefusal extends RuntimeException implements RefusalInte
         return self::aboutDocument(ConfigurationOrigin::of(ConfigurationSource::Preset, $preset), $summary, $previous);
     }
 
+    /** A key position inside a baseline file. */
+    public static function atBaselineFileKey(
+        string $path,
+        RefusedPosition $position,
+        string $summary,
+        ?Throwable $previous = null,
+    ): self {
+        return self::at(ConfigurationOrigin::of(ConfigurationSource::BaselineFile, $path), $position, $summary, $previous);
+    }
+
     /** A baseline file that could not be read, parsed, or accepted as a whole. */
     public static function aboutBaselineFileDocument(
         string $path,

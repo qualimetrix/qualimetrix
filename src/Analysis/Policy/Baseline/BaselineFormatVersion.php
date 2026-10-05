@@ -16,7 +16,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  */
 final class BaselineFormatVersion
 {
-    public const int CURRENT = 13;
+    public const int CURRENT = 14;
 
     private function __construct() {}
 }

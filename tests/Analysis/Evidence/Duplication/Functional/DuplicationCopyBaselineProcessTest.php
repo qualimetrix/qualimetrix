@@ -137,17 +137,21 @@ final class DuplicationCopyBaselineProcessTest extends TestCase
             $explained = $this->qmx('baseline:explain', 'file:src/' . $class . '.php', 'src', '--config=qmx.yaml', '--baseline=baseline.json', '--no-progress');
             self::assertSame(0, $explained['exitCode'], $explained['stderr'] . "\n" . $explained['stdout']);
 
-            preg_match_all('/Occurrence: ([0-9a-f]{16})\n    Reported at: (\S+)\n    baseline: +(.+)\n/', $explained['stdout'], $sections, \PREG_SET_ORDER);
+            preg_match_all('/Occurrence: ([0-9a-f]{16})\n    Reported at: (\S+)\n    baseline: +(.+)\n    now: +(.+)\n/', $explained['stdout'], $sections, \PREG_SET_ORDER);
             self::assertCount(1, $sections, $explained['stdout']);
-            foreach ($sections as [, $occurrence, $at, $baseline]) {
-                $baselineByFile[$at] = $baseline;
+            foreach ($sections as [, $occurrence, $at, $baseline, $now]) {
+                $baselineByFile[$at] = ['baseline' => $baseline, 'now' => $now];
                 $occurrences[] = $occurrence;
             }
         }
         ksort($baselineByFile);
 
         self::assertSame(
-            ['src/Alpha.php:4' => 'accepted 19; now 19', 'src/Beta.php:4' => 'accepted 19; now 19', 'src/Gamma.php:4' => '(none)'],
+            [
+                'src/Alpha.php:4' => ['baseline' => 'accepted 19', 'now' => '19'],
+                'src/Beta.php:4' => ['baseline' => 'accepted 19', 'now' => '19'],
+                'src/Gamma.php:4' => ['baseline' => '(none)', 'now' => '19'],
+            ],
             $baselineByFile,
         );
         self::assertCount(1, array_unique($occurrences), 'file subject distinguishes copies with the same occurrence');

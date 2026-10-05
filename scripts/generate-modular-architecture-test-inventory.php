@@ -19,13 +19,11 @@ require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-// 70 paths. Stage 05 moved four of them from Unit/ to Integration/ --
-// BaselineChannelRenamerTest, BaselineRoundTripVOTest, BaselineWriterTest and
-// ConfigurationErrorChannelRejectionTest -- because their bodies do real work,
-// not because the set changed: no file entered or left the tree, and the count
-// is the same on both sides of the move. Re-hash only against a diff of the
-// path list; a digest refreshed to make the generator run again asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = '45d8f941f21c403684dbcd8aa4bc99c9a9955a70869b5128177925904f640432';
+// 77 paths: the accepted finite Baseline artifact set plus comparison,
+// group-measurement, subject-region, update-mode and unused-entry regressions.
+// Re-hash only against a diff of the path list; refreshing the digest without
+// checking that delta asserts nothing.
+const P6_C_BASELINE_PATHS_SHA256 = 'd9c2bae1bf340434758db18b58526c66b0008467609e129e833b9e5bba6f8548';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);

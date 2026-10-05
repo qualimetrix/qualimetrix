@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Core\Symbol\SymbolLevel;
+
 /**
  * Answers "what is the declaration for this channel?" — the single lookup the
  * baseline ceiling and the finding projection need to decide whether a channel
@@ -49,6 +51,9 @@ interface ChannelDeclarationRegistryInterface
      * `computed.*` / `health.*` definition).
      */
     public function declarationFor(FindingChannel $channel): ?ChannelDeclaration;
+
+    /** Unknown channels and levels outside their declaration are refused. */
+    public function reachAt(FindingChannel $channel, SymbolLevel $level): ValueReach;
 
     /**
      * The statically declared set only — excludes the run-time

@@ -93,6 +93,7 @@ final readonly class ChannelDeclaration
         public ?string $description = null,
         public bool $usesProducerWarningBoundary = true,
         public ChannelSelectionRole $selectionRole = ChannelSelectionRole::Selectable,
+        public bool $readsRunEvidence = false,
     ) {
         $this->levels = self::canonicalLevels($levels);
     }
@@ -182,7 +183,7 @@ final readonly class ChannelDeclaration
      */
     public function asConfigurationError(): self
     {
-        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole);
+        return new self($this->direction, true, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence);
     }
 
     /**
@@ -202,17 +203,23 @@ final readonly class ChannelDeclaration
             throw new InvalidArgumentException('A channel description must not be blank.');
         }
 
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary, $this->selectionRole);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $description, $this->usesProducerWarningBoundary, $this->selectionRole, $this->readsRunEvidence);
     }
 
     public function withoutConfiguredWarningBoundary(): self
     {
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false, $this->selectionRole);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, false, $this->selectionRole, $this->readsRunEvidence);
     }
 
     public function selectedAs(ChannelSelectionRole $role): self
     {
-        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $role);
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $role, $this->readsRunEvidence);
+    }
+
+    /** A channel without catalog judges may state that its evidence depends on the run. */
+    public function readingRunEvidence(): self
+    {
+        return new self($this->direction, $this->configurationError, $this->judges, $this->levels, $this->description, $this->usesProducerWarningBoundary, $this->selectionRole, true);
     }
 
     /**

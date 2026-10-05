@@ -136,3 +136,9 @@ user-defined metric shares one, `computed`.
 ## Why These Values Differ From Default Thresholds
 
 This page is calibration, not detection. [Default Thresholds](default-thresholds.md) says *when* a rule fires; this page says *how long fixing one instance is expected to take*. `coupling.class-rank` scales its own thresholds by project size and is excluded from the overshoot scaling this page's model applies to every other magnitude channel — see [ClassRank](../rules/coupling.md#classrank) for why.
+
+## Baseline Rules
+
+| Rule         | ID                      | Minutes |
+| ------------ | ----------------------- | ------- |
+| Unused entry | `baseline.unused-entry` | 5       |

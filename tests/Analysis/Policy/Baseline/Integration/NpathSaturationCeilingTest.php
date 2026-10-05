@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 
 use DateTimeImmutable;
+
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
@@ -22,7 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
-use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -33,6 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use SplFileInfo;
 
 /**
@@ -60,13 +62,14 @@ final class NpathSaturationCeilingTest extends TestCase
             generated: new DateTimeImmutable('2026-08-07T12:00:00+00:00'),
             scope: ['src'],
             entries: [new BaselineEntry(BaselineIdentity::forFinding($recorded), [1_000_000_000], 1)],
+            exclusions: self::fixtureExclusions(),
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
             'complexity.npath',
-            ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_),
+            ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Callable),
         );
-        $stage = new BaselineCeilingStage($baseline, $declarations);
+        $stage = new BaselineCeilingStage($baseline, $declarations, StubRuleCoverage::completeFor($baseline), []);
 
         self::assertSame([], $stage->apply([$current])->findings);
     }
@@ -114,5 +117,13 @@ final class NpathSaturationCeilingTest extends TestCase
         }
 
         return "<?php\n\nnamespace App;\n\nfinal class Subject\n{\n    public function explode(): void\n    {\n{$branches}    }\n}\n";
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

@@ -36,6 +36,25 @@ final class HtmlFindingPartitionerTest extends TestCase
     // --- partition() tests ---
 
     #[Test]
+    public function itPreservesBaselineStatusInTheHtmlPayload(): void
+    {
+        $node = new HtmlTreeNode('(project)', '(project)', 'project');
+        $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'health.overall', code: 'health.overall', message: 'low health', severity: Severity::Warning, metricValue: 20);
+        $accepted = new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([30], 1);
+        $this->partitioner->attach(['(project)' => $node], ['(project)' => [$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'exclusions-differ')]], new FormatterContext());
+        self::assertNull($node->findings[0]['acceptedLevel']);
+        self::assertNull($node->findings[0]['baselineVerdict']);
+        self::assertNull($node->findings[0]['baselineReason']);
+        self::assertSame('breached', $node->findings[1]['baselineVerdict']);
+        self::assertNull($node->findings[1]['baselineReason']);
+        self::assertSame('error', $node->findings[1]['severity']);
+        self::assertSame($node->findings[1]['acceptedLevel'], $node->findings[2]['acceptedLevel']);
+        self::assertSame('not-compared', $node->findings[2]['baselineVerdict']);
+        self::assertSame('exclusions-differ', $node->findings[2]['baselineReason']);
+        self::assertSame('warning', $node->findings[2]['severity']);
+    }
+
+    #[Test]
     public function itPartitionsEmptyFindingsList(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');

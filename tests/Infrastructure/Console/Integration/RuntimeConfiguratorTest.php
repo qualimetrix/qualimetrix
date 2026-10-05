@@ -156,6 +156,7 @@ final class RuntimeConfiguratorTest extends TestCase
             [LcomRule::NAME => array_keys(LcomRule::channelDeclarations())],
             [LcomRule::NAME => false],
             new ResolvedComputedMetricDefinitions([]),
+            ...self::unusedReachPorts(),
         );
         $this->snapshotFactory = $snapshotFactoryOverride ?? $staticChannels;
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
@@ -746,5 +747,27 @@ PHP, var_export(\dirname(__DIR__, 4) . '/vendor/autoload.php', true));
         } catch (LogicException $refusal) {
             self::assertSame('Rule options are unavailable before analysis preflight.', $refusal->getMessage());
         }
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

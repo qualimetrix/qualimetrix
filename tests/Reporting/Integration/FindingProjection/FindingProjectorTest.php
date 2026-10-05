@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -28,6 +30,7 @@ use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
@@ -37,6 +40,7 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -58,10 +62,13 @@ final class FindingProjectorTest extends TestCase
 
     private FindingProjectionOptions $configuredOptions;
 
+    private StubChannelDeclarationRegistry $declarations;
+
     protected function setUp(): void
     {
         $this->suppressions = [];
         $this->configuredOptions = new FindingProjectionOptions();
+        $this->declarations = StubChannelDeclarationRegistry::withDefaults();
     }
 
     protected function tearDown(): void
@@ -94,7 +101,7 @@ final class FindingProjectorTest extends TestCase
         ));
 
         $options = new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([]),
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
             gitScope: $this->createGitScope(),
         );
 
@@ -122,7 +129,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
 
         $result = $this->project($pipeline, [], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([]),
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
         ));
 
         self::assertSame(
@@ -155,11 +162,11 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$ignored], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $ignored->subject->toCanonical() => [
                     ['channel' => $ignored->channel()->code, 'magnitudes' => [25]],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertSame([], $result->measuredFindings);
@@ -186,14 +193,14 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
-            ]),
+            ])),
         ));
 
-        self::assertSame([], $result->findings);
+        $this->assertUnusedAudit($result, 'stale');
         self::assertSame([$finding], $result->removedBy(FindingFilterStage::Suppression));
         self::assertSame([], $result->removedBy(FindingFilterStage::Baseline));
     }
@@ -259,7 +266,7 @@ final class FindingProjectorTest extends TestCase
         // Nothing is staged, so the git-scope stage narrows the report to
         // nothing at all.
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $baselinePath,
+            baselineDocument: BaselineLoader::preflight($baselinePath),
             gitScope: $this->createGitScope(),
         ));
 
@@ -276,11 +283,11 @@ final class FindingProjectorTest extends TestCase
         $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertSame([], $result->findings);
@@ -311,11 +318,11 @@ final class FindingProjectorTest extends TestCase
         );
 
         $result = $this->project($this->createPipeline(), [$first, $second], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $first->subject->toCanonical() => [
                     ['channel' => $first->channel()->code, 'count' => 1],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertCount(2, $result->findings);
@@ -346,14 +353,16 @@ final class FindingProjectorTest extends TestCase
         // A magnitude list on an occurrence channel: the entry claims a
         // boundary the channel's findings cannot be compared against.
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [1]],
                 ],
-            ]),
+            ])),
         ));
 
-        self::assertCount(1, $result->findings);
+        self::assertCount(2, $result->findings);
+        self::assertSame($finding, $result->findings[0]);
+        $this->assertUnusedAudit($result, 'inert', expectedCount: 2);
         self::assertSame(Severity::Warning, $result->findings[0]->severity);
         self::assertNull($result->findings[0]->acceptedLevel);
     }
@@ -374,7 +383,7 @@ final class FindingProjectorTest extends TestCase
     {
         $finding = $this->makeFinding('src/Service/UserService.php');
 
-        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(baselinePath: ''));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(baselineDocument: null));
 
         self::assertSame([$finding], $result->findings);
         self::assertSame(0, $result->removedCountBy(FindingFilterStage::Baseline));
@@ -395,11 +404,11 @@ final class FindingProjectorTest extends TestCase
         $subjectKey = self::subjectKey('App\\Nowhere', 'Ghost', 'src/Nowhere/Ghost.php');
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $subjectKey => [
                     ['channel' => 'nonexistent.channel', 'count' => 1],
                 ],
-            ]),
+            ])),
         ));
 
         self::assertCount(1, $result->inertEntries);
@@ -427,7 +436,7 @@ final class FindingProjectorTest extends TestCase
         $finding = $this->makeFinding('src/Service/UserService.php');
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([]),
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
         ));
 
         self::assertSame(['src'], $result->baselineScope);
@@ -462,9 +471,9 @@ final class FindingProjectorTest extends TestCase
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions($baselinePath));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
-        self::assertSame([], $result->findings);
+        $this->assertUnusedAudit($result, 'stale');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
         self::assertSame($otherSubjectKey, $result->staleEntries[0]->identity->subjectKey);
@@ -493,9 +502,10 @@ final class FindingProjectorTest extends TestCase
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions($baselinePath));
+        $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
-        self::assertSame([], $result->findings, 'The surviving entry must still suppress its finding.');
+        self::assertNotContains($stillFiring, $result->findings, 'The surviving entry must still suppress its finding.');
+        $this->assertUnusedAudit($result, 'stale');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
         self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->code);
@@ -545,11 +555,11 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipelineIgnoringLine21();
 
         $result = $this->project($pipeline, [$measured, $annotated], new FindingProjectionOptions(
-            baselinePath: $this->writeBaselineFile([
+            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
                 $measured->subject->toCanonical() => [
                     ['channel' => $measured->channel()->code, 'count' => 1],
                 ],
-            ]),
+            ])),
             annotationSuppressionDisabled: true,
         ));
 
@@ -583,14 +593,14 @@ final class FindingProjectorTest extends TestCase
         $applied = $this->project(
             $this->createPipelineIgnoringLine21(),
             [$measured, $annotated],
-            new FindingProjectionOptions(baselinePath: $baselinePath),
+            new FindingProjectionOptions(baselineDocument: BaselineLoader::preflight($baselinePath)),
         );
 
         $disabled = $this->project(
             $this->createPipelineIgnoringLine21(),
             [$measured, $annotated],
             new FindingProjectionOptions(
-                baselinePath: $baselinePath,
+                baselineDocument: BaselineLoader::preflight($baselinePath),
                 annotationSuppressionDisabled: true,
             ),
         );
@@ -1047,17 +1057,40 @@ final class FindingProjectorTest extends TestCase
         );
     }
 
+    private function assertUnusedAudit(FindingProjectionResult $result, string $cause, int $expectedCount = 1): void
+    {
+        self::assertCount($expectedCount, $result->findings);
+        $audit = $result->findings[$expectedCount - 1];
+        $selector = $cause === 'stale' ? $result->staleEntries[0]->selector()->value : $result->inertEntries[0]->selector->value;
+        self::assertSame('baseline.unused-entry', $audit->channel()->code);
+        self::assertSame(Severity::Warning, $audit->severity);
+        self::assertSame(SymbolLevel::Project, $audit->level());
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('baseline-unused-entry', ['cause' => $cause, 'selector' => $selector])->value, $audit->occurrenceKey?->value);
+        self::assertStringContainsString($cause === 'stale' ? $result->staleEntries[0]->identity->describe() : $result->inertEntries[0]->describe(), $audit->message);
+        self::assertStringContainsString($selector, $audit->message);
+        self::assertStringContainsString($cause === 'stale' ? 'complete comparable measured set' : $result->inertEntries[0]->reason->description(), $audit->message);
+        self::assertNotContains($audit, $result->measuredFindings);
+    }
+
     private function createPipeline(?FindingProjectionOptions $configuration = null): FindingProjector
     {
         $this->configuredOptions = $configuration ?? new FindingProjectionOptions();
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
+        $this->declarations = $declarations;
 
         return new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             new ReportingGitScopeQuery(),
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
     }
 
@@ -1065,6 +1098,7 @@ final class FindingProjectorTest extends TestCase
     private function projectWithSyntheticGitScope(array $findings, GitScopeResult $scope, bool $includeAggregates): FindingProjectionResult
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
         $query = new class ($scope) implements GitScopeQueryInterface {
             public function __construct(private GitScopeResult $scope) {}
 
@@ -1078,6 +1112,12 @@ final class FindingProjectorTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             $query,
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
 
         return $projector->project($findings, [], new FindingProjectionOptions(gitScope: new GitScopeRequest(
@@ -1094,12 +1134,24 @@ final class FindingProjectorTest extends TestCase
         FindingProjectionOptions $options,
     ): FindingProjectionResult {
         $options = new FindingProjectionOptions(
-            baselinePath: $options->baselinePath ?? $this->configuredOptions->baselinePath,
+            baselineDocument: $options->baselineDocument ?? $this->configuredOptions->baselineDocument,
             suppressPaths: $this->uniquePaths([...$this->configuredOptions->suppressPaths, ...$options->suppressPaths]),
             suppressNamespaces: $this->uniqueNamespaces([...$this->configuredOptions->suppressNamespaces, ...$options->suppressNamespaces]),
             annotationSuppressionDisabled: $options->annotationSuppressionDisabled,
             gitScope: $options->gitScope,
         );
+
+        if ($options->baselineDocument !== null) {
+            $baseline = (new BaselineLoader(new BaselineEntryParser($this->declarations)))->load($options->baselineDocument);
+            $files = array_values(array_map(
+                static fn(Finding $finding): string => $finding->location->file?->value() ?? 'src/Foo.php',
+                $findings,
+            ));
+            $options = $options->withRunCoverage(
+                StubRuleCoverage::completeFor($baseline, $files),
+                StubRuleCoverage::everyRuleRan(),
+            );
+        }
 
         return $projector->project($findings, $this->suppressions, $options);
     }
@@ -1196,9 +1248,10 @@ final class FindingProjectorTest extends TestCase
         $this->tempFiles[] = $path;
 
         $data = [
-            'version' => 13,
+            'version' => 14,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ];
 
