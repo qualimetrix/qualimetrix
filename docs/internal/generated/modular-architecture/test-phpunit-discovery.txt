@@ -8571,7 +8571,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itComparesEqualWholePathsAndDefinitionsWithoutRequestingATreeSnapshot
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itDistinguishesAChangedExclusionOutsideTheRegionFromUnknownTreeMetadata
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itMarksAKnownAbsentFileStaleOnFullAndNarrowRunsIncludingMovesAndCaseRenames
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itRefusesNamespaceAbsenceOutsideTheSnapshotDenominator
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itRefusesUnknownFilePresenceInsteadOfTreatingItAsAbsence
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itRefusesWholeAbsenceOutsideTheSnapshotDenominator
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itComputesTwelveLowercaseHexCharacters
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itDiffersForDifferentKeys
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itIsDeterministicForOneKey
