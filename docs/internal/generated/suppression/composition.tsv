@@ -29,6 +29,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contra
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/ThresholdParser.php	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/RuleConfigurationInterface.php	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/RuleEnablement.php	Qualimetrix\Analysis\Finding\Contract\RuleEnablement	warning	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/RuleExecutionInterface.php	Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Severity.php	Qualimetrix\Analysis\Finding\Contract\Severity	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Inline/Contract/AnnotationSuppressionInterface.php	Qualimetrix\Analysis\Policy\Inline\Contract	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Policy/Inline/Contract/Directive/DeclarationBinding.php	Qualimetrix\Analysis\Policy\Inline\Contract\Directive	warning	1

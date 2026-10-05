@@ -61,11 +61,17 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             );
             // The fixture states the structural facts; a channel's display
             // text is held to its producer by ChannelDescriptionTest instead.
-            self::assertEquals(
+            $expectedFields = get_object_vars(
                 $declaration->description === null
                     ? $expected[$key]
                     : $expected[$key]->describedAs($declaration->description),
-                $declaration,
+            );
+            $actualFields = get_object_vars($declaration);
+            // The fixture has no representation for run-evidence reach.
+            unset($expectedFields['readsRunEvidence'], $actualFields['readsRunEvidence']);
+            self::assertEquals(
+                $expectedFields,
+                $actualFields,
                 \sprintf('Fixture line for "%s" does not match the declaration the code actually registers.', $key),
             );
         }

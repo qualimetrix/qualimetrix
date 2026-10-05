@@ -41,10 +41,10 @@ final class ProjectScopedChannelRollCallTest extends TestCase
      *
      * This is the floor for "the scan died altogether", and nothing else: it
      * is equal to the number of declarers today, so it carries no slack and a
-     * fourth declarer arriving unread is caught by
+     * fifth declarer arriving unread is caught by
      * {@see itReadsEveryFileThatNamesTheConstant}, not by this number.
      */
-    private const int KNOWN_DECLARERS = 3;
+    private const int KNOWN_DECLARERS = 4;
 
     /**
      * Files that name the constant without declaring one, each with the reason.

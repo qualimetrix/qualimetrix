@@ -513,7 +513,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
             'broken: one unparsable file, so `coverage.failures[]` is not empty' => $broken['coverage']['failures'] !== [],
             'empty: a complete run that finds nothing at all' => $empty['violations'] === [],
             'suppressed: a finding an inline `@qmx-ignore` held back, and a configured suppressor that matched nothing' => self::suppressionsWereObserved(),
-            'breach: a finding whose own identity group exceeds its accepted level' => self::anyEntry($breach['violations'], static fn(array $v): bool => $v['acceptedLevel'] !== null),
+            'breach: a finding whose own identity group exceeds its accepted level' => self::anyEntry($breach['violations'], static fn(array $v): bool => $v['acceptedLevel'] !== null && $v['baselineVerdict'] === 'breached'),
         ];
 
         foreach ($reached as $branch => $wasReached) {

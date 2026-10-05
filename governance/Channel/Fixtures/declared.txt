@@ -22,12 +22,12 @@
 #     no-warning-boundary declines the producer options' warning boundary.
 #     follows-addressed-rule publishes the diagnostic with its addressed producer.
 #
-# Twenty-two of the sixty channels here carry a judges: token. The
-# thirty-eight that do not split into thirty-three occurrence channels, five
+# Twenty-two of the sixty-one channels here carry a judges: token. The
+# thirty-nine that do not split into thirty-four occurrence channels, five
 # magnitudes that
 # publish a number of their own making (architecture.circular-dependency,
 # architecture.unassigned-class, duplication.clone,
-# design.god-class, cohesion.unmatched-exclude-method), and -- inside the thirty-three -- coupling.class-rank,
+# design.god-class, cohesion.unmatched-exclude-method), and -- inside the thirty-four -- coupling.class-rank,
 # which does read a catalog metric and stays occurrence anyway by ADR 0017
 # point 5.
 #
@@ -78,7 +78,6 @@
 #
 # Do not add a line here without reading that channel's own emission point
 # first — never by analogy with a neighbouring line.
-
 annotation.invalid-threshold - file config-error follows-addressed-rule
 annotation.unresolved-directive - file config-error
 annotation.unsupported-threshold - file config-error follows-addressed-rule
@@ -93,6 +92,7 @@ architecture.potential-shadow - project config-error
 architecture.unassigned-class higher project
 architecture.unmatched-exclude - project
 architecture.unreachable-layer - project config-error
+baseline.unused-entry - project
 code-smell.boolean-argument - callable
 code-smell.constructor-overinjection higher callable judges:code-smell.parameter-count
 code-smell.count-in-loop - callable,file

@@ -10,6 +10,11 @@
 # them would lose that distinction. Run `composer enumeration:channel-universe`
 # to print both halves and their sum together, without merging the files.
 code	producer	owner_capability	shape	declared_direction	levels	requires_list	judged_metric_key	judged_metric_source	code_equals_judged_key	threshold_option_keys	notes
+#
+# EVIDENCE AND LIMITATIONS
+# Runtime computed-metric channels are enumerated separately because they resolve from configuration rather than staticDeclarations().
+# The live compiled container supplies static declarations, producer names, levels, directions, requirements, and rule classes. Judged metric keys and threshold options were traced through producer code.
+# This table trusts the compiled container and does not independently audit autoconfiguration tags, HTML rendering, website documentation, fixtures, literal metric-key bypasses, auxiliary reflection metadata, or external consumers.
 annotation.invalid-threshold	annotation.directive	Inline	occurrence	NULL	file	NONE	NONE	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php:212-216 (no metricValue set)	NA	NONE	NONE
 annotation.unresolved-directive	annotation.directive	Inline	occurrence	NULL	file	NONE	NONE	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php:255-259 (no metricValue set)	NA	NONE	NONE
 annotation.unsupported-threshold	annotation.directive	Inline	occurrence	NULL	file	NONE	NONE	src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php:182-186 (no metricValue set)	NA	NONE	NONE
@@ -22,6 +27,7 @@ architecture.pending-layer-matched	architecture.layer-violation	Architecture	occ
 architecture.potential-shadow	architecture.layer-violation	Architecture	occurrence	NULL	project	NONE	NONE	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php (configuration-error channel; no metricValue)	NA	NONE	configurationError=true
 architecture.unassigned-class	architecture.unassigned-class	Architecture	magnitude	higher	project	NONE	NONE	src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php:99 (metricValue: $count, the raw unassigned-declaration count — not a MetricName catalog key)	NA	NONE (mode: warn/error, no numeric threshold)	Per task instruction architecture.* is written NONE; note the raw count is a real magnitude judged, just not sourced from MetricName
 architecture.unreachable-layer	architecture.layer-violation	Architecture	occurrence	NULL	project	NONE	NONE	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php (configuration-error channel; no metricValue)	NA	NONE	configurationError=true
+baseline.unused-entry	baseline.unused-entry	Baseline	occurrence	NULL	project	NONE	NONE	src/Analysis/Policy/Baseline/EntryBinding/UnusedEntryAudit.php (late Project audit, no metricValue)	NA	NONE (enabled-only)	Not accepted as debt: produced after baseline judgement and outside the measured set
 code-smell.boolean-argument	code-smell.boolean-argument	CodeSmell	occurrence	NULL	callable	codeSmell.boolean_argument	NONE	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:120-136 (analyze(): entries("codeSmell.{type}"), no metricValue set; occurrence shape)	NA	NONE (enabled-only)	Occurrence marker only; requires() literal "codeSmell.boolean_argument" is a collector-context key, not a MetricName constant
 code-smell.constructor-overinjection	code-smell.constructor-overinjection	CodeSmell	magnitude	higher	callable	code-smell.parameter-count	code-smell.parameter-count	src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php:119,151 ($parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT); metricValue: $parameterCountValue)	N	warning,error	Same MetricName as code-smell.long-parameter-list; two channels judge the same metric key with different Options thresholds
 code-smell.count-in-loop	code-smell.count-in-loop	CodeSmell	occurrence	NULL	callable	codeSmell.count_in_loop	NONE	src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php:120-136 (inherited analyze(), no override)	NA	NONE (enabled-only)	Occurrence marker only
@@ -62,8 +68,3 @@ security.xss	security.xss	Security	occurrence	NULL	callable	security.xss	NONE	sr
 size.class-count	size.class-count	Size	magnitude	higher	namespace	size.class-count	size.class-count	src/Analysis/Evidence/Size/ClassCountRule.php:102,123 ($classCount = $metrics->get(MetricName::agg(SIZE_CLASS_COUNT, Sum)); metricValue: $classCount)	Y	warning,error	Reads the .sum aggregated key, whose base() is size.class-count
 size.method-count	size.method-count	Size	magnitude	higher	class	size.method-count	size.method-count	src/Analysis/Evidence/Size/MethodCountRule.php:98,137 ($methodCount = $metrics->get(MetricName::SIZE_METHOD_COUNT); metricValue: $methodCount)	Y	warning,error	NONE
 size.property-count	size.property-count	Size	magnitude	higher	class	size.property-count,design.is-readonly,design.is-promoted-properties-only	size.property-count	src/Analysis/Evidence/Size/PropertyCountRule.php:149,141 ($propertyCount = $metrics->get(MetricName::SIZE_PROPERTY_COUNT); metricValue: $propertyCountValue)	Y	warning,error	NONE
-#
-# EVIDENCE AND LIMITATIONS
-# The live compiled container supplies static declarations, producer names, levels, directions, requirements, and rule classes. Judged metric keys and threshold options were traced through producer code.
-# Runtime computed-metric channels are enumerated separately because they resolve from configuration rather than staticDeclarations().
-# This table trusts the compiled container and does not independently audit autoconfiguration tags, HTML rendering, website documentation, fixtures, literal metric-key bypasses, auxiliary reflection metadata, or external consumers.

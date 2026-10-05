@@ -19,11 +19,11 @@ require_once __DIR__ . '/subprocess/ChildProcess.php';
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const TEST_LEVELS = ['Unit', 'Integration', 'Functional'];
-// 74 paths: the accepted finite Baseline artifact set plus S08's three
-// comparison, group-measurement and subject-region regression files.
+// 77 paths: the accepted finite Baseline artifact set plus comparison,
+// group-measurement, subject-region, update-mode and unused-entry regressions.
 // Re-hash only against a diff of the path list; refreshing the digest without
 // checking that delta asserts nothing.
-const P6_C_BASELINE_PATHS_SHA256 = '62ebbdba13777ce0be243128dfa7c453edc73062775b644ab44acfc6bc850ff7';
+const P6_C_BASELINE_PATHS_SHA256 = 'd9c2bae1bf340434758db18b58526c66b0008467609e129e833b9e5bba6f8548';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);

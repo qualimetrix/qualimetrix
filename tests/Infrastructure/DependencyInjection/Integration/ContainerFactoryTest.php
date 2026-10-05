@@ -100,6 +100,7 @@ use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
@@ -938,6 +939,7 @@ PHP;
             CircularDependencyRule::class,
             LayerViolationRule::class,
             UnusedDirectiveRule::class,
+            UnusedEntryRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,
