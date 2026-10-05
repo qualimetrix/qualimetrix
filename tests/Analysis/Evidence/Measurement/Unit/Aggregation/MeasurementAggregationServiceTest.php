@@ -216,8 +216,17 @@ final class MeasurementAggregationServiceTest extends TestCase
     {
         $catalog = new MeasurementAggregationService([], new CompositeCollector([], new DeclarationRegistrarFactory()), self::createStub(ProfilerInterface::class));
 
-        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT] as $key) {
+        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, MetricName::COMPLEXITY_WMC] as $key) {
             self::assertSame(MetricReach::Members, $catalog->metricReach($key));
+        }
+
+        $regular = self::createStub(MetricCollectorInterface::class);
+        $regular->method('provides')->willReturn([MetricName::COMPLEXITY_CCN]);
+        $regular->method('getMetricDefinitions')->willReturn([]);
+        $catalog = new MeasurementAggregationService([], new CompositeCollector([$regular], new DeclarationRegistrarFactory()), self::createStub(ProfilerInterface::class));
+
+        foreach ([AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max, AggregationStrategy::Percentile95, AggregationStrategy::Count] as $strategy) {
+            self::assertSame(MetricReach::Members, $catalog->metricReach(MetricName::agg(MetricName::COMPLEXITY_CCN, $strategy)));
         }
     }
 

@@ -54,8 +54,8 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         $this->globalDefinitions = self::definitions($this->sortedCollectors);
         $this->allDefinitions = [...$regularDefinitions, ...$derivedDefinitions, ...$this->globalDefinitions];
         $reachByMetric = array_fill_keys(self::providedMetrics($regularCollectors, $derivedCollectors), MetricReach::Members);
-        // Aggregation writes these populations directly rather than through a collector.
-        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT] as $key) {
+        // Aggregation writes these metrics directly rather than through a collector.
+        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT, MetricName::COMPLEXITY_WMC] as $key) {
             $reachByMetric[$key] = MetricReach::Members;
         }
         foreach ($this->sortedCollectors as $collector) {
