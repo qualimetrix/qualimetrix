@@ -4,12 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
+use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\GroupMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Ceiling\SubjectRegion;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 
@@ -17,15 +26,6 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
  * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain`, as
  * specified by ADR 0017: the effective boundary for a symbol, and where
  * every part of it comes from.
- *
- * **Why `$configuredThresholds` arrives pre-resolved rather than being
- * looked up here.** `qmx.yaml` says `baseline: [core]` — this package may
- * depend on nothing but `Core` — and reading a rule's configured threshold
- * means building its `RuleOptionsInterface` through `RuleOptionsFactory`,
- * which lives in `Configuration`. The command that owns `explain` already
- * has that machinery (the same one that ran the analysis); this service
- * takes the resolved numbers as data instead of reaching for the
- * `Configuration` layer itself.
  *
  * Annotation ownership is resolved by exact typed subject. A current
  * finding is the first source even when its occurrence or dependency edge
@@ -77,11 +77,28 @@ final readonly class BoundaryExplanationService
         array $measuredFindings,
         array $thresholdOverridesByFile,
         array $configuredThresholds,
+        ChannelDeclarationRegistryInterface $declarations,
+        RunCoverage $coverage,
         ?MetricRepositoryInterface $symbolLocations = null,
     ): BoundaryExplanation {
         $identities = ExplainedSubject::identities($subjectKey, $channelFilter, $baseline, $measuredFindings);
         $repositoryRecord = ExplainedSubject::recordFor($subjectKey, ExplainedSubject::index($symbolLocations));
         $groups = self::groupsByIdentity($measuredFindings);
+        $outcome = $baseline !== null
+            ? (new BaselineCeilingStage(
+                $baseline,
+                $declarations,
+                $coverage,
+                $this->ruleCoverage->classify(array_map(
+                    static fn(BaselineEntry $entry): BaselineIdentity => $entry->identity,
+                    array_filter($baseline->entries, static fn(BaselineEntry $entry): bool => \in_array(
+                        MetricSubject::levelOfCanonical($entry->identity->subjectKey),
+                        $declarations->declarationFor($entry->identity->channel)->levels ?? [],
+                        true,
+                    )),
+                )),
+            ))->judgeAll($measuredFindings)
+            : null;
 
         $boundaries = [];
         foreach ($identities as $identity) {
@@ -93,6 +110,9 @@ final readonly class BoundaryExplanationService
                 $thresholdOverridesByFile,
                 $configuredThresholds,
                 $repositoryRecord,
+                $declarations,
+                $coverage,
+                $outcome,
             );
         }
 
@@ -168,11 +188,12 @@ final readonly class BoundaryExplanationService
         array $thresholdOverridesByFile,
         array $configuredThresholds,
         ?array $repositoryRecord,
+        ChannelDeclarationRegistryInterface $declarations,
+        RunCoverage $coverage,
+        ?CeilingOutcome $outcome,
     ): EffectiveBoundary {
-        $baselineSource = self::baselineSourceFor($identity, $baseline, $group);
-        if ($baselineSource !== null && $this->ruleCoverage->classify([$identity]) !== []) {
-            $baselineSource = $baselineSource->unmeasured();
-        }
+        $baselineSource = self::baselineSourceFor($identity, $baseline, $outcome);
+        $now = $this->currentMeasurement($identity, $baseline, $group, $declarations, $coverage, $outcome);
 
         $subject = ExplainedSubject::subjectFor($identity, $measuredFindings, $repositoryRecord);
         $configuredThreshold = self::configuredThresholdFor(
@@ -188,6 +209,7 @@ final readonly class BoundaryExplanationService
             $baselineSource,
             $configuredThreshold,
             $annotation,
+            $now,
             array_values(array_map(
                 static fn(Finding $finding): string => $finding->location->toString(),
                 array_filter($group, static fn(Finding $finding): bool => !$finding->location->isNone()),
@@ -216,38 +238,131 @@ final readonly class BoundaryExplanationService
         return \count($byLevel) === 1 ? reset($byLevel) : null;
     }
 
-    /**
-     * @param list<Finding> $group the measured findings sharing `$identity`
-     */
     private static function baselineSourceFor(
         BaselineIdentity $identity,
         ?Baseline $baseline,
-        array $group,
+        ?CeilingOutcome $outcome,
     ): ?EffectiveBoundaryBaselineSource {
-        if ($baseline === null) {
-            return null;
+        $entry = $baseline?->findByIdentity($identity);
+        if ($entry !== null) {
+            return EffectiveBoundaryBaselineSource::applicable($entry, $outcome?->statusFor($identity), $outcome?->reasonFor($identity));
+        }
+        $inert = $baseline?->findInertByIdentity($identity);
+
+        return $inert !== null ? EffectiveBoundaryBaselineSource::inert($inert) : null;
+    }
+
+    /** @param list<Finding> $group */
+    private function currentMeasurement(
+        BaselineIdentity $identity,
+        ?Baseline $baseline,
+        array $group,
+        ChannelDeclarationRegistryInterface $declarations,
+        RunCoverage $coverage,
+        ?CeilingOutcome $outcome,
+    ): CurrentMeasurement {
+        $declaration = $declarations->declarationFor($identity->channel);
+        $level = MetricSubject::levelOfCanonical($identity->subjectKey);
+        if ($declaration !== null && !\in_array($level, $declaration->levels, true)) {
+            return new CurrentMeasurement(
+                CurrentMeasurement::LEVEL_NOT_REPORTED,
+                null,
+                0,
+                null,
+                0,
+                declaredLevels: array_map(static fn($declared): string => $declared->value, $declaration->levels),
+                subjectLevel: $level->value,
+            );
         }
 
-        $entry = $baseline->findByIdentity($identity);
-
-        if ($entry === null) {
-            $inert = $baseline->findInertByIdentity($identity);
-
-            return $inert !== null ? EffectiveBoundaryBaselineSource::inert($inert, \count($group)) : null;
+        $shape = $declaration === null ? null : ($declaration->direction === null ? 'occurrence' : 'magnitude');
+        $measurement = $group !== [] && $declaration !== null
+            ? GroupMeasurement::fromFindings($group, $shape === 'occurrence')
+            : null;
+        if ($baseline?->findByIdentity($identity) !== null) {
+            $status = $outcome?->statusFor($identity) ?? throw new LogicException('An explained entry requires its ceiling verdict.');
+            $reason = $outcome->reasonFor($identity);
+            $state = match ($status) {
+                'stale' => CurrentMeasurement::NOTHING_REPORTED,
+                'unmeasured' => CurrentMeasurement::NOT_MEASURED,
+                'outside-coverage' => CurrentMeasurement::OUTSIDE_COVERAGE,
+                'not-compared' => $group === [] ? CurrentMeasurement::OUTSIDE_COVERAGE : CurrentMeasurement::NOT_COMPARED,
+                default => CurrentMeasurement::REPORTED,
+            };
+        } else {
+            [$state, $reason] = $this->currentState($identity, $group, $declaration, $declarations, $coverage);
+            if ($measurement !== null && !$measurement->complete() && $state === CurrentMeasurement::REPORTED) {
+                $state = CurrentMeasurement::NOT_COMPARED;
+                $reason = 'magnitude-unavailable';
+            }
         }
 
-        if ($group === []) {
-            return EffectiveBoundaryBaselineSource::applicable($entry, null, 0, 0);
-        }
-
-        $measurement = GroupMeasurement::fromFindings($group, $entry->magnitudes === null);
-
-        return EffectiveBoundaryBaselineSource::applicable(
-            $entry,
-            $measurement->magnitudes,
-            $measurement->count,
-            $measurement->membersWithoutMagnitude,
+        return new CurrentMeasurement(
+            $state,
+            $shape,
+            \count($group),
+            $measurement?->magnitudes,
+            $measurement->membersWithoutMagnitude ?? 0,
+            $reason,
         );
+    }
+
+    /**
+     * @param list<Finding> $group
+     *
+     * @return array{string, ?string}
+     */
+    private function currentState(
+        BaselineIdentity $identity,
+        array $group,
+        ?ChannelDeclaration $declaration,
+        ChannelDeclarationRegistryInterface $declarations,
+        RunCoverage $coverage,
+    ): array {
+        if (!$coverage->analysis->isComplete()) {
+            return [$group === [] ? CurrentMeasurement::NOT_MEASURED : CurrentMeasurement::NOT_COMPARED, 'analysis-incomplete'];
+        }
+        if ($declaration === null) {
+            return [$group === [] ? CurrentMeasurement::NOT_MEASURED : CurrentMeasurement::REPORTED, 'channel-not-declared'];
+        }
+        if ($this->ruleCoverage->classify([$identity]) !== []) {
+            return [CurrentMeasurement::NOT_MEASURED, 'producer-not-measured'];
+        }
+        if ($group !== []) {
+            return [CurrentMeasurement::REPORTED, null];
+        }
+        $region = SubjectRegion::forIdentity(
+            $identity,
+            $declarations->reachAt($identity->channel, MetricSubject::levelOfCanonical($identity->subjectKey)),
+            $coverage->psr4Roots,
+        );
+        if ($region->file !== null) {
+            $presence = $coverage->hasFile($region->file);
+
+            return match (true) {
+                $presence === ProjectEntryPresence::Absent => [CurrentMeasurement::NOTHING_REPORTED, null],
+                $presence === ProjectEntryPresence::Unknown => [CurrentMeasurement::OUTSIDE_COVERAGE, 'metadata-unknown'],
+                $coverage->analyzed($region->file) => [CurrentMeasurement::NOTHING_REPORTED, null],
+                default => [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'],
+            };
+        }
+        if ($coverage->scope->coversPath('.') || ($region->roots !== [] && array_all(
+            $region->roots,
+            static fn($root): bool => $coverage->scope->coversPath($root->value()),
+        ))) {
+            return [CurrentMeasurement::NOTHING_REPORTED, null];
+        }
+        $snapshot = $coverage->snapshot();
+        if (!$snapshot->complete()) {
+            return [CurrentMeasurement::OUTSIDE_COVERAGE, 'metadata-unknown'];
+        }
+        foreach ($snapshot->phpFiles as $file) {
+            if ($region->contains($file) && !$coverage->scope->coversPath($file->value())) {
+                return [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'];
+            }
+        }
+
+        return [CurrentMeasurement::NOTHING_REPORTED, null];
     }
 
     /**

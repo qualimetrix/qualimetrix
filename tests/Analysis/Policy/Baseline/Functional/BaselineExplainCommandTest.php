@@ -141,7 +141,8 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
 
         $display = $tester->getDisplay();
-        self::assertStringContainsString('accepted 25; now 31', $display);
+        self::assertStringContainsString('baseline:      accepted 25', $display);
+        self::assertStringContainsString('now:           31', $display);
         self::assertStringContainsString('qmx.yaml:      10', $display);
         self::assertStringContainsString('warning=40 error=60', $display);
     }
@@ -186,7 +187,8 @@ final class BaselineExplainCommandTest extends TestCase
         );
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('accepted 12; now 19', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      accepted 12', $tester->getDisplay());
+        self::assertStringContainsString('now:           19', $tester->getDisplay());
     }
 
     /**
@@ -318,7 +320,8 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Baseline only', $tester->getDisplay());
         self::assertStringContainsString('absent from the current analysis scope or result', $tester->getDisplay());
-        self::assertStringContainsString('accepted 25; now nothing reported', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      accepted 25 (stale)', $tester->getDisplay());
+        self::assertStringContainsString('now:           nothing reported', $tester->getDisplay());
     }
 
     /**
@@ -430,9 +433,10 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'baseline:      accepted 24 (mode: suppress, accepted whatever is reported); now 32',
+            'baseline:      accepted 24 (mode: suppress, accepted whatever is reported)',
             $tester->getDisplay(),
         );
+        self::assertStringContainsString('now:           32', $tester->getDisplay());
     }
 
     /**
@@ -464,7 +468,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'baseline:      accepted 25, 25; now 20, and 1 without a finite value, so the entry is not applied',
+            'now:           2 findings, 1 without a finite magnitude — not compared: the group has members without a finite magnitude',
             $tester->getDisplay(),
         );
     }
@@ -487,7 +491,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString(
-            'accepted 25; now not measured (this invocation did not measure this channel at this subject level)',
+            'now:           not measured (this invocation did not measure this channel at this subject level)',
             $tester->getDisplay(),
         );
     }
@@ -507,7 +511,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('present but not applied (subject level is not declared by this channel in this configuration', $tester->getDisplay());
-        self::assertStringContainsString('now not measured (this invocation did not measure this channel at this subject level)', $tester->getDisplay());
+        self::assertStringContainsString('now:           channel duplication.clone reports at file — not at project', $tester->getDisplay());
         self::assertStringNotContainsString('nothing reported', $tester->getDisplay());
         self::assertStringNotContainsString('did not run the rule', $tester->getDisplay());
     }
@@ -528,7 +532,34 @@ final class BaselineExplainCommandTest extends TestCase
         );
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString("baseline:      accepted 25; now 20\n", $tester->getDisplay());
+        self::assertStringContainsString("baseline:      accepted 25\n    now:           20\n", $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itPrintsAnIndependentNowLineForEveryBoundary(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $subject = self::subject($symbol)->toCanonical();
+        file_put_contents($this->baselinePath, json_encode([
+            'version' => 14, 'generated' => '2026-09-01T00:00:00+00:00', 'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => [$subject => [
+                ['channel' => self::CCN_CHANNEL, 'magnitudes' => [25]],
+                ['channel' => self::CCN_CHANNEL, 'magnitudes' => [30]],
+            ]],
+        ], \JSON_THROW_ON_ERROR));
+        $findings = [self::finding($symbol, self::CCN_CHANNEL, 16), self::finding($symbol, 'code-smell.goto', 1)];
+        foreach ([[], ['--baseline' => $this->baselinePath]] as $options) {
+            $tester = $this->execute($findings, $options);
+            self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+            self::assertSame(2, substr_count($tester->getDisplay(), '    now:'));
+            self::assertStringContainsString('now:           16', $tester->getDisplay());
+            self::assertStringContainsString('now:           1 occurrence', $tester->getDisplay());
+            self::assertStringContainsString('baseline:      (none)', $tester->getDisplay());
+            if ($options !== []) {
+                self::assertStringContainsString('present but not applied (duplicate identity', $tester->getDisplay());
+            }
+        }
     }
 
     /**

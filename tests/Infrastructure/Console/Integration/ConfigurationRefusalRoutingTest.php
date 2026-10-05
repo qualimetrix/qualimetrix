@@ -50,6 +50,7 @@ use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use ReflectionClass;
 use ReflectionProperty;
+use stdClass;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\ApplicationTester;
@@ -90,13 +91,12 @@ use Throwable;
  * document, and consults {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer}
  * alone — there is no resolver in its call path to substitute.
  *
- * `baseline:update` and `baseline:cleanup` refuse a missing baseline file
- * before they resolve any configuration, so their cases name a file that is
- * there: a missing one would be refused by that earlier check and never reach
- * the substituted resolver this class exists to route. That earlier refusal
- * is {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest}'s
- * subject. The file stays empty on purpose: the loader is inert, so a command
- * that read it before resolving the configuration fails loudly here.
+ * `baseline:update` and `baseline:cleanup` preflight baseline grammar before
+ * resolving configuration, so these cases provide a valid envelope to reach
+ * the substituted resolver. Early file and grammar refusals belong to
+ * {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineFileRefusedBeforeAnalysisTest}.
+ * Semantic loading remains after configuration: its loader is inert here,
+ * so calling it before the resolver fails loudly.
  */
 #[CoversNothing]
 final class ConfigurationRefusalRoutingTest extends TestCase
@@ -570,7 +570,13 @@ final class ConfigurationRefusalRoutingTest extends TestCase
     private function presentBaselinePath(): string
     {
         $path = $this->nonExistentBaselinePath();
-        touch($path);
+        file_put_contents($path, json_encode([
+            'version' => 14,
+            'generated' => '2026-09-01T00:00:00+00:00',
+            'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => new stdClass(),
+        ], \JSON_THROW_ON_ERROR));
         $this->presentBaselines[] = $path;
 
         return $path;

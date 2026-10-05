@@ -148,7 +148,8 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $tester = $this->executeExplain();
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('accepted 25; now 12', $tester->getDisplay());
+        self::assertStringContainsString('baseline:      accepted 25', $tester->getDisplay());
+        self::assertStringContainsString('now:           12', $tester->getDisplay());
     }
 
     /**

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
@@ -18,7 +19,9 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -151,6 +154,22 @@ final class BaselineWorkflowTest extends TestCase
 
         // Both groups are within what was captured, so neither is reported
         self::assertSame([], $stage->apply($findings)->findings);
+
+        $channels = self::createStub(ChannelIdentityInterface::class);
+        $explanation = (new BoundaryExplanationService($channels, StubRuleCoverage::everyRuleRan()))->explain(
+            $findings[0]->subject->toCanonical(),
+            null,
+            $loadedBaseline,
+            $findings,
+            [],
+            [],
+            $declarations,
+            StubRuleCoverage::completeFor($loadedBaseline),
+        );
+        self::assertSame('accepted', $explanation->boundaries[0]->baseline?->verdict);
+        self::assertSame([15.0], $explanation->boundaries[0]->baseline->accepted?->magnitudes);
+        self::assertSame(CurrentMeasurement::REPORTED, $explanation->boundaries[0]->now->state);
+        self::assertSame([15.0], $explanation->boundaries[0]->now->magnitudes);
 
         // Step 5: Test new finding (not in baseline)
         $newFinding = new Finding(

@@ -186,7 +186,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         $explain = $this->runExplain($subject);
         self::assertSame(0, $explain->getStatusCode(), $explain->getDisplay());
         self::assertStringContainsString(self::EVAL_CHANNEL, $explain->getDisplay());
-        self::assertStringContainsString('nothing reported', $explain->getDisplay());
+        self::assertStringContainsString("now:           outside this run's coverage (outside-coverage)", $explain->getDisplay());
 
         $this->runGenerate(['--force' => true]);
         self::assertNotContains(self::EVAL_CHANNEL, self::capturedChannels($this->baselinePath));
