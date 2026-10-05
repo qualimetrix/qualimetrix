@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
@@ -30,6 +31,7 @@ final readonly class FindingProjector
         private BaselineLoader $baselineLoader,
         private ChannelDeclarationRegistryInterface $declarations,
         private GitScopeQueryInterface $gitScopeQuery,
+        private UnusedEntryAudit $unusedEntryAudit,
     ) {}
 
     public function preflightBaseline(string $path): BaselineDocument
@@ -75,6 +77,7 @@ final readonly class FindingProjector
         $inert = [];
         $baselineScope = null;
         $ceiling = null;
+        $unusedAuditPublished = true;
         if ($options->baselineDocument !== null) {
             $coverage = $options->runCoverage ?? throw new LogicException('Baseline projection requires current run coverage');
             $ruleCoverage = $options->ruleCoverage ?? throw new LogicException('Baseline projection requires rule publication');
@@ -91,6 +94,9 @@ final readonly class FindingProjector
             $stale = $ceiling->staleEntries;
             $inert = $ceiling->inertEntries;
             $baselineScope = $stage->baselineScope();
+            $audit = $this->unusedEntryAudit->findings($ceiling, $options->baselineDocument->path);
+            $unusedAuditPublished = $audit !== [] || ($stale === [] && $inert === []);
+            $findings = [...$findings, ...$audit];
         }
 
         if ($options->annotationSuppressionDisabled) {
@@ -123,6 +129,7 @@ final readonly class FindingProjector
             inertEntries: $inert,
             baselineScope: $baselineScope,
             ceilingOutcome: $ceiling,
+            unusedAuditPublished: $unusedAuditPublished,
         );
     }
 

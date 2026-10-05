@@ -414,7 +414,7 @@ function renderViolationsTable(node) {
   for (const v of sorted) {
     const tr = document.createElement('tr');
     tr.className = `violation-${v.severity}`;
-    const message = v.recommendation || v.message;
+    const message = findingMessage(v);
     tr.innerHTML = `<td>${escapeHtml(v.violationCode || v.ruleName)}</td>` +
       `<td>${escapeHtml(v.file || '')}</td>` +
       `<td>${escapeHtml(v.severity)}</td>` +
@@ -427,15 +427,28 @@ function renderViolationsTable(node) {
   container.appendChild(table);
 }
 
+export function findingMessage(finding) {
+  const message = finding.recommendation || finding.message;
+  const accepted = finding.acceptedLevel;
+  if (!accepted) return message;
+  if (finding.baselineVerdict === 'not-compared') {
+    return `${message} (accepted at ${accepted.describe}; not compared: ${finding.baselineReason})`;
+  }
+  if (finding.baselineVerdict !== 'breached') return message;
+  const current = finding.metricValue;
+  const now = accepted.shape === 'magnitude' && Number.isFinite(current)
+    ? `, now ${current.toFixed(6).replace(/\.?0+$/, '')}`
+    : '';
+  return `${message} (accepted at ${accepted.describe}${now})`;
+}
+
 function formatMetricValue(value) {
   if (Number.isInteger(value)) return String(value);
   return value.toFixed(2);
 }
 
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ---------------------------------------------------------------------------

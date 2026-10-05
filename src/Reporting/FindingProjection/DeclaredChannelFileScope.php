@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependency
 use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 
 /**
  * The one place that knows **which capabilities declare project-scoped
@@ -39,6 +40,7 @@ final class DeclaredChannelFileScope
             ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
             ...ProjectScopeChannels::PROJECT_SCOPED_CHANNELS,
+            ...BaselineAuditChannels::PROJECT_SCOPED_CHANNELS,
         ]);
     }
 }

@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -199,7 +200,7 @@ final class FindingProjectorTest extends TestCase
             ])),
         ));
 
-        self::assertSame([], $result->findings);
+        $this->assertUnusedAudit($result, 'stale');
         self::assertSame([$finding], $result->removedBy(FindingFilterStage::Suppression));
         self::assertSame([], $result->removedBy(FindingFilterStage::Baseline));
     }
@@ -359,7 +360,9 @@ final class FindingProjectorTest extends TestCase
             ])),
         ));
 
-        self::assertCount(1, $result->findings);
+        self::assertCount(2, $result->findings);
+        self::assertSame($finding, $result->findings[0]);
+        $this->assertUnusedAudit($result, 'inert', expectedCount: 2);
         self::assertSame(Severity::Warning, $result->findings[0]->severity);
         self::assertNull($result->findings[0]->acceptedLevel);
     }
@@ -470,7 +473,7 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
-        self::assertSame([], $result->findings);
+        $this->assertUnusedAudit($result, 'stale');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
         self::assertSame($otherSubjectKey, $result->staleEntries[0]->identity->subjectKey);
@@ -501,7 +504,8 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
 
-        self::assertSame([], $result->findings, 'The surviving entry must still suppress its finding.');
+        self::assertNotContains($stillFiring, $result->findings, 'The surviving entry must still suppress its finding.');
+        $this->assertUnusedAudit($result, 'stale');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
         self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->code);
@@ -1053,6 +1057,21 @@ final class FindingProjectorTest extends TestCase
         );
     }
 
+    private function assertUnusedAudit(FindingProjectionResult $result, string $cause, int $expectedCount = 1): void
+    {
+        self::assertCount($expectedCount, $result->findings);
+        $audit = $result->findings[$expectedCount - 1];
+        $selector = $cause === 'stale' ? $result->staleEntries[0]->selector()->value : $result->inertEntries[0]->selector->value;
+        self::assertSame('baseline.unused-entry', $audit->channel()->code);
+        self::assertSame(Severity::Warning, $audit->severity);
+        self::assertSame(SymbolLevel::Project, $audit->level());
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('baseline-unused-entry', ['cause' => $cause, 'selector' => $selector])->value, $audit->occurrenceKey?->value);
+        self::assertStringContainsString($cause === 'stale' ? $result->staleEntries[0]->identity->describe() : $result->inertEntries[0]->describe(), $audit->message);
+        self::assertStringContainsString($selector, $audit->message);
+        self::assertStringContainsString($cause === 'stale' ? 'complete comparable measured set' : $result->inertEntries[0]->reason->description(), $audit->message);
+        self::assertNotContains($audit, $result->measuredFindings);
+    }
+
     private function createPipeline(?FindingProjectionOptions $configuration = null): FindingProjector
     {
         $this->configuredOptions = $configuration ?? new FindingProjectionOptions();
@@ -1066,6 +1085,12 @@ final class FindingProjectorTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             new ReportingGitScopeQuery(),
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
     }
 
@@ -1087,6 +1112,12 @@ final class FindingProjectorTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             $query,
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
 
         return $projector->project($findings, [], new FindingProjectionOptions(gitScope: new GitScopeRequest(

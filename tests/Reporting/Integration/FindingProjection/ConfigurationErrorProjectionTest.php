@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -191,7 +192,16 @@ final class ConfigurationErrorProjectionTest extends TestCase
             ])),
         ));
 
-        self::assertSame([$configurationError], $result->findings);
+        self::assertSame($configurationError, $result->findings[1]);
+        self::assertCount(2, $result->findings);
+        $audit = $result->findings[0];
+        self::assertSame('baseline.unused-entry', $audit->channel()->code);
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\Severity::Warning, $audit->severity);
+        $entry = $result->inertEntries[0];
+        self::assertSame(\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey::semantic('baseline-unused-entry', ['cause' => 'inert', 'selector' => $entry->selector->value])->value, $audit->occurrenceKey?->value);
+        self::assertStringContainsString($entry->describe(), $audit->message);
+        self::assertStringContainsString($entry->reason->description(), $audit->message);
+        self::assertNotContains($audit, $result->measuredFindings);
         self::assertSame([], $result->removedBy(FindingFilterStage::Baseline));
     }
 
@@ -272,6 +282,12 @@ final class ConfigurationErrorProjectionTest extends TestCase
             new BaselineLoader(new BaselineEntryParser($declarations)),
             $declarations,
             new ReportingGitScopeQuery(),
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
 
         if ($options->baselineDocument !== null) {

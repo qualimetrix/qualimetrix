@@ -22,6 +22,15 @@ use Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator;
 final class AcceptedLevelNarratorTest extends TestCase
 {
     #[Test]
+    public function itNarratesAnUncomparedAcceptedLevelWithoutClaimingABreach(): void
+    {
+        foreach ([new AcceptedLevel([25], 1), new AcceptedLevel(null, 2)] as $accepted) {
+            $finding = self::baseFinding(metricValue: 31)->reportedUncompared($accepted, 'paths-differ');
+            self::assertSame('accepted at ' . $accepted->describe() . '; not compared: paths-differ', AcceptedLevelNarrator::describe($finding));
+        }
+    }
+
+    #[Test]
     public function itReturnsNullWhenNoAcceptedLevelIsPresent(): void
     {
         self::assertNull(AcceptedLevelNarrator::describe(self::baseFinding()));

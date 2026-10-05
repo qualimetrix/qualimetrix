@@ -26,6 +26,7 @@ use Qualimetrix\Tests\Analysis\Evidence\Prioritization\Support\StubRemediationMi
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 #[CoversClass(JsonFindingSection::class)]
+#[CoversClass(\Qualimetrix\Reporting\Formatter\PublishedFinding::class)]
 final class JsonFindingSectionTest extends TestCase
 {
     private JsonFindingSection $section;
@@ -39,6 +40,24 @@ final class JsonFindingSectionTest extends TestCase
     }
 
     // --- format ---
+
+    #[Test]
+    public function itPublishesTheVerdictAndReasonAlongsideTheAcceptedLevel(): void
+    {
+        $base = self::finding(location: Location::none(), symbolPath: SymbolPath::forProject(), ruleName: 'complexity.ccn', code: 'complexity.ccn', message: 'high complexity', severity: Severity::Warning, metricValue: 20);
+        $accepted = new AcceptedLevel([30], 1);
+        $rows = $this->section->format([$base, $base->reportedAsBreach($accepted), $base->reportedUncompared($accepted, 'paths-differ')], new FormatterContext());
+        self::assertNull($rows[0]['acceptedLevel']);
+        self::assertNull($rows[0]['baselineVerdict']);
+        self::assertNull($rows[0]['baselineReason']);
+        self::assertSame('breached', $rows[1]['baselineVerdict']);
+        self::assertNull($rows[1]['baselineReason']);
+        self::assertSame('error', $rows[1]['severity']);
+        self::assertSame($rows[1]['acceptedLevel'], $rows[2]['acceptedLevel']);
+        self::assertSame('not-compared', $rows[2]['baselineVerdict']);
+        self::assertSame('paths-differ', $rows[2]['baselineReason']);
+        self::assertSame('warning', $rows[2]['severity']);
+    }
 
     #[Test]
     public function itFormatsEmptyFindings(): void

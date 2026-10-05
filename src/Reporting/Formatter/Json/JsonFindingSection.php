@@ -93,32 +93,7 @@ final class JsonFindingSection
             'metricValue' => $this->sanitizer->sanitizeNumeric($finding->metricValue),
             'threshold' => $this->sanitizer->sanitizeNumeric($finding->threshold),
             'techDebtMinutes' => $this->remediationTimeRegistry->getMinutesForFinding($finding),
-            'acceptedLevel' => $this->formatAcceptedLevel($finding),
-        ];
-    }
-
-    /**
-     * Structured form of the accepted level a measured breach carries under ADR 0017 —
-     * `null` on every other finding, including one no baseline ever
-     * judged. `describe` is the human string (e.g. "25" or "3 occurrences");
-     * `now` reuses the sibling `metricValue` field on purpose — an
-     * `occurrence` channel has no per-finding "now" to report, so this
-     * object never fabricates one.
-     *
-     * @return ?array{shape: string, describe: string, count: int}
-     */
-    private function formatAcceptedLevel(Finding $finding): ?array
-    {
-        $accepted = $finding->acceptedLevel;
-
-        if ($accepted === null) {
-            return null;
-        }
-
-        return [
-            'shape' => $accepted->shape()->value,
-            'describe' => $accepted->describe(),
-            'count' => $accepted->count,
+            ...PublishedFinding::baselineFields($finding),
         ];
     }
 

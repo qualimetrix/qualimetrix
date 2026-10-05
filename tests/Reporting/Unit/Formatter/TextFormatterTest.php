@@ -40,6 +40,24 @@ final class TextFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
+    {
+        $finding = self::finding(
+            location: new Location(RelativePath::fromString('src/A.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/A.php')),
+            ruleName: 'code-smell.goto',
+            code: 'code-smell.goto',
+            message: 'Original message',
+            severity: Severity::Warning,
+            metricValue: 31,
+            recommendation: 'Recommended repair',
+        )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), $this->plainContext);
+        self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
+        self::assertStringNotContainsString('now 31', $output);
+    }
+
+    #[Test]
     public function itReturnsTextName(): void
     {
         self::assertSame('text', $this->formatter->getName());

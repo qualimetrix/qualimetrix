@@ -24,6 +24,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryComp
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\BaselineConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CircularDependencyConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CohesionConfigurator;
@@ -118,6 +119,7 @@ final class ContainerFactory
             new ArchitectureConfigurator($srcDir),
             new CircularDependencyConfigurator($srcDir),
             new DuplicationConfigurator($srcDir),
+            new BaselineConfigurator($srcDir),
             new AnalysisConfigurator(),
             new OutputConfigurator($srcDir),
         ];

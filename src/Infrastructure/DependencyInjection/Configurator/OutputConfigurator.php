@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Run\Configuration\PathsSection;
@@ -200,7 +201,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
                 . 'BaselineFormatVersion.php,BaselineFileShape.php,'
                 . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
-                . 'ExplainedSubject.php,Ceiling/**,Contract/**}',
+                . 'ExplainedSubject.php,Ceiling/**,Contract/**,EntryBinding/**}',
         );
     }
 
@@ -265,6 +266,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(BaselineLoader::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(GitScopeQueryInterface::class),
+                new Reference(UnusedEntryAudit::class),
             ]);
 
         // MeasuredFindingSet — the single definition of the set a baseline

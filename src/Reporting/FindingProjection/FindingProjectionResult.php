@@ -57,6 +57,7 @@ final readonly class FindingProjectionResult
         public array $inertEntries = [],
         public ?array $baselineScope = null,
         public ?CeilingOutcome $ceilingOutcome = null,
+        private bool $unusedAuditPublished = true,
     ) {}
 
     /**
@@ -72,6 +73,14 @@ final readonly class FindingProjectionResult
     public function removedCountBy(FindingFilterStage $stage): int
     {
         return \count($this->removedBy($stage));
+    }
+
+    /** @return array{stale: int, inert: int} */
+    public function unselectedUnusedEntries(): array
+    {
+        return $this->unusedAuditPublished
+            ? ['stale' => 0, 'inert' => 0]
+            : ['stale' => \count($this->staleEntries), 'inert' => \count($this->inertEntries)];
     }
 
     public function staleEntryCount(): int

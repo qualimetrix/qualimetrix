@@ -290,6 +290,91 @@ final class CheckCommandBaselineTest extends TestCase
         self::assertStringContainsString('2 warnings', $check->getDisplay());
     }
 
+    #[Test]
+    public function itPublishesUnusedEntriesInNineFormatsAndGatesAllTwelveFormats(): void
+    {
+        $this->writeFixture("<?php\nfinal class Clean {}\n");
+        file_put_contents($this->configPath, "only_rules: ['code-smell.goto', 'baseline.unused-entry']\nsuppress_paths: [{regex: '.*'}]\nsuppress_namespaces: [{regex: '.*'}]\n");
+        file_put_contents($this->baselinePath, json_encode([
+            'version' => 14,
+            'generated' => '2026-10-05T00:00:00+00:00',
+            'scope' => ['.'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => [
+                'file:src/Gone.php' => [['channel' => 'code-smell.goto', 'count' => 1]],
+                'project:' => [['channel' => 'baseline.unused-entry', 'count' => 1]],
+            ],
+        ], \JSON_THROW_ON_ERROR));
+        $declarations = (new ContainerFactory())->create()->get(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class);
+        self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class, $declarations);
+        $baseline = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineLoader(
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser($declarations),
+        ))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $selectors = [$baseline->entries[0]->selector()->value, $baseline->inertEntries[0]->selector->value];
+        $this->git('git init -q');
+        $this->git('git config user.email test@example.com');
+        $this->git('git config user.name Test');
+        $this->git('git add .');
+        $this->git('git commit -qm initial');
+        $findingFormats = ['text', 'text-verbose', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary'];
+        foreach ([...$findingFormats, 'metrics', 'health', 'suppressed'] as $format) {
+            $options = ['--baseline' => $this->baselinePath, '--format' => $format, '--report' => 'git:staged'];
+            foreach (['warning' => 1, 'error' => 0, 'none' => 0] as $policy => $exit) {
+                $tester = $this->runCheck([...$options, '--fail-on' => $policy], captureErrors: true);
+                self::assertStringNotContainsString('is stale', $tester->getErrorOutput());
+                self::assertStringNotContainsString('is inert', $tester->getErrorOutput());
+                self::assertSame($exit, $tester->getStatusCode(), $format . ': ' . $tester->getDisplay());
+                $payload = $tester->getDisplay();
+                if (\in_array($format, $findingFormats, true)) {
+                    foreach ($selectors as $selector) {
+                        self::assertStringContainsString($selector, $payload, $format);
+                    }
+                    self::assertStringContainsString('baseline.unused-entry', $payload, $format);
+                } else {
+                    foreach ($selectors as $selector) {
+                        self::assertStringNotContainsString($selector, $payload, $format);
+                    }
+                }
+            }
+            self::assertSame(0, $this->runCheck($options)->getStatusCode(), $format . ' default exit');
+        }
+    }
+
+    #[Test]
+    public function itNamesUnusedCountsWhenTheAuditRuleIsNotSelected(): void
+    {
+        $this->writeFixture("<?php\nfinal class Clean {}\n");
+        file_put_contents($this->configPath, "only_rules: ['code-smell.goto', 'baseline.unused-entry']\n");
+        file_put_contents($this->baselinePath, json_encode([
+            'version' => 14, 'generated' => '2026-10-05T00:00:00+00:00', 'scope' => ['.'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => ['project:' => [['channel' => 'baseline.unused-entry', 'count' => 1]]],
+        ], \JSON_THROW_ON_ERROR));
+        foreach ([['--disable-rule' => ['baseline.unused-entry']], ['--only-rule' => ['code-smell.goto']]] as $selection) {
+            $tester = $this->runCheck(['--baseline' => $this->baselinePath, '--format' => 'json', '--fail-on' => 'warning', ...$selection], captureErrors: true);
+            self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+            self::assertStringContainsString('1 baseline entries are unused (0 stale, 1 inert); rule baseline.unused-entry is not selected in this run', $tester->getErrorOutput());
+            self::assertStringNotContainsString('could not be applied and are not suppressing', $tester->getDisplay());
+        }
+    }
+
+    #[Test]
+    public function itPreservesTheIncompleteRunExitForEveryFormat(): void
+    {
+        $this->writeFixture("<?php\ninvalid syntax here\n");
+        file_put_contents($this->configPath, "only_rules: ['code-smell.goto', 'baseline.unused-entry']\n");
+        file_put_contents($this->baselinePath, json_encode([
+            'version' => 14, 'generated' => '2026-10-05T00:00:00+00:00', 'scope' => ['.'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
+            'entries' => ['file:src/Gone.php' => [['channel' => 'code-smell.goto', 'count' => 1]]],
+        ], \JSON_THROW_ON_ERROR));
+        foreach (['text', 'text-verbose', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary', 'metrics', 'health', 'suppressed'] as $format) {
+            $tester = $this->runCheck(['--baseline' => $this->baselinePath, '--format' => $format, '--fail-on' => 'none']);
+            self::assertSame(4, $tester->getStatusCode(), $format . ': ' . $tester->getDisplay());
+            self::assertStringNotContainsString('is stale', $tester->getDisplay());
+        }
+    }
+
     private function writeFixture(string $code): void
     {
         file_put_contents($this->tempDir . '/Legacy.php', $code . "\n");
@@ -303,7 +388,7 @@ final class CheckCommandBaselineTest extends TestCase
     /**
      * @param array<string, mixed> $options
      */
-    private function runCheck(array $options): CommandTester
+    private function runCheck(array $options, bool $captureErrors = false): CommandTester
     {
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
@@ -320,7 +405,7 @@ final class CheckCommandBaselineTest extends TestCase
             '--config' => $this->configPath,
             '--no-progress' => true,
             ...$options,
-        ]);
+        ], ['capture_stderr_separately' => $captureErrors]);
 
         return $tester;
     }

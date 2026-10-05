@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
@@ -73,6 +74,21 @@ final class CaptureFromMeasuredSetTest extends TestCase
                 unlink($file);
             }
         }
+    }
+
+    #[Test]
+    public function itNeverCapturesTheLateUnusedEntryAudit(): void
+    {
+        $gone = self::finding('src/Gone.php', 'App', 'Gone');
+        $baselinePath = $this->writeBaseline($this->capture([$gone]));
+        $result = $this->project($this->createPipeline(), [], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
+        self::assertCount(1, $result->findings);
+        self::assertSame('baseline.unused-entry', $result->findings[0]->channel()->code);
+        self::assertSame([], $result->measuredFindings);
+        self::assertSame([], $this->capture($result->measuredFindings)->entries);
+        $direct = (new BaselineGenerator(StubChannelDeclarationRegistry::withDefaults(), new FixedClock()))->generate($result->findings, ['src'], self::fixtureExclusions());
+        self::assertSame([], $direct->baseline->entries);
+        self::assertSame(\Qualimetrix\Analysis\Policy\Baseline\UncapturedReason::BaselineAuditChannel, $direct->uncaptured[0]->reason);
     }
 
     #[Test]
@@ -300,6 +316,12 @@ final class CaptureFromMeasuredSetTest extends TestCase
                     return new \Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult([], []);
                 }
             },
+            unusedEntryAudit: new UnusedEntryAudit((function () {
+                $execution = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
+                $execution->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+                return $execution;
+            })()),
         );
     }
 

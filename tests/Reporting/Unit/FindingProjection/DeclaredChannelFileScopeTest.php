@@ -34,6 +34,7 @@ final class DeclaredChannelFileScopeTest extends TestCase
         self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.circular-dependency')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('discovery.unmatched-exclude')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('suppression.unmatched-path')));
+        self::assertFalse($scope->isFileScoped(new FindingChannel('baseline.unused-entry')));
     }
 
     #[Test]
