@@ -1,7 +1,8 @@
 {
-  "version": 13,
+  "version": 14,
   "generated": "2026-09-25T12:26:17+00:00",
   "scope": ["src"],
+  "exclusions": {"patterns":[],"generated":"excluded"},
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions::fromArray@src/Analysis/Evidence/Cohesion/LcomOptions.php": [
       {"channel":"complexity.ccn","magnitudes":[12]}

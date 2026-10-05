@@ -6,9 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 
 /**
- * A loaded or freshly captured baseline file (ADR 0017): when it was written, over which paths, and the entries it holds.
+ * A loaded or freshly captured baseline file (ADR 0017): when it was written, over which paths, under which exclusions, and the entries it holds.
  *
  * The version is not a field of this type; {@see BaselineFormatVersion} owns
  * it, because it names a fact about the *format*, not about a loaded
@@ -58,6 +59,7 @@ final readonly class Baseline
         public DateTimeImmutable $generated,
         array $scope,
         public array $entries,
+        public RecordedExclusions $exclusions,
         public array $inertEntries = [],
         public ?string $sourceContentHash = null,
         public bool $expectsSourceAbsence = false,
@@ -237,6 +239,7 @@ final readonly class Baseline
             generated: $this->generated,
             scope: $this->scope,
             entries: $this->entries,
+            exclusions: $this->exclusions,
             inertEntries: $this->inertEntries,
             sourceContentHash: null,
             expectsSourceAbsence: false,
@@ -258,6 +261,7 @@ final readonly class Baseline
             generated: $this->generated,
             scope: $this->scope,
             entries: $this->entries,
+            exclusions: $this->exclusions,
             inertEntries: $this->inertEntries,
             sourceContentHash: $sourceContentHash,
             expectsSourceAbsence: false,
@@ -276,6 +280,7 @@ final readonly class Baseline
             generated: $this->generated,
             scope: $this->scope,
             entries: $this->entries,
+            exclusions: $this->exclusions,
             inertEntries: $this->inertEntries,
             sourceContentHash: null,
             expectsSourceAbsence: true,

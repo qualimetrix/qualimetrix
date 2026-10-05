@@ -244,7 +244,7 @@ final class RuleSelectorTest extends TestCase
                 $declarations[$channel] = ChannelDeclaration::occurrence(...$levels);
             }
         }
-        return new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]));
+        return new ChannelUniverse($declarations, $channelsByProducer, array_fill_keys(array_keys($channelsByProducer), false), new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
     }
 
     /** @param list<string> $channelKeys */
@@ -261,5 +261,27 @@ final class RuleSelectorTest extends TestCase
         $metadata = array_map(static fn(string $producer): RuleMetadata => new RuleMetadata($producer, CodeDuplicationOptions::class, '', [], false), $channels->ruleNames());
         return ResolvedOptionsFixture::ready(FindingConfiguration::none(), $metadata, channels: $channels, only: $only, disabled: $disabled)->enablement
             ?? throw new LogicException('The fixture must carry final enablement.');
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

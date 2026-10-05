@@ -178,6 +178,7 @@ final class JsonDocumentMetaParityTest extends TestCase
                     'version' => BaselineFormatVersion::CURRENT,
                     'generated' => '2026-01-01T00:00:00+00:00',
                     'scope' => ['src'],
+                    'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
                     'entries' => ['class:App\\Foo' => [['channel' => 'alpha.one', 'count' => 1]]],
                 ], \JSON_THROW_ON_ERROR)),
                 'map' => $this->writeFile('map.tsv', "old\tnew\treason\nalpha.one\talpha.renamed\twhy\n"),

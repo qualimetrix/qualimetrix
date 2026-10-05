@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineFileShape;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -197,7 +199,7 @@ final class BaselineChannelRenamerTest extends TestCase
             'class:App\Foo' => [
                 ['channel' => 'mid.two', 'count' => 1],
                 ['channel' => 'gone.channel', 'count' => 'not a number'],
-                ['no channel at all' => true],
+                ['channel' => null],
                 ['channel' => 'odd.occurrence', 'occurrence' => 17, 'count' => 1],
                 ['channel' => 'odd.edge', 'edge' => ['target' => 'class:App\Baz', 'type' => 'no-such-type'], 'count' => 1],
                 ['channel' => 'mid.two', 'occurrence' => 17, 'count' => 2],
@@ -425,7 +427,7 @@ final class BaselineChannelRenamerTest extends TestCase
         try {
             $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
             self::fail('Expected the carry to be refused.');
-        } catch (ChannelRenameRefusal $e) {
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('version 5', $e->getMessage());
             self::assertStringContainsString('version ' . BaselineFormatVersion::CURRENT, $e->getMessage());
         }
@@ -439,7 +441,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->tempDir . '/broken.json';
         file_put_contents($path, '{not json');
 
-        $this->expectRefusal($path, '{not json', "mid.two\tmid.renamed");
+        $this->expectGrammarRefusal($path, '{not json', "mid.two\tmid.renamed");
     }
 
     #[Test]
@@ -448,7 +450,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->tempDir . '/list.json';
         file_put_contents($path, '[1, 2, 3]');
 
-        $this->expectRefusal($path, '[1, 2, 3]', "mid.two\tmid.renamed");
+        $this->expectGrammarRefusal($path, '[1, 2, 3]', "mid.two\tmid.renamed");
     }
 
     /**
@@ -463,10 +465,11 @@ final class BaselineChannelRenamerTest extends TestCase
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => '2026-01-01T00:00:00+00:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
         ], \JSON_THROW_ON_ERROR);
         file_put_contents($path, $contents);
 
-        $this->expectRefusal($path, $contents, "mid.two\tmid.renamed");
+        $this->expectGrammarRefusal($path, $contents, "mid.two\tmid.renamed");
     }
 
     /**
@@ -501,6 +504,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->tempDir . '/odd-envelope.json';
         $contents = (string) json_encode([
             'version' => BaselineFormatVersion::CURRENT,
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             ...$envelope,
             'entries' => ['class:App\Foo' => [['channel' => 'mid.two', 'count' => 1]]],
         ], \JSON_THROW_ON_ERROR);
@@ -509,7 +513,7 @@ final class BaselineChannelRenamerTest extends TestCase
         try {
             $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
             self::fail('Expected the carry to be refused.');
-        } catch (ChannelRenameRefusal $e) {
+        } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString($expected, $e->getMessage());
         }
 
@@ -577,28 +581,34 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertSame($carried, (string) file_get_contents($path));
     }
 
-    /**
-     * An envelope field the build does not know is carried through, and a
-     * numeric name for one still comes back a quoted JSON key: `json_decode`
-     * turns `"0"` into an `int` array key, and encoding it as it stands would
-     * spell a document nothing can read back.
-     */
     #[Test]
-    public function itQuotesANumericEnvelopeFieldName(): void
+    public function itRefusesAnUnknownNumericEnvelopeKeyWithoutWriting(): void
     {
         $path = $this->tempDir . '/numeric-field.json';
-        file_put_contents($path, (string) json_encode([
+        $before = json_encode([
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => '2026-01-01T00:00:00+00:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             '0' => 'a field from another build',
             'entries' => ['class:App\Foo' => [['channel' => 'mid.two', 'count' => 1]]],
-        ], \JSON_THROW_ON_ERROR));
+        ], \JSON_THROW_ON_ERROR);
+        file_put_contents($path, $before);
 
-        $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
+        try {
+            $this->renamer->carry($path, $this->map("mid.two\tmid.renamed"));
+            self::fail('An unknown envelope key must refuse the document.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertNotNull($e->position());
+            self::assertSame(['0'], $e->position()->segments);
+            self::assertSame('0', $e->position()->written);
+            self::assertSame(BaselineFileShape::ENVELOPE, $e->position()->accepted);
+            self::assertTrue($e->position()->closed);
+            self::assertSame('baseline', $e->sources()[0]->source()->value);
+            self::assertSame($path, $e->sources()[0]->locator());
+        }
 
-        $carried = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
-        self::assertSame('a field from another build', $carried[0]);
+        self::assertSame($before, file_get_contents($path));
     }
 
     /**
@@ -748,6 +758,20 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertSame($before, (string) file_get_contents($path), 'A refused carry must not touch the file.');
     }
 
+    private function expectGrammarRefusal(string $path, string $before, string $row): void
+    {
+        try {
+            $this->renamer->carry($path, $this->map($row));
+            self::fail('Expected the document grammar to be refused.');
+        } catch (ConfigurationRefusal $e) {
+            self::assertNotSame('', $e->summary());
+            self::assertSame('baseline', $e->sources()[0]->source()->value);
+            self::assertSame($path, $e->sources()[0]->locator());
+        }
+
+        self::assertSame($before, file_get_contents($path));
+    }
+
     /**
      * Five entries over two subjects, written by the product itself so the
      * comparison is against a canonical file rather than against a hand-typed
@@ -794,7 +818,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->tempDir . '/' . $name;
 
         (new BaselineWriter())->write(
-            new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), ['src'], $entries),
+            new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), ['src'], $entries, exclusions: self::fixtureExclusions()),
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
@@ -812,6 +836,7 @@ final class BaselineChannelRenamerTest extends TestCase
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => '2026-01-01T00:00:00+00:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ], \JSON_THROW_ON_ERROR));
 
@@ -841,5 +866,13 @@ final class BaselineChannelRenamerTest extends TestCase
             }
             exit(0);
             PHP);
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

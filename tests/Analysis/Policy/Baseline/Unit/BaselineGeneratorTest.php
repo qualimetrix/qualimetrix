@@ -20,7 +20,9 @@ use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCapture;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Policy\Baseline\UncapturedReason;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -42,6 +44,32 @@ final class BaselineGeneratorTest extends TestCase
             StubChannelDeclarationRegistry::withDefaults(),
             new FixedClock(),
         );
+    }
+
+    #[Test]
+    public function itCarriesTheRecordedDefinitionThroughCaptureAndProvenanceCopies(): void
+    {
+        $exclusions = new RecordedExclusions(
+            ['subtree:src/Nothing', 'exact:src/Legacy.php', 'subtree:src/Nothing'],
+            GeneratedFilePolicy::Include,
+        );
+        $baseline = $this->generator->generate([], ['src'], $exclusions)->baseline;
+
+        self::assertSame([
+            'patterns' => ['exact:src/Legacy.php', 'subtree:src/Nothing'],
+            'generated' => 'included',
+        ], $baseline->exclusions->toArray());
+        foreach ([$baseline, $baseline->detached(), $baseline->withSourceContentHash('known-bytes'), $baseline->withExpectedSourceAbsence()] as $copy) {
+            self::assertSame($exclusions, $copy->exclusions);
+            self::assertTrue($copy->exclusions->equals(new RecordedExclusions(
+                ['subtree:src/Nothing', 'exact:src/Legacy.php'],
+                GeneratedFilePolicy::Include,
+            )));
+            self::assertFalse($copy->exclusions->equals(new RecordedExclusions(
+                ['subtree:src/Nothing', 'exact:src/Legacy.php'],
+                GeneratedFilePolicy::Exclude,
+            )));
+        }
     }
 
     #[Test]
@@ -67,10 +95,14 @@ final class BaselineGeneratorTest extends TestCase
         };
         $generator = new BaselineGenerator(StubChannelDeclarationRegistry::withDefaults(), $clock);
 
-        $generator->generate([
-            FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
-            FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
-        ], ['src']);
+        $generator->generate(
+            [
+                FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
+                FindingFactory::occurrence(SymbolPath::forFile(RelativePath::fromString('src/A.php'))),
+            ],
+            ['src'],
+            self::fixtureExclusions(),
+        );
 
         self::assertSame(1, $clock->calls);
     }
@@ -91,6 +123,11 @@ final class BaselineGeneratorTest extends TestCase
                 return $this->delegate->declarationFor($channel);
             }
 
+            public function reachAt(FindingChannel $channel, \Qualimetrix\Core\Symbol\SymbolLevel $level): \Qualimetrix\Analysis\Finding\Contract\ValueReach
+            {
+                return $this->delegate->reachAt($channel, $level);
+            }
+
             public function staticDeclarations(): array
             {
                 return $this->delegate->staticDeclarations();
@@ -100,11 +137,15 @@ final class BaselineGeneratorTest extends TestCase
         $first = SymbolPath::forFile(RelativePath::fromString('src/First.php'));
         $second = SymbolPath::forFile(RelativePath::fromString('src/Second.php'));
 
-        $baseline = $generator->generate([
-            FindingFactory::occurrence($first),
-            FindingFactory::occurrence($second),
-            FindingFactory::occurrence($first),
-        ], ['src'])->baseline;
+        $baseline = $generator->generate(
+            [
+                FindingFactory::occurrence($first),
+                FindingFactory::occurrence($second),
+                FindingFactory::occurrence($first),
+            ],
+            ['src'],
+            self::fixtureExclusions(),
+        )->baseline;
 
         self::assertSame(2, $registry->queries);
         self::assertSame(
@@ -266,7 +307,7 @@ final class BaselineGeneratorTest extends TestCase
         );
         $second = $this->findingWithoutMagnitude();
 
-        $capture = $this->generator->generate([$first, $second, $first], ['src']);
+        $capture = $this->generator->generate([$first, $second, $first], ['src'], self::fixtureExclusions());
 
         self::assertSame(0, $capture->baseline->count());
         self::assertCount(2, $capture->uncaptured);
@@ -311,7 +352,7 @@ final class BaselineGeneratorTest extends TestCase
     #[Test]
     public function itSkipsAMagnitudeGroupWhoseMemberReportsNoNumber(): void
     {
-        $capture = $this->generator->generate([$this->findingWithoutMagnitude()], ['src']);
+        $capture = $this->generator->generate([$this->findingWithoutMagnitude()], ['src'], self::fixtureExclusions());
 
         self::assertSame(0, $capture->baseline->count());
         self::assertCount(1, $capture->uncaptured);
@@ -323,7 +364,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         $finding = $this->findingWithMagnitude(\INF);
 
-        $capture = $this->generator->generate([$finding], ['src']);
+        $capture = $this->generator->generate([$finding], ['src'], self::fixtureExclusions());
 
         self::assertSame([], $capture->baseline->entries);
         self::assertSame(
@@ -441,6 +482,14 @@ final class BaselineGeneratorTest extends TestCase
      */
     private function capture(array $findings, array $scope): Baseline
     {
-        return $this->generator->generate($findings, $scope)->baseline;
+        return $this->generator->generate($findings, $scope, self::fixtureExclusions())->baseline;
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

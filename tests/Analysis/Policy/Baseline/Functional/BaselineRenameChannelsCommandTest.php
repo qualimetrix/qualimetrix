@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineFileShape;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRenameChannelsCommand;
@@ -176,6 +177,31 @@ final class BaselineRenameChannelsCommandTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesTheExactUnknownEntryPositionWithoutWriting(): void
+    {
+        $subject = 'class:App\Foo';
+        $baseline = $this->baseline([$subject => [['channel' => 'alpha.one', 'count' => 1, 'mod' => 'suppress']]]);
+        $before = (string) file_get_contents($baseline);
+        $status = 0;
+        $output = $this->qmx(\sprintf(
+            'baseline:rename-channels %s %s --format=json',
+            escapeshellarg($baseline),
+            escapeshellarg($this->map("alpha.one\talpha.renamed")),
+        ), $status);
+
+        self::assertSame(3, $status, $output);
+        $document = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame([
+            'path' => ['entries', $subject, '0', 'mod'],
+            'written' => 'mod',
+            'accepted' => BaselineFileShape::ENTRY,
+            'closed' => true,
+        ], $document['position']);
+        self::assertSame([['kind' => 'baseline', 'name' => $baseline, 'imported_by' => null]], $document['source']);
+        self::assertSame($before, (string) file_get_contents($baseline));
+    }
+
+    #[Test]
     public function itAnswersAMalformedMapWithThree(): void
     {
         $baseline = $this->baseline(['class:App\Foo' => [['channel' => 'alpha.one', 'count' => 1]]]);
@@ -232,6 +258,7 @@ final class BaselineRenameChannelsCommandTest extends TestCase
             'version' => $version,
             'generated' => '2026-01-01T00:00:00+00:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ], \JSON_THROW_ON_ERROR));
 

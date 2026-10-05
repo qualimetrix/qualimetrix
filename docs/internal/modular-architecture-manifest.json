@@ -1175,10 +1175,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineChannelRenamer"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
         },
         {
@@ -1308,6 +1304,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CanonicalBaselineReader"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
         }
       ]
     },
@@ -1368,6 +1372,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\EnvironmentRefusal"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
         }
       ]
     },
@@ -14274,8 +14282,13 @@
       "path": "src/Analysis/Run/Contract/Configuration/AuthoredExclude.php",
       "kind": "class",
       "owner": "Analysis.Run",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\AutoloadDevPolicy": {
       "path": "src/Analysis/Run/Contract/Configuration/AutoloadDevPolicy.php",
@@ -14295,6 +14308,14 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResolvedRunConfiguration",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\RunConfiguration"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
         }
       ]
     },
@@ -14612,6 +14633,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRunContext"
         }
       ]
     },
@@ -16318,6 +16347,14 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\AuthoredExclude"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
         }
       ]
     },
@@ -16386,6 +16423,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliSelectorDecoder"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions"
         }
       ]
     },
@@ -17776,6 +17821,22 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\DirectivesCommand"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
         }
       ]
     },
@@ -22390,6 +22451,103 @@
       "owner": "Infrastructure.Console",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricReach.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface": {
+      "path": "src/Analysis/Evidence/ComputedMetrics/Contract/Definition/ComputedMetricReachInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.ComputedMetrics",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReach": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/MetricReach.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/MetricReachCatalogInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach"
+        },
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\ValueReach": {
+      "path": "src/Analysis/Finding/Contract/ValueReach.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Rule",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineFileShape": {
+      "path": "src/Analysis/Policy/Baseline/BaselineFileShape.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\BaselineAuditChannels": {
+      "path": "src/Analysis/Policy/Baseline/Contract/BaselineAuditChannels.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\Contract\\RecordedExclusions": {
+      "path": "src/Analysis/Policy/Baseline/Contract/RecordedExclusions.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand"
+        }
+      ]
     }
   },
   "enforcement_seams": {}

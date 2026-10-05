@@ -90,7 +90,14 @@ foreach ($groups as $identity => $values) {
         $findings[] = new Finding(Location::none(), $subject, $subject->toSymbolPath(), $channel, $channel, 'probe', Severity::Error, $value);
     }
 }
-$capture = $generator->generate($findings, []);
+$capture = $generator->generate(
+    $findings,
+    [],
+    new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+        [],
+        \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+    ),
+);
 $decisions = array_fill_keys(array_keys($groups), null);
 foreach ($capture->baseline->entries as $entry) {
     $decisions[$identities[$entry->identity->subjectKey] ?? throw new RuntimeException('Unknown captured baseline group.')] = true;

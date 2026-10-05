@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -174,7 +175,7 @@ final class RuleInputValidatorTest extends TestCase
         ], AbsolutePath::fromString('/project'), [
             new RuleMetadata('health.complexity', ComputedMetricRuleOptions::class, '', [], false),
         ]);
-        $channels = new ChannelUniverse([], [], ['health.complexity' => false], self::healthComplexityDefinitions());
+        $channels = new ChannelUniverse([], [], ['health.complexity' => false], self::healthComplexityDefinitions(), ...self::unusedReachPorts());
 
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage('is written in the retired channel-pair form');
@@ -414,7 +415,7 @@ final class RuleInputValidatorTest extends TestCase
         ResolvedComputedMetricDefinitions $definitions,
     ): ChannelUniverse {
         $names = [ComputedMetricRule::NAME, LcomRule::NAME, ...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES];
-        $channels = new ChannelUniverse([], [], array_fill_keys($names, false), $definitions);
+        $channels = new ChannelUniverse([], [], array_fill_keys($names, false), $definitions, ...self::unusedReachPorts());
         $execution = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         \assert($execution instanceof \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface);
         $cliWrites = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser((new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory())->createFromMetadata($execution->allRules())))->pathWrites($input);
@@ -448,6 +449,28 @@ final class RuleInputValidatorTest extends TestCase
             $names = [...$names, ...ComputedMetricChannelFamily::HEALTH_PRODUCER_RULE_NAMES];
         }
 
-        return new ChannelUniverse([], [], array_fill_keys($names, false), new ResolvedComputedMetricDefinitions([]));
+        return new ChannelUniverse([], [], array_fill_keys($names, false), new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
@@ -22,6 +23,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
@@ -94,8 +96,9 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 1: Generate baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
         $generator = new BaselineGenerator($declarations, new FixedClock());
-        $baseline = $generator->generate($findings, ['src'])->baseline;
+        $baseline = $generator->generate($findings, ['src'], self::fixtureExclusions())->baseline;
 
         self::assertSame(2, $baseline->count());
         $expectedIdentityKeys = array_map(
@@ -179,7 +182,7 @@ final class BaselineWorkflowTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 13 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
         $loader->load($this->baselinePath);
@@ -206,7 +209,7 @@ final class BaselineWorkflowTest extends TestCase
         $untyped = $edgeFinding(null);
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $baseline = (new BaselineGenerator($declarations, new FixedClock()))
-            ->generate([$typed, $untyped], ['src'])
+            ->generate([$typed, $untyped], ['src'], self::fixtureExclusions())
             ->baseline;
 
         (new BaselineWriter())->write(
@@ -276,7 +279,7 @@ final class BaselineWorkflowTest extends TestCase
             ),
         ];
 
-        $baseline = $generator->generate($initialFindings, ['src'])->baseline;
+        $baseline = $generator->generate($initialFindings, ['src'], self::fixtureExclusions())->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($this->tempDir));
 
@@ -341,8 +344,9 @@ final class BaselineWorkflowTest extends TestCase
 
         // Generate and write baseline
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
         $generator = new BaselineGenerator($declarations, new FixedClock());
-        $baseline = $generator->generate($findings, ['src'])->baseline;
+        $baseline = $generator->generate($findings, ['src'], self::fixtureExclusions())->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath), AbsolutePath::fromString($projectRoot));
 
@@ -468,5 +472,13 @@ final class BaselineWorkflowTest extends TestCase
     private static function declarationSubject(SymbolPath $symbolPath, int $startFilePos): MetricSubject
     {
         return MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString(basename(__FILE__)), DeclarationOrdinal::fromRank(0)));
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

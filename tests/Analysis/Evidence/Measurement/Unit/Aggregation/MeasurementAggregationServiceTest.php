@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -13,9 +14,13 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
@@ -177,6 +182,53 @@ final class MeasurementAggregationServiceTest extends TestCase
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame(2, $runCount);
+    }
+
+    #[Test]
+    public function itDerivesReachFromTheSameRegularDerivedAndGlobalCollectors(): void
+    {
+        $regular = self::createStub(MetricCollectorInterface::class);
+        $regular->method('provides')->willReturn([MetricName::COMPLEXITY_CCN, MetricName::COUPLING_INSTABILITY]);
+        $regular->method('getMetricDefinitions')->willReturn([]);
+        $derived = self::createStub(DerivedCollectorInterface::class);
+        $derived->method('provides')->willReturn([MetricName::MAINTAINABILITY_MI]);
+        $derived->method('getMetricDefinitions')->willReturn([]);
+        $fileCollector = self::createMock(FileMeasurementCollectorInterface::class);
+        $fileCollector->expects(self::once())->method('getCollectors')->willReturn([$regular]);
+        $fileCollector->expects(self::once())->method('getDerivedCollectors')->willReturn([$derived]);
+        $global = self::createStub(GlobalContextCollectorInterface::class);
+        $global->method('getName')->willReturn('global');
+        $global->method('requires')->willReturn([MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)]);
+        $global->method('provides')->willReturn([MetricName::COUPLING_INSTABILITY]);
+        $global->method('getMetricDefinitions')->willReturn([]);
+
+        $catalog = new MeasurementAggregationService([$global], $fileCollector, self::createStub(ProfilerInterface::class));
+
+        self::assertSame(MetricReach::Members, $catalog->metricReach(MetricName::COMPLEXITY_CCN));
+        self::assertSame(MetricReach::Members, $catalog->metricReach(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)));
+        self::assertSame(MetricReach::Members, $catalog->metricReach(MetricName::MAINTAINABILITY_MI));
+        self::assertSame(MetricReach::Run, $catalog->metricReach(MetricName::COUPLING_INSTABILITY));
+        self::assertSame(MetricReach::Run, $catalog->metricReach(MetricName::agg(MetricName::COUPLING_INSTABILITY, AggregationStrategy::Average)));
+    }
+
+    #[Test]
+    public function itDeclaresAggregationOwnedSymbolPopulationsAsMemberEvidence(): void
+    {
+        $catalog = new MeasurementAggregationService([], new CompositeCollector([], new DeclarationRegistrarFactory()), self::createStub(ProfilerInterface::class));
+
+        foreach ([MetricName::SIZE_SYMBOL_METHOD_COUNT, MetricName::SIZE_SYMBOL_CLASS_COUNT, MetricName::SIZE_SYMBOL_DECLARING_NAMESPACE_COUNT] as $key) {
+            self::assertSame(MetricReach::Members, $catalog->metricReach($key));
+        }
+    }
+
+    #[Test]
+    public function itRefusesAnUnknownMeasuredMetricInsteadOfInventingMemberReach(): void
+    {
+        $catalog = new MeasurementAggregationService([], new CompositeCollector([], new DeclarationRegistrarFactory()), self::createStub(ProfilerInterface::class));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Unknown measured metric "missing.metric.max"');
+        $catalog->metricReach('missing.metric.max');
     }
 
     /**

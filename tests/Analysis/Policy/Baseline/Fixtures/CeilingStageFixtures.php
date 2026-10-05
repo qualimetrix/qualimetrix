@@ -39,6 +39,7 @@ trait CeilingStageFixtures
             scope: ['src'],
             entries: $entries,
             inertEntries: $inertEntries,
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -123,5 +124,13 @@ trait CeilingStageFixtures
     private static function severitiesOf(array $findings): array
     {
         return array_map(static fn(Finding $finding): Severity => $finding->severity, $findings);
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

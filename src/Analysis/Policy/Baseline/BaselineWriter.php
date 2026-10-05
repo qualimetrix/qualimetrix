@@ -104,6 +104,7 @@ final readonly class BaselineWriter
      *     version: int,
      *     generated: string,
      *     scope: list<string>,
+     *     exclusions: array{patterns: list<string>, generated: 'included'|'excluded'},
      *     entries: array<string, list<mixed>>
      * }
      */
@@ -113,6 +114,7 @@ final readonly class BaselineWriter
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => $baseline->generated->format('c'),
             'scope' => $baseline->scope,
+            'exclusions' => $baseline->exclusions->toArray(),
             'entries' => $this->serializeEntries($baseline, $projectRoot),
         ];
     }

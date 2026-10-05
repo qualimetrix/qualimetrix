@@ -3705,6 +3705,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRefusesToReadASectionTheDocumentCarriedUnread
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itRemovesAPresetMetricByEnabledFalse
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricLayeringTest::itReplacesTheLevelListWhole
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itReadsEveryAstBranchAndIgnoresMetricLikeTextInStringValues
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesANonLiteralMetricAccessInsteadOfInventingMemberReach
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesAReportedLevelWithoutAFormula
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesCircularComputedInputs
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itRefusesUnknownInputsEvenAfterAnInputAlreadyEstablishedRunReach
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itResolvesNestedInputsAtTheRequestedLevelWithProjectFormulaFallback
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itTreatsKnownInputsUnpublishedAtTheLevelAsAlwaysAbsent
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricReachTest::itUsesOnlyTheDefinitionsPassedToEachQuery
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itAlwaysReturnsNullSeverity
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itDisablesWhenEnabledFalse
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\ComputedMetricRuleOptionsTest::itHasCorrectConstructorDefaults
@@ -5040,8 +5048,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itRollsUpAGlobalFunctionsCcnToItsNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itSkipsGlobalFunctionsDuringMethodToClassAggregation
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\GlobalFunctionAggregationTest::itSumsClassAndGlobalFunctionCcnAtTheNamespaceLevel
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itDeclaresAggregationOwnedSymbolPopulationsAsMemberEvidence
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itDerivesReachFromTheSameRegularDerivedAndGlobalCollectors
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itHandlesEmptyCollectorList
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itPreservesAggregationGlobalAndReaggregationSpansAndLogOrder
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRefusesAnUnknownMeasuredMetricInsteadOfInventingMemberReach
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRunsCollectorsInTopologicalOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MeasurementAggregationServiceTest::itRunsIndependentCollectorsInAnyOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itAcceptsIterableCollectors
@@ -6200,6 +6211,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itLeavesTheJudgedMetricsUnsetForTheTwoOlderFactories
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itOrdersDeclaredLevelsCanonicallySoTwoSpellingsOfOneChannelCompareEqual
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itPreservesBoundaryEligibilityWhenSelectingAChannelRole
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itPreservesExplicitRunEvidenceAndOtherFactsThroughEveryFluentCopy
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesABlankDescription
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRefusesARepeatedLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itReportsLowerWorseFalseForAHigherDirection
@@ -8131,6 +8143,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itIsRegisteredAsAPublicServiceAndOfferedByTheBinary
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itOffersNoMeasuredRunInput
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPrintsTheDocsPointerInTextOutputButNotInJson
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itPublishesTheExactUnknownEntryPositionWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itLeavesAConfiguredComputedEntryAloneInCleanup
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itReportsAConfiguredComputedEntryInExplain
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRunBeforeLoadTest::itStillRefusesAnEntryOnAChannelNothingDeclares"cleanup"
@@ -8155,7 +8168,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileByteIdenticalUnderAnEmptyMap
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itLeavesTheFileTheProductWouldHaveWritten
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itPlacesADeclaredEntryWhereTheWriterWouldWithoutRerenderingIt
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itQuotesANumericEnvelopeFieldName
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesACarryThatWouldGiveTwoEntriesOneIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a chain"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesADefectiveMapWithoutTouchingTheBaseline"a wrong header"
@@ -8170,6 +8182,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"no scope"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"scope of non-strings"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnEnvelopeTheLoaderWouldRefuse"unparseable generated"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesAnUnknownNumericEnvelopeKeyWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesToWriteOverAFileThatChangedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itRefusesWhenADistinctEntryJoinsAnExistingDuplicate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineChannelRenamerTest::itReportsADeclaredRenameThatMatchedNothing
@@ -8223,6 +8236,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itWritesThroughAClosedSymlinkWhenItsReferentMatchesTheExpectedHash
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itWritesWhenTheTargetIsStillExpectedToBeAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itKeepsAGroupWithOneIgnoredMemberAcceptedAcrossGenerateAndCheck
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itRecordsTheCompleteResolvedExclusionDefinitionThroughGenerate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesAnEntryForAnArchitectureFindingInsideAnExcludedNamespace
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAFindingRemovedByAnIgnoreTag
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAFindingRemovedByPathExclusion
@@ -8314,14 +8328,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itStillListsAnEntryWhoseRuleRanAsStale
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itGivesAnInertEntryWithAnIdentityThatIdentitysSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itGivesAnUnreadableEntryASelectorAnyway
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itJudgesTheConfiguredLevelsOfAComputedChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itKeepsKnownBadEntryValuesInertInBothFileLayouts
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itKeepsTheRawPayloadOfAnInertEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itNamesWhatIsWrongWithAMalformedEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesAMagnitudeEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesAnOccurrenceEntryWithAnEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesSemanticOccurrencesAsDistinctSelectorBearingIdentities
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itParsesTheSuppressMode
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRefusesUnknownFileKeysAtTheSamePositionInCanonicalAndPrettyLayouts
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRefusesVersionThirteenAndLoadsItsExplicitlyMigratedEnvelope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRejectsAJsonListWhereEdgeRequiresAnObject
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRejectsWrongOptionalAndRequiredJsonShapesWithoutLosingRawInput
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRequiresACompleteAndValidExclusionDefinition
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsABaselineAuditChannelInertEvenWithoutADeclaration
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAJsonListAtTheEntryBoundaryInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAMagnitudeChannelWithoutMagnitudesInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonFiniteMagnitudeInert
@@ -8335,6 +8355,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithoutACountInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnOccurrenceChannelWithMagnitudesInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUndeclaredChannelInert
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUndeclaredSubjectLevelInertWithItsIdentityAndRawPayload
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUnknownEdgeTypeInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUnrecognizedModeInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itCollapsesNegativeZeroToPositiveZero
@@ -8361,6 +8382,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAbsentAndNullOptionalValuesAsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAnExplicitNullCountAlongsideMagnitudesAsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCapturesTheMagnitudeOfASingleFinding
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCarriesTheRecordedDefinitionThroughCaptureAndProvenanceCopies
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCollectsEveryMemberOfAGroupIntoOneEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCountsAnOccurrenceGroupWithoutStoringItsReportedNumber
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itKeepsSemanticOccurrencesOnTheSameSubjectAndChannelApart
@@ -8436,9 +8458,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnUnsupportedVersionWrittenInTheCanonicalLayout
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnyOtherVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsInvalidJson
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV13Baseline
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV13Review
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV13Guidance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV14Baseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV14Review
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV14Guidance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
@@ -10876,8 +10898,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itCarriesTheDeclaredThresholdOverrideSupportRatherThanInferringIt
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itDoesNothingWhenTheRegistryIsNotRegistered
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itKeepsTheSixRunEvidenceEmittersExplicitAtTheirOwners
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itPairsACodeWithTheDeclaringRulesOwnName
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRefusesARuleChannelWithBothCatalogJudgesAndExplicitRunEvidence
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itRefusesAValidatorChannelWithBothCatalogJudgesAndExplicitRunEvidence
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itSuppliesMandatoryReachPortsThroughTheExistingComposition
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsOnAChannelDeclaredByTwoDifferentRuleServices
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsOnATaggedServiceWithNoClass
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\ChannelDeclarationCompilerPassTest::itThrowsWhenAChannelJudgesAMetricTheCatalogDoesNotPublish
@@ -11305,15 +11331,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itExpandsAnEqualitySelectorIntoTheOneChannelItNames
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itExpandsOverConfiguredComputedMetricsTheSameWayAsStaticChannels
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itExposesExactlyTheStaticDeclarationsItWasGiven
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itHonorsExplicitRunEvidenceWithoutInventingItForOtherUnjudgedChannels
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itKnowsEveryRegisteredRuleIncludingOnesDeclaringNoChannel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itLetsNoRepeatedLevelReachTheChannelDeclaration
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itPreservesTheProducerOfStaticChannelsWithDifferentRuleNames
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itProjectsEveryDeclaredLevelOfAComputedMetricOntoTheChannel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itRefusesAComputedMetricNamedAfterARegisteredRule
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itRefusesAComputedMetricNamedAfterAStaticallyDeclaredChannel
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itRefusesReachQueriesOutsideTheDeclaredChannelLevelPopulation
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReportsThresholdOverrideSupportAsDeclaredAndDefaultsToNoSupport
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesABuiltInHealthChannelAtRunTimeFromTheDefinitionsInvertedFlag
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesAUserDefinedComputedMetricAtRunTimeAsHigherIsWorseByDefault
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesComputedReachAgainstTheCandidateCatalogRetainedByItsSnapshot
+ - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itResolvesJudgedMetricsFromTheirReachAtEveryDeclaredLevel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReturnsNullForAComputedMetricChannelWithNoMatchingDefinition
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReturnsNullForAnUndeclaredChannel
  - Qualimetrix\Tests\Infrastructure\Rule\Unit\ChannelUniverseTest::itReturnsTheDeclarationForAStaticallyDeclaredChannel

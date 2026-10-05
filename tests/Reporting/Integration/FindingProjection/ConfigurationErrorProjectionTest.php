@@ -285,9 +285,10 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ], \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT));
 

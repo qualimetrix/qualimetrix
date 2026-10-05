@@ -15,6 +15,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class ComputedMetricsConfigurator implements ContainerConfiguratorInterface
 {
     private const string CONFIGURATOR = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface';
+    private const string REACH = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface';
     private const string CATALOG = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface';
     private const string HEALTH_EXCLUSION = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\HealthFormulaExclusionInterface';
     private const string METADATA_PROVIDER = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\Metadata\\HealthMetricMetadataProviderInterface';
@@ -28,6 +29,9 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
 
     private function registerRoot(ContainerBuilder $container): void
     {
+        $reach = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricReach';
+        $expression = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricExpression';
+        $metricReachCatalog = 'Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface';
         $formulaValidator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricFormulaValidator';
         $configResolver = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver';
         $findingBuilder = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Finding\\ComputedMetricFindingBuilder';
@@ -43,6 +47,12 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
 
         $container->register($healthFormulaExcluder);
         $container->setAlias(self::HEALTH_EXCLUSION, $healthFormulaExcluder)->setPublic(true);
+        $container->register($expression);
+        $container->register($reach)->setArguments([
+            new Reference($metricReachCatalog),
+            new Reference($expression),
+        ]);
+        $container->setAlias(self::REACH, $reach);
         $container->register($formulaValidator);
         $container->register($configResolver)->setArguments([
             new Reference($formulaValidator),

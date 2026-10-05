@@ -7,11 +7,13 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Integration;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
@@ -28,11 +30,16 @@ use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock;
+use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * What capture is allowed to record.
@@ -64,6 +71,49 @@ final class CaptureFromMeasuredSetTest extends TestCase
             if (file_exists($file)) {
                 unlink($file);
             }
+        }
+    }
+
+    #[Test]
+    public function itRecordsTheCompleteResolvedExclusionDefinitionThroughGenerate(): void
+    {
+        $directory = TempDirectory::create('qmx-capture-definition-');
+        $previous = getcwd();
+        self::assertNotFalse($previous);
+        $path = $directory . '/baseline.json';
+
+        try {
+            mkdir($directory . '/src');
+            mkdir($directory . '/src/Legacy');
+            file_put_contents($directory . '/src/Legacy/Old.php', '<?php goto done; done:;');
+            file_put_contents($directory . '/src/Current.php', '<?php goto done; done:;');
+            file_put_contents($directory . '/qmx.yaml', "paths: [src]\nexclude: [{subtree: src/Nothing}, {subtree: src/Legacy}]\ncache: {enabled: false}\n");
+            chdir($directory);
+            $command = (new ContainerFactory())->create()->get(BaselineGenerateCommand::class);
+            self::assertInstanceOf(BaselineGenerateCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute([
+                'baseline' => $path,
+                '--workers' => '0',
+                '--include-generated' => true,
+                '--only-rule' => ['code-smell.goto'],
+                '--mode' => 'suppress',
+            ], ['capture_stderr_separately' => true]);
+
+            self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+            $baseline = (new BaselineLoader(new BaselineEntryParser(new StubChannelDeclarationRegistry([
+                'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::File),
+            ]))))->load($path);
+            self::assertSame([
+                'patterns' => ['subtree:src/Legacy', 'subtree:src/Nothing'],
+                'generated' => 'included',
+            ], $baseline->exclusions->toArray());
+            self::assertCount(1, $baseline->entries);
+            self::assertSame(BaselineEntryMode::Suppress, $baseline->entries[0]->mode);
+            self::assertSame('file:src/Current.php', $baseline->entries[0]->identity->subjectKey);
+        } finally {
+            chdir($previous);
+            TempDirectory::remove($directory);
         }
     }
 
@@ -201,7 +251,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
     {
         $generator = new BaselineGenerator(StubChannelDeclarationRegistry::withDefaults(), new FixedClock());
 
-        return $generator->generate($measured, ['src'])->baseline;
+        return $generator->generate($measured, ['src'], self::fixtureExclusions())->baseline;
     }
 
     private function writeBaseline(Baseline $baseline): string
@@ -225,6 +275,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
+            'exclusions' => $baseline->exclusions->toArray(),
             'entries' => $entries,
         ], \JSON_THROW_ON_ERROR));
 
@@ -236,6 +287,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $this->configuredOptions = $configuration ?? new FindingProjectionOptions();
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
 
         return new FindingProjector(
             new SuppressionFilter(),
@@ -302,6 +354,14 @@ final class CaptureFromMeasuredSetTest extends TestCase
             message: 'goto statement detected',
             severity: Severity::Warning,
             metricValue: 1.0,
+        );
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
         );
     }
 }

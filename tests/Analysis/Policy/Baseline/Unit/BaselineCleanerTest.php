@@ -228,7 +228,7 @@ final class BaselineCleanerTest extends TestCase
     {
         $inert = self::inertEntry('file:src/Legacy.php', InertEntryReason::UnrecognizedMode);
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert], exclusions: self::fixtureExclusions());
 
         $candidates = $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), []);
 
@@ -300,7 +300,7 @@ final class BaselineCleanerTest extends TestCase
         $kept = self::inertEntry('file:kept.php', InertEntryReason::Malformed);
         $removed = self::inertEntry('file:gone.php', InertEntryReason::Malformed);
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$kept, $removed]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$kept, $removed], exclusions: self::fixtureExclusions());
 
         $result = $this->cleaner()->remove($baseline, [$removed->selector]);
 
@@ -337,7 +337,7 @@ final class BaselineCleanerTest extends TestCase
         $first = self::inertEntry('file:one.php', InertEntryReason::Malformed, $shared);
         $second = self::inertEntry('file:two.php', InertEntryReason::Malformed, $shared);
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$first, $second]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$first, $second], exclusions: self::fixtureExclusions());
 
         $result = $this->cleaner()->remove($baseline, [$shared]);
 
@@ -360,6 +360,7 @@ final class BaselineCleanerTest extends TestCase
             scope: ['src'],
             entries: [$removedEntry],
             inertEntries: [$first, $second],
+            exclusions: self::fixtureExclusions(),
         );
 
         $result = $this->cleaner()->remove($baseline, [
@@ -405,7 +406,7 @@ final class BaselineCleanerTest extends TestCase
     public function itCarriesTheSourceContentHashForward(): void
     {
         $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], sourceContentHash: 'abc123');
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], sourceContentHash: 'abc123', exclusions: self::fixtureExclusions());
 
         $result = $this->cleaner()->remove($baseline, []);
 
@@ -419,7 +420,7 @@ final class BaselineCleanerTest extends TestCase
 
     private static function baselineOf(BaselineEntry ...$entries): Baseline
     {
-        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: array_values($entries));
+        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: array_values($entries), exclusions: self::fixtureExclusions());
     }
 
     private static function gotoChannel(): FindingChannel
@@ -437,6 +438,14 @@ final class BaselineCleanerTest extends TestCase
             reason: $reason,
             detail: 'test fixture',
             raw: 'garbage',
+        );
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
         );
     }
 }

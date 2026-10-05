@@ -105,6 +105,7 @@ final readonly class BaselineUpdater
             generated: $this->clock->now(),
             scope: self::scopeToRecord($baseline, $scope),
             entries: $entries,
+            exclusions: $baseline->exclusions,
             inertEntries: $baseline->inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );

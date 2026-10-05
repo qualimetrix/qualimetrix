@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
+use LogicException;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -1408,7 +1409,7 @@ final class RuleExecutionTest extends TestCase
                 }
             }
         }
-        $channels = new ChannelUniverse($declarations, $produced, $supports, new ResolvedComputedMetricDefinitions([]));
+        $channels = new ChannelUniverse($declarations, $produced, $supports, new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
         $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => $fileRules], $metadata, only: $only, disabled: $disabled);
         $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata, channels: $channels));
         foreach ($manual as $producer => [$namespaces, $channelExclusions, $paths]) {
@@ -1669,6 +1670,28 @@ final class RuleExecutionTest extends TestCase
             static fn(RuleMetadata $metadata): bool => $metadata->active,
         ));
     }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
+    }
 }
 
 final readonly class RuleExecutionFixtureOptions implements RuleOptionsInterface
@@ -1725,4 +1748,5 @@ final readonly class RuleMetadataFixtureRule implements RuleInterface
     {
         return RuleExecutionFixtureOptions::class;
     }
+
 }

@@ -161,7 +161,7 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itNeverAddsAnIdentityTheBaselineDidNotAlreadyHold(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: [], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: [], entries: [], exclusions: self::fixtureExclusions());
         $found = FindingFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
 
         $result = $this->updater()->update($baseline, [$found], RunScope::fromRecorded(['src']));
@@ -183,7 +183,7 @@ final class BaselineUpdaterTest extends TestCase
             raw: 'garbage',
         );
 
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert]);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert], exclusions: self::fixtureExclusions());
 
         $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
 
@@ -356,7 +356,7 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itStampsTheResultFromTheInjectedClock(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable('2020-01-01T00:00:00+00:00'), scope: ['src'], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable('2020-01-01T00:00:00+00:00'), scope: ['src'], entries: [], exclusions: self::fixtureExclusions());
 
         $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
 
@@ -371,7 +371,7 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itRecordsTheRunScopeWhenTheRunCoversWhatTheFileRecords(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], exclusions: self::fixtureExclusions());
 
         $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src', 'tests']));
 
@@ -389,7 +389,7 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itKeepsTheRecordedScopeWhenTheRunDoesNotCoverIt(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src', 'tests'], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src', 'tests'], entries: [], exclusions: self::fixtureExclusions());
 
         $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src/Legacy']));
 
@@ -399,7 +399,7 @@ final class BaselineUpdaterTest extends TestCase
     #[Test]
     public function itCarriesTheSourceContentHashForward(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], sourceContentHash: 'abc123');
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], sourceContentHash: 'abc123', exclusions: self::fixtureExclusions());
 
         $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
 
@@ -413,7 +413,7 @@ final class BaselineUpdaterTest extends TestCase
 
     private static function baselineOf(BaselineEntry $entry): Baseline
     {
-        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry]);
+        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], exclusions: self::fixtureExclusions());
     }
 
     private static function duplicationChannel(): FindingChannel
@@ -424,5 +424,13 @@ final class BaselineUpdaterTest extends TestCase
     private static function gotoChannel(): FindingChannel
     {
         return new FindingChannel('code-smell.goto');
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

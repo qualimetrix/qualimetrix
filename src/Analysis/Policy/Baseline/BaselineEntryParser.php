@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
@@ -150,6 +151,13 @@ final readonly class BaselineEntryParser
     {
         $values = BaselineEntryValues::decode($raw);
 
+        if ($identity->channel->code === BaselineAuditChannels::UNUSED_ENTRY) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::BaselineAuditChannel,
+                'baseline audit findings cannot be accepted as debt',
+            );
+        }
+
         $declaration = $this->declarations->declarationFor($identity->channel);
         if ($declaration === null) {
             throw new BaselineEntryRejection(
@@ -171,6 +179,14 @@ final readonly class BaselineEntryParser
                     'the channel "%s" reports a configuration error, which cannot be accepted as debt',
                     $identity->channel->code,
                 ),
+            );
+        }
+
+        $level = MetricSubject::levelOfCanonical($identity->subjectKey);
+        if (!\in_array($level, $declaration->levels, true)) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::LevelNotDeclared,
+                \sprintf('the channel "%s" does not declare level "%s" in this configuration', $identity->channel->code, $level->value),
             );
         }
 

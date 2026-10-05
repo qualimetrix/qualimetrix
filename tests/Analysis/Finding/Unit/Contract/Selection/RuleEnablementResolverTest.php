@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -98,6 +99,7 @@ final class RuleEnablementResolverTest extends TestCase
             ['demo.many' => ['demo.class', 'demo.namespace']],
             ['demo.many' => false],
             new ResolvedComputedMetricDefinitions([]),
+            ...self::unusedReachPorts(),
         );
         try {
             (new RuleEnablementResolver())->decide($document->resolved(), $channels);
@@ -265,6 +267,28 @@ final class RuleEnablementResolverTest extends TestCase
         return [
             new RuleMetadata('complexity.alpha', CodeSmellOptions::class, 'Alpha', [], false),
             new RuleMetadata('complexity.beta', CodeSmellOptions::class, 'Beta', [], false),
+        ];
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
         ];
     }
 }

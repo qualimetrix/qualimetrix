@@ -102,7 +102,7 @@ final readonly class BaselineRun implements BaselineRunInterface
 
         $projectRoot = $configuration->projectRoot;
 
-        return new BaselineRunContext($run, RunScope::record($configuration->paths, $projectRoot), $projectRoot);
+        return new BaselineRunContext($run, RunScope::record($configuration->paths, $projectRoot), $projectRoot, $configuration);
     }
 
 }

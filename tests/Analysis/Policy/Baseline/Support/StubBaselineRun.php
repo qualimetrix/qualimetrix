@@ -11,6 +11,12 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\DirectiveObservations;
+use Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\MeasuredRunResult;
@@ -82,10 +88,39 @@ final readonly class StubBaselineRun implements BaselineRunInterface
             latePublished: $this->findings,
         );
 
+        $paths = array_map(
+            fn(string $path): AbsolutePath => str_starts_with($path, '/')
+                ? AbsolutePath::fromString($path)
+                : $this->projectRoot->joinRelative(RelativePath::fromString($path)),
+            $this->scope,
+        );
+        $configuration = new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $this->projectRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
+            projectScope: new ProjectScopeMeasurement(
+                universe: new ProjectScopeUniverse(
+                    projectRoot: $this->projectRoot,
+                    pathsAuthored: true,
+                    denominator: [],
+                    prunedTargets: [],
+                    reasons: [],
+                    namespaceMapUsable: false,
+                    pathResolutions: [],
+                ),
+                paths: $paths,
+                scopeState: ProjectScopeState::Narrowed,
+                uncoveredRoots: [],
+            ),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: AutoloadDevPolicy::Exclude,
+        );
+
         return new BaselineRunContext(
             new MeasuredAnalysisRun($result, $this->findings),
             RunScope::fromRecorded($this->scope),
             $this->projectRoot,
+            $configuration,
         );
     }
 }

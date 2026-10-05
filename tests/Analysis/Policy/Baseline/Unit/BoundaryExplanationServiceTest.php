@@ -112,6 +112,7 @@ final class BoundaryExplanationServiceTest extends TestCase
                     'test fixture',
                     'garbage',
                 )],
+                exclusions: self::fixtureExclusions(),
             ),
             [],
             [],
@@ -245,6 +246,7 @@ final class BoundaryExplanationServiceTest extends TestCase
                 scope: ['src'],
                 entries: [],
                 inertEntries: [$inert, $unreadable, $elsewhere],
+                exclusions: self::fixtureExclusions(),
             ),
             measuredFindings: [],
             thresholdOverridesByFile: [],
@@ -272,6 +274,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: ['src'],
             entries: [new BaselineEntry($identity, [24], 1, BaselineEntryMode::Suppress)],
+            exclusions: self::fixtureExclusions(),
         );
 
         $explanation = $this->service->explain(
@@ -450,6 +453,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             ['src'],
             [new BaselineEntry($baselineIdentity, [25], 1)],
+            exclusions: self::fixtureExclusions(),
         );
         $measured = $this->findingWithIdentityParts(
             $channel,
@@ -486,6 +490,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             ['src'],
             [new BaselineEntry($baselineIdentity, [25], 1)],
+            exclusions: self::fixtureExclusions(),
         );
         $measured = $this->findingWithIdentityParts($channel, dependencyTarget: $target);
 
@@ -644,7 +649,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $channel = new FindingChannel('duplication.clone');
         $project = new BaselineEntry(new BaselineIdentity('project:', $channel), [40], 1);
         $file = new BaselineEntry(new BaselineIdentity('file:src/Foo.php', $channel), [40], 1);
-        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$project, $file]);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$project, $file], exclusions: self::fixtureExclusions());
         $service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
 
         $old = $service->explain('project:', $channel, $baseline, [], [], []);
@@ -676,6 +681,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
             scope: ['src'],
             entries: [new BaselineEntry($identity, $magnitudes, $count)],
+            exclusions: self::fixtureExclusions(),
         );
     }
 
@@ -725,6 +731,14 @@ final class BoundaryExplanationServiceTest extends TestCase
             MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             ControlScope::Class_,
             50,
+        );
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
         );
     }
 }
@@ -850,4 +864,5 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
     {
         $counter[$key] = ($counter[$key] ?? 0) + 1;
     }
+
 }

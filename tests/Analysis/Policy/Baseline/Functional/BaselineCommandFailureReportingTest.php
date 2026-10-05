@@ -264,7 +264,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
-        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
             $staticChannels,
@@ -301,7 +301,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
     private static function ruleInputValidator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
 
         return new RuleInputValidator(
             $rules,
@@ -325,5 +325,27 @@ final class BaselineCommandFailureReportingTest extends TestCase
     private static function refusalPresenter(): RefusalPresenter
     {
         return new RefusalPresenter(new ErrorStream());
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

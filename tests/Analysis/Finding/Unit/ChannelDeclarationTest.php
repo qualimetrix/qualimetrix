@@ -293,4 +293,31 @@ final class ChannelDeclarationTest extends TestCase
 
         ChannelDeclaration::occurrence(SymbolLevel::Project)->describedAs("  \t");
     }
+    #[Test]
+    public function itPreservesExplicitRunEvidenceAndOtherFactsThroughEveryFluentCopy(): void
+    {
+        $base = ChannelDeclaration::magnitude(WorseDirection::Lower, SymbolLevel::Namespace_, SymbolLevel::Class_)
+            ->describedAs('Reports run evidence.')
+            ->withoutConfiguredWarningBoundary()
+            ->selectedAs(ChannelSelectionRole::FilterExempt);
+        self::assertFalse($base->readsRunEvidence);
+        $run = $base->readingRunEvidence();
+        self::assertTrue($run->readsRunEvidence);
+        self::assertSame($base->direction, $run->direction);
+        self::assertSame($base->levels, $run->levels);
+        self::assertSame($base->description, $run->description);
+        self::assertSame($base->usesProducerWarningBoundary, $run->usesProducerWarningBoundary);
+        self::assertSame($base->selectionRole, $run->selectionRole);
+        self::assertSame($base->judges, $run->judges);
+        self::assertSame($base->configurationError, $run->configurationError);
+
+        foreach ([$run->asConfigurationError(), $run->describedAs('Another description.'), $run->withoutConfiguredWarningBoundary(), $run->selectedAs(ChannelSelectionRole::Selectable)] as $copy) {
+            self::assertTrue($copy->readsRunEvidence);
+            self::assertSame($run->direction, $copy->direction);
+            self::assertSame($run->levels, $copy->levels);
+            self::assertSame($run->judges, $copy->judges);
+        }
+        self::assertTrue($run->asConfigurationError()->readingRunEvidence()->configurationError);
+    }
+
 }

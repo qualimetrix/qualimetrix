@@ -6,8 +6,10 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use HashContext;
 use JsonException;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use RuntimeException;
 use SplFileObject;
+use stdClass;
 
 /**
  * Reads a baseline file written in the canonical layout — one entry per line
@@ -86,6 +88,8 @@ final class CanonicalBaselineReader
 
     private HashContext $hash;
 
+    private string $path;
+
     public function __construct(
         private readonly BaselineEntryParser $entryParser,
     ) {}
@@ -106,6 +110,7 @@ final class CanonicalBaselineReader
             return null;
         }
 
+        $this->path = $path;
         $this->hash = hash_init('sha256');
 
         return $this->scan();
@@ -251,6 +256,7 @@ final class CanonicalBaselineReader
      */
     private function readSubjectEntries(string $subjectKey, array &$entries, array &$inert): ?bool
     {
+        $index = 0;
         do {
             $line = $this->readLine();
 
@@ -266,6 +272,15 @@ final class CanonicalBaselineReader
                 return null;
             }
 
+            if ($decoded instanceof stdClass) {
+                try {
+                    BaselineFileShape::assertEntryKeys((array) $decoded, $this->path, $subjectKey, $index);
+                } catch (ConfigurationRefusal) {
+                    return null;
+                }
+            }
+
+            BaselineFileShape::normalizeValues($decoded);
             $entry = $this->entryParser->parse($subjectKey, $decoded);
 
             if ($entry instanceof InertBaselineEntry) {
@@ -273,6 +288,7 @@ final class CanonicalBaselineReader
             } else {
                 $entries[] = $entry;
             }
+            ++$index;
         } while (!$last);
 
         return match ($this->readLine()) {
@@ -358,7 +374,7 @@ final class CanonicalBaselineReader
     private function decode(string $json, int $depthLimit): mixed
     {
         try {
-            return json_decode($json, true, $depthLimit, \JSON_THROW_ON_ERROR);
+            return json_decode($json, false, $depthLimit, \JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             return self::UNDECODABLE;
         }

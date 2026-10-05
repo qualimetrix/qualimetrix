@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
@@ -45,7 +46,7 @@ final readonly class BaselineGenerator
      * @param list<string> $scope the analysed paths that produced this run; {@see Baseline}
      *                            normalizes it, so the caller passes what it analysed
      */
-    public function generate(array $findings, array $scope): BaselineCapture
+    public function generate(array $findings, array $scope, RecordedExclusions $exclusions): BaselineCapture
     {
         $groups = self::groupFindings($findings);
         $generated = $this->clock->now();
@@ -72,6 +73,7 @@ final readonly class BaselineGenerator
                 generated: $generated,
                 scope: $scope,
                 entries: $entries,
+                exclusions: $exclusions,
             ),
             $rejected,
         );

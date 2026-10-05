@@ -394,9 +394,10 @@ final class BaselineExplainCommandTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
         $subjectKey = self::subject($symbol)->toCanonical();
         file_put_contents($this->baselinePath, json_encode([
-            'version' => 13,
+            'version' => 14,
             'generated' => '2026-09-01T00:00:00+00:00',
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => [$subjectKey => [['channel' => 5, 'count' => 1]]],
         ], \JSON_THROW_ON_ERROR));
 
@@ -505,7 +506,8 @@ final class BaselineExplainCommandTest extends TestCase
         );
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('accepted 40; now not measured (this invocation did not measure this channel at this subject level)', $tester->getDisplay());
+        self::assertStringContainsString('present but not applied (subject level is not declared by this channel in this configuration', $tester->getDisplay());
+        self::assertStringContainsString('now not measured (this invocation did not measure this channel at this subject level)', $tester->getDisplay());
         self::assertStringNotContainsString('nothing reported', $tester->getDisplay());
         self::assertStringNotContainsString('did not run the rule', $tester->getDisplay());
     }
@@ -657,7 +659,7 @@ final class BaselineExplainCommandTest extends TestCase
     private function writeBaseline(array $entries): void
     {
         (new BaselineWriter())->write(
-            new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: $entries),
+            new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: $entries, exclusions: self::fixtureExclusions()),
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
         );
@@ -710,5 +712,13 @@ final class BaselineExplainCommandTest extends TestCase
         });
 
         return $identity;
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

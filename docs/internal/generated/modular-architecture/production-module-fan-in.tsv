@@ -26,10 +26,10 @@ Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite	Analys
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	5	4
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	43	7
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	44	7
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	4	3
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	8	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	7	3
+Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	8	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
@@ -41,6 +41,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMet
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface	Analysis.Evidence.ComputedMetrics	6	3
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	7	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions	Analysis.Evidence.ComputedMetrics	5	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	1	1
@@ -87,6 +88,8 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.M
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Analysis.Evidence.Measurement	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	22	7
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	68	13
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	3	2
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	26	11
 Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface	Analysis.Evidence.Measurement	3	2
@@ -194,6 +197,7 @@ Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge	Analysis.Finding	1
 Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	112	17
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	8	3
+Qualimetrix\Analysis\Finding\Contract\ValueReach	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	2	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit	Analysis.Finding	1	1
@@ -225,6 +229,7 @@ Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Polic
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	2	1
+Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	1	1
@@ -263,10 +268,12 @@ Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface	Analysis.Run
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
+Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude	Analysis.Run	1	1
+Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	2	1
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	8	2
+Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	10	3
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface	Analysis.Run	4	2
@@ -303,8 +310,8 @@ Qualimetrix\Core\Path\RelativePath	Core.Path	91	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	8	4
 Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	17	6
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2
-Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	9	5
-Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	7	5
+Qualimetrix\Core\Pattern\PathPattern	Core.Neutral	11	6
+Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	9	6
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	7	4
 Qualimetrix\Core\ProductIdentity	Core.Neutral	22	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	21	8
@@ -319,7 +326,7 @@ Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	2	1
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	125	21
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	129	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	78	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	34	12

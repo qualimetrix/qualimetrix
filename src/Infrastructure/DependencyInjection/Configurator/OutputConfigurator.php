@@ -198,7 +198,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 . 'BaselineConflictException.php,BaselineEntryRejection.php,'
                 . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
                 . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
-                . 'BaselineFormatVersion.php,'
+                . 'BaselineFormatVersion.php,BaselineFileShape.php,'
                 . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
                 . 'ExplainedSubject.php,Ceiling/**,Contract/**}',
         );

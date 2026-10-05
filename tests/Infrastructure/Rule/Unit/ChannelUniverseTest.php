@@ -5,18 +5,27 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Rule\Unit;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricReach;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\ValueReach;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
@@ -422,6 +431,66 @@ final class ChannelUniverseTest extends TestCase
         self::assertSame(ComputedMetricRule::NAME, $snapshot->producerOf('computed.branch-load'));
     }
 
+    #[Test]
+    public function itResolvesJudgedMetricsFromTheirReachAtEveryDeclaredLevel(): void
+    {
+        $universe = $this->universe(declarations: [
+            'coupling.instability' => ChannelDeclaration::judging(WorseDirection::Higher, JudgedMetrics::of(MetricName::COUPLING_INSTABILITY), SymbolLevel::Class_, SymbolLevel::Namespace_),
+            'complexity.ccn' => ChannelDeclaration::judging(WorseDirection::Higher, JudgedMetrics::of(MetricName::COMPLEXITY_CCN, MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max)), SymbolLevel::Class_),
+            'maintainability.mi' => ChannelDeclaration::judging(WorseDirection::Lower, JudgedMetrics::of(MetricName::MAINTAINABILITY_MI), SymbolLevel::Callable),
+            'fixture.mixed' => ChannelDeclaration::judging(WorseDirection::Higher, JudgedMetrics::of(MetricName::COMPLEXITY_CCN, MetricName::COUPLING_INSTABILITY), SymbolLevel::Class_),
+        ]);
+
+        self::assertSame(ValueReach::Run, $universe->reachAt(new FindingChannel('coupling.instability'), SymbolLevel::Class_));
+        self::assertSame(ValueReach::Run, $universe->reachAt(new FindingChannel('coupling.instability'), SymbolLevel::Namespace_));
+        self::assertSame(ValueReach::Members, $universe->reachAt(new FindingChannel('complexity.ccn'), SymbolLevel::Class_));
+        self::assertSame(ValueReach::Members, $universe->reachAt(new FindingChannel('maintainability.mi'), SymbolLevel::Callable));
+        self::assertSame(ValueReach::Run, $universe->reachAt(new FindingChannel('fixture.mixed'), SymbolLevel::Class_));
+    }
+
+    #[Test]
+    public function itHonorsExplicitRunEvidenceWithoutInventingItForOtherUnjudgedChannels(): void
+    {
+        $universe = $this->universe(declarations: [
+            'annotation.unused-directive' => ChannelDeclaration::occurrence(SymbolLevel::File)->readingRunEvidence(),
+            'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::File),
+        ]);
+
+        self::assertSame(ValueReach::Run, $universe->reachAt(new FindingChannel('annotation.unused-directive'), SymbolLevel::File));
+        self::assertSame(ValueReach::Members, $universe->reachAt(new FindingChannel('code-smell.goto'), SymbolLevel::File));
+    }
+
+    #[Test]
+    public function itResolvesComputedReachAgainstTheCandidateCatalogRetainedByItsSnapshot(): void
+    {
+        $this->definitions = [$this->definition('computed.same', false)];
+        $live = $this->universe();
+        $candidate = new ResolvedComputedMetricDefinitions([
+            new ComputedMetricDefinition('computed.same', ['class' => 'm["coupling.instability"]'], 'Candidate.', [SymbolLevel::Class_]),
+        ]);
+        $snapshot = $live->snapshot($candidate);
+        $channel = new FindingChannel('computed.same');
+
+        self::assertSame(ValueReach::Members, $live->reachAt($channel, SymbolLevel::Class_));
+        self::assertSame(ValueReach::Run, $snapshot->reachAt($channel, SymbolLevel::Class_));
+        $this->definitions = [];
+        self::assertSame(ValueReach::Run, $snapshot->reachAt($channel, SymbolLevel::Class_));
+    }
+
+    #[Test]
+    public function itRefusesReachQueriesOutsideTheDeclaredChannelLevelPopulation(): void
+    {
+        $universe = $this->universe(declarations: ['fixture.known' => ChannelDeclaration::occurrence(SymbolLevel::Class_)]);
+        foreach ([['fixture.unknown', SymbolLevel::Class_, 'Unknown finding channel'], ['fixture.known', SymbolLevel::Namespace_, 'does not report at level']] as [$code, $level, $message]) {
+            try {
+                $universe->reachAt(new FindingChannel($code), $level);
+                self::fail('An out-of-population reach query must be refused.');
+            } catch (LogicException $exception) {
+                self::assertStringContainsString($message, $exception->getMessage());
+            }
+        }
+    }
+
     /**
      * @param array<string, ChannelDeclaration> $declarations
      * @param array<string, list<string>> $channelsByProducer
@@ -432,12 +501,28 @@ final class ChannelUniverseTest extends TestCase
         array $channelsByProducer = [],
         array $thresholdSupport = [],
     ): ChannelUniverse {
+        $metricReachCatalog = $this->metricReachCatalog();
+
         return new ChannelUniverse(
             $declarations,
             $channelsByProducer,
             $thresholdSupport,
             $this->catalog(),
+            $metricReachCatalog,
+            new ComputedMetricReach($metricReachCatalog, new ComputedMetricExpression()),
         );
+    }
+
+    private function metricReachCatalog(): MetricReachCatalogInterface
+    {
+        $catalog = self::createStub(MetricReachCatalogInterface::class);
+        $catalog->method('metricReach')->willReturnCallback(static fn(string $key): MetricReach => match (MetricName::base($key)) {
+            MetricName::COMPLEXITY_CCN, MetricName::MAINTAINABILITY_MI => MetricReach::Members,
+            MetricName::COUPLING_INSTABILITY => MetricReach::Run,
+            default => throw new LogicException('Unknown measured fixture metric: ' . $key),
+        });
+
+        return $catalog;
     }
 
     private function definition(string $name, bool $inverted): ComputedMetricDefinition

@@ -238,6 +238,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricOverrideReader'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricProducerOptions'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricReach'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRuleOptions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver'
@@ -251,6 +252,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricBranchTrace'
@@ -438,6 +440,8 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface'
@@ -630,6 +634,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
+        - 'Qualimetrix\Analysis\Finding\Contract\ValueReach'
         - 'Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider'
@@ -775,6 +780,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryRejection'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryUpdateOutcome'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryValues'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineFileShape'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineFormatVersion'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
@@ -793,7 +799,9 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap'
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal'
         - 'Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels'
         - 'Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome'
+        - 'Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntrySelector'
@@ -1493,6 +1501,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-finding
+      - analysis-run
       - core-filetarget
       - core-neutral
       - core-path
@@ -1638,8 +1647,10 @@ architecture:
       - external
     infrastructure-rule:
       - analysis-evidence-computedmetrics
+      - analysis-evidence-measurement
       - analysis-finding
       - core-neutral
+      - core-symbol
       - external
     infrastructure-serializer:
       - external

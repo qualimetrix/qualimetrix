@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Selection;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -69,16 +70,22 @@ final class RuleEnablementRoleTest extends TestCase
             new RuleMetadata('complexity.alpha', CodeSmellOptions::class, 'Alpha', [], false),
             new RuleMetadata($producer, CodeSmellOptions::class, 'Diagnostic', [], false),
         ];
-        $universe = new ChannelUniverse([
-            'complexity.alpha' => ChannelDeclaration::occurrence(SymbolLevel::Project),
-            $channel->code => ChannelDeclaration::occurrence(SymbolLevel::Project)->selectedAs($role),
-        ], [
-            'complexity.alpha' => ['complexity.alpha'],
-            $producer => [$channel->code],
-        ], [
-            'complexity.alpha' => false,
-            $producer => false,
-        ], new ResolvedComputedMetricDefinitions([]));
+        $universe = new ChannelUniverse(
+            [
+                'complexity.alpha' => ChannelDeclaration::occurrence(SymbolLevel::Project),
+                $channel->code => ChannelDeclaration::occurrence(SymbolLevel::Project)->selectedAs($role),
+            ],
+            [
+                'complexity.alpha' => ['complexity.alpha'],
+                $producer => [$channel->code],
+            ],
+            [
+                'complexity.alpha' => false,
+                $producer => false,
+            ],
+            new ResolvedComputedMetricDefinitions([]),
+            ...self::unusedReachPorts(),
+        );
         $document = ResolvedOptionsFixture::document([
             ['source' => 'config', 'values' => [
                 'rules' => [$producer => ['enabled' => true]],
@@ -87,5 +94,27 @@ final class RuleEnablementRoleTest extends TestCase
         ], AbsolutePath::fromString('/project'), $metadata);
         $ready = ResolvedOptionsFixture::ready(FindingConfiguration::fromDocument($document), $metadata, channels: $universe);
         return $ready->enablement ?? self::fail('The final enablement must be available.');
+    }
+
+    /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
+    private static function unusedReachPorts(): array
+    {
+        return [
+            new class implements \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface {
+                public function metricReach(string $metricKey): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach
+                {
+                    throw new LogicException('This fixture does not query measured-metric reach.');
+                }
+            },
+            new class implements \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface {
+                public function reachAt(
+                    string $metricName,
+                    \Qualimetrix\Core\Symbol\SymbolLevel $level,
+                    \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface $definitions,
+                ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach {
+                    throw new LogicException('This fixture does not query computed-metric reach.');
+                }
+            },
+        ];
     }
 }

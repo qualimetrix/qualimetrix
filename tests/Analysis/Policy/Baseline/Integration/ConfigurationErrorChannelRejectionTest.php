@@ -106,7 +106,7 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
     {
         $generator = new BaselineGenerator(self::registry(), new FixedClock());
 
-        $capture = $generator->generate([self::finding()], ['src']);
+        $capture = $generator->generate([self::finding()], ['src'], self::fixtureExclusions());
 
         self::assertSame([], $capture->baseline->entries);
         self::assertCount(1, $capture->uncaptured);
@@ -212,6 +212,14 @@ final class ConfigurationErrorChannelRejectionTest extends TestCase
 
     private static function baselineOf(BaselineEntry $entry): Baseline
     {
-        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry]);
+        return new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], exclusions: self::fixtureExclusions());
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

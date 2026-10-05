@@ -184,6 +184,7 @@ rule-path-suppression	coupling.cbo	coupling.cbo	src/Analysis/Run/Pipeline/Depend
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Core/FileTarget/FileTargetFailure.php	Qualimetrix\Core\FileTarget\FileTargetFailure	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/AnalysisInputPathValidator.php	Qualimetrix\Infrastructure\Console	error	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/AbstractHookCommand.php	Qualimetrix\Infrastructure\Console\Command	error	1
+rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/CheckCommand.php	Qualimetrix\Infrastructure\Console\Command\CheckCommand	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/DirectivesCommand.php	Qualimetrix\Infrastructure\Console\Command\DirectivesCommand	warning	1
 rule-path-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Console/Command/GraphExportCommand.php	Qualimetrix\Infrastructure\Console\Command\GraphExportCommand	error	1

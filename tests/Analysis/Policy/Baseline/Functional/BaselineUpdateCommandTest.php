@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -18,11 +19,13 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -204,6 +207,7 @@ final class BaselineUpdateCommandTest extends TestCase
     private function execute(array $measured, array $options = [], array $runScope = ['src']): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare(self::HIGHER_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
 
         $command = new BaselineUpdateCommand(
             new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
@@ -229,6 +233,7 @@ final class BaselineUpdateCommandTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: $scope,
                 entries: $entries,
+                exclusions: self::fixtureExclusions(),
             ),
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($this->baselinePath),
             AbsolutePath::fromString($this->tempDir),
@@ -317,5 +322,13 @@ final class BaselineUpdateCommandTest extends TestCase
         }
 
         self::fail(\sprintf('No entry for channel %s in %s', $channelKey, $path));
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

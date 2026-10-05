@@ -121,7 +121,7 @@ final class LayerViolationRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_)->readingRunEvidence(),
             self::UNMATCHED_EXCLUDE_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
                 ->describedAs('Reports a layer\'s exclude clause that removed no class while the layer\'s own criteria matched some.'),
             self::DOUBTED_ASSIGNMENT_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)

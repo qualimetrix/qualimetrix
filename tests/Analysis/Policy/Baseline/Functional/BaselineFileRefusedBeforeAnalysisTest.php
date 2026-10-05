@@ -294,7 +294,7 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
     private function writeEmptyBaseline(string $path): void
     {
         (new BaselineWriter())->write(
-            new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: []),
+            new Baseline(generated: (new FixedClock())->now(), scope: ['src'], entries: [], exclusions: self::fixtureExclusions()),
             \Qualimetrix\Core\FileTarget\TargetPath::resolve($path),
             AbsolutePath::fromString($this->tempDir),
         );
@@ -313,5 +313,13 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
                 return [];
             }
         };
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

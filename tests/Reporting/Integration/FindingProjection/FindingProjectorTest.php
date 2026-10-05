@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -28,6 +29,7 @@ use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
@@ -1052,6 +1054,7 @@ final class FindingProjectorTest extends TestCase
         $this->configuredOptions = $configuration ?? new FindingProjectionOptions();
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
 
         return new FindingProjector(
             new SuppressionFilter(),
@@ -1065,6 +1068,7 @@ final class FindingProjectorTest extends TestCase
     private function projectWithSyntheticGitScope(array $findings, GitScopeResult $scope, bool $includeAggregates): FindingProjectionResult
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::Class_));
         $query = new class ($scope) implements GitScopeQueryInterface {
             public function __construct(private GitScopeResult $scope) {}
 
@@ -1196,9 +1200,10 @@ final class FindingProjectorTest extends TestCase
         $this->tempFiles[] = $path;
 
         $data = [
-            'version' => 13,
+            'version' => 14,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
+            'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => $entries,
         ];
 

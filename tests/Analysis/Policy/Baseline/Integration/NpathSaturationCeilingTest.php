@@ -60,6 +60,7 @@ final class NpathSaturationCeilingTest extends TestCase
             generated: new DateTimeImmutable('2026-08-07T12:00:00+00:00'),
             scope: ['src'],
             entries: [new BaselineEntry(BaselineIdentity::forFinding($recorded), [1_000_000_000], 1)],
+            exclusions: self::fixtureExclusions(),
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
@@ -114,5 +115,13 @@ final class NpathSaturationCeilingTest extends TestCase
         }
 
         return "<?php\n\nnamespace App;\n\nfinal class Subject\n{\n    public function explode(): void\n    {\n{$branches}    }\n}\n";
+    }
+
+    private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions
+    {
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+            [],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+        );
     }
 }

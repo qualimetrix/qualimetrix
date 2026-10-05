@@ -196,6 +196,7 @@ final readonly class BaselineCleaner
             generated: $this->clock->now(),
             scope: $baseline->scope,
             entries: $entries,
+            exclusions: $baseline->exclusions,
             inertEntries: $inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );

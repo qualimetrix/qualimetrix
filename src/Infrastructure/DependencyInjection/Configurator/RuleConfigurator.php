@@ -59,12 +59,17 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     {
         $computedMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface';
 
+        $metricReachCatalog = 'Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricReachCatalogInterface';
+        $computedMetricReach = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricReachInterface';
+
         $container->register(ChannelUniverse::class)
             ->setArguments([
                 '$staticDeclarations' => [],
                 '$staticChannelKeysByProducer' => [],
                 '$thresholdOverrideSupportByRule' => [],
                 '$definitionCatalog' => new Reference($computedMetricCatalog),
+                '$metricReachCatalog' => new Reference($metricReachCatalog),
+                '$computedMetricReach' => new Reference($computedMetricReach),
             ])
             ->setPublic(true);
 
