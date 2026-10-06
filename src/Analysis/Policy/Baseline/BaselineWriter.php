@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -50,10 +51,12 @@ final readonly class BaselineWriter
      * the token a caller passes on if it goes on to modify and write again,
      * via {@see Baseline::withSourceContentHash()}.
      *
+     * @param ?callable(): void $beforePublish
+     *
      * @throws BaselineConflictException if the target changed or vanished since it was read
      * @throws RuntimeException if the write fails
      */
-    public function write(Baseline $baseline, ResolvedTarget $target, AbsolutePath $projectRoot): string
+    public function write(Baseline $baseline, ResolvedTarget $target, AbsolutePath $projectRoot, ?PreparedTarget $prepared = null, ?callable $beforePublish = null): string
     {
         if ($baseline->expectsSourceAbsence && $target->kind !== TargetKind::Absent) {
             throw new BaselineConflictException(\sprintf(
@@ -76,7 +79,7 @@ final readonly class BaselineWriter
 
         $json = BaselineDocumentLayout::render($serialized, $entries);
 
-        $this->documents->replace($target, $json, $baseline->sourceContentHash);
+        $this->documents->replace($target, $json, $baseline->sourceContentHash, $prepared, $beforePublish);
 
         return hash('sha256', $json);
     }

@@ -54,7 +54,8 @@ Console/
 ├── ResultPresenter.php
 ├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
 ├── RunTarget/
-│   ├── RunTargets.php               # shared claims and teardown for report/profile/log
+│   ├── RunTargets.php               # shared preparation, publication and teardown for report/profile/log
+│   ├── StagedSignalGuard.php        # scoped interruption and restoration for staged targets
 │   ├── RunTargetSession.php         # command outcome, cleanup and terminal classification
 │   ├── TargetAccess.php             # pure CLI target-access judgement
 │   ├── TargetCollisions.php         # identity/name conflicts before and after claim
@@ -237,14 +238,34 @@ targets or entering analysis, naming the option, target, directory and actor.
 threshold, including SILENT and QUIET. Other `OutputInterface` implementations
 retain their own write contract.
 
-Claims happen after configuration, scope, selector and baseline input checks,
-before cache clearing or analysis. An existing file is held without truncation
-until report delivery, preserving inode, ownership, mode and hard links. A new
-unwritten name is removed during teardown when cleanup succeeds. A write failure can leave an existing
-file partly written. Closed symbolic links keep their entry and write the resolved
-referent; their parent must already exist. Explicit descriptors retain offset
-and use blocking writes. Equal ordinary inodes and equal absent names refuse,
-including collisions with implicit report stdout; character devices may coincide.
+Preparation happens after configuration, scope, selector and baseline input
+checks, before cache clearing or analysis. Named regular report, profile and graph
+targets hold a private sibling; a new final name remains absent and existing bytes
+remain unchanged until complete writes, flush and identity checks permit atomic
+publication. Replacement changes the final inode and preserves its mode; other
+hard links retain the old bytes. Closed symbolic links keep their entry and
+publish the resolved referent. The parent must already exist and allow creation
+and replacement, including for a writable existing final file. Explicit
+descriptors retain offset and use blocking writes. Equal authored destination
+inodes or absent names refuse, including collisions with explicit configuration
+and baseline inputs. A shell-inherited `2>&1` is not a second authored target.
+Character devices may coincide. `--clear-cache` refuses a destination or its
+sibling inside the physical cache root before clearing or analysis.
+
+`StagedSignalGuard` scopes SIGINT/SIGTERM to the current staged operation, latches
+interruption across worker recovery, checks it before publication and restores
+handlers and asynchronous-signal mode after cleanup. Its own siblings are removed
+before returning 128 + signal. Staged regular output requires pcntl, default
+SIGINT/SIGTERM handlers and no registered Revolt signal callbacks; otherwise it
+refuses before preparation or analysis with exit 3. Descriptor/stream output and
+log-only runs remain available. The guard uses raw asynchronous pcntl handlers;
+interruption propagates through worker recovery as `Amp\CancelledException`, and
+the worker pool kills pending workers instead of awaiting graceful shutdown.
+Revolt's public callback inspection does not expose the signal number, so even a
+pending callback for another signal prevents preparation. Replacing handlers
+during the operation is unsupported. Cleanup is not guaranteed for SIGKILL, cleanup
+failure or an already published target. Each target has its own atomic
+publication; later profile failure does not roll back a published report.
 The shared logger buffers early records, attaches its claimed target, latches
 append failures and reports lost records at settle before report publication.
 `RunTargetSession` runs Check and Graph actions, attempts target cleanup, then

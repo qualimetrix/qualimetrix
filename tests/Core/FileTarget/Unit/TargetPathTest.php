@@ -229,6 +229,55 @@ final class TargetPathTest extends TestCase
     }
 
     #[Test]
+    public function itClassifiesAnUninspectableIntermediateParentAsUnopenable(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-uninspectable-' . bin2hex(random_bytes(6));
+        mkdir($base);
+        $parent = $base . '/present-parent';
+        mkdir($parent);
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+namespace Qualimetrix\Core\FileTarget {
+    function lstat(string $path): array|false
+    {
+        if ($path === $GLOBALS['probe_parent']) {
+            \trigger_error('Input/output error from qmx probe', \E_USER_WARNING);
+
+            return false;
+        }
+
+        return \lstat($path);
+    }
+}
+namespace {
+    require $argv[1];
+    $GLOBALS['probe_parent'] = $argv[2];
+    $kind = null;
+    $detail = null;
+    try {
+        \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2] . '/child.php');
+    } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
+        $kind = $failure->kind->name;
+        $detail = $failure->detail;
+    }
+    echo \json_encode(['kind' => $kind, 'detail' => $detail]);
+}
+PHP;
+
+        try {
+            $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $parent]);
+            self::assertSame(0, $run['exitCode'], $run['stderr']);
+            $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame(FileTargetFailureKind::Unopenable->name, $result['kind']);
+            self::assertStringContainsString($parent, $result['detail']);
+            self::assertStringContainsString('Input/output error from qmx probe', $result['detail']);
+        } finally {
+            rmdir($parent);
+            rmdir($base);
+        }
+    }
+
+    #[Test]
     public function itKeepsTheNativeWarningReasonAndRestoresThePreviousHandler(): void
     {
         $script = <<<'PHP'

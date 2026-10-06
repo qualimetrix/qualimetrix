@@ -16,15 +16,25 @@ final class HeldTarget
         private readonly ResolvedTarget $target,
         mixed $handle,
         private bool $created,
+        private readonly int $ownerPid,
     ) {
         $this->handle = $handle;
     }
 
     public static function claim(ResolvedTarget $judged): self
     {
+        $ownerPid = getmypid();
+        if ($ownerPid === false) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $judged->spelling, 'cannot determine the target owner process');
+        }
         [$target, $handle, $created] = TargetClaim::open($judged);
 
-        return new self($target, $handle, $created);
+        return new self($target, $handle, $created, $ownerPid);
+    }
+
+    public function markAttached(): void
+    {
+        $this->created = false;
     }
 
     /** @param resource $stream */
@@ -91,6 +101,12 @@ final class HeldTarget
     public function release(): void
     {
         if ($this->handle === null) {
+            return;
+        }
+        if ($this->ownerPid !== getmypid()) {
+            fclose($this->handle);
+            $this->handle = null;
+
             return;
         }
         try {

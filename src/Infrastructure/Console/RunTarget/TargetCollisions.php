@@ -6,8 +6,10 @@ namespace Qualimetrix\Infrastructure\Console\RunTarget;
 
 use Qualimetrix\Core\FileTarget\FileIdentity;
 use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
+use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal;
 
 /** Identity and name collisions among the targets of one console run. */
@@ -32,21 +34,46 @@ final class TargetCollisions
     }
 
     /**
-     * @param array<string, HeldTarget> $held
+     * @param array<string, ResolvedTarget> $judged
+     * @param array<string, string> $inputs
+     */
+    public static function assertSeparateFromInputs(array $judged, array $inputs): void
+    {
+        foreach ($inputs as $inputSubject => $spelling) {
+            $input = TargetPath::resolve($spelling);
+            foreach ($judged as $outputSubject => $output) {
+                if (($output->path !== null && $input->path !== null && $output->path->equals($input->path))
+                    || ($output->identity !== null && $input->identity !== null && $output->identity->sameAs($input->identity))) {
+                    throw EnvironmentRefusal::aboutFile(
+                        $output->spelling,
+                        'use',
+                        \sprintf('%s and %s name the same input target', $outputSubject, $inputSubject),
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array<string, HeldTarget|PreparedTarget> $held
      * @param array<string, ResolvedTarget> $judged
      */
     public static function assertAfterClaim(array $held, array $judged, ?FileIdentity $standardOutput): void
     {
         $previous = [];
         foreach ($held as $subject => $target) {
-            $identity = $target->identity();
-            foreach ($previous as [$otherSubject, $otherIdentity]) {
-                if ($identity->sameAs($otherIdentity)) {
+            $identity = $target instanceof PreparedTarget ? $target->target()->identity : $target->identity();
+            $path = $judged[$subject]->path?->value();
+            foreach ($previous as [$otherSubject, $otherIdentity, $otherPath]) {
+                if (($identity !== null && $otherIdentity !== null && $identity->sameAs($otherIdentity))
+                    || ($path !== null && $path === $otherPath)) {
                     self::refuseCollision($judged, $subject, $otherSubject, $identity);
                 }
             }
-            self::assertSeparateFromStandardOutput($judged, $subject, $identity, $standardOutput);
-            $previous[] = [$subject, $identity];
+            if ($identity !== null) {
+                self::assertSeparateFromStandardOutput($judged, $subject, $identity, $standardOutput);
+            }
+            $previous[] = [$subject, $identity, $path];
         }
     }
 

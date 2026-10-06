@@ -104,6 +104,11 @@ final class PathWalk
         if (str_contains($warning, 'Permission denied')) {
             throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target', $warning);
         }
+        if ($warning === '' || (!str_contains($warning, 'No such file or directory')
+            && !str_contains($warning, 'Not a directory')
+            && !str_contains($warning, 'Lstat failed for'))) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target', $candidate . ($warning === '' ? '' : ': ' . $warning));
+        }
         if (self::hasRemainingComponents($this->todo)) {
             throw new FileTargetFailure(FileTargetFailureKind::DirectoryMissing, $this->spelling, 'a parent directory is missing', $candidate);
         }
@@ -114,7 +119,7 @@ final class PathWalk
         }
         [$searchable, $searchWarning] = NativeCall::attempt(static fn() => is_executable($parent));
         if ($searchable !== true) {
-            $detail = $parent . ($warning === '' ? '' : ': ' . $warning);
+            $detail = $parent . ': ' . $warning;
             if ($searchWarning !== null) {
                 $detail .= '; ' . $searchWarning;
             }

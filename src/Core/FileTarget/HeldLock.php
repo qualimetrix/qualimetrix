@@ -99,8 +99,14 @@ final class HeldLock
     /** @param resource $handle */
     private static function lockMatchesName(mixed $handle, string $path): bool
     {
-        [$locked] = NativeCall::attempt(static fn() => flock($handle, \LOCK_EX | \LOCK_NB));
+        [$locked, $warning] = NativeCall::attempt(static fn() => flock($handle, \LOCK_EX | \LOCK_NB));
         if (!$locked) {
+            if ($warning !== null
+                && stripos($warning, 'would block') === false
+                && stripos($warning, 'temporarily unavailable') === false) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot lock file', $warning);
+            }
+
             return false;
         }
 

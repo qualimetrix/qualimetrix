@@ -119,4 +119,13 @@ final class WorkerPool
             restore_error_handler();
         }
     }
+
+    public function abort(): void
+    {
+        try {
+            $this->pool->kill();
+        } finally {
+            restore_error_handler();
+        }
+    }
 }

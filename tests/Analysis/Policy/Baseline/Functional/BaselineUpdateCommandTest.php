@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -203,18 +204,43 @@ final class BaselineUpdateCommandTest extends TestCase
         self::assertSame($before, file_get_contents($this->baselinePath));
     }
 
+    #[Test]
+    public function itHoldsAPrivateSiblingDuringMeasurementAndDiscardsItOnNoOp(): void
+    {
+        $this->writeBaseline([self::entry(self::LOWER_CHANNEL, [60.0], 1)], ['src']);
+        clearstatcache(true, $this->baselinePath);
+        $inode = fileinode($this->baselinePath);
+        $bytes = file_get_contents($this->baselinePath);
+        $observed = null;
+        $this->execute([self::finding(self::LOWER_CHANNEL, 60.0)], onMeasure: function () use (&$observed, $bytes): void {
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            $observed = array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock']));
+            self::assertSame($bytes, file_get_contents($this->baselinePath));
+        });
+
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'A private replacement sibling must be held during measurement.');
+        clearstatcache(true, $this->baselinePath);
+        self::assertSame($inode, fileinode($this->baselinePath));
+        self::assertSame($bytes, file_get_contents($this->baselinePath));
+        $entries = scandir($this->tempDir);
+        self::assertIsArray($entries);
+        self::assertSame([], array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock'])));
+    }
+
     /**
      * @param list<Finding> $measured
      * @param array<string, mixed> $options
      * @param list<string> $runScope
      */
-    private function execute(array $measured, array $options = [], array $runScope = ['src']): CommandTester
+    private function execute(array $measured, array $options = [], array $runScope = ['src'], ?Closure $onMeasure = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::HIGHER_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher, SymbolLevel::Class_));
 
         $command = new BaselineUpdateCommand(
-            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
+            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),

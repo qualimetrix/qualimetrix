@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Named regular report, profile and graph outputs now prepare a private sibling
+  before analysis and publish complete bytes atomically afterward. Existing final
+  inodes are replaced with their mode preserved; other hard links retain the old
+  bytes. Consumers that relied on in-place updates must read the final name again.
+  Existing writable destinations also require a writable/searchable parent for
+  the replacement sibling; move the destination or make that parent usable.
+  Baseline generate/update/writing cleanup use the same early preparation; no-op
+  operations preserve the original bytes and inode. Staged regular output requires
+  pcntl, default SIGINT/SIGTERM handlers and no registered event-loop signal
+  callbacks; unavailable capability refuses with exit 3 before analysis. Use a
+  descriptor/stream destination when that capability is unavailable. An attached
+  log remains an empty file when no record passes its level. Replacing the signal
+  handlers during a staged operation is unsupported.
+
 - CLI rule-option keys and level segments now accept only the declared snake,
   camel and kebab spellings, matching YAML. Replace previously folded wrong-case
   segments with the spelling named by the refusal. `CommandLinePathWrite`

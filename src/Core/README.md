@@ -37,6 +37,7 @@ Core/
 │   ├── FileTargetFailure.php
 │   ├── FileTargetFailureKind.php
 │   ├── HeldLock.php
+│   ├── PreparedTarget.php
 │   ├── HeldTarget.php
 │   ├── NativeCall.php
 │   ├── NativePrivateGroupMembership.php
@@ -945,9 +946,13 @@ facts. `HeldTarget::claim(ResolvedTarget)` uses internal `TargetClaim` to hold
 an unchanged regular file, an exclusively created name or a supplied stream; `write()`, `append()` and `release()` own the
 resource lifecycle. `HeldTarget::writeToStream()` borrows an already opened
 stream and checks complete writes and flush without closing, seeking or truncating
-it; a successful write advances its existing offset. `FileReplacement::replace()` publishes a complete sibling,
+it; a successful write advances its existing offset. `PreparedTarget` creates a
+private sibling before a long operation and publishes its completed bytes only
+after identity and mode checks. `FileReplacement::replace()` uses that same
+publication primitive for immediate replacement,
 and `HeldLock::acquire()` holds a named lock without truncating it, using a
-monotonic acquisition deadline.
+monotonic acquisition deadline. Native lock contention waits; another native
+lock failure refuses immediately with its cause.
 `TemporarySibling`, `ProcessOwner`, `FileIdentity`, the facts and enum values
 support these operations. `NativeCall` captures the warning of one filesystem
 call and restores the previous PHP error handler even when the call throws.
@@ -966,9 +971,13 @@ configurations; unavailable or ambiguous evidence stays exposed.
 `TargetPath::resolve()` accepts an optional membership port, and `ResolvedTarget`
 retains it through claim, replacement and lock rechecks.
 
-Existing regular files open without truncation and are checked against their
-judged inode before a write. An unwritten exclusive name is removed on release
-only if it still identifies the held file. Sticky directory mode protects
+Held regular files open without truncation and are checked against their judged
+inode before a write. Staged replacement preserves the final bytes until atomic
+publication; it changes the final inode while preserving the existing mode.
+Temporary and held-target cleanup is fenced to its owning process, so an inherited
+child does not remove a parent's sibling or log. An unwritten exclusive name is
+removed on release only if it still identifies the held file. An attached log
+retains its name even when it receives no records. Sticky directory mode protects
 existing owned entries from replacement but does not make a link trustworthy.
 Without POSIX, effective-uid discovery uses an empty diagnostic temporary file
 that must be removed immediately; unsafe cleanup refuses the operation.

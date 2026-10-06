@@ -11,9 +11,12 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -95,6 +98,16 @@ final class BaselineCleanupCommand extends BaselineCommand
         $written = CommandLineSpelling::options($input, 'remove');
 
         $document = BaselineLoader::preflight($baselinePath);
+
+        return $this->withPreparedTarget(
+            $document->target,
+            fn(PreparedTarget $prepared, StagedSignalGuard $guard): int => $this->cleanupPrepared($input, $output, $written, $document, $prepared, $guard),
+        );
+    }
+
+    /** @param list<string> $written */
+    private function cleanupPrepared(InputInterface $input, OutputInterface $output, array $written, BaselineDocument $document, PreparedTarget $prepared, StagedSignalGuard $guard): int
+    {
         $measured = $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
         if ($measured === null) {
@@ -143,7 +156,7 @@ final class BaselineCleanupCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($removal->baseline, $document->target, $context->projectRoot);
+        $this->writer->write($removal->baseline, $document->target, $context->projectRoot, $prepared, $guard->assertNotInterrupted(...));
 
         $output->writeln(\sprintf(
             '<info>Removed %d entr%s; %d remain%s (%d including entries that cannot be applied).</info>',

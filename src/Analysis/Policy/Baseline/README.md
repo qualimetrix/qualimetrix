@@ -454,7 +454,15 @@ the same document without ever building a `Baseline`, and a second spelling of e
 half would show up as an unexplained diff in a user's baseline rather than as a
 failing test. `BaselineEntryOrder` is shared for the same reason.
 
-`BaselineDocumentWriter` writes to a temporary file and renames. A sibling `<baseline>.lock`
+Generate, update and writing cleanup prepare a private sibling before measuring
+the project. Existing final bytes remain untouched and a new final name remains
+absent until publication. No-op update/cleanup discard the sibling without
+changing the final bytes or inode. Console scopes SIGINT/SIGTERM cleanup to the
+operation; staged commands require pcntl and an available Revolt signal watcher
+without a foreign handler, otherwise exit 3 precedes preparation or analysis.
+This does not cover SIGKILL, cleanup failure or a target already published.
+
+`BaselineDocumentWriter` publishes the complete sibling atomically. A sibling `<baseline>.lock`
 file (worth adding to `.gitignore`) holds an exclusive lock across both the
 content-hash check and the rename, so a read-modify-write cannot silently discard a
 concurrent writer: a `Baseline` loaded from a file carries that file's content hash,

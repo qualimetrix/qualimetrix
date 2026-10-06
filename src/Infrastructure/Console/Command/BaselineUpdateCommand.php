@@ -11,8 +11,11 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
+use Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -79,6 +82,16 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         [$channels, $recordExclusions] = self::updateOptions($input);
         $document = BaselineLoader::preflight($baselinePath);
+
+        return $this->withPreparedTarget(
+            $document->target,
+            fn(PreparedTarget $prepared, StagedSignalGuard $guard): int => $this->updatePrepared($input, $output, $baselinePath, $channels, $recordExclusions, $document, $prepared, $guard),
+        );
+    }
+
+    /** @param list<FindingChannel> $channels */
+    private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, array $channels, bool $recordExclusions, BaselineDocument $document, PreparedTarget $prepared, StagedSignalGuard $guard): int
+    {
         $measured = $channels !== [] || $recordExclusions
             ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($document))
             : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
@@ -107,7 +120,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($result->baseline, $document->target, $context->projectRoot);
+        $this->writer->write($result->baseline, $document->target, $context->projectRoot, $prepared, $guard->assertNotInterrupted(...));
 
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 

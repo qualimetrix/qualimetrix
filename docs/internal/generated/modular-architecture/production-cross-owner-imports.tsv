@@ -1637,6 +1637,7 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Base
 Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\NewName	Core.FileTarget	contract
+Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
@@ -1669,6 +1670,7 @@ Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	Qua
 Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	Qualimetrix\Core\Time\ClockInterface	Core.Neutral	contract
+Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	contract
 Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
@@ -2099,6 +2101,7 @@ Qualimetrix\Core\FileTarget\FileReplacement	Core.FileTarget	Qualimetrix\Core\Pat
 Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	contract
 Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\PathWalk	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
+Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\ProcessOwner	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Core\FileTarget\TargetClaim	Core.FileTarget	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
@@ -2240,14 +2243,18 @@ Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\EntrySelector	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunScope	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineCommand	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader	Analysis.Finding	contract
@@ -2313,7 +2320,9 @@ Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\BaselineWriter	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage	Analysis.Policy.Baseline	contract
+Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand	Infrastructure.Console	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	contract
 Qualimetrix\Infrastructure\Console\Command\ChannelRenameReporter	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
 Qualimetrix\Infrastructure\Console\Command\CheckCommand	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
@@ -2559,7 +2568,11 @@ Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Q
 Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\NewName	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface	Infrastructure.Logging	contract
 Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	contract
@@ -2567,8 +2580,10 @@ Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console
 Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\TargetAccess	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions	Infrastructure.Console	Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions	Infrastructure.Console	Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	contract
+Qualimetrix\Infrastructure\Console\RunTarget\TargetCollisions	Infrastructure.Console	Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract
 Qualimetrix\Infrastructure\Console\RuntimeConfigurator	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	contract

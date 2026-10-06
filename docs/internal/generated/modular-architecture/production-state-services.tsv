@@ -119,7 +119,8 @@ src/Infrastructure/Console/Progress/ConsoleProgressBar.php	Qualimetrix\Infrastru
 src/Infrastructure/Console/Progress/SwitchableProgressReporter.php	Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter	Infrastructure.Console	"adapter session or cache"	-	delegate	reset,setMessage
 src/Infrastructure/Console/Refusal/OutOfMemoryHint.php	Qualimetrix\Infrastructure\Console\Refusal\OutOfMemoryHint	Infrastructure.Console	"process-wide static"	registered,reserve	-	register
 src/Infrastructure/Console/RunTarget/RunTargetSession.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession	Infrastructure.Console	"adapter session or cache"	-	outputPublished	-
-src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	held,judged,reportOnStandardOutput	settle
+src/Infrastructure/Console/RunTarget/RunTargets.php	Qualimetrix\Infrastructure\Console\RunTarget\RunTargets	Infrastructure.Console	"adapter session or cache"	-	held,judged,lastSignal,prepared,reportOnStandardOutput,signals	settle
+src/Infrastructure/Console/RunTarget/StagedSignalGuard.php	Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard	Infrastructure.Console	"adapter session or cache"	-	closing,interrupted,previousAsync,previousHandlers	-
 src/Infrastructure/Git/GitClient.php	Qualimetrix\Infrastructure\Git\GitClient	Infrastructure.Git	"adapter session or cache"	-	gitToplevelCache	-
 src/Infrastructure/Git/NameStatusListing.php	Qualimetrix\Infrastructure\Git\NameStatusListing	Infrastructure.Git	"adapter session or cache"	-	skipped	-
 src/Infrastructure/Logging/FileLogger.php	Qualimetrix\Infrastructure\Logging\FileLogger	Infrastructure.Logging	"adapter session or cache"	-	failure,lostRecords,pending,target	settle

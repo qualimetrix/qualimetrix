@@ -233,6 +233,10 @@ final class CheckCommand extends Command
         );
         $this->claimRunTargets($input, $output);
 
+        if ($input->hasOption('clear-cache') && $input->getOption('clear-cache') === true) {
+            $this->runTargetSession->targets()->assertCacheClearSafe($resolved->run->cacheConfiguration->directory->value());
+        }
+
         if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
             $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
         }
@@ -289,6 +293,14 @@ final class CheckCommand extends Command
         if (CommandLineSpelling::option($input, 'output') === null) {
             $this->runTargetSession->targets()->reportOnStandardOutput();
         }
+        $inputs = [];
+        foreach (['config', 'baseline'] as $name) {
+            $spelling = CommandLineSpelling::option($input, $name);
+            if ($spelling !== null) {
+                $inputs['--' . $name] = $spelling;
+            }
+        }
+        $this->runTargetSession->targets()->assertSeparateFromInputs($inputs);
         foreach ($this->runTargetSession->targets()->exposureWarnings() as $warning) {
             $this->writeWarning($output, 'Warning: ' . \Symfony\Component\Console\Formatter\OutputFormatter::escape($warning));
         }

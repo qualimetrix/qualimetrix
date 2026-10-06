@@ -94,8 +94,10 @@ a default would be indistinguishable from a written `info`.
   only `null` means no file, and a blank path throws `LogFileUnavailable`
 - Returns a composite logger if both are active, `NullLogger` if neither is
 - `create()` requires all three arguments, including explicit nulls. The same
-  per-run factory receives `attachFileTarget()` after Console claims targets,
-  `settle()` before report publication and after profile delivery, and `reset()`
+  per-run factory receives `attachFileTarget()` after Console claims targets;
+  attachment publishes the log name even when the configured minimum level admits
+  no records. Inherited children cannot remove the parent's attached empty log.
+  The factory receives `settle()` before report publication and after profile delivery, and `reset()`
   during runtime teardown
 
 ### LoggerHolder and DelegatingLogger

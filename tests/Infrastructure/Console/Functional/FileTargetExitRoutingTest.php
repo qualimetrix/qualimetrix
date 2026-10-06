@@ -159,6 +159,59 @@ final class FileTargetExitRoutingTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesToClearTheCacheContainingTheRequestedReport(): void
+    {
+        $output = $this->directory . '/cache/report.json';
+        $cacheEntry = $this->directory . '/cache/entry.cache';
+        file_put_contents($output, 'KEEP REPORT');
+        file_put_contents($cacheEntry, 'KEEP CACHE');
+        $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $command);
+        $tester = new CommandTester($command);
+        $tester->execute([
+            'paths' => [$this->directory . '/Source.php'],
+            '--format' => 'json',
+            '--workers' => '0',
+            '--output' => $output,
+            '--cache-dir' => $this->directory . '/cache',
+            '--clear-cache' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('cache', $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame('KEEP REPORT', file_get_contents($output));
+        self::assertSame('KEEP CACHE', file_get_contents($cacheEntry));
+        self::assertStringNotContainsString('Report written', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itRefusesToClearTheCacheContainingTheResolvedReportReferent(): void
+    {
+        $referent = $this->directory . '/cache/report.json';
+        $link = $this->directory . '/report-link.json';
+        $cacheEntry = $this->directory . '/cache/entry.cache';
+        file_put_contents($referent, 'KEEP REPORT');
+        file_put_contents($cacheEntry, 'KEEP CACHE');
+        symlink('cache/report.json', $link);
+        $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $command);
+        $tester = new CommandTester($command);
+        $tester->execute([
+            'paths' => [$this->directory . '/Source.php'],
+            '--format' => 'json',
+            '--workers' => '0',
+            '--output' => $link,
+            '--cache-dir' => $this->directory . '/cache',
+            '--clear-cache' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame('KEEP REPORT', file_get_contents($referent));
+        self::assertSame('KEEP CACHE', file_get_contents($cacheEntry));
+        self::assertTrue(is_link($link));
+    }
+
+    #[Test]
     public function itClassifiesAnUnsupportedGraphTargetWithoutWritingAReport(): void
     {
         $command = (new ContainerFactory())->create()->get(GraphExportCommand::class);
@@ -290,7 +343,8 @@ final class FileTargetExitRoutingTest extends TestCase
 
                 public function export(\Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat $format): string
                 {
-                    if (!is_file($this->target) || !chmod($this->parent, 0o555)) {
+                    $staged = array_filter((array) scandir($this->parent), static fn(string $name): bool => str_starts_with($name, '.qmx-'));
+                    if (\count($staged) !== 1 || !chmod($this->parent, 0o555)) {
                         throw new \LogicException('Claimed profile target was not prepared');
                     }
 
@@ -355,10 +409,12 @@ final class FileTargetExitRoutingTest extends TestCase
             self::assertArrayHasKey('summary', $report);
             self::assertArrayNotHasKey('error', $report);
             self::assertStringContainsString('primary profile delivery failure', $run['stderr']);
-            self::assertStringContainsString('cannot remove unwritten target', $run['stderr']);
+            self::assertStringContainsString('cannot remove the temporary file', $run['stderr']);
             self::assertStringContainsString('unlink(', $run['stderr']);
-            self::assertStringContainsString($target, $run['stderr']);
-            self::assertFileExists($target, 'The failed cleanup left the claimed profile target in place.');
+            self::assertFileDoesNotExist($target);
+            $entries = scandir($profileDirectory);
+            self::assertIsArray($entries);
+            self::assertCount(1, array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-')));
         } finally {
             chmod($profileDirectory, 0o755);
         }

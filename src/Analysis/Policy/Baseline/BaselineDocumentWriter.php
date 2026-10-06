@@ -11,6 +11,7 @@ use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
 use Qualimetrix\Core\FileTarget\HeldLock;
 use Qualimetrix\Core\FileTarget\HeldTarget;
 use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\FileTarget\TargetPath;
@@ -56,8 +57,12 @@ final readonly class BaselineDocumentWriter
         return ['target' => $target, 'hash' => $hash];
     }
 
-    /** @throws BaselineConflictException if the prepared target no longer has the expected contents */
-    public function replace(ResolvedTarget $target, string $contents, ?string $expectedHash): void
+    /**
+     * @param ?callable(): void $beforePublish
+     *
+     * @throws BaselineConflictException if the prepared target no longer has the expected contents
+     */
+    public function replace(ResolvedTarget $target, string $contents, ?string $expectedHash, ?PreparedTarget $prepared = null, ?callable $beforePublish = null): void
     {
         self::assertDocumentTarget($target);
         $path = $target->path?->value() ?? throw new LogicException('Baseline target has no path');
@@ -65,12 +70,12 @@ final readonly class BaselineDocumentWriter
 
         try {
             self::assertExpectation($target, $expectedHash);
-            FileReplacement::replace(
-                $target,
-                $contents,
-                mode: null,
-                newName: $target->kind === TargetKind::Absent ? NewName::Exclusive : NewName::LastWriterWins,
-            );
+            $newName = $target->kind === TargetKind::Absent ? NewName::Exclusive : NewName::LastWriterWins;
+            if ($prepared !== null) {
+                $prepared->publish($contents, null, $newName, $beforePublish);
+            } else {
+                FileReplacement::replace($target, $contents, null, $newName);
+            }
         } finally {
             $lock->release();
         }

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
 use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -99,6 +100,108 @@ final class BaselineGenerateCommandTest extends TestCase
      * records, including entries a user deliberately tightened — and the
      * command line that does it is the one that created the file.
      */
+    #[Test]
+    public function itPreparesAPrivateSiblingBeforeMeasuringForANewBaseline(): void
+    {
+        $observed = null;
+        $duringAnalysis = function () use (&$observed): void {
+            $observed = array_values(array_diff((array) scandir($this->tempDir), ['.', '..']));
+        };
+
+        $tester = $this->execute([], duringAnalysis: $duringAnalysis);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'A staged baseline sibling must exist during analysis.');
+        self::assertNotSame('baseline.json', $observed[0]);
+        self::assertFileExists($this->baselinePath);
+        self::assertSame(['baseline.json', 'baseline.json.lock'], array_values(array_diff((array) scandir($this->tempDir), ['.', '..'])));
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function interruptionSignals(): iterable
+    {
+        yield 'SIGTERM' => [\SIGTERM];
+        yield 'SIGINT' => [\SIGINT];
+    }
+
+    #[Test]
+    #[DataProvider('interruptionSignals')]
+    public function itKeepsAnExistingBaselineAndDiscardsItsSiblingOnSignal(int $signal): void
+    {
+        if (!\function_exists('pcntl_signal')) {
+            self::markTestSkipped('Signal handling is unavailable.');
+        }
+        file_put_contents($this->baselinePath, 'OLD');
+        $ready = $this->tempDir . '/ready';
+        $script = <<<'PHP'
+require $argv[1];
+$error = new \Qualimetrix\Infrastructure\Console\ErrorStream();
+$command = new \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand(
+    new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubBaselineRun(
+        [],
+        ['src'],
+        \Qualimetrix\Core\Path\AbsolutePath::fromString($argv[2]),
+        onMeasure: static function () use ($argv): void {
+            file_put_contents($argv[4], 'READY');
+            sleep(10);
+        },
+    ),
+    new \Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator(
+        \Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry::withDefaults(),
+        new \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\FixedClock(),
+    ),
+    new \Qualimetrix\Analysis\Policy\Baseline\BaselineWriter(),
+    $error,
+);
+$command->setRefusalPresenter(new \Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter($error));
+$tester = new \Symfony\Component\Console\Tester\CommandTester($command);
+$tester->execute(['baseline' => $argv[3], 'paths' => ['src'], '--force' => true]);
+exit($tester->getStatusCode());
+PHP;
+        $process = proc_open([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php', $this->tempDir, $this->baselinePath, $ready], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        self::assertIsResource($process);
+        fclose($pipes[0]);
+        try {
+            $deadline = microtime(true) + 5;
+            while (!is_file($ready) && microtime(true) < $deadline) {
+                usleep(10_000);
+            }
+            self::assertFileExists($ready);
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            self::assertCount(1, array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-')));
+            self::assertTrue(proc_terminate($process, $signal));
+            $deadline = microtime(true) + 5;
+            do {
+                $status = proc_get_status($process);
+                if (!$status['running']) {
+                    break;
+                }
+                usleep(10_000);
+            } while (microtime(true) < $deadline);
+            self::assertFalse($status['running'], 'The interrupted baseline did not stop promptly.');
+            self::assertSame('OLD', file_get_contents($this->baselinePath));
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            self::assertSame([], array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-')));
+            self::assertSame(128 + $signal, $status['exitcode']);
+        } finally {
+            if (\is_resource($process)) {
+                proc_terminate($process);
+                proc_close($process);
+            }
+            foreach ($pipes as $pipe) {
+                if (\is_resource($pipe)) {
+                    fclose($pipe);
+                }
+            }
+            if (is_file($ready)) {
+                unlink($ready);
+            }
+        }
+    }
+
     #[Test]
     public function itRefusesToOverwriteAnExistingBaselineWithoutForce(): void
     {

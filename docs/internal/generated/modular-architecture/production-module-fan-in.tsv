@@ -232,7 +232,7 @@ Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap	Analysis.Policy.Baseline	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport	Analysis.Policy.Baseline	2	1
 Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels	Analysis.Policy.Baseline	3	2
-Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	4	2
+Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument	Analysis.Policy.Baseline	6	2
 Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement	Analysis.Policy.Baseline	1	1
 Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions	Analysis.Policy.Baseline	3	1
@@ -311,12 +311,13 @@ Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	11	4
 Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	7	3
 Qualimetrix\Core\FileTarget\HeldLock	Core.FileTarget	1	1
 Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	6	3
-Qualimetrix\Core\FileTarget\NewName	Core.FileTarget	3	3
-Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	9	2
-Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	7	2
-Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	6	3
+Qualimetrix\Core\FileTarget\NewName	Core.FileTarget	4	3
+Qualimetrix\Core\FileTarget\PreparedTarget	Core.FileTarget	7	2
+Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	10	2
+Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	8	2
+Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	8	3
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	83	14
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	84	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	18	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	99	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4

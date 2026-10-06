@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -93,6 +94,31 @@ final class BaselineCleanupCommandTest extends TestCase
         self::assertStringContainsString('nothing reported for this identity', $tester->getDisplay());
         self::assertSame($bytesBefore, file_get_contents($this->baselinePath));
         self::assertSame($mtimeBefore, filemtime($this->baselinePath));
+    }
+
+    #[Test]
+    public function itHoldsAPrivateSiblingDuringListingAndDiscardsItWithoutRemove(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
+        clearstatcache(true, $this->baselinePath);
+        $inode = fileinode($this->baselinePath);
+        $bytes = file_get_contents($this->baselinePath);
+        $observed = null;
+        $this->execute([], onMeasure: function () use (&$observed, $bytes): void {
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            $observed = array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock']));
+            self::assertSame($bytes, file_get_contents($this->baselinePath));
+        });
+
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'A private replacement sibling must be held during measurement.');
+        clearstatcache(true, $this->baselinePath);
+        self::assertSame($inode, fileinode($this->baselinePath));
+        self::assertSame($bytes, file_get_contents($this->baselinePath));
+        $entries = scandir($this->tempDir);
+        self::assertIsArray($entries);
+        self::assertSame([], array_values(array_diff($entries, ['.', '..', 'baseline.json', 'baseline.json.lock'])));
     }
 
     /**
@@ -254,12 +280,13 @@ final class BaselineCleanupCommandTest extends TestCase
         array $runScope = ['src'],
         array $measured = [],
         ?RunRuleCoverage $coverage = null,
+        ?Closure $onMeasure = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::OCCURRENCE_CHANNEL, ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File));
 
         $command = new BaselineCleanupCommand(
-            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
+            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),

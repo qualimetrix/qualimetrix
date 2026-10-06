@@ -45,6 +45,10 @@ workers' limit in the failed file's message, re-submits a task the dead worker
 refused before starting it, and routes the pool's own crash notices to the log
 instead of stdout.
 
+**Interruption.** `Amp\CancelledException` bypasses per-file error recovery.
+The pool kills pending workers on cancellation instead of awaiting graceful
+shutdown, so an interrupted coordinator does not wait for another file result.
+
 **Collector marker.** A registered collector that does not implement
 `ParallelSafeCollectorInterface` is refused, like a collector class that does not
 exist. Skipping it instead made `--workers=N` measure less than `--workers=0`

@@ -14,13 +14,17 @@ final class TemporarySibling
     private mixed $handle;
 
     /** @param resource $handle */
-    private function __construct(private AbsolutePath $path, mixed $handle)
+    private function __construct(private AbsolutePath $path, mixed $handle, private readonly int $ownerPid)
     {
         $this->handle = $handle;
     }
 
     public static function create(AbsolutePath $directory): self
     {
+        $ownerPid = getmypid();
+        if ($ownerPid === false) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'cannot determine the temporary owner process');
+        }
         for ($attempt = 0; $attempt < 5; ++$attempt) {
             try {
                 $name = '.qmx-' . bin2hex(random_bytes(6));
@@ -30,7 +34,7 @@ final class TemporarySibling
             $path = AbsolutePath::fromString(rtrim($directory->value(), '/') . '/' . $name);
             [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
             if ($handle !== false) {
-                $temporary = new self($path, $handle);
+                $temporary = new self($path, $handle, $ownerPid);
                 $opened = fstat($handle);
                 clearstatcache(true, $path->value());
                 [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
@@ -104,6 +108,12 @@ final class TemporarySibling
     public function discard(): void
     {
         if ($this->handle === null) {
+            return;
+        }
+        if ($this->ownerPid !== getmypid()) {
+            fclose($this->handle);
+            $this->handle = null;
+
             return;
         }
 

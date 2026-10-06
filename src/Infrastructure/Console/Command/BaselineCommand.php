@@ -11,8 +11,11 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Core\FileTarget\PreparedTarget;
+use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
+use Qualimetrix\Infrastructure\Console\RunTarget\StagedSignalGuard;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -66,7 +69,7 @@ abstract class BaselineCommand extends Command
             // four declare no `--format` and this stays `null` for them), which
             // is exactly the guard that keeps its machine-readable branch a
             // document a script can still parse.
-            if ($format !== 'json') {
+            if ($format !== 'json' && !\in_array($exitCode, [128 + \SIGINT, 128 + \SIGTERM], true)) {
                 $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
             }
 
@@ -106,6 +109,34 @@ abstract class BaselineCommand extends Command
     }
 
     abstract protected function doExecute(InputInterface $input, OutputInterface $output): int;
+
+    /** @param callable(PreparedTarget, StagedSignalGuard): int $action */
+    protected function withPreparedTarget(ResolvedTarget $target, callable $action): int
+    {
+        $guard = StagedSignalGuard::start($target->spelling);
+        $prepared = null;
+        try {
+            $prepared = PreparedTarget::prepare($target);
+            $result = $action($prepared, $guard);
+            $signal = $guard->interruptedSignal();
+
+            return $signal === null ? $result : 128 + $signal;
+        } catch (Throwable $failure) {
+            $signal = $guard->interruptedSignal();
+            if ($signal !== null) {
+                return 128 + $signal;
+            }
+
+            throw $failure;
+        } finally {
+            $guard->beginCleanup();
+            try {
+                $prepared?->discard();
+            } finally {
+                $guard->close();
+            }
+        }
+    }
 
     /**
      * Appends the documentation address to a command's own `--help` text, so
