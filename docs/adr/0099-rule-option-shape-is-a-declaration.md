@@ -53,8 +53,10 @@ use the private interpreters where they need direct matching or wording.
 Code constructing CLI input adapters, validators or parsers, or building an
 inline validator map, must provide the document-forms contract. Direct users of
 `FileProcessingTaskFactory`, `FileProcessingTask` and
-`WorkerBootstrap::getFileProcessor()` must supply that required service too. Option-authoring
-factories and declared keys do not change. User-facing accepted values and
+`WorkerBootstrap::getFileProcessor()` must supply that required service too.
+Bootstrap calls supply the existing `WorkerComposition` for collector,
+derived-collector, traversal and rule metadata instead of four separate arguments.
+Option-authoring factories and declared keys do not change. User-facing accepted values and
 refusal wording retain their existing semantics.
 
 ## Consequences

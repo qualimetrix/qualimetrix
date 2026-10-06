@@ -76,15 +76,15 @@ final class NssSourceSelection
     }
 
     /** @return ?array{passwd: list<string>, group: list<string>} */
-    private static function acceptedSources(string $passwd, string $group): ?array
+    private static function acceptedSources(string $userSources, string $group): ?array
     {
-        if (!\in_array($passwd, ['files', 'files systemd'], true)
+        if (!\in_array($userSources, ['files', 'files systemd'], true)
             || !\in_array($group, ['files', 'files systemd', 'files [SUCCESS=merge] systemd'], true)) {
             return null;
         }
 
         return [
-            'passwd' => explode(' ', $passwd),
+            'passwd' => explode(' ', $userSources),
             'group' => $group === 'files' ? ['files'] : ['files', 'systemd'],
         ];
     }

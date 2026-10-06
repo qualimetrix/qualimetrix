@@ -20,6 +20,11 @@ final readonly class RuleOptionShape
     /**
      * @param list<self> $alternatives
      * @param ?Closure(ResolvedValueInterface, list<string>): void $layerJudge
+     *
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Eight immutable
+     *                declaration facts describe one shape, rather than injected collaborators.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Named factories compose
+     *                these eight independent declaration facts; grouping them hides the vocabulary.
      */
     private function __construct(
         public string $kind,
