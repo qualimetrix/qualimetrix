@@ -1,1 +1,33 @@
 surface	file	reason
+case:annotations|directives	declared-delta/case-annotations-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:applied-threshold|directives	declared-delta/case-applied-threshold-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:baseline-cycle|baseline:update	declared-delta/case-baseline-cycle-baseline-update.diff	Include the removed-entry count in the baseline update summary; the unchanged document contains no removed entries.
+case:baseline-cycle|directives	declared-delta/case-baseline-cycle-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:complexity|directives	declared-delta/case-complexity-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:config-precedence|directives	declared-delta/case-config-precedence-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:coupling|directives	declared-delta/case-coupling-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:cycle|directives	declared-delta/case-cycle-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:design|directives	declared-delta/case-design-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:directive-placement|directives	declared-delta/case-directive-placement-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:disabled-rule-duplication|directives	declared-delta/case-disabled-rule-duplication-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:disabled-rule|directives	declared-delta/case-disabled-rule-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:discovery|directives	declared-delta/case-discovery-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:duplicate-declaration|directives	declared-delta/case-duplicate-declaration-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:duplication-size|directives	declared-delta/case-duplication-size-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:duplication|directives	declared-delta/case-duplication-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:excluded-path|directives	declared-delta/case-excluded-path-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:external-parent|directives	declared-delta/case-external-parent-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:health|directives	declared-delta/case-health-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:incomplete-directory-symlink|directives	declared-delta/case-incomplete-directory-symlink-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:layered-threshold|directives	declared-delta/case-layered-threshold-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:layers|directives	declared-delta/case-layers-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:only-rules|directives	declared-delta/case-only-rules-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:parallel-files|directives	declared-delta/case-parallel-files-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:rule-exclusion-ledger|directives	declared-delta/case-rule-exclusion-ledger-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:scoped-layers|baseline:update	declared-delta/case-scoped-layers-baseline-update.diff	Include the removed-entry count in the baseline update summary; the unchanged document contains no removed entries.
+case:scoped-layers|directives	declared-delta/case-scoped-layers-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:security|directives	declared-delta/case-security-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:smells|directives	declared-delta/case-smells-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:stderr-warning|directives	declared-delta/case-stderr-warning-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:suppression|directives	declared-delta/case-suppression-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:threshold-raising|directives	declared-delta/case-threshold-raising-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
