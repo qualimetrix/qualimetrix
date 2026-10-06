@@ -53,6 +53,11 @@ Full writes, flush, mode and identity checks precede atomic rename or exclusive
 hard-link publication. Replacement preserves the old mode unless explicitly
 changed, and distinguishes exclusive creation from declared last-writer-wins
 publication. `FileReplacement` uses this primitive for immediate publication.
+Replacement siblings open exclusively with mode 0600 or stricter under the
+caller's umask, before receiving any payload. A synchronous open temporarily
+restricts the process umask and restores it on success or failure; chmod after
+open would leave a window for another user to acquire a readable descriptor.
+New held names and lock names retain ordinary umask-filtered 0666 creation.
 An inherited child cannot discard a parent's sibling or held target. A held lock checks its named inode after locking;
 releasing the lock does not remove its name. Its acquisition deadline uses a
 monotonic clock, so a system-clock adjustment cannot shorten or extend it.

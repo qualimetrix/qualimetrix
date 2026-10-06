@@ -984,6 +984,11 @@ retains it through claim, replacement and lock rechecks.
 Held regular files open without truncation and are checked against their judged
 inode before a write. Staged replacement preserves the final bytes until atomic
 publication; it changes the final inode while preserving the existing mode.
+Replacement siblings are created with mode 0600, restricted further by the
+caller's umask, before any payload is written. Creation temporarily restricts
+the process umask around the synchronous exclusive open and restores it even
+on failure. New held targets and locks explicitly retain ordinary 0666 creation
+restricted by the caller's umask; replacement publication sets its final mode.
 Temporary and held-target cleanup is fenced to its owning process, so an inherited
 child does not remove a parent's sibling or log. An unwritten exclusive name is
 removed on release only if it still identifies the held file. An attached log

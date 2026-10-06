@@ -1443,6 +1443,10 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- Staged report and profile replacements keep their temporary contents owner-only
+  before publication, including when replacing an existing file with mode 0600.
+  New log and lock files retain their ordinary umask-filtered creation modes.
+
 - Stale suppression regex values are audited on a complete named PHP file roster using measured path completeness, with the separate declaration-completeness requirement for namespace values.
 
 - Analysis durations, baseline lock deadlines and script elapsed-time checks use

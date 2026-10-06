@@ -19,7 +19,7 @@ final class TemporarySibling
         $this->handle = $handle;
     }
 
-    public static function create(AbsolutePath $directory): self
+    public static function create(AbsolutePath $directory, int $mode = 0600): self
     {
         $ownerPid = getmypid();
         if ($ownerPid === false) {
@@ -32,7 +32,13 @@ final class TemporarySibling
                 throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'cannot name a temporary file', $error->getMessage());
             }
             $path = AbsolutePath::fromString(rtrim($directory->value(), '/') . '/' . $name);
-            [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
+            $previousMask = umask();
+            try {
+                umask($previousMask | (0777 & ~$mode));
+                [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
+            } finally {
+                umask($previousMask);
+            }
             if ($handle !== false) {
                 return self::verifyCreated($path, $handle, $ownerPid);
             }

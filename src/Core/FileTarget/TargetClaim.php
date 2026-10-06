@@ -60,7 +60,7 @@ final class TargetClaim
     private static function prepareTemporary(ResolvedTarget $target, string $path): TemporarySibling
     {
         try {
-            return TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+            return TemporarySibling::create(AbsolutePath::fromString(\dirname($path)), 0666);
         } catch (FileTargetFailure $failure) {
             throw new FileTargetFailure(
                 $failure->kind,

@@ -60,7 +60,7 @@ final class HeldLock
 
     private static function createLockName(ResolvedTarget $lockFile, string $path): void
     {
-        $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+        $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)), 0666);
         try {
             [$linked, $linkWarning] = NativeCall::attempt(static fn() => link($temporary->path()->value(), $path));
             if (!$linked) {
