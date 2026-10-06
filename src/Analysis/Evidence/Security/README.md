@@ -26,6 +26,7 @@ the enclosing query did not reach, such as a subquery built behind a call.
 ```
 Security/
 ├── Credential/
+│   ├── CredentialDeclarations.php
 │   ├── CredentialLiterals.php
 │   ├── CredentialLocation.php
 │   ├── CredentialValue.php
@@ -79,15 +80,13 @@ off from its qualifier (`apikey`, `dbpassword`). Its prefix/suffix blacklists
 keep names such as `passwordHash`, `tokenStorage`, `cacheKey`, and
 `OPTION_PASSWORD` out of the credential context.
 
-`CredentialLiterals` finds a string literal stored under a name and
-`CredentialValue` judges the literal itself. The name comes from a variable,
-property or static property assignment (also `??=`), a string-keyed array
-element assignment, an array item, a class constant, `define()`, a property or
-parameter default, and an enum case. Namespace and global `const` declarations
-are also inspected. Lowercase dotted identifier values, whole angle-bracket
-placeholders, native built-in PHP type syntax, and messages of three or more
-whitespace-separated words are skipped. Type syntax is parsed and checked
-against a built-in whitelist; this does not validate PHP type semantics.
+`CredentialLiterals` finds a string literal stored under a name in assignments
+and array items. `CredentialDeclarations` handles class, namespace and global
+constants, `define()`, property and parameter defaults, and enum cases.
+`CredentialValue` judges the literal itself. Lowercase dotted identifier values,
+whole angle-bracket placeholders, native built-in PHP type syntax, and messages
+of three or more whitespace-separated words are skipped. Type syntax is parsed
+and checked against a built-in whitelist; this does not validate PHP type semantics.
 Uppercase dotted values are judged as possible credentials. A lowercase dotted
 secret phrase may still be skipped, while an alias-map value can be flagged.
 Bare `token8` remains outside the default sensitive-name policy.

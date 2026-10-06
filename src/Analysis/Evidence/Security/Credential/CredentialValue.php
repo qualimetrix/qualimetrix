@@ -56,12 +56,23 @@ final readonly class CredentialValue
             return false;
         }
 
+        return $this->hasNoComments() && $this->isSingleNativeTypeFunction($statements);
+    }
+
+    private function hasNoComments(): bool
+    {
         foreach ($this->parser->getTokens() as $token) {
             if ($token->id === \T_COMMENT || $token->id === \T_DOC_COMMENT) {
                 return false;
             }
         }
 
+        return true;
+    }
+
+    /** @param array<Node\Stmt>|null $statements */
+    private function isSingleNativeTypeFunction(?array $statements): bool
+    {
         if (\count($statements ?? []) !== 1 || !$statements[0] instanceof Function_) {
             return false;
         }

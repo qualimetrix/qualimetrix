@@ -11,11 +11,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Security\Credential\CredentialDeclarations;
 use Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLiterals;
 use Qualimetrix\Analysis\Evidence\Security\Credential\CredentialValue;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
 
 #[CoversClass(CredentialLiterals::class)]
+#[CoversClass(CredentialDeclarations::class)]
 #[CoversClass(CredentialValue::class)]
 final class CredentialLiteralsTest extends TestCase
 {
