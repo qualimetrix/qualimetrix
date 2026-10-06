@@ -194,6 +194,22 @@ class PhpunitAggregateTest(unittest.TestCase):
         self.assertIn("partial measurement", failed.stdout)
         self.assertNotIn("enabled PHPUnit profile is incomplete", failed.stderr)
 
+    def test_profile_refuses_a_junit_population_smaller_than_its_declared_count(self):
+        runner = load_runner_module()
+        with tempfile.TemporaryDirectory(prefix="qmx-profile-count-") as directory:
+            path = Path(directory) / "junit.xml"
+            path.write_text('<testsuites><testsuite tests="2"><testcase class="Example" name="itRuns" time="0.1"/></testsuite></testsuites>', encoding="utf-8")
+            with self.assertRaisesRegex(runner.RunnerRefusal, "testcase count"):
+                runner.read_junit_cases(path, "Unit")
+
+    def test_records_elapsed_time_for_a_started_shard_that_is_terminated(self):
+        runner = load_runner_module()
+        shard = runner.Shard("Unit", Path("Unit.stdout"), Path("Unit.stderr"), started_at=100.0)
+        with mock.patch.object(runner, "terminate_shard"), mock.patch.object(runner.time, "monotonic", return_value=103.0):
+            runner.terminate_shards([shard])
+        self.assertEqual(runner.TIMEOUT_EXIT, shard.exit_code)
+        self.assertEqual(3.0, shard.elapsed)
+
     def test_terminates_overdue_shards_and_cleans_up_before_returning(self):
         configuration = complete_configuration()
         configuration["run"] = {suite: {"sleep": 30} for suite in SUITES}

@@ -336,6 +336,8 @@ def terminate_shards(shards: Sequence[Shard]) -> None:
             if first_error is None:
                 first_error = error
         finally:
+            if shard.started_at is not None and shard.elapsed is None:
+                shard.elapsed = time.monotonic() - shard.started_at
             if shard.exit_code is None:
                 shard.exit_code = TIMEOUT_EXIT
             close_shard_handles(shard)
@@ -462,6 +464,15 @@ def read_junit_cases(path: Path, suite: str) -> list[tuple[float, str, str]]:
         raise RunnerRefusal(f"{suite} JUnit unavailable or malformed: {error}") from error
     if root.tag not in ("testsuites", "testsuite"):
         raise RunnerRefusal(f"{suite} JUnit has unexpected root {root.tag!r}")
+
+    for test_suite in root.iter("testsuite"):
+        try:
+            declared_count = int(test_suite.get("tests", ""))
+        except ValueError as error:
+            raise RunnerRefusal(f"{suite} JUnit has an invalid declared testcase count") from error
+        measured_count = sum(1 for _ in test_suite.iter("testcase"))
+        if declared_count != measured_count:
+            raise RunnerRefusal(f"{suite} JUnit testcase count is {measured_count}, declared {declared_count}")
 
     cases: list[tuple[float, str, str]] = []
     for testcase in root.iter("testcase"):

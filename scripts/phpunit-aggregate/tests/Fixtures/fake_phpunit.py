@@ -42,7 +42,7 @@ if junit_path is not None and behavior.get("junit") != "missing":
         path.write_text("<testsuites>", encoding="utf-8")
     else:
         root = ET.Element("testsuites")
-        test_suite = ET.SubElement(root, "testsuite")
+        test_suite = ET.SubElement(root, "testsuite", {"tests": str(len(configuration["suites"][suite]))})
         for identifier in configuration["suites"][suite]:
             class_name, name = identifier.split("::", 1)
             ET.SubElement(test_suite, "testcase", {
