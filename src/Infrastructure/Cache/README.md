@@ -45,6 +45,8 @@ These internal operations keep directory contents and path eligibility with the
 Cache subject. Contents owns removal, owned-entry residue inspection and
 marker-last completion. Eligibility inspects the nearest existing directory
 through Core and requires write and search permission without creating it.
+It also renders the unusable-directory reason and remedy; the resolver selects
+authored refusal or the default-cache fallback.
 `FileCache` retains serialization and entry publication; the resolver retains
 authored provenance and explicit/default configuration decisions.
 

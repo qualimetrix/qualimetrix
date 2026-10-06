@@ -309,7 +309,6 @@ final class CaptureFromMeasuredSetTest extends TestCase
         return new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new class implements \Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface {
                 public function resolve(\Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest $request): \Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult

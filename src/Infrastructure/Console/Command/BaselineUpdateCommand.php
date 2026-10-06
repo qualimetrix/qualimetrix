@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
-use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
 use Qualimetrix\Core\FileTarget\PreparedTarget;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
@@ -84,19 +83,23 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         [$channels, $recordExclusions] = self::updateOptions($input);
         $document = $this->documentReader->preflight($baselinePath);
+        $invocation = match (true) {
+            $channels !== [] => BaselineUpdateInvocation::acceptNew($document, $channels),
+            $recordExclusions => BaselineUpdateInvocation::recordExclusions($document),
+            default => BaselineUpdateInvocation::tighten($document),
+        };
 
         return $this->withPreparedTarget(
             $document->target,
-            fn(PreparedTarget $prepared, StagedSignalGuard $guard): int => $this->updatePrepared($input, $output, $baselinePath, $channels, $recordExclusions, $document, $prepared, $guard),
+            fn(PreparedTarget $prepared, StagedSignalGuard $guard): int => $this->updatePrepared($input, $output, $baselinePath, $invocation, $prepared, $guard),
         );
     }
 
-    /** @param list<FindingChannel> $channels */
-    private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, array $channels, bool $recordExclusions, BaselineDocument $document, PreparedTarget $prepared, StagedSignalGuard $guard): int
+    private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, BaselineUpdateInvocation $invocation, PreparedTarget $prepared, StagedSignalGuard $guard): int
     {
-        $measured = $recordExclusions
-            ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($document))
-            : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
+        $measured = $invocation->recordsExclusions()
+            ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($invocation->document))
+            : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $invocation->document);
 
         if ($measured === null) {
             return self::FAILURE;
@@ -104,12 +107,7 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         $context = $measured->context;
 
-        $gaps = $this->ruleCoverage->classify(array_map(static fn($entry) => $entry->identity, $measured->baseline->entries));
-        $result = match (true) {
-            $channels !== [] => $this->updater->acceptNew($measured->baseline, $context->findings(), $channels, $context->coverage, $this->ruleCoverage),
-            $recordExclusions => $this->updater->recordExclusions($measured->baseline, $context->findings(), $context->coverage, $gaps),
-            default => $this->updater->update($measured->baseline, $context->findings(), $context->coverage, $gaps),
-        };
+        $result = $invocation->update($this->updater, $measured, $this->ruleCoverage);
         if ($result->writeRefusal !== null) {
             self::report($result, $output);
             throw ConfigurationRefusal::aboutCommandLineInput('--record-exclusions', $result->writeRefusal->description());
@@ -123,7 +121,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             return self::SUCCESS;
         }
 
-        $this->writer->write($result->baseline, $document->target, $context->projectRoot, $prepared, $guard->assertNotInterrupted(...));
+        $this->writer->write($result->baseline, $invocation->document->target, $context->projectRoot, $prepared, $guard->assertNotInterrupted(...));
 
         $output->writeln(\sprintf('<info>Baseline updated: %s</info>', $baselinePath));
 
@@ -154,8 +152,20 @@ final class BaselineUpdateCommand extends BaselineCommand
         foreach ($result->channelNotes as $channel => $reason) {
             $output->writeln(\sprintf('0 accepted: %s (%s)', $channel, $reason));
         }
-        $output->writeln(\sprintf('%d accepted, %d re-recorded', $counts['accepted'] ?? 0, $counts['re-recorded'] ?? 0));
-        $output->writeln(\sprintf(
+        $output->writeln(self::acceptanceSummary($counts));
+        $output->writeln(self::dispositionSummary($counts));
+    }
+
+    /** @param array<string, int> $counts */
+    private static function acceptanceSummary(array $counts): string
+    {
+        return \sprintf('%d accepted, %d re-recorded', $counts['accepted'] ?? 0, $counts['re-recorded'] ?? 0);
+    }
+
+    /** @param array<string, int> $counts */
+    private static function dispositionSummary(array $counts): string
+    {
+        return \sprintf(
             '%d updated, %d unchanged, %d removed, %d not compared, %d refused, %d skipped',
             $counts[BaselineUpdateDisposition::Updated->value] ?? 0,
             $counts[BaselineUpdateDisposition::Unchanged->value] ?? 0,
@@ -163,7 +173,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             $counts[BaselineUpdateDisposition::NotCompared->value] ?? 0,
             $counts[BaselineUpdateDisposition::Refused->value] ?? 0,
             $counts[BaselineUpdateDisposition::Skipped->value] ?? 0,
-        ));
+        );
     }
 
     private static function outcomeLine(BaselineUpdateResult $result, int $index): string
@@ -172,27 +182,10 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         return match ($outcome->disposition) {
             BaselineUpdateDisposition::ReRecorded => self::reRecordedLine($result, $index),
-            BaselineUpdateDisposition::Removed => \sprintf(
-                '  removed  %s [%s] (%s)',
-                $outcome->identity->describe(),
-                $outcome->selector === null ? '' : $outcome->selector->value,
-                $outcome->reasonCode ?? 'unknown reason',
-            ),
-            BaselineUpdateDisposition::NotCompared => \sprintf(
-                '  not compared  %s (%s)',
-                $outcome->identity->describe(),
-                $outcome->reasonCode ?? 'unknown reason',
-            ),
-            BaselineUpdateDisposition::Skipped => \sprintf(
-                '  skipped  %s (%s)',
-                $outcome->identity->describe(),
-                $outcome->reasonCode ?? 'not reported by this run',
-            ),
-            BaselineUpdateDisposition::Refused => \sprintf(
-                '<comment>  refused  %s (%s)</comment>',
-                $outcome->identity->describe(),
-                $outcome->refusalReason?->description() ?? 'no reason given',
-            ),
+            BaselineUpdateDisposition::Removed => self::removedLine($result, $index),
+            BaselineUpdateDisposition::NotCompared => self::notComparedLine($result, $index),
+            BaselineUpdateDisposition::Skipped => self::skippedLine($result, $index),
+            BaselineUpdateDisposition::Refused => self::refusedLine($result, $index),
             default => \sprintf('  %s  %s', $outcome->disposition->value, $outcome->identity->describe()),
         };
     }
@@ -200,7 +193,6 @@ final class BaselineUpdateCommand extends BaselineCommand
     private static function reRecordedLine(BaselineUpdateResult $result, int $index): string
     {
         $outcome = $result->outcomes[$index];
-
         return \sprintf(
             '  re-recorded  %s (exclusions changed: %s -> %s)',
             $outcome->identity->describe(),
@@ -209,4 +201,32 @@ final class BaselineUpdateCommand extends BaselineCommand
         );
     }
 
+    private static function removedLine(BaselineUpdateResult $result, int $index): string
+    {
+        $outcome = $result->outcomes[$index];
+        return \sprintf(
+            '  removed  %s [%s] (%s)',
+            $outcome->identity->describe(),
+            $outcome->selector === null ? '' : $outcome->selector->value,
+            $outcome->reasonCode ?? 'unknown reason',
+        );
+    }
+
+    private static function notComparedLine(BaselineUpdateResult $result, int $index): string
+    {
+        $outcome = $result->outcomes[$index];
+        return \sprintf('  not compared  %s (%s)', $outcome->identity->describe(), $outcome->reasonCode ?? 'unknown reason');
+    }
+
+    private static function skippedLine(BaselineUpdateResult $result, int $index): string
+    {
+        $outcome = $result->outcomes[$index];
+        return \sprintf('  skipped  %s (%s)', $outcome->identity->describe(), $outcome->reasonCode ?? 'not reported by this run');
+    }
+
+    private static function refusedLine(BaselineUpdateResult $result, int $index): string
+    {
+        $outcome = $result->outcomes[$index];
+        return \sprintf('<comment>  refused  %s (%s)</comment>', $outcome->identity->describe(), $outcome->refusalReason?->description() ?? 'no reason given');
+    }
 }

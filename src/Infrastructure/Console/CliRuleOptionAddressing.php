@@ -94,21 +94,39 @@ final readonly class CliRuleOptionAddressing
         $parts = explode('.', $option, 2);
         $level = \count($parts) === 2 ? $surface->levelNamed($parts[0]) : null;
         if ($level === null && \count($parts) === 2) {
-            foreach ($surface->levels() as $declared) {
-                if (ConfigKeySpelling::sameWords($parts[0], $declared)) {
-                    return \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $declared);
-                }
+            $suggestion = self::similarLevel($surface, $parts[0]);
+            if ($suggestion !== null) {
+                return \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $suggestion);
             }
         }
         $wording = $level === null
             ? RuleOptionRefusalWording::notAnOptionOfRule($option, $rule, $surface->writableAt(null))
             : RuleOptionRefusalWording::notAnOptionAtLevel($parts[1], $rule, $level, $surface->writableAt($level));
         $written = $level === null ? $option : $parts[1];
-        foreach ($surface->writableAt($level) as $canonical) {
-            if (ConfigKeySpelling::sameWords($written, $canonical)) {
-                return $wording . \sprintf(' Write "%s".', $canonical);
+        $suggestion = self::similarOption($surface, $level, $written);
+
+        return $suggestion === null ? $wording : $wording . \sprintf(' Write "%s".', $suggestion);
+    }
+
+    private static function similarLevel(RuleOptionSurface $surface, string $written): ?string
+    {
+        foreach ($surface->levels() as $declared) {
+            if (ConfigKeySpelling::sameWords($written, $declared)) {
+                return $declared;
             }
         }
-        return $wording;
+
+        return null;
+    }
+
+    private static function similarOption(RuleOptionSurface $surface, ?string $level, string $written): ?string
+    {
+        foreach ($surface->writableAt($level) as $canonical) {
+            if (ConfigKeySpelling::sameWords($written, $canonical)) {
+                return $canonical;
+            }
+        }
+
+        return null;
     }
 }

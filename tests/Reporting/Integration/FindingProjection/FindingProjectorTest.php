@@ -1083,7 +1083,6 @@ final class FindingProjectorTest extends TestCase
         return new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new ReportingGitScopeQuery(),
             unusedEntryAudit: new UnusedEntryAudit((function () {
@@ -1112,7 +1111,6 @@ final class FindingProjectorTest extends TestCase
         $projector = new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             $query,
             unusedEntryAudit: new UnusedEntryAudit((function () {

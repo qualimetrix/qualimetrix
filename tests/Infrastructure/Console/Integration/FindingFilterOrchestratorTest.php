@@ -481,7 +481,6 @@ final class FindingFilterOrchestratorTest extends TestCase
         $pipeline = new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new class implements GitScopeQueryInterface {
                 public function resolve(GitScopeRequest $request): GitScopeResult
@@ -498,7 +497,15 @@ final class FindingFilterOrchestratorTest extends TestCase
             fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
-        return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), $reader, new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor), new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan());
+        return new FindingFilterOrchestrator(
+            $pipeline,
+            new ErrorStream(),
+            self::silentSuppressionAudit(),
+            $reader,
+            new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new \Qualimetrix\Infrastructure\Console\BaselineProjectionCoverage($reader, new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan()),
+        );
     }
 
     /**

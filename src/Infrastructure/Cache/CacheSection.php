@@ -46,4 +46,23 @@ final readonly class CacheSection implements DocumentSectionSchemaInterface
 
         return $candidate;
     }
+
+    public static function directory(?ResolvedValueInterface $configured): string
+    {
+        return $configured === null ? self::DEFAULT_DIRECTORY : self::acceptedDirectory($configured);
+    }
+
+    public static function enabled(?ResolvedValueInterface $configured): bool
+    {
+        if ($configured === null) {
+            return true;
+        }
+
+        $enabled = $configured->plain();
+        if (!\is_bool($enabled)) {
+            $configured->refuse('Cache enabled must be a boolean.');
+        }
+
+        return $enabled;
+    }
 }

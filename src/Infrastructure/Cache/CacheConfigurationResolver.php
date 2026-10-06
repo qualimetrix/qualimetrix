@@ -14,38 +14,20 @@ final class CacheConfigurationResolver implements CacheConfigurationResolverInte
 {
     public function resolve(ConfigurationDocument $document, AbsolutePath $projectRoot): CacheConfiguration
     {
-        $directory = CacheSection::DEFAULT_DIRECTORY;
         $configuredDirectory = $document->resolved()->get(CacheSection::KEY, 'dir');
-        if ($configuredDirectory !== null) {
-            $directory = CacheSection::acceptedDirectory($configuredDirectory);
-        }
-
-        $enabled = true;
-        $configuredEnabled = $document->resolved()->get(CacheSection::KEY, 'enabled');
-        if ($configuredEnabled !== null) {
-            $enabled = $configuredEnabled->plain();
-            if (!\is_bool($enabled)) {
-                $configuredEnabled->refuse('Cache enabled must be a boolean.');
-            }
-        }
-
+        $directory = CacheSection::directory($configuredDirectory);
+        $enabled = CacheSection::enabled($document->resolved()->get(CacheSection::KEY, 'enabled'));
         $path = PathFactory::fromCliArgument($directory, $projectRoot);
 
         if (!$enabled) {
             return new CacheConfiguration($path, false);
         }
 
-        $reason = CacheDirectoryEligibility::unusableReason($path);
-        if ($reason === null) {
+        $summary = CacheDirectoryEligibility::unusableMessage($path);
+        if ($summary === null) {
             return new CacheConfiguration($path);
         }
 
-        $summary = \sprintf(
-            'Cache directory "%s" is not writable or cannot be created: %s Point cache.dir (or --cache-dir)'
-            . ' at a writable path, or disable the cache with --no-cache.',
-            $path->value(),
-            $reason,
-        );
         if ($configuredDirectory !== null) {
             $configuredDirectory->refuse($summary);
         }

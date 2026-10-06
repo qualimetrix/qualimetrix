@@ -25,6 +25,7 @@ Console/
 ├── RuleListingPresenter.php        # producer rows, computed footer and selection sources
 ├── MeasuredFindingSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by configuration alone — qmx.yaml, source annotations, and the config CLI flags baseline commands share with check (--preset, --disable-rule, --only-rule, --include-generated, --include-autoload-dev), which can narrow or widen it; check's own --suppress-path/--suppress-namespace flags never reach it, since baseline commands deliberately omit them
 ├── FindingFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
+├── BaselineProjectionCoverage.php # Carries the completed run's evidence into baseline projection
 ├── BaselineFilterReporter.php     # Private count-only unused/uncompared diagnostics with the selected error writer
 ├── DirectiveAuditTextPresenter.php # Private text wording; the facade owns shared text/JSON values
 ├── ExitPolicySection.php            # every writing layer's fail_on value, using the resolved ExitPolicy validator
@@ -55,6 +56,7 @@ Console/
 ├── ReportCoverageProjection.php     # The run's coverage as a report publishes it, failures relative to the project
 ├── RunTarget/
 │   ├── RunTargets.php               # shared preparation, publication and teardown for report/profile/log
+│   ├── RunTargetClaimLifecycle.php # claimed resources, staged publication, signal ownership and cleanup
 │   ├── StagedSignalGuard.php        # scoped interruption and restoration for staged targets
 │   ├── RunTargetSession.php         # command outcome, cleanup and terminal classification
 │   ├── TargetAccess.php             # pure CLI target-access judgement
@@ -69,6 +71,8 @@ Console/
 ├── RunningBinaryLocatorInterface.php
 ├── Hook/
 │   ├── HookFileTransaction.php   # identity-fenced hook publication, backup and restoration
+│   ├── HookBackupTransaction.php # judged, identity-fenced creation of a hook backup
+│   ├── HookEntryAccess.php         # shared guarded hook IO, identity checks and exposure warnings
 │   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
 ├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
@@ -79,6 +83,7 @@ Console/
     ├── CheckCommand.php             # Main analysis command
     ├── AbstractHookCommand.php      # Shared by the three below: locate the repository, spell hooks/pre-commit, refuse once
     ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
+    ├── BaselineUpdateInvocation.php # Document and selected update action for one invocation
     ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
     ├── HookInstallCommand.php       # Install pre-commit hook
     ├── HookStatusCommand.php        # Check hook status
@@ -225,7 +230,9 @@ refuses an empty value for the five doors whose owners would read it as
 its closed set and a `--profile` target the export cannot be written to, and
 `ResultPresenter::assertOutputIsWritable()` the same for `--output` — all before
 analysis. `RunTargets` owns report, profile and log target judgement, collision
-checks and held resources. Core resolves target components and trusted links;
+checks. Its private `RunTargetClaimLifecycle` owns held resources, staged
+publication, signal ownership and teardown; `TargetCollisions` judges target
+identities and names. Core resolves target components and trusted links;
 unknown wrappers, exposed links and unsupported targets refuse. Pure preflight
 checks writable regular targets and writable/searchable parents without opening
 them. Descriptor existence is checked on both platforms; Linux fdinfo also
@@ -375,6 +382,8 @@ does not create a missing destination, and preserves an existing destination.
 `HookFileTransaction` owns target judgement, identity checks, backup, replacement,
 removal and restoration. Commands retain option parsing, repository discovery,
 messages and the exit ladder; status reads the same hook-owned file facts.
+`HookBackupTransaction` performs judged backup creation while the file
+transaction retains removal and restoration.
 
 The hook's contents are generated rather than shipped: `/scripts/` is excluded
 from the composer distribution, so a script living there reaches no consumer

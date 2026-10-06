@@ -36,6 +36,7 @@ use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\BaselineProjectionCoverage;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
@@ -271,7 +272,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(AnnotationSuppressionInterface::class),
                 new Reference(BaselineLoader::class),
-                new Reference(BaselineDocumentReader::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(GitScopeQueryInterface::class),
                 new Reference(UnusedEntryAudit::class),
@@ -357,6 +357,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setAutowired(true);
 
         // FindingFilterOrchestrator
+        $container->register(BaselineProjectionCoverage::class)
+            ->setAutowired(true);
         $container->register(FindingFilterOrchestrator::class)
             ->setAutowired(true);
     }

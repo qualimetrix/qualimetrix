@@ -24,41 +24,68 @@ final class StagedSignalGuard
 
     public static function start(string $spelling): self
     {
+        self::assertAvailable();
+        $ownerPid = self::ownerPid();
+        self::assertNoForeignWatcher($spelling);
+        $guard = new self($ownerPid);
+        $guard->rememberDefaultHandlers($spelling);
+        $guard->register($spelling);
+
+        return $guard;
+    }
+
+    private static function assertAvailable(): void
+    {
         $available = get_defined_functions()['internal'];
         foreach (['pcntl_signal', 'pcntl_signal_get_handler', 'pcntl_async_signals'] as $function) {
             if (!\in_array($function, $available, true)) {
                 throw EnvironmentRefusal::aboutCapability($function, 'Staged regular output', 'Use a PHP runtime with PCNTL or select a stream target.');
             }
         }
+    }
+
+    private static function ownerPid(): int
+    {
         $ownerPid = getmypid();
         if ($ownerPid === false) {
             throw EnvironmentRefusal::aboutCapability('getmypid', 'Staged regular output', 'The owner process cannot be identified.');
         }
+
+        return $ownerPid;
+    }
+
+    private static function assertNoForeignWatcher(string $spelling): void
+    {
         foreach (EventLoop::getIdentifiers() as $callbackId) {
             if (EventLoop::getType($callbackId) === CallbackType::Signal) {
                 throw EnvironmentRefusal::aboutFile($spelling, 'stage', 'an existing event-loop signal watcher may replace the staged output handler');
             }
         }
-        $guard = new self($ownerPid);
+    }
+
+    private function rememberDefaultHandlers(string $spelling): void
+    {
         foreach ([\SIGINT, \SIGTERM] as $signal) {
             $previous = pcntl_signal_get_handler($signal);
             if ($previous !== \SIG_DFL) {
                 throw EnvironmentRefusal::aboutFile($spelling, 'stage', 'an existing signal handler owns SIGINT or SIGTERM');
             }
-            $guard->previousHandlers[$signal] = $previous;
+            $this->previousHandlers[$signal] = $previous;
         }
-        $guard->previousAsync = pcntl_async_signals();
+    }
+
+    private function register(string $spelling): void
+    {
+        $this->previousAsync = pcntl_async_signals();
         try {
             pcntl_async_signals(true);
             foreach ([\SIGINT, \SIGTERM] as $signal) {
-                pcntl_signal($signal, $guard->receive(...));
+                pcntl_signal($signal, $this->receive(...));
             }
         } catch (Throwable $failure) {
-            $guard->close();
+            $this->close();
             throw EnvironmentRefusal::aboutFile($spelling, 'stage', 'signal watching is unavailable: ' . $failure->getMessage());
         }
-
-        return $guard;
     }
 
     public function interruptedSignal(): ?int

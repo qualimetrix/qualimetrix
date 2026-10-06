@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
@@ -12,6 +13,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
@@ -88,18 +90,7 @@ final readonly class BaselineRun implements BaselineRunInterface
                 : \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred,
         );
 
-        if ($input->hasOption('accept-new')) {
-            foreach (CommandLineSpelling::options($input, 'accept-new') as $code) {
-                $channel = new FindingChannel($code);
-                $declaration = $findingConfiguration->channels?->declarationFor($channel);
-                if ($declaration === null || $declaration->isConfigurationError() || $code === BaselineAuditChannels::UNUSED_ENTRY) {
-                    throw ConfigurationRefusal::aboutCommandLineInput(
-                        '--accept-new',
-                        \sprintf('Channel "%s" cannot be accepted: name an exact declared debt channel.', $code),
-                    );
-                }
-            }
-        }
+        self::validateAcceptNew($input, $findingConfiguration);
 
         $run = $this->measuredFindingSet->run(
             $configuration,
@@ -119,15 +110,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         }
 
         $coverage = $run->result->measured->coverage;
-        if ($coverage->isIntentionallyEmpty()) {
-            $this->errorStream->write($output, CoverageNarrator::describe(new ReportCoverage(
-                $coverage->discoveredFiles(),
-                $coverage->analyzedFilesCount(),
-                $coverage->generatedExcludedFilesCount(),
-                $coverage->failedFilesCount(),
-                excluded: $coverage->excludedCount(),
-            )));
-        }
+        $this->narrateIntentionallyEmpty($coverage, $output);
 
         $projectRoot = $configuration->projectRoot;
 
@@ -145,4 +128,34 @@ final readonly class BaselineRun implements BaselineRunInterface
         return new BaselineRunContext($run, $scope, $projectRoot, $configuration, $runCoverage);
     }
 
+    private static function validateAcceptNew(InputInterface $input, FindingConfiguration $findingConfiguration): void
+    {
+        if (!$input->hasOption('accept-new')) {
+            return;
+        }
+        foreach (CommandLineSpelling::options($input, 'accept-new') as $code) {
+            $channel = new FindingChannel($code);
+            $declaration = $findingConfiguration->channels?->declarationFor($channel);
+            if ($declaration === null || $declaration->isConfigurationError() || $code === BaselineAuditChannels::UNUSED_ENTRY) {
+                throw ConfigurationRefusal::aboutCommandLineInput(
+                    '--accept-new',
+                    \sprintf('Channel "%s" cannot be accepted: name an exact declared debt channel.', $code),
+                );
+            }
+        }
+    }
+
+    private function narrateIntentionallyEmpty(AnalysisCoverage $coverage, OutputInterface $output): void
+    {
+        if (!$coverage->isIntentionallyEmpty()) {
+            return;
+        }
+        $this->errorStream->write($output, CoverageNarrator::describe(new ReportCoverage(
+            $coverage->discoveredFiles(),
+            $coverage->analyzedFilesCount(),
+            $coverage->generatedExcludedFilesCount(),
+            $coverage->failedFilesCount(),
+            excluded: $coverage->excludedCount(),
+        )));
+    }
 }

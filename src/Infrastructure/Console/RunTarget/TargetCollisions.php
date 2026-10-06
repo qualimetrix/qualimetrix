@@ -65,8 +65,7 @@ final class TargetCollisions
             $identity = $target instanceof PreparedTarget ? $target->target()->identity : $target->identity();
             $path = $judged[$subject]->path?->value();
             foreach ($previous as [$otherSubject, $otherIdentity, $otherPath]) {
-                if (($identity !== null && $otherIdentity !== null && $identity->sameAs($otherIdentity))
-                    || ($path !== null && $path === $otherPath)) {
+                if (self::sameTarget($identity, $path, $otherIdentity, $otherPath)) {
                     self::refuseCollision($judged, $subject, $otherSubject, $identity);
                 }
             }
@@ -83,13 +82,13 @@ final class TargetCollisions
         ResolvedTarget $otherTarget,
         ?FileIdentity $otherIdentity,
     ): bool {
-        if ($identity !== null && $otherIdentity !== null && $identity->sameAs($otherIdentity)) {
-            return true;
-        }
+        return self::sameTarget($identity, $target->path?->value(), $otherIdentity, $otherTarget->path?->value());
+    }
 
-        return $target->path !== null
-            && $otherTarget->path !== null
-            && $target->path->value() === $otherTarget->path->value();
+    private static function sameTarget(?FileIdentity $identity, ?string $path, ?FileIdentity $otherIdentity, ?string $otherPath): bool
+    {
+        return ($identity !== null && $otherIdentity !== null && $identity->sameAs($otherIdentity))
+            || ($path !== null && $path === $otherPath);
     }
 
     private static function identityOf(ResolvedTarget $target): ?FileIdentity

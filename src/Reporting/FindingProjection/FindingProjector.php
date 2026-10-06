@@ -9,9 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
-use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -25,7 +23,6 @@ final readonly class FindingProjector
     public function __construct(
         private AnnotationSuppressionInterface $annotationSuppression,
         BaselineLoader $baselineLoader,
-        private BaselineDocumentReader $documentReader,
         private ChannelDeclarationRegistryInterface $declarations,
         private GitScopeQueryInterface $gitScopeQuery,
         UnusedEntryAudit $unusedEntryAudit,
@@ -35,11 +32,6 @@ final readonly class FindingProjector
     }
 
     private BaselineFindingProjection $baselineProjection;
-
-    public function preflightBaseline(string $path): BaselineDocument
-    {
-        return $this->documentReader->preflight($path);
-    }
 
     /**
      * Git keeps declared project-scoped channels, changed file locations,
