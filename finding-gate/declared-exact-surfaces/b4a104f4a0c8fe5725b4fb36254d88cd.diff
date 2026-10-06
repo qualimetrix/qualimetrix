@@ -1,0 +1,265 @@
+--- candidate
++++ reference (mapped)
+@@ -1,246 +1,16 @@
+-visible 13353
+-{
+-  "version": 14,
+-  "generated": "<normalized>",
+-  "scope": ["src"],
+-  "exclusions": {"patterns":[],"generated":"excluded"},
+-  "entries": {
+-    "declaration:callable:App\\A\\X::f@src/x70/A/X.php": [
+-      {"channel":"code-smell.boolean-argument","occurrence":"e20592e46405e960","count":1},
+-      {"channel":"code-smell.count-in-loop","occurrence":"5c1a23262585b794","count":1},
+-      {"channel":"security.sensitive-parameter","occurrence":"d8c7c1c77a1276d8","count":1}
+-    ],
+-    "declaration:callable:App\\A\\X::m@src/x70/A/X.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1},
+-      {"channel":"code-smell.empty-catch","occurrence":"4c102a608a3cc500","count":1},
+-      {"channel":"code-smell.error-suppression","occurrence":"ce21655efa0f850a","count":1},
+-      {"channel":"code-smell.eval","occurrence":"cb4db382fbd60b86","count":1},
+-      {"channel":"code-smell.exit","occurrence":"3215b3c81a7774ac","count":1},
+-      {"channel":"code-smell.goto","occurrence":"d5cdb2ffde93239f","count":1},
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.hardcoded-credentials","occurrence":"d0bb964668a533e2","count":1},
+-      {"channel":"security.sensitive-parameter","occurrence":"d8c7c1c77a1276d8","count":1},
+-      {"channel":"security.xss","occurrence":"a23bfca96dcca636","count":1}
+-    ],
+-    "declaration:callable:App\\A\\Y::a@src/x70/A/X.php": [
+-      {"channel":"code-smell.identical-subexpression","occurrence":"a0265fe53cf8d5dc","count":1},
+-      {"channel":"code-smell.unreachable-code","magnitudes":[1]}
+-    ],
+-    "declaration:callable:App\\A\\Y::b@src/x70/A/X.php": [
+-      {"channel":"code-smell.long-parameter-list","magnitudes":[8]}
+-    ],
+-    "declaration:callable:App\\A\\Y::c@src/x70/A/X.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":2},
+-      {"channel":"security.command-injection","occurrence":"ae5ed341b4756606","count":1},
+-      {"channel":"security.sql-injection","occurrence":"a6b791649689b23a","count":1}
+-    ],
+-    "declaration:callable:App\\Creds::values@src/sec/Creds.php": [
+-      {"channel":"security.hardcoded-credentials","occurrence":"82943f8b7a6d7500","count":5}
+-    ],
+-    "declaration:callable:App\\D::a@src/dbg/D.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"63061a7410b542e7","count":1},
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":2},
+-      {"channel":"code-smell.debug-code","occurrence":"bdad6e1835ffe289","count":1}
+-    ],
+-    "declaration:callable:App\\D::debug@src/dbg/D.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "declaration:callable:App\\D::dump@src/dbg/D.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"54e57728f342211b","count":1},
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "declaration:callable:App\\F\\Repo::dump@src/dbg/F.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "declaration:callable:App\\Guards::guardCallContinue@src/ec03/Guards.php": [
+-      {"channel":"code-smell.empty-catch","occurrence":"4c102a608a3cc500","count":1}
+-    ],
+-    "declaration:callable:App\\Guards::guardCallReturn@src/ec03/Guards.php": [
+-      {"channel":"code-smell.empty-catch","occurrence":"4c102a608a3cc500","count":1}
+-    ],
+-    "declaration:callable:App\\Loop::guardReturn@src/ec03/Loop.php": [
+-      {"channel":"code-smell.empty-catch","occurrence":"4c102a608a3cc500","count":1}
+-    ],
+-    "declaration:callable:App\\Loop::guardThenWork@src/ec03/Loop.php": [
+-      {"channel":"code-smell.empty-catch","occurrence":"4c102a608a3cc500","count":1}
+-    ],
+-    "declaration:callable:App\\Loop::plain@src/ec03/Loop.php": [
+-      {"channel":"code-smell.empty-catch","occurrence":"4c102a608a3cc500","count":1}
+-    ],
+-    "declaration:callable:App\\P::none@src/sp/P.php": [
+-      {"channel":"security.sensitive-parameter","occurrence":"d8c7c1c77a1276d8","count":1}
+-    ],
+-    "declaration:callable:App\\P::unq@src/sp/P.php": [
+-      {"channel":"security.sensitive-parameter","occurrence":"d8c7c1c77a1276d8","count":1}
+-    ],
+-    "declaration:callable:App\\Q\\Q::mis@src/sp/Q.php": [
+-      {"channel":"security.sensitive-parameter","occurrence":"d8c7c1c77a1276d8","count":1}
+-    ],
+-    "declaration:callable:App\\S::cmd_braced_concat@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.command-injection","occurrence":"ae5ed341b4756606","count":1}
+-    ],
+-    "declaration:callable:App\\S::cmd_braced_double@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.command-injection","occurrence":"ae5ed341b4756606","count":1}
+-    ],
+-    "declaration:callable:App\\S::cmd_braced_single@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.command-injection","occurrence":"ae5ed341b4756606","count":1}
+-    ],
+-    "declaration:callable:App\\S::cmd_globals_key@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"d252444045417990","count":1},
+-      {"channel":"security.command-injection","occurrence":"ae5ed341b4756606","count":1}
+-    ],
+-    "declaration:callable:App\\S::cmd_plain@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.command-injection","occurrence":"ae5ed341b4756606","count":1}
+-    ],
+-    "declaration:callable:App\\S::cmd_request_plain@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"df96f432119081dc","count":1},
+-      {"channel":"security.command-injection","occurrence":"e0df01e8c029b8e3","count":1}
+-    ],
+-    "declaration:callable:App\\S::sql_braced_concat@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.sql-injection","occurrence":"a6b791649689b23a","count":1}
+-    ],
+-    "declaration:callable:App\\S::sql_braced_double@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.sql-injection","occurrence":"a6b791649689b23a","count":1}
+-    ],
+-    "declaration:callable:App\\S::sql_braced_single@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.sql-injection","occurrence":"a6b791649689b23a","count":1}
+-    ],
+-    "declaration:callable:App\\S::sql_globals_key@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"d252444045417990","count":1},
+-      {"channel":"security.sql-injection","occurrence":"a6b791649689b23a","count":1}
+-    ],
+-    "declaration:callable:App\\S::sql_plain@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.sql-injection","occurrence":"a6b791649689b23a","count":1}
+-    ],
+-    "declaration:callable:App\\S::sql_request_plain@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"df96f432119081dc","count":1},
+-      {"channel":"security.sql-injection","occurrence":"d516aa00073016ec","count":1}
+-    ],
+-    "declaration:callable:App\\S::xss_braced_concat@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.xss","occurrence":"a23bfca96dcca636","count":1}
+-    ],
+-    "declaration:callable:App\\S::xss_braced_double@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.xss","occurrence":"a23bfca96dcca636","count":1}
+-    ],
+-    "declaration:callable:App\\S::xss_braced_single@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.xss","occurrence":"a23bfca96dcca636","count":1}
+-    ],
+-    "declaration:callable:App\\S::xss_globals_key@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"d252444045417990","count":1},
+-      {"channel":"security.xss","occurrence":"a23bfca96dcca636","count":1}
+-    ],
+-    "declaration:callable:App\\S::xss_plain@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"c07a29ee639052d1","count":1},
+-      {"channel":"security.xss","occurrence":"a23bfca96dcca636","count":1}
+-    ],
+-    "declaration:callable:App\\S::xss_request_plain@src/sgforms/S.php": [
+-      {"channel":"code-smell.superglobals","occurrence":"df96f432119081dc","count":1},
+-      {"channel":"security.xss","occurrence":"75a288b8593218ca","count":1}
+-    ],
+-    "declaration:class:App\\A\\X@src/x70/A/X.php": [
+-      {"channel":"design.type-coverage.param","magnitudes":[75]}
+-    ],
+-    "declaration:class:App\\A\\Y@src/x70/A/X.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]},
+-      {"channel":"cohesion.lcom","magnitudes":[3]},
+-      {"channel":"design.type-coverage.param","magnitudes":[18.18]}
+-    ],
+-    "declaration:class:App\\CALLABLE_ARRAY_FQ\\V@src/upforms/callable_array_fq/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\CALLABLE_ARRAY_SELF\\V@src/upforms/callable_array_self/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\CALLABLE_ARRAY_SHORT\\V@src/upforms/callable_array_short/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\CALLABLE_ARRAY_STRING_CLASS\\V@src/upforms/callable_array_string_class/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\CALLABLE_STRING_FQ\\V@src/upforms/callable_string_fq/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\CALLABLE_STRING_SELF\\V@src/upforms/callable_string_self/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\CLOSURE_FROMCALLABLE_SELF\\V@src/upforms/closure_fromCallable_self/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\D@src/dbg/D.php": [
+-      {"channel":"cohesion.lcom","magnitudes":[3]}
+-    ],
+-    "declaration:class:App\\FIRST_CLASS_SELF\\V@src/upforms/first_class_self/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\FIRST_CLASS_SHORT\\V@src/upforms/first_class_short/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\FQ_NAME\\V@src/upforms/fq_name/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:class:App\\K@src/x121/consts.php": [
+-      {"channel":"security.hardcoded-credentials","occurrence":"68e9ad114cb54a0d","count":1}
+-    ],
+-    "declaration:class:App\\LOWERCASE_SHORT\\V@src/upforms/lowercase_short/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:class:App\\NAMESPACE_RELATIVE\\V@src/upforms/namespace_relative/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:class:App\\NEW_SHORT_RECEIVER\\V@src/upforms/new_short_receiver/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[3,3,3]}
+-    ],
+-    "declaration:class:App\\S@src/sgforms/S.php": [
+-      {"channel":"cohesion.lcom","magnitudes":[21]},
+-      {"channel":"size.method-count","magnitudes":[21]}
+-    ],
+-    "declaration:class:App\\SELF\\V@src/upforms/self/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:class:App\\SHORT_NAME\\V@src/upforms/short_name/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:class:App\\STATIC\\V@src/upforms/static/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:class:App\\USE_ALIAS\\V@src/upforms/use_alias/V.php": [
+-      {"channel":"code-smell.unused-private","magnitudes":[1]}
+-    ],
+-    "declaration:func:App::dump_helper@src/dbg/D.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "declaration:func:App\\F::debug@src/dbg/F.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "declaration:func:App\\F::{closure#1}@src/dbg/F.php": [
+-      {"channel":"code-smell.debug-code","occurrence":"9d9a9bef4ea8a01f","count":1}
+-    ],
+-    "file:src/x121/consts.php": [
+-      {"channel":"security.hardcoded-credentials","occurrence":"b49e31ac3a1c7ec0","count":2},
+-      {"channel":"security.hardcoded-credentials","occurrence":"e2d05ac28ab4b276","count":1}
+-    ],
+-    "file:src/x121/global.php": [
+-      {"channel":"security.hardcoded-credentials","occurrence":"b49e31ac3a1c7ec0","count":1}
+-    ],
+-    "ns:App\\Big": [
+-      {"channel":"size.class-count","magnitudes":[30]}
+-    ],
+-    "ns:App\\Small": [
+-      {"channel":"size.class-count","magnitudes":[16]}
+-    ]
+-  }
+-}
+-
+-records 11885
+-{"entries":{"declaration:callable:App\\A\\X::f@src/x70/A/X.php":[{"channel":"code-smell.boolean-argument","count":1,"occurrence":"e20592e46405e960"},{"channel":"code-smell.count-in-loop","count":1,"occurrence":"5c1a23262585b794"},{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"}],"declaration:callable:App\\A\\X::m@src/x70/A/X.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"},{"channel":"code-smell.empty-catch","count":1,"occurrence":"4c102a608a3cc500"},{"channel":"code-smell.error-suppression","count":1,"occurrence":"ce21655efa0f850a"},{"channel":"code-smell.eval","count":1,"occurrence":"cb4db382fbd60b86"},{"channel":"code-smell.exit","count":1,"occurrence":"3215b3c81a7774ac"},{"channel":"code-smell.goto","count":1,"occurrence":"d5cdb2ffde93239f"},{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.hardcoded-credentials","count":1,"occurrence":"d0bb964668a533e2"},{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:App\\A\\Y::a@src/x70/A/X.php":[{"channel":"code-smell.identical-subexpression","count":1,"occurrence":"a0265fe53cf8d5dc"},{"channel":"code-smell.unreachable-code","magnitudes":[1]}],"declaration:callable:App\\A\\Y::b@src/x70/A/X.php":[{"channel":"code-smell.long-parameter-list","magnitudes":[8]}],"declaration:callable:App\\A\\Y::c@src/x70/A/X.php":[{"channel":"code-smell.superglobals","count":2,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:App\\Creds::values@src/sec/Creds.php":[{"channel":"security.hardcoded-credentials","count":5,"occurrence":"82943f8b7a6d7500"}],"declaration:callable:App\\D::a@src/dbg/D.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"63061a7410b542e7"},{"channel":"code-smell.debug-code","count":2,"occurrence":"9d9a9bef4ea8a01f"},{"channel":"code-smell.debug-code","count":1,"occurrence":"bdad6e1835ffe289"}],"declaration:callable:App\\D::debug@src/dbg/D.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"}],"declaration:callable:App\\D::dump@src/dbg/D.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"54e57728f342211b"},{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"}],"declaration:callable:App\\F\\Repo::dump@src/dbg/F.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"}],"declaration:callable:App\\Guards::guardCallContinue@src/ec03/Guards.php":[{"channel":"code-smell.empty-catch","count":1,"occurrence":"4c102a608a3cc500"}],"declaration:callable:App\\Guards::guardCallReturn@src/ec03/Guards.php":[{"channel":"code-smell.empty-catch","count":1,"occurrence":"4c102a608a3cc500"}],"declaration:callable:App\\Loop::guardReturn@src/ec03/Loop.php":[{"channel":"code-smell.empty-catch","count":1,"occurrence":"4c102a608a3cc500"}],"declaration:callable:App\\Loop::guardThenWork@src/ec03/Loop.php":[{"channel":"code-smell.empty-catch","count":1,"occurrence":"4c102a608a3cc500"}],"declaration:callable:App\\Loop::plain@src/ec03/Loop.php":[{"channel":"code-smell.empty-catch","count":1,"occurrence":"4c102a608a3cc500"}],"declaration:callable:App\\P::none@src/sp/P.php":[{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"}],"declaration:callable:App\\P::unq@src/sp/P.php":[{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"}],"declaration:callable:App\\Q\\Q::mis@src/sp/Q.php":[{"channel":"security.sensitive-parameter","count":1,"occurrence":"d8c7c1c77a1276d8"}],"declaration:callable:App\\S::cmd_braced_concat@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:callable:App\\S::cmd_braced_double@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:callable:App\\S::cmd_braced_single@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:callable:App\\S::cmd_globals_key@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"d252444045417990"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:callable:App\\S::cmd_plain@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.command-injection","count":1,"occurrence":"ae5ed341b4756606"}],"declaration:callable:App\\S::cmd_request_plain@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"df96f432119081dc"},{"channel":"security.command-injection","count":1,"occurrence":"e0df01e8c029b8e3"}],"declaration:callable:App\\S::sql_braced_concat@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:App\\S::sql_braced_double@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:App\\S::sql_braced_single@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:App\\S::sql_globals_key@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"d252444045417990"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:App\\S::sql_plain@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.sql-injection","count":1,"occurrence":"a6b791649689b23a"}],"declaration:callable:App\\S::sql_request_plain@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"df96f432119081dc"},{"channel":"security.sql-injection","count":1,"occurrence":"d516aa00073016ec"}],"declaration:callable:App\\S::xss_braced_concat@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:App\\S::xss_braced_double@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:App\\S::xss_braced_single@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:App\\S::xss_globals_key@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"d252444045417990"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:App\\S::xss_plain@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"c07a29ee639052d1"},{"channel":"security.xss","count":1,"occurrence":"a23bfca96dcca636"}],"declaration:callable:App\\S::xss_request_plain@src/sgforms/S.php":[{"channel":"code-smell.superglobals","count":1,"occurrence":"df96f432119081dc"},{"channel":"security.xss","count":1,"occurrence":"75a288b8593218ca"}],"declaration:class:App\\A\\X@src/x70/A/X.php":[{"channel":"design.type-coverage.param","magnitudes":[75]}],"declaration:class:App\\A\\Y@src/x70/A/X.php":[{"channel":"code-smell.unused-private","magnitudes":[1]},{"channel":"cohesion.lcom","magnitudes":[3]},{"channel":"design.type-coverage.param","magnitudes":[18.18]}],"declaration:class:App\\CALLABLE_ARRAY_FQ\\V@src/upforms/callable_array_fq/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\CALLABLE_ARRAY_SELF\\V@src/upforms/callable_array_self/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\CALLABLE_ARRAY_SHORT\\V@src/upforms/callable_array_short/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\CALLABLE_ARRAY_STRING_CLASS\\V@src/upforms/callable_array_string_class/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\CALLABLE_STRING_FQ\\V@src/upforms/callable_string_fq/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\CALLABLE_STRING_SELF\\V@src/upforms/callable_string_self/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\CLOSURE_FROMCALLABLE_SELF\\V@src/upforms/closure_fromCallable_self/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\D@src/dbg/D.php":[{"channel":"cohesion.lcom","magnitudes":[3]}],"declaration:class:App\\FIRST_CLASS_SELF\\V@src/upforms/first_class_self/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\FIRST_CLASS_SHORT\\V@src/upforms/first_class_short/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\FQ_NAME\\V@src/upforms/fq_name/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:class:App\\K@src/x121/consts.php":[{"channel":"security.hardcoded-credentials","count":1,"occurrence":"68e9ad114cb54a0d"}],"declaration:class:App\\LOWERCASE_SHORT\\V@src/upforms/lowercase_short/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:class:App\\NAMESPACE_RELATIVE\\V@src/upforms/namespace_relative/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:class:App\\NEW_SHORT_RECEIVER\\V@src/upforms/new_short_receiver/V.php":[{"channel":"code-smell.unused-private","magnitudes":[3,3,3]}],"declaration:class:App\\S@src/sgforms/S.php":[{"channel":"cohesion.lcom","magnitudes":[21]},{"channel":"size.method-count","magnitudes":[21]}],"declaration:class:App\\SELF\\V@src/upforms/self/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:class:App\\SHORT_NAME\\V@src/upforms/short_name/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:class:App\\STATIC\\V@src/upforms/static/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:class:App\\USE_ALIAS\\V@src/upforms/use_alias/V.php":[{"channel":"code-smell.unused-private","magnitudes":[1]}],"declaration:func:App::dump_helper@src/dbg/D.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"}],"declaration:func:App\\F::debug@src/dbg/F.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"}],"declaration:func:App\\F::{closure#1}@src/dbg/F.php":[{"channel":"code-smell.debug-code","count":1,"occurrence":"9d9a9bef4ea8a01f"}],"file:src/x121/consts.php":[{"channel":"security.hardcoded-credentials","count":2,"occurrence":"b49e31ac3a1c7ec0"},{"channel":"security.hardcoded-credentials","count":1,"occurrence":"e2d05ac28ab4b276"}],"file:src/x121/global.php":[{"channel":"security.hardcoded-credentials","count":1,"occurrence":"b49e31ac3a1c7ec0"}],"ns:App\\Big":[{"channel":"size.class-count","magnitudes":[30]}],"ns:App\\Small":[{"channel":"size.class-count","magnitudes":[16]}]},"exclusions":{"generated":"excluded","patterns":[]},"generated":"<normalized>","scope":["src"],"version":14}
++visible 0
++
++baseline-exit 1
++1
++baseline-stderr 166
++Internal error: No declared selection cell for channel "security.hardcoded-credentials".
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
++
++refusal 172
++{
++    "error": "Internal error: No declared selection cell for channel \"security.hardcoded-credentials\".",
++    "exit_code": 1,
++    "position": null,
++    "source": null
++}
++

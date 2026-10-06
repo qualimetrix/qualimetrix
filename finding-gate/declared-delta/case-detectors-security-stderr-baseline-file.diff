@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -1,0 +1,2 @@
++Internal error: No declared selection cell for channel "security.command-injection".
++Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt

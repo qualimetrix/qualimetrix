@@ -1,0 +1,72 @@
+{
+    "case:detectors-smells|format:summary": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:text": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:text-verbose": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:json": {
+        "stdout": "{\n    \"error\": \"Internal error: No declared selection cell for channel \\\"code-smell.boolean-argument\\\".\",\n    \"exit_code\": 1,\n    \"position\": null,\n    \"source\": null\n}\n",
+        "stderr": "",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:checkstyle": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:sarif": {
+        "stdout": "{\n    \"error\": \"Internal error: No declared selection cell for channel \\\"code-smell.boolean-argument\\\".\",\n    \"exit_code\": 1,\n    \"position\": null,\n    \"source\": null\n}\n",
+        "stderr": "",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:gitlab": {
+        "stdout": "{\n    \"error\": \"Internal error: No declared selection cell for channel \\\"code-smell.boolean-argument\\\".\",\n    \"exit_code\": 1,\n    \"position\": null,\n    \"source\": null\n}\n",
+        "stderr": "",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:github": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:metrics": {
+        "stdout": "{\n    \"error\": \"Internal error: No declared selection cell for channel \\\"code-smell.boolean-argument\\\".\",\n    \"exit_code\": 1,\n    \"position\": null,\n    \"source\": null\n}\n",
+        "stderr": "",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:health": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:html": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|format:suppressed": {
+        "stdout": "{\n    \"error\": \"Internal error: No declared selection cell for channel \\\"code-smell.boolean-argument\\\".\",\n    \"exit_code\": 1,\n    \"position\": null,\n    \"source\": null\n}\n",
+        "stderr": "",
+        "exit": "1"
+    },
+    "case:detectors-smells|show-suppressed": {
+        "stdout": "",
+        "stderr": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".\nDocs: https://qualimetrix.dev \u00b7 AI agents: https://qualimetrix.dev/llms.txt\n",
+        "exit": "1"
+    },
+    "case:detectors-smells|check:output": {
+        "stdout": "{\n    \"error\": \"Internal error: No declared selection cell for channel \\\"code-smell.boolean-argument\\\".\",\n    \"exit_code\": 1,\n    \"position\": null,\n    \"source\": null\n}\n",
+        "stderr": "",
+        "exit": "1"
+    }
+}
