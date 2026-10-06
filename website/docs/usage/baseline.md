@@ -72,8 +72,9 @@ The parent must permit creation and replacement even when the final file exists.
 They publish complete bytes atomically after identity and content-hash checks;
 no-op update/cleanup preserve the final bytes and inode. SIGINT/SIGTERM before
 publication discard the own sibling and return 128 + signal. These staged
-commands require pcntl and a Revolt signal watcher without a foreign handler;
-unavailable capability refuses with exit 3 before preparation or analysis.
+commands require pcntl, default SIGINT/SIGTERM handlers and no registered
+event-loop signal callbacks. Unavailable capability refuses with exit 3 before
+preparation or analysis. Replacing handlers during the operation is unsupported.
 SIGKILL, cleanup failure and already published targets are outside that guarantee.
 
 ### Generate
