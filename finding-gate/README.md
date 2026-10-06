@@ -582,6 +582,14 @@ changing those constructors also updates the channel probe.
 
 ## Execution, controls and independent checks
 
+The reference tree uses the candidate's installed dependencies. Before artifact
+comparison, the gate compares both `composer.lock` documents through PHP's native
+JSON decoder. Only the top-level `content-hash`, which tracks root
+`composer.json` freshness, is excluded. Object member order is insignificant;
+all other decoded values, scalar types, object/list distinctions and list order
+must match. Malformed JSON and non-object lock documents are refused. This
+compares decoded lock facts, not installed vendor contents or lock-file bytes.
+
 `composer check:gate` runs the end-to-end captures and both self-tests.
 Its **Gate captures and witnesses (composer check:gate)** CI context runs on
 every pull request and on pushes to `main`. Locally it is required when
