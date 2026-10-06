@@ -11,9 +11,6 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 
-/**
- * @qmx-threshold coupling.instability warning=0.85 -- The Coupling configuration-document adapter has Ca=2 and Ce=11 (I=0.84615); the next outward dependency, Ce=12 (I=0.85714), remains a warning.
- */
 final class CouplingAnalysis implements CouplingConfiguratorInterface
 {
     /** @var list<NamespacePattern> */

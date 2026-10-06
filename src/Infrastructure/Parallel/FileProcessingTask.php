@@ -26,11 +26,6 @@ use SplFileInfo;
  * The collector classes are passed from the main process to ensure
  * workers use the same set of collectors as configured in DI container.
  *
- * @qmx-threshold coupling.instability warning=0.81 -- A task is efferent by construction:
- * it names the worker-side machinery it runs, and only its factory and the pool name it
- * back. Ca=2, Ce=8 is exactly 0.800 against an inclusive 0.800 ceiling; the eighth
- * efferent edge is `WorkerComposition`, which took four constructor parameters.
- *
  * @implements Task<FileProcessingResult, mixed, mixed>
  */
 final class FileProcessingTask implements Task
