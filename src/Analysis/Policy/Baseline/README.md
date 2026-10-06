@@ -200,7 +200,8 @@ quantitative comparison after identity applicability is established.
 
 `EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
 Warnings for stale and inert entries after the full ceiling and before Git
-projection. The rule's remediation estimate is 5 minutes. Audit findings never
+projection. Inert contenders for one duplicate identity produce one warning
+with their contender count, rather than indistinguishable repeated findings. The rule's remediation estimate is 5 minutes. Audit findings never
 enter the measured set, capture or accept-new; authored path/namespace
 suppression and Git projection cannot hide them. When unselected, stderr reports
 counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
@@ -271,6 +272,9 @@ candidate requires complete comparable absence; an unmeasured/outside entry is
 retained and named as such. Unknown channel, undeclared level, malformed payload
 and audit entries are inert. Repeated `--remove=<selector>` removes exactly the
 reviewed entries; no bulk removal infers remediation from missing findings.
+A selector shared only by inert DuplicateIdentity contenders for the same
+identity removes all of those contenders. Other selector collisions remain
+ambiguous and refuse.
 Incomplete analysis exits 4 before classification or mutation.
 
 ## Explaining a Boundary

@@ -141,7 +141,9 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 Default cleanup lists candidates without writing. Remove only reviewed selectors;
 repeat --remove for several entries. A shrinking group that still fires is not
 stale. Unmeasured/outside entries do not prove repair. Old undeclared subject
-levels remain inert rather than becoming zero-count groups.
+levels remain inert rather than becoming zero-count groups. If a selector names
+only inert duplicate-identity contenders for the same identity, removing it
+removes every contender. Other selector collisions still refuse as ambiguous.
 
 ### Carry a baseline onto renamed channels
 

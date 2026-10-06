@@ -29,6 +29,16 @@ final class DuplicateMatchCandidates
         $this->count++;
     }
 
+    /** @return iterable<array{int, list<int>}> */
+    public function matches(): iterable
+    {
+        for ($index = 0; $index < $this->count; $index++) {
+            $record = $this->record($index);
+
+            yield [$record[1], $this->readCopies($record[2], $record[3])];
+        }
+    }
+
     private function appendRecord(int $length, int $copyCount): void
     {
         $chunk = intdiv($this->count, 1024);

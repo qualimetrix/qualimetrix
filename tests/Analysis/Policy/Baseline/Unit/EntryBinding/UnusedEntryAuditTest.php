@@ -34,6 +34,27 @@ use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 final class UnusedEntryAuditTest extends TestCase
 {
     #[Test]
+    public function itReportsOneFindingForAllInertContendersOfADuplicateIdentity(): void
+    {
+        $identity = new BaselineIdentity('file:src/Legacy.php', new FindingChannel('code-smell.goto'));
+        $first = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'first contender', ['count' => 1]);
+        $second = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'second contender', ['count' => 2]);
+        $execution = self::createMock(RuleExecutionInterface::class);
+        $execution->expects(self::once())->method('publishable')->willReturnCallback(static fn(array $findings): array => $findings);
+
+        $findings = (new UnusedEntryAudit($execution))->findings(new CeilingOutcome(
+            new FindingFilterStageResult(FindingFilterStage::Baseline, [], []),
+            [],
+            [$first, $second],
+        ), 'baseline.json');
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString($identity->describe(), $findings[0]->message);
+        self::assertStringContainsString('2 contenders', $findings[0]->message);
+        self::assertStringContainsString('--remove=' . $first->selector->value, $findings[0]->recommendation ?? '');
+    }
+
+    #[Test]
     public function itReportsOnlyStaleAndInertEntriesWithTheirOwnReasons(): void
     {
         $stale = self::entry('file:src/Gone.php');

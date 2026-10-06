@@ -24,6 +24,15 @@ final class DuplicationNormalizationTest extends TestCase
 {
     private string $directory;
 
+    #[Test]
+    public function itDoesNotAdmitTrailingHtmlNewlineAsAnotherCoveredCodeLine(): void
+    {
+        self::assertSame([], $this->detect(1, [
+            'First.php' => "hello\n",
+            'Second.php' => "hello\n",
+        ], 2));
+    }
+
     protected function setUp(): void
     {
         $this->directory = sys_get_temp_dir() . '/qmx-duplication-normalization-' . bin2hex(random_bytes(6));
@@ -93,11 +102,11 @@ final class DuplicationNormalizationTest extends TestCase
      *
      * @return list<DuplicateBlock>
      */
-    private function detect(int $minTokens, array $contents): array
+    private function detect(int $minTokens, array $contents, int $minLines = 1): array
     {
         $metadata = [new RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false)];
         $configuration = ResolvedOptionsFixture::authoredConfiguration(['rules' => [
-            'duplication.clone' => ['min_tokens' => $minTokens, 'min_lines' => 1],
+            'duplication.clone' => ['min_tokens' => $minTokens, 'min_lines' => $minLines],
         ]], $metadata);
         $registry = new RuleOptionsRegistry();
         $registry->replace(ResolvedOptionsFixture::ready($configuration, $metadata));

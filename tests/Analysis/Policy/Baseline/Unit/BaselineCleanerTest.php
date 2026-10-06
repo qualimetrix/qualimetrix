@@ -347,6 +347,73 @@ final class BaselineCleanerTest extends TestCase
     }
 
     #[Test]
+    public function itRemovesEveryInertContenderOfOneDuplicateIdentity(): void
+    {
+        $identity = new BaselineIdentity('file:src/Legacy.php', self::gotoChannel());
+        $first = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'first contender', ['count' => 1]);
+        $second = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'second contender', ['count' => 2]);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: ['src'],
+            entries: [],
+            inertEntries: [$first, $second],
+            exclusions: self::fixtureExclusions(),
+        );
+
+        $selector = $identity->selector();
+        $result = $this->cleaner()->remove($baseline, [$selector]);
+
+        self::assertSame([$selector], $result->removed);
+        self::assertSame([], $result->ambiguous);
+        self::assertSame([], $result->baseline->inertEntries);
+    }
+
+    #[Test]
+    public function itKeepsAValidAndInertEntryWithTheSameSelectorAmbiguous(): void
+    {
+        $identity = new BaselineIdentity('file:src/Legacy.php', self::gotoChannel());
+        $valid = new BaselineEntry($identity, null, 1);
+        $inert = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'duplicate', ['count' => 2]);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: ['src'],
+            entries: [$valid],
+            inertEntries: [$inert],
+            exclusions: self::fixtureExclusions(),
+        );
+        $selector = $identity->selector();
+
+        $result = $this->cleaner()->remove($baseline, [$selector]);
+
+        self::assertSame([$selector], $result->ambiguous);
+        self::assertSame([], $result->removed);
+        self::assertSame([$valid], $result->baseline->entries);
+        self::assertSame([$inert], $result->baseline->inertEntries);
+    }
+
+    #[Test]
+    public function itKeepsDifferentInertReasonsWithTheSameSelectorAmbiguous(): void
+    {
+        $identity = new BaselineIdentity('file:src/Legacy.php', self::gotoChannel());
+        $duplicate = InertBaselineEntry::forIdentity($identity, InertEntryReason::DuplicateIdentity, 'duplicate', ['count' => 1]);
+        $shape = InertBaselineEntry::forIdentity($identity, InertEntryReason::ShapeMismatch, 'wrong shape', ['count' => 2]);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: ['src'],
+            entries: [],
+            inertEntries: [$duplicate, $shape],
+            exclusions: self::fixtureExclusions(),
+        );
+        $selector = $identity->selector();
+
+        $result = $this->cleaner()->remove($baseline, [$selector]);
+
+        self::assertSame([$selector], $result->ambiguous);
+        self::assertSame([], $result->removed);
+        self::assertSame([$duplicate, $shape], $result->baseline->inertEntries);
+    }
+
+    #[Test]
     public function itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder(): void
     {
         $removedEntry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::gone', self::gotoChannel()), null, 1);

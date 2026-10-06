@@ -128,8 +128,8 @@ final readonly class BaselineCleaner
 
     /**
      * Removes exactly the named entries — valid or inert — and reports which
-     * selectors matched exactly one entry, which matched none, and which
-     * matched more than one and were therefore left alone (ADR 0017). An empty
+     * selectors matched one removable identity, which matched none, and which
+     * matched unrelated entries and were therefore left alone (ADR 0017). An empty
      * `$selectors` list changes nothing but still stamps a fresh `generated`
      * — callers implementing "no `--remove` given" as "report and change
      * nothing" (ADR 0017) do so by not calling this method at all, not by calling
@@ -163,18 +163,18 @@ final readonly class BaselineCleaner
                 continue;
             }
 
-            if (\count($matches) > 1) {
+            if (\count($matches) > 1 && !self::oneDuplicateIdentity($matches, $selector)) {
                 $ambiguous[] = $selector;
 
                 continue;
             }
 
-            $match = $matches[0];
-
-            if ($match instanceof BaselineEntry) {
-                $toRemoveEntries[] = $match;
-            } else {
-                $toRemoveInert[] = $match;
+            foreach ($matches as $match) {
+                if ($match instanceof BaselineEntry) {
+                    $toRemoveEntries[] = $match;
+                } else {
+                    $toRemoveInert[] = $match;
+                }
             }
 
             $removed[] = $selector;
@@ -202,6 +202,27 @@ final readonly class BaselineCleaner
         return new BaselineCleanupRemoval($updated, $removed, $notFound, $ambiguous);
     }
 
+    /** @param list<BaselineEntry|InertBaselineEntry> $matches */
+    private static function oneDuplicateIdentity(array $matches, EntrySelector $selector): bool
+    {
+        $identity = $matches[0] instanceof InertBaselineEntry ? $matches[0]->identity : null;
+        if ($identity === null || $identity->selector()->value !== $selector->value) {
+            return false;
+        }
+
+        foreach ($matches as $match) {
+            if (!$match instanceof InertBaselineEntry
+                || $match->reason !== InertEntryReason::DuplicateIdentity
+                || $match->identity === null
+                || !$match->identity->equals($identity)
+                || $match->selector->value !== $selector->value) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Every entry — valid or inert — keyed by its selector, built on demand
      * for this call only. `Baseline` itself no longer carries this index: on
@@ -209,10 +230,8 @@ final readonly class BaselineCleaner
      * entry's identity, so it lived as pure per-run cost for callers that
      * never removed anything.
      *
-     * Returns lists, not single entries, because the digest, however unlikely
-     * to collide, is not a proof of uniqueness (see {@see EntrySelector}) —
-     * {@see remove()} reports a selector matching more than one entry as
-     * ambiguous instead of picking one.
+     * Returns lists, not single entries, because the digest is not a proof of
+     * uniqueness (see {@see EntrySelector}).
      *
      * @return array<string, list<BaselineEntry|InertBaselineEntry>>
      */

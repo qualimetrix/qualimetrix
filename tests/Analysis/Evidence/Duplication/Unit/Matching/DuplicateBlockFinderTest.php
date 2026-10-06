@@ -12,10 +12,30 @@ use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateSearchRequest;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\RetokenizedFiles;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenNormalizer;
+use Qualimetrix\Tests\Analysis\Evidence\Duplication\Support\SplitSameContentFixture;
 
 #[CoversClass(DuplicateBlockFinder::class)]
 final class DuplicateBlockFinderTest extends TestCase
 {
+    #[Test]
+    public function itUnitesSplitEvidenceForTheSameNormalizedContent(): void
+    {
+        $request = SplitSameContentFixture::request();
+        $first = \array_slice($request->retokenized->streams[0]->values, SplitSameContentFixture::FIRST_OFFSET, SplitSameContentFixture::CONTENT_LENGTH);
+        $second = \array_slice($request->retokenized->streams[0]->values, SplitSameContentFixture::SECOND_OFFSET, SplitSameContentFixture::CONTENT_LENGTH);
+        self::assertSame($first, $second);
+        $hash = hash('sha256', json_encode(['tokenCount' => \count($first), 'tokens' => $first], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
+
+        $blocks = (new DuplicateBlockFinder())->find($request);
+        $sameContent = array_values(array_filter($blocks, static fn($block): bool => $block->contentHash === $hash));
+
+        self::assertCount(1, $sameContent);
+        self::assertSame(
+            ['src/F04.php:20', 'src/F04.php:86', 'src/F05.php:72', 'src/F05.php:98', 'src/F10.php:27', 'src/F10.php:60'],
+            array_map(static fn($location): string => $location->file->value() . ':' . $location->startLine, $sameContent[0]->locations),
+        );
+    }
+
     #[Test]
     public function itReportsEveryCopyInALargeBucketAsOneBlock(): void
     {

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
@@ -23,12 +24,14 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\Duplication\Support\SplitSameContentFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 
 #[CoversClass(CodeDuplicationRule::class)]
 #[CoversClass(CodeDuplicationOptions::class)]
 #[CoversClass(DuplicateBlock::class)]
 #[CoversClass(DuplicateLocation::class)]
+#[CoversClass(DuplicateBlockFinder::class)]
 final class CodeDuplicationRuleTest extends TestCase
 {
     private const string CONTENT_HASH = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -38,6 +41,51 @@ final class CodeDuplicationRuleTest extends TestCase
     protected function setUp(): void
     {
         $this->resultProvider = new DuplicationResultProvider();
+    }
+
+    #[Test]
+    public function itReportsEveryCopyWithUniqueIdentityAfterRealFinderEvidence(): void
+    {
+        $request = SplitSameContentFixture::request();
+        $first = \array_slice($request->retokenized->streams[0]->values, SplitSameContentFixture::FIRST_OFFSET, SplitSameContentFixture::CONTENT_LENGTH);
+        $second = \array_slice($request->retokenized->streams[0]->values, SplitSameContentFixture::SECOND_OFFSET, SplitSameContentFixture::CONTENT_LENGTH);
+        self::assertSame($first, $second);
+
+        $blocks = (new DuplicateBlockFinder())->find($request);
+        $hash = hash('sha256', json_encode(['tokenCount' => \count($first), 'tokens' => $first], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
+        $copies = [];
+        $expectedValues = [];
+        foreach ($blocks as $block) {
+            if ($block->contentHash !== $hash) {
+                continue;
+            }
+            foreach ($block->locations as $location) {
+                $where = $location->file->value() . ':' . $location->startLine;
+                $copies[] = $where;
+                $expectedValues[$where] = $location->codeLines;
+            }
+        }
+        sort($copies);
+        self::assertSame(
+            ['src/F04.php:20', 'src/F04.php:86', 'src/F05.php:72', 'src/F05.php:98', 'src/F10.php:27', 'src/F10.php:60'],
+            $copies,
+        );
+
+        $findings = $this->createRule()->analyze($this->contextWithBlocks(self::createStub(MetricRepositoryInterface::class), $blocks));
+        $keys = [];
+        $fingerprints = [];
+        $reportedValues = [];
+        foreach ($findings as $finding) {
+            $keys[] = $finding->subject->toCanonical() . ':' . $finding->occurrenceKey?->value;
+            $fingerprints[] = $finding->getFingerprint();
+            $where = $finding->location->pathString() . ':' . $finding->location->line();
+            $reportedValues[$where][] = $finding->metricValue;
+        }
+        foreach ($expectedValues as $where => $value) {
+            self::assertContains($value, $reportedValues[$where] ?? [], $where);
+        }
+        self::assertCount(\count($keys), array_unique($keys), 'Each source copy needs its own subject and occurrence');
+        self::assertCount(\count($fingerprints), array_unique($fingerprints));
     }
 
     #[Test]

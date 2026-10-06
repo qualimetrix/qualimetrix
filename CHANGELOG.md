@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Duplication merges balanced segments with identical normalized content into
+  one copy group before coverage reduction. Previously split groups could reuse
+  one occurrence key; affected baseline keys can become stale while copies gain
+  distinct identities. Review the stale entries and accept the newly distinct
+  file-copy identities after a complete run. Inline HTML ending with a line
+  break no longer contributes an empty following row, so copy values and
+  `min_lines` admission can change. Recheck affected boundaries and accepted
+  entries. The baseline schema does not change. See ADR 0097.
+
 - `ResolvedTarget` construction requires retained private-group membership
   evidence as its final argument. Obtain resolved targets through
   `TargetPath::resolve()` so claim, replacement and lock rechecks use the same
@@ -1002,6 +1011,11 @@ What changes for a configuration you already have:
   none. A consumer comparing the key set exactly must accept it.
 
 ### Changed
+
+- Inert baseline contenders for one duplicate identity produce one
+  `baseline.unused-entry` finding with their count. Removing their shared
+  selector removes all contenders only when every selected entry is an inert
+  duplicate of that same identity; other selector collisions still refuse.
 
 - Group-writable parents with a provably private primary group no longer refuse
   the owner's symbolic link or report false exposure. Complete supported NSS

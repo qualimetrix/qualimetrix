@@ -89,7 +89,9 @@ final class TokenNormalizer
                 $types[] = $type;
             }
             $startLines[] = $line;
-            $endLines[] = $currentLine;
+            $endLines[] = $type === \T_INLINE_HTML && $text !== '' && ($text[\strlen($text) - 1] === "\n" || $text[\strlen($text) - 1] === "\r")
+                ? max($line, $currentLine - 1)
+                : $currentLine;
             $startBytes[] = $startByte;
             $endBytes[] = $byte;
         }

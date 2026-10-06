@@ -88,9 +88,11 @@ final class DuplicateBlockFinder
             }
             unset($this->candidates);
 
+            $merged = $this->mergeSameContent($segments);
+
             return array_map(
                 fn(array $match): DuplicateBlock => $this->buildBlock(...$match),
-                $segments->withoutSubsumed($this->coverSpan(...)),
+                $merged->withoutSubsumed($this->coverSpan(...)),
             );
         } finally {
             // Exceptions must also release the dataset held by this long-lived instance.
@@ -294,6 +296,74 @@ final class DuplicateBlockFinder
             tokens: $length,
             contentHash: $this->contentHash($this->tokensAt($first), PackedPosition::offset($first), $length),
         );
+    }
+
+    private function mergeSameContent(DuplicateMatchCandidates $segments): DuplicateMatchCandidates
+    {
+        /** @var list<array{length: int, first: int, copies: list<int>}> $groups */
+        $groups = [];
+        /** @var array<string, list<int>> $byHash */
+        $byHash = [];
+
+        foreach ($segments->matches() as [$length, $copies]) {
+            $first = $copies[0];
+            $hash = $this->contentHash($this->tokensAt($first), PackedPosition::offset($first), $length);
+            $matched = false;
+            foreach ($byHash[$hash] ?? [] as $index) {
+                if ($groups[$index]['length'] !== $length || !$this->sameContent($first, $groups[$index]['first'], $length)) {
+                    continue;
+                }
+                $existing = $groups[$index];
+                $joined = $existing['copies'];
+                foreach ($copies as $copy) {
+                    $joined[] = $copy;
+                }
+                $groups[$index] = ['length' => $existing['length'], 'first' => $existing['first'], 'copies' => $joined];
+                $matched = true;
+
+                break;
+            }
+            if (!$matched) {
+                $byHash[$hash][] = \count($groups);
+                $groups[] = ['length' => $length, 'first' => $first, 'copies' => $copies];
+            }
+        }
+
+        $merged = new DuplicateMatchCandidates();
+        foreach ($groups as $group) {
+            $copies = $group['copies'];
+            sort($copies, \SORT_NUMERIC);
+            $unique = [];
+            $previous = null;
+            foreach ($copies as $copy) {
+                if ($copy !== $previous) {
+                    $unique[] = $copy;
+                    $previous = $copy;
+                }
+            }
+            $reportable = $this->reportableCopies($unique, $group['length']);
+            if ($reportable !== null) {
+                $merged->add($group['length'], $reportable);
+            }
+        }
+
+        return $merged;
+    }
+
+    private function sameContent(int $left, int $right, int $length): bool
+    {
+        $leftValues = $this->tokensAt($left)->values;
+        $rightValues = $this->tokensAt($right)->values;
+        $leftOffset = PackedPosition::offset($left);
+        $rightOffset = PackedPosition::offset($right);
+
+        for ($index = 0; $index < $length; $index++) {
+            if ($leftValues[$leftOffset + $index] !== $rightValues[$rightOffset + $index]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
