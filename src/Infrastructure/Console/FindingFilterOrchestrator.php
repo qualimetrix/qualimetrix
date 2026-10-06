@@ -109,6 +109,7 @@ final readonly class FindingFilterOrchestrator
                 $configuration->projectScope->universe,
                 $this->composerReader->read($configuration->projectRoot)->psr4Roots(),
                 $this->projectTree,
+                $result->measured->subjectCoverage,
             ), $this->ruleCoverage);
         }
         $filterResult = $this->findingProjector->project(

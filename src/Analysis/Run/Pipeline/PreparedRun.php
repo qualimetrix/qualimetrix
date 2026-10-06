@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Pipeline;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
@@ -46,6 +47,7 @@ final readonly class PreparedRun
         public AnalysisContext $context,
         public RuleExecutionResult $ruleExecution,
         public AnalysisCoverage $coverage,
+        public SubjectCoverageFacts $subjectCoverage,
         public array $unmatchedExcludeFindings,
     ) {}
 }

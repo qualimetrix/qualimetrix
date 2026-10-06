@@ -200,9 +200,11 @@ final readonly class ReportProjectScope
             self::UNKNOWN => 'Project scope unknown: the project universe cannot be established completely.'
                 . ($this->unjudgedChannels === [] ? '' : ' Channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.')
                 . $this->describeUnjudgedValues(),
-            default => $this->unjudgedValues === []
+            default => $this->unjudgedChannels === [] && $this->unjudgedValues === []
                 ? null
-                : 'Project scope covered: the analysed paths cover every autoload target.' . $this->describeUnjudgedValues(),
+                : 'Project scope covered: the analysed paths cover every autoload target.'
+                    . ($this->unjudgedChannels === [] ? '' : ' Channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.')
+                    . $this->describeUnjudgedValues(),
         };
         if ($this->reasons !== []) {
             $description = ($description ?? 'Project scope covered.') . ' Source reasons: ' . implode('; ', array_map(static fn(ProjectScopeReason $reason): string => (string) json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES), $this->reasons)) . '.';

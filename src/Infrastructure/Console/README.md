@@ -144,6 +144,8 @@ the existing verdict/selection/sweep fields. The command passes no separate note
 parameter. `ReportCoverageProjection` transfers named `excluded` independently
 of `discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
 terminal entries. Diagnostics remain on stderr and structured stdout retains its format.
+The report also carries the measured project scope: JSON publishes it as
+`scope.project_scope`, and text combines its explanation with the coverage note.
 
 The Console package is an adapter. It imports Run, Configuration, Finding, and
 Reporting contracts, parses options, configures one run, and renders

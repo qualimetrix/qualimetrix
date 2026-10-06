@@ -38,6 +38,15 @@ mean absence. Equal path sets and exclusion definitions can establish equality
 without a metadata scan; changed definitions require evidence about their delta.
 A project subject always requires whole-region coverage.
 
+A missing exact file or declaration needs a positively present recorded root
+that contains its path before absence becomes stale. A directory alias can
+supply that evidence when its canonical target contains the subject. A removed
+recorded root or unknown metadata cannot. A run-wide producer's deleted exact
+subject can still be stale; a present subject requires its wider population.
+Without a current member proving PSR-4 containment, namespace absence needs the
+whole region. Without a baseline entry, `baseline:explain` instead requires a
+captured source root, a selected containing root and positive directory presence.
+
 A complete comparable missing group is **stale**. An absent unselected producer
 is **unmeasured**; an absent incomparable entry is **outside coverage**. A present
 incomparable group is **not-compared** and keeps its own severity, accepted level

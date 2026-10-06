@@ -99,15 +99,22 @@ Inline/
   cannot: whether *this* directive silenced anything.
 - `InlineDirectivePolicyInterface` promises the four `annotation.*` channel
   names and the moments Run needs: `prepare()` before rule execution,
-  `auditDirectiveUsage()` and `directiveVerdicts()` after it. Only
+  `auditDirectiveUsage()` and `directiveVerdicts()` after it, receiving the same
+  measured `SubjectCoverageFacts` as their required final argument. Only
   `Analysis\Run\InlineDirectiveRun` calls them using the same invocation
   policy instance. Authored state is prepared independently of whether its
   reporting rule runs; a channel is a rule's output, a verdict is what a
   caller asked for.
+
 - `ThresholdDirectiveAuditInterface` promises the other half of the same
   question to the same consumer, and `ThresholdDirectiveAuditInput` is the
   prepared run it needs to answer: the context the rules already ran against,
   the executor that ran them, and what they produced.
+
+An otherwise inert suppression is `Unmeasured` with `scope-unmeasured` when its
+producer's subject was not covered. A narrowed run cannot prove a run-dependent
+declaration unused; an analyzed local member can still be judged. Effective,
+refused and disabled-producer verdicts keep their earlier meanings.
 
 ThresholdDirectiveAudit refuses unaddressable directives through RefusedDirectives
 before ThresholdDirectiveEligibility checks a directly live producer and its

@@ -695,6 +695,32 @@ final class BoundaryExplanationServiceTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotInferCurrentAbsenceForAnUnrecordedFileOutsideTheCapturedUniverse(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $explanation = $this->explain(
+            'file:src/Gone.php',
+            $channel,
+            null,
+            [],
+            [],
+            [],
+            coverage: $this->currentRun([], [], captured: false),
+        );
+
+        self::assertSame(CurrentMeasurement::OUTSIDE_COVERAGE, $explanation->boundaries[0]->now->state);
+    }
+
+    #[Test]
+    public function itReportsCurrentAbsenceForAnUnrecordedFileInsideAKnownSelectedRoot(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $explanation = $this->explain('file:src/Gone.php', $channel, null, [], [], [], coverage: $this->currentRun([], []));
+
+        self::assertSame(CurrentMeasurement::NOTHING_REPORTED, $explanation->boundaries[0]->now->state);
+    }
+
+    #[Test]
     public function itReadsKnownEntryNowFromTheCeilingOutcome(): void
     {
         $channel = new FindingChannel('complexity.ccn');
@@ -802,7 +828,7 @@ final class BoundaryExplanationServiceTest extends TestCase
      * @param list<string> $present
      * @param ?Closure(): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence $presence
      */
-    private function currentRun(array $analyzed, array $present, ?\Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions $exclusions = null, ?Closure $presence = null): RunCoverage
+    private function currentRun(array $analyzed, array $present, ?\Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions $exclusions = null, ?Closure $presence = null, bool $captured = true): RunCoverage
     {
         $root = \Qualimetrix\Core\Path\AbsolutePath::fromString('/tmp/qmx-explain-fixture');
         $files = array_map(RelativePath::fromString(...), $present);
@@ -812,6 +838,10 @@ final class BoundaryExplanationServiceTest extends TestCase
              * @param ?Closure(): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence $presence
              */
             public function __construct(private array $files, private ?Closure $presence) {}
+            public function hasDirectory(\Qualimetrix\Core\Path\AbsolutePath $directory): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
             public function hasFile(\Qualimetrix\Core\Path\AbsolutePath $root, RelativePath $file): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
             {
                 if ($this->presence !== null) {
@@ -830,9 +860,10 @@ final class BoundaryExplanationServiceTest extends TestCase
             \Qualimetrix\Analysis\Policy\Baseline\RunScope::fromRecorded(['src']),
             new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage(array_map(RelativePath::fromString(...), $analyzed), [], []),
             $exclusions ?? self::fixtureExclusions(),
-            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, [], [], [], true, []),
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, $captured ? [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]] : [], [], [], true, []),
             ['App\\' => ['src/']],
             $tree,
+            \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), array_map(RelativePath::fromString(...), $analyzed), []),
         );
     }
 

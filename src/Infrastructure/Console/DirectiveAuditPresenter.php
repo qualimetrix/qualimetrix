@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\ReportCoverage;
+use Qualimetrix\Reporting\ReportProjectScope;
 
 /**
  * The two projections of one directive audit.
@@ -71,6 +72,7 @@ final readonly class DirectiveAuditPresenter
             'failed_files' => $report->coverage->failedFilesCount(),
             'complete' => $report->coverage->isComplete(),
             'produced_findings' => $report->producedFindings,
+            'project_scope' => ReportProjectScope::measured($report->projectScope, [], [])->toArray(),
         ];
         if ($this->note !== null) {
             $scope['note'] = $this->note;
@@ -90,17 +92,19 @@ final readonly class DirectiveAuditPresenter
     private function coverageNote(): ?string
     {
         $coverage = $this->report->coverage;
-        if (!$coverage->isIntentionallyEmpty()) {
-            return null;
-        }
-
-        return CoverageNarrator::describe(new ReportCoverage(
+        $emptyNote = $coverage->isIntentionallyEmpty() ? CoverageNarrator::describe(new ReportCoverage(
             $coverage->discoveredFiles(),
             $coverage->analyzedFilesCount(),
             $coverage->generatedExcludedFilesCount(),
             $coverage->failedFilesCount(),
             excluded: $coverage->excludedCount(),
-        ));
+        )) : null;
+        $scopeNote = ReportProjectScope::measured($this->report->projectScope, [], [])->describe();
+
+        $notes = array_filter([$emptyNote, $scopeNote], static fn(?string $note): bool => $note !== null && $note !== '');
+        $description = implode(' ', $notes);
+
+        return $description !== '' ? $description : null;
     }
 
     /** @return list<string> */

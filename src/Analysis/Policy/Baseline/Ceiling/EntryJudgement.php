@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -109,12 +110,28 @@ final readonly class EntryJudgement
         if (!\in_array($level, $declaration->levels, true)) {
             return Absence::notCompared(IncomparabilityReason::ProducerNotMeasured);
         }
-        $region = SubjectRegion::forIdentity(
-            $entry->identity,
-            $this->declarations->reachAt($entry->identity->channel, $level),
-            $this->coverage->psr4Roots,
-        );
-        $comparison = EntryComparability::judge($region, $this->baseline, $this->coverage);
+        $reach = $this->declarations->reachAt($entry->identity->channel, $level);
+        $subjectFile = SubjectRegion::subjectFile($entry->identity);
+        $presence = $subjectFile === null ? null : $this->coverage->hasFile($subjectFile);
+        if ($presence === \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Unknown) {
+            return Absence::notCompared(IncomparabilityReason::MetadataUnknown);
+        }
+        if ($presence === \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Absent) {
+            $comparison = EntryComparability::judge(Region::file($subjectFile), $this->baseline, $this->coverage);
+            if ($comparison->canCompare() && !$this->coverage->subjectCoverage->covers($reach, $level, SubjectCoverageObservation::verifiedAbsentFile($subjectFile))) {
+                $comparison = EntryComparability::refused(IncomparabilityReason::OutsideCoverage);
+            }
+        } else {
+            $region = SubjectRegion::forIdentity(
+                $entry->identity,
+                $reach,
+                $this->coverage->psr4Roots,
+            );
+            $comparison = EntryComparability::judge($region, $this->baseline, $this->coverage);
+            if ($comparison->canCompare() && $region->kind !== 'file' && !$this->coverage->subjectCoverage->covers($reach, $level, SubjectCoverageObservation::nonlocalRegion())) {
+                $comparison = EntryComparability::refused(IncomparabilityReason::OutsideCoverage);
+            }
+        }
         if ($comparison->canCompare()) {
             return Absence::stale();
         }
@@ -127,5 +144,4 @@ final readonly class EntryJudgement
     {
         return new AcceptedLevel($entry->magnitudes, $entry->count);
     }
-
 }

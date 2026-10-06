@@ -517,7 +517,9 @@ Each published skipped value has `{channel, option, pattern}`.
 `unjudgedChannels` lists channels with no judged value; a partially judged channel
 can be absent while its skipped values remain named. Reasons retain
 flat named cause fields even on a `covered` run. Namespace location still uses
-accepted PSR-4 facts independently of state. `metrics` and `suppressed` share
+accepted PSR-4 facts independently of state. Human wording names unjudged
+channels even when state is `covered`: path coverage alone does not judge every
+channel. `metrics` and `suppressed` share
 this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
 and human formats render the scope explanation; `gitlab` and `checkstyle` have
 no diagnostic entry because their consumers treat every entry as a finding.

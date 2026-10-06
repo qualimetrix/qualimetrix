@@ -13,4 +13,6 @@ interface ProjectTreeQueryInterface
     public function snapshot(ProjectScopeUniverse $universe): ProjectTreeSnapshot;
 
     public function hasFile(AbsolutePath $root, RelativePath $file): ProjectEntryPresence;
+
+    public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence;
 }

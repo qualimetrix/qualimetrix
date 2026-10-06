@@ -119,6 +119,15 @@ are refused. Run supplies facts, and readers ask their own question.
 Settled `Removed` and named inaccessible evidence survive withheld selector
 completeness. See [ADR 0093](../../../docs/adr/0093-measured-run-scope-and-project-tree-queries.md).
 
+`SubjectCoverageFacts` indexes the measured run's analyzed and failed files once.
+Its `covers(ValueReach, SymbolLevel, SubjectCoverageObservation)` query separates
+an analyzed local file, a positively verified absent file and a nonlocal region.
+Local member evidence can survive an unrelated failed file; a nonlocal absence
+needs a known complete declaration population. A verified absent exact file can
+prove absence even for a run-wide producer. A present run-wide subject still
+requires its wider population. Baseline and Inline use this same Finding-owned
+answer instead of deriving separate scope heuristics.
+
 `LevelActivity` records the producer/level cells admitted by the committed
 `RuleEnablement`. `RuleExecutionInterface::levelActivity()` reads that immutable
 answer without running rules. Rule instances no longer provide a second activity

@@ -105,6 +105,9 @@ The pipeline combines captured universe and final selection once. Its final
 judgement reaches `AnalysisContext`, threshold counterfactual contexts and
 `AnalysisResult`. `PreparedRun` retains context without a duplicate scope field.
 Console publishes final measurement rather than the pre-discovery target state.
+The pipeline creates Finding's `SubjectCoverageFacts` once after collection.
+`PreparedRun` and `MeasuredRunResult` share that instance; merging measured
+results builds one index from their combined coverage and selected judgement.
 An omitted empty directory need not narrow final paths: observed missing PHP does.
 Git reporting changes publication while preserving analysis paths and universe.
 
@@ -131,7 +134,8 @@ Six declaration-absence channels ask the first question:
 namespace values also ask the first question. Finding owns this vocabulary.
 
 `ProjectTreeQueryInterface` exposes opt-in `snapshot(ProjectScopeUniverse)` and
-`hasFile(AbsolutePath, RelativePath)` metadata queries, with `Present`, `Absent`
+`hasFile(AbsolutePath, RelativePath)` and `hasDirectory(AbsolutePath)` metadata
+queries, with `Present`, `Absent`
 and `Unknown`. The snapshot sorts distinct regular PHP paths under captured
 autoload targets, retains inaccessible metadata, applies the built-in floor,
 and ignores authored exclusions and generated policy. It opens no source and
@@ -139,6 +143,8 @@ follows no walked directory links. Unknown targets do not become a known empty
 universe. Ordinary analysis requests no additional snapshot. Baseline metadata
 consumers can request it explicitly; lifecycle integration is separate. It costs
 O(entries) time and O(PHP files) memory, with no cap or persistent index.
+Directory queries establish positive root presence, including inspectable named
+directory links; an unlistable directory remains `Unknown`.
 
 Collection is the only parallel phase. Private `SourceReader` supplies one snapshot
 to parsing, LOC and Inline extraction. Read refusal yields `unreadable-file` before
@@ -255,7 +261,8 @@ contract on the same class rather than a second operation on
 `AnalysisPipelineInterface`: the consumers of that contract analyse and do not
 audit, the same split `DependencyGraphAnalyzerInterface` already makes for the
 graph. The composition root binds one instance under both. `DirectiveAuditReport`
-carries the coverage the verdicts were measured under, because a verdict is a
+carries the coverage and required `ProjectScopeMeasurement` the verdicts were
+measured under, because a verdict is a
 statement about one run — a threshold retuning a metric computed over the
 analysed subgraph is live over one tree and dead over a subdirectory of it, and
 neither answer is wrong. The rule selection is deliberately not carried: it is

@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TargetPath::resolve()` so claim, replacement and lock rechecks use the same
   membership policy. See ADR 0096.
 
+- Absence and unused-directive judgements require measured subject coverage.
+  A narrowed run no longer calls a run-dependent suppression unused; a missing
+  baseline subject needs a positively present recorded containing root before
+  it becomes stale. Run with the complete required population to settle an
+  unmeasured result. `baseline:explain` without an entry uses captured and selected
+  roots rather than treating an unrecorded missing file as covered. See ADR 0093.
+  PHP consumers must supply `SubjectCoverageFacts` to `MeasuredRunResult`,
+  `RunCoverage`, `auditDirectiveUsage()` and `directiveVerdicts()`; implement
+  `ProjectTreeQueryInterface::hasDirectory()` with tri-state metadata evidence.
+  `DirectiveAuditReport` requires the measured `ProjectScopeMeasurement` before
+  its optional sweep. Accept the new JSON `scope.project_scope` member and text
+  scope explanation when consuming directive audits.
+
 - `ConfigSchema::EXCLUDES` and the `excludes` resolved result key are removed.
   Use `ConfigSchema::EXCLUDE` and `exclude`; YAML `exclude:` and CLI `--exclude`
   keep their spelling. `ConfigurationRoot::Cache` is removed; register Cache's

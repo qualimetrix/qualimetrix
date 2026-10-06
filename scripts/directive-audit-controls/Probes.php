@@ -1498,9 +1498,9 @@ final class Probes
                 'usage-reporting-gate-silences-verdicts',
                 'the audit\'s own suppression verdicts are gated by the rule\'s post-execution reporting flag, so disabling the directive rule silences them too',
                 self::PRODUCER_RULE,
-                ['    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
+                ['    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array
     {
-        $groups = [];' => '    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
+        $groups = [];' => '    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array
     {
         if ($this->usageReportingSeverity === null) {
             return [];
@@ -1515,6 +1515,11 @@ final class Probes
                 [
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itKeepsTwoRefusalsOfDifferentFormsOnOneLineApart',
                     'Qualimetrix.Tests.Analysis.Policy.Inline.Integration.DirectiveUsageTest::itReportsAnUnreadableTagUnderTheFormItWasWrittenAs',
+                ],
+            )->alsoReddens(
+                'the vocabulary census observes the same refused usage verdicts after the reporting gate',
+                [
+                    'Qualimetrix.Governance.DirectiveVocabulary.DirectiveEffectVocabularyAgreementTest::itAsksForEveryRefusalTheProductCanPublishAndNoOther',
                 ],
             ),
             Probe::breaking(

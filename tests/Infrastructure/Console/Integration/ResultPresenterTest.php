@@ -517,6 +517,7 @@ final class ResultPresenterTest extends TestCase
                 namespaceTree: $namespaceTree,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],

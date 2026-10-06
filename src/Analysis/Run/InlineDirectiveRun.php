@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -46,9 +47,9 @@ final readonly class InlineDirectiveRun
      *
      * @return list<Finding>
      */
-    public function usageFindings(array $produced, LevelActivity $activity): array
+    public function usageFindings(array $produced, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
-        return $this->policy->auditDirectiveUsage($produced, $activity);
+        return $this->policy->auditDirectiveUsage($produced, $activity, $subjectCoverage);
     }
 
     /**
@@ -61,13 +62,14 @@ final readonly class InlineDirectiveRun
     public function verdicts(
         array $produced,
         LevelActivity $activity,
+        SubjectCoverageFacts $subjectCoverage,
         AnalysisContext $context,
         RuleExecutionInterface $executor,
         RuleExecutionResult $baseline,
         DirectiveSweepScope $sweep,
     ): array {
         $verdicts = [
-            ...$this->policy->directiveVerdicts($produced, $activity),
+            ...$this->policy->directiveVerdicts($produced, $activity, $subjectCoverage),
             ...$this->thresholdAudit->verdicts(new ThresholdDirectiveAuditInput($context, $executor, $baseline, $sweep)),
         ];
 

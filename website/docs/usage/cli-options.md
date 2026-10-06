@@ -1149,19 +1149,23 @@ input/configuration, including truly undiscovered empty input; `4` incomplete
 input; `1` unexpected command failure. Incompleteness takes priority.
 Text and JSON retain all sites, including refusals whose channels the final
 selection does not publish. A measured scope note appears in text and JSON
-`scope.note`.
+`scope.note`. JSON also publishes the measured project scope at
+`scope.project_scope`, including state, unjudged channels and source reasons.
 
 There are five verdicts:
 
-| Verdict               | What it states                                                                                 |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| effective             | It silenced a produced finding or its removal changes the threshold result.                    |
-| applied-boundary-only | It applied; only the boundary printed by the finding moved (JSON: `overrun`).                  |
-| inert                 | It silenced nothing or its removal changes nothing; exit 2 only if the boundary is observable. |
-| unmeasured            | Its producer did not run, or another threshold directive masks it.                             |
-| refused               | It could not be admitted or applied, with a nonempty list of refusal details.                  |
+| Verdict               | What it states                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| effective             | It silenced a produced finding or its removal changes the threshold result.                     |
+| applied-boundary-only | It applied; only the boundary printed by the finding moved (JSON: `overrun`).                   |
+| inert                 | It silenced nothing or its removal changes nothing; exit 2 only if the boundary is observable.  |
+| unmeasured            | Its producer did not run, its subject was not covered, or another threshold directive masks it. |
+| refused               | It could not be admitted or applied, with a nonempty list of refusal details.                   |
 
 Every read tag has one site, independent of its declaration bindings.
+An otherwise inert suppression stays unmeasured when the run cannot judge its
+producer's subject. A narrowed run cannot prove a run-dependent declaration
+unused; analyzed local member evidence can still be judged.
 Suppression/diagnostic positions distinguish identical comments on one line;
 JSON still publishes `file`, `line`, `form` and `target`, not the internal
 position. For next-line controls, `line` is the tag line, not the target

@@ -92,6 +92,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.0,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), $files, []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -148,6 +149,11 @@ final readonly class StubBaselineRun implements BaselineRunInterface
 
                 return ProjectEntryPresence::Absent;
             }
+
+            public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
+            {
+                return ProjectEntryPresence::Present;
+            }
         };
         $coverage = new RunCoverage(
             RunScope::fromRecorded($this->scope),
@@ -156,6 +162,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
             $configuration->projectScope->universe,
             [],
             $tree,
+            $result->measured->subjectCoverage,
         );
 
         return new BaselineRunContext(

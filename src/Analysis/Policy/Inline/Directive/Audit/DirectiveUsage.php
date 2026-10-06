@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
@@ -21,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The post-execution half of the inline-directive subject: what each authored
@@ -83,11 +86,11 @@ final class DirectiveUsage
      *
      * @return list<DirectiveVerdict>
      */
-    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity): array
+    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
         return array_map(
             static fn(array $pair): DirectiveVerdict => $pair['verdict'],
-            $this->evaluate($suppressionsByFile, $findings, $activity),
+            $this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage),
         );
     }
 
@@ -105,10 +108,11 @@ final class DirectiveUsage
         array $findings,
         Severity $severity,
         LevelActivity $activity,
+        SubjectCoverageFacts $subjectCoverage,
     ): array {
         $stale = [];
 
-        foreach ($this->evaluate($suppressionsByFile, $findings, $activity) as $pair) {
+        foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
             if ($pair['verdict']->effect === DirectiveEffect::Inert) {
                 $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
             }
@@ -167,7 +171,7 @@ final class DirectiveUsage
      *
      * @return list<array{verdict: DirectiveVerdict, directive: Suppression}>
      */
-    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity): array
+    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
         $findings = $this->suppressible($findings);
         $evaluated = [];
@@ -178,11 +182,12 @@ final class DirectiveUsage
                 if ($this->refused->suppression(RelativePath::fromString($file), $directive) !== null) {
                     continue;
                 }
-                $reason = $this->unmeasurableReason($group, $activity);
+                $fired = self::anyOfTheGroupFired($file, $group, $findings);
+                $reason = $fired ? null : $this->unmeasurableReason($file, $group, $activity, $subjectCoverage);
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
-                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,
+                    $fired => DirectiveEffect::Effective,
                     default => DirectiveEffect::Inert,
                 };
 
@@ -251,14 +256,22 @@ final class DirectiveUsage
 
     /** @param non-empty-list<Suppression> $group */
     private function unmeasurableReason(
+        string $file,
         array $group,
         LevelActivity $activity,
+        SubjectCoverageFacts $subjectCoverage,
     ): ?DirectiveUnmeasurableReason {
         $suppression = $group[0];
         if ($suppression->target()->appliesToEveryChannel()) {
-            return null;
+            return $subjectCoverage->covers(
+                \Qualimetrix\Analysis\Finding\Contract\ValueReach::Run,
+                SymbolLevel::Project,
+                SubjectCoverageObservation::nonlocalRegion(),
+            ) ? null : DirectiveUnmeasurableReason::ScopeUnmeasured;
         }
 
+        $enabled = false;
+        $uncovered = false;
         foreach ($this->addressedCodes($suppression) as $code) {
             $producer = $this->identity->producerOf($code);
             if ($producer === null) {
@@ -270,13 +283,34 @@ final class DirectiveUsage
                 continue;
             }
 
-            if ($this->producerRan($code, $producer, $group, $activity)) {
-                return null;
+            if (!$this->producerRan($code, $producer, $group, $activity)) {
+                continue;
             }
-
+            $enabled = true;
+            $declaration = $this->declarations->declarationFor(new FindingChannel($code));
+            if ($declaration === null) {
+                $uncovered = true;
+                continue;
+            }
+            $levels = DirectiveLevels::ofGroup($group);
+            foreach ($levels === [] ? $declaration->levels : $levels as $level) {
+                if (!\in_array($level, $declaration->levels, true)) {
+                    continue;
+                }
+                $observation = $level === SymbolLevel::Namespace_ || $level === SymbolLevel::Project
+                    ? SubjectCoverageObservation::nonlocalRegion()
+                    : SubjectCoverageObservation::analyzedFile(RelativePath::fromString($file));
+                if (!$subjectCoverage->covers($this->declarations->reachAt(new FindingChannel($code), $level), $level, $observation)) {
+                    $uncovered = true;
+                }
+            }
         }
 
-        return DirectiveUnmeasurableReason::ProducerDisabled;
+        return match (true) {
+            $uncovered => DirectiveUnmeasurableReason::ScopeUnmeasured,
+            !$enabled => DirectiveUnmeasurableReason::ProducerDisabled,
+            default => null,
+        };
     }
 
     /** @param non-empty-list<Suppression> $group */

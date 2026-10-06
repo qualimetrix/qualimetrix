@@ -73,6 +73,15 @@ final class FindingFilterOrchestratorTest extends TestCase
     /** @var list<string> */
     private array $tempFiles = [];
 
+    private string $tempRoot;
+
+    protected function setUp(): void
+    {
+        $this->tempRoot = \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory::create('qmx-orchestrator-');
+        mkdir($this->tempRoot . '/src/Service', 0o755, true);
+        file_put_contents($this->tempRoot . '/src/Service/UserService.php', '<?php');
+    }
+
     protected function tearDown(): void
     {
         foreach ($this->tempFiles as $file) {
@@ -80,6 +89,7 @@ final class FindingFilterOrchestratorTest extends TestCase
                 unlink($file);
             }
         }
+        \Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory::remove($this->tempRoot);
     }
 
     #[Test]
@@ -542,10 +552,11 @@ final class FindingFilterOrchestratorTest extends TestCase
         return AnalysisResult::fromRun(
             measured: new MeasuredRunResult(
                 repository: $repository,
-                coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+                coverage: new AnalysisCoverage([RelativePath::fromString('src/Service/UserService.php')], [], []),
                 namespaceTree: null,
-                projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString(sys_get_temp_dir()), true, [], [], [], true, []), [AbsolutePath::fromString(sys_get_temp_dir())], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
+                projectScope: $projectScope ?? new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(AbsolutePath::fromString($this->tempRoot), true, [], [], [], true, []), [AbsolutePath::fromString($this->tempRoot)], \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement()),
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [RelativePath::fromString('src/Service/UserService.php')], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -559,10 +570,10 @@ final class FindingFilterOrchestratorTest extends TestCase
     private function createScopeResolution(): GitScopeResolution
     {
         return new GitScopeResolution(
-            paths: [],
+            paths: [AbsolutePath::fromString($this->tempRoot . '/src/Service/UserService.php')],
             gitClient: null,
             reportScope: null,
-            projectRoot: AbsolutePath::fromString(sys_get_temp_dir()),
+            projectRoot: AbsolutePath::fromString($this->tempRoot),
         );
     }
 }

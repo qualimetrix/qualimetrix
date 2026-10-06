@@ -80,6 +80,33 @@ final class DirectivesCommandTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotFailAWarningGateForANocDirectiveOnASelectedParent(): void
+    {
+        $this->writeSource('Parent.php', <<<'SOURCE'
+            <?php
+            // @qmx-ignore-file design.noc -- child lies outside this selection
+            namespace Fixture;
+            class ParentClass {}
+            SOURCE);
+        $this->writeSource('Child.php', <<<'SOURCE'
+            <?php
+            namespace Fixture;
+            class ChildClass extends ParentClass {}
+            SOURCE);
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Fixture\\\\":"src/"}}}');
+        $config = $this->writeConfig("fail_on: warning\nrules:\n  annotation.directive:\n    unused-directive-severity: warning\n");
+
+        $tester = $this->runCheck([
+            'paths' => [$this->tempDir . '/src/Parent.php'],
+            '--config' => $config,
+            '--only-rule' => ['design.noc', 'annotation.unused-directive'],
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringNotContainsString('annotation.unused-directive', $tester->getDisplay());
+    }
+
+    #[Test]
     public function itExitsCleanWhenEveryDirectiveStillDoesSomething(): void
     {
         $this->writeSource('Live.php', self::sevenParameterMethod(
@@ -154,6 +181,7 @@ final class DirectivesCommandTest extends TestCase
     #[Test]
     public function itReportsAnEmptyWildcardSuppressionAsInert(): void
     {
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Fixture\\\\":"src/"}}}');
         $this->writeSource('Unmeasured.php', <<<'SOURCE'
             <?php
 
@@ -215,6 +243,7 @@ final class DirectivesCommandTest extends TestCase
             )],
             new AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], []),
             1,
+            self::measuredScope(),
         );
 
         self::assertSame(Command::SUCCESS, self::exitCodeFor($report));
@@ -226,6 +255,7 @@ final class DirectivesCommandTest extends TestCase
             )],
             new AnalysisCoverage([RelativePath::fromString('src/Foo.php')], [], []),
             1,
+            self::measuredScope(),
         );
 
         self::assertSame(2, self::exitCodeFor($observable));
@@ -438,6 +468,7 @@ final class DirectivesCommandTest extends TestCase
     #[Test]
     public function itNoLongerLetsAFormWithoutARuleFilterSilenceTheBannedChannel(): void
     {
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Fixture\\\\":"src/"}}}');
         $this->writeSource('NoFilter.php', <<<'SOURCE'
             <?php
             // @qmx-ignore-file -- whatever is here
@@ -1693,6 +1724,19 @@ final class DirectivesCommandTest extends TestCase
         self::assertIsArray($decoded);
 
         return $decoded;
+    }
+
+    private static function measuredScope(): \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement
+    {
+        $root = \Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture');
+
+        return new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, [], [], [], true, []),
+            [$root],
+            \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+            [],
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+        );
     }
 
     private static function removeDirectory(string $dir): void

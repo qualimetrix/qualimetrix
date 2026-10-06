@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
@@ -150,7 +151,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $this->usageReportingSeverity = $severity;
     }
 
-    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity): array
+    public function directiveVerdicts(array $producedFindings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array
     {
         $groups = [];
         foreach ($this->refusedDirectives() as $refusal) {
@@ -166,7 +167,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
                 DirectiveEffect::Refused,
                 refusals: $group['refusals'],
             ), array_values($groups)),
-            ...$this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity),
+            ...$this->usage->verdicts($this->suppressions, $producedFindings, $levelActivity, $subjectCoverage),
         ];
     }
 
@@ -176,13 +177,13 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         return $this->refused->all($this->authoredSuppressions(), $this->authoredThresholdOverrides(), $this->authoredThresholdDiagnostics());
     }
 
-    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity): array
+    public function auditDirectiveUsage(array $findings, LevelActivity $levelActivity, SubjectCoverageFacts $subjectCoverage): array
     {
         $severity = $this->usageReportingSeverity;
         if ($severity === null) {
             return [];
         }
 
-        return $this->usage->stale($this->suppressions, $findings, $severity, $levelActivity);
+        return $this->usage->stale($this->suppressions, $findings, $severity, $levelActivity, $subjectCoverage);
     }
 }

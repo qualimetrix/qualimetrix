@@ -182,6 +182,46 @@ final class EntryComparabilityTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itDoesNotCallAMissingFileStaleWhenTheRecordedRootIsMissing(): void
+    {
+        $entry = new BaselineEntry(new BaselineIdentity('file:src/Legacy.php', new FindingChannel('code-smell.goto')), null, 1);
+        $baseline = new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), ['src'], [$entry], new RecordedExclusions([], GeneratedFilePolicy::Exclude));
+        $coverage = self::coverage([], ['src/Other'], $baseline->exclusions, self::tree([], true, directoryPresence: ProjectEntryPresence::Absent));
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $declarations->declare('code-smell.goto', ChannelDeclaration::occurrence(SymbolLevel::File));
+
+        $outcome = (new BaselineCeilingStage($baseline, $declarations, $coverage, []))->judgeAll([]);
+
+        self::assertSame([], $outcome->staleEntries);
+        self::assertSame([$entry], $outcome->outsideCoverageEntries);
+    }
+
+    #[Test]
+    public function itDoesNotUseAnUnrelatedExistingAbsoluteRootToProveFileAbsence(): void
+    {
+        $recordedRoot = (string) realpath(sys_get_temp_dir());
+        $baseline = self::baseline([], [$recordedRoot]);
+        $coverage = self::coverage([], ['src/Other'], $baseline->exclusions, self::tree([], true));
+
+        self::assertSame(
+            IncomparabilityReason::OutsideCoverage,
+            EntryComparability::judge(Region::file(RelativePath::fromString('src/Gone.php')), $baseline, $coverage)->reason,
+        );
+    }
+
+    #[Test]
+    public function itCanCallADeletedFileSubjectStaleEvenWhenItsProducerReadsTheRun(): void
+    {
+        $entry = new BaselineEntry(new BaselineIdentity('file:src/Legacy.php', new FindingChannel('duplication.clone')), [10], 1);
+        $baseline = new Baseline(new DateTimeImmutable('2026-01-01T00:00:00+00:00'), ['src'], [$entry], new RecordedExclusions([], GeneratedFilePolicy::Exclude));
+        $coverage = self::coverage([], ['src/Other'], $baseline->exclusions, self::tree([], true));
+
+        $outcome = (new BaselineCeilingStage($baseline, StubChannelDeclarationRegistry::withDefaults(), $coverage, []))->judgeAll([]);
+
+        self::assertSame([$entry], $outcome->staleEntries);
+    }
+
     /** @param list<string> $patterns
      * @param list<string> $scope
      */
@@ -209,6 +249,7 @@ final class EntryComparabilityTest extends TestCase
             new ProjectScopeUniverse($root, true, [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]], [], [], false, []),
             [],
             $tree,
+            \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), $analyzed, []),
         );
     }
 
@@ -217,13 +258,18 @@ final class EntryComparabilityTest extends TestCase
      *
      * @return ProjectTreeQueryInterface&object{snapshots: int}
      */
-    private static function tree(array $files, bool $complete, ?ProjectEntryPresence $override = null): ProjectTreeQueryInterface
+    private static function tree(array $files, bool $complete, ?ProjectEntryPresence $override = null, ProjectEntryPresence $directoryPresence = ProjectEntryPresence::Present): ProjectTreeQueryInterface
     {
-        return new class ($files, $complete, $override) implements ProjectTreeQueryInterface {
+        return new class ($files, $complete, $override, $directoryPresence) implements ProjectTreeQueryInterface {
             public int $snapshots = 0;
 
             /** @param list<RelativePath> $files */
-            public function __construct(private array $files, private bool $complete, private ?ProjectEntryPresence $override) {}
+            public function __construct(private array $files, private bool $complete, private ?ProjectEntryPresence $override, private ProjectEntryPresence $directoryPresence) {}
+
+            public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
+            {
+                return $this->directoryPresence;
+            }
 
             public function snapshot(ProjectScopeUniverse $universe): ProjectTreeSnapshot
             {

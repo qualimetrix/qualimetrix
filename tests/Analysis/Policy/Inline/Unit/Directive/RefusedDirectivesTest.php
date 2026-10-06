@@ -83,7 +83,7 @@ final class RefusedDirectivesTest extends TestCase
             ['src/Example.php' => [new ThresholdDiagnostic(10, self::subject(), 'known.rule', 'Invalid payload.', 160)]],
         );
         $findings = (new InlineDirectiveValidator($policy, $classifier))->validate(new AnalysisContext(new InMemoryMetricRepository()));
-        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty());
+        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty(), self::coverage());
 
         self::assertCount(3, $findings);
         self::assertCount(3, $verdicts);
@@ -163,4 +163,13 @@ final class RefusedDirectivesTest extends TestCase
             },
         ];
     }
+    private static function coverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+            [\Qualimetrix\Core\Path\RelativePath::fromString('src/Example.php')],
+            [],
+        );
+    }
+
 }

@@ -538,8 +538,13 @@ final class BaselineUpdaterTest extends TestCase
             {
                 return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
             }
+
+            public function hasDirectory(AbsolutePath $directory): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
         };
-        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage($current->scope, $current->analysis, new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions($patterns, $includeGenerated ? \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include : \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude), $current->universe, $current->psr4Roots, $tree);
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage($current->scope, $current->analysis, new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions($patterns, $includeGenerated ? \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include : \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude), $current->universe, $current->psr4Roots, $tree, $current->subjectCoverage);
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured */

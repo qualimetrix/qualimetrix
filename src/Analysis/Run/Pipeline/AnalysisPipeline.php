@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
@@ -99,6 +100,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
                 namespaceTree: $prepared->namespaceTree,
                 projectScope: $measuredScope,
                 duration: $duration,
+                subjectCoverage: $prepared->subjectCoverage,
             ),
             directives: new DirectiveObservations(
                 suppressions: $prepared->collection->suppressions,
@@ -121,7 +123,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         RunConfiguration $configuration,
         DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ): DirectiveAuditReport {
-        [$prepared] = $this->preparedRun($configuration);
+        [$prepared, $measuredScope] = $this->preparedRun($configuration);
 
         // What the rules produced, and nothing assembled after them. The
         // channel a run assembles late — `annotation.unused-directive` — used
@@ -135,6 +137,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         $verdicts = $this->inlineDirectiveRun->verdicts(
             $produced,
             $prepared->ruleExecution->levelActivity,
+            $prepared->subjectCoverage,
             $prepared->context,
             $this->ruleExecutor,
             $prepared->ruleExecution,
@@ -146,6 +149,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             coverage: $prepared->coverage,
             producedFindings: \count($produced),
             sweep: $sweep,
+            projectScope: $measuredScope,
         );
     }
 
@@ -296,19 +300,27 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
 
         $profiler->stop('analysis');
 
+        $coverage = self::buildCoverage(
+            $eligiblePaths,
+            $generatedExcludedFiles,
+            $collectionResult,
+            $skippedFailures,
+            $discoveredFiles->namedExcluded,
+            $inspectionFailures,
+        );
+        $subjectCoverage = SubjectCoverageFacts::fromMeasured(
+            $measuredScope->judgement(),
+            $coverage->analyzedFiles,
+            array_map(static fn(AnalysisFailure $failure): RelativePath => $failure->path, $coverage->failures),
+        );
+
         return [new PreparedRun(
             namespaceTree: $namespaceTree,
             collection: $collectionResult,
             context: $context,
             ruleExecution: $ruleExecution,
-            coverage: self::buildCoverage(
-                $eligiblePaths,
-                $generatedExcludedFiles,
-                $collectionResult,
-                $skippedFailures,
-                $discoveredFiles->namedExcluded,
-                $inspectionFailures,
-            ),
+            coverage: $coverage,
+            subjectCoverage: $subjectCoverage,
             unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
         ), $measuredScope];
     }
@@ -364,6 +376,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             ...$this->inlineDirectiveRun->usageFindings(
                 $ruleExecution->produced,
                 $ruleExecution->levelActivity,
+                $prepared->subjectCoverage,
             ),
             // The second channel assembled outside `execute()`, and through
             // the same `publishable()` for the same reason: an exclude pattern

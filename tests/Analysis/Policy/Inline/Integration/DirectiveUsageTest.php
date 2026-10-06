@@ -60,7 +60,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itCallsASuppressionEffectiveWhenSomethingItCoversWasProduced(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [self::finding()], LevelActivity::empty());
+        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [self::finding()], LevelActivity::empty(), self::coverage());
 
         self::assertSame(DirectiveEffect::Effective, self::single($verdicts)->effect);
         self::assertNull(self::single($verdicts)->reason);
@@ -69,9 +69,17 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itCallsASuppressionInertWhenNothingItCoversWasProduced(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
+        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty(), self::coverage());
 
         self::assertSame(DirectiveEffect::Inert, self::single($verdicts)->effect);
+    }
+
+    #[Test]
+    public function itDoesNotCallARunWideProducerInertOnAPartialSelection(): void
+    {
+        $verdicts = self::usage()->verdicts(self::fileDirective('design.noc'), [], LevelActivity::empty(), self::partialCoverage());
+
+        self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
     }
 
     /**
@@ -81,10 +89,10 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itJudgesADirectiveWithoutARuleFilterByWhatItSilenced(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [], LevelActivity::empty());
+        $verdicts = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [], LevelActivity::empty(), self::coverage());
 
         self::assertSame(DirectiveEffect::Inert, self::single($verdicts)->effect);
-        $effective = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [self::finding()], LevelActivity::empty());
+        $effective = self::usage()->verdicts(self::fileDirective(SuppressionTarget::NO_RULE_FILTER), [self::finding()], LevelActivity::empty(), self::coverage());
         self::assertSame(DirectiveEffect::Effective, self::single($effective)->effect);
     }
 
@@ -96,7 +104,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itRefusesToJudgeAChannelLevelPairAddressabilityAlreadyRefused(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL . ':project'), [], LevelActivity::empty());
+        $verdicts = self::usage()->verdicts(self::fileDirective(self::CHANNEL . ':project'), [], LevelActivity::empty(), self::coverage());
 
         self::assertSame([], $verdicts);
     }
@@ -111,7 +119,7 @@ final class DirectiveUsageTest extends TestCase
     public function itRefusesToJudgeADirectiveThatReachesTheBannedChannel(): void
     {
         foreach ([InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, 'annotation.*'] as $target) {
-            $verdicts = self::usage()->verdicts(self::fileDirective($target), [], LevelActivity::empty());
+            $verdicts = self::usage()->verdicts(self::fileDirective($target), [], LevelActivity::empty(), self::coverage());
 
             self::assertSame([], $verdicts, $target);
         }
@@ -120,7 +128,7 @@ final class DirectiveUsageTest extends TestCase
     #[Test]
     public function itRefusesToJudgeASelectorThatNamesNoChannelAtAll(): void
     {
-        $verdicts = self::usage()->verdicts(self::fileDirective('coupling.instabilty'), [], LevelActivity::empty());
+        $verdicts = self::usage()->verdicts(self::fileDirective('coupling.instabilty'), [], LevelActivity::empty(), self::coverage());
 
         self::assertSame([], $verdicts);
     }
@@ -130,7 +138,7 @@ final class DirectiveUsageTest extends TestCase
     {
         $registry = new RuleOptionsRegistry();
 
-        $verdicts = self::usage($registry, disabled: [self::CHANNEL])->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty());
+        $verdicts = self::usage($registry, disabled: [self::CHANNEL])->verdicts(self::fileDirective(self::CHANNEL), [], LevelActivity::empty(), self::coverage());
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
         self::assertSame(DirectiveUnmeasurableReason::ProducerDisabled, self::single($verdicts)->reason);
@@ -154,6 +162,7 @@ final class DirectiveUsageTest extends TestCase
             self::fileDirective(self::CHANNEL),
             [],
             LevelActivity::fromMap([self::CHANNEL => [SymbolLevel::Class_->value => false]]),
+            self::coverage(),
         );
 
         self::assertSame(DirectiveEffect::Unmeasured, self::single($verdicts)->effect);
@@ -176,6 +185,7 @@ final class DirectiveUsageTest extends TestCase
                 DeclarationOrdinal::fromRank(0),
             )))],
             LevelActivity::empty(),
+            self::coverage(),
         );
 
         self::assertSame(DirectiveEffect::Effective, self::single($verdicts)->effect);
@@ -192,7 +202,7 @@ final class DirectiveUsageTest extends TestCase
         $verdicts = self::usage()->verdicts([self::FILE => [
             new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 0),
             new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::NextLine, position: 0, silencedLine: 7 + 1),
-        ]], [], LevelActivity::empty());
+        ]], [], LevelActivity::empty(), self::coverage());
 
         self::assertCount(2, $verdicts);
         self::assertSame(
@@ -214,6 +224,7 @@ final class DirectiveUsageTest extends TestCase
             ['src/Other.php' => [new Suppression(self::CHANNEL, 'reason', 42, SuppressionType::File, position: 0)]],
             [],
             LevelActivity::empty(),
+            self::coverage(),
         );
 
         self::assertSame('src/Other.php', self::single($verdicts)->site->file->value());
@@ -244,7 +255,7 @@ final class DirectiveUsageTest extends TestCase
         );
         $judged = array_map(
             static fn(DirectiveVerdict $verdict): string => $verdict->site->line . '/' . $verdict->site->form,
-            self::usage()->verdicts($directives, [], LevelActivity::empty()),
+            self::usage()->verdicts($directives, [], LevelActivity::empty(), self::coverage()),
         );
 
         sort($authored);
@@ -270,10 +281,10 @@ final class DirectiveUsageTest extends TestCase
         $usage = self::usage();
 
         $inert = array_values(array_filter(
-            $usage->verdicts($directives, [self::finding()], LevelActivity::empty()),
+            $usage->verdicts($directives, [self::finding()], LevelActivity::empty(), self::coverage()),
             static fn(DirectiveVerdict $verdict): bool => $verdict->effect === DirectiveEffect::Inert,
         ));
-        $stale = $usage->stale($directives, [self::finding()], Severity::Warning, LevelActivity::empty());
+        $stale = $usage->stale($directives, [self::finding()], Severity::Warning, LevelActivity::empty(), self::coverage());
 
         self::assertCount(1, $inert);
         self::assertSame('complexity.ccn', $inert[0]->site->target);
@@ -297,7 +308,7 @@ final class DirectiveUsageTest extends TestCase
             new Suppression(self::CHANNEL, 'reason', 7, SuppressionType::File, position: 80),
         ]];
         $usage = self::usage();
-        $verdicts = $usage->verdicts($directives, [], LevelActivity::empty());
+        $verdicts = $usage->verdicts($directives, [], LevelActivity::empty(), self::coverage());
         self::assertCount(2, $verdicts);
         self::assertSame([20, 80], array_map(static fn(DirectiveVerdict $v): ?int => $v->site->position, $verdicts));
 
@@ -327,7 +338,7 @@ final class DirectiveUsageTest extends TestCase
             refusal: DirectiveRefusal::noDeclarationToBind(),
         )]];
 
-        $verdicts = self::usage()->verdicts($refused, [self::finding()], LevelActivity::empty());
+        $verdicts = self::usage()->verdicts($refused, [self::finding()], LevelActivity::empty(), self::coverage());
 
         self::assertSame([], $verdicts);
     }
@@ -347,7 +358,7 @@ final class DirectiveUsageTest extends TestCase
 
         $policy = new InlineDirectivePolicy(self::usage(), new RefusedDirectives(self::productionUniverse()));
         $policy->prepare($refused, [], []);
-        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty());
+        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty(), self::coverage());
 
         self::assertSame('ignore-lines', self::single($verdicts)->site->form);
         self::assertSame(DirectiveEffect::Refused, self::single($verdicts)->effect);
@@ -372,7 +383,7 @@ final class DirectiveUsageTest extends TestCase
         $policy->prepare($directives, [], []);
         $judged = array_map(
             static fn(DirectiveVerdict $verdict): string => $verdict->site->form,
-            $policy->directiveVerdicts([], LevelActivity::empty()),
+            $policy->directiveVerdicts([], LevelActivity::empty(), self::coverage()),
         );
         sort($judged);
 
@@ -456,6 +467,26 @@ final class DirectiveUsageTest extends TestCase
     private static array $metadata = [];
 
     private static ?RuleChannelSnapshotFactoryInterface $snapshotFactory = null;
+
+    private static function coverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+            [RelativePath::fromString(self::FILE)],
+            [],
+        );
+    }
+
+    private static function partialCoverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(
+                [\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Paths],
+            ),
+            [RelativePath::fromString(self::FILE)],
+            [],
+        );
+    }
 
     private static function productionUniverse(): ChannelUniverseInterface
     {

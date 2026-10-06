@@ -171,6 +171,14 @@ second definition of identity, matching, or precedence.
 Comparison requires complete analysis and compatible evidence for the whole
 identity group. Baseline-owned `RunCoverage` combines current paths, recorded
 paths/exclusions, `AnalysisCoverage`, metadata and subject-region evidence.
+It receives the run's required `SubjectCoverageFacts`; its analyzed-file lookup
+uses that shared index. A missing exact file or declaration becomes stale only
+after a recorded containing root is positively present and exclusions permit
+the proof. This also applies to a run-wide producer whose exact subject file
+has disappeared. Without a current member proving PSR-4 containment, namespace
+absence requires whole-region evidence. For `baseline:explain` without a recorded
+entry, missing-file authority instead needs a captured source root, a selected
+containing root and positive directory presence.
 Exact files can be judged without a complete Composer roster; namespaces and
 run-dependent channels require their wider region. Unknown metadata does not
 mean absence. Equal path sets and exclusion definitions can establish equality

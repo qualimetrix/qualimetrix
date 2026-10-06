@@ -133,6 +133,7 @@ final readonly class BaselineRun implements BaselineRunInterface
             $configuration->projectScope->universe,
             $this->composerReader->read($projectRoot)->psr4Roots(),
             $this->projectTree,
+            $run->result->measured->subjectCoverage,
         );
 
         return new BaselineRunContext($run, $scope, $projectRoot, $configuration, $runCoverage);
