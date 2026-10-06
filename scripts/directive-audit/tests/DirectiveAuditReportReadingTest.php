@@ -110,7 +110,7 @@ final class DirectiveAuditReportReadingTest extends TestCase
         yield 'effect not a string' => [[...$sound, 'effect' => 7]];
         yield 'line not a number' => [[...$sound, 'line' => '10']];
         yield 'refusals null' => [[...$sound, 'refusals' => null]];
-        yield 'refusals not a list' => [[...$sound, 'refusals' => ['a' => ['channel' => 'a', 'message' => 'b']]]];
+        yield 'refusals not a list' => [[...$sound, 'effect' => 'refused', 'refusals' => ['a' => ['channel' => 'a', 'message' => 'b']]]];
         yield 'refused without refusals' => [[...$sound, 'effect' => 'refused']];
         yield 'inert with refusals' => [[...$sound, 'effect' => 'inert', 'refusals' => [['channel' => 'a', 'message' => 'b']]]];
         yield 'refusal missing channel' => [[...$sound, 'effect' => 'refused', 'refusals' => [['message' => 'b']]]];
