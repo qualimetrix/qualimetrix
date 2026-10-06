@@ -60,6 +60,7 @@ final class GraphExportCommand extends Command
             ->addOption('include-generated', null, InputOption::VALUE_NONE, 'Include generated files')
             ->addOption('include-autoload-dev', null, InputOption::VALUE_NONE, 'Include composer autoload-dev files')
             ->addOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching')
+            ->addOption('no-progress', null, InputOption::VALUE_NONE, 'Disable progress bar')
             ->addOption('workers', 'w', InputOption::VALUE_REQUIRED, 'Number of parallel workers')
             ->addOption('memory-limit', null, InputOption::VALUE_REQUIRED, 'PHP memory limit')
             ->addArgument(

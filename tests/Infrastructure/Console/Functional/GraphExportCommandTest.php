@@ -24,6 +24,7 @@ use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(GraphExportCommand::class)]
@@ -93,6 +94,31 @@ final class GraphExportCommandTest extends TestCase
         self::assertStringContainsString('digraph', $output);
         self::assertStringContainsString('ClassA', $output);
         self::assertStringContainsString('ClassB', $output);
+    }
+
+    #[Test]
+    public function itExportsAQuietGraphWithNoProgressOption(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Source.php',
+            '<?php namespace App; final class Source { public function use(Model $model): void {} }',
+        );
+
+        $tester = $this->createCommandTester();
+        try {
+            $exit = $tester->execute([
+                'paths' => [$this->tempDir],
+                '--no-progress' => true,
+            ], ['capture_stderr_separately' => true]);
+        } catch (InvalidOptionException $exception) {
+            self::assertSame('The "--no-progress" option does not exist.', $exception->getMessage());
+            self::fail('Graph export must accept --no-progress.');
+        }
+
+        self::assertSame(0, $exit, $tester->getErrorOutput());
+        self::assertStringStartsWith('digraph', $tester->getDisplay());
+        self::assertStringContainsString('Source', $tester->getDisplay());
+        self::assertSame('', $tester->getErrorOutput());
     }
 
     #[Test]
