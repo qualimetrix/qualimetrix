@@ -126,6 +126,7 @@ PHP;
 require $argv[1];
 $factory = new \Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory(
     new \Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore(),
+    new \Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms(),
     \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor::class,
     [\Qualimetrix\Tests\Infrastructure\Console\Unit\RunTarget\SignalWorkerCollector::class],
 );

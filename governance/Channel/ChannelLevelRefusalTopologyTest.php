@@ -91,6 +91,8 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
             'validates an inert stored identity level against its declaration, not an authored pair',
         'src/Analysis/Policy/Baseline/Ceiling/EntryJudgement.php' =>
             'checks applicability of a measured group at its stored level, not authored pair grammar',
+        'src/Analysis/Policy/Baseline/Ceiling/EntryAbsenceProof.php' =>
+            'checks a stored baseline identity against its declared levels before proving absence, not an authored pair',
         'src/Analysis/Policy/Baseline/CurrentBoundaryMeasurement.php' =>
             'prepares supported measured levels and known outcomes, not authored pair grammar',
         'src/Analysis/Policy/Baseline/NewIdentityAcceptance.php' =>
@@ -108,6 +110,9 @@ final class ChannelLevelRefusalTopologyTest extends TestCase
         'src/Analysis/Finding/Selection/SelectionSpecificity.php' =>
             'enumerates declared channel levels to build invocation cell addresses and rank membership;'
             . ' authored channel:level judgement belongs to RuleNameJudge through ChannelLevelAddressing',
+        'src/Analysis/Policy/Inline/Directive/Audit/DirectiveMeasurability.php' =>
+            'checks declared levels when measuring an already-bound directive; authored pair refusal belongs to'
+            . ' ChannelLevelAddressing',
         'src/Infrastructure/Console/Command/RulesCommand.php' =>
             'trips both halves of the detector on two unrelated subjects: it asks declarationFor() for one'
             . ' property that is not a level — which metrics a channel judges — and its ->levels() call is'

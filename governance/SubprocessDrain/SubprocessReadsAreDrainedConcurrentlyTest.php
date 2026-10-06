@@ -208,6 +208,23 @@ final class SubprocessReadsAreDrainedConcurrentlyTest extends TestCase
      * @var array<string, string>
      */
     private const ENTRIES = [
+        'src/Core/FileTarget/NativeNssEnumerator.php:17' => 'A function_exists probe, not a spawn; the actual'
+            . ' child invocation is declared separately below.',
+        'src/Core/FileTarget/NativeNssEnumerator.php:35' => 'Core cannot depend on the development-only'
+            . ' ChildProcess module. NSS enumeration opens only stdout as a pipe, sends stdin and stderr to'
+            . ' /dev/null, drains stdout non-blockingly, and enforces a deadline and output bound.',
+        'tests/Analysis/Policy/Baseline/Functional/BaselineGenerateCommandTest.php:162' => 'The signal'
+            . ' regression spawns controlled PHP code that creates a ready file then sleeps until terminated;'
+            . ' its normal path emits no stream output. Both pipes are closed after termination, but this is not'
+            . ' a general-purpose concurrent drain.',
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:70' => 'The controlled signal'
+            . ' child writes one READY line to stdout and sleeps until termination; the test reads that line'
+            . ' before reaping. Stderr is not drained concurrently, so this entry is limited to that bounded'
+            . ' child script, not reusable subprocess capture.',
+        'tests/Infrastructure/Console/Unit/RunTarget/RunTargetSessionTest.php:155' => 'The controlled'
+            . ' worker-signal child uses files for readiness and waits until termination; the test reads stderr'
+            . ' only after exit for an assertion. This is a bounded interruption witness, not a concurrent'
+            . ' drain suitable for arbitrary child output.',
         'tests/Core/FileTarget/Unit/HeldTargetTest.php:219' => 'The descriptor regression binds stdout directly to '
             . 'the existing append-mode file under test, which ChildProcess does not accept as a descriptor map. '
             . 'Only stderr is a pipe and it is drained before reaping; stdout writes to the file, so no second '

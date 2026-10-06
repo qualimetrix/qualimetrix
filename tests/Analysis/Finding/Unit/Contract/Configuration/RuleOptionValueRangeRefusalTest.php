@@ -161,7 +161,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             MethodCountRule::class,
             'size.method-count',
             MethodCountOptions::class,
-            'Option --rule-opt must be at least 0, got -1.',
+            'Option --rule-opt (written as --rule-opt=size.method-count:threshold=-1) must be at least 0, got -1.',
             ['rules', 'size.method-count', 'threshold'],
         ];
 
@@ -170,7 +170,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             ComplexityRule::class,
             'complexity.ccn',
             ComplexityOptions::class,
-            'Option --rule-opt must be at least 0, got -5.',
+            'Option --rule-opt (written as --rule-opt=complexity.ccn:callable.warning=-5) must be at least 0, got -5.',
             ['rules', 'complexity.ccn', 'callable', 'warning'],
         ];
 
@@ -179,7 +179,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             LcomRule::class,
             'cohesion.lcom',
             LcomOptions::class,
-            'Option --rule-opt must be at least 0, got -3.',
+            'Option --rule-opt (written as --rule-opt=cohesion.lcom:min-methods=-3) must be at least 0, got -3.',
             ['rules', 'cohesion.lcom', 'min-methods'],
         ];
 
@@ -188,7 +188,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
             InstabilityRule::class,
             'coupling.instability',
             InstabilityOptions::class,
-            'Option --rule-opt must be at least 0, got -0.5.',
+            'Option --rule-opt (written as --rule-opt=coupling.instability:class.max-warning=-0.5) must be at least 0, got -0.5.',
             ['rules', 'coupling.instability', 'class', 'max-warning'],
         ];
     }

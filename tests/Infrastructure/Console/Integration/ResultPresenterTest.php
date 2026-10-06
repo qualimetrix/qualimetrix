@@ -351,7 +351,7 @@ final class ResultPresenterTest extends TestCase
             self::assertGreaterThan(0, $result['hit']);
             self::assertNull($result['exit']);
             self::assertStringContainsString('--output', $result['failure']);
-            self::assertSame('', $result['content']);
+            self::assertSame('old', $result['content']);
         } finally {
             unlink($target);
         }

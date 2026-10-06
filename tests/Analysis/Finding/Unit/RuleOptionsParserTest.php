@@ -116,7 +116,7 @@ final class RuleOptionsParserTest extends TestCase
                 $this->parser->parseAuthoredRuleOption($text);
                 self::fail('Malformed rule option input must be refused.');
             } catch (ConfigurationRefusal $refusal) {
-                self::assertSame('Invalid --rule-opt "' . $text . '". Expected RULE:OPTION=VALUE.', $refusal->summary());
+                self::assertSame('Invalid --rule-opt=' . $text . '. Expected RULE:OPTION=VALUE.', $refusal->summary());
             }
         }
 
@@ -205,7 +205,7 @@ final class RuleOptionsParserTest extends TestCase
         $this->expectException(ConfigurationRefusal::class);
         $this->expectExceptionMessage(
             'Option "allowedPrefixes" of rule "code-smell.boolean-argument" was written with an empty value'
-            . ' ("--rule-opt code-smell.boolean-argument:allowed-prefixes=").',
+            . ' ("--rule-opt=code-smell.boolean-argument:allowed-prefixes=").',
         );
 
         $this->parser->parseAuthoredRuleOption('code-smell.boolean-argument:allowed-prefixes=');

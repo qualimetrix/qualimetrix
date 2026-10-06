@@ -2313,7 +2313,7 @@ final class RuleOptionsFactoryTest extends TestCase
             (new CliOptionsParser(new RuleOptionDocumentForms(), $parser))->pathWrites($input);
             self::fail('The authored CLI key must be refused before installing a ready snapshot.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame($summary, $refusal->summary());
+            self::assertSame($summary . ' Written: --rule-opt=' . $producer . ':' . $key . '=' . json_encode($value, \JSON_THROW_ON_ERROR) . '.', $refusal->summary());
             self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
             self::assertSame('--rule-opt', $refusal->sources()[0]->locator());
             self::assertNull($refusal->position());
