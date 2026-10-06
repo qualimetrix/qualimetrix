@@ -34,20 +34,7 @@ final class TemporarySibling
             $path = AbsolutePath::fromString(rtrim($directory->value(), '/') . '/' . $name);
             [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
             if ($handle !== false) {
-                $temporary = new self($path, $handle, $ownerPid);
-                $opened = fstat($handle);
-                clearstatcache(true, $path->value());
-                [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
-                if ($opened === false || $named === false || !FileIdentity::fromStat($opened)->sameAs(FileIdentity::fromStat($named))) {
-                    try {
-                        $temporary->cleanupLinkedReferent($path->value());
-                    } finally {
-                        $temporary->discard();
-                    }
-                    throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $path->value(), 'temporary file identity changed while opening');
-                }
-
-                return $temporary;
+                return self::verifyCreated($path, $handle, $ownerPid);
             }
             clearstatcache(true, $path->value());
             [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
@@ -57,6 +44,25 @@ final class TemporarySibling
         }
 
         throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'temporary names collided repeatedly');
+    }
+
+    /** @param resource $handle */
+    private static function verifyCreated(AbsolutePath $path, mixed $handle, int $ownerPid): self
+    {
+        $temporary = new self($path, $handle, $ownerPid);
+        $opened = fstat($handle);
+        clearstatcache(true, $path->value());
+        [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
+        if ($opened === false || $named === false || !FileIdentity::fromStat($opened)->sameAs(FileIdentity::fromStat($named))) {
+            try {
+                $temporary->cleanupLinkedReferent($path->value());
+            } finally {
+                $temporary->discard();
+            }
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $path->value(), 'temporary file identity changed while opening');
+        }
+
+        return $temporary;
     }
 
     public function path(): AbsolutePath

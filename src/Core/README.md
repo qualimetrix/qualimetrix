@@ -41,7 +41,11 @@ Core/
 │   ├── HeldTarget.php
 │   ├── NativeCall.php
 │   ├── NativePrivateGroupMembership.php
+│   ├── NativeNssEnumerator.php
+│   ├── NssPrivateGroupRoster.php
+│   ├── NssSourceSelection.php
 │   ├── NewName.php
+│   ├── PathAbsenceProof.php
 │   ├── PathExposure.php
 │   ├── PathInspection.php
 │   ├── PathWalk.php
@@ -968,6 +972,12 @@ is the effective user's sole primary group, with no other primary or
 supplementary members. `NativePrivateGroupMembership` checks keyed POSIX facts
 against complete per-source NSS enumeration for supported `files` and `systemd`
 configurations; unavailable or ambiguous evidence stays exposed.
+`NssSourceSelection` recognizes the supported source configuration, while
+`NssPrivateGroupRoster` proves membership from all selected source rows.
+`NativeNssEnumerator` owns bounded native enumeration; its two-second deadline
+and output cap retain conservative refusal on incomplete evidence. The private
+group proof rereads the configuration after enumeration. `PathAbsenceProof`
+classifies failed path inspection only after checking the parent evidence.
 `TargetPath::resolve()` accepts an optional membership port, and `ResolvedTarget`
 retains it through claim, replacement and lock rechecks.
 

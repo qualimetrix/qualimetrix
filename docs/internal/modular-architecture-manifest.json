@@ -23574,6 +23574,34 @@
       "owner": "Infrastructure.DependencyInjection",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\NssSourceSelection": {
+      "path": "src/Core/FileTarget/NssSourceSelection.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\NssPrivateGroupRoster": {
+      "path": "src/Core/FileTarget/NssPrivateGroupRoster.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\NativeNssEnumerator": {
+      "path": "src/Core/FileTarget/NativeNssEnumerator.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Core\\FileTarget\\PathAbsenceProof": {
+      "path": "src/Core/FileTarget/PathAbsenceProof.php",
+      "kind": "class",
+      "owner": "Core.FileTarget",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}

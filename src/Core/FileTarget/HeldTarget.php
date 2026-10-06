@@ -100,30 +100,36 @@ final class HeldTarget
 
     public function release(): void
     {
-        if ($this->handle === null) {
+        $handle = $this->handle;
+        if ($handle === null) {
             return;
         }
         if ($this->ownerPid !== getmypid()) {
-            fclose($this->handle);
+            fclose($handle);
             $this->handle = null;
 
             return;
         }
         try {
             if ($this->created) {
-                $path = $this->target->path?->value() ?? throw new LogicException('Created target has no path');
-                clearstatcache(true, $path);
-                [$named] = NativeCall::attempt(static fn() => lstat($path));
-                if ($named !== false && FileIdentity::fromStat($named)->sameAs($this->identity())) {
-                    [$removed, $warning] = NativeCall::attempt(static fn() => unlink($path));
-                    if (!$removed) {
-                        throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot remove unwritten target', $warning ?? 'unknown error');
-                    }
-                }
+                $this->cleanupUnwrittenName();
             }
         } finally {
-            fclose($this->handle);
+            fclose($handle);
             $this->handle = null;
+        }
+    }
+
+    private function cleanupUnwrittenName(): void
+    {
+        $path = $this->target->path?->value() ?? throw new LogicException('Created target has no path');
+        clearstatcache(true, $path);
+        [$named] = NativeCall::attempt(static fn() => lstat($path));
+        if ($named !== false && FileIdentity::fromStat($named)->sameAs($this->identity())) {
+            [$removed, $warning] = NativeCall::attempt(static fn() => unlink($path));
+            if (!$removed) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot remove unwritten target', $warning ?? 'unknown error');
+            }
         }
     }
 

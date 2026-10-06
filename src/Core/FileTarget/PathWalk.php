@@ -98,34 +98,8 @@ final class PathWalk
 
     private function absentTarget(string $candidate, string $part, string $warning): ResolvedTarget
     {
-        if (str_contains($warning, 'File name too long') || \strlen($part) > 255) {
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'File name too long', $candidate);
-        }
-        if (str_contains($warning, 'Permission denied')) {
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target', $warning);
-        }
-        if ($warning === '' || (!str_contains($warning, 'No such file or directory')
-            && !str_contains($warning, 'Not a directory')
-            && !str_contains($warning, 'Lstat failed for'))) {
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target', $candidate . ($warning === '' ? '' : ': ' . $warning));
-        }
-        if (self::hasRemainingComponents($this->todo)) {
-            throw new FileTargetFailure(FileTargetFailureKind::DirectoryMissing, $this->spelling, 'a parent directory is missing', $candidate);
-        }
         $parent = '/' . implode('/', $this->parts);
-        [$isDirectory] = NativeCall::attempt(static fn() => is_dir($parent));
-        if ($isDirectory !== true) {
-            throw new FileTargetFailure(FileTargetFailureKind::DirectoryMissing, $this->spelling, 'the parent directory is missing', $parent);
-        }
-        [$searchable, $searchWarning] = NativeCall::attempt(static fn() => is_executable($parent));
-        if ($searchable !== true) {
-            $detail = $parent . ': ' . $warning;
-            if ($searchWarning !== null) {
-                $detail .= '; ' . $searchWarning;
-            }
-
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target through a non-searchable parent', $detail);
-        }
+        (new PathAbsenceProof($this->spelling, $candidate, $part, $warning))->assertFinalAbsent($this->todo, $parent);
 
         return new ResolvedTarget($this->spelling, TargetKind::Absent, AbsolutePath::fromString($candidate), null, null, $this->inspection, $this->membership);
     }
