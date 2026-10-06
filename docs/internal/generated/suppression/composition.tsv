@@ -14,6 +14,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contra
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/JudgedMetrics.php	Qualimetrix\Analysis\Finding\Contract\JudgedMetrics	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Location.php	Qualimetrix\Analysis\Finding\Contract\Location	error	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorOutcome.php	Qualimetrix\Analysis\Finding\Contract\ProjectScope	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/AbstractRule.php	Qualimetrix\Analysis\Finding\Contract\Rule	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/AbstractRule.php	Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Analysis/Finding/Contract/Rule/AnalysisContext.php	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	error	1
@@ -40,7 +41,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/AbsolutePath.php	Qualimetrix\Core\Path\AbsolutePath	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/PathFactory.php	Qualimetrix\Core\Path\PathFactory	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Path/RelativePath.php	Qualimetrix\Core\Path\RelativePath	error	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	warning	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Pattern/CompiledSelector.php	Qualimetrix\Core\Pattern	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/CallableKind.php	Qualimetrix\Core\Symbol	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/MetricSubject.php	Qualimetrix\Core\Symbol\MetricSubject	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolInfo.php	Qualimetrix\Core\Symbol\SymbolInfo	error	1
@@ -79,7 +80,7 @@ rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Find
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Finding/Rule/Override/NonNegativeOverrideThresholds.php	Qualimetrix\Analysis\Finding\Rule\Override	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Configuration/Allow/AllowAliasExpander.php	Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow	error	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Architecture/Layer/AnalysedDeclarations.php	Qualimetrix\Analysis\Policy\Architecture\Layer	warning	1
-rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Baseline/Contract/BaselineAuditChannels.php	Qualimetrix\Analysis\Policy\Baseline\Contract	error	1
+rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Baseline/Contract/BaselineAuditChannels.php	Qualimetrix\Analysis\Policy\Baseline\Contract	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/Policy/Inline/Contract/Directive/DeclarationBinding.php	Qualimetrix\Analysis\Policy\Inline\Contract\Directive	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest	warning	1
 rule-namespace-suppression	coupling.distance	coupling.distance	src/Analysis/ProjectManifest/Contract/ComposerAutoloadSection.php	Qualimetrix\Analysis\ProjectManifest\Contract	warning	1
