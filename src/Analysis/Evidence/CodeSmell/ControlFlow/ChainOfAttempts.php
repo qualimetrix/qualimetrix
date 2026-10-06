@@ -40,18 +40,13 @@ final class ChainOfAttempts
     private function holdsExit(array $statements, ?Stmt $fallback, ?Node $priorWork = null): bool
     {
         $statements = $this->withoutNops($statements);
-        foreach ($statements as $index => $statement) {
+        $lastStatement = $statements[array_key_last($statements)] ?? null;
+        foreach ($statements as $statement) {
             if ($this->endsAttemptAfterWork($statement, $fallback, $priorWork)) {
                 return true;
             }
-            if ($statement instanceof Stmt\If_) {
-                $branchWork = $priorWork;
-                if ($index === array_key_last($statements) && $this->work->in($statement->cond)) {
-                    $branchWork ??= $statement->cond;
-                }
-                if ($this->branchHoldsExit($statement, $fallback, $branchWork)) {
-                    return true;
-                }
+            if ($this->ifBranchHoldsExit($statement, $lastStatement, $fallback, $priorWork)) {
+                return true;
             }
             if ($statement instanceof Stmt\Expression && $this->work->in($statement->expr)) {
                 $priorWork = $statement;
@@ -59,6 +54,20 @@ final class ChainOfAttempts
         }
 
         return false;
+    }
+
+    private function ifBranchHoldsExit(Stmt $statement, ?Stmt $lastStatement, ?Stmt $fallback, ?Node $priorWork): bool
+    {
+        if (!$statement instanceof Stmt\If_) {
+            return false;
+        }
+
+        $branchWork = $priorWork;
+        if ($branchWork === null && $statement === $lastStatement && $this->work->in($statement->cond)) {
+            $branchWork = $statement->cond;
+        }
+
+        return $this->branchHoldsExit($statement, $fallback, $branchWork);
     }
 
     private function endsAttemptAfterWork(Stmt $statement, ?Stmt $fallback, ?Node $priorWork): bool
