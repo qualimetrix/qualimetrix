@@ -1,0 +1,34 @@
+{
+    "id": "detectors-namespace",
+    "description": "Named detector findings selected through the App\\A namespace drill-down.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--namespace=subtree:App\\A"
+    ],
+    "channels": [
+        "code-smell.boolean-argument@callable",
+        "code-smell.count-in-loop@callable",
+        "code-smell.debug-code@callable",
+        "code-smell.empty-catch@callable",
+        "code-smell.error-suppression@callable",
+        "code-smell.eval@callable",
+        "code-smell.exit@callable",
+        "code-smell.goto@callable",
+        "code-smell.identical-subexpression@callable",
+        "code-smell.long-parameter-list@callable",
+        "code-smell.superglobals@callable",
+        "code-smell.unreachable-code@callable",
+        "code-smell.unused-private@class",
+        "cohesion.lcom@class",
+        "design.type-coverage.param@class",
+        "security.command-injection@callable",
+        "security.hardcoded-credentials@callable",
+        "security.sensitive-parameter@callable",
+        "security.sql-injection@callable",
+        "security.xss@callable"
+    ]
+}

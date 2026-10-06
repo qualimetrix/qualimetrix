@@ -1,7 +1,7 @@
 {
-    "id": "security",
-    "description": "The security family: hardcoded credentials, SQL injection, XSS, command injection and unmarked sensitive parameters.",
-    "coverage": "auxiliary",
+    "id": "detectors-security",
+    "description": "The security family with independent file, callable and class credential and injection inputs.",
+    "coverage": "authoritative",
     "paths": [
         "src"
     ],
@@ -16,10 +16,16 @@
         "code-smell.superglobals@callable",
         "code-smell.superglobals@file",
         "security.command-injection@callable",
+        "security.command-injection@file",
+        "security.hardcoded-credentials@callable",
         "security.hardcoded-credentials@class",
+        "security.hardcoded-credentials@file",
         "security.sensitive-parameter@callable",
+        "security.sensitive-parameter@file",
         "security.sql-injection@callable",
-        "security.xss@callable"
+        "security.sql-injection@file",
+        "security.xss@callable",
+        "security.xss@file"
     ],
     "explainSubjects": [
         "declaration:callable:Corpus\\Security\\Login::authenticate@src/Login.php",

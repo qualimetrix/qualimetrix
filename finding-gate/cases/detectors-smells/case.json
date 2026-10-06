@@ -1,7 +1,7 @@
 {
-    "id": "smells",
-    "description": "The code-smell family: statement smells, dead code, over-injection, error suppression, plus one deliberately suppressed eval.",
-    "coverage": "auxiliary",
+    "id": "detectors-smells",
+    "description": "The code-smell family with named and anonymous callable, file and class inputs.",
+    "coverage": "authoritative",
     "paths": [
         "src"
     ],
@@ -14,6 +14,7 @@
     ],
     "channels": [
         "code-smell.boolean-argument@callable",
+        "code-smell.boolean-argument@file",
         "code-smell.constructor-overinjection@callable",
         "code-smell.count-in-loop@callable",
         "code-smell.count-in-loop@file",
