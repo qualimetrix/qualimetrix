@@ -15,6 +15,7 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Param;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\ClassConst;
+use PhpParser\Node\Stmt\Const_;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
@@ -39,6 +40,7 @@ final class CredentialLiterals
             $node instanceof Assign, $node instanceof AssignOp\Coalesce => $this->assignment($node, $subjectId),
             $node instanceof Node\ArrayItem => $this->arrayItem($node, $subjectId),
             $node instanceof ClassConst => $this->constants($node, $subjectId),
+            $node instanceof Const_ => $this->fileConstants($node, $subjectId),
             $node instanceof FuncCall => $this->define($node, $subjectId),
             $node instanceof Property => $this->properties($node, $subjectId),
             $node instanceof Param => $this->parameter($node, $subjectId),
@@ -90,6 +92,17 @@ final class CredentialLiterals
                 array_push($locations, ...$this->match($const->name->toString(), $const->value->value, $const->getStartLine(), 'class_const', $subject));
             }
         } return $locations;
+    }
+    /** @return list<CredentialLocation> */ private function fileConstants(Const_ $node, string $subject): array
+    {
+        $locations = [];
+        foreach ($node->consts as $const) {
+            if ($const->value instanceof String_) {
+                array_push($locations, ...$this->match($const->name->toString(), $const->value->value, $const->getStartLine(), 'file_const', $subject));
+            }
+        }
+
+        return $locations;
     }
     /** @return list<CredentialLocation> */ private function properties(Property $node, string $subject): array
     {

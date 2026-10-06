@@ -13,7 +13,6 @@ use Qualimetrix\Analysis\Evidence\Security\SecurityPatternFinding;
 use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -62,10 +61,8 @@ final class SecurityPatternFindingTest extends TestCase
         string $expectedSuperglobal,
     ): void {
         $file = RelativePath::fromString('src/Controller.php');
-        $fileSymbol = SymbolPath::forFile($file);
 
         $finding = SecurityPatternFinding::fromEntry($entry, $file)->toFinding(
-            $fileSymbol,
             'security.example',
             'example',
             Severity::Error,
@@ -74,7 +71,7 @@ final class SecurityPatternFindingTest extends TestCase
         );
 
         self::assertSame($expectedSubject, $finding->subject->toCanonical());
-        self::assertSame($fileSymbol, $finding->symbolPath);
+        self::assertSame($finding->subject->toSymbolPath()->toString(), $finding->symbolPath->toString());
         self::assertSame('src/Controller.php', $finding->location->pathString());
         self::assertSame($expectedLine, $finding->location->line);
         self::assertTrue($finding->location->precise);
@@ -250,7 +247,6 @@ final class SecurityPatternFindingTest extends TestCase
             'line' => 8.9,
             'superglobal' => 12,
         ], $file)->toFinding(
-            SymbolPath::forFile($file),
             'rule',
             'pattern',
             Severity::Error,
@@ -271,13 +267,12 @@ final class SecurityPatternFindingTest extends TestCase
     public function itNormalizesEmptySuperglobalAndKeepsCanonicalOccurrencesStable(): void
     {
         $file = RelativePath::fromString('src/Controller.php');
-        $fileSymbol = SymbolPath::forFile($file);
         $absent = SecurityPatternFinding::fromEntry(['subjectKind' => 'file', 'line' => 8], $file)
-            ->toFinding($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
+            ->toFinding('rule', 'pattern', Severity::Error, 'message', null);
         $empty = SecurityPatternFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'superglobal' => ''], $file)
-            ->toFinding($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
+            ->toFinding('rule', 'pattern', Severity::Error, 'message', null);
         $get = SecurityPatternFinding::fromEntry(['subjectKind' => 'file', 'line' => 8, 'superglobal' => '_GET'], $file)
-            ->toFinding($fileSymbol, 'rule', 'pattern', Severity::Error, 'message', null);
+            ->toFinding('rule', 'pattern', Severity::Error, 'message', null);
 
         self::assertSame($absent->occurrenceKey?->value, $empty->occurrenceKey?->value);
         self::assertNotSame($absent->occurrenceKey?->value, $get->occurrenceKey?->value);

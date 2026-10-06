@@ -96,7 +96,7 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            static::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            static::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
         ];
     }
 
@@ -131,7 +131,6 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
             foreach ($entries as $entry) {
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
                 $findings[] = SecurityPatternFinding::fromEntry($entry, $file)->toFinding(
-                    $fileInfo->symbolPath,
                     static::NAME,
                     $type,
                     Severity::Error,

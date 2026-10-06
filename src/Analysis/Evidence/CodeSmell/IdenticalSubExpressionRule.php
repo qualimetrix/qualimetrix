@@ -100,7 +100,7 @@ final class IdenticalSubExpressionRule extends AbstractRule
                     $findings[] = new Finding(
                         location: new Location($fileInfo->file, $line, precise: true),
                         subject: $subject,
-                        symbolPath: $fileInfo->symbolPath,
+                        symbolPath: $subject->toSymbolPath(),
                         ruleName: $this->getName(),
                         code: self::NAME,
                         message: $message,

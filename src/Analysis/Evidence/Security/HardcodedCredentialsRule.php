@@ -103,7 +103,7 @@ final class HardcodedCredentialsRule extends AbstractRule
             $findings[] = new Finding(
                 location: new Location($file, $line, precise: true),
                 subject: $subject,
-                symbolPath: $fileInfo->symbolPath,
+                symbolPath: $subject->toSymbolPath(),
                 ruleName: $this->getName(),
                 code: self::NAME,
                 message: $this->messageForPattern($pattern),
@@ -123,12 +123,13 @@ final class HardcodedCredentialsRule extends AbstractRule
             'variable' => 'Hardcoded credential in variable assignment',
             'array_key' => 'Hardcoded credential in array key',
             'class_const' => 'Hardcoded credential in class constant',
+            'file_const' => 'Hardcoded credential in file constant',
             'define' => 'Hardcoded credential in define() call',
             'property' => 'Hardcoded credential in property default',
             'property_assignment' => 'Hardcoded credential in property assignment',
             'parameter' => 'Hardcoded credential in parameter default',
             'enum_case' => 'Hardcoded credential in enum case',
-            default => 'Hardcoded credential found',
+            default => throw new LogicException(\sprintf('Unknown credential pattern "%s"', $pattern)),
         };
 
         return $message . ' — use environment variables or a secrets manager';
@@ -148,7 +149,7 @@ final class HardcodedCredentialsRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Class_),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::File, SymbolLevel::Callable, SymbolLevel::Class_),
         ];
     }
 }

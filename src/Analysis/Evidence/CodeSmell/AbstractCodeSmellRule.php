@@ -135,7 +135,6 @@ abstract class AbstractCodeSmellRule extends AbstractRule
 
                 $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
                 $findings[] = CodeSmellFinding::fromEntry($entry, $file)->toFinding(
-                    $fileInfo->symbolPath,
                     static::NAME,
                     static::SMELL_TYPE,
                     static::SEVERITY,
