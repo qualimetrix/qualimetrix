@@ -630,6 +630,11 @@ not require equality of the whole `directives` surface: its project-scope
 metadata has a declared transition. Directive record values still have exact
 semantic expectations; the ordinary gate judges the declared metadata diff.
 
+The failed-derivation control requires an invalid captured publication and
+hashes the declaration index and directory before and after the run. Complete
+expressible measurements may still be written when other semantic residuals
+remain; that is the derivation policy, rather than a failed no-write check.
+
 The `ranking-input-order` control requires an order mismatch on JSON findings.
 It does not require one on the `scoped-layers` baseline source: that
 unknown-scope source publishes one finding. Baseline-source ranking permutations

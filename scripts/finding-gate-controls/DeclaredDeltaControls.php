@@ -52,34 +52,17 @@ final class DeclaredDeltaControls
         );
     }
 
-    /**
-     * A derivation whose own comparison failed must leave the tracked
-     * declaration exactly as it found it.
-     *
-     * The gate has always *said* so — "the run this declaration would be derived
-     * from failed, so nothing was written" — and until this control it said so
-     * after having rewritten the index and every diff file. Measured on
-     * 2026-09-04: a full derive over a tree with one finding dropped exited 5,
-     * printed that sentence, and replaced a planted declaration with thirteen
-     * derived rows whose reasons were `?`.
-     *
-     * So the assertion cannot live in the report: the report is what lied. It is
-     * the two paths the write would touch, digested before the run and after it.
-     * The failure class is required as well, because a derivation that failed
-     * for some *other* reason would leave the tree alone for a reason this
-     * control is not about.
-     */
     public static function deriveRefusesBrokenRun(): Control
     {
+        $captureFailure = TupleControls::publisherDrift();
         return Control::writing(
             'derive-refuses-broken-run',
-            'a --derive-declarations run whose comparison failed, which must write nothing',
-            FindingControls::droppedFindingMutation(),
+            'a --derive-declarations run with an invalid captured publication, which must write nothing',
+            $captureFailure->mutation,
             '--derive-declarations',
-            [new Expectation(FailureClass::FINDING_COUNT_MISMATCH, 'case:design'),
-                new Expectation(FailureClass::RECORD_UNDECLARED, 'case:design|format:json', exactScope: true)],
+            $captureFailure->required,
             ['finding-gate/' . DeclaredDelta::INDEX, 'finding-gate/' . DeclaredDelta::DIRECTORY],
-            [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:design')],
+            $captureFailure->tolerated,
         );
     }
 
@@ -87,7 +70,7 @@ final class DeclaredDeltaControls
      * A derivation whose comparison passed must put the declaration back.
      *
      * The mirror of {@see deriveRefusesBrokenRun()}, and the half nothing held.
-     * That control proves a failed derivation writes nothing; a derivation
+     * That control proves an invalid capture writes nothing; a derivation
      * emptied to `return []` after the comparison satisfies it exactly — the
      * comparison still fails, the tree is still untouched — and satisfies the
      * self-test too, which never enters the write path. A check green before and
