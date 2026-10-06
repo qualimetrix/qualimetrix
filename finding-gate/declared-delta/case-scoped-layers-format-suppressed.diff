@@ -1,9 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -338,6 +338,0 @@
--            "producer": "baseline.unused-entry",
--            "reason": "filtered",
--            "statement": "only_rules: [architecture.layer-violation]",
--            "layer": "configuration file \"qmx.yaml\""
--        },
--        {

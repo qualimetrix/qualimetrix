@@ -1,6 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1,2 +1,1 @@
--0 accepted, 0 re-recorded
--0 updated, 0 unchanged, 0 not compared, 0 refused, 0 skipped
-+0 updated, 0 refused, 0 skipped

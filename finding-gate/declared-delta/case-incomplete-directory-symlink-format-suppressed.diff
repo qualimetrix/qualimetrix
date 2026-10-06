@@ -1,9 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -326,6 +326,0 @@
--            "producer": "baseline.unused-entry",
--            "reason": "filtered",
--            "statement": "only_rules: [code-smell.boolean-argument]",
--            "layer": "configuration file \"qmx.yaml\""
--        },
--        {

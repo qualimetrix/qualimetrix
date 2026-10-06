@@ -1,9 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -308,6 +308,0 @@
--            "producer": "baseline.unused-entry",
--            "reason": "filtered",
--            "statement": "only_rules: [complexity.ccn, complexity.cognitive, complexity.npath]",
--            "layer": "configuration file \"qmx.yaml\""
--        },
--        {
