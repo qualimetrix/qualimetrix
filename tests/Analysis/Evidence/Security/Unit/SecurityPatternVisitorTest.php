@@ -808,7 +808,7 @@ PHP;
     {
         $locations = $this->analyze(<<<'PHP'
 <?php
-$q = "SELECT * FROM t WHERE id = " . $GLOBALS['_GET']['id'];
+$q = "SELECT * FROM t " . "WHERE id = {$GLOBALS['_GET']['id']}";
 PHP, 'sql_injection');
 
         self::assertCount(1, $locations);

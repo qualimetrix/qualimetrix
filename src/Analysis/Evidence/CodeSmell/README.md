@@ -106,8 +106,12 @@ the visitor evaluates the chain once, at its head.
 - `RepeatedExpression/IfChain.php` — if-chain shape: an `else` holding only an `if` continues the chain
 - `ControlFlow/ControlFlowSmells.php` — empty catches, goto, exit/die, and count/sizeof loop conditions
 - `ControlFlow/ChainOfAttempts.php` — the foreach chain-of-attempts shape that exempts an empty catch
+- `ControlFlow/AttemptWork.php` — recognizes work before a chain-of-attempts exit
 - `Debug/DebugCodeSmells.php` — debug-call recognition
 - `BooleanArgument/BooleanArgumentSmells.php` — boolean-argument and promoted-property policy
+- `UsageTrackingTrait.php` — records private member references while visiting a class or trait
+- `OwnClassReference.php` — recognizes resolved references to the inspected class and its instances
+- `LiteralCallableUse.php` — recognizes literal array and string callables targeting that class
 
 `CodeSmellVisitor` owns AST traversal/delegation and only three residual one-node projections: `eval`, error suppression (including its direct function-name payload), and direct superglobal access. `ControlFlowSmells` owns only empty catches (including the foreach chain-of-attempts exception), `goto`, `exit`/`die`, and `count`/`sizeof` calls in `for`, `while`, and `do` conditions. Debug and boolean-argument policy stay in their named child subjects.
 

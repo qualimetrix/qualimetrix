@@ -5,15 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow;
 
 use PhpParser\Node;
-use PhpParser\Node\Expr;
-use PhpParser\Node\Expr\FuncCall;
-use PhpParser\Node\Expr\Include_;
-use PhpParser\Node\Expr\MethodCall;
-use PhpParser\Node\Expr\New_;
-use PhpParser\Node\Expr\StaticCall;
-use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Stmt;
-use PhpParser\NodeFinder;
 
 /**
  * Recognizes a foreach that tries each item until one succeeds: the one shape whose empty catch
@@ -26,13 +18,15 @@ use PhpParser\NodeFinder;
  */
 final class ChainOfAttempts
 {
+    public function __construct(private readonly AttemptWork $work = new AttemptWork()) {}
+
     /** @return list<Stmt\TryCatch> */
     public function attempts(Stmt\Foreach_ $loop): array
     {
         $attempts = [];
         $statements = $this->withoutNops($loop->stmts);
         foreach ($statements as $index => $statement) {
-            if ($statement instanceof Stmt\TryCatch && $this->holdsExit($statement->stmts, isset($statements[$index + 1]))) {
+            if ($statement instanceof Stmt\TryCatch && $this->holdsExit($statement->stmts, $statements[$index + 1] ?? null)) {
                 $attempts[] = $statement;
             }
         }
@@ -43,26 +37,40 @@ final class ChainOfAttempts
     /**
      * @param array<Stmt> $statements
      */
-    private function holdsExit(array $statements, bool $hasFallback, bool $worked = false): bool
+    private function holdsExit(array $statements, ?Stmt $fallback, ?Node $priorWork = null): bool
     {
         $statements = $this->withoutNops($statements);
         foreach ($statements as $index => $statement) {
-            if ($statement instanceof Stmt\Return_ && ($worked || ($statement->expr !== null && $this->hasWork($statement->expr)))) {
+            if ($this->endsAttemptAfterWork($statement, $fallback, $priorWork)) {
                 return true;
             }
-            if ($worked && ($statement instanceof Stmt\Break_ || ($hasFallback && $statement instanceof Stmt\Continue_))) {
-                return true;
+            if ($statement instanceof Stmt\If_) {
+                $branchWork = $priorWork;
+                if ($index === array_key_last($statements) && $this->work->in($statement->cond)) {
+                    $branchWork ??= $statement->cond;
+                }
+                if ($this->branchHoldsExit($statement, $fallback, $branchWork)) {
+                    return true;
+                }
             }
-            if ($statement instanceof Stmt\If_ && $this->branchHoldsExit($statement, $hasFallback, $worked || ($index === array_key_last($statements) && $this->hasWork($statement->cond)))) {
-                return true;
+            if ($statement instanceof Stmt\Expression && $this->work->in($statement->expr)) {
+                $priorWork = $statement;
             }
-            $worked = $worked || $this->statementHasWork($statement);
         }
 
         return false;
     }
 
-    private function branchHoldsExit(Stmt\If_ $if, bool $hasFallback, bool $worked): bool
+    private function endsAttemptAfterWork(Stmt $statement, ?Stmt $fallback, ?Node $priorWork): bool
+    {
+        if ($statement instanceof Stmt\Return_) {
+            return $priorWork !== null || ($statement->expr !== null && $this->work->in($statement->expr));
+        }
+
+        return $priorWork !== null && ($statement instanceof Stmt\Break_ || ($fallback !== null && $statement instanceof Stmt\Continue_));
+    }
+
+    private function branchHoldsExit(Stmt\If_ $if, ?Stmt $fallback, ?Node $priorWork): bool
     {
         $branches = [$if->stmts, ...array_map(static fn(Stmt\ElseIf_ $elseif): array => $elseif->stmts, $if->elseifs)];
         if ($if->else !== null) {
@@ -70,27 +78,12 @@ final class ChainOfAttempts
         }
 
         foreach ($branches as $branch) {
-            if ($this->holdsExit($branch, $hasFallback, $worked)) {
+            if ($this->holdsExit($branch, $fallback, $priorWork)) {
                 return true;
             }
         }
 
         return false;
-    }
-
-    private function statementHasWork(Stmt $statement): bool
-    {
-        return $statement instanceof Stmt\Expression && $this->hasWork($statement->expr);
-    }
-
-    private function hasWork(Expr $expression): bool
-    {
-        return (new NodeFinder())->findFirst($expression, static fn(Node $node): bool => $node instanceof FuncCall
-            || $node instanceof MethodCall
-            || $node instanceof StaticCall
-            || $node instanceof New_
-            || $node instanceof Include_
-            || $node instanceof Throw_) !== null;
     }
 
     /**
