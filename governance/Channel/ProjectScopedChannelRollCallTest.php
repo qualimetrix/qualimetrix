@@ -8,7 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -72,7 +72,7 @@ final class ProjectScopedChannelRollCallTest extends TestCase
             => 'a {@see} in the docblock of the type the declarations are assembled into',
         'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php'
             => 'a {@see} in a docblock explaining what one capability declares about one channel',
-        'src/Reporting/FindingProjection/DeclaredChannelFileScope.php'
+        'src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php'
             => 'the assembly under test: it spreads every declaration into the scope',
     ];
 

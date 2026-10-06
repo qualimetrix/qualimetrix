@@ -166,6 +166,12 @@ optional note for intentionally empty coverage from its report: it constructs
 it as `scope.note`. The command passes no separate note parameter.
 `ReportCoverageProjection` transfers named `excluded` separately from `discovered`,
 which sums analyzed PHP, generated-excluded PHP and selected failed terminal entries.
+Published omitted-Composer-root reasons retain their cause and visited-level
+count, but candidate/start/last paths are optional project-relative paths only
+when they lie inside the project. An absent main manifest supplies no omitted-root
+reason. The projection uses existing observations rather than probing another
+filesystem or exposing absolute paths outside the analysed project.
+
 Project scope preserves skipped `{channel, option, pattern}` values. A channel is
 in `unjudgedChannels` only when none of its values was judged; a partial channel
 can be absent there while its skipped values remain named.
@@ -225,10 +231,34 @@ Present, Absent and Unknown. Unknown is not absence. Normal analysis does not
 request a full snapshot merely to serve a future baseline operation; a lifecycle
 metadata consumer can request it explicitly once for its invocation.
 
+`hasDirectory(AbsolutePath): ProjectEntryPresence` establishes positive root
+presence, including an inspectable directory alias. Unknown metadata does not
+establish that a root disappeared. For an absolute recorded root, canonical
+containment of the subject is required as well as directory presence.
+
 The opt-in price is O(entries) metadata traversal and O(PHP files) memory,
 including excluded autoload subtrees. There is no cap, persistent index, new
 benchmark fixture or unconditional additional walk. The snapshot is metadata,
 not a guarantee that bytes cannot change between filesystem observations.
+
+### Share subject-absence coverage
+
+Finding owns `SubjectCoverageFacts` and `SubjectCoverageObservation`, so Inline
+does not depend on Run's discovery implementation and Baseline does not invent
+another population test. Run creates one analyzed/failed-file index after
+collection and passes the same instance to late directive audit and measured
+results. Queries distinguish analyzed local evidence, verified absent exact
+files and nonlocal regions. A narrowed or unknown declaration population cannot
+prove a run-dependent suppression unused. A missing baseline subject instead
+requires a positively present recorded containing root; a missing exact subject
+can then be stale even for a run-wide producer. A namespace without current
+members does not prove PSR-4 containment. These rules govern absence authority;
+present findings keep their existing comparison policy.
+
+Directive audits carry the measured project scope with their verdicts. The
+structured report publishes `scope.project_scope`; human wording names unjudged
+channels even when analyzed paths cover every autoload target. Covered paths do
+not by themselves answer every producer's question.
 
 ### Preserve Git publication context
 
@@ -258,6 +288,9 @@ passes it once; the locator does not infer cwd.
 | `PathFactory::bestEffortRelative()` / `structurePreservingFallback()`                                                                | `published(file, canonicalRoot)` after Run input preflight                                                    |
 | No-argument Git locator methods; unused `GitClient::isRepository()`                                                                  | Explicit-root locator methods and existing checked Git scope resolution                                       |
 | Unjudged values with only option/pattern                                                                                             | Retain `channel` alongside both fields and interpret partial channel lists correctly                          |
+| Measured result, run coverage and late Inline audit without subject coverage facts                                                   | Supply the shared measured `SubjectCoverageFacts`                                                             |
+| Project tree implementations with file/snapshot queries only                                                                         | Implement tri-state `hasDirectory(AbsolutePath)`                                                              |
+| Directive audit without measured project scope                                                                                       | Supply `ProjectScopeMeasurement`; consume `scope.project_scope` and the human scope note                      |
 
 There are no compatibility shims or alternative configuration/discovery paths.
 Outward history lives in CHANGELOG Breaking; migration must preserve captured

@@ -14,7 +14,8 @@ Baseline rules audit the acceptance file after comparison.
 
 Complete comparable missing entries are stale; entries the loader cannot apply
 are inert. Unknown, outside or unmeasured entries do not prove remediation.
-Each audited entry produces a project warning after ceiling judgement. The audit
+Each audited entry produces a project warning after ceiling judgement, except
+inert contenders for one duplicate identity share a warning with their count. The audit
 is not a judged metric and has no warning/error threshold.
 
 ### How to fix

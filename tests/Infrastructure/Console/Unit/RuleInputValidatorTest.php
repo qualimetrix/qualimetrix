@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetri
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
@@ -290,6 +291,7 @@ final class RuleInputValidatorTest extends TestCase
         $rules->method('getClasses')->willReturn([ComputedMetricRule::class]);
         $static = self::universe($rules);
         $validator = new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $rules,
             $static,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
@@ -327,7 +329,7 @@ final class RuleInputValidatorTest extends TestCase
         $rules->method('getClasses')->willReturn([LcomRule::class]);
 
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessage('Invalid --rule-opt "cohesion.lcom:exclude_methods". Expected RULE:OPTION=VALUE.');
+        $this->expectExceptionMessage('Invalid --rule-opt=cohesion.lcom:exclude_methods. Expected RULE:OPTION=VALUE.');
         $this->validate(
             $this->validator($rules),
             self::ruleOptionInput('cohesion.lcom:exclude_methods'),
@@ -399,6 +401,7 @@ final class RuleInputValidatorTest extends TestCase
         $static = self::universe($rules);
 
         return new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $rules,
             $static,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
@@ -418,12 +421,13 @@ final class RuleInputValidatorTest extends TestCase
         $channels = new ChannelUniverse([], [], array_fill_keys($names, false), $definitions, ...self::unusedReachPorts());
         $execution = (new \Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory())->create()->get(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         \assert($execution instanceof \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface);
-        $cliWrites = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser((new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory())->createFromMetadata($execution->allRules())))->pathWrites($input);
+        $cliWrites = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser(new RuleOptionDocumentForms(), (new \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory())->createFromMetadata($execution->allRules())))->pathWrites($input);
         $authored = ResolvedOptionsFixture::authoredConfiguration($rules === [] ? [] : ['rules' => $rules], $execution->allRules(), $cliWrites);
         $document = new \Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument([], AbsolutePath::fromString('/project'), $authored->document);
         $computed = self::createStub(ComputedMetricConfiguratorInterface::class);
         $computed->method('resolve')->willReturn($definitions);
         $resolved = (new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             self::createStub(RuleRegistryInterface::class),
             $channels,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild($execution),

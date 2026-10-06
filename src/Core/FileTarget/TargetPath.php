@@ -6,11 +6,12 @@ namespace Qualimetrix\Core\FileTarget;
 
 final class TargetPath
 {
-    public static function resolve(string $spelling): ResolvedTarget
+    public static function resolve(string $spelling, ?PrivateGroupMembership $membership = null): ResolvedTarget
     {
+        $membership ??= new NativePrivateGroupMembership();
         $descriptor = self::schemeDescriptor($spelling);
         if ($descriptor !== null) {
-            return new ResolvedTarget($spelling, TargetKind::Descriptor, null, $descriptor, null, new PathInspection([], []));
+            return new ResolvedTarget($spelling, TargetKind::Descriptor, null, $descriptor, null, new PathInspection([], []), $membership);
         }
 
         $path = self::pathSpelling($spelling);
@@ -22,7 +23,7 @@ final class TargetPath
             $path = $cwd . '/' . $path;
         }
 
-        return (new PathWalk($spelling, $path, static fn(string $candidate): ?int => self::descriptorPrefix($candidate)))->resolve();
+        return (new PathWalk($spelling, $path, static fn(string $candidate): ?int => self::descriptorPrefix($candidate), $membership))->resolve();
     }
 
     private static function descriptorPrefix(string $path): ?int

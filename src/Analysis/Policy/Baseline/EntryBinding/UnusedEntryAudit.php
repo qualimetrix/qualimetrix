@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineAuditChannels;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
+use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -31,17 +33,47 @@ final readonly class UnusedEntryAudit
                 $baselinePath,
             );
         }
+        $duplicateCounts = self::duplicateCounts($outcome->inertEntries);
+        $reportedDuplicates = [];
         foreach ($outcome->inertEntries as $entry) {
+            $reason = $entry->reason->description() . ': ' . $entry->detail;
+            if ($entry->reason === InertEntryReason::DuplicateIdentity && $entry->identity !== null) {
+                $key = $entry->identity->key();
+                $selector = $entry->selector->value;
+                if (isset($reportedDuplicates[$key][$selector])) {
+                    continue;
+                }
+                $reportedDuplicates[$key][$selector] = true;
+                $reason .= '; ' . $duplicateCounts[$key][$selector] . ' contenders share this identity';
+            }
             $findings[] = self::finding(
                 'inert',
                 $entry->selector->value,
                 $entry->describe(),
-                $entry->reason->description() . ': ' . $entry->detail,
+                $reason,
                 $baselinePath,
             );
         }
 
         return $this->execution->publishable($findings);
+    }
+
+    /**
+     * @param list<InertBaselineEntry> $entries
+     *
+     * @return array<string, array<string, int>>
+     */
+    private static function duplicateCounts(array $entries): array
+    {
+        $duplicateCounts = [];
+        foreach ($entries as $entry) {
+            if ($entry->reason === InertEntryReason::DuplicateIdentity && $entry->identity !== null) {
+                $key = $entry->identity->key();
+                $selector = $entry->selector->value;
+                $duplicateCounts[$key][$selector] = ($duplicateCounts[$key][$selector] ?? 0) + 1;
+            }
+        }
+        return $duplicateCounts;
     }
 
     private static function finding(string $cause, string $selector, string $entry, string $reason, string $baselinePath): Finding

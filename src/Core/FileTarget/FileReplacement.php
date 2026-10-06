@@ -18,19 +18,34 @@ final class FileReplacement
         $path = $target->path?->value() ?? throw new LogicException('Replacement path is missing');
         $temporary = self::prepareTemporary($target, $path);
         try {
-            self::writeAll($target, $temporary, $bytes);
-            $now = TargetPath::resolve($target->spelling);
-            if (!$target->sameAs($now)) {
-                throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'target changed before replacement');
-            }
-
-            $replacementMode = self::replacementMode($target, $now, $path, $mode);
-            self::setMode($target, $temporary, $replacementMode);
-
-            self::publish($target, $now, $temporary, $path, $newName);
+            self::publishPrepared($target, $temporary, $bytes, $mode, $newName);
         } finally {
             $temporary->discard();
         }
+    }
+
+    /** @param ?callable(): void $beforePublish */
+    public static function publishPrepared(
+        ResolvedTarget $target,
+        TemporarySibling $temporary,
+        string $bytes,
+        ?int $mode,
+        NewName $newName,
+        ?callable $beforePublish = null,
+    ): void {
+        $path = $target->path?->value() ?? throw new LogicException('Replacement path is missing');
+        self::writeAll($target, $temporary, $bytes);
+        $now = TargetPath::resolve($target->spelling, $target->membership());
+        if (!$target->sameAs($now)) {
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'target changed before replacement');
+        }
+
+        $replacementMode = self::replacementMode($target, $now, $path, $mode);
+        self::setMode($target, $temporary, $replacementMode);
+        if ($beforePublish !== null) {
+            $beforePublish();
+        }
+        self::publish($target, $now, $temporary, $path, $newName);
     }
 
     private static function prepareTemporary(ResolvedTarget $target, string $path): TemporarySibling

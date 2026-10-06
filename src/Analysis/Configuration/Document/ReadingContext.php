@@ -32,7 +32,7 @@ final readonly class ReadingContext
 
     public function child(string $authored, string $canonical, AuthoredNode $node): self
     {
-        return $this->descend($authored, $canonical, $node->locator);
+        return $this->descend($authored, $canonical, $node->locator, $node->authoredExpression);
     }
 
     /** An item of this list: everything below it is inside a list. */
@@ -46,7 +46,7 @@ final readonly class ReadingContext
     /** A key of this map as a spot of its own, whatever value is written there. */
     public function key(string $authored, string $canonical): self
     {
-        return $this->descend($authored, $canonical, null);
+        return $this->descend($authored, $canonical, null, null);
     }
 
     /** @param list<string> $path */
@@ -62,10 +62,12 @@ final readonly class ReadingContext
         );
     }
 
-    private function descend(string $authored, string $canonical, ?string $locator): self
+    private function descend(string $authored, string $canonical, ?string $locator, ?string $authoredExpression): self
     {
         return new self(
-            $locator === null ? $this->origin : $this->origin->locatedAt($locator),
+            $locator === null ? $this->origin : ($authoredExpression === null
+                ? $this->origin->locatedAt($locator)
+                : $this->origin->locatedAtAuthoredWrite($locator, $authoredExpression)),
             $this->positioned,
             [...$this->authoredPath, $authored],
             [...$this->canonicalPath, $canonical],

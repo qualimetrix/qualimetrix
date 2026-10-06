@@ -142,6 +142,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
     }
 

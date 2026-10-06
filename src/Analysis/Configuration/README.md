@@ -247,7 +247,7 @@ refusal names `option --format`.
 The root dictionary is closed: `ConfigSchema` enumerates the accepted root
 keys. `ConfigurationRoot` declares the roots with Configuration-owned value
 forms. Run declares `paths`, Console declares `fail_on` and `memory_limit`,
-Parallel declares `parallel`, and Reporting declares `format`; the evidence
+Parallel declares `parallel`, Infrastructure Cache declares `cache`, and Reporting declares `format`; the evidence
 and policy owners declare their own sections. Each owner registers its section
 autoconfigured, and the container hands those instances to
 `ConfigurationPipeline`. Every accepted root has an actual registered declaration. A known but
@@ -255,11 +255,25 @@ undeclared root is a configuration error, not an unread transport escape;
 an unknown root is refused, `~` or not. A suggestion offers the canonical key, whatever the style of the
 key it answers.
 
+`ConfigSchema::EXCLUDE` names both the authored `exclude` root and its resolved
+result key. The former `EXCLUDES` constant and `excludes` result key are removed.
+`Infrastructure\\Cache\\CacheSection` owns cache forms and the default directory;
+`ParserConfigurator` registers that section explicitly with the document engine.
+
 `YamlConfigLoader` returns the positioned authored document. The stage supplies
 its real ConfigFile or Preset origin; the document engine reads it against all
 registered declarations. There is no deferred raw-rule refusal or second
 normalization pass after composition. Command-line values arrive as one authored
 layer through the same schema, with their option locator and no file position.
+`CommandLinePathWrite` requires the complete authored expression as well as the
+option name. `ConfigurationOrigin` keeps that expression for statement/refusal
+wording while the machine source locator remains the option name.
+
+Symfony YAML owns value parsing. It reads unquoted `+2` and `2.0` as floats;
+integer options refuse both with the parsed value and a hint to write `2`.
+The file, rule-option and alias doors share `WrittenForm` admission. File
+refusals retain their path and parsed value; CLI refusals also retain the authored
+expression. No source rewriting or float-to-integer conversion occurs.
 
 `SelectorYamlDecoder` is the configuration ingress for the shared selector
 language. A selector list entry is exactly one mapping — `{exact: value}`,

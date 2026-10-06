@@ -90,12 +90,12 @@ final class BaselineAcceptNewTest extends TestCase
                 }
                 $before = (string) file_get_contents($this->path);
                 [$tester, $pipeline, $loader] = $this->command();
-                $loaded = $loader->load(BaselineLoader::preflight($this->path));
+                $loaded = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->path));
                 $tester->execute(['baseline' => $this->path, 'paths' => ['src'], '--accept-new' => ['architecture.layer-violation'], '--only-rule' => $onlyRule ? ['architecture.layer-violation'] : [], '--no-progress' => true], ['capture_stderr_separately' => true]);
                 self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
                 self::assertSame(1, $pipeline->calls);
                 self::assertStringContainsString('accepted', $tester->getDisplay());
-                $after = $loader->load(BaselineLoader::preflight($this->path));
+                $after = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->path));
                 $retained = $after->findByIdentity($entry->identity);
                 self::assertNotNull($retained);
                 self::assertSame($loaded->entries[0]->toArray(), $retained->toArray());
@@ -115,6 +115,47 @@ final class BaselineAcceptNewTest extends TestCase
             }
             self::assertSame($deltas[0], $deltas[1]);
         }
+    }
+
+    #[Test]
+    public function itRefusesAcceptNewWhenTheRunDoesNotCoverTheRecordedScope(): void
+    {
+        $this->emptyBaseline();
+        $before = (string) file_get_contents($this->path);
+        [$tester, $pipeline] = $this->command();
+
+        $tester->execute([
+            'baseline' => $this->path,
+            'paths' => ['src/Foo.php'],
+            '--accept-new' => ['architecture.layer-violation'],
+            '--no-progress' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(1, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(1, $pipeline->calls);
+        self::assertStringContainsString('does not cover', $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame($before, file_get_contents($this->path));
+    }
+
+    #[Test]
+    public function itLetsForceBypassOnlyTheScopeGuardWithoutInventingAcceptance(): void
+    {
+        $this->emptyBaseline();
+        $before = (string) file_get_contents($this->path);
+        [$tester, $pipeline] = $this->command();
+
+        $tester->execute([
+            'baseline' => $this->path,
+            'paths' => ['src/Foo.php'],
+            '--accept-new' => ['architecture.layer-violation'],
+            '--force' => true,
+            '--no-progress' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(1, $pipeline->calls);
+        self::assertStringContainsString('outside-coverage', $tester->getDisplay());
+        self::assertSame($before, file_get_contents($this->path));
     }
 
     #[Test]
@@ -182,7 +223,7 @@ final class BaselineAcceptNewTest extends TestCase
         $run = new BaselineRun($property($run, 'runtimeConfigurator'), new MeasuredFindingSet($pipeline, $property($measured, 'projector')), $property($run, 'ruleInputValidator'), $property($run, 'configurationInputAdapter'), $property($run, 'runConfigurationPreparation'), $property($run, 'findingExclusionsResolver'), $property($run, 'errorStream'), $property($run, 'projectTree'), $property($run, 'composerReader'));
         $loader = $property($original, 'loader');
         \assert($loader instanceof BaselineLoader);
-        $command = new BaselineUpdateCommand($run, $loader, $property($original, 'updater'), $property($original, 'writer'), $property($original, 'ruleCoverage'));
+        $command = new BaselineUpdateCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(), $property($original, 'updater'), $property($original, 'writer'), $property($original, 'ruleCoverage'));
         $command->setRefusalPresenter((new ReflectionProperty(BaselineCommand::class, 'refusalPresenter'))->getValue($original));
         return [new CommandTester($command), $pipeline, $loader];
     }

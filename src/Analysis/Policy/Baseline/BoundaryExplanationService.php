@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline;
 
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
-use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 
 /**
  * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain`, as
@@ -38,45 +35,21 @@ final readonly class BoundaryExplanationService
     public function __construct(
         private ChannelIdentityInterface $channels,
         private RunRuleCoverage $ruleCoverage,
+        private ChannelDeclarationRegistryInterface $declarations,
     ) {}
 
-    /**
-     * @qmx-threshold code-smell.long-parameter-list 10 -- Nine independent invocation facts preserve exact subject, channel and coverage evidence; combining them introduces shared state. The next parameter reports again.
-     *
-     * @param list<Finding> $measuredFindings the measured set (ADR 0017) this run produced —
-     *                                        both the "currently compared" magnitudes of
-     *                                        ADR 0017 and the first exact typed subject for
-     *                                        annotation ownership come from here
-     * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile per-file
-     *                                                                         `@qmx-threshold`
-     *                                                                         overrides — read
-     *                                                                         straight off
-     *                                                                         `DirectiveObservations::$thresholdOverrides`
-     * @param array<string, array<string, int|float>> $configuredThresholds the rule's `qmx.yaml`-configured
-     *                                                                      boundary, keyed by channel name;
-     *                                                                      a channel absent from this map
-     *                                                                      reports {@see EffectiveBoundary::$configuredThreshold}
-     *                                                                      as `null`
-     * @param ?MetricRepositoryInterface $symbolLocations the run's measured exact subjects;
-     *                                                    repository evidence is the fallback
-     *                                                    when no current finding has that
-     *                                                    canonical subject
-     */
     public function explain(
         string $subjectKey,
         ?FindingChannel $channelFilter,
         ?Baseline $baseline,
-        array $measuredFindings,
-        array $thresholdOverridesByFile,
-        array $configuredThresholds,
-        ChannelDeclarationRegistryInterface $declarations,
-        RunCoverage $coverage,
-        ?MetricRepositoryInterface $symbolLocations = null,
+        BoundaryThresholdSources $thresholds,
+        BoundaryRunFacts $run,
     ): BoundaryExplanation {
+        $measuredFindings = $run->measuredFindings;
         $identities = ExplainedSubject::identities($subjectKey, $channelFilter, $baseline, $measuredFindings);
-        $repositoryRecord = ExplainedSubject::recordFor($subjectKey, ExplainedSubject::index($symbolLocations));
+        $repositoryRecord = ExplainedSubject::recordFor($subjectKey, ExplainedSubject::index($run->symbolLocations));
         $groups = self::groupsByIdentity($measuredFindings);
-        $evidence = (new CurrentBoundaryMeasurement($this->ruleCoverage))->measure($baseline, $identities, $groups, $measuredFindings, $declarations, $coverage);
+        $evidence = (new CurrentBoundaryMeasurement($this->ruleCoverage))->measure($baseline, $identities, $groups, $measuredFindings, $this->declarations, $run->coverage);
         $identityExplanation = new IdentityBoundaryExplanation($this->channels);
         $boundaries = [];
         foreach ($identities as $index => $identity) {
@@ -86,8 +59,8 @@ final readonly class BoundaryExplanationService
                 $identity,
                 $groups[$identity->key()] ?? [],
                 $subject,
-                $thresholdOverridesByFile,
-                $configuredThresholds,
+                $thresholds->thresholdOverridesByFile,
+                $thresholds->configuredThresholds,
                 $now,
                 $baselineSource,
             );

@@ -52,9 +52,9 @@ final class TranslatedRefusalVocabularyTest extends TestCase
         'options-for-another-level' => 'Configuration error: Unknown key "rules.complexity.ccn.callable.max_warning" in configuration file "%s". Accepted keys: enabled, error, warning, threshold.',
         'cross-level-options' => 'Configuration error: Unknown key "rules.complexity.ccn.class.warning" in configuration file "%s". Accepted keys: enabled, max-error, max-warning, threshold.',
         'scalar-for-level-options-map' => 'Configuration error: "rules.complexity.ccn.callable" in configuration file "%s" must be a map, got int.',
-        'flag-unsupported-level' => 'Configuration error: Option "method.warning" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold. Source: option --rule-opt.',
-        'flag-typo-inside-level' => 'Configuration error: Option "warnign" is not an option of rule "complexity.ccn" at level "callable". Options at that level: enabled, error, threshold, warning. Other levels of this rule take different options. Source: option --rule-opt.',
-        'flag-level-option-at-rule-depth' => 'Configuration error: Option "warning" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold. Source: option --rule-opt.',
+        'flag-unsupported-level' => 'Configuration error: Option "method.warning" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold. Written: --rule-opt=complexity.ccn:method.warning=1. Source: option --rule-opt.',
+        'flag-typo-inside-level' => 'Configuration error: Option "warnign" is not an option of rule "complexity.ccn" at level "callable". Options at that level: enabled, error, threshold, warning. Other levels of this rule take different options. Written: --rule-opt=complexity.ccn:callable.warnign=1. Source: option --rule-opt.',
+        'flag-level-option-at-rule-depth' => 'Configuration error: Option "warning" is not an option of rule "complexity.ccn". Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold. Written: --rule-opt=complexity.ccn:warning=1. Source: option --rule-opt.',
     ];
 
     /**

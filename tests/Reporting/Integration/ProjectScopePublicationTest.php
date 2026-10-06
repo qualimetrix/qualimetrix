@@ -164,6 +164,35 @@ final class ProjectScopePublicationTest extends TestCase
         self::assertStringContainsString('subtree:tests/Legacy', $output);
     }
 
+    #[Test]
+    public function itNamesUnjudgedChannelsOfACoveredRun(): void
+    {
+        $scope = ReportProjectScope::measured(
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(
+                new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(
+                    \Qualimetrix\Core\Path\AbsolutePath::fromString('/fixture'),
+                    true,
+                    [],
+                    [],
+                    [],
+                    true,
+                    [],
+                ),
+                [],
+                \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered,
+                [],
+                new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement([
+                    \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeDoor::Generated,
+                ]),
+            ),
+            [],
+            [],
+        );
+
+        self::assertContains('architecture.unreachable-layer', $scope->unjudgedChannels);
+        self::assertStringContainsString('architecture.unreachable-layer', (string) $scope->describe());
+    }
+
     /** A narrowed run judges no value, so it has none to skip, and a list beside its channels could only contradict them. */
     #[Test]
     public function itRefusesSkippedValuesOnANarrowedRun(): void

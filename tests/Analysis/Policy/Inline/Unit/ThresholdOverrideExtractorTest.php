@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Policy\Inline\ThresholdOverrideExtractionResult;
@@ -225,7 +226,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     #[Test]
     public function itRejectsAFractionalIntegerBoundaryBeforeOptionsCanTruncateIt(): void
     {
-        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build([ComplexityRule::class]));
+        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [ComplexityRule::class]));
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
@@ -251,7 +252,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     #[Test]
     public function itKeepsFractionalNumberBoundariesAndRefusesTheIntegerInOneDocblock(): void
     {
-        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build([
+        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [
             ComplexityRule::class,
             MaintainabilityRule::class,
             InstabilityRule::class,
@@ -289,7 +290,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     #[Test]
     public function itKeepsIndependentAndWarningOnlySemanticsWithDeclaredForms(): void
     {
-        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build([
+        $this->extractor = new ThresholdOverrideExtractor(RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [
             DataClassRule::class,
             GodClassRule::class,
         ]));

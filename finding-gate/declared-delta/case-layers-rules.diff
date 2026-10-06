@@ -1,8 +1,0 @@
---- candidate
-+++ reference (mapped)
-@@ -1,1 +1,1 @@
--55 rules available
-+54 rules available
-@@ -18,2 +18,0 @@
--Baseline
--  baseline.unused-entry                    Reports baseline entries that no longer bind a measured finding or cannot be applied.

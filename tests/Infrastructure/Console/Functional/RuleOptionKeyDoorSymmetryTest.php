@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Core\ProductIdentity;
@@ -29,6 +30,50 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(RuleOptionsBuild::class)]
 final class RuleOptionKeyDoorSymmetryTest extends TestCase
 {
+    /** @param 'file'|'alias'|'flag' $door */
+    #[Test]
+    #[TestWith(['file', '+2'])]
+    #[TestWith(['alias', '+2'])]
+    #[TestWith(['flag', '+2'])]
+    #[TestWith(['file', '2.0'])]
+    #[TestWith(['alias', '2.0'])]
+    #[TestWith(['flag', '2.0'])]
+    public function itExplainsYamlFloatInterpretationAtEveryIntegerDoor(string $door, string $written): void
+    {
+        $path = $this->configFile("  complexity.ccn:\n    callable:\n      warning: " . $written . "\n");
+        $input = match ($door) {
+            'file' => ['--config' => $path],
+            'alias' => ['--cyclomatic-warning' => $written],
+            'flag' => ['--rule-opt' => ['complexity.ccn:callable.warning=' . $written]],
+        };
+        $run = $this->check($input);
+        self::assertSame(3, $run['exit'], $run['stderr']);
+        self::assertStringContainsString('read as float (2.0)', $run['refusal']);
+        self::assertStringContainsString('YAML interprets +2 and 2.0 as float; write 2 for an integer.', $run['refusal']);
+        self::assertStringContainsString(match ($door) {
+            'file' => $path,
+            'alias' => '--cyclomatic-warning=' . $written,
+            'flag' => '--rule-opt=complexity.ccn:callable.warning=' . $written,
+        }, $run['refusal']);
+    }
+
+    #[Test]
+    public function itRefusesTheMiscalledLevelInsteadOfFoldingItsCase(): void
+    {
+        $run = $this->check(['--rule-opt' => ['complexity.ccn:Callable.warning=1']]);
+        self::assertSame(3, $run['exit'], $run['stderr']);
+        self::assertStringContainsString('Callable', $run['refusal']);
+        self::assertStringContainsString('callable', $run['refusal']);
+    }
+
+    #[Test]
+    public function itKeepsTheFullAuthoredRuleStatementInAnEarlyValueRefusal(): void
+    {
+        $run = $this->check(['--rule-opt' => ['complexity.ccn:callable.warning=oops']]);
+        self::assertSame(3, $run['exit'], $run['stderr']);
+        self::assertStringContainsString('complexity.ccn:callable.warning=oops', $run['refusal']);
+    }
+
     private const string ANALYSED_PATH = 'tests/Infrastructure/Console/Fixtures/parses_with_no_findings.php';
 
     /** @var list<string> */
@@ -51,7 +96,7 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertSame(
             'Configuration error: Option "max_warnign" is not an option of rule "complexity.ccn" at level "callable".'
             . ' Options at that level: enabled, error, threshold, warning.'
-            . ' Other levels of this rule take different options. Source: option --rule-opt.',
+            . ' Other levels of this rule take different options. Written: --rule-opt=complexity.ccn:callable.max_warnign=1. Source: option --rule-opt.',
             $throughTheFlag['refusal'],
         );
     }
@@ -84,7 +129,7 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertSame(
             'Configuration error: Option "warnign" is not an option of rule "complexity.ccn" at level "callable".'
             . ' Options at that level: enabled, error, threshold, warning.'
-            . ' Other levels of this rule take different options. Source: option --rule-opt.',
+            . ' Other levels of this rule take different options. Written: --rule-opt=complexity.ccn:callable.warnign=1. Source: option --rule-opt.',
             $fromTheFlag['refusal'],
         );
     }
@@ -142,7 +187,7 @@ final class RuleOptionKeyDoorSymmetryTest extends TestCase
         self::assertSame(
             'Configuration error: Option "warnign" is not an option of rule "complexity.ccn".'
             . ' Options here: callable, class, enabled, suppress-namespace-channels, suppress-namespaces, suppress-paths, threshold.'
-            . ' Source: option --rule-opt.',
+            . ' Written: --rule-opt=complexity.ccn:warnign=1. Source: option --rule-opt.',
             $throughTheFlag['refusal'],
         );
     }

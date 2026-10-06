@@ -580,7 +580,7 @@ final class UnusedDirectiveRuleTest extends TestCase
             $policy,
             self::productionUniverse(),
         ));
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -761,7 +761,7 @@ final class UnusedDirectiveRuleTest extends TestCase
         $produced = self::analyzeFamily($options ?? new InlineDirectiveOptions(), $policy, $identity);
 
         return $auditUsage
-            ? [...$produced, ...$policy->auditDirectiveUsage($produced, LevelActivity::empty())]
+            ? [...$produced, ...$policy->auditDirectiveUsage($produced, LevelActivity::empty(), self::coverage())]
             : $produced;
     }
 
@@ -877,4 +877,13 @@ final class UnusedDirectiveRuleTest extends TestCase
 
         return $execution->execute(self::context())->produced;
     }
+    private static function coverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+            [\Qualimetrix\Core\Path\RelativePath::fromString('src/Foo.php')],
+            [],
+        );
+    }
+
 }

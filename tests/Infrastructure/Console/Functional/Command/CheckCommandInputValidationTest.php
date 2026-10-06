@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Functional\Command;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -19,6 +20,65 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class CheckCommandInputValidationTest extends TestCase
 {
+    #[Test]
+    public function itNamesComposerJsonForAMissingInferredAutoloadTarget(): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-inferred-path-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"missing-src/"}}}');
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($root);
+            $tester = $this->tester();
+            $tester->execute(['--format' => 'json'], ['capture_stderr_separately' => true]);
+            self::assertSame(3, $tester->getStatusCode(), $tester->getErrorOutput());
+            $error = self::envelopeError($tester);
+            self::assertStringContainsString('composer.json', $error);
+            self::assertStringContainsString('missing-src', $error);
+            self::assertStringNotContainsString('Error: Error:', $error);
+        } finally {
+            chdir($before);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
+    #[Test]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\GraphExportCommand::class])]
+    #[TestWith([\Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class])]
+    public function itNamesInferredComposerTargetsThroughPreflightAndBaseline(string $commandClass): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-inferred-adjacent-' . bin2hex(random_bytes(6));
+        mkdir($root);
+        file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"missing-src/"}}}');
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($root);
+            $container = (new ContainerFactory())->create();
+            $command = $container->get($commandClass);
+            self::assertInstanceOf(\Symfony\Component\Console\Command\Command::class, $command);
+            $presenter = $container->get(RefusalPresenter::class);
+            self::assertInstanceOf(RefusalPresenter::class, $presenter);
+            (new Application(new ErrorStream(), $presenter, new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()))->addCommand($command);
+            $tester = new CommandTester($command);
+            $input = $commandClass === \Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand::class
+                ? ['baseline' => $root . '/baseline.json']
+                : ['--format' => 'json'];
+            $tester->execute($input, ['capture_stderr_separately' => true]);
+            self::assertSame(3, $tester->getStatusCode());
+            $refusal = $tester->getDisplay() . $tester->getErrorOutput();
+            self::assertStringContainsString('composer.json autoload target missing-src', $refusal);
+            self::assertStringNotContainsString('Error: Error:', $refusal);
+            self::assertFileDoesNotExist($root . '/baseline.json');
+        } finally {
+            chdir($before);
+            unlink($root . '/composer.json');
+            rmdir($root);
+        }
+    }
+
     #[Test]
     public function itFormatsIncompleteAnalysisAndGivesItExitCodePriority(): void
     {

@@ -67,7 +67,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->fixture();
         $before = (string) file_get_contents($path);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
 
         $after = (string) file_get_contents($path);
 
@@ -89,7 +89,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->fixture();
         $before = (string) file_get_contents($path);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map());
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map());
 
         self::assertSame($before, (string) file_get_contents($path));
         self::assertFalse($report->written);
@@ -107,7 +107,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->fixture();
         $before = (string) file_get_contents($path);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("nothing.here\tsomething.else"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("nothing.here\tsomething.else"));
 
         self::assertSame(['nothing.here'], $report->idleRows());
         self::assertFalse($report->written);
@@ -124,7 +124,7 @@ final class BaselineChannelRenamerTest extends TestCase
     {
         $path = $this->fixture();
 
-        $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("zeta.three\tbeta.three"));
+        $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("zeta.three\tbeta.three"));
 
         $expected = $this->writeBaseline(
             $this->entries(['alpha.one', 'mid.two', 'beta.three']),
@@ -176,11 +176,11 @@ final class BaselineChannelRenamerTest extends TestCase
             ],
         ]);
 
-        $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("a.rename\tb.renamed"));
+        $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("a.rename\tb.renamed"));
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
         self::assertStringContainsString('"channel":"b.renamed"', $carried);
@@ -207,7 +207,7 @@ final class BaselineChannelRenamerTest extends TestCase
             ],
         ]);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
 
         $carried = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
@@ -250,11 +250,11 @@ final class BaselineChannelRenamerTest extends TestCase
             ],
         ]);
 
-        $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("complexity.ccn\tmaintainability.index.class"));
+        $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("complexity.ccn\tmaintainability.index.class"));
         $carried = (string) file_get_contents($path);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
         $rewritten = (string) file_get_contents($path);
 
         self::assertSame(
@@ -323,7 +323,7 @@ final class BaselineChannelRenamerTest extends TestCase
             ],
         ]);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
 
         self::assertTrue($report->written);
         self::assertSame(2, array_sum($report->unreadable));
@@ -348,7 +348,7 @@ final class BaselineChannelRenamerTest extends TestCase
             ],
         ]);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("twin.channel\ttwin.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("twin.channel\ttwin.renamed"));
 
         self::assertTrue($report->written);
         self::assertSame(2, $report->renamedEntries);
@@ -409,7 +409,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $contents = $rows === 'HEADER' ? "from\tto\treason\n" : "old\tnew\treason\n" . $rows . "\n";
 
         try {
-            $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), ChannelRenameMap::fromString($contents, 'defective.tsv'));
+            $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), ChannelRenameMap::fromString($contents, 'defective.tsv'));
             self::fail('Expected the map to be refused.');
         } catch (ChannelRenameRefusal $e) {
             self::assertNotSame('', $e->getMessage());
@@ -426,7 +426,7 @@ final class BaselineChannelRenamerTest extends TestCase
         file_put_contents($path, $contents);
 
         try {
-            $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+            $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
             self::fail('Expected the carry to be refused.');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString('version 5', $e->getMessage());
@@ -512,7 +512,7 @@ final class BaselineChannelRenamerTest extends TestCase
         file_put_contents($path, $contents);
 
         try {
-            $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+            $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
             self::fail('Expected the carry to be refused.');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString($expected, $e->getMessage());
@@ -537,7 +537,7 @@ final class BaselineChannelRenamerTest extends TestCase
             'class:App\Bar' => [['channel' => 'mid.two', 'count' => 1]],
         ]);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
         $carried = (string) file_get_contents($path);
 
         self::assertSame(1, $report->renamedEntries);
@@ -549,7 +549,7 @@ final class BaselineChannelRenamerTest extends TestCase
         self::assertStringContainsString('{"channel":"mid.two","count":1}', $carried);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
     }
@@ -570,14 +570,14 @@ final class BaselineChannelRenamerTest extends TestCase
             'class:App\Bar' => [['channel' => 'mid.two', 'count' => 1]],
         ]);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
         $carried = (string) file_get_contents($path);
 
         self::assertSame(1, $report->renamedEntries);
         self::assertStringNotContainsString('App\\\\Empty', $carried);
 
         $loader = new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
-        (new BaselineWriter())->write($loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
+        (new BaselineWriter())->write($loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString($this->tempDir));
 
         self::assertSame($carried, (string) file_get_contents($path));
     }
@@ -597,7 +597,7 @@ final class BaselineChannelRenamerTest extends TestCase
         file_put_contents($path, $before);
 
         try {
-            $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+            $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
             self::fail('An unknown envelope key must refuse the document.');
         } catch (ConfigurationRefusal $e) {
             self::assertNotNull($e->position());
@@ -699,7 +699,7 @@ final class BaselineChannelRenamerTest extends TestCase
             $impatient = new BaselineChannelRenamer(new BaselineDocumentWriter(0.2));
 
             try {
-                $impatient->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+                $impatient->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
                 self::fail('The carry must not proceed while another holder has the lock.');
             } catch (RuntimeException $e) {
                 self::assertStringContainsString($path . '.lock', $e->getMessage());
@@ -725,7 +725,7 @@ final class BaselineChannelRenamerTest extends TestCase
         $path = $this->tempDir . '/link.json';
         symlink($referent, $path);
 
-        $report = $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map("mid.two\tmid.renamed"));
+        $report = $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map("mid.two\tmid.renamed"));
 
         clearstatcache(true, $referent);
         self::assertTrue($report->written);
@@ -740,7 +740,7 @@ final class BaselineChannelRenamerTest extends TestCase
     public function itCarriesHeldBytesAndRefusesChangedTargetOnWrite(): void
     {
         $path = $this->fixture('held.json');
-        $document = BaselineLoader::preflight($path);
+        $document = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path);
         $replacement = str_replace('"channel":"mid.two"', '"channel":"fresh.two"', (string) file_get_contents($path));
         file_put_contents($path, $replacement);
 
@@ -768,7 +768,7 @@ final class BaselineChannelRenamerTest extends TestCase
     private function expectRefusal(string $path, string $before, string $row): void
     {
         try {
-            $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map($row));
+            $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map($row));
             self::fail('Expected the carry to be refused.');
         } catch (ChannelRenameRefusal $e) {
             self::assertNotSame('', $e->getMessage());
@@ -780,7 +780,7 @@ final class BaselineChannelRenamerTest extends TestCase
     private function expectGrammarRefusal(string $path, string $before, string $row): void
     {
         try {
-            $this->renamer->carry(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path), $this->map($row));
+            $this->renamer->carry((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path), $this->map($row));
             self::fail('Expected the document grammar to be refused.');
         } catch (ConfigurationRefusal $e) {
             self::assertNotSame('', $e->summary());
@@ -879,7 +879,7 @@ final class BaselineChannelRenamerTest extends TestCase
                 (new Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer(
                     new Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter(),
                 ))->carry(
-                    Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight(\$baseline),
+                    (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight(\$baseline),
                     Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap::fromFile(\$map),
                 );
             } catch (Throwable \$e) {

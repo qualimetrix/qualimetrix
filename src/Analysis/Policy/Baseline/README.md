@@ -33,8 +33,10 @@ Baseline/
 ├── BaselineExclusionShape.php   # Closed recorded-exclusion grammar and indexed refusals
 ├── BaselineEntryShape.php       # Closed raw entry and edge keys before value normalization
 ├── GroupAcceptance.php          # Acceptance policy over complete groups
-├── BaselineLoader.php           # Loads the exact typed-subject version 14 file; envelope failures throw ConfigurationRefusal (Analysis/Configuration)
+├── BaselineDocumentReader.php   # Acquires and judges held document bytes before analysis
+├── BaselineLoader.php           # Semantically loads entries from the held version 14 document
 ├── CanonicalBaselineReader.php  # Reads the held canonical bytes, or declines to the full-document decoder
+├── CanonicalSubjectReader.php   # Existing canonical subject blocks and entry admission through the reader's line source
 ├── CanonicalEnvelope.php        # Pure canonical envelope-line recognition and depth-bounded decoding
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
@@ -47,10 +49,11 @@ Baseline/
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
 ├── BaselineEntryTightening.php  # Reconciles one existing entry against the whole ceiling outcome
+├── ExclusionRemovedPopulation.php # Proves that a file identity's own population was newly excluded
 ├── NewIdentityAcceptance.php    # Captures complete comparable identities of explicitly selected channels
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
 ├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
-├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / refused / skipped / accepted / re-recorded
+├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / removed / refused / skipped / accepted / re-recorded
 ├── BaselineUpdateRefusalReason.php # Enum: why update refused to tighten an entry
 │
 ├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
@@ -64,6 +67,8 @@ Baseline/
 ├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
 │
 ├── BoundaryExplanationService.php # `baseline:explain`: assembles the explained identities and sources
+├── BoundaryThresholdSources.php # readonly invocation configured and inline thresholds
+├── BoundaryRunFacts.php         # readonly measured findings, coverage and optional symbol locations
 ├── CurrentBoundaryMeasurement.php # Projects independent current evidence and the whole ceiling verdict
 ├── CurrentAbsentMeasurement.php # Proves file or aggregate absence only for unrecorded identities
 ├── IdentityBoundaryExplanation.php # Joins one identity with its configured threshold and annotation
@@ -77,7 +82,9 @@ Baseline/
 │   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
 │   ├── Absence.php              # Proven absence classification
 │   ├── EntryComparability.php   # Full-group comparison evidence
-│   ├── EntryJudgement.php       # Present-group acceptance and absent-entry classification
+│   ├── EntryJudgement.php       # Present-group acceptance
+│   ├── EntryAbsenceProof.php    # Positive evidence and ordered reasons for absent entries
+│   ├── RecordedRootPresence.php # Recorded-root containment and tri-state directory evidence
 │   ├── ExclusionDelta.php       # Changed discovery definition evidence
 │   ├── GroupCapture.php         # Complete finite-vector capture
 │   ├── GroupMeasurement.php     # Declared group measurement
@@ -159,7 +166,7 @@ also require deliberate identity migration; regenerating is a new acceptance.
 | `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode`         | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                              | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
 | `BaselineGenerator`          | `generate(list<Finding>, list<string>, RecordedExclusions): BaselineCapture`                                                          | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member.            | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
 | `ExplainedSubject`           | `identities()`, `index()`, `recordFor()`, `subjectFor()` over baseline, measured findings and an optional `MetricRepositoryInterface` | Answers which identities bear on the requested symbol and which exact subject and location the run measured for it. Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository; a logical projection invents no declaration subject. Static because the answer is a pure function of the run data handed in.                                                              | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
-| `BoundaryExplanationService` | measured findings, threshold maps, declarations, RunCoverage, optional `MetricRepositoryInterface` -> `BoundaryExplanation`           | Turns the identities and subject `ExplainedSubject` resolved into boundaries: status, independent CurrentMeasurement, baseline source, configured threshold and annotation. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value. | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
+| `BoundaryExplanationService` | `BoundaryThresholdSources`, `BoundaryRunFacts` with constructor declarations -> `BoundaryExplanation`                                 | Turns the identities and subject `ExplainedSubject` resolved into boundaries: status, independent CurrentMeasurement, baseline source, configured threshold and annotation. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value. | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
 
 These owners retain only their subject dependencies: baseline and capture VOs,
 channel declarations and the clock, or repository/subject/path and Finding-owned
@@ -171,6 +178,14 @@ second definition of identity, matching, or precedence.
 Comparison requires complete analysis and compatible evidence for the whole
 identity group. Baseline-owned `RunCoverage` combines current paths, recorded
 paths/exclusions, `AnalysisCoverage`, metadata and subject-region evidence.
+It receives the run's required `SubjectCoverageFacts`; its analyzed-file lookup
+uses that shared index. A missing exact file or declaration becomes stale only
+after a recorded containing root is positively present and exclusions permit
+the proof. This also applies to a run-wide producer whose exact subject file
+has disappeared. Without a current member proving PSR-4 containment, namespace
+absence requires whole-region evidence. For `baseline:explain` without a recorded
+entry, missing-file authority instead needs a captured source root, a selected
+containing root and positive directory presence.
 Exact files can be judged without a complete Composer roster; namespaces and
 run-dependent channels require their wider region. Unknown metadata does not
 mean absence. Equal path sets and exclusion definitions can establish equality
@@ -192,7 +207,8 @@ quantitative comparison after identity applicability is established.
 
 `EntryBinding\UnusedEntryAudit` emits `baseline.unused-entry` project-level
 Warnings for stale and inert entries after the full ceiling and before Git
-projection. The rule's remediation estimate is 5 minutes. Audit findings never
+projection. Inert contenders for one duplicate identity produce one warning
+with their contender count, rather than indistinguishable repeated findings. The rule's remediation estimate is 5 minutes. Audit findings never
 enter the measured set, capture or accept-new; authored path/namespace
 suppression and Git projection cannot hide them. When unselected, stderr reports
 counts only. Uncompared entries likewise produce count diagnostics, not path dumps.
@@ -231,6 +247,14 @@ bypass the ordinary scope guard, but cannot establish comparability or make
 incomplete evidence acceptable. `--record-exclusions` always requires exact
 recorded paths. Full ceiling judgement precedes report Git scope and hook
 projection; narrow run-dependent channels can therefore become not-compared.
+The ordinary guard also applies to `--accept-new`; `--force` bypasses only that
+guard, never acceptance coverage.
+
+`RunCoverage` uses the measured subject index for analyzed paths and memoizes
+exact file and directory answers. The first distinct file lookup remains exact;
+repeated PHP lookups inside the Composer denominator share one complete snapshot
+and path set. Incomplete/unknown inventories, paths outside the denominator and
+built-in omitted directory floors retain exact metadata queries.
 
 ### `BaselineUpdater` — direction-aware monotonic tightening
 
@@ -252,6 +276,15 @@ Other entries follow ordinary tightening. Unknown delta, changed generated
 policy without sufficient proof, incomplete analysis or unavailable required
 groups refuses the whole write. The options cannot combine.
 
+An absent `file:` entry can instead be removed as
+`exclusions-removed-population` when its own PHP file is present in a complete
+inventory, the run covers exactly the recorded paths, generated policy is
+unchanged, and the new authored exclusion alone removes that file. Cleanup
+offers the same selector for review. Relation identities do not retain source
+provenance, so a target declaration and occurrence hash cannot establish this
+proof; their unavailable groups still refuse. Update prints every named outcome
+before refusing the whole write and never publishes only the successful entries.
+
 Normalized accepted payload is preserved for arbitrary human JSON input.
 Exact unchanged entry bytes are guaranteed only for canonical writer-produced
 entries; arbitrary field order and numeric spelling may be normalized.
@@ -263,11 +296,19 @@ candidate requires complete comparable absence; an unmeasured/outside entry is
 retained and named as such. Unknown channel, undeclared level, malformed payload
 and audit entries are inert. Repeated `--remove=<selector>` removes exactly the
 reviewed entries; no bulk removal infers remediation from missing findings.
+A selector shared only by inert DuplicateIdentity contenders for the same
+identity removes all of those contenders. Other selector collisions remain
+ambiguous and refuse.
 Incomplete analysis exits 4 before classification or mutation.
 
 ## Explaining a Boundary
 
 `BoundaryExplanationService` answers one `EffectiveBoundary` per identity.
+Channel declarations are constructor dependencies. `BoundaryThresholdSources`
+retains the invocation's configured and inline threshold arrays;
+`BoundaryRunFacts` retains measured findings, coverage and optional repository
+locations. These readonly carriers are invocation evidence and are excluded
+from the service prototype.
 Its mandatory `Contract\CurrentMeasurement now` is independent of its nullable
 baseline source, configured threshold and inline override. No baseline or an
 inert entry can still have a current measured group. Known valid entries read
@@ -414,7 +455,7 @@ available.
 
 ### Reads
 
-`BaselineLoader::preflight()` physically acquires one immutable
+`BaselineDocumentReader::preflight()` physically acquires one immutable
 `Contract\BaselineDocument` before analysis for check, update, cleanup, explain
 and rename-channels. `BaselineFileShape` judges closed document grammar, including
 unknown envelope, entry, edge and exclusion keys, before configured semantics.
@@ -423,6 +464,12 @@ The canonical recognizer scans held bytes line by line; a declined layout uses
 full-document decoding over those same bytes. No second path acquisition or
 alternate grammar is introduced. The snapshot's target and content hash remain
 the publication/CAS provenance.
+
+Repeated member names refuse only at the envelope and subject-key levels of a
+fully recognized canonical layout, where the existing reader observes decoded
+names. Entry objects and noncanonical fallback use native `json_decode`, which
+keeps the last repeated member; duplicate detection is not promised there. A
+canonical prefix followed by a declined layout retains the same fallback limit.
 
 A single local measurement on identical 185,517-entry inputs compared the old
 load(path) with preflight(path) plus configured load(document). Canonical input
@@ -442,7 +489,16 @@ the same document without ever building a `Baseline`, and a second spelling of e
 half would show up as an unexplained diff in a user's baseline rather than as a
 failing test. `BaselineEntryOrder` is shared for the same reason.
 
-`BaselineDocumentWriter` writes to a temporary file and renames. A sibling `<baseline>.lock`
+Generate, update and writing cleanup prepare a private sibling before measuring
+the project. Existing final bytes remain untouched and a new final name remains
+absent until publication. No-op update/cleanup discard the sibling without
+changing the final bytes or inode. Console scopes SIGINT/SIGTERM cleanup to the
+operation; staged commands require pcntl, default SIGINT/SIGTERM handlers and no
+registered event-loop signal callbacks; otherwise exit 3 precedes preparation or
+analysis. Replacing handlers during the operation is unsupported. This does not
+cover SIGKILL, cleanup failure or a target already published.
+
+`BaselineDocumentWriter` publishes the complete sibling atomically. A sibling `<baseline>.lock`
 file (worth adding to `.gitignore`) holds an exclusive lock across both the
 content-hash check and the rename, so a read-modify-write cannot silently discard a
 concurrent writer: a `Baseline` loaded from a file carries that file's content hash,

@@ -57,8 +57,8 @@ final class CliStageTest extends TestCase
     {
         $layer = (new CliStage())->apply(new ConfigurationResolutionRequest(
             AbsolutePath::fromString('/project'),
-            cliValues: ['cache.dir' => '/tmp/c', 'cache.enabled' => false, 'excludes' => [['subtree' => 'build']]],
-            cliOptionNames: ['cache.dir' => '--cache-dir', 'cache.enabled' => '--no-cache', 'excludes' => '--exclude'],
+            cliValues: ['cache.dir' => '/tmp/c', 'cache.enabled' => false, 'exclude' => [['subtree' => 'build']]],
+            cliOptionNames: ['cache.dir' => '--cache-dir', 'cache.enabled' => '--no-cache', 'exclude' => '--exclude'],
         ));
 
         self::assertNotNull($layer);
@@ -81,7 +81,7 @@ final class CliStageTest extends TestCase
 
         $rules = $stage->apply(new ConfigurationResolutionRequest(
             AbsolutePath::fromString('/project'),
-            cliPathWrites: [new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '10', '--cyclomatic-warning', NodeSchema::scalar(ScalarForm::Integer))],
+            cliPathWrites: [new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '10', '--cyclomatic-warning', '--cyclomatic-warning=10', NodeSchema::scalar(ScalarForm::Integer))],
         ));
         self::assertNotNull($rules);
         self::assertArrayNotHasKey('rules', $rules->values);

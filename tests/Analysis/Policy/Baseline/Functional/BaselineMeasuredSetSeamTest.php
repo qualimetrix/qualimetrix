@@ -175,7 +175,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
             . ' \[[a-f0-9]{16}\] \(outside-coverage\)/',
             $update->getDisplay(),
         );
-        self::assertStringContainsString('0 updated, 0 unchanged, 1 not compared, 0 refused, 0 skipped', $update->getDisplay());
+        self::assertStringContainsString('0 updated, 0 unchanged, 0 removed, 1 not compared, 0 refused, 0 skipped', $update->getDisplay());
         self::assertStringContainsString('No entry moved', $update->getDisplay());
         self::assertSame($before, file_get_contents($this->baselinePath));
 
@@ -208,7 +208,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
             . ' \[[a-f0-9]{16}\] \(producer-not-measured\)/',
             $update->getDisplay(),
         );
-        self::assertStringContainsString('0 updated, 0 unchanged, 1 not compared, 0 refused, 0 skipped', $update->getDisplay());
+        self::assertStringContainsString('0 updated, 0 unchanged, 0 removed, 1 not compared, 0 refused, 0 skipped', $update->getDisplay());
         self::assertSame($before, file_get_contents($this->baselinePath));
     }
 

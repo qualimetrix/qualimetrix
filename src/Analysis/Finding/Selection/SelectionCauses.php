@@ -96,6 +96,9 @@ final class SelectionCauses
         if ($write === null) {
             return \sprintf('mode of "%s" is ignore by default', $cell->producer);
         }
+        if ($write->path === null && $write->origin->authoredExpression() !== null) {
+            return \sprintf('%s (%s)', $write->origin->authoredExpression(), self::layer($write));
+        }
         return \sprintf('%s: ignore (%s)', $write->path === null
             ? ($write->origin->locator() ?? '--rule-opt') : $write->displayPath(), self::layer($write));
     }
@@ -128,7 +131,7 @@ final class SelectionCauses
         $selectors = '[' . implode(', ', $filter->selectors) . ']';
         $writer = $filter->provenance;
         $statement = $writer->path === null
-            ? ($writer->origin->locator() ?? '--only-rule') . '=' . $selectors
+            ? ($writer->origin->authoredExpression() ?? (($writer->origin->locator() ?? '--only-rule') . '=' . $selectors))
             : $writer->displayPath() . ': ' . $selectors;
         return [$statement, $writer];
     }

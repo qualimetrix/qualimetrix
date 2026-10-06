@@ -9,133 +9,361 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-- Baseline version 13 becomes version 14 with required
-  `exclusions: {patterns, generated}`. Preserve accepted entries and explicitly
-  record the definition under which they were accepted when migrating.
-  Malformed subject buckets written as JSON objects now retain their container
-  on update instead of becoming entry lists. Combining such a bucket with another
-  entry at the same portable subject refuses before publication; review and remove
-  it with `baseline:cleanup --remove=<selector>` before accepting that entry.
-  Updates to other subjects remain available.
-  Unknown document keys refuse before analysis; channel and level semantics
-  are judged after configuration. PHP consumers must supply
-  `RecordedExclusions` to Baseline construction and generation. Ceiling types
-  move from `Baseline\Filter` to `Baseline\Ceiling`, with `CeilingOutcome`
-  under `Baseline\Contract`. See ADR 0098 for ownership and migration.
-- Baseline acceptance and resolved-entry reporting require comparable complete
-  measurement. Narrow scope, changed exclusions, unknown metadata and
-  incomplete analysis no longer imply repair or a measured breach. Update
-  preserves recorded scope and exclusions and reports equal payload as
-  unchanged. Stale and inert entries publish project warnings through
-  `baseline.unused-entry`; narrow hook and Git report invocations retain the
-  full ceiling evidence requirement. JSON and HTML distinguish `breached`
-  from `not-compared` through `baselineVerdict` and `baselineReason`; an
-  `acceptedLevel` alone no longer identifies a breach. See ADR 0098.
+- Inline directive migration: An exact `@qmx-*` tag in the middle of a comment
+  line, after another tag, or inside a list item now refuses; start its own
+  physical comment line, or quote a literal example with paired backticks or a
+  closed fence. A misspelled `@qmx-` tag at line start also refuses; correct or
+  quote it. A nested closure behind a call, yield, match, or constant-expression
+  wrapper still cannot bind, but its refusal reason changes from
+  `no-declaration-to-bind` to `closure-not-direct-value`; put the directive
+  directly before `function` or `fn` and update diagnostic parsers.
+  Direct argument, array value, return value, and assignment-chain placements
+  now bind a closure; docblocks in a declaration header bind that declaration.
+
+- A member directive now suppresses only findings on that member's lines, so repeat an
+  intended exception on each member. A method still covers its whole callable,
+  a hooked property its hooks, and a promoted parameter both parameter and
+  property findings. Threshold overrides retain whole-declaration semantics.
+  An explicit `:level` unreachable from its
+  binding now refuses; move it to a reachable declaration or remove the level.
+
+- Annotation findings and suppressed-format locations use the tag's physical
+  line rather than the docblock's opening line; re-key line-based consumers.
+  Each read tag has its own byte-positioned audit site. Next-line directives
+  name the tag line while targeting the next source line; two identical tags
+  on one line stay separate, while same-rule threshold overrides coalesce.
+  The suppressed formatter still labels sites as `file:line`, so same-line
+  sites share that public label.
+
+- Blanket `*` and bare `@qmx-ignore-file` controls can now report unused when
+  they suppress nothing; remove inert controls. Directive audit replaces its
+  old unmeasured/already-refused and every-channel verdicts with `refused` and
+  `refusals[]`; parse those details and treat exit 2 as a publishable refusal.
+  Incomplete analysis takes exit 4 priority; otherwise the audit exits 0.
+  JSON omits the internal addressed producer; blanket controls still cannot
+  silence banned channels.
+  `annotation.unused-directive` changes from Info to Warning; set
+  `rules.annotation.directive.unused-directive-severity: info` to retain the
+  old `--fail-on=warning` outcome.
+
+- Run-scope migration: Authored `exclude` now removes explicitly named files
+  and directories as well as discovered entries; a completely excluded,
+  otherwise valid run succeeds with exit 0. Remove the selector to analyse
+  those paths, and inspect coverage before treating exit 0 as analysed work.
+  For that empty run, `check` and `directives` return 0, `graph:export`
+  writes an empty graph, and `baseline:generate` writes an empty baseline with
+  a stderr explanation. Incomplete input instead exits 4 without baseline
+  mutation or authoritative graph output. Exclusion is not remediation;
+  baseline cleanup/explain retain their metadata-coverage limitation.
+
+- A symlink found while walking a directory is skipped as `file-symlink` and
+  makes the run incomplete (exit 4); name the link explicitly to analyse its
+  target under the written path. A path outside the captured project root now
+  refuses with exit 3; set `--working-dir` to the intended root. A backslash
+  in a POSIX filename stays literal in discovery and Git output; update stored
+  path keys to that spelling.
+
+- `projectScope.reasons` and
+  `unjudgedValues[].channel` now appear, `unjudgedChannels` means no value in
+  that channel was judged, and a complete named roster can be `covered`;
+  update scope parsers. Directive-audit JSON also adds `scope.project_scope`
+  and the text report explains measured scope. Namespace absence is withheld when authored exclusions
+  or generated-file removal hide PHP; include that population before relying
+  on absence.
+
+- `discovery.unmatched-exclude` distinguishes no project entry
+  from entries removed by the same source and reports another source's masking
+  as unjudged; fix the selector or inspect the unjudged value. An unreadable
+  source now has `failures[].kind=unreadable-file` rather than `parse`, and
+  `file-symlink` and `unreadable-entry` are additional kinds; update failure
+  parsers.
+
+- Git reports keep file findings only on changed files, while
+  non-strict mode also keeps relevant namespace and project aggregates.
+  Declared project-scoped findings, including architecture cycles and layer
+  violations, pass the Git filter in both modes. An empty range endpoint means
+  HEAD; a changed file becoming a symlink makes the run incomplete (exit 4),
+  and Git 2.28 or newer is required. Update report consumers and Git installs.
+
+- A narrowed-run warning now follows analysis on stderr; do not treat its old
+  ordering as a progress signal.
+
+- File-target migration: A target symlink is accepted only when its containing
+  directory is controlled by the invoking user or root, including a proven
+  private primary group; move exposed targets or correct ownership.
+
+- Regular report, profile, graph, and baseline output no longer exposes an empty new
+  final file during analysis; read the final name after successful atomic
+  publication. Creating an absent final name still requires hard-link support
+  for exclusive publication; precreate the destination on a filesystem without
+  it. A failed regular write leaves an existing final file unchanged; a
+  successful write replaces its inode while preserving mode, so reopen the
+  final pathname instead of watching another hard link. Existing report,
+  profile, and graph files no longer need read permission for an `r+` open;
+  baseline input still has to be readable. An existing writable destination
+  also needs a writable/searchable parent for the replacement sibling. Baseline
+  generate, update, and writing cleanup use the same preparation; a no-op
+  leaves old bytes and inode untouched. Staged regular output requires pcntl,
+  default SIGINT/SIGTERM handlers, and no registered event-loop signal
+  callbacks. Missing capability refuses with exit 3 before analysis; use a
+  descriptor/stream destination. Replacing handlers during staging is unsupported.
+
+- A replaceable FIFO or device output now refuses; use a trusted descriptor target or secure its
+  parent. `--output=/dev/stdin` now refuses; supported stdout descriptor
+  spellings write through the active descriptor, including shell `>>` append.
+
+- Distinct user-named report, profile, and log targets identifying one recipient
+  now refuse; give them separate destinations. Ordinary shell `2>&1` remains
+  valid. Target URIs now accept ordinary paths, `file://`, and supported
+  `php://stdout`, `php://stderr`, or `php://fd/N` descriptors; replace other
+  schemes.
+
+- Graph status moves from stdout to stderr; consume graph data only
+  from stdout. `--clear-cache` now runs only after configuration, target, and
+  baseline checks succeed; use an accepted invocation to clear it. A refusal
+  before log attachment leaves no new log file; an attached log with no records
+  passing its level remains empty. Later log-write failure prevents report publication and exits
+  3. Output-target and storage write failures now report `Environment error` and exit 3
+  rather than a configuration or internal error; route that exit accordingly.
+  Directory exposure warnings precede analysis on stderr. Failed implicit
+  report/graph stream writes respect SILENT and QUIET. Cleanup failure after a
+  completed report is diagnosed on stderr without appending another JSON body.
+
+- `baseline:generate --force` still refuses an unwritable destination and
+  preserves an existing mode such as 0600; make it writable first. Hook backup
+  retains mode, and restore consumes the backup name by moving its inode; do
+  not expect the backup path after restore. An unreadable hook now refuses with
+  environment exit 3. Baseline publication no longer creates parent directories;
+  create them first. A closed, Core-judged symlink writes to its resolved
+  referent; an exposed link refuses.
+
+- Cache configuration resolution no longer creates directories. An unusable
+  default cache directory disables caching, while an explicitly configured
+  unusable directory refuses with its authored provenance; correct the path or
+  let the default disable caching.
+
+- Invalid Coupling framework selectors, oversized selector lists, and
+  intrinsic Architecture layer-list defects now refuse in their authored
+  layer even when a later layer replaces the list. Correct the lower layer
+  rather than relying on its replacement to hide the defect.
+
+- Duplication migration: `duplication.clone` copy findings move from `project:`
+  to `file:<path>` subjects, with file symbols and null namespace; re-key JSON,
+  SARIF, and GitLab consumers. Occurrence hashes no longer include the file
+  name, so exported fingerprints change once; refresh fingerprint consumers
+  and accepted entries.
+
+- Old project-subject copy entries become stale; remove
+  them with `baseline:cleanup` and accept file-subject copies. The
+  `duplication.clone:project` selector now refuses; use
+  `duplication.clone:file`, including in directives. Query copies with
+  `baseline:explain file:<path>` instead of `project:`. HTML places copies on
+  their file's sole class when available, otherwise the project, and uses the
+  file's maximum ClassRank for impact instead of the project median; update
+  tree and impact comparisons.
+
+- Duplicate line values count token-covered
+  lines rather than the enclosing span; review thresholds and accepted
+  magnitudes.
+
+- Each copy's hint now comes from its own source and is truncated
+  by characters; do not compare hints byte for byte. Duplication `warning`,
+  `threshold`, and `@qmx-threshold duplication.clone` now refuse; retain only
+  `error` and remove per-directive overrides.
+
+- HTML markup differences and keyword, cast, or magic-constant case can now yield equivalent tokens;
+  review new copies. Unbalanced brackets and overlapping method tails now
+  split into balanced segments; recheck occurrence identities and short-tail
+  thresholds. Balanced segments with identical normalized content merge into
+  one copy group before coverage reduction; previously split groups could
+  reuse an occurrence key, so review stale keys and accept newly distinct
+  file copies after a complete run. Inline HTML ending in a line break no
+  longer adds an empty following row; recheck `min_lines` admission. The
+  baseline schema does not change. See ADR 0097. A block adding a new copy relation survives coverage reduction,
+  so findings and debt can increase; review before accepting them. A
+  `suppress_namespaces` regex matching an empty string no longer hides
+  file-level duplication or unused-directive findings; use `suppress_paths`
+  for files.
+
+- Duplication memory exhaustion now reports `--memory-limit`
+  guidance on stderr and exits 4 rather than a raw fatal 255; treat the run
+  as incomplete and raise the limit when appropriate.
+
+- Baseline migration: A v13 baseline now refuses until migrated to v14 with
+  `exclusions: {patterns, generated}`; preserve entries and record the
+  exclusion definition under which they were accepted.
+
+- Unknown envelope, entry, and edge keys, including a misspelled `magnitude`, now refuse before
+  analysis with their position and allowed keys; correct the document.
+  A malformed subject bucket written as a JSON object retains its container
+  on update. Combining it with another entry at the same portable subject
+  refuses before publication; remove it with
+  `baseline:cleanup --remove=<selector>` before accepting that entry. Other
+  subjects remain updatable.
+  `baseline:rename-channels` also refuses unknown envelope fields instead of
+  copying them; repair the document before renaming. `check`,
+  `baseline:update`, `baseline:cleanup`, `baseline:explain`, and
+  `baseline:rename-channels` preflight malformed baseline input before
+  analysis with exit 3 and its file path; fix that file rather than
+  interpreting a late analysis failure.
+
+- An accepted entry at an undeclared level is inert with `level-not-declared`;
+  move it to a declared level or remove it. Stale and inert entries now publish
+  `baseline.unused-entry` warnings, which can fail `--fail-on=warning` even in
+  Git mode or with `suppress_*`; repair or remove the entries. A recorded file
+  missing below a positively present recorded root is stale even in a narrow
+  or hook run; an absent or unknown root remains not compared. Verify a move
+  before cleanup. `baseline:explain` without an entry uses captured and selected
+  roots, so an unrecorded missing file is not assumed covered.
+
+- Stderr summaries now count unmeasured, outside-coverage,
+  not-compared, and unselected-producer entries instead of the old prose; parse
+  verdict state. `--show-resolved` counts only comparable absent entries, not
+  unmeasured or outside-coverage entries; inspect verdicts for the full set.
+
+- Namespace/project aggregates and run-dependent channels on another measured
+  scope are not compared; analyse the recorded population before judging them.
+  Unknown coverage metadata also withholds comparison until its population
+  can be established.
+  Changed `exclude:` or `--include-generated` policy withholds affected
+  aggregate comparisons; review the population and use
+  `baseline:update --record-exclusions` to recapture it.
+
+- A hook run staging both source and target can leave an accepted `architecture.layer-violation`
+  not compared and report its original severity, so `fail_on: warning` may
+  fail; analyse the full comparable population or address the violation.
+  Narrow runs do not automatically compare duplication, inheritance, or
+  unused-directive entries; run over their required population. Narrow hook
+  and Git report invocations still need complete evidence for baseline ceilings.
+
+- In JSON, non-null `acceptedLevel` no longer proves a breach; read `baselineVerdict`
+  and `baselineReason`, also present in HTML. `baseline:update` preserves
+  recorded scope, reports an equal entry as `unchanged` without rewriting,
+  and names not-compared/skipped reasons; handle those states. Finally,
+  `baseline:explain` prints `now:` per boundary and names not-compared or
+  undeclared-level states; parse that line for current measurement.
+
+- CLI rule-option keys and level segments now accept only the declared snake,
+  camel and kebab spellings, matching YAML. Replace previously folded wrong-case
+  segments with the spelling named by the refusal. Published
+  `omitted-composer-root` paths are now project-relative and absent
+  outside the project; an absent main manifest adds no such reason. Consumers
+  must treat those path fields as optional relative paths.
+
+- `baseline:update --accept-new` now uses the ordinary recorded-scope guard;
+  rerun over that scope or explicitly use `--force`, which still cannot supply
+  missing acceptance evidence. `--record-exclusions` names all entry outcomes
+  before a whole-write refusal. It removes absent `file:` entries only when
+  their own present PHP population is proven newly excluded; cleanup offers
+  those selectors. Relation entries without source provenance still refuse.
+  Review `removed` outcomes and `exclusions-removed-population` before cleanup.
+  Repeated envelope and subject keys now refuse in a fully recognized canonical
+  baseline; remove those duplicates. Entry-object and noncanonical duplicates
+  retain native last-member behavior, without a detection guarantee.
+
+- PHP option-schema consumers must replace
+  `RuleOptionShape::{matches,asNodeSchema,describe,describeWritten}` and
+  `RuleOptionSurface::{schema,schemaAt}` with document forms requested through
+  the injected `RuleOptionDocumentFormsInterface`. The surface now exposes
+  declaration-only `shapeAt()`. Supply the forms contract when constructing
+  CLI adapters, validators and parsers or building inline validator maps.
+  Worker task factories, tasks and bootstrap calls also require that contract;
+  carry the configured serializable forms service with each task rather than
+  constructing a private implementation in the worker.
+  Bootstrap calls group collector, derived-collector, traversal and rule class
+  metadata in the existing `WorkerComposition` instead of four separate arguments.
+  Existing option-authoring factories and accepted values are unchanged.
+  [ADR 0099](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0099-rule-option-shape-is-a-declaration.md) records the
+  declaration and private-interpretation boundary.
+
+- PHP baseline consumers must move `BaselineLoader::preflight()` and
+  `assertReadable()` calls to an injected `BaselineDocumentReader` instance;
+  semantic loading still consumes the held `BaselineDocument`.
+  `BoundaryExplanationService` now receives channel declarations in its
+  constructor and accepts `BoundaryThresholdSources` and `BoundaryRunFacts`
+  in `explain()` instead of separate invocation arrays and run facts. Update
+  direct construction and calls while preserving their existing evidence.
+
+- `CommandLinePathWrite` construction requires the complete authored
+  flag/value expression after the option name; carry the original text rather
+  than a reconstructed statement.
+
+- `ResolvedTarget` construction requires retained private-group membership
+  evidence as its final argument. Obtain resolved targets through
+  `TargetPath::resolve()` so claim, replacement and lock rechecks use the same
+  membership policy. See ADR 0096.
+
+- PHP consumers must supply `SubjectCoverageFacts` to `MeasuredRunResult`,
+  `RunCoverage`, `auditDirectiveUsage()` and `directiveVerdicts()`; implement
+  `ProjectTreeQueryInterface::hasDirectory()` with tri-state metadata evidence.
+  `DirectiveAuditReport` requires the measured `ProjectScopeMeasurement` before
+  its optional sweep. See ADR 0093 for the measured coverage contract.
+
+- `ConfigSchema::EXCLUDES` and the `excludes` resolved result key are removed.
+  Use `ConfigSchema::EXCLUDE` and `exclude`; YAML `exclude:` and CLI `--exclude`
+  keep their spelling. `ConfigurationRoot::Cache` is removed; register Cache's
+  `CacheSection` declaration instead of taking its directory grammar from
+  Configuration.
+
+- PHP consumers must supply `RecordedExclusions` to Baseline construction and
+  generation. Ceiling types move from `Baseline\Filter` to `Baseline\Ceiling`,
+  with `CeilingOutcome` under `Baseline\Contract`. See ADR 0098 for ownership
+  and the consumer migration above.
 
 - `ArtifactFile` is removed. Console report, profile and log delivery uses one
   shared `RunTargets`: judge destinations, claim after input checks, write through
-  held targets and abandon on teardown. `CheckCommand` requires a shared
+  prepared or held targets and abandon on teardown. `CheckCommand` requires a shared
   `RunTargetSession` as its final constructor argument; `GraphExportCommand`
   requires that session before its optional logger. Construct the session with
   the shared `RunTargets` and `RefusalPresenter`; `RuntimeLoggerConfigurator`
   requires those same targets as its final constructor argument.
   `ResultPresenter::presentResults()`, `presentProfile()` and
   `assertOutputIsWritable()`, and `ProfilePresenter::present()`, require explicit
-  run targets. Report/profile/log aliases of one ordinary inode or absent name
-  now refuse, including collisions with implicit report stdout. Graph status
-  moves to stderr. Directory exposure warnings precede analysis on stderr.
-  Implicit report and graph streams now refuse failed writes with environment
-  exit 3, using the supplied console resource and respecting SILENT and QUIET.
-  See ADR 0096 for filesystem guarantees and platform limits.
-  A cleanup failure after a completed report is also diagnosed on stderr,
-  alongside the primary failure, without appending another JSON document.
+  run targets. See ADR 0096 for filesystem guarantees and platform limits;
+  consumer-visible target behavior is described above.
 - `FileLogger` no longer opens a file or creates its parent in its constructor.
   Create the parent explicitly, attach a claimed `HeldTarget` and call `settle()`
   to receive a latched write failure with the lost-record count.
   `LoggerFactoryInterface::create()` requires all three arguments, including
   explicit nulls; implementations must provide `attachFileTarget()`, `settle()`
-  and `reset()`. File logging begins after input checks; an invalid invocation
-  leaves the requested log untouched. File failures use environment exit 3.
+  and `reset()`.
 - Baseline writers now require a prepared `ResolvedTarget` instead of a string
   destination. `destinationSnapshot()` returns `{target, hash}` for both absent
   and existing targets. Pass that prepared target to `BaselineWriter::write()`;
-  `baseline:generate` prepares its destination before analysis. Create parent directories
-  explicitly: baseline publication no longer creates them. Existing modes are
-  preserved. Closed, Core-judged symbolic links write their resolved referents;
-  exposed links refuse. `--force` still authorizes replacing occupied names.
+  `baseline:generate` prepares its destination before analysis.
 - `BaselineGenerateCommand` requires its fourth `ErrorStream` argument, and
   hook commands require the third. Use the same stream as `RefusalPresenter`.
-  Unreadable hooks now refuse with environment exit 3. Hook backups preserve
-  mode; restoring a backup moves its inode and consumes the backup name.
 - `CacheInterface::clear()` now returns `CacheClearOutcome`, with completion,
   remaining-entry count, directory and reason. Inspect completion rather than
-  assuming every entry was removed. Cache configuration resolution no longer
-  creates directories; an unusable default disables caching, while an explicit
-  unusable directory refuses with its authored provenance.
+  assuming every entry was removed.
 
 
-**Inline directives are authored sites with bounded declaration reach.**
-Previously midline tags could become live controls, quote handling depended on
-a tick immediately before the tag, and binding followed the parser's outer
-node or broad containment. A tag must now start its physical comment line
-after decoration; quote documentation with equal paired backtick runs or a
-closed fence. Midline and unclosed-fence mentions are refused. Put a closure
-directive directly before `function`/`fn`, or on its direct argument, array
-value, return value or assignment chain; wrappers around a nested closure do
-not bind. Docblocks anywhere in a declaration header belong to that declaration.
-
-Member suppressions now reach only findings on the member's source lines in
-the containing class or callable. A method retains whole-callable reach;
-a hooked property also reaches its hooks, and a promoted parameter reaches
-both parameter and property findings. Move an intentional member exception
-onto that member. Explicit `:level` selectors must be reachable there.
-Threshold overrides retain whole declaration semantics and gain no containing
-member reach.
-
-Every read tag produces one audit site. Suppressions and diagnostics carry its
-byte position, and next-line sites name the tag line while targeting the line
-after the comment. Two identical comments on one line remain distinct;
-threshold overrides of the same rule on the same line still coalesce.
-Replace `unmeasured / already-refused` and `addresses-every-channel` handling
-with `refused` and required `refusals: [{channel, message}]` (empty for other
-verdicts). JSON does not publish the internal addressed producer. Audit exit
-`4` for incomplete analysis takes priority over `2` for a publishable refusal
-or observable inert directive, otherwise `0`. Blanket `*` and bare file
-controls are judged effective/inert while still unable to silence banned
-channels.
-
-Unused directives now default to Warning instead of Info. To keep the former
-severity, set `rules.annotation.directive.unused-directive-severity: info`
-(or the equivalent nested YAML key). Unresolved and unused channels are
-`Selectable`; unsupported and invalid thresholds are `FollowsAddressedRule`.
-
-PHP consumers must provide `DeclarationBinding(subject, scope, reach)` with
+- PHP consumers must provide `DeclarationBinding(subject, scope, reach)` with
 Inline's `DeclarationReach`, and provide `Suppression`'s physical `position`
 and separate `silencedLine`. `ThresholdDiagnostic` requires `position`;
 `DirectiveSite` requires nullable `position`; `DirectiveVerdict` requires
 nonempty refusal details exactly when refused.
+Unresolved and unused channels are `Selectable`; unsupported and invalid
+thresholds are `FollowsAddressedRule`.
 Read the first actually applied site through
 `AnnotationSuppressionResult::suppressorOf(Finding)`; Reporting receives that
 result through `FindingProjectionResult` rather than repeating a matcher.
 Construct `AnnotationSuppressionResult(retained, suppressed, suppressors)`
 with one site per suppressed finding and supply that result as
 `FindingProjectionResult`'s required `annotationSuppression` argument.
-The suppressed formatter still publishes only `file:line`, so same-line
-sites share that public label. A missing rule class now refuses validator-map
-construction instead of silently being skipped.
+A missing rule class now refuses validator-map construction instead of
+silently being skipped.
 See [ADR 0095](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0095-inline-directives-are-authored-sites-with-bounded-reach.md)
 for ownership and rationale.
 
 - `ValueScopeJudgement` now requires its existing fifth constructor argument, the measured `ProjectScopeJudgement`; omitting it previously assumed both questions were open. Pass the pipeline judgement explicitly. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for the single measured authority.
 
 - Replace the nine-input `AnalysisResult` constructor with `AnalysisResult::fromRun(measured, directives, ruleExecution, latePublished)`. Read metrics as `measured.repository`; read coverage, namespaceTree, projectScope and duration under `measured`, and suppressions/thresholdOverrides under `directives`. Replace the findings property with `findings()` and filesAnalyzed/filesSkipped with measured coverage methods. Execution publication and late findings remain separate, and merge preserves their original order. See [ADR 0094](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0094-analysis-results-publish-subject-owned-values.md) for PHP-consumer migration.
-- Run scope is measured from the captured project universe and final entry selection. Namespace/declaration absence and exclude-selector binding use separate judgements. A complete named PHP roster can cover paths; authored removal hiding PHP and generated removal still withhold declaration-absence claims. Unjudged report values now include `channel` beside `option` and `pattern`.
-- Authored `exclude` removes named files and directories instead of refusing written directories or bypassing selectors for named files. A complete intentionally empty run (`analyzed=0`, `failed=0`, `excluded + generatedExcluded > 0`) succeeds: `check` and `directives` return 0, `graph:export` writes an empty graph, and `baseline:generate` writes an empty baseline with a stderr explanation. Incomplete input takes priority with exit 4 and no baseline mutation or authoritative graph output. Exclusion is not remediation; baseline cleanup/explain retain the metadata-coverage limitation described in their guide.
 - Replace Run's `FileDiscoveryInterface`, `FileDiscoveryFactoryInterface`, `SkipReportingDiscoveryInterface` and `AnalysisFileDiscovery` composition with `ProjectFilesInterface::discover(RunConfiguration): DiscoveredProjectFiles`. Remove `FinderFileDiscovery`, `DiscoveredAnalysisFiles`, `DirectoryPruner`, `DirectoryWalk`, `ExcludeBindingProbe` and `ExcludeBindingVerdict` integrations. Graph and debug pass the captured run configuration. `LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath)` replaces separate path/exclude/root inputs and `resolveIncludingGenerated()`.
-- Replace `AnalysisContext::$coversProjectScope` with Finding's measured `ProjectScopeJudgement`: use `judgesNamespaceClaims()` for declaration absence and `judgesExcludeSelectors()` for selector completeness. Carry the pipeline's judgement into copied contexts instead of deriving another boolean from report state. Replace `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` with Finding's sole `ProjectScopeChannels` roster. `unjudgedChannels` contains only channels with no judged value; partially judged channels can still have named skipped values.
-- `FileParserInterface::parse(SplFileInfo)` is removed: supply caller-owned bytes through `parseContent(SplFileInfo, string)` with the original absolute file identity. Replace file-based `CacheKeyGenerator::generate()` with `generateForContent()`. Run supplies one snapshot to parser, LOC and Inline processing; source-read refusal becomes `unreadable-file` before parsing.
-- Replace `PathFactory::bestEffortRelative()` and `structurePreservingFallback()` with `published(AbsolutePath, AbsolutePath)`. Publication requires a canonical parent inside the captured root and preserves lexical basename and POSIX backslashes. Outside parents refuse instead of producing a fallback path. Explicit directory aliases targeting the root or its descendants remain valid.
-- `GitRepositoryLocator::findGitDir()` and `findHooksDir()` require an explicit `AbsolutePath`. Git reporting retains all nine project-scoped configuration channels even in strict mode, resolves empty range endpoints as HEAD and uses root-relative diffs. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for migration and limits.
+- Replace `AnalysisContext::$coversProjectScope` with Finding's measured `ProjectScopeJudgement`: use `judgesNamespaceClaims()` for declaration absence and `judgesExcludeSelectors()` for selector completeness. Carry the pipeline's judgement into copied contexts instead of deriving another boolean from report state. Replace `ProjectScopeCoverage::WHOLE_PROJECT_CHANNELS` with Finding's sole `ProjectScopeChannels` roster.
+- `FileParserInterface::parse(SplFileInfo)` is removed: supply caller-owned bytes through `parseContent(SplFileInfo, string)` with the original absolute file identity. Replace file-based `CacheKeyGenerator::generate()` with `generateForContent()`. Run supplies one snapshot to parser, LOC and Inline processing.
+- Replace `PathFactory::bestEffortRelative()` and `structurePreservingFallback()` with `published(AbsolutePath, AbsolutePath)`. Explicit directory aliases targeting the root or its descendants remain valid.
+- `GitRepositoryLocator::findGitDir()` and `findHooksDir()` require an explicit `AbsolutePath`. Git diffs are root-relative. See [ADR 0093](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0093-measured-run-scope-and-project-tree-queries.md) for migration and limits.
 
 **Authored threshold override requests.** Replace validate(warning, error,
 errorWasExplicit) with validate(ThresholdOverrideRequest). An absent override
@@ -976,6 +1204,21 @@ What changes for a configuration you already have:
 
 ### Changed
 
+- Integer option refusals now explain the parsed float value: Symfony YAML reads
+  `+2` and `2.0` as floats, so write `2` for an integer. The file, dedicated
+  alias and `--rule-opt` doors share that explanation; CLI refusals retain the
+  complete authored expression. Integer admission itself is unchanged.
+
+- Inert baseline contenders for one duplicate identity produce one
+  `baseline.unused-entry` finding with their count. Removing their shared
+  selector removes all contenders only when every selected entry is an inert
+  duplicate of that same identity; other selector collisions still refuse.
+
+- Group-writable parents with a provably private primary group no longer refuse
+  the owner's symbolic link or report false exposure. Complete supported NSS
+  membership evidence is required; uncertain membership retains the refusal.
+  See ADR 0096.
+
 - `baseline:update --accept-new=channel` adds comparable measured identities
   only for explicitly named channels while preserving existing accepted
   payloads. `--record-exclusions` deliberately records a new exclusion
@@ -1199,6 +1442,10 @@ What changes for a configuration you already have:
   copy of a duplicate block can be told apart.
 
 ### Fixed
+
+- Staged report and profile replacements keep their temporary contents owner-only
+  before publication, including when replacing an existing file with mode 0600.
+  New log and lock files retain their ordinary umask-filtered creation modes.
 
 - Stale suppression regex values are audited on a complete named PHP file roster using measured path completeness, with the separate declaration-completeness requirement for namespace values.
 

@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
@@ -43,7 +42,7 @@ final class PresetStage implements ConfigurationStageInterface
 
     public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        $presetNames = $this->extractPresetNames($request);
+        $presetNames = PresetResolver::names($request->presetNames);
 
         if ($presetNames === []) {
             return null;
@@ -53,48 +52,6 @@ final class PresetStage implements ConfigurationStageInterface
             'preset:' . implode(',', $presetNames),
             authored: $this->loadPresets($presetNames, $request->workingDirectory->value()),
         );
-    }
-
-    /**
-     * Extracts and deduplicates preset names from --preset CLI option.
-     *
-     * Supports both repeated options (--preset=strict --preset=ci)
-     * and comma-separated values (--preset=strict,ci).
-     *
-     * An empty name between commas (`--preset=strict,`, `--preset=,ci`) is
-     * refused rather than skipped: it is what a list assembled from an unset
-     * variable looks like, and skipping it runs fewer presets than written.
-     *
-     * @return list<string>
-     */
-    private function extractPresetNames(ConfigurationResolutionRequest $request): array
-    {
-        if ($request->presetNames === []) {
-            return [];
-        }
-
-        // Split comma-separated values and flatten
-        $names = [];
-        foreach ($request->presetNames as $value) {
-            foreach (explode(',', $value) as $part) {
-                $trimmed = trim($part);
-                if ($trimmed === '') {
-                    throw ConfigurationRefusal::aboutCommandLineInput(
-                        '--preset',
-                        \sprintf(
-                            'Option --preset was written with an empty preset name ("--preset=%s"). '
-                            . 'Name a preset between every pair of commas, or omit --preset entirely.',
-                            $value,
-                        ),
-                    );
-                }
-
-                $names[] = $trimmed;
-            }
-        }
-
-        // Deduplicate while preserving order
-        return array_values(array_unique($names));
     }
 
     /**

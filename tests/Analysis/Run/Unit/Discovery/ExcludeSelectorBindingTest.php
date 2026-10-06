@@ -92,10 +92,10 @@ final class ExcludeSelectorBindingTest extends TestCase
             LayeredDocument::of([
                 ['source' => 'qmx.yaml', 'values' => [
                     'paths' => ['.'],
-                    'excludes' => [['exact' => 'Missing'], ['subtree' => 'AlsoMissing']],
+                    'exclude' => [['exact' => 'Missing'], ['subtree' => 'AlsoMissing']],
                 ]],
                 ['source' => 'cli', 'values' => [
-                    'excludes' => [['exact' => 'Missing']],
+                    'exclude' => [['exact' => 'Missing']],
                 ]],
             ], AbsolutePath::fromString($this->root)),
         );

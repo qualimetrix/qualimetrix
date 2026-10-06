@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
+use Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement;
 
 /**
  * What every inline directive of one run did, plus what the answer is relative
@@ -42,6 +43,7 @@ final readonly class DirectiveAuditReport
         public array $verdicts,
         public AnalysisCoverage $coverage,
         public int $producedFindings,
+        public ProjectScopeMeasurement $projectScope,
         public DirectiveSweepScope $sweep = DirectiveSweepScope::Narrow,
     ) {}
 }

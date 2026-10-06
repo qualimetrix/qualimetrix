@@ -21,13 +21,13 @@ final class HeldLock
 
     public static function acquire(ResolvedTarget $lockFile, float $timeoutSeconds): self
     {
-        if (!$lockFile->sameAs(TargetPath::resolve($lockFile->spelling))) {
+        if (!$lockFile->sameAs(TargetPath::resolve($lockFile->spelling, $lockFile->membership()))) {
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $lockFile->spelling, 'lock target changed before acquisition');
         }
 
         $deadline = hrtime(true) / 1e9 + $timeoutSeconds;
         do {
-            $now = TargetPath::resolve($lockFile->spelling);
+            $now = TargetPath::resolve($lockFile->spelling, $lockFile->membership());
             $path = self::lockPath($lockFile, $now);
             if ($now->kind === TargetKind::Absent) {
                 self::createLockName($lockFile, $path);
@@ -60,7 +60,7 @@ final class HeldLock
 
     private static function createLockName(ResolvedTarget $lockFile, string $path): void
     {
-        $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+        $temporary = TemporarySibling::create(AbsolutePath::fromString(\dirname($path)), 0666);
         try {
             [$linked, $linkWarning] = NativeCall::attempt(static fn() => link($temporary->path()->value(), $path));
             if (!$linked) {
@@ -99,8 +99,14 @@ final class HeldLock
     /** @param resource $handle */
     private static function lockMatchesName(mixed $handle, string $path): bool
     {
-        [$locked] = NativeCall::attempt(static fn() => flock($handle, \LOCK_EX | \LOCK_NB));
+        [$locked, $warning] = NativeCall::attempt(static fn() => flock($handle, \LOCK_EX | \LOCK_NB));
         if (!$locked) {
+            if ($warning !== null
+                && stripos($warning, 'would block') === false
+                && stripos($warning, 'temporarily unavailable') === false) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot lock file', $warning);
+            }
+
             return false;
         }
 

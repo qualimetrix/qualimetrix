@@ -9,9 +9,12 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryRunFacts;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryThresholdSources;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -49,6 +52,7 @@ final class BaselineExplainCommand extends BaselineCommand
     public function __construct(
         private readonly BaselineRunInterface $baselineRun,
         private readonly BaselineLoader $loader,
+        private readonly BaselineDocumentReader $documentReader,
         private readonly BoundaryExplanationService $explanationService,
         private readonly BaselineConfiguredThresholds $configuredThresholds,
         private readonly ChannelDeclarationRegistryInterface $declarations,
@@ -94,7 +98,7 @@ final class BaselineExplainCommand extends BaselineCommand
         $channel = $this->readChannel($input);
 
         $baselinePath = self::baselinePath($input);
-        $document = $baselinePath !== null ? BaselineLoader::preflight($baselinePath) : null;
+        $document = $baselinePath !== null ? $this->documentReader->preflight($baselinePath) : null;
 
         $context = $this->baselineRun->measure($input, $output);
         if ($context->result()->measured->coverage->isIntentionallyEmpty()) {
@@ -123,12 +127,15 @@ final class BaselineExplainCommand extends BaselineCommand
             $subjectKey,
             $channel,
             $baseline,
-            $context->findings(),
-            $context->result()->directives->thresholdOverrides,
-            $this->configuredThresholds->resolve(),
-            $this->declarations,
-            $context->coverage,
-            $context->result()->measured->repository,
+            new BoundaryThresholdSources(
+                $context->result()->directives->thresholdOverrides,
+                $this->configuredThresholds->resolve(),
+            ),
+            new BoundaryRunFacts(
+                $context->findings(),
+                $context->coverage,
+                $context->result()->measured->repository,
+            ),
         );
 
         if ($explanation->status === BoundaryExplanationStatus::Unknown) {

@@ -37,7 +37,7 @@ final readonly class Suite
         'tests/Infrastructure/DependencyInjection/Unit/CompilerPass/RuleCompilerPassTest.php',
         'tests/Infrastructure/Parallel/Unit/Strategy/AmphpParallelStrategyTest.php',
         'tests/Infrastructure/Rule/Unit/RuleRegistryTest.php',
-        'tests/Reporting/Unit/FindingProjection/DeclaredChannelFileScopeTest.php',
+        'tests/Infrastructure/DependencyInjection/Unit/Configurator/DeclaredChannelFileScopeTest.php',
     ];
 
     /**

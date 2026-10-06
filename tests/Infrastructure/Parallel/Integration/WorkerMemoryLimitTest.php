@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
@@ -127,6 +128,7 @@ final class WorkerMemoryLimitTest extends TestCase
     {
         $strategy = new AmphpParallelStrategy(new FileProcessingTaskFactory(
             new LcomCollectionConfigurationStore(),
+            new RuleOptionDocumentForms(),
             DependencyVisitor::class,
             [LocCollector::class, CyclomaticComplexityCollector::class],
         ));

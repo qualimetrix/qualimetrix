@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
@@ -2309,10 +2310,10 @@ final class RuleOptionsFactoryTest extends TestCase
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]));
         try {
-            (new CliOptionsParser($parser))->pathWrites($input);
+            (new CliOptionsParser(new RuleOptionDocumentForms(), $parser))->pathWrites($input);
             self::fail('The authored CLI key must be refused before installing a ready snapshot.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame($summary, $refusal->summary());
+            self::assertSame($summary . ' Written: --rule-opt=' . $producer . ':' . $key . '=' . json_encode($value, \JSON_THROW_ON_ERROR) . '.', $refusal->summary());
             self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
             self::assertSame('--rule-opt', $refusal->sources()[0]->locator());
             self::assertNull($refusal->position());

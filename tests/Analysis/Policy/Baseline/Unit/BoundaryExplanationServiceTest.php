@@ -33,6 +33,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryRunFacts;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryThresholdSources;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject;
@@ -60,7 +62,7 @@ final class BoundaryExplanationServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), StubChannelDeclarationRegistry::withDefaults());
     }
 
     /**
@@ -661,12 +663,12 @@ final class BoundaryExplanationServiceTest extends TestCase
         $project = new BaselineEntry(new BaselineIdentity('project:', $channel), [40], 1);
         $file = new BaselineEntry(new BaselineIdentity('file:src/Foo.php', $channel), [40], 1);
         $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$project, $file], exclusions: self::fixtureExclusions());
-        $service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
+        $service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), StubChannelDeclarationRegistry::withDefaults());
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $coverage = StubRuleCoverage::completeFor($baseline);
-        $old = $service->explain('project:', $channel, $baseline, [], [], [], $declarations, $coverage);
-        $current = $service->explain('file:src/Foo.php', $channel, $baseline, [], [], [], $declarations, $coverage);
+        $old = $service->explain('project:', $channel, $baseline, new BoundaryThresholdSources([], []), new BoundaryRunFacts([], $coverage, null));
+        $current = $service->explain('file:src/Foo.php', $channel, $baseline, new BoundaryThresholdSources([], []), new BoundaryRunFacts([], $coverage, null));
 
         self::assertSame(CurrentMeasurement::LEVEL_NOT_REPORTED, $old->boundaries[0]->now->state);
         self::assertSame(['file'], $old->boundaries[0]->now->declaredLevels);
@@ -695,6 +697,32 @@ final class BoundaryExplanationServiceTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotInferCurrentAbsenceForAnUnrecordedFileOutsideTheCapturedUniverse(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $explanation = $this->explain(
+            'file:src/Gone.php',
+            $channel,
+            null,
+            [],
+            [],
+            [],
+            coverage: $this->currentRun([], [], captured: false),
+        );
+
+        self::assertSame(CurrentMeasurement::OUTSIDE_COVERAGE, $explanation->boundaries[0]->now->state);
+    }
+
+    #[Test]
+    public function itReportsCurrentAbsenceForAnUnrecordedFileInsideAKnownSelectedRoot(): void
+    {
+        $channel = new FindingChannel('duplication.clone');
+        $explanation = $this->explain('file:src/Gone.php', $channel, null, [], [], [], coverage: $this->currentRun([], []));
+
+        self::assertSame(CurrentMeasurement::NOTHING_REPORTED, $explanation->boundaries[0]->now->state);
+    }
+
+    #[Test]
     public function itReadsKnownEntryNowFromTheCeilingOutcome(): void
     {
         $channel = new FindingChannel('complexity.ccn');
@@ -712,11 +740,11 @@ final class BoundaryExplanationServiceTest extends TestCase
 
         $outside = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], [], coverage: $this->currentRun([], ['src/Foo.php']));
         self::assertSame(CurrentMeasurement::OUTSIDE_COVERAGE, $outside->boundaries[0]->now->state);
-        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn']));
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn']), StubChannelDeclarationRegistry::withDefaults());
         $disabled = $this->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], []);
         self::assertSame(CurrentMeasurement::NOT_MEASURED, $disabled->boundaries[0]->now->state);
         self::assertSame('producer-not-measured', $disabled->boundaries[0]->now->reason);
-        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan());
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), StubChannelDeclarationRegistry::withDefaults());
 
         $aggregateChannel = new FindingChannel('size.class-count');
         $declarations = StubChannelDeclarationRegistry::withDefaults();
@@ -763,7 +791,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itNamesAnUndeclaredSubjectLevelBeforeClassifyingCoverage(): void
     {
-        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn', 'duplication.clone']));
+        $this->service = new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::withSkipped(notSelected: ['complexity.ccn', 'duplication.clone']), StubChannelDeclarationRegistry::withDefaults());
         foreach ([['ns:App', 'complexity.ccn', ['callable', 'class']], ['project:', 'duplication.clone', ['file']]] as [$subject, $code, $levels]) {
             $explanation = $this->explain($subject, new FindingChannel($code), null, [], [], []);
             self::assertSame(CurrentMeasurement::LEVEL_NOT_REPORTED, $explanation->boundaries[0]->now->state);
@@ -802,7 +830,7 @@ final class BoundaryExplanationServiceTest extends TestCase
      * @param list<string> $present
      * @param ?Closure(): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence $presence
      */
-    private function currentRun(array $analyzed, array $present, ?\Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions $exclusions = null, ?Closure $presence = null): RunCoverage
+    private function currentRun(array $analyzed, array $present, ?\Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions $exclusions = null, ?Closure $presence = null, bool $captured = true): RunCoverage
     {
         $root = \Qualimetrix\Core\Path\AbsolutePath::fromString('/tmp/qmx-explain-fixture');
         $files = array_map(RelativePath::fromString(...), $present);
@@ -812,6 +840,10 @@ final class BoundaryExplanationServiceTest extends TestCase
              * @param ?Closure(): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence $presence
              */
             public function __construct(private array $files, private ?Closure $presence) {}
+            public function hasDirectory(\Qualimetrix\Core\Path\AbsolutePath $directory): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
             public function hasFile(\Qualimetrix\Core\Path\AbsolutePath $root, RelativePath $file): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
             {
                 if ($this->presence !== null) {
@@ -830,9 +862,10 @@ final class BoundaryExplanationServiceTest extends TestCase
             \Qualimetrix\Analysis\Policy\Baseline\RunScope::fromRecorded(['src']),
             new \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage(array_map(RelativePath::fromString(...), $analyzed), [], []),
             $exclusions ?? self::fixtureExclusions(),
-            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, [], [], [], true, []),
+            new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse($root, true, $captured ? [['target' => 'src', 'path' => $root->joinRelative(RelativePath::fromString('src'))]] : [], [], [], true, []),
             ['App\\' => ['src/']],
             $tree,
+            \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), array_map(RelativePath::fromString(...), $analyzed), []),
         );
     }
 
@@ -929,16 +962,16 @@ final class BoundaryExplanationServiceTest extends TestCase
     ): BoundaryExplanation {
         $fixture = $baseline ?? new Baseline(new DateTimeImmutable(), ['src'], [], self::fixtureExclusions());
 
-        return $this->service->explain(
+        $service = $declarations === null
+            ? $this->service
+            : new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations);
+
+        return $service->explain(
             $subjectKey,
             $channelFilter,
             $baseline,
-            $measuredFindings,
-            $thresholdOverridesByFile,
-            $configuredThresholds,
-            $declarations ?? StubChannelDeclarationRegistry::withDefaults(),
-            $coverage ?? StubRuleCoverage::completeFor($fixture),
-            $symbolLocations,
+            new BoundaryThresholdSources($thresholdOverridesByFile, $configuredThresholds),
+            new BoundaryRunFacts($measuredFindings, $coverage ?? StubRuleCoverage::completeFor($fixture), $symbolLocations),
         );
     }
 

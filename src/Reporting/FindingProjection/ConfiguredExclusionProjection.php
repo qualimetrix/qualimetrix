@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
@@ -17,9 +18,8 @@ final class ConfiguredExclusionProjection
     private function __construct() {}
 
     /** @return list<PredicateFilterStage> */
-    public static function stages(FindingProjectionOptions $options): array
+    public static function stages(FindingProjectionOptions $options, ChannelFileScope $fileScope): array
     {
-        $fileScope = DeclaredChannelFileScope::create();
         $stages = [];
         if ($options->suppressPaths !== []) {
             $stages[] = new PredicateFilterStage(

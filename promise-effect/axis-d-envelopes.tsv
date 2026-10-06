@@ -5,6 +5,8 @@
 # Neither context prewrites the target under measurement.
 # Cache-owned probes observe newly created directories inside their own run.
 ledger_path	write_path	base	cache_owned
+coupling	coupling	{"include_generated":true}	no
+coupling.framework_namespaces	coupling.framework_namespaces	{"include_generated":true}	no
 architecture.layers[*].name	architecture.layers.0.name	{"architecture":{"layers":[{"patterns":["Probe\\Domain\\*"]}]}}	no
 architecture.layers[*].patterns	architecture.layers.0.patterns	{"architecture":{"layers":[{"name":"Domain"}]}}	no
 architecture.layers[*].suffix	architecture.layers.0.suffix	{"architecture":{"layers":[{"name":"Domain"}]}}	no

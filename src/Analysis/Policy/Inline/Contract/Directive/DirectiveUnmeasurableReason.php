@@ -22,6 +22,9 @@ enum DirectiveUnmeasurableReason: string
      */
     case ProducerDisabled = 'producer-disabled';
 
+    /** The selected run cannot establish absence for an addressed producer. */
+    case ScopeUnmeasured = 'scope-unmeasured';
+
     /**
      * Another directive of the same rule covers the same subject, so removing
      * this one alone changes nothing whether or not it does something.

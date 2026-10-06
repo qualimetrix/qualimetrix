@@ -28,7 +28,6 @@ final class CorpusCaseControls
                 FailureClass::SURFACE_MISMATCH => [
                     'case:config-precedence|baseline-file',
                     'case:config-precedence|check:output:file',
-                    'case:config-precedence|directives',
                     'case:config-precedence|format:checkstyle',
                     'case:config-precedence|format:github',
                     'case:config-precedence|format:gitlab',
@@ -62,7 +61,6 @@ final class CorpusCaseControls
                 FailureClass::SURFACE_MISMATCH => [
                     'case:threshold-raising|baseline-file',
                     'case:threshold-raising|check:output:file',
-                    'case:threshold-raising|directives',
                     'case:threshold-raising|format:checkstyle',
                     'case:threshold-raising|format:github',
                     'case:threshold-raising|format:gitlab',
@@ -100,7 +98,6 @@ final class CorpusCaseControls
                 FailureClass::SURFACE_MISMATCH => [
                     'case:directive-placement|baseline-file',
                     'case:directive-placement|check:output:file',
-                    'case:directive-placement|directives',
                     'case:directive-placement|format:checkstyle',
                     'case:directive-placement|format:github',
                     'case:directive-placement|format:gitlab',

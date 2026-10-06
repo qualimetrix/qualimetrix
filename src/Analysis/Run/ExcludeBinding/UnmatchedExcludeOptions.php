@@ -43,7 +43,7 @@ final readonly class UnmatchedExcludeOptions implements RuleOptionsInterface
     public static function fromResolved(ResolvedRuleOptionValues $config): self
     {
         return new self(
-            enabled: $config->boolean('enabled', true),
+            enabled: $config->boolean(RuleOptionKey::ENABLED, true),
         );
     }
 

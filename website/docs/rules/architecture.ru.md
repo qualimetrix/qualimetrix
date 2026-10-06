@@ -105,6 +105,9 @@ rules:
     directAsError: true    # прямые циклы -- ошибки
 ```
 
+Находки о циклах сейчас относятся ко всему проекту и остаются видимыми в
+Git-отчётах, включая `--report-strict`, независимо от изменённых файлов.
+
 <!-- llms:skip-begin -->
 ### Пример
 
@@ -1011,6 +1014,10 @@ rules:
     enabled: true
     severity: error
 ```
+
+Находки о нарушениях слоёв сейчас относятся ко всему проекту и остаются
+видимыми в Git-отчётах, включая `--report-strict`, независимо от изменённых
+файлов.
 
 Пять архитектурных диагностик конфигурации — `architecture.coverage-gap`,
 `architecture.unreachable-layer`, `architecture.pending-layer-matched`,

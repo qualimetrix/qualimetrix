@@ -309,7 +309,7 @@ final class CheckCommandBaselineTest extends TestCase
         self::assertInstanceOf(\Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface::class, $declarations);
         $baseline = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineLoader(
             new \Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser($declarations),
-        ))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        ))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
         $selectors = [$baseline->entries[0]->selector()->value, $baseline->inertEntries[0]->selector->value];
         $this->git('git init -q');
         $this->git('git config user.email test@example.com');

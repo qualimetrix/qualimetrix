@@ -119,9 +119,6 @@
       {"channel":"code-smell.constructor-overinjection","magnitudes":[9]},
       {"channel":"code-smell.long-parameter-list","magnitudes":[9]}
     ],
-    "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand::report@src/Infrastructure/Console/Command/BaselineUpdateCommand.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]}
-    ],
     "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct@src/Infrastructure/Console/Command/CheckCommand.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[9]}
     ],
@@ -244,9 +241,6 @@
     "declaration:class:Qualimetrix\\Infrastructure\\Logging\\LoggerHolder@src/Infrastructure/Logging/LoggerHolder.php": [
       {"channel":"design.data-class","magnitudes":[33]}
     ],
-    "declaration:class:Qualimetrix\\Infrastructure\\Parallel\\Strategy\\AmphpParallelStrategy@src/Infrastructure/Parallel/Strategy/AmphpParallelStrategy.php": [
-      {"channel":"coupling.instability","magnitudes":[0.846154]}
-    ],
     "declaration:class:Qualimetrix\\Reporting\\DrillDown\\DrillDownBinding@src/Reporting/DrillDown/DrillDownBinding.php": [
       {"channel":"health.cohesion","magnitudes":[40]}
     ],
@@ -318,8 +312,11 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
       {"channel":"size.class-count","magnitudes":[15]}
     ],
-    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
+    "ns:Qualimetrix\\Core\\FileTarget": [
       {"channel":"size.class-count","magnitudes":[23]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [
+      {"channel":"size.class-count","magnitudes":[24]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Serializer": [
       {"channel":"health.cohesion","magnitudes":[43.7]}
@@ -331,9 +328,8 @@
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
     "project:": [
-      {"channel":"health.coupling","magnitudes":[49.6]},
-      {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]},
-      {"channel":"architecture.circular-dependency","occurrence":"63813cd71327da6f","magnitudes":[4]}
+      {"channel":"health.coupling","magnitudes":[48.4]},
+      {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]}
     ]
   }
 }

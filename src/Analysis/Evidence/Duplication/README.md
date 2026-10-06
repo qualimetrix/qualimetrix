@@ -31,6 +31,7 @@ Duplication/
 │   ├── CopyCoverIndex.php
 │   ├── DuplicateBlock.php
 │   ├── DuplicateBlockFinder.php
+│   ├── DuplicateContentMerger.php # collision-checked content groups and copy reduction
 │   ├── DuplicateLocation.php
 │   ├── DuplicateMatchCandidates.php
 │   └── DuplicateSearchRequest.php
@@ -118,6 +119,12 @@ limits are regression fixtures, not a general time or memory guarantee. Its
 60-file lifecycle case runs only in the existing `benchmark` group; the ordinary
 20-file JSON memory guard remains in the default suite. Run the manual case
 with `vendor/bin/phpunit --no-coverage --group=benchmark --filter=itCompletesTheDuplicationLifetimePipelineUnder128M`.
+
+> **Limitation:** the ordinary suite has no 128M full-lifecycle guarantee. A
+> 40-file/128M trial passed but exceeded the five-second ordinary-test budget;
+> `itCompletesTheDuplicationLifetimePipelineUnder128M` therefore remains the
+> 60-file manual benchmark. The ordinary memory guard uses 20 files at 64M.
+
 It is the reason the module has a Functional level at all. `DuplicationGitScopeProcessTest`
 runs `--report=git:staged` over a git repository in which only a new copy is
 staged, and pins that the copy is reported in its own file.
@@ -154,8 +161,11 @@ A file subject has no namespace, so `suppress_namespaces` does not suppress a
 Duplication finding; path selectors can suppress copies in their files.
 
 The detector counts token rows over CR, LF and CRLF correctly; CRLF is one line
-break. It admits connected matching segments separately and falls back to the
-whole match when none is large enough. It retains connected file-pair evidence
+break. A trailing line break in an inline-HTML token does not cover an empty
+next line. Admitted balanced segments with the same complete normalized token
+sequence form one block with all distinct copy positions before the second
+connected-coverage reduction. The ordinal is local to each file in that merged
+block. If no balanced segment is large enough, the whole match is the fallback. It retains connected file-pair evidence
 while removing containment witnesses that add no distinct reportable evidence;
 this is not a blanket rule to discard every contained copy. Some nested
 matching multiplicity remains an acknowledged behavior; it is not claimed
@@ -174,6 +184,10 @@ Each finding names at most ten other copies in its message and related
 locations, and counts the rest. `DuplicateBlockFinder` keeps candidate lengths
 and packed positions until non-reportable contained witnesses are removed,
 then constructs blocks from the retained connected evidence.
+`DuplicateContentMerger` groups verified segments by complete token content,
+checks hash collisions token by token, and reduces sorted unique reportable
+copies. Its streams and reduction callback live only for that merge; the finder
+releases request state at the end of each search.
 
 `TokenStream` retains token values, a data mask and interleaved packed
 coordinates. `startLine(int)`, `endLine(int)`, `coveredPrefix(int)`,

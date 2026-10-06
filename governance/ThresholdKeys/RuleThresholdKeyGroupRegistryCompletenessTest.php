@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use RuntimeException;
 use Symfony\Component\Finder\Finder;
 
@@ -234,7 +235,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
 
                 self::assertSame(
                     $group['form'] === RuleOptionValueForm::Number,
-                    $shape->matches(1.5),
+                    (new RuleOptionShapeMatcher())->matches($shape, 1.5),
                     \sprintf(
                         'Rule "%s" (path %s): key "%s" (role %s) accepts a fraction iff the group\'s declared'
                         . ' form is Number — real declaration and registry disagree.',
@@ -246,7 +247,7 @@ final class RuleThresholdKeyGroupRegistryCompletenessTest extends TestCase
                 );
 
                 self::assertTrue(
-                    $shape->matches(1),
+                    (new RuleOptionShapeMatcher())->matches($shape, 1),
                     \sprintf(
                         'Rule "%s" (path %s): key "%s" (role %s) must at least accept a whole number.',
                         $ruleName,

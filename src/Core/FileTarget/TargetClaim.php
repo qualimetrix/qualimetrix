@@ -13,7 +13,7 @@ final class TargetClaim
     /** @return array{ResolvedTarget, resource, bool} */
     public static function open(ResolvedTarget $judged): array
     {
-        $now = TargetPath::resolve($judged->spelling);
+        $now = TargetPath::resolve($judged->spelling, $judged->membership());
         if (!$judged->sameAs($now)) {
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $judged->spelling, 'target changed before it could be claimed');
         }
@@ -60,7 +60,7 @@ final class TargetClaim
     private static function prepareTemporary(ResolvedTarget $target, string $path): TemporarySibling
     {
         try {
-            return TemporarySibling::create(AbsolutePath::fromString(\dirname($path)));
+            return TemporarySibling::create(AbsolutePath::fromString(\dirname($path)), 0666);
         } catch (FileTargetFailure $failure) {
             throw new FileTargetFailure(
                 $failure->kind,

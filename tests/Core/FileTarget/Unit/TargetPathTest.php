@@ -7,8 +7,13 @@ namespace Qualimetrix\Tests\Core\FileTarget\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\FileTarget\FileReplacement;
 use Qualimetrix\Core\FileTarget\FileTargetFailure;
 use Qualimetrix\Core\FileTarget\FileTargetFailureKind;
+use Qualimetrix\Core\FileTarget\HeldLock;
+use Qualimetrix\Core\FileTarget\HeldTarget;
+use Qualimetrix\Core\FileTarget\NewName;
+use Qualimetrix\Core\FileTarget\PrivateGroupMembership;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Subprocess\ChildProcess;
@@ -18,6 +23,64 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 #[CoversClass(TargetPath::class)]
 final class TargetPathTest extends TestCase
 {
+    #[Test]
+    public function itCarriesPrivateGroupEvidenceThroughClaimReplacementAndLockRechecks(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-target-' . bin2hex(random_bytes(6));
+        mkdir($base);
+        chmod($base, 0775);
+        file_put_contents($base . '/target', 'old');
+        file_put_contents($base . '/lock', '');
+        symlink('target', $base . '/link');
+        symlink('lock', $base . '/lock-link');
+        $owner = fileowner($base);
+        $group = filegroup($base);
+        self::assertIsInt($owner);
+        self::assertIsInt($group);
+        $membership = self::membership($owner, $group, true);
+
+        try {
+            $target = TargetPath::resolve($base . '/link', $membership);
+            $held = HeldTarget::claim($target);
+            $held->release();
+            FileReplacement::replace($target, 'new', null, NewName::LastWriterWins);
+            self::assertSame('new', file_get_contents($base . '/target'));
+
+            $lock = HeldLock::acquire(TargetPath::resolve($base . '/lock-link', $membership), 0.2);
+            $lock->release();
+        } finally {
+            unlink($base . '/lock-link');
+            unlink($base . '/link');
+            unlink($base . '/lock');
+            unlink($base . '/target');
+            rmdir($base);
+        }
+    }
+
+    #[Test]
+    public function itStillRejectsAGroupWritableLinkWithoutPrivateMembershipEvidence(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-target-' . bin2hex(random_bytes(6));
+        mkdir($base);
+        chmod($base, 0775);
+        file_put_contents($base . '/target', 'safe');
+        symlink('target', $base . '/link');
+        $owner = fileowner($base);
+        $group = filegroup($base);
+        self::assertIsInt($owner);
+        self::assertIsInt($group);
+
+        try {
+            $this->expectException(FileTargetFailure::class);
+            $this->expectExceptionMessage('symbolic link can be placed');
+            TargetPath::resolve($base . '/link', self::membership($owner, $group, false));
+        } finally {
+            unlink($base . '/link');
+            unlink($base . '/target');
+            rmdir($base);
+        }
+    }
+
     #[Test]
     public function itRecognizesDescriptorsBeforeFollowingProcLinks(): void
     {
@@ -31,6 +94,22 @@ final class TargetPathTest extends TestCase
             self::assertSame(1, TargetPath::resolve('/proc/self/fd/1')->descriptor);
             self::assertSame(1, TargetPath::resolve('/proc/' . getmypid() . '/fd/1')->descriptor);
         }
+    }
+
+    private static function membership(int $owner, int $group, bool $private): PrivateGroupMembership
+    {
+        return new class ($owner, $group, $private) implements PrivateGroupMembership {
+            public function __construct(
+                private readonly int $owner,
+                private readonly int $group,
+                private readonly bool $private,
+            ) {}
+
+            public function isPrivatePrimaryGroup(int $effectiveUid, int $groupId): bool
+            {
+                return $this->private && $effectiveUid === $this->owner && $groupId === $this->group;
+            }
+        };
     }
 
     #[Test]
@@ -147,6 +226,55 @@ final class TargetPathTest extends TestCase
     public function itDoesNotMistakeAnInaccessibleOwnedLinkForAnAbsentTarget(): void
     {
         $this->assertRefusesEntryBehindNonSearchableParent('link');
+    }
+
+    #[Test]
+    public function itClassifiesAnUninspectableIntermediateParentAsUnopenable(): void
+    {
+        $base = realpath(sys_get_temp_dir()) . '/qmx-uninspectable-' . bin2hex(random_bytes(6));
+        mkdir($base);
+        $parent = $base . '/present-parent';
+        mkdir($parent);
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+namespace Qualimetrix\Core\FileTarget {
+    function lstat(string $path): array|false
+    {
+        if ($path === $GLOBALS['probe_parent']) {
+            \trigger_error('Input/output error from qmx probe', \E_USER_WARNING);
+
+            return false;
+        }
+
+        return \lstat($path);
+    }
+}
+namespace {
+    require $argv[1];
+    $GLOBALS['probe_parent'] = $argv[2];
+    $kind = null;
+    $detail = null;
+    try {
+        \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2] . '/child.php');
+    } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
+        $kind = $failure->kind->name;
+        $detail = $failure->detail;
+    }
+    echo \json_encode(['kind' => $kind, 'detail' => $detail]);
+}
+PHP;
+
+        try {
+            $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $parent]);
+            self::assertSame(0, $run['exitCode'], $run['stderr']);
+            $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame(FileTargetFailureKind::Unopenable->name, $result['kind']);
+            self::assertStringContainsString($parent, $result['detail']);
+            self::assertStringContainsString('Input/output error from qmx probe', $result['detail']);
+        } finally {
+            rmdir($parent);
+            rmdir($base);
+        }
     }
 
     #[Test]

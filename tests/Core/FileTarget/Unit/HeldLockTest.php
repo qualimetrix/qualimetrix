@@ -78,6 +78,55 @@ final class HeldLockTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesANativeLockErrorImmediatelyWithItsReason(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'qmx-lock-');
+        self::assertIsString($path);
+        $root = \dirname(__DIR__, 4);
+        $script = <<<'PHP'
+namespace Qualimetrix\Core\FileTarget {
+    function flock($handle, int $operation): bool
+    {
+        if ($operation === (\LOCK_EX | \LOCK_NB)) {
+            $GLOBALS['lock_attempts'] = ($GLOBALS['lock_attempts'] ?? 0) + 1;
+            \trigger_error('Bad file descriptor from qmx probe', \E_USER_WARNING);
+
+            return false;
+        }
+
+        return true;
+    }
+}
+namespace {
+    require $argv[1];
+    $kind = null;
+    $message = null;
+    try {
+        \Qualimetrix\Core\FileTarget\HeldLock::acquire(
+            \Qualimetrix\Core\FileTarget\TargetPath::resolve($argv[2]),
+            0.05,
+        );
+    } catch (\Qualimetrix\Core\FileTarget\FileTargetFailure $failure) {
+        $kind = $failure->kind->name;
+        $message = $failure->getMessage();
+    }
+    echo \json_encode(['attempts' => $GLOBALS['lock_attempts'] ?? 0, 'kind' => $kind, 'message' => $message]);
+}
+PHP;
+
+        try {
+            $run = ChildProcess::run([\PHP_BINARY, '-r', $script, $root . '/vendor/autoload.php', $path]);
+            self::assertSame(0, $run['exitCode'], $run['stderr']);
+            $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertSame('Unopenable', $result['kind']);
+            self::assertSame(1, $result['attempts'], 'A native hard error must not be retried as contention.');
+            self::assertStringContainsString('Bad file descriptor', $result['message']);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    #[Test]
     public function itKeepsWaitingForTheLockWhenWallClockJumpsForward(): void
     {
         $path = tempnam(sys_get_temp_dir(), 'qmx-lock-');

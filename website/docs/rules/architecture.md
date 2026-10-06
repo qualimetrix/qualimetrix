@@ -105,6 +105,9 @@ rules:
     directAsError: true    # direct cycles are errors
 ```
 
+Cycle findings are currently project-scoped and remain visible in Git reports,
+including `--report-strict`, regardless of which files changed.
+
 <!-- llms:skip-begin -->
 ### Example
 
@@ -1006,6 +1009,9 @@ rules:
     enabled: true
     severity: error
 ```
+
+Layer-violation findings are currently project-scoped and remain visible in Git
+reports, including `--report-strict`, regardless of which files changed.
 
 The five architecture configuration diagnostics — `architecture.coverage-gap`,
 `architecture.unreachable-layer`, `architecture.pending-layer-matched`,

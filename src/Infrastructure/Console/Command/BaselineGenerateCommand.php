@@ -120,33 +120,37 @@ final class BaselineGenerateCommand extends BaselineCommand
         $destination = $this->writer->destinationSnapshot($baselinePath);
         $this->reportExposure($destination['target'], $output);
 
-        $context = $this->baselineRun->measure($input, $output);
-        $capture = $this->generator->generate(
-            $context->findings(),
-            $context->scope->paths(),
-            RecordedExclusions::fromRunConfiguration($context->configuration),
-        );
-        $baseline = $mode === BaselineEntryMode::Suppress
-            ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
-            : $capture->baseline;
+        return $this->withPreparedTarget($destination['target'], function ($prepared, $guard) use ($input, $output, $mode, $destination, $baselinePath): int {
+            $context = $this->baselineRun->measure($input, $output);
+            $capture = $this->generator->generate(
+                $context->findings(),
+                $context->scope->paths(),
+                RecordedExclusions::fromRunConfiguration($context->configuration),
+            );
+            $baseline = $mode === BaselineEntryMode::Suppress
+                ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
+                : $capture->baseline;
 
-        $this->writer->write(
-            $destination['hash'] === null
-                ? $baseline->withExpectedSourceAbsence()
-                : $baseline->withSourceContentHash($destination['hash']),
-            $destination['target'],
-            $context->projectRoot,
-        );
+            $this->writer->write(
+                $destination['hash'] === null
+                    ? $baseline->withExpectedSourceAbsence()
+                    : $baseline->withSourceContentHash($destination['hash']),
+                $destination['target'],
+                $context->projectRoot,
+                $prepared,
+                $guard->assertNotInterrupted(...),
+            );
 
-        $output->writeln(\sprintf(
-            '<info>Baseline with %d entries written to %s</info>',
-            $baseline->count(),
-            $baselinePath,
-        ));
+            $output->writeln(\sprintf(
+                '<info>Baseline with %d entries written to %s</info>',
+                $baseline->count(),
+                $baselinePath,
+            ));
 
-        BaselineCaptureReporter::reportUncaptured($capture, $output);
+            BaselineCaptureReporter::reportUncaptured($capture, $output);
 
-        return self::SUCCESS;
+            return self::SUCCESS;
+        });
     }
 
     private function reportExposure(\Qualimetrix\Core\FileTarget\ResolvedTarget $target, OutputInterface $output): void

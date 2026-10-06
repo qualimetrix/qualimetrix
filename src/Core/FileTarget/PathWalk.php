@@ -19,8 +19,12 @@ final class PathWalk
     private int $hops = 0;
 
     /** @param Closure(string): ?int $descriptorAt */
-    public function __construct(private readonly string $spelling, string $absolutePath, private readonly Closure $descriptorAt)
-    {
+    public function __construct(
+        private readonly string $spelling,
+        string $absolutePath,
+        private readonly Closure $descriptorAt,
+        private readonly PrivateGroupMembership $membership,
+    ) {
         $this->todo = explode('/', ltrim($absolutePath, '/'));
         $this->inspection = new PathInspection([], []);
     }
@@ -89,36 +93,15 @@ final class PathWalk
             throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'a descriptor cannot have path components after it');
         }
 
-        return new ResolvedTarget($this->spelling, TargetKind::Descriptor, null, $descriptor, null, $this->inspection);
+        return new ResolvedTarget($this->spelling, TargetKind::Descriptor, null, $descriptor, null, $this->inspection, $this->membership);
     }
 
     private function absentTarget(string $candidate, string $part, string $warning): ResolvedTarget
     {
-        if (str_contains($warning, 'File name too long') || \strlen($part) > 255) {
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'File name too long', $candidate);
-        }
-        if (str_contains($warning, 'Permission denied')) {
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target', $warning);
-        }
-        if (self::hasRemainingComponents($this->todo)) {
-            throw new FileTargetFailure(FileTargetFailureKind::DirectoryMissing, $this->spelling, 'a parent directory is missing', $candidate);
-        }
         $parent = '/' . implode('/', $this->parts);
-        [$isDirectory] = NativeCall::attempt(static fn() => is_dir($parent));
-        if ($isDirectory !== true) {
-            throw new FileTargetFailure(FileTargetFailureKind::DirectoryMissing, $this->spelling, 'the parent directory is missing', $parent);
-        }
-        [$searchable, $searchWarning] = NativeCall::attempt(static fn() => is_executable($parent));
-        if ($searchable !== true) {
-            $detail = $parent . ($warning === '' ? '' : ': ' . $warning);
-            if ($searchWarning !== null) {
-                $detail .= '; ' . $searchWarning;
-            }
+        (new PathAbsenceProof($this->spelling, $candidate, $part, $warning))->assertFinalAbsent($this->todo, $parent);
 
-            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target through a non-searchable parent', $detail);
-        }
-
-        return new ResolvedTarget($this->spelling, TargetKind::Absent, AbsolutePath::fromString($candidate), null, null, $this->inspection);
+        return new ResolvedTarget($this->spelling, TargetKind::Absent, AbsolutePath::fromString($candidate), null, null, $this->inspection, $this->membership);
     }
 
     /**
@@ -137,7 +120,7 @@ final class PathWalk
         $effectiveUid = $parentStat['uid'] === 0 && ($parentStat['mode'] & 0022) === 0
             ? 0
             : ProcessOwner::effectiveUid($parent);
-        $control = EntryControl::of(DirectoryFacts::fromStat($parentStat), EntryFacts::fromStat($entry), $effectiveUid);
+        $control = EntryControl::of(DirectoryFacts::fromStat($parentStat), EntryFacts::fromStat($entry), $effectiveUid, $this->membership);
 
         return [$parent, $control, $effectiveUid];
     }
@@ -191,6 +174,7 @@ final class PathWalk
             null,
             FileIdentity::fromStat($entry),
             $this->inspection,
+            $this->membership,
         );
     }
 

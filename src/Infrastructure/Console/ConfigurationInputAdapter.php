@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -29,6 +30,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class ConfigurationInputAdapter
 {
     public function __construct(
+        private readonly RuleOptionDocumentFormsInterface $documentForms,
         private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly ErrorStream $errorStream,
         private readonly RuleExecutionInterface $ruleExecution,
@@ -89,7 +91,7 @@ final class ConfigurationInputAdapter
         $writes = [];
         if ($profile->requiresFindingConfiguration) {
             $parser = (new RuleOptionsParserFactory())->createFromMetadata($this->ruleExecution->allRules());
-            $writes = (new CliOptionsParser($parser, $this->selectorDecoder))->pathWrites($input, $authoredRuleRecords);
+            $writes = (new CliOptionsParser($this->documentForms, $parser, $this->selectorDecoder))->pathWrites($input, $authoredRuleRecords);
         }
 
         return new ConfigurationResolutionRequest(
@@ -169,7 +171,7 @@ final class ConfigurationInputAdapter
             return;
         }
 
-        $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
+        $this->put($values, $names, ConfigSchema::EXCLUDE, array_map(
             function (string $selector): array {
                 $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
 

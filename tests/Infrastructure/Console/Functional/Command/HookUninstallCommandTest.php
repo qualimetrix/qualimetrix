@@ -63,7 +63,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -87,7 +87,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
         $commandTester = new CommandTester($command);
         $commandTester->execute([]);
 
@@ -97,7 +97,7 @@ final class HookUninstallCommandTest extends TestCase
     #[Test]
     public function itAdvertisesTheDocsAddressInItsHelp(): void
     {
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }
@@ -105,7 +105,7 @@ final class HookUninstallCommandTest extends TestCase
     #[Test]
     public function itReportsNothingToUninstallWhenHookNotFound(): void
     {
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -128,7 +128,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\necho 'Some other hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $commandTester = self::throughLadder($command);
 
@@ -153,7 +153,7 @@ final class HookUninstallCommandTest extends TestCase
         $backupPath = $hookPath . '.backup';
         file_put_contents($backupPath, "#!/bin/bash\necho 'Backup hook'\n");
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -186,7 +186,7 @@ final class HookUninstallCommandTest extends TestCase
         file_put_contents($hookPath, "#!/bin/bash\n# Qualimetrix pre-commit hook\necho 'Running hook'\n");
         chmod($hookPath, 0755);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -213,7 +213,7 @@ final class HookUninstallCommandTest extends TestCase
         $backupPath = $hookPath . '.backup';
         file_put_contents($backupPath, "#!/bin/bash\necho 'Backup hook'\n");
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $application = new Application();
         $application->addCommand($command);
@@ -239,7 +239,7 @@ final class HookUninstallCommandTest extends TestCase
         // Remove .git directory
         $this->removeDirectory($this->gitDir);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $commandTester = self::throughLadder($command);
 
@@ -261,7 +261,7 @@ final class HookUninstallCommandTest extends TestCase
         $hookPath = $this->gitDir . '/hooks/pre-commit';
         symlink($this->tempDir . '/scripts/pre-commit-hook.sh', $hookPath);
 
-        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookUninstallCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         $commandTester = self::throughLadder($command);
 

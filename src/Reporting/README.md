@@ -129,8 +129,12 @@ Reporting/
 suppression, configured path exclusion, configured namespace exclusion,
 Baseline ceiling, optional annotation rejoin, and Git scope last. Git scope is
 queried through `GitScopeQueryInterface`; its Infrastructure adapter never
-leaks into Reporting. Git changes only the reported list and cannot alter the
-measured, accepted, or stale Baseline facts.
+leaks into Reporting. Infrastructure composes the declared `ChannelFileScope`
+once and injects it into `FindingProjector`; configured exclusions and Git
+projection use that same value. Reporting carries no capability-registration
+factory. Git changes only the reported list and cannot alter the measured,
+accepted, or stale Baseline facts. `BaselineDocumentReader` acquires and judges
+the held document before analysis; `BaselineLoader` interprets those bytes.
 
 Reporting-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime
@@ -517,12 +521,17 @@ Each published skipped value has `{channel, option, pattern}`.
 `unjudgedChannels` lists channels with no judged value; a partially judged channel
 can be absent while its skipped values remain named. Reasons retain
 flat named cause fields even on a `covered` run. Namespace location still uses
-accepted PSR-4 facts independently of state. `metrics` and `suppressed` share
+accepted PSR-4 facts independently of state. Human wording names unjudged
+channels even when state is `covered`: path coverage alone does not judge every
+channel. `metrics` and `suppressed` share
 this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
 and human formats render the scope explanation; `gitlab` and `checkstyle` have
 no diagnostic entry because their consumers treat every entry as a finding.
 Auxiliary install issues explain ancestry limits without changing main-project
-coverage. `coverage.excluded` counts named authored entries separately from
+coverage. An `omitted-composer-root` reason retains `cause` and `visitedLevels`.
+Its `candidate`, `startDirectory` and `lastDirectory` are published only when
+inside the project, relative to its root. An absent main manifest contributes no
+omitted-root reason. `coverage.excluded` counts named authored entries separately from
 `discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
 terminal entries. Named exclusions are outside that sum; failures may name
 directories, links or special entries rather than PHP files. A complete

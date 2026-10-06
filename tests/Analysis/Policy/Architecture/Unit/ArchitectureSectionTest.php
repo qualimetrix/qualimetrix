@@ -215,14 +215,52 @@ final class ArchitectureSectionTest extends TestCase
     }
 
     #[Test]
-    public function itJudgesTemplateBindingsOnlyInTheListThatWon(): void
+    public function itRefusesAShadowedTemplateWithoutItsDeclaredBinding(): void
     {
-        $result = self::configure(ArchitectureDocument::compose(
-            ArchitectureDocument::presetLayer(['layers' => [['name' => 'app-{m}', 'patterns' => ['App\\Static']]]]),
+        $refusal = self::refusal(static fn() => ArchitectureDocument::compose(
+            ArchitectureDocument::presetLayer(['layers' => [['name' => 'app-{m}', 'patterns' => ['App\\Static']]]], 'team'),
             ArchitectureDocument::fileLayer(['layers' => self::LAYERS]),
         ));
 
-        self::assertSame(['domain', 'infra'], $result->configuration->registry()->layerNames());
+        self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
+        self::assertSame('team', $refusal->sources()[0]->locator());
+        $position = $refusal->position();
+        self::assertNotNull($position);
+        self::assertSame(['architecture', 'layers', '0'], \array_slice($position->segments, 0, 3));
+    }
+
+    /** @return iterable<string, array{list<array<string, mixed>>}> */
+    public static function provideShadowedLayerListSemantics(): iterable
+    {
+        yield 'duplicate names' => [[
+            ['name' => 'old', 'patterns' => ['App\\Old']],
+            ['name' => 'old', 'patterns' => ['App\\Other']],
+        ]];
+        yield 'duplicate patterns' => [[
+            ['name' => 'old', 'patterns' => ['App\\Shared']],
+            ['name' => 'other', 'patterns' => ['App\\Shared']],
+        ]];
+        yield 'no criteria' => [[['name' => 'old']]];
+        yield 'unbound template name' => [[['name' => 'app-{m}', 'patterns' => ['App\\Static']]]];
+        yield 'template any with global suffix' => [[['name' => 'app-{m}', 'patterns' => ['App\\{m}'], 'suffix' => 'Repository', 'match' => 'any']]];
+        yield 'static capture pattern' => [[['name' => 'old', 'patterns' => ['App\\{m}']]]];
+    }
+
+    /** @param list<array<string, mixed>> $layers */
+    #[Test]
+    #[DataProvider('provideShadowedLayerListSemantics')]
+    public function itRefusesAShadowedLayerListWithInvalidOwnSemantics(array $layers): void
+    {
+        $refusal = self::refusal(static fn() => ArchitectureDocument::compose(
+            ArchitectureDocument::presetLayer(['layers' => $layers], 'team'),
+            ArchitectureDocument::fileLayer(['layers' => self::LAYERS]),
+        ));
+
+        self::assertSame([ConfigurationSource::Preset], self::kinds($refusal));
+        self::assertSame('team', $refusal->sources()[0]->locator());
+        $position = $refusal->position();
+        self::assertNotNull($position);
+        self::assertSame(['architecture', 'layers'], \array_slice($position->segments, 0, 2));
     }
 
     /**

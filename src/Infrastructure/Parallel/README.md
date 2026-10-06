@@ -32,7 +32,15 @@ of this namespace.
 `FileProcessingTask` carries by name what the container registered —
 `WorkerComposition`: collectors, derived collectors, the traversal participant
 and the rules — beside the per-file path, the cache directory, the Cohesion
-configuration current at task creation, and the memory limit.
+configuration current at task creation, and the memory limit. It also carries
+the registered `RuleOptionDocumentFormsInterface` service instance through PHP
+serialization. Main DI and worker inline validators therefore use the same
+Finding interpretation; workers import only its public interface. The task
+factory, task constructor and `WorkerBootstrap::getFileProcessor()` require
+that service. Bootstrap takes the already serialized `WorkerComposition` as
+its metadata argument, rather than separate collector, derived-collector,
+traversal and rule class arguments. Processor reuse includes its serialized class and state in the
+cache identity, alongside the existing project and collector configuration.
 
 **Memory limit.** A worker is a separate process that starts under `php.ini`,
 and the coordinator's `ini_set()` does not cross the process boundary.
@@ -44,6 +52,10 @@ responding — its PHP fatal error goes to stderr past this code — so
 workers' limit in the failed file's message, re-submits a task the dead worker
 refused before starting it, and routes the pool's own crash notices to the log
 instead of stdout.
+
+**Interruption.** `Amp\CancelledException` bypasses per-file error recovery.
+The pool kills pending workers on cancellation instead of awaiting graceful
+shutdown, so an interrupted coordinator does not wait for another file result.
 
 **Collector marker.** A registered collector that does not implement
 `ParallelSafeCollectorInterface` is refused, like a collector class that does not

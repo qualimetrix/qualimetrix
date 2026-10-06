@@ -26,6 +26,7 @@ foreach (
         'CommandLine',
         'FailureClass',
         'GateError',
+        'MissingStructuralRecordList',
         'Wiring',
         'BudgetExceeded',
         'Interrupted',

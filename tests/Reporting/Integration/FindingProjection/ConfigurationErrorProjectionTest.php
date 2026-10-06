@@ -185,7 +185,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
         $configurationError = $this->makeConfigurationError();
 
         $result = $this->project([$configurationError], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $configurationError->subject->toCanonical() => [
                     ['channel' => $configurationError->channel()->code, 'count' => 1],
                 ],
@@ -288,6 +288,7 @@ final class ConfigurationErrorProjectionTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
         if ($options->baselineDocument !== null) {

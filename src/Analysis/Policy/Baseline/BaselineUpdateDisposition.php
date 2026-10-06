@@ -16,6 +16,8 @@ enum BaselineUpdateDisposition: string
 
     case ReRecorded = 're-recorded';
 
+    case Removed = 'removed';
+
     /** The measured group has the same serialized acceptance as before. */
     case Unchanged = 'unchanged';
 

@@ -157,6 +157,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 1.0,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -172,6 +173,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 2.0,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -212,6 +214,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -227,6 +230,7 @@ final class AnalysisResultTest extends TestCase
                     namespaceTree: null,
                     projectScope: null,
                     duration: 0.1,
+                    subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
                 ),
                 directives: new DirectiveObservations(
                     suppressions: [],
@@ -324,6 +328,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: ['shared.php' => [$suppression1], 'only1.php' => [$suppression2]],
@@ -340,6 +345,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: ['shared.php' => [$suppression3], 'only2.php' => [$suppression2]],
@@ -376,6 +382,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -392,6 +399,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -427,8 +435,8 @@ final class AnalysisResultTest extends TestCase
         $rightTree = new NamespaceTree(['Right']);
         $root = AbsolutePath::fromString(sys_get_temp_dir());
         $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
-        $leftScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, []);
-        $rightScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Narrowed, []);
+        $leftScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
+        $rightScope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Narrowed, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
 
         $result1 = AnalysisResult::fromRun(
             measured: new MeasuredRunResult(
@@ -437,6 +445,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: $leftTree,
                 projectScope: $leftScope,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -458,6 +467,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: $rightTree,
                 projectScope: $rightScope,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -526,7 +536,7 @@ final class AnalysisResultTest extends TestCase
         $tree = new NamespaceTree(['App']);
         $root = AbsolutePath::fromString(sys_get_temp_dir());
         $universe = new ProjectScopeUniverse($root, true, [], [], [], true, []);
-        $scope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, []);
+        $scope = new ProjectScopeMeasurement($universe, [$root], ProjectScopeState::Covered, [], new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement());
         $ruleExecution = new RuleExecutionResult(
             produced: [$finding],
             published: [$finding],
@@ -541,6 +551,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -557,6 +568,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: $tree,
                 projectScope: $scope,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],
@@ -602,6 +614,7 @@ final class AnalysisResultTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: $duration,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],

@@ -210,6 +210,7 @@ final class MeasuredFindingSetTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
         return new MeasuredFindingSet($analyzer, $projector);
@@ -228,6 +229,7 @@ final class MeasuredFindingSetTest extends TestCase
                 namespaceTree: null,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: $suppressions,

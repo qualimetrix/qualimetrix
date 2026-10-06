@@ -26,6 +26,11 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
  */
 final class ChannelLevelRefusalWording
 {
+    public static function misCasedLevel(?string $subject, string $raw, string $written, string $declared): string
+    {
+        return \sprintf('%s names level "%s" with the wrong case. Write "%s".', self::subjectOf($subject, $raw), $written, $declared);
+    }
+
     public static function notTheAppliedLevel(?string $subject, string $channel, string $level, string $appliedLevel): string
     {
         return \sprintf(

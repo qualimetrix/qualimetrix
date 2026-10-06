@@ -18,6 +18,23 @@ use Qualimetrix\Analysis\Configuration\Loader\CommandLineValue;
 final class CommandLineValueTest extends TestCase
 {
     #[Test]
+    public function itExplainsWhyAnAuthoredPositiveDecimalIsNotAnInteger(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('Value was read as float (1.0). YAML interprets +2 and 2.0 as float; write 2 for an integer.');
+        CommandLineValue::read('+1', NodeSchema::scalar(ScalarForm::Integer), '--rule-opt');
+    }
+
+    #[Test]
+    public function itKeepsTheAuthoredExpressionWhenYamlScalarSyntaxIsMalformed(): void
+    {
+        $expression = '--rule-opt=complexity.ccn:callable.warning=[';
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage($expression);
+        CommandLineValue::read('[', NodeSchema::scalar(ScalarForm::Integer), '--rule-opt', authoredExpression: $expression);
+    }
+
+    #[Test]
     public function itParsesBooleanIntegerFloatAndStringThroughTheirDeclaredForms(): void
     {
         self::assertTrue(CommandLineValue::read('true', NodeSchema::scalar(ScalarForm::Boolean), '--rule-opt')->plain());
@@ -36,7 +53,7 @@ final class CommandLineValueTest extends TestCase
         self::assertSame(3, CommandLineValue::read('3', $integer, '--rule-opt')->plain());
         self::assertSame('3', CommandLineValue::read('"3"', NodeSchema::scalar(ScalarForm::String), '--rule-opt')->plain());
 
-        foreach (['-1', '+1', '1e0', '"3"'] as $text) {
+        foreach (['-1', '+1', '"+2"', '1e0', '1.0', '+1e0', '"3"', "'3'", '+' . \PHP_INT_MAX . '0'] as $text) {
             try {
                 CommandLineValue::read($text, $integer, '--rule-opt');
                 self::fail($text . ' should not satisfy the integer declaration.');

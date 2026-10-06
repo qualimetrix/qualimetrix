@@ -1,7 +1,1 @@
 change	report	view	field	reason
-added	json	format:json	baselineVerdict	Baseline publication distinguishes a compared breach from an incomparable accepted group.
-added	json	format:json	baselineReason	Baseline publication distinguishes a compared breach from an incomparable accepted group.
-added	json	check:baseline-source	baselineVerdict	Baseline publication distinguishes a compared breach from an incomparable accepted group.
-added	json	check:baseline-source	baselineReason	Baseline publication distinguishes a compared breach from an incomparable accepted group.
-added	json	check:baseline	baselineVerdict	Baseline publication distinguishes a compared breach from an incomparable accepted group.
-added	json	check:baseline	baselineReason	Baseline publication distinguishes a compared breach from an incomparable accepted group.

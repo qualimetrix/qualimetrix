@@ -23,20 +23,26 @@ final readonly class SubjectRegion
         }
 
         $subject = $identity->subjectKey;
-        if (str_starts_with($subject, 'file:')) {
-            return Region::file(RelativePath::fromString(substr($subject, 5)));
-        }
-        if (str_starts_with($subject, 'declaration:')) {
-            $file = self::declarationFile($subject);
-            if ($file !== null) {
-                return Region::file($file);
-            }
+        $file = self::subjectFile($identity);
+        if ($file !== null) {
+            return Region::file($file);
         }
         if (!str_starts_with($subject, 'ns:')) {
             return Region::whole();
         }
 
         return self::namespaceRegion(substr($subject, 3), $psr4Roots, $observed);
+    }
+
+    public static function subjectFile(BaselineIdentity $identity): ?RelativePath
+    {
+        if (str_starts_with($identity->subjectKey, 'file:')) {
+            return RelativePath::fromString(substr($identity->subjectKey, 5));
+        }
+
+        return str_starts_with($identity->subjectKey, 'declaration:')
+            ? self::declarationFile($identity->subjectKey)
+            : null;
     }
 
     private static function declarationFile(string $subject): ?RelativePath
@@ -103,6 +109,9 @@ final readonly class SubjectRegion
     /** @param list<Finding> $observed */
     private static function containsObserved(Region $region, array $observed): bool
     {
+        if ($observed === []) {
+            return false;
+        }
         foreach ($observed as $finding) {
             if ($finding->location->file === null || !$region->contains($finding->location->file)) {
                 return false;

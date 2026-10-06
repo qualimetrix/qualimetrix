@@ -62,6 +62,32 @@ final readonly class ProjectTree implements ProjectTreeQueryInterface
         return ProjectEntryPresence::Unknown;
     }
 
+    public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
+    {
+        $current = '/';
+        foreach (array_values(array_filter(explode('/', $directory->value()), static fn(string $part): bool => $part !== '')) as $part) {
+            $names = $this->inspector->list($current);
+            if ($names === null) {
+                return ProjectEntryPresence::Unknown;
+            }
+            if (!\in_array($part, $names, true)) {
+                return ProjectEntryPresence::Absent;
+            }
+            $current = rtrim($current, '/') . '/' . $part;
+            $kind = $this->inspector->inspect($current);
+            if ($kind === EntryKind::StatFailed) {
+                return ProjectEntryPresence::Unknown;
+            }
+            if ($kind !== EntryKind::Directory && $kind !== EntryKind::DirectoryLink) {
+                return ProjectEntryPresence::Absent;
+            }
+        }
+
+        return $this->inspector->list($current) === null
+            ? ProjectEntryPresence::Unknown
+            : ProjectEntryPresence::Present;
+    }
+
     /**
      * @param array<string, RelativePath> $files
      * @param array<string, RelativePath> $unknown

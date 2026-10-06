@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
@@ -98,7 +99,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
         $shape = self::shapeOf($optionsClass, $key);
 
         foreach (self::wordsOf($enumClass) as $word) {
-            self::assertTrue($shape->matches($word), \sprintf('declaration should accept "%s"', $word));
+            self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, $word), \sprintf('declaration should accept "%s"', $word));
             self::assertTrue(
                 self::readerAccepts($optionsClass, $key, $buildConfig($word)),
                 \sprintf('%s::fromResolved() should accept "%s"', $optionsClass, $word),
@@ -131,7 +132,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
             $flipped = strtoupper($word);
 
             self::assertSame(
-                $shape->matches($flipped),
+                (new RuleOptionShapeMatcher())->matches($shape, $flipped),
                 self::readerAccepts($optionsClass, $key, $buildConfig($flipped)),
                 \sprintf(
                     'declaration and reader disagree on "%s" (case-flipped "%s") for %s::$%s',
@@ -159,7 +160,7 @@ final class RuleOptionWordSetDeclarationAgreementTest extends TestCase
     ): void {
         $shape = self::shapeOf($optionsClass, $key);
 
-        self::assertFalse($shape->matches('bogus-word'));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 'bogus-word'));
         self::assertFalse(
             self::readerAccepts($optionsClass, $key, $buildConfig('bogus-word')),
             \sprintf('%s::fromResolved() should refuse an undeclared word', $optionsClass),

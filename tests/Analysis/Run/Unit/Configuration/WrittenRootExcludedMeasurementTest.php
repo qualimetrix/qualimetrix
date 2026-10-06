@@ -69,7 +69,7 @@ final class WrittenRootExcludedMeasurementTest extends TestCase
     public function itMeasuresARootWrittenInTheDocumentToo(): void
     {
         $configuration = $this->resolve([
-            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['legacy'], ConfigSchema::EXCLUDES => [['regex' => 'leg.*']]]],
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['legacy'], ConfigSchema::EXCLUDE => [['regex' => 'leg.*']]]],
         ]);
         $files = $this->discover($configuration);
         self::assertSame(['legacy'], array_map(static fn($path): string => $path->value(), $files->namedExcluded));
@@ -81,18 +81,18 @@ final class WrittenRootExcludedMeasurementTest extends TestCase
     {
         yield 'CLI exclude over file paths' => [[
             ['source' => 'qmx.yaml', 'values' => [ConfigSchema::PATHS => ['src']]],
-            ['source' => 'cli', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+            ['source' => 'cli', 'values' => [ConfigSchema::EXCLUDE => [['subtree' => 'src']]]],
         ], 'src'];
         yield 'CLI paths over file exclude' => [[
-            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDE => [['subtree' => 'src']]]],
             ['source' => 'cli', 'values' => [ConfigSchema::PATHS => ['src']]],
         ], 'src'];
         yield 'later preset excludes earlier paths' => [[
             ['source' => 'preset-first', 'values' => [ConfigSchema::PATHS => ['src']]],
-            ['source' => 'preset-second', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+            ['source' => 'preset-second', 'values' => [ConfigSchema::EXCLUDE => [['subtree' => 'src']]]],
         ], 'src'];
         yield 'later preset paths over earlier exclusion' => [[
-            ['source' => 'preset-first', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'src']]]],
+            ['source' => 'preset-first', 'values' => [ConfigSchema::EXCLUDE => [['subtree' => 'src']]]],
             ['source' => 'preset-second', 'values' => [ConfigSchema::PATHS => ['src']]],
         ], 'src'];
     }
@@ -114,7 +114,7 @@ final class WrittenRootExcludedMeasurementTest extends TestCase
     {
         $configuration = $this->resolve([
             ['source' => 'composer.json', 'values' => [ConfigSchema::DISCOVERED_AUTOLOAD_PATHS => ['src', 'legacy']]],
-            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDES => [['subtree' => 'legacy']]]],
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDE => [['subtree' => 'legacy']]]],
         ]);
 
         self::assertSame(
@@ -165,7 +165,7 @@ final class WrittenRootExcludedMeasurementTest extends TestCase
     private function resolveWritten(array $paths, array $exclude): RunConfiguration
     {
         return $this->resolve([
-            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDES => [$exclude]]],
+            ['source' => 'qmx.yaml', 'values' => [ConfigSchema::EXCLUDE => [$exclude]]],
             ['source' => 'cli', 'values' => [ConfigSchema::PATHS => $paths]],
         ]);
     }

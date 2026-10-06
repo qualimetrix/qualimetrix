@@ -23,10 +23,16 @@ final readonly class ResolvedTarget
         public ?int $descriptor,
         public ?FileIdentity $identity,
         private PathInspection $inspection,
+        private PrivateGroupMembership $membership,
     ) {
         $this->directories = $inspection->directories;
         $this->exposure = $inspection->exposure;
         $this->streamExposed = $inspection->streamExposed;
+    }
+
+    public function membership(): PrivateGroupMembership
+    {
+        return $this->membership;
     }
 
     public function sameAs(self $other): bool

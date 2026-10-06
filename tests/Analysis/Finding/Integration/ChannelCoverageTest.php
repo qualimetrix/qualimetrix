@@ -396,7 +396,7 @@ final class ChannelCoverageTest extends TestCase
             self::assertDeclared($finding->channel());
         }
 
-        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage());
         self::assertCount(0, $unused, 'An unresolvable suppression is a configuration error, never stale debt.');
     }
 
@@ -417,7 +417,7 @@ final class ChannelCoverageTest extends TestCase
         self::assertSame([], (new UnusedDirectiveRule($options, $policy))->analyze($context));
         self::assertSame([], (new InlineDirectiveValidator($policy, new RefusedDirectives(self::channelIdentity())))->validate($context));
 
-        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty());
+        $unused = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage());
         self::assertCount(1, $unused);
         self::assertSame(
             InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
@@ -490,4 +490,13 @@ final class ChannelCoverageTest extends TestCase
 
         return $registry;
     }
+    private static function coverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+            [\Qualimetrix\Core\Path\RelativePath::fromString('src/Foo.php')],
+            [],
+        );
+    }
+
 }

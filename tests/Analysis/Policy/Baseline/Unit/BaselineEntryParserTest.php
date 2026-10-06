@@ -460,7 +460,7 @@ final class BaselineEntryParserTest extends TestCase
                 foreach ([BaselineDocumentLayout::render($fields, $entries), json_encode([...$fields, 'entries' => $entries], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)] as $content) {
                     file_put_contents($path, $content);
                     try {
-                        $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+                        $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
                         self::fail('An unknown file key must refuse the complete document.');
                     } catch (ConfigurationRefusal $refusal) {
                         self::assertNotNull($refusal->position());
@@ -502,7 +502,7 @@ final class BaselineEntryParserTest extends TestCase
         try {
             foreach ([BaselineDocumentLayout::render($fields, $entries), json_encode([...$fields, 'entries' => $entries], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR)] as $content) {
                 file_put_contents($path, $content);
-                $baseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+                $baseline = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
                 self::assertSame([], $baseline->entries);
                 self::assertCount(3, $baseline->inertEntries);
                 foreach ($rawEntries as $index => $raw) {
@@ -570,7 +570,7 @@ final class BaselineEntryParserTest extends TestCase
         try {
             file_put_contents($path, json_encode($document, \JSON_THROW_ON_ERROR));
             try {
-                $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+                $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
                 self::fail('Version 13 has no recorded exclusion definition.');
             } catch (ConfigurationRefusal $refusal) {
                 self::assertStringContainsString('version 13', $refusal->summary());
@@ -582,7 +582,7 @@ final class BaselineEntryParserTest extends TestCase
             $document['version'] = BaselineFormatVersion::CURRENT;
             $document['exclusions'] = ['patterns' => ['subtree:src/Legacy'], 'generated' => 'included'];
             file_put_contents($path, json_encode($document, \JSON_THROW_ON_ERROR));
-            $baseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+            $baseline = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::assertSame([25.0], $baseline->entries[0]->magnitudes);
             self::assertSame($document['exclusions'], $baseline->exclusions->toArray());
         } finally {

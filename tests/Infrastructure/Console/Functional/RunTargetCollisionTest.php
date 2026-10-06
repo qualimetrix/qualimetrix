@@ -10,7 +10,10 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\RunTarget\RunTargets;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Subprocess\ChildProcess;
 use Symfony\Component\Console\Tester\CommandTester;
+
+require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 
 #[CoversClass(RunTargets::class)]
 final class RunTargetCollisionTest extends TestCase
@@ -75,12 +78,53 @@ final class RunTargetCollisionTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAReportThatNamesItsExplicitConfigurationInput(): void
+    {
+        $config = $this->directory . '/qmx.yaml';
+        $original = "rules: {}\n";
+        file_put_contents($config, $original);
+
+        $tester = $this->check(['--config' => $config, '--output' => $config]);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('same input target', $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame($original, file_get_contents($config));
+    }
+
+    #[Test]
+    public function itRefusesAReportThatNamesItsBaselineInput(): void
+    {
+        $baseline = $this->directory . '/baseline.json';
+        $original = '{"version":14,"generated":"2026-08-05T12:00:00+03:00","scope":[],"exclusions":{"patterns":[],"generated":"excluded"},"entries":{}}';
+        file_put_contents($baseline, $original);
+
+        $tester = $this->check(['--baseline' => $baseline, '--output' => $baseline]);
+
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('same input target', $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame($original, file_get_contents($baseline));
+    }
+
+    #[Test]
     public function itAllowsTheSameNullDeviceForTwoExplicitDocuments(): void
     {
         $tester = $this->check(['--output' => '/dev/null', '--profile' => '/dev/null']);
 
         self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
         self::assertSame('char', filetype('/dev/null'));
+    }
+
+    #[Test]
+    public function itAllowsAnExplicitStderrReportWhenShellRedirectsStderrToStdout(): void
+    {
+        $command = escapeshellarg(\PHP_BINARY)
+            . ' ' . escapeshellarg(\dirname(__DIR__, 4) . '/bin/qmx')
+            . ' check Source.php --format=json --workers=0 --no-cache --output=/dev/stderr 2>&1';
+        $run = ChildProcess::run(['sh', '-c', $command], $this->directory);
+
+        self::assertSame(0, $run['exitCode'], $run['stdout'] . $run['stderr']);
+        self::assertStringContainsString('"summary"', $run['stdout']);
+        self::assertStringNotContainsString('same output target', $run['stdout']);
     }
 
     /** @param array<string, mixed> $options */

@@ -60,9 +60,12 @@ cover matrix for every candidate.
 Matching considers every eligible balanced segment after an unmatched closer.
 If none is admitted, it retains the admitted whole match. If a later segment
 is admitted, an undersized preceding tail is not reported independently.
-A second connected coverage pass precedes block allocation. This is not a
-promise of one finding per physical region: distinct verified matches can
-overlap.
+Before the second connected coverage pass, admitted segments with the same
+complete normalized token sequence merge their distinct file/offset positions.
+One content sequence produces one block, so its per-file ordinal cannot restart
+in a second block with that content. The pass then precedes block allocation.
+Distinct verified matches can still overlap. Inline-HTML row coverage ends at
+the last row containing token bytes; a trailing line break adds no empty row.
 
 Block admission uses token count and the greatest covered code-line count
 among distinct copies. Every copy of an admitted block is published, including
@@ -104,13 +107,17 @@ complete structured report.
 ## Consequences and migration
 
 Consumers must replace current duplication Project selectors with File
-selectors and regroup findings by their file subject. Old version 13 Project
-baseline entries remain readable: cleanup identifies their retired channel
-level, and explain preserves accepted evidence while marking that level
-unmeasured. The baseline schema version does not change.
+selectors and regroup findings by their file subject. Older Project baseline
+entries remain readable after migrating the envelope to the current baseline
+format: cleanup identifies their retired channel level, and explain preserves
+accepted evidence while marking that level unmeasured. This copy-identity
+change does not change the baseline schema version.
 
 The subject, occurrence and measurement changes intentionally reset affected
-fingerprints and require a measured baseline update. Remove duplication
+fingerprints and require a measured baseline update. Previously split blocks
+with identical normalized content could share an occurrence identity. Their
+merged copy group gives distinct per-file ordinals; review stale accepted keys
+and accept the newly distinct copy identities after a complete measured run. Remove duplication
 warning and threshold configuration and its local threshold directives;
 keep positive min_lines/min_tokens and the error boundary.
 
@@ -126,8 +133,10 @@ stands or CI jobs are introduced. The full 60-file memory regression
 uses the existing manual benchmark group and costs about 52 seconds on the
 development machine. It catches pipeline lifetime allocation that the cheaper
 retained-coordinate and retained-candidate unit guards cannot observe. It adds
-no default aggregate execution. The 100-file capacity run remains a one-off
-acceptance measurement.
+no default aggregate execution. A 40-file/128M trial passed but cost more than
+the five-second ordinary-test budget; the ordinary suite therefore retains its
+20-file/64M guard and makes no full-lifecycle 128M promise. The 100-file capacity
+run remains a one-off acceptance measurement.
 
 Property hooks, multi-property statements and ambiguous bare-static property
 syntax remain conservative data-tagging gaps. Multiplicity of overlapping

@@ -43,6 +43,7 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
     {
         $groups = self::groupByIdentity($findings);
         $judgement = new EntryJudgement($this->baseline, $this->declarations, $this->coverage, $this->ruleGaps);
+        $absenceProof = new EntryAbsenceProof($this->baseline, $this->declarations, $this->coverage, $this->ruleGaps);
         $verdicts = $statuses = $reasons = [];
         foreach ($groups as $key => $group) {
             $entry = $this->baseline->findByIdentity($group['identity']);
@@ -64,7 +65,7 @@ final readonly class BaselineCeilingStage implements FindingFilterStageInterface
             if (isset($groups[$key])) {
                 continue;
             }
-            $absence = $judgement->classifyAbsent($entry);
+            $absence = $absenceProof->classify($entry);
             $statuses[$key] = $absence->status;
             if ($absence->reason !== null) {
                 $reasons[$key] = $absence->reason->value;

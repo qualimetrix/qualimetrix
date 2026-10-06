@@ -34,10 +34,10 @@ final class BaselineFileShape
         10 => 'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
             . 'write a new version %v% baseline (or regenerate and review the accepted state).',
-        11 => 'Baseline version 11 cannot be converted automatically: version %v% drops the redundant "count" field '
+        11 => 'Baseline version 11 cannot be converted automatically: version 12 drops the redundant "count" field '
             . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
             . 'and write a new version %v% baseline (or regenerate and review the accepted state).',
-        12 => 'Baseline version 12 cannot be converted automatically: version %v% replaces the file position in a '
+        12 => 'Baseline version 12 cannot be converted automatically: version 13 replaces the file position in a '
             . 'declaration key with an assigned ordinal, and no converter can recover which declaration a stored '
             . 'position meant. Run a fresh analysis and write a new version %v% baseline (or regenerate and review '
             . 'the accepted state).',

@@ -51,8 +51,10 @@ final class ProjectScopeReadersTest extends TestCase
                 UnboundSuppressionOptions::UNMATCHED_RULE_LEDGER,
             ],
             'src/Analysis/Finding/Contract/ProjectScope/ProjectScopeJudgement.php' => [],
+            'src/Analysis/Finding/Contract/ProjectScope/SubjectCoverageFacts.php' => [],
             'src/Analysis/Finding/Contract/Rule/AnalysisContext.php' => [],
             'src/Analysis/Run/Contract/Configuration/ProjectScopeMeasurement.php' => [],
+            'src/Analysis/Run/Contract/Pipeline/MeasuredRunResult.php' => [],
             'src/Reporting/ReportProjectScope.php' => [],
         ];
     }

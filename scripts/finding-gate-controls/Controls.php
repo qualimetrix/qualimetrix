@@ -22,13 +22,12 @@ use QmxFindingGate\Wiring;
  * Each subject's controls live in its own class; this one fixes their order,
  * which is the order of the harness's table.
  *
- * {@see DeclaredDeltaControls::deriveRefusesBrokenRun()} and
- * {@see DeclaredDeltaControls::deriveWritesOnAGreenRun()} are the only controls
- * whose subject is not in the report at all. A derivation that
- * failed prints "nothing was written", and what had to be checked was whether
- * that was true ({@see Control::writing()}); a derivation that succeeded
- * prints what it wrote, and what had to be checked was whether it wrote it
- * ({@see Control::rewriting()}).
+ * {@see DeclaredDeltaControls::deriveRefusesBrokenRun()} physically checks
+ * unchanged declarations after an invalid captured publication
+ * ({@see Control::writing()}). A complete comparison with semantic residuals
+ * can still write independent measurements. Its counterpart
+ * {@see DeclaredDeltaControls::deriveWritesOnAGreenRun()} checks that a
+ * successful derivation wrote the expected files ({@see Control::rewriting()}).
  *
  * `delta-too-large` must be observed red by a control because the code computes
  * its count; merely naming the failure class does not prove that branch works.

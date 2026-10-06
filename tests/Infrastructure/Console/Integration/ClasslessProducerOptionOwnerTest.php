@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
@@ -315,7 +316,7 @@ final class ClasslessProducerOptionOwnerTest extends TestCase
         $execution = (new ContainerFactory())->create()->get(RuleExecutionInterface::class);
         \assert($execution instanceof RuleExecutionInterface);
         $metadata = $execution->allRules();
-        $writes = $input === null ? null : (new CliOptionsParser(new RuleOptionsParser(
+        $writes = $input === null ? null : (new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser(
             optionsClasses: array_combine(array_column($metadata, 'name'), array_column($metadata, 'optionsClass')),
         )))->pathWrites($input);
         $authored = ResolvedOptionsFixture::authoredConfiguration(['rules' => $rules], $metadata, $writes);

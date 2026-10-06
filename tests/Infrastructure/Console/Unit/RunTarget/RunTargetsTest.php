@@ -35,7 +35,7 @@ final class RunTargetsTest extends TestCase
     }
 
     #[Test]
-    public function itWritesAnExistingInodeThroughItsHardLinkWithoutChangingItsMode(): void
+    public function itReplacesAnExistingNameWithoutChangingItsModeOrHardLink(): void
     {
         $target = $this->directory . '/report.json';
         file_put_contents($target, 'old and longer');
@@ -51,11 +51,53 @@ final class RunTargetsTest extends TestCase
         $targets->abandon();
 
         clearstatcache();
-        self::assertSame($inode, fileinode($target));
+        self::assertNotSame($inode, fileinode($target));
         self::assertSame(0o600, fileperms($target) & 0o777);
         self::assertSame('new', file_get_contents($target));
-        self::assertSame('new', file_get_contents($this->directory . '/second.json'));
+        self::assertSame('old and longer', file_get_contents($this->directory . '/second.json'));
         self::assertSame(['report.json', 'second.json'], $this->entries());
+    }
+
+    #[Test]
+    public function itKeepsAnAbsentReportNameUnpublishedUntilCompleteWrite(): void
+    {
+        $target = $this->directory . '/late-report.json';
+        $targets = self::targets();
+        $targets->judge('--output', $target);
+        $targets->claim();
+
+        try {
+            self::assertFileDoesNotExist($target, 'A claimed report must stay private before analysis finishes.');
+            $targets->write('--output', 'complete bytes');
+            self::assertSame('complete bytes', file_get_contents($target));
+        } finally {
+            $targets->abandon();
+        }
+    }
+
+    #[Test]
+    public function itPublishesAReportWithoutChangingItsExistingHardLink(): void
+    {
+        $target = $this->directory . '/late-existing.json';
+        $other = $this->directory . '/other-link.json';
+        file_put_contents($target, 'old bytes');
+        link($target, $other);
+        $oldInode = fileinode($target);
+        $targets = self::targets();
+        $targets->judge('--output', $target);
+        $targets->claim();
+
+        try {
+            self::assertSame('old bytes', file_get_contents($target));
+            self::assertSame('old bytes', file_get_contents($other));
+            $targets->write('--output', 'complete replacement');
+            clearstatcache(true, $target);
+            self::assertNotSame($oldInode, fileinode($target));
+            self::assertSame('complete replacement', file_get_contents($target));
+            self::assertSame('old bytes', file_get_contents($other));
+        } finally {
+            $targets->abandon();
+        }
     }
 
     #[Test]
@@ -65,8 +107,12 @@ final class RunTargetsTest extends TestCase
         $targets = self::targets();
         $targets->judge('--output', $target);
         $targets->claim();
-        self::assertFileExists($target);
-        $targets->abandon();
+        try {
+            self::assertFileDoesNotExist($target);
+            self::assertCount(1, $this->entries());
+        } finally {
+            $targets->abandon();
+        }
         self::assertSame([], $this->entries());
 
         $targets->judge('--output', $target);
@@ -75,6 +121,176 @@ final class RunTargetsTest extends TestCase
         $targets->abandon();
         self::assertSame('complete', file_get_contents($target));
         self::assertSame(['new.json'], $this->entries());
+    }
+
+    #[Test]
+    public function itKeepsAnAttachedLogNameWhenNoRecordsWereWritten(): void
+    {
+        $path = $this->directory . '/empty.log';
+        $factory = new LoggerFactory();
+        $factory->create(new \Symfony\Component\Console\Output\BufferedOutput(), $path, null);
+        $targets = new RunTargets($factory);
+        $targets->judge('--log-file', $path);
+        $targets->claim();
+        $targets->abandon();
+
+        self::assertFileExists($path);
+        self::assertSame('', file_get_contents($path));
+        self::assertSame(['empty.log'], $this->entries());
+    }
+
+    #[Test]
+    public function itKeepsAClaimedParentTargetWhenAnInheritedChildAbandons(): void
+    {
+        if (!\function_exists('pcntl_fork')) {
+            self::markTestSkipped('Fork is unavailable on this host.');
+        }
+        $script = <<<'PHP'
+require $argv[1];
+$directory = $argv[2];
+$targets = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(
+    new \Qualimetrix\Infrastructure\Logging\LoggerFactory(),
+);
+$targets->judge('--output', $directory . '/report.json');
+$targets->claim();
+$entries = static fn(): array => array_values(array_diff((array) scandir($directory), ['.', '..']));
+$before = $entries();
+$pid = pcntl_fork();
+if ($pid === -1) {
+    exit(4);
+}
+if ($pid === 0) {
+    $targets->abandon();
+    exit(0);
+}
+pcntl_waitpid($pid, $status);
+$after = $entries();
+$targets->abandon();
+echo json_encode(['before' => $before, 'after' => $after, 'childExit' => pcntl_wexitstatus($status)]);
+PHP;
+        $run = ChildProcess::run([\PHP_BINARY, '-r', $script, \dirname(__DIR__, 5) . '/vendor/autoload.php', $this->directory]);
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        $result = json_decode($run['stdout'], true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(0, $result['childExit']);
+        self::assertNotEmpty($result['before']);
+        self::assertSame($result['before'], $result['after'], 'The child must not discard its parent target.');
+        self::assertSame([], $this->entries());
+    }
+
+    #[Test]
+    public function itRestoresSignalHandlersAndAsyncModeAfterAStagedRun(): void
+    {
+        if (!\function_exists('pcntl_signal_get_handler')) {
+            self::markTestSkipped('Signal handlers are unavailable.');
+        }
+        $int = pcntl_signal_get_handler(\SIGINT);
+        $term = pcntl_signal_get_handler(\SIGTERM);
+        $async = pcntl_async_signals();
+        $targets = self::targets();
+        $targets->judge('--output', $this->directory . '/report.json');
+        $targets->claim();
+        try {
+            \Amp\delay(0.001);
+            self::assertNotSame($int, pcntl_signal_get_handler(\SIGINT));
+            self::assertNotSame($term, pcntl_signal_get_handler(\SIGTERM));
+            self::assertTrue(pcntl_async_signals());
+        } finally {
+            $targets->abandon();
+        }
+        \Amp\delay(0.001);
+        self::assertSame($int, pcntl_signal_get_handler(\SIGINT));
+        self::assertSame($term, pcntl_signal_get_handler(\SIGTERM));
+        self::assertSame($async, pcntl_async_signals());
+    }
+
+    #[Test]
+    public function itRefusesAForeignSignalHandlerBeforePreparingAFile(): void
+    {
+        if (!\function_exists('pcntl_signal_get_handler')) {
+            self::markTestSkipped('Signal handlers are unavailable.');
+        }
+        $previous = pcntl_signal_get_handler(\SIGTERM);
+        $handler = static function (): void {};
+        pcntl_signal(\SIGTERM, $handler);
+        try {
+            $targets = self::targets();
+            $targets->judge('--output', $this->directory . '/report.json');
+            try {
+                $targets->claim();
+                self::fail('A foreign handler must refuse staged output.');
+            } catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $refusal) {
+                self::assertStringContainsString('existing signal handler', $refusal->getMessage());
+            }
+            self::assertSame($handler, pcntl_signal_get_handler(\SIGTERM));
+            self::assertSame([], $this->entries());
+        } finally {
+            pcntl_signal(\SIGTERM, $previous);
+        }
+    }
+
+    #[Test]
+    public function itRefusesAPendingEventLoopSignalWatcherBeforePreparingAFile(): void
+    {
+        if (!\function_exists('pcntl_signal_get_handler')) {
+            self::markTestSkipped('Signal handlers are unavailable.');
+        }
+        $watcher = \Revolt\EventLoop::onSignal(\SIGTERM, static function (): void {});
+        try {
+            $targets = self::targets();
+            $targets->judge('--output', $this->directory . '/report.json');
+            try {
+                $targets->claim();
+                self::fail('A pending event-loop signal watcher must refuse staged output.');
+            } catch (EnvironmentRefusal $refusal) {
+                self::assertStringContainsString('event-loop signal watcher', $refusal->getMessage());
+            }
+            self::assertContains($watcher, \Revolt\EventLoop::getIdentifiers());
+            self::assertSame([], $this->entries());
+        } finally {
+            \Revolt\EventLoop::cancel($watcher);
+        }
+    }
+
+    #[Test]
+    public function itRefusesRegularStagingWithoutPcntlButAllowsDescriptorAndLog(): void
+    {
+        $script = <<<'PHP'
+require $argv[1];
+$directory = $argv[2];
+$factory = new \Qualimetrix\Infrastructure\Logging\LoggerFactory();
+$regular = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets($factory);
+$regular->judge('--output', $directory . '/report.json');
+try {
+    $regular->claim();
+    exit(5);
+} catch (\Qualimetrix\Infrastructure\Console\Refusal\EnvironmentRefusal $refusal) {
+    if (!str_contains($refusal->getMessage(), 'pcntl_signal')) {
+        exit(6);
+    }
+}
+$stream = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
+$stream->judge('--output', 'php://stdout');
+$stream->claim();
+$stream->write('--output', 'STREAM');
+$stream->abandon();
+$log = new \Qualimetrix\Infrastructure\Console\RunTarget\RunTargets(new \Qualimetrix\Infrastructure\Logging\LoggerFactory());
+$log->judge('--log-file', $directory . '/run.log');
+$log->claim();
+$log->abandon();
+exit(0);
+PHP;
+        $run = ChildProcess::run([
+            \PHP_BINARY,
+            '-d',
+            'disable_functions=pcntl_signal,pcntl_signal_get_handler,pcntl_async_signals',
+            '-r',
+            $script,
+            \dirname(__DIR__, 5) . '/vendor/autoload.php',
+            $this->directory,
+        ]);
+        self::assertSame(0, $run['exitCode'], $run['stderr']);
+        self::assertSame('STREAM', $run['stdout']);
+        self::assertSame(['run.log'], $this->entries());
     }
 
     #[Test]

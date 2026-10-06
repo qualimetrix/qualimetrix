@@ -88,9 +88,11 @@ final class DuplicateBlockFinder
             }
             unset($this->candidates);
 
+            $merged = (new DuplicateContentMerger($request->retokenized->streams, $reportable))->merge($segments);
+
             return array_map(
                 fn(array $match): DuplicateBlock => $this->buildBlock(...$match),
-                $segments->withoutSubsumed($this->coverSpan(...)),
+                $merged->withoutSubsumed($this->coverSpan(...)),
             );
         } finally {
             // Exceptions must also release the dataset held by this long-lived instance.
@@ -292,7 +294,7 @@ final class DuplicateBlockFinder
         return new DuplicateBlock(
             locations: $locations,
             tokens: $length,
-            contentHash: $this->contentHash($this->tokensAt($first), PackedPosition::offset($first), $length),
+            contentHash: DuplicateContentMerger::contentHash($this->tokensAt($first), PackedPosition::offset($first), $length),
         );
     }
 
@@ -332,23 +334,6 @@ final class DuplicateBlockFinder
     private function tokensAt(int $packed): TokenStream
     {
         return $this->request->retokenized->streams[PackedPosition::fileIndex($packed)];
-    }
-
-    /**
-     * Creates the semantic identity for one fully verified duplicate block.
-     *
-     * The sequence is length-prefixed through JSON and carries its token count
-     * explicitly, so neither source locations nor a shortened display hint can
-     * influence the group identity.
-     */
-    private function contentHash(TokenStream $tokens, int $offset, int $length): string
-    {
-        $values = \array_slice($tokens->values, $offset, $length);
-
-        return hash('sha256', json_encode(
-            ['tokenCount' => $length, 'tokens' => $values],
-            \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES,
-        ));
     }
 
     /**

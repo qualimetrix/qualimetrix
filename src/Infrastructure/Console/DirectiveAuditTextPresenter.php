@@ -181,6 +181,8 @@ final readonly class DirectiveAuditTextPresenter
         $reason = match ($verdict->reason) {
             DirectiveUnmeasurableReason::ProducerDisabled
                 => 'unmeasured: the producer of the addressed channel did not run.',
+            DirectiveUnmeasurableReason::ScopeUnmeasured
+                => 'unmeasured: the selected run cannot establish absence for the addressed channel.',
             DirectiveUnmeasurableReason::Masked => self::maskedSentence($verdict->maskedBy),
             null => 'unmeasured.',
         };

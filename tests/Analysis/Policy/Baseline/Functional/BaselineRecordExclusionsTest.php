@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -89,6 +90,84 @@ final class BaselineRecordExclusionsTest extends TestCase
         $check = $this->execute(CheckCommand::class, ['paths' => ['src'], '--baseline' => $this->path, '--only-rule' => ['architecture.layer-violation'], '--format' => 'json']);
         self::assertSame(0, $check->getStatusCode(), $check->getDisplay() . $check->getErrorOutput());
         self::assertStringNotContainsString('exclusions-differ', $check->getDisplay());
+    }
+
+    #[Test]
+    public function itRemovesARecordedGroupThatTheNewExclusionProvesGone(): void
+    {
+        file_put_contents($this->root . '/src/Foo.php', '<?php goto done; done: echo 1;');
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['code-smell.goto']]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
+        self::assertNotEmpty($this->payload()['entries']);
+        $config = (string) file_get_contents($this->root . '/qmx.yaml');
+        file_put_contents($this->root . '/qmx.yaml', "exclude: [{exact: 'src/Foo.php'}]\n" . $config);
+
+        $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, '--only-rule' => ['code-smell.goto']]);
+
+        self::assertSame(0, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
+        self::assertStringContainsString('exclusions-removed-population', $record->getDisplay());
+        self::assertSame([], $this->payload()['entries']);
+        self::assertSame(['exact:src/Foo.php'], $this->payload()['exclusions']['patterns']);
+    }
+
+    #[Test]
+    public function itNamesTheNewlyExcludedFileWhenCleanupOffersItsEntry(): void
+    {
+        file_put_contents($this->root . '/src/Foo.php', '<?php goto done; done: echo 1;');
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['code-smell.goto']]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
+        self::assertNotEmpty($this->payload()['entries']);
+        $before = (string) file_get_contents($this->path);
+        $config = (string) file_get_contents($this->root . '/qmx.yaml');
+        file_put_contents($this->root . '/qmx.yaml', "exclude: [{exact: 'src/Foo.php'}]\n" . $config);
+
+        $cleanup = $this->execute(BaselineCleanupCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['code-smell.goto']]);
+
+        self::assertSame(0, $cleanup->getStatusCode(), $cleanup->getDisplay() . $cleanup->getErrorOutput());
+        self::assertStringContainsString('file:src/Foo.php', $cleanup->getDisplay());
+        self::assertStringContainsString('this identity belongs to a file newly excluded from analysis', $cleanup->getDisplay());
+        self::assertStringNotContainsString('nothing reported for this identity', $cleanup->getDisplay());
+        self::assertSame($before, file_get_contents($this->path));
+    }
+
+    #[Test]
+    public function itReportsNamedEntryOutcomesBeforeRefusingAnUnavailableRecapture(): void
+    {
+        file_put_contents($this->root . '/src/Foo.php', '<?php goto done; done: echo 1;');
+        file_put_contents($this->root . '/src/Extra.php', '<?php goto done; done: echo 1;');
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['code-smell.goto']]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
+        self::assertSame(2, array_sum(array_map('count', $this->payload()['entries'])));
+        $before = (string) file_get_contents($this->path);
+        file_put_contents($this->root . '/src/Foo.php', '<?php echo 1;');
+        $this->configuration(true);
+
+        $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, '--only-rule' => ['code-smell.goto']]);
+
+        self::assertSame(3, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
+        self::assertSame($before, file_get_contents($this->path));
+        self::assertStringContainsString('an exclusion-affected group', $record->getDisplay() . $record->getErrorOutput());
+        self::assertStringContainsString('file:src/Foo.php', $record->getDisplay(), 'Unavailable entry must be named before write refusal.');
+        self::assertStringContainsString('file:src/Extra.php', $record->getDisplay(), 'Excluded entry must be named before write refusal.');
+        self::assertStringContainsString('refused', $record->getDisplay());
+        self::assertStringContainsString('removed', $record->getDisplay());
+    }
+
+    #[Test]
+    public function itRefusesToInferAnArchitectureSourceFromATargetIdentity(): void
+    {
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['architecture.layer-violation']]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
+        self::assertSame(1, array_sum(array_map('count', $this->payload()['entries'])));
+        $before = (string) file_get_contents($this->path);
+        $config = (string) file_get_contents($this->root . '/qmx.yaml');
+        file_put_contents($this->root . '/qmx.yaml', "exclude: [{exact: 'src/Foo.php'}]\n" . $config);
+
+        $record = $this->execute(BaselineUpdateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--record-exclusions' => true, '--only-rule' => ['architecture.layer-violation']]);
+
+        self::assertSame(3, $record->getStatusCode(), $record->getDisplay() . $record->getErrorOutput());
+        self::assertSame($before, file_get_contents($this->path));
+        self::assertStringContainsString('refused', $record->getDisplay());
     }
 
     #[Test]

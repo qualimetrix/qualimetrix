@@ -12,10 +12,12 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\Matching\DuplicateBlockFinder;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Analysis\Evidence\Duplication\Support\SplitSameContentFixture;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
 use SplFileInfo;
 
@@ -26,6 +28,7 @@ use SplFileInfo;
  */
 #[CoversClass(CodeDuplicationRule::class)]
 #[CoversClass(DuplicationDetector::class)]
+#[CoversClass(DuplicateBlockFinder::class)]
 final class DuplicateCopyIdentityTest extends TestCase
 {
     private const array BODY = [
@@ -60,6 +63,28 @@ final class DuplicateCopyIdentityTest extends TestCase
         }
         rmdir($this->tmpDir . '/src');
         rmdir($this->tmpDir);
+    }
+
+    #[Test]
+    public function itGivesEveryDetectorCopyAUniqueIdentityForSplitSameContentEvidence(): void
+    {
+        foreach (SplitSameContentFixture::sources() as $index => $source) {
+            $this->write(['F04', 'F05', 'F10'][$index], $source);
+        }
+
+        $analysis = $this->analyze();
+        $request = SplitSameContentFixture::request();
+        $values = \array_slice($request->retokenized->streams[0]->values, SplitSameContentFixture::FIRST_OFFSET, SplitSameContentFixture::CONTENT_LENGTH);
+        $hash = hash('sha256', json_encode(['tokenCount' => \count($values), 'tokens' => $values], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
+        self::assertSame(1, \count(array_filter($analysis['hashes'], static fn(string $candidate): bool => $candidate === $hash)));
+
+        $keys = array_map(static fn(array $copy): string => $copy['file'] . ':' . $copy['occurrence'], $analysis['copies']);
+        self::assertCount(\count($keys), array_unique($keys));
+        self::assertCount(\count($keys), array_unique(array_column($analysis['copies'], 'key')));
+        $locations = array_map(static fn(array $copy): string => $copy['file'] . ':' . $copy['line'], $analysis['copies']);
+        foreach (['src/F04.php:20', 'src/F04.php:86', 'src/F05.php:72', 'src/F05.php:98', 'src/F10.php:27', 'src/F10.php:60'] as $location) {
+            self::assertContains($location, $locations);
+        }
     }
 
     /** Comments widen physical spans without changing either copy's code value. */
@@ -279,7 +304,7 @@ final class DuplicateCopyIdentityTest extends TestCase
     }
 
     /**
-     * @return array{hashes: list<string>, copies: list<array{file: string, key: string, occurrence: string, value: int|float|null, message: string}>}
+     * @return array{hashes: list<string>, copies: list<array{file: string, line: ?int, key: string, occurrence: string, value: int|float|null, message: string}>}
      */
     private function analyze(): array
     {
@@ -299,6 +324,7 @@ final class DuplicateCopyIdentityTest extends TestCase
         foreach ($findings as $finding) {
             $copies[] = [
                 'file' => $finding->location->pathString(),
+                'line' => $finding->location->line(),
                 'key' => $finding->getFingerprint(),
                 'occurrence' => (string) $finding->occurrenceKey?->value,
                 'value' => $finding->metricValue,

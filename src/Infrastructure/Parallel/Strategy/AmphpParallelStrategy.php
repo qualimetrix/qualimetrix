@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
+use Amp\CancelledException;
 use Closure;
 use LogicException;
 use Psr\Log\LoggerInterface;
@@ -213,6 +214,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
         $pool = WorkerPool::open($this->workerCount, $this->logger);
 
+        $cancelled = false;
         try {
             $results = [];
             $errorCount = 0;
@@ -235,6 +237,9 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
             }
 
             return $results;
+        } catch (CancelledException $e) {
+            $cancelled = true;
+            throw $e;
         } catch (Throwable $e) {
             // This catches errors in task submission, not execution
             $this->logger->error(
@@ -244,7 +249,11 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
             throw $e;
         } finally {
-            $pool->close();
+            if ($cancelled) {
+                $pool->abort();
+            } else {
+                $pool->close();
+            }
         }
     }
 
@@ -291,6 +300,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
             $file = $item['file'];
             try {
                 $results[] = $item['await']();
+            } catch (CancelledException $e) {
+                throw $e;
             } catch (Throwable $e) {
                 // Record failure for this specific file, continue processing others
                 $errorCount++;

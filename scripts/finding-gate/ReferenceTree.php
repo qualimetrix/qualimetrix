@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use JsonException;
+use stdClass;
+
 /**
  * The reference side: a detached worktree of a named ref, with the candidate's
  * installed dependencies.
@@ -90,20 +93,58 @@ final class ReferenceTree
             return 'The reference tree has no composer.lock.';
         }
 
-        $candidateHash = hash('sha256', Fs::read($candidate));
-        $referenceHash = hash('sha256', Fs::read($reference));
+        try {
+            $candidateLock = json_decode(Fs::read($candidate), false, 512, \JSON_THROW_ON_ERROR);
+            $referenceLock = json_decode(Fs::read($reference), false, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $error) {
+            return 'Cannot compare composer.lock dependency facts: ' . $error->getMessage();
+        }
 
-        if ($candidateHash === $referenceHash) {
+        if (!$candidateLock instanceof stdClass || !$referenceLock instanceof stdClass) {
+            return 'Cannot compare composer.lock dependency facts: both lock documents must be JSON objects.';
+        }
+
+        // Composer's root content-hash tracks composer.json freshness, not the
+        // installed dependency set. Nested fields retain their full meaning.
+        unset($candidateLock->{'content-hash'}, $referenceLock->{'content-hash'});
+
+        if (self::sameLockValue($candidateLock, $referenceLock)) {
             return null;
         }
 
-        return \sprintf(
-            'composer.lock differs (candidate %s, reference %s). The reference tree runs against the candidate\'s'
+        return 'composer.lock dependency facts differ. The reference tree runs against the candidate\'s'
             . ' installed dependencies, so a different lock means the two sides do not share a dependency set and'
-            . ' no artifact comparison between them means anything.',
-            substr($candidateHash, 0, 12),
-            substr($referenceHash, 0, 12),
-        );
+            . ' no artifact comparison between them means anything.';
+    }
+
+    private static function sameLockValue(mixed $candidate, mixed $reference): bool
+    {
+        if ($candidate instanceof stdClass || $reference instanceof stdClass) {
+            if (!$candidate instanceof stdClass || !$reference instanceof stdClass) {
+                return false;
+            }
+
+            $candidate = get_object_vars($candidate);
+            $reference = get_object_vars($reference);
+            ksort($candidate, \SORT_STRING);
+            ksort($reference, \SORT_STRING);
+        }
+
+        if (\is_array($candidate) && \is_array($reference)) {
+            if (array_keys($candidate) !== array_keys($reference)) {
+                return false;
+            }
+
+            foreach ($candidate as $key => $value) {
+                if (!self::sameLockValue($value, $reference[$key])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return $candidate === $reference;
     }
 
     /**

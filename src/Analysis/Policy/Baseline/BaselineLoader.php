@@ -6,61 +6,13 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
-use Qualimetrix\Core\FileTarget\FileIdentity;
-use Qualimetrix\Core\FileTarget\TargetPath;
 
 /**
- * Reads the current baseline grammar, then judges entries against the configured channel declarations.
- *
- * @qmx-threshold coupling.cbo 22 -- Held-file grammar and configured entry assembly require thirteen outgoing types; another facade relocates those edges. Raw CBO21 retains one-edge headroom.
+ * Judges held baseline entries against the configured channel declarations.
  */
 final readonly class BaselineLoader
 {
     public function __construct(private BaselineEntryParser $entryParser) {}
-
-    /** @throws ConfigurationRefusal if the file is unreadable or its document grammar is invalid */
-    public static function preflight(string $path): BaselineDocument
-    {
-        self::assertReadable($path);
-        $target = TargetPath::resolve($path);
-        $resolvedPath = $target->path?->value();
-        if ($resolvedPath === null || $target->identity === null) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
-        }
-
-        $handle = @fopen($resolvedPath, 'rb');
-        if ($handle === false) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
-        }
-        try {
-            $stat = fstat($handle);
-            if ($stat === false || !$target->identity->sameAs(FileIdentity::fromStat($stat))) {
-                throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline file changed before reading: {$path}");
-            }
-            $content = stream_get_contents($handle);
-        } finally {
-            fclose($handle);
-        }
-
-        if ($content === false) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Failed to read baseline file: {$path}");
-        }
-
-        $canonical = CanonicalBaselineReader::grammarEnvelope($content, $path);
-        $data = $canonical === null ? BaselineFileShape::decode($content, $path) : [...$canonical, 'entries' => []];
-        $envelope = BaselineFileShape::envelope($data, $path);
-
-        return new BaselineDocument(
-            path: $path,
-            contentHash: hash('sha256', $content),
-            version: BaselineFormatVersion::CURRENT,
-            generated: $envelope['generated'],
-            scope: $envelope['scope'],
-            exclusions: $envelope['exclusions'],
-            target: $target,
-            bytes: $content,
-        );
-    }
 
     /** Semantic entries are judged only after the current run has resolved configuration. */
     public function load(BaselineDocument $document): Baseline
@@ -71,20 +23,6 @@ final readonly class BaselineLoader
         }
 
         return $this->parseBaseline(BaselineFileShape::decode($document->bytes(), $document->path), $document->contentHash, $document->path);
-    }
-
-    /** @throws ConfigurationRefusal if the file is missing, not a regular file, or unreadable */
-    public static function assertReadable(string $path): void
-    {
-        if (!file_exists($path)) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline file not found: {$path}");
-        }
-        if (!is_file($path)) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline path is not a regular file: {$path}");
-        }
-        if (!is_readable($path)) {
-            throw ConfigurationRefusal::aboutBaselineFileDocument($path, "Baseline file is not readable: {$path}");
-        }
     }
 
     /** @param array<string, mixed> $data */

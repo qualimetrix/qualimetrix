@@ -81,7 +81,7 @@ final class ProfilePresenterTest extends TestCase
             $result = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
             self::assertGreaterThan(0, $result['hit']);
             self::assertStringContainsString('--profile', $result['failure']);
-            self::assertSame('', $result['content']);
+            self::assertSame('old', $result['content']);
         } finally {
             unlink($target);
         }

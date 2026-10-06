@@ -653,7 +653,7 @@ A	form|rule-opt|rules.annotation.directive.unused-directive-severity|int	int	opt
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|rule-opt|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.annotation.directive.unused-directive-severity|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.architecture.circular-dependency.direct-as-error|bool	bool	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|rule-opt|rules.architecture.circular-dependency.direct-as-error|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2332,8 +2332,8 @@ A	form|yaml|rules.annotation.directive.unused-directive-severity|float	float	opt
 A	form|yaml|rules.annotation.directive.unused-directive-severity|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.annotation.directive.unused-directive-severity|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.annotation.directive.unused-directive-severity|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.annotation.directive.unused-directive-severity|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.annotation.directive.unused-directive-severity|null	null	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
+A	form|yaml|rules.annotation.directive.unused-directive-severity|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	DECIDED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.annotation.directive.unused-directive-severity|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.circular-dependency.direct-as-error|bool	bool	optionsObject	NOT OBSERVABLE	no	PROMISED	omitted == equivalent; lost at optionsObject
 A	form|yaml|rules.architecture.circular-dependency.direct-as-error|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -5247,7 +5247,7 @@ A	form|yaml|rules.suppression.configuration.suppress-paths|map	map	optionsObject
 A	form|yaml|rules.suppression.configuration.suppress-paths|null	null	optionsObject	NOT OBSERVABLE	no	PROMISED	no reachability witness for the producer; lost at optionsObject
 A	form|yaml|rules.suppression.configuration.suppress-paths|string-nonnumber	string-nonnumber	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; `abc` names no file in the fixture; lost at nowhere
 A	form|yaml|rules.suppression.configuration.suppress-paths|string-number	string-number	optionsObject	NOT OBSERVABLE	no	PROMISED	the declared hit is a path list; every other form still writes 7331, which names no file; lost at nowhere
-B	pair|annotation.directive|enabled|unused-directive-severity|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
+B	pair|annotation.directive|enabled|unused-directive-severity|same-source|6-gate	both	optionsObject	NOT OBSERVABLE	no	PROMISED	B alone leaves the object as an omitted key does, so no survival could be asked of it; A wrote the alternate magnitude, B the canonical magnitude, which no declared value here can improve on
 B	pair|architecture.circular-dependency|direct-as-error|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the alternate magnitude
 B	pair|architecture.circular-dependency|direct-as-error|max-cycle-size|same-source|6-gate-vs-severity	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
 B	pair|architecture.circular-dependency|enabled|max-cycle-size|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the alternate magnitude, B the per-side magnitude
@@ -5895,25 +5895,25 @@ D	form|yaml|architecture.layers[*].attributes|string-number	string-number	report
 D	form|yaml|architecture.layers[*].exclude.attributes|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.attributes|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.attributes|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.attributes|list	list	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.attributes|list	list	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.attributes|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.attributes|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
+D	form|yaml|architecture.layers[*].exclude.attributes|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.attributes|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.attributes|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.extends|list	list	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.extends|list	list	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.extends|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.extends|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
+D	form|yaml|architecture.layers[*].exclude.extends|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.extends|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.extends|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.implements|list	list	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.implements|list	list	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.implements|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.implements|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
+D	form|yaml|architecture.layers[*].exclude.implements|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.implements|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.implements|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.match|bool	bool	report	REFUSES	no	DECIDED	refused
@@ -5927,25 +5927,25 @@ D	form|yaml|architecture.layers[*].exclude.match|string-number	string-number	rep
 D	form|yaml|architecture.layers[*].exclude.patterns|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.patterns|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.patterns|list	list	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.patterns|list	list	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.patterns|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.patterns|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
-D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	OK	no	PROMISED	effect distinguishable and the producer reachable
-D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.patterns|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|architecture.layers[*].exclude.patterns|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|architecture.layers[*].exclude.patterns|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.suffix|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude.suffix|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.suffix|list	list	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.suffix|list	list	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude.suffix|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude.suffix|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
-D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	OK	no	PROMISED	effect distinguishable and the producer reachable
-D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|architecture.layers[*].exclude.suffix|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|architecture.layers[*].exclude.suffix|string-nonnumber	string-nonnumber	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|architecture.layers[*].exclude.suffix|string-number	string-number	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|list	list	report	REFUSES	no	PROMISED	refused
-D	form|yaml|architecture.layers[*].exclude|map	map	report	OK	no	PROMISED	effect distinguishable and the producer reachable
-D	form|yaml|architecture.layers[*].exclude|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
+D	form|yaml|architecture.layers[*].exclude|map	map	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|architecture.layers[*].exclude|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
 D	form|yaml|architecture.layers[*].exclude|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].exclude|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|architecture.layers[*].extends|bool	bool	report	NOT OBSERVABLE	no	PROMISED	the envelope is refused with or without this key
@@ -6268,7 +6268,7 @@ D	form|yaml|suppress_paths|map	map	report	REFUSES	no	PROMISED	refused
 D	form|yaml|suppress_paths|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|suppress_paths|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|suppress_paths|string-number	string-number	report	REFUSES	no	PROMISED	refused
-E	neighbourhood|annotation.directive|enabled|unused-directive-severity|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the canonical magnitude
+E	neighbourhood|annotation.directive|enabled|unused-directive-severity|6-gate	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone changes nothing, so it has no effect to lose; pair kind 6-gate; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|annotation.directive|unused-directive-severity|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.circular-dependency|direct-as-error|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.circular-dependency|direct-as-error|max-cycle-size|6-gate-vs-severity	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate-vs-severity; the neighbour wrote the canonical magnitude

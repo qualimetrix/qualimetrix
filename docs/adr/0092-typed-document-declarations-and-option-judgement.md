@@ -38,6 +38,16 @@ from the first decisive writer, so callers cannot supply independent display fac
 Private selection indexes and option builders keep the decide/build/conclude
 publication boundary and preserve writer ordering and refusals.
 
+CLI writes retain both the machine option locator and the complete authored
+flag/value expression. A normalized address cannot reproduce what the caller
+wrote, so `CommandLinePathWrite` requires the original expression and provenance
+carries it through value refusal, selection and activity presentation. Rule-option
+keys and levels accept only their declared snake, camel and kebab spellings at
+every door; folding wrong case before judgement hid an authored error.
+Symfony YAML remains the scalar parser. Parsed floats such as `+2` and `2.0`
+remain refused for integers, with the value and a hint to write `2`; no source
+rewriting or float-to-integer conversion is used.
+
 Finding owns a threshold override request with its numeric values, syntax and
 actually authored axes. Inline parses that request and judges every declared
 level and axis before handing it to the rule-specific validator. Worker
@@ -45,6 +55,10 @@ transport keeps the existing ThresholdOverride value. Absence is a consumer
 choice to skip validation; a malformed authored annotation still diagnoses.
 
 ## Consumer migration
+
+Supply the complete authored flag/value expression after the option name when
+constructing `CommandLinePathWrite`. Replace previously folded wrong-case CLI
+keys and levels with the spelling named by the refusal.
 
 Replace `NodeSchema::stringList()` with a list of ScalarForm::String nodes.
 Replace `oneOf(words, foldCase)` with `words(SchemaWordSet)`; choose
@@ -77,8 +91,8 @@ construction instead of representing an absent or inconsistent override.
 ## Consequences
 
 The public declaration and override programming APIs change while configuration grammar,
-numeric defaults, metric formulas, provenance and published diagnostics remain
-the same. Exact manifest consumers must reflect the new contracts; internal
+numeric defaults and metric formulas remain the same. CLI spelling admission
+and authored refusal statements follow the explicit rules above. Exact manifest consumers must reflect the new contracts; internal
 matching, construction and delivery helpers remain private to their owners.
 
 Readonly typed facts make dependencies and invalid combinations explicit.

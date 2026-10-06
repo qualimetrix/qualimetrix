@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 
 use PHPUnit\Framework\Attributes\Group;
-
 use PHPUnit\Framework\Attributes\Test;
+
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
@@ -51,6 +51,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
@@ -1274,6 +1275,7 @@ PHP);
 
         $fileProcessingTaskFactory = new FileProcessingTaskFactory(
             new LcomCollectionConfigurationStore(),
+            new RuleOptionDocumentForms(),
             DependencyVisitor::class,
             [LocCollector::class, CyclomaticComplexityCollector::class],
             [],
@@ -1301,7 +1303,7 @@ PHP);
             $compositeCollector,
             sourceControlExtractor: new SourceControlExtractor(
                 thresholdOverrideExtractor: new ThresholdOverrideExtractor(
-                    RuleValidatorMapFactory::build([ComplexityRule::class]),
+                    RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [ComplexityRule::class]),
                 ),
             ),
         );

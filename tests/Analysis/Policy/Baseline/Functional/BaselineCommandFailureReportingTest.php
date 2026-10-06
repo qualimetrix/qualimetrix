@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
@@ -266,6 +267,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
         $ruleInputValidator = new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $ruleRegistry,
             $staticChannels,
             new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
@@ -304,6 +306,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $staticChannels = new ChannelUniverse([], [], [], new ResolvedComputedMetricDefinitions([]), ...self::unusedReachPorts());
 
         return new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $rules,
             $staticChannels,
             new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
@@ -316,6 +319,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         ConfigurationPipelineInterface $pipeline,
     ): ConfigurationInputAdapter {
         return new ConfigurationInputAdapter(
+            new RuleOptionDocumentForms(),
             $pipeline,
             new ErrorStream(),
             self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class),

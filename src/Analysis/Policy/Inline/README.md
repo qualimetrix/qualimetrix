@@ -43,6 +43,7 @@ Inline/
 │   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
 │   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
 │   │   ├── DirectiveUsage.php      # what each authored suppression did
+│   │   ├── DirectiveMeasurability.php # addressed producer and subject-coverage evidence
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
@@ -99,15 +100,22 @@ Inline/
   cannot: whether *this* directive silenced anything.
 - `InlineDirectivePolicyInterface` promises the four `annotation.*` channel
   names and the moments Run needs: `prepare()` before rule execution,
-  `auditDirectiveUsage()` and `directiveVerdicts()` after it. Only
+  `auditDirectiveUsage()` and `directiveVerdicts()` after it, receiving the same
+  measured `SubjectCoverageFacts` as their required final argument. Only
   `Analysis\Run\InlineDirectiveRun` calls them using the same invocation
   policy instance. Authored state is prepared independently of whether its
   reporting rule runs; a channel is a rule's output, a verdict is what a
   caller asked for.
+
 - `ThresholdDirectiveAuditInterface` promises the other half of the same
   question to the same consumer, and `ThresholdDirectiveAuditInput` is the
   prepared run it needs to answer: the context the rules already ran against,
   the executor that ran them, and what they produced.
+
+An otherwise inert suppression is `Unmeasured` with `scope-unmeasured` when its
+producer's subject was not covered. A narrowed run cannot prove a run-dependent
+declaration unused; an analyzed local member can still be judged. Effective,
+refused and disabled-producer verdicts keep their earlier meanings.
 
 ThresholdDirectiveAudit refuses unaddressable directives through RefusedDirectives
 before ThresholdDirectiveEligibility checks a directly live producer and its
@@ -224,6 +232,9 @@ authored state and severity gate; no separate reset exists.
 produced findings and the recorded `LevelActivity`. Usage judges what rules
 produced, before report exclusions and selection, rather than re-deriving
 producer activity from configuration.
+`DirectiveMeasurability` judges addressed producer and subject coverage before
+that accounting. An enabled but uncovered channel takes precedence over a
+disabled producer; unknown coverage cannot establish an inert directive.
 
 `AnnotationSuppressionResult` carries kept/suppressed findings and the first
 actually applied `DirectiveSite` for each suppressed finding in match order.
@@ -235,7 +246,10 @@ physical sites on one line share that label.
 
 `RuleValidatorMapFactory` builds the same map for sequential and real worker
 collection and refuses a missing class with its FQCN; a real rule declaring no
-threshold support is still skipped normally.
+threshold support is still skipped normally. It receives Finding's
+`RuleOptionDocumentFormsInterface` to project declared threshold shapes. Main
+container compilation and worker bootstrap supply the same private Finding
+implementation, so accepted forms and refusal wording share one interpretation.
 Extraction internals never cross Run or the serialized worker payload.
 
 ## Change recipe

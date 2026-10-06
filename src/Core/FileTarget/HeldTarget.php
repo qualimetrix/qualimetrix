@@ -16,15 +16,25 @@ final class HeldTarget
         private readonly ResolvedTarget $target,
         mixed $handle,
         private bool $created,
+        private readonly int $ownerPid,
     ) {
         $this->handle = $handle;
     }
 
     public static function claim(ResolvedTarget $judged): self
     {
+        $ownerPid = getmypid();
+        if ($ownerPid === false) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $judged->spelling, 'cannot determine the target owner process');
+        }
         [$target, $handle, $created] = TargetClaim::open($judged);
 
-        return new self($target, $handle, $created);
+        return new self($target, $handle, $created, $ownerPid);
+    }
+
+    public function markAttached(): void
+    {
+        $this->created = false;
     }
 
     /** @param resource $stream */
@@ -90,24 +100,36 @@ final class HeldTarget
 
     public function release(): void
     {
-        if ($this->handle === null) {
+        $handle = $this->handle;
+        if ($handle === null) {
+            return;
+        }
+        if ($this->ownerPid !== getmypid()) {
+            fclose($handle);
+            $this->handle = null;
+
             return;
         }
         try {
             if ($this->created) {
-                $path = $this->target->path?->value() ?? throw new LogicException('Created target has no path');
-                clearstatcache(true, $path);
-                [$named] = NativeCall::attempt(static fn() => lstat($path));
-                if ($named !== false && FileIdentity::fromStat($named)->sameAs($this->identity())) {
-                    [$removed, $warning] = NativeCall::attempt(static fn() => unlink($path));
-                    if (!$removed) {
-                        throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot remove unwritten target', $warning ?? 'unknown error');
-                    }
-                }
+                $this->cleanupUnwrittenName();
             }
         } finally {
-            fclose($this->handle);
+            fclose($handle);
             $this->handle = null;
+        }
+    }
+
+    private function cleanupUnwrittenName(): void
+    {
+        $path = $this->target->path?->value() ?? throw new LogicException('Created target has no path');
+        clearstatcache(true, $path);
+        [$named] = NativeCall::attempt(static fn() => lstat($path));
+        if ($named !== false && FileIdentity::fromStat($named)->sameAs($this->identity())) {
+            [$removed, $warning] = NativeCall::attempt(static fn() => unlink($path));
+            if (!$removed) {
+                throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $path, 'cannot remove unwritten target', $warning ?? 'unknown error');
+            }
         }
     }
 

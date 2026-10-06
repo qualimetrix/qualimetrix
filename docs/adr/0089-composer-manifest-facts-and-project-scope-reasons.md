@@ -40,6 +40,12 @@ production and development integrity separately, package metadata and source
 identity. Each `ComposerAutoloadSection` owns its accepted mappings, integrity,
 targets and PSR-4 roots. Production and development are two values of that
 same subject; rejected-record ordering remains with the source facts.
+The exact `coupling.distance` exception for `Analysis\ProjectManifest\Contract`
+covers the exported Composer value grammar as well as the captured facts:
+autoload sections, mappings, targets, read states and typed issues. These
+concrete immutable values are the vocabulary promised to their named readers.
+The distance formula counts their concrete declarations as low abstractness;
+incoming popularity alone would not explain that design.
 The root must be a JSON object; path records must be strings or lists of
 strings. The existing trailing-slash trimming and empty-to-dot normalization
 are preserved. Rejected records retain their locations, and valid siblings

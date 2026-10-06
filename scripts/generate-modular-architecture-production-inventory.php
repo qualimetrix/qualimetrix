@@ -2430,6 +2430,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0096-file-target-claims.md' => 'Core.FileTarget',
         'docs/adr/0097-duplication-copy-evidence.md' => 'Analysis.Evidence.Duplication',
         'docs/adr/0098-baseline-entry-comparability.md' => 'Analysis.Policy.Baseline',
+        'docs/adr/0099-rule-option-shape-is-a-declaration.md' => 'Analysis.Finding',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

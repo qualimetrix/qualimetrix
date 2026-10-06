@@ -189,7 +189,17 @@ final readonly class ReportProjectScope
      */
     public function describe(): ?string
     {
-        $description = match ($this->state) {
+        $description = $this->describeState();
+        if ($this->reasons === []) {
+            return $description;
+        }
+
+        return ($description ?? 'Project scope covered.') . ' Source reasons: ' . implode('; ', array_map(static fn(ProjectScopeReason $reason): string => (string) json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES), $this->reasons)) . '.';
+    }
+
+    private function describeState(): ?string
+    {
+        return match ($this->state) {
             self::UNMEASURED => 'Project scope unmeasured: the selected autoload universe is incomplete or undeclared; channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.' . $this->describeUnjudgedValues(),
             self::NARROWED => \sprintf(
                 'Project scope narrowed: the analysed paths do not cover %s; channels with no judged value: %s.%s',
@@ -198,17 +208,26 @@ final readonly class ReportProjectScope
                 $this->describeUnjudgedValues(),
             ),
             self::UNKNOWN => 'Project scope unknown: the project universe cannot be established completely.'
-                . ($this->unjudgedChannels === [] ? '' : ' Channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.')
-                . $this->describeUnjudgedValues(),
-            default => $this->unjudgedValues === []
-                ? null
-                : 'Project scope covered: the analysed paths cover every autoload target.' . $this->describeUnjudgedValues(),
+                . $this->describeUnjudgedChannels() . $this->describeUnjudgedValues(),
+            default => $this->describeCovered(),
         };
-        if ($this->reasons !== []) {
-            $description = ($description ?? 'Project scope covered.') . ' Source reasons: ' . implode('; ', array_map(static fn(ProjectScopeReason $reason): string => (string) json_encode($reason->toArray(), \JSON_UNESCAPED_SLASHES), $this->reasons)) . '.';
+    }
+
+    private function describeCovered(): ?string
+    {
+        if ($this->unjudgedChannels === [] && $this->unjudgedValues === []) {
+            return null;
         }
 
-        return $description;
+        return 'Project scope covered: the analysed paths cover every autoload target.'
+            . $this->describeUnjudgedChannels() . $this->describeUnjudgedValues();
+    }
+
+    private function describeUnjudgedChannels(): string
+    {
+        return $this->unjudgedChannels === []
+            ? ''
+            : ' Channels with no judged value: ' . implode(', ', $this->unjudgedChannels) . '.';
     }
 
     private function describeUnjudgedValues(): string

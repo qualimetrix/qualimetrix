@@ -1000,7 +1000,7 @@ final class AllowValidatorTest extends TestCase
         $this->expectExceptionMessage("quantifier ':**' is not supported");
 
         $this->validator->validate(
-            ArchitectureDocument::allow(['app-{m:**}' => ['domain-{m}']]),
+            self::allowSpot(['app-{m:**}' => ['domain-{m}']]),
             ['app-Order', 'domain-Order'],
             $warnings,
         );

@@ -14,13 +14,17 @@ final class TemporarySibling
     private mixed $handle;
 
     /** @param resource $handle */
-    private function __construct(private AbsolutePath $path, mixed $handle)
+    private function __construct(private AbsolutePath $path, mixed $handle, private readonly int $ownerPid)
     {
         $this->handle = $handle;
     }
 
-    public static function create(AbsolutePath $directory): self
+    public static function create(AbsolutePath $directory, int $mode = 0600): self
     {
+        $ownerPid = getmypid();
+        if ($ownerPid === false) {
+            throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'cannot determine the temporary owner process');
+        }
         for ($attempt = 0; $attempt < 5; ++$attempt) {
             try {
                 $name = '.qmx-' . bin2hex(random_bytes(6));
@@ -28,22 +32,15 @@ final class TemporarySibling
                 throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'cannot name a temporary file', $error->getMessage());
             }
             $path = AbsolutePath::fromString(rtrim($directory->value(), '/') . '/' . $name);
-            [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
+            $previousMask = umask();
+            try {
+                umask($previousMask | (0777 & ~$mode));
+                [$handle, $openWarning] = NativeCall::attempt(static fn() => fopen($path->value(), 'x+e'));
+            } finally {
+                umask($previousMask);
+            }
             if ($handle !== false) {
-                $temporary = new self($path, $handle);
-                $opened = fstat($handle);
-                clearstatcache(true, $path->value());
-                [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
-                if ($opened === false || $named === false || !FileIdentity::fromStat($opened)->sameAs(FileIdentity::fromStat($named))) {
-                    try {
-                        $temporary->cleanupLinkedReferent($path->value());
-                    } finally {
-                        $temporary->discard();
-                    }
-                    throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $path->value(), 'temporary file identity changed while opening');
-                }
-
-                return $temporary;
+                return self::verifyCreated($path, $handle, $ownerPid);
             }
             clearstatcache(true, $path->value());
             [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
@@ -53,6 +50,25 @@ final class TemporarySibling
         }
 
         throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $directory->value(), 'temporary names collided repeatedly');
+    }
+
+    /** @param resource $handle */
+    private static function verifyCreated(AbsolutePath $path, mixed $handle, int $ownerPid): self
+    {
+        $temporary = new self($path, $handle, $ownerPid);
+        $opened = fstat($handle);
+        clearstatcache(true, $path->value());
+        [$named] = NativeCall::attempt(static fn() => lstat($path->value()));
+        if ($opened === false || $named === false || !FileIdentity::fromStat($opened)->sameAs(FileIdentity::fromStat($named))) {
+            try {
+                $temporary->cleanupLinkedReferent($path->value());
+            } finally {
+                $temporary->discard();
+            }
+            throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $path->value(), 'temporary file identity changed while opening');
+        }
+
+        return $temporary;
     }
 
     public function path(): AbsolutePath
@@ -104,6 +120,12 @@ final class TemporarySibling
     public function discard(): void
     {
         if ($this->handle === null) {
+            return;
+        }
+        if ($this->ownerPid !== getmypid()) {
+            fclose($this->handle);
+            $this->handle = null;
+
             return;
         }
 

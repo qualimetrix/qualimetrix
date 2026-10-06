@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
@@ -165,6 +166,7 @@ PHP
 
             $strategy = new AmphpParallelStrategy(new FileProcessingTaskFactory(
                 new LcomCollectionConfigurationStore(),
+                new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 [LocCollector::class, ClassCountCollector::class],
             ));

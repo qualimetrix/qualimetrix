@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
@@ -47,7 +48,7 @@ final readonly class RuleValidatorMapFactory
      *
      * @return array<string, OverrideValidatorInterface>
      */
-    public static function build(array $ruleClasses): array
+    public static function build(RuleOptionDocumentFormsInterface $documentForms, array $ruleClasses): array
     {
         $map = [];
 
@@ -67,7 +68,7 @@ final readonly class RuleValidatorMapFactory
                 continue;
             }
 
-            $map[$ruleName] = new RuleOptionForms($ruleName, RuleOptionSurface::of($optionsClass), $validator);
+            $map[$ruleName] = new RuleOptionForms($ruleName, RuleOptionSurface::of($optionsClass), $validator, $documentForms);
         }
 
         return $map;

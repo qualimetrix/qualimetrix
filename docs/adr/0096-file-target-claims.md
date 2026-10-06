@@ -22,7 +22,15 @@ entry-control judgement, held resources, temporary siblings and publication.
 Capability policy and Console delivery stay outside Core.
 
 A symbolic link is trusted by control of its parent directory entry, not by
-ownership of the link. Group or other write permission permits placement;
+ownership of the link. Other write permission permits placement. Group write
+also permits placement unless complete membership evidence proves that the
+group is the effective user's primary group, with no other primary or
+supplementary member. Core owns the membership port: static filesystem callers
+need the same judgement without depending on an Infrastructure adapter. The
+native producer supports per-source `files` and `systemd` enumeration, checked
+against keyed POSIX records. Unknown NSS sources, explicit `initgroups`, failed
+or incomplete enumeration and unsupported platforms keep the conservative
+refusal. The selected port follows the resolved target through every recheck;
 sticky mode protects some existing entries against replacement but does not
 protect a previously absent name. Root ownership of a closed directory is
 trusted. The effective process uid comes from POSIX, never the script owner.
@@ -36,16 +44,25 @@ bounds link traversal, and recognizes the current process's descriptor paths
 before traversing their filesystem links. Absolute file URLs are supported;
 unknown wrappers and relative file URLs refuse.
 
-Existing regular targets open without truncation. The opened identity must
-match both the judged inode and the current name before writing. New names use
-a random exclusive sibling and hard-link publication, refusing a competing
-entry rather than falling back to overwrite. Held writes and append perform
-complete writes and flush; append locks the file and seeks to its current end.
-Replacement writes a complete sibling first, preserves the old mode unless an
-explicit mode is supplied, and distinguishes exclusive creation from declared
-last-writer-wins publication. A held lock checks its named inode after locking;
+Held stream/log targets open without truncation. Their opened identity must
+match both the judged inode and the current name before writing. Held writes and
+append perform complete writes and flush; append locks the file and seeks to
+its current end. `PreparedTarget` instead creates an exclusive private sibling
+before a long operation and leaves the final name untouched until publication.
+Full writes, flush, mode and identity checks precede atomic rename or exclusive
+hard-link publication. Replacement preserves the old mode unless explicitly
+changed, and distinguishes exclusive creation from declared last-writer-wins
+publication. `FileReplacement` uses this primitive for immediate publication.
+Replacement siblings open exclusively with mode 0600 or stricter under the
+caller's umask, before receiving any payload. A synchronous open temporarily
+restricts the process umask and restores it on success or failure; chmod after
+open would leave a window for another user to acquire a readable descriptor.
+New held names and lock names retain ordinary umask-filtered 0666 creation.
+An inherited child cannot discard a parent's sibling or held target. A held lock checks its named inode after locking;
 releasing the lock does not remove its name. Its acquisition deadline uses a
 monotonic clock, so a system-clock adjustment cannot shorten or extend it.
+Only native would-block contention waits; another native lock error refuses
+immediately with its reason.
 
 Descriptor duplication preserves the supplied stream's offset and avoids
 truncation. Descriptor and stream writes enable blocking so an inherited
@@ -88,10 +105,31 @@ retains its separate implementation.
 Console owns `RunTargets`, the lifecycle for report, profile and log destinations.
 It judges targets without opening them, includes implicit report stdout in
 collision checks, and claims them after configuration, scope, selector and
-baseline input checks. Equal ordinary inodes and equal absent names refuse;
-character devices may coincide. Opened identities are compared again before
-delivery. Teardown releases every held target and attempts to remove its
-unwritten new name; an unsuccessful removal remains a reported failure.
+baseline input checks. Named regular report/profile/graph destinations prepare a
+private sibling before analysis, replacing the final inode only after a complete
+result is ready. Other hard links retain their old bytes. Equal authored inodes
+and equal absent names refuse, including explicit configuration and baseline
+inputs; a shell-inherited fd2=fd1 is not a second authored target. Character
+devices may coincide. `--clear-cache` refuses a destination or its sibling inside
+the physical cache root. Teardown releases held resources and discards owned
+siblings; an unsuccessful removal remains a reported failure.
+
+Console's `StagedSignalGuard` owns SIGINT/SIGTERM only for the current staged
+operation, latches interruption across worker recovery, checks it at publication
+and restores handlers and async mode after cleanup. Staged regular output requires
+pcntl, default SIGINT/SIGTERM handlers and no registered Revolt signal callbacks,
+otherwise an early
+environment refusal precedes sibling creation and analysis. Descriptor/stream
+output and log-only runs remain available. Interrupted commands return 128 +
+signal after cleanup. Raw asynchronous handlers interrupt a blocking worker
+receive; cancellation bypasses per-file recovery and kills pending workers.
+An event-loop signal watcher can replace a raw handler and defer interruption
+until workers finish, so the guard installs no such watcher. Public callback
+inspection cannot identify its signal number; any registered signal callback
+therefore refuses preparation. Replacing handlers later in the operation is
+unsupported. SIGKILL, cleanup failures and already published targets are
+outside this guarantee. Publication is atomic per target; later profile failure
+does not roll back an already published report.
 
 Check and Graph share a `RunTargetSession` with those same targets and the
 terminal presenter. It retains the primary throwable, attempts cleanup, then
@@ -104,7 +142,8 @@ the presenter. The existing inner claim cleanup and the application's terminal
 presenter fallback retain their separate failure boundaries.
 
 The per-run `LoggerFactory` creates a buffering file logger without opening the
-path. After claim it attaches the same held target. Append failures latch their
+path. After claim it attaches the same held target, publishing the name even
+when no record passes the configured minimum level. Append failures latch their
 first cause and count lost records rather than escaping into parser recovery
 handlers. Console settles logging before report publication and after profile
 delivery, and resets the factory on teardown. Graph status uses stderr.

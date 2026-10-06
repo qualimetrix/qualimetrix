@@ -114,10 +114,7 @@ final class DeclaredDeltaCheck implements Derivation
 
         try {
             $overreaching = $this->overreachingLines($key, $left, $right);
-        } catch (GateError $error) {
-            if ($error->getMessage() !== 'A structural intention has no observed complete record list.') {
-                throw $error;
-            }
+        } catch (MissingStructuralRecordList $error) {
             $overreaching = [$error->getMessage()];
         }
         foreach ($overreaching as $problem) {
@@ -207,7 +204,7 @@ final class DeclaredDeltaCheck implements Derivation
             $document = ReportRecords::decode($text);
             $member = $surface === 'format:suppressed' ? 'suppressed' : 'violations';
             if (!\is_array($document[$member] ?? null) || !array_is_list($document[$member])) {
-                throw new GateError('A structural intention has no observed complete record list.');
+                throw new MissingStructuralRecordList('A structural intention has no observed complete record list.');
             }
             $records = [];
             foreach ($document[$member] as $record) {

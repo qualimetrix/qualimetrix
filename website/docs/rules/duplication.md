@@ -136,12 +136,17 @@ The rule declares only the File channel and has no public Duplication contract.
     No line number enters the identity. A moved/renamed file, a changed block,
     or a changed copy order can change identity, so GitLab Code Quality and SARIF
     fingerprints and baseline entries may need a one-time rebase. The baseline
-    format remains v13. Lines outside the matched tokens do not by themselves
+    schema does not change for this identity migration. Lines outside the
+    matched tokens do not by themselves
     change identity when the detector still finds the same block.
 
     A candidate is divided into connected balanced token segments. Reportable
     segments are retained; if no segment meets the admission minima, the whole
-    match is the fallback. Connected file-pair evidence is retained while
+    match is the fallback. Segments with the same complete normalized sequence
+    merge into one block before the second coverage pass, with distinct
+    file/offset positions and one per-file ordinal sequence. Review affected
+    baseline keys and accept newly distinct copy identities after a complete run.
+    Connected file-pair evidence is retained while
     containment witnesses that add no reportable evidence are removed; this is
     not a blanket removal of every contained copy. Some nested matching
     multiplicity is known behavior and is not claimed fixed here.
@@ -150,7 +155,8 @@ The rule declares only the File channel and has no public Duplication contract.
     identifiers and the existing non-HTML hash vocabulary are unchanged.
     `T_INLINE_HTML` content collapses ASCII whitespace and uses an `xxh128`
     digest. Token source rows count CR, LF and CRLF correctly, with CRLF as one
-    line break. Each preview hint comes from that copy's byte range, starts at
+    line break. A trailing line break in inline HTML does not cover an empty
+    following row. Each preview hint comes from that copy's byte range, starts at
     its first substantive fragment, and is limited to 80 Unicode codepoints;
     invalid UTF-8 uses a byte-safe fallback.
 

@@ -11,17 +11,18 @@ contracts; it publishes one configuration contract for the runtime adapter.
 `CouplingAnalysis` owns the framework-prefix state for one analysis run. Its
 owner-declared `coupling` map merges key by key, so an empty map keeps lower
 values. The `framework_namespaces` list replaces as one ordered value, including
-an empty list. Each written framework selector must name exactly one kind
-before a later layer can replace its list. Coupling reads the resolved selector
-list before replacing
+an empty list. `FrameworkNamespaceSelectorParser` judges every written list and
+the resolved list with the same namespace-selector grammar: exactly one kind,
+a nonempty pattern, valid PCRE and the 256-selector ceiling. A later list cannot
+hide an invalid lower list. Coupling reads the resolved selector list before replacing
 its run-local matcher. Sequential runs therefore cannot leak classification
 state.
 
 ```text
 Coupling/
 └── Configuration/
-    └── CouplingSection.php # owner-declared coupling map; framework_namespaces
-                             # is the replaced list of selector maps
+    ├── CouplingSection.php # owner-declared coupling map; replaced selector list
+    └── FrameworkNamespaceSelectorParser.php # shared authored/effective grammar
 ```
 
 ## Metrics

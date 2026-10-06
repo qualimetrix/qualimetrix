@@ -6,8 +6,6 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
 use LogicException;
 use Qualimetrix\Analysis\Configuration\ConfigKeySpelling;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\Shorthand;
 
 /**
  * Where a rule option key may be written, and which declaration answers there.
@@ -95,10 +93,8 @@ final readonly class RuleOptionSurface
      */
     public function levelNamed(string $writtenKey): ?string
     {
-        $normalized = ConfigKeySpelling::normalize($writtenKey);
-
         foreach ($this->levelOptionsClasses as $slot => $_) {
-            if (ConfigKeySpelling::normalize((string) $slot) === $normalized) {
+            if (\in_array($writtenKey, ConfigKeySpelling::acceptedSpellings((string) $slot), true)) {
                 return (string) $slot;
             }
         }
@@ -137,8 +133,8 @@ final readonly class RuleOptionSurface
         return $keys;
     }
 
-    /** The declared document form at an accepted option address. */
-    public function schemaAt(RuleOptionAddress $address): NodeSchema
+    /** The producer's declaration at an admitted option address. */
+    public function shapeAt(RuleOptionAddress $address): RuleOptionShape
     {
         $set = $this->declarationAt($address->level);
         $shape = $set?->shapeOf(ConfigKeySpelling::normalize($address->key));
@@ -147,11 +143,7 @@ final readonly class RuleOptionSurface
             $shape = FrameworkOptionKeys::declared()->shapeOf(ConfigKeySpelling::normalize($address->key));
         }
 
-        if ($shape === null) {
-            throw new LogicException(\sprintf('Rule option "%s" has no declared document form.', $address->written()));
-        }
-
-        return $address->level === null ? $this->rootField($address->key, $shape) : $shape->asNodeSchema();
+        return $shape ?? throw new LogicException(\sprintf('Rule option "%s" has no declared form.', $address->written()));
     }
 
     /** @param class-string<RuleOptionsInterface|LevelOptionsInterface> $optionsClass */
@@ -169,76 +161,6 @@ final readonly class RuleOptionSurface
             }
         }
         throw new LogicException(\sprintf('Options class "%s" declares no band "%s".', $optionsClass, $shorthand));
-    }
-
-    /** The complete producer entry; every shorthand is expanded by the document engine. */
-    public function schema(): NodeSchema
-    {
-        return $this->rootSchema()->bareFor('enabled');
-    }
-
-    private function rootSchema(): NodeSchema
-    {
-        $set = $this->ownKeySet();
-        $fields = $this->fieldsFor($set, $this->rootField(...));
-        $framework = FrameworkOptionKeys::declared();
-        foreach ($framework->acceptedForDisplay() as $key) {
-            $fields[$key] = $framework->shapeOf(ConfigKeySpelling::normalize($key))?->asNodeSchema()
-                ?? throw new LogicException('Missing framework option form.');
-        }
-        return $this->schemaFrom($set, $fields);
-    }
-
-    /**
-     * @param callable(string, RuleOptionShape): NodeSchema $project
-     *
-     * @return array<string, NodeSchema>
-     */
-    private function fieldsFor(RuleOptionKeySet $set, callable $project): array
-    {
-        $fields = [];
-        $spreading = self::spreadingTargets($set);
-        foreach ($set->acceptedForDisplay() as $key) {
-            if (isset($spreading[$key])) {
-                continue;
-            }
-            $shape = $set->shapeOf(ConfigKeySpelling::normalize($key))
-                ?? throw new LogicException(\sprintf('Accepted rule option "%s" has no declared form.', $key));
-            $fields[$key] = $project($key, $shape);
-        }
-        return $fields;
-    }
-
-    private function rootField(string $key, RuleOptionShape $shape): NodeSchema
-    {
-        $slot = $this->levelNamed($key);
-        if ($slot === null) {
-            return $shape->asNodeSchema();
-        }
-        $set = $this->keySetAtLevel($slot) ?? throw new LogicException('Missing level declaration.');
-        $fields = $this->fieldsFor($set, static fn(string $_key, RuleOptionShape $entry): NodeSchema => $entry->asNodeSchema());
-        return $shape->asNodeSchema($this->schemaFrom($set, $fields));
-    }
-
-    /** @param array<string, NodeSchema> $fields */
-    private function schemaFrom(RuleOptionKeySet $set, array $fields): NodeSchema
-    {
-        $spreading = self::spreadingTargets($set);
-        $shorthands = [];
-        foreach ($spreading as $key => $targets) {
-            $shorthands[] = Shorthand::spreading($key, $targets);
-        }
-        return NodeSchema::map($fields, ...$shorthands)->retiring($set->retired() + \Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions::documentKeys());
-    }
-
-    /** @return array<string, non-empty-list<string>> */
-    private static function spreadingTargets(RuleOptionKeySet $set): array
-    {
-        $spreading = $set->spreading();
-        foreach ($set->bands() as $band) {
-            $spreading[$band->shorthand] = [$band->warning, $band->error];
-        }
-        return $spreading;
     }
 
     /**
@@ -271,6 +193,10 @@ final readonly class RuleOptionSurface
         $spelling = $keySet?->spellingOf(ConfigKeySpelling::normalize($key));
         if ($spelling === null && $level === null) {
             $spelling = FrameworkOptionKeys::declared()->spellingOf(ConfigKeySpelling::normalize($key));
+        }
+
+        if ($spelling !== null && !\in_array($key, ConfigKeySpelling::acceptedSpellings($spelling), true)) {
+            return null;
         }
 
         return $spelling === null ? null : new RuleOptionAddress($level, $spelling);

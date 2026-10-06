@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\SectionDeclarati
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 
 /** The rule option entries and the two independent rule selection lists. */
 final readonly class RulesSection implements DocumentSectionSchemaInterface
@@ -34,7 +35,7 @@ final readonly class RulesSection implements DocumentSectionSchemaInterface
         }
         $entries = [];
         foreach ($this->execution->allRules() as $producer) {
-            $entries[$producer->name] = RuleOptionSurface::of($producer->optionsClass)->schema();
+            $entries[$producer->name] = (new RuleOptionDocumentForms())->schema(RuleOptionSurface::of($producer->optionsClass));
         }
         $judge = new RuleNameJudge(array_keys($entries));
         return new SectionDeclaration('rules', NodeSchema::namedMapOf(

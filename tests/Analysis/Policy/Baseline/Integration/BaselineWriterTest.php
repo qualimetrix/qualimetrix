@@ -119,7 +119,7 @@ final class BaselineWriterTest extends TestCase
     public function itRoundTripsEdgesAndMultiElementMagnitudes(): void
     {
         $path = $this->write($this->baseline());
-        $reloaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $reloaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
 
         self::assertSame(3, $reloaded->count());
         self::assertSame(
@@ -164,7 +164,7 @@ final class BaselineWriterTest extends TestCase
 
                 self::assertSame(
                     [0.1, 1.234568, 40.0, 1234.567891],
-                    $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path))->entries[0]->magnitudes,
+                    $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path))->entries[0]->magnitudes,
                     'serialize_precision=' . $precision,
                 );
             }
@@ -276,7 +276,7 @@ final class BaselineWriterTest extends TestCase
     {
         $path = $this->write($this->baseline());
 
-        $readByBoth = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $readByBoth = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
 
         // Writer A lands.
         $this->writer->write($readByBoth, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
@@ -308,10 +308,10 @@ final class BaselineWriterTest extends TestCase
         self::assertTrue(is_link($path));
         self::assertSame($referent, readlink($path));
         self::assertNotSame($contents, file_get_contents($referent));
-        self::assertSame(3, $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($referent))->count());
+        self::assertSame(3, $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($referent))->count());
         self::assertSame(0o600, fileperms($referent) & 0o7777);
 
-        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($referent));
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($referent));
         $prepared = \Qualimetrix\Core\FileTarget\TargetPath::resolve($path);
         file_put_contents($referent, 'concurrent replacement');
 
@@ -427,7 +427,7 @@ final class BaselineWriterTest extends TestCase
     public function itRefusesWhenTheFileVanishedSinceItWasRead(): void
     {
         $path = $this->write($this->baseline());
-        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
         unlink($path);
 
         try {
@@ -448,7 +448,7 @@ final class BaselineWriterTest extends TestCase
     public function itAcceptsASecondWriteOfABaselineCarryingTheTokenOfTheFirst(): void
     {
         $path = $this->write($this->baseline());
-        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
 
         // Each step drops an entry, so each write really changes the file and
         // the previous reading genuinely goes out of date.
@@ -512,7 +512,7 @@ final class BaselineWriterTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
 
-        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
         self::assertCount(4, $loaded->inertEntries, 'Both duplicates and both unreadable lines are inert.');
 
         $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
@@ -585,7 +585,7 @@ final class BaselineWriterTest extends TestCase
             ],
         ], \JSON_THROW_ON_ERROR));
 
-        $this->writer->write($this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
@@ -604,7 +604,7 @@ final class BaselineWriterTest extends TestCase
     public function itAcceptsAWriteWhenTheFileStillHoldsWhatWasRead(): void
     {
         $path = $this->write($this->baseline());
-        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
 
         $hash = $this->writer->write($loaded, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
@@ -666,7 +666,7 @@ final class BaselineWriterTest extends TestCase
                 ],
             ], \JSON_THROW_ON_ERROR));
 
-            $loaded = $this->loader->load(BaselineLoader::preflight($path));
+            $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::assertCount(1, $loaded->entries);
             self::assertSame([20.0], $loaded->entries[0]->magnitudes);
             self::assertCount(1, $loaded->inertEntries);
@@ -689,7 +689,7 @@ final class BaselineWriterTest extends TestCase
             self::assertInstanceOf(stdClass::class, $rewritten->entries);
             self::assertInstanceOf(stdClass::class, $rewritten->entries->{$malformedSubject});
             self::assertSame(json_encode($bucket), json_encode($rewritten->entries->{$malformedSubject}));
-            $reloaded = $this->loader->load(BaselineLoader::preflight($path));
+            $reloaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::assertCount(1, $reloaded->entries);
             self::assertSame([10.0], $reloaded->entries[0]->magnitudes);
             self::assertCount(1, $reloaded->inertEntries);
@@ -831,7 +831,7 @@ final class BaselineWriterTest extends TestCase
         $path = $this->write($this->baseline());
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
 
         self::assertSame($first, (string) file_get_contents($path));
     }

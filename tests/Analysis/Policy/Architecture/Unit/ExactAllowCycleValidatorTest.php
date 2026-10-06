@@ -98,7 +98,10 @@ final class ExactAllowCycleValidatorTest extends TestCase
         // place to fix it.
         $document = ArchitectureDocument::compose(
             ArchitectureDocument::presetLayer([
-                'layers' => [['name' => 'application'], ['name' => 'domain']],
+                'layers' => [
+                    ['name' => 'application', 'patterns' => ['App\\Application']],
+                    ['name' => 'domain', 'patterns' => ['App\\Domain']],
+                ],
                 'allow' => ['application' => ['domain']],
             ]),
             ArchitectureDocument::fileLayer(['allow' => ['domain' => ['application']]]),

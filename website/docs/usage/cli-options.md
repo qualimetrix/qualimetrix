@@ -202,12 +202,22 @@ Write the report to a file instead of stdout:
 bin/qmx check src/ --format=html --output=report.html
 ```
 
-An existing regular file is written in place: its inode, owner, permissions
-and hard links remain. A new name is claimed only after configuration, scope,
-selector and baseline-input refusals; a failed write attempts to remove the new
-file the run still owns. If removal fails, qmx names the cleanup failure and the
-file can remain. An existing file can retain partial bytes after a write failure.
-Create the destination's parent directory before running qmx.
+A named regular destination is prepared after configuration, scope, selector and
+baseline-input refusals, before analysis. A private sibling holds the result; a
+new final name remains absent and existing bytes stay unchanged until complete
+write, flush and identity checks permit atomic publication. Replacement preserves
+permissions and changes the final inode; other hard links keep their old bytes.
+The parent must already exist and permit creation and replacement, even when
+the final file exists and is writable. Move the destination or make its parent
+writable/searchable before running qmx.
+
+SIGINT/SIGTERM before publication discard the run's own sibling and return
+128 + signal. Staged regular output requires pcntl, default SIGINT/SIGTERM handlers
+and no registered event-loop signal callbacks; otherwise exit 3 precedes
+preparation and analysis. Descriptor/stream output and log-only runs remain
+available. Replacing signal handlers during the operation is unsupported.
+SIGKILL, failed cleanup and already published targets are outside that
+cleanup guarantee. A later profile failure does not roll back a published report.
 
 A symbolic link is followed only when another user cannot place that directory
 entry; accepted links remain intact and write their resolved referents. This
@@ -215,6 +225,12 @@ also applies to a dangling link into an existing parent. A placeable link
 refuses on both ordinary and thread-safe PHP. Writable exposure elsewhere in
 the path is reported on stderr before analysis. Component swaps, ACLs,
 hard-link provenance and non-local filesystems retain their platform limits.
+
+An owned link in a 0775 directory is accepted when the directory group is
+proved to be the effective user's private primary group: no other primary or
+supplementary member. The native check supports complete per-source `files`
+and `systemd` NSS enumeration. Unknown sources, explicit `initgroups`, failed
+enumeration or unsupported platforms keep the conservative refusal.
 
 `/dev/stdout`, `/dev/stderr`, `/dev/fd/N`, `/proc/self/fd/N`,
 `/proc/thread-self/fd/N`, `php://stdout`, `php://stderr` and `php://fd/N`
@@ -229,8 +245,9 @@ expose that original access flag, so an unknown mode is left to the actual write
 and its environment refusal. Descriptor and stream writes use blocking mode.
 
 Report, profile and log targets are judged together. Two targets for one
-ordinary inode, or one absent name, refuse before analysis, including a target
-that aliases the report's stdout. Character devices such as a terminal or
+ordinary inode, or one absent name, refuse before analysis, including collisions
+with the explicit configuration or baseline input. A shell-inherited `2>&1` is
+not a second authored destination. Character devices such as a terminal or
 `/dev/null` may coincide. Missing parents, directories, inaccessible paths,
 closed descriptors and write failures exit 3; the reason distinguishes
 configuration input from an environment failure. A report write failure with
@@ -487,7 +504,9 @@ Clear the cache before running analysis:
 bin/qmx check src/ --clear-cache
 ```
 
-Clearing starts after input checks and file-target claims. A cache entry that
+Clearing starts after input checks and target preparation. A destination or its
+temporary sibling inside the physical cache root refuses before clearing or
+analysis, including through a symbolic link. A cache entry that
 cannot be removed produces an environment error (exit 3), naming the directory,
 the remaining entry count and the reason. An incomplete clear never prints
 "Cache cleared.".
@@ -615,11 +634,11 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Git scope options
 
-Publish findings relative to changed files while retaining project-scoped diagnostics. See [Git Integration](git-integration.md) for the full guide.
+Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle and layer-violation findings. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
-Limit publication by Git while preserving selected analysis paths. Non-strict mode also retains relevant namespace/project findings; project-scoped configuration channels remain visible:
+Limit publication by Git while preserving selected analysis paths. Non-strict mode also retains relevant namespace/project findings; declared project-scoped findings remain visible:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD
@@ -628,7 +647,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Limit code findings to changed files without namespace/project widening. All nine project-scoped configuration channels remain visible even in strict mode:
+Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles and layer violations, remain visible even in strict mode:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -685,7 +704,9 @@ bin/qmx check src/ --log-file=qmx.log
 The file is appended to; its parent directory must already exist. Log records
 produced during input checks are buffered. The target is claimed together with
 the report and profile targets after input checks, then buffered records are
-appended. Invalid input leaves the log file untouched.
+appended. Attachment publishes the log name: a successful run leaves an empty
+file even when no record passes its minimum level. Invalid input leaves the log
+file untouched.
 
 The same link, descriptor and collision rules as `--output` apply. An unwritable
 target is refused with exit code 3. If writing fails during analysis, the logger
@@ -791,7 +812,9 @@ bin/qmx check src/ --profile=profile.json
 A target that cannot be written is refused with exit code 3 before analysis
 starts, by the same rules as [`--output`](#--output--o): a directory or a name
 ending in `/`, a file in a directory that does not exist or cannot be written,
-or a file that is not writable. An empty `--profile=` is refused the same way. A
+or a file that is not writable. Named regular profiles share the staging, atomic
+publication and signal capability boundary of `--output`. An empty `--profile=`
+is refused the same way. A
 write that still fails after the run also exits with code 3, never reported
 beside a finished run. The report is already published by then, so the reason
 goes to stderr and stdout keeps the report as its only document, even under
@@ -1143,19 +1166,23 @@ input/configuration, including truly undiscovered empty input; `4` incomplete
 input; `1` unexpected command failure. Incompleteness takes priority.
 Text and JSON retain all sites, including refusals whose channels the final
 selection does not publish. A measured scope note appears in text and JSON
-`scope.note`.
+`scope.note`. JSON also publishes the measured project scope at
+`scope.project_scope`, including state, unjudged channels and source reasons.
 
 There are five verdicts:
 
-| Verdict               | What it states                                                                                 |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| effective             | It silenced a produced finding or its removal changes the threshold result.                    |
-| applied-boundary-only | It applied; only the boundary printed by the finding moved (JSON: `overrun`).                  |
-| inert                 | It silenced nothing or its removal changes nothing; exit 2 only if the boundary is observable. |
-| unmeasured            | Its producer did not run, or another threshold directive masks it.                             |
-| refused               | It could not be admitted or applied, with a nonempty list of refusal details.                  |
+| Verdict               | What it states                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| effective             | It silenced a produced finding or its removal changes the threshold result.                     |
+| applied-boundary-only | It applied; only the boundary printed by the finding moved (JSON: `overrun`).                   |
+| inert                 | It silenced nothing or its removal changes nothing; exit 2 only if the boundary is observable.  |
+| unmeasured            | Its producer did not run, its subject was not covered, or another threshold directive masks it. |
+| refused               | It could not be admitted or applied, with a nonempty list of refusal details.                   |
 
 Every read tag has one site, independent of its declaration bindings.
+An otherwise inert suppression stays unmeasured when the run cannot judge its
+producer's subject. A narrowed run cannot prove a run-dependent declaration
+unused; analyzed local member evidence can still be judged.
 Suppression/diagnostic positions distinguish identical comments on one line;
 JSON still publishes `file`, `line`, `form` and `target`, not the internal
 position. For next-line controls, `line` is the tag line, not the target
@@ -1238,8 +1265,10 @@ missed exclusion leaves the picture whole, so the viewer loses nothing.
 An `--output` target is judged and written the way `check` treats its own
 [`--output`](#--output--o): a directory or a name ending in `/`, an unwritable
 existing file and a new name in a directory that does not exist or does not
-allow creating a file are refused with exit 3 before any file is read; an existing target —
-a file, a symbolic link, `/dev/stdout`, a named pipe — is written in place.
+allow creating a file are refused with exit 3 before any file is read. A named
+regular target is staged and published atomically; a trusted symbolic link keeps
+its entry and publishes its referent. `/dev/stdout` and named pipes retain their
+stream delivery. The same SIGINT/SIGTERM capability boundary applies.
 
 If any discovered file fails parsing or processing, `graph:export` exits 4 and
 emits no partial graph. It does not create a missing output file and preserves

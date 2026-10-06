@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation;
+use Qualimetrix\Analysis\Finding\Contract\ValueReach;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /** One proof that a recorded entry's population was measured again. */
 final readonly class EntryComparability
@@ -58,7 +61,22 @@ final readonly class EntryComparability
             return self::refused(IncomparabilityReason::MetadataUnknown);
         }
         if ($presence === ProjectEntryPresence::Absent) {
-            return self::comparable();
+            if ($delta->differsAt($file)) {
+                return self::refused(IncomparabilityReason::ExclusionsDiffer);
+            }
+            if ($delta->currentlyExcluded($file)) {
+                return self::refused(IncomparabilityReason::OutsideCoverage);
+            }
+            $rootPresence = RecordedRootPresence::forFile($file, $recordedScope, $run);
+            if ($rootPresence !== ProjectEntryPresence::Present) {
+                return self::refused($rootPresence === ProjectEntryPresence::Unknown
+                    ? IncomparabilityReason::MetadataUnknown
+                    : IncomparabilityReason::OutsideCoverage);
+            }
+
+            return $run->subjectCoverage->covers(ValueReach::Members, SymbolLevel::File, SubjectCoverageObservation::verifiedAbsentFile($file))
+                ? self::comparable()
+                : self::refused(IncomparabilityReason::OutsideCoverage);
         }
         return self::judgePresentFile($file, $run, $recordedScope, $delta);
     }
@@ -71,7 +89,7 @@ final readonly class EntryComparability
         if (!$current || !$recorded) {
             return self::refused(IncomparabilityReason::OutsideCoverage);
         }
-        if (!$run->analyzed($file)) {
+        if (!$run->subjectCoverage->covers(ValueReach::Members, SymbolLevel::File, SubjectCoverageObservation::analyzedFile($file))) {
             return self::refused(IncomparabilityReason::OutsideCoverage);
         }
         if ($delta->differsAt($file)) {

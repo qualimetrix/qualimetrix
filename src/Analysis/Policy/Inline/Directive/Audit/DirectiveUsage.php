@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive\Audit;
 
-use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSite;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveUnmeasurableReason;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
-use Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveLevels;
 use Qualimetrix\Analysis\Policy\Inline\Directive\RefusedDirectives;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
@@ -57,6 +54,8 @@ use Qualimetrix\Core\Path\RelativePath;
  */
 final class DirectiveUsage
 {
+    private readonly DirectiveMeasurability $measurability;
+
     /**
      * Two views and not the composite that implements both: the composite
      * exists so one object can answer everything, not so every consumer may
@@ -64,11 +63,13 @@ final class DirectiveUsage
      * same instance to both, which is what makes the two answers one universe.
      */
     public function __construct(
-        private readonly ChannelIdentityInterface $identity,
-        private readonly RuleConfigurationInterface $ruleConfiguration,
+        ChannelIdentityInterface $identity,
+        RuleConfigurationInterface $ruleConfiguration,
         private readonly ChannelDeclarationRegistryInterface $declarations,
         private readonly RefusedDirectives $refused,
-    ) {}
+    ) {
+        $this->measurability = new DirectiveMeasurability($identity, $ruleConfiguration, $declarations);
+    }
 
     /**
      * What each authored suppression did this run.
@@ -83,11 +84,11 @@ final class DirectiveUsage
      *
      * @return list<DirectiveVerdict>
      */
-    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity): array
+    public function verdicts(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
         return array_map(
             static fn(array $pair): DirectiveVerdict => $pair['verdict'],
-            $this->evaluate($suppressionsByFile, $findings, $activity),
+            $this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage),
         );
     }
 
@@ -105,10 +106,11 @@ final class DirectiveUsage
         array $findings,
         Severity $severity,
         LevelActivity $activity,
+        SubjectCoverageFacts $subjectCoverage,
     ): array {
         $stale = [];
 
-        foreach ($this->evaluate($suppressionsByFile, $findings, $activity) as $pair) {
+        foreach ($this->evaluate($suppressionsByFile, $findings, $activity, $subjectCoverage) as $pair) {
             if ($pair['verdict']->effect === DirectiveEffect::Inert) {
                 $stale[] = StaleDirectiveFinding::of($pair['verdict']->site->file, $pair['directive'], $severity);
             }
@@ -167,7 +169,7 @@ final class DirectiveUsage
      *
      * @return list<array{verdict: DirectiveVerdict, directive: Suppression}>
      */
-    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity): array
+    private function evaluate(array $suppressionsByFile, array $findings, LevelActivity $activity, SubjectCoverageFacts $subjectCoverage): array
     {
         $findings = $this->suppressible($findings);
         $evaluated = [];
@@ -178,11 +180,12 @@ final class DirectiveUsage
                 if ($this->refused->suppression(RelativePath::fromString($file), $directive) !== null) {
                     continue;
                 }
-                $reason = $this->unmeasurableReason($group, $activity);
+                $fired = self::anyOfTheGroupFired($file, $group, $findings);
+                $reason = $fired ? null : $this->measurability->unmeasurableReason($file, $group, $activity, $subjectCoverage);
 
                 $effect = match (true) {
                     $reason !== null => DirectiveEffect::Unmeasured,
-                    self::anyOfTheGroupFired($file, $group, $findings) => DirectiveEffect::Effective,
+                    $fired => DirectiveEffect::Effective,
                     default => DirectiveEffect::Inert,
                 };
 
@@ -247,70 +250,5 @@ final class DirectiveUsage
         }
 
         return false;
-    }
-
-    /** @param non-empty-list<Suppression> $group */
-    private function unmeasurableReason(
-        array $group,
-        LevelActivity $activity,
-    ): ?DirectiveUnmeasurableReason {
-        $suppression = $group[0];
-        if ($suppression->target()->appliesToEveryChannel()) {
-            return null;
-        }
-
-        foreach ($this->addressedCodes($suppression) as $code) {
-            $producer = $this->identity->producerOf($code);
-            if ($producer === null) {
-                // Unreachable through a directive: `addressedCodes()` expands
-                // the selector over the same catalogue `producerOf()` reads, so
-                // a code that came out of the expansion has a producer. Kept as
-                // a type guard, not as a reason path — the answer below is the
-                // same either way, so nothing hangs on which way this exits.
-                continue;
-            }
-
-            if ($this->producerRan($code, $producer, $group, $activity)) {
-                return null;
-            }
-
-        }
-
-        return DirectiveUnmeasurableReason::ProducerDisabled;
-    }
-
-    /** @param non-empty-list<Suppression> $group */
-    private function producerRan(string $code, string $producer, array $group, LevelActivity $activity): bool
-    {
-        $enablement = $this->ruleConfiguration->enablement()
-            ?? throw new LogicException('Rule enablement is unavailable before directive audit.');
-        $levels = DirectiveLevels::ofGroup($group);
-        foreach ($levels === [] ? [null] : $levels as $level) {
-            if ($enablement->publishes(new FindingChannel($code), $level)
-                && $activity->ranAtAnyOf($producer, $level === null ? [] : [$level])) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * The finding codes a target addresses.
-     *
-     * @return list<string>
-     */
-    private function addressedCodes(Suppression $suppression): array
-    {
-        $selector = $suppression->target()->selector();
-        if ($selector === null) {
-            return [];
-        }
-
-        $codes = [];
-        foreach ($this->identity->expand($selector->channel()) as $channel) {
-            $codes[] = $channel->code;
-        }
-
-        return $codes;
     }
 }

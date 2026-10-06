@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
@@ -38,6 +39,7 @@ final class FileProcessingTaskFactoryTest extends TestCase
     {
         $factory = new FileProcessingTaskFactory(
             $this->store,
+            new RuleOptionDocumentForms(),
             DependencyVisitor::class,
             [CyclomaticComplexityCollector::class],
             [MaintainabilityIndexCollector::class],
@@ -66,7 +68,7 @@ final class FileProcessingTaskFactoryTest extends TestCase
                 new LcomCollectionConfiguration(['first']),
                 new LcomCollectionConfiguration(['second']),
             );
-        $factory = new FileProcessingTaskFactory($store, DependencyVisitor::class);
+        $factory = new FileProcessingTaskFactory($store, new RuleOptionDocumentForms(), DependencyVisitor::class);
 
         $first = $factory->create(AbsolutePath::fromString('/project/First.php'), AbsolutePath::fromString('/project'), null);
         $second = $factory->create(AbsolutePath::fromString('/project/Second.php'), AbsolutePath::fromString('/project'), null);
@@ -78,7 +80,7 @@ final class FileProcessingTaskFactoryTest extends TestCase
     #[Test]
     public function itCarriesTheTraversalParticipantClassIntoEveryTask(): void
     {
-        $factory = new FileProcessingTaskFactory($this->store, DependencyVisitor::class);
+        $factory = new FileProcessingTaskFactory($this->store, new RuleOptionDocumentForms(), DependencyVisitor::class);
 
         $first = $factory->create(AbsolutePath::fromString('/project/First.php'), AbsolutePath::fromString('/project'), null);
         $second = $factory->create(AbsolutePath::fromString('/project/Second.php'), AbsolutePath::fromString('/project'), null);
@@ -94,7 +96,7 @@ final class FileProcessingTaskFactoryTest extends TestCase
         ini_set('memory_limit', '345M');
 
         try {
-            $task = (new FileProcessingTaskFactory($this->store, DependencyVisitor::class))
+            $task = (new FileProcessingTaskFactory($this->store, new RuleOptionDocumentForms(), DependencyVisitor::class))
                 ->create(AbsolutePath::fromString('/project/First.php'), AbsolutePath::fromString('/project'), null);
         } finally {
             ini_set('memory_limit', $previous);
@@ -110,7 +112,7 @@ final class FileProcessingTaskFactoryTest extends TestCase
         $this->expectExceptionMessage('must implement');
 
         /** @phpstan-ignore argument.type */
-        new FileProcessingTaskFactory($this->store, stdClass::class);
+        new FileProcessingTaskFactory($this->store, new RuleOptionDocumentForms(), stdClass::class);
     }
 
     private function property(FileProcessingTask $task, string $name): mixed

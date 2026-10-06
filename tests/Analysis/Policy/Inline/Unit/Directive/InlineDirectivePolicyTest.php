@@ -60,7 +60,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        $findings = $policy->auditDirectiveUsage([], LevelActivity::empty());
+        $findings = $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage());
 
         self::assertCount(1, $findings);
         self::assertSame(InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME, $findings[0]->code);
@@ -74,7 +74,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::declarationSubject(), 42)], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::declarationSubject(), 42)], LevelActivity::empty(), self::coverage()));
     }
 
     #[Test]
@@ -88,8 +88,8 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)], LevelActivity::empty(), self::coverage()));
     }
 
     #[Test]
@@ -105,10 +105,10 @@ final class InlineDirectivePolicyTest extends TestCase
 
         self::assertCount(
             1,
-            $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 12)], LevelActivity::empty()),
+            $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 12)], LevelActivity::empty(), self::coverage()),
             'A finding two lines down is not the next line, so the directive did nothing.',
         );
-        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 11)], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 11)], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -129,7 +129,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -152,7 +152,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], self::gotoDidNotRun()));
+        self::assertSame([], $policy->auditDirectiveUsage([], self::gotoDidNotRun(), self::coverage()));
     }
 
     /** A live rule is still accounted for — the guard above is not a blanket. */
@@ -169,7 +169,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -189,7 +189,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -204,7 +204,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -227,7 +227,7 @@ final class InlineDirectivePolicyTest extends TestCase
         );
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /** The bare file form is judged by the findings it actually silenced. */
@@ -238,7 +238,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy->prepare([self::FILE => [new Suppression('*', null, 1, SuppressionType::File, position: 0)]], [], []);
         $policy->enableUsageReporting(Severity::Info);
 
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /** Without the owning rule having run, the post-execution half says nothing. */
@@ -248,7 +248,7 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
 
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     /**
@@ -262,10 +262,10 @@ final class InlineDirectivePolicyTest extends TestCase
         $policy = self::policy();
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
         $policy->enableUsageReporting(Severity::Info);
-        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertCount(1, $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
 
         $policy->prepare([self::FILE => [self::symbolDirective()]], [], []);
-        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty()));
+        self::assertSame([], $policy->auditDirectiveUsage([], LevelActivity::empty(), self::coverage()));
     }
 
     #[Test]
@@ -282,7 +282,7 @@ final class InlineDirectivePolicyTest extends TestCase
             [self::FILE => [$override, $override]],
             [self::FILE => [$diagnostic, $diagnostic, $otherReason, $anotherTag]],
         );
-        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty());
+        $verdicts = $policy->directiveVerdicts([], LevelActivity::empty(), self::coverage());
         self::assertCount(4, $verdicts);
         self::assertSame([28, null, 160, 200], array_column(array_column($verdicts, 'site'), 'position'));
         self::assertSame([1, 1, 2, 1], array_map(static fn(DirectiveVerdict $verdict): int => \count($verdict->refusals), $verdicts));
@@ -387,4 +387,13 @@ final class InlineDirectivePolicyTest extends TestCase
             },
         ];
     }
+    private static function coverage(): \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts
+    {
+        return \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+            new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+            [\Qualimetrix\Core\Path\RelativePath::fromString('src/Foo.php')],
+            [],
+        );
+    }
+
 }

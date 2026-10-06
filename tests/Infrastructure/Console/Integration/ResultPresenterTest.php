@@ -351,7 +351,7 @@ final class ResultPresenterTest extends TestCase
             self::assertGreaterThan(0, $result['hit']);
             self::assertNull($result['exit']);
             self::assertStringContainsString('--output', $result['failure']);
-            self::assertSame('', $result['content']);
+            self::assertSame('old', $result['content']);
         } finally {
             unlink($target);
         }
@@ -517,6 +517,7 @@ final class ResultPresenterTest extends TestCase
                 namespaceTree: $namespaceTree,
                 projectScope: null,
                 duration: 0.1,
+                subjectCoverage: \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []),
             ),
             directives: new DirectiveObservations(
                 suppressions: [],

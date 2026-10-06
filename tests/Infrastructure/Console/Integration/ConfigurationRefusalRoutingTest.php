@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolution
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -339,6 +340,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $command = new BaselineUpdateCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineUpdater'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\RunRuleCoverage'),
@@ -362,6 +364,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $command = new BaselineCleanupCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineCleaner'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter'),
             $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
@@ -386,6 +389,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->realBaselineRun(),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader'),
+            $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader'),
             $this->inert('Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService'),
             $this->inert('Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds'),
             $this->inert('Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclarationRegistryInterface'),
@@ -487,7 +491,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             self::REFUSAL_SUMMARY,
         );
 
-        return new ConfigurationInputAdapter(new class ($refusal) implements ConfigurationPipelineInterface {
+        return new ConfigurationInputAdapter(new RuleOptionDocumentForms(), new class ($refusal) implements ConfigurationPipelineInterface {
             public function __construct(private readonly Throwable $refusal) {}
 
             public function resolve(ConfigurationResolutionRequest $request): ConfigurationDocument
@@ -544,6 +548,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
         };
 
         return new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $ruleRegistry,
             $this->inert('Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface'),
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),

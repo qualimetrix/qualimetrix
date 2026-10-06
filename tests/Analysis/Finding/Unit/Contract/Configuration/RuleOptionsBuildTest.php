@@ -38,6 +38,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -76,6 +77,63 @@ final class RuleOptionsBuildTest extends TestCase
         self::assertNull($default->written);
         self::assertNull($default->decidedBy);
         self::assertSame(-1, $default->rank());
+    }
+
+    #[Test]
+    public function itKeepsFullCliStatementsInSelectionAndActivity(): void
+    {
+        $surface = RuleOptionSurface::of(ComplexityOptions::class);
+        $writes = [];
+        foreach (['enabled' => 'false', 'class.enabled' => 'false'] as $option => $text) {
+            $address = $surface->locate($option);
+            self::assertNotNull($address);
+            $path = ['rules', 'complexity.ccn', ...explode('.', $option)];
+            $writes[] = new CommandLinePathWrite($path, $text, '--rule-opt', '--rule-opt=complexity.ccn:' . $option . '=' . $text, (new RuleOptionDocumentForms())->schemaAt($surface, $address));
+        }
+        $configuration = self::prepareLayers([CommandLineLayer::of(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString('/project'),
+            cliPathWrites: $writes,
+        ))]);
+        $statements = \Qualimetrix\Analysis\Finding\Selection\AuthoredSelection::statements($configuration->document);
+        self::assertSame('--rule-opt=complexity.ccn:enabled=false', $statements[0]['text']);
+        $activity = $configuration->resolvedOptions?->activityOf('complexity.ccn', SymbolLevel::Class_);
+        self::assertNotNull($activity);
+        self::assertSame('--rule-opt=complexity.ccn:class.enabled=false', $activity->written);
+    }
+
+    #[Test]
+    public function itKeepsTheWrittenFilterExpressionInsteadOfRebuildingItsList(): void
+    {
+        $origin = ConfigurationOrigin::of(ConfigurationSource::CommandLine)->locatedAtAuthoredWrite('--only-rule', '--only-rule=complexity.ccn');
+        $writer = new \Qualimetrix\Analysis\Configuration\Contract\Document\Provenance($origin, null, 0);
+        $filter = new \Qualimetrix\Analysis\Finding\Contract\SelectionFilter(['complexity.ccn'], $writer);
+        self::assertSame(['--only-rule=complexity.ccn', $writer], \Qualimetrix\Analysis\Finding\Selection\SelectionCauses::filter($filter));
+    }
+
+    #[Test]
+    public function itKeepsTheFullCliExpressionForAMutedMode(): void
+    {
+        $metadata = [new RuleMetadata('architecture.unassigned-class', UnassignedClassOptions::class, '', [], false)];
+        $execution = ResolvedOptionsFixture::execution($metadata);
+        $surface = RuleOptionSurface::of(UnassignedClassOptions::class);
+        $address = $surface->locate('mode');
+        self::assertNotNull($address);
+        $layer = CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: [
+            new CommandLinePathWrite(['rules', 'architecture.unassigned-class', 'mode'], 'ignore', '--rule-opt', '--rule-opt=architecture.unassigned-class:mode=ignore', (new RuleOptionDocumentForms())->schemaAt($surface, $address)),
+        ]));
+        $document = DocumentComposer::compose(new DocumentSchema([new RulesSection($execution, 'rules'), new RulesSection($execution, 'only_rules'), new RulesSection($execution, 'disabled_rules')]), [$layer]);
+        $stated = (new RuleEnablementResolver())->decide($document, ResolvedOptionsFixture::universe($metadata));
+        $options = (new RuleOptionsBuild($execution))->build(new FindingConfiguration($document), $stated);
+        $decision = $stated->decisionFor('architecture.unassigned-class');
+        $cell = new \Qualimetrix\Analysis\Finding\Contract\EnablementDecision(
+            new \Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress($decision->producer, $decision->channel, $decision->level, $decision->role),
+            new \Qualimetrix\Analysis\Finding\Contract\Selection\AuthoredCellDecision(
+                \Qualimetrix\Analysis\Finding\Contract\Selection\CellSwitch::On,
+                \Qualimetrix\Analysis\Finding\Contract\Selection\CellAdmission::Direct,
+            ),
+            $options->activityOf('architecture.unassigned-class', SymbolLevel::Project),
+        );
+        self::assertSame('--rule-opt=architecture.unassigned-class:mode=ignore (the command line)', \Qualimetrix\Analysis\Finding\Selection\SelectionCauses::mutedMode($cell));
     }
 
     #[Test]
@@ -337,13 +395,13 @@ final class RuleOptionsBuildTest extends TestCase
         $address = $surface->locate('callable.warning');
         self::assertNotNull($address);
         $cli = CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: [
-            new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '30', '--cyclomatic-warning', $surface->schemaAt($address)),
+            new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '30', '--cyclomatic-warning', '--cyclomatic-warning=30', (new RuleOptionDocumentForms())->schemaAt($surface, $address)),
         ]));
         try {
             self::buildLayers([self::file(['complexity.ccn' => ['callable' => ['error' => 12]]]), $cli]);
             self::fail('The effective CLI/file band was accepted.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 12. Warning: 30 from option --cyclomatic-warning; error: 12 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".', $refusal->summary());
+            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 12. Warning: 30 from option --cyclomatic-warning (written as --cyclomatic-warning=30); error: 12 from "rules.complexity.ccn.callable.error" in configuration file "/project/qmx.yaml".', $refusal->summary());
             self::assertSame(['/project/qmx.yaml', '--cyclomatic-warning'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
             self::assertNull($refusal->position());
         }
@@ -351,7 +409,7 @@ final class RuleOptionsBuildTest extends TestCase
             self::buildLayers([$cli]);
             self::fail('The CLI half above the owning default was accepted.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 20. Warning: 30 from option --cyclomatic-warning; error: default 20.', $refusal->summary());
+            self::assertSame('Warning threshold 30 must be less than or equal to error threshold 20. Warning: 30 from option --cyclomatic-warning (written as --cyclomatic-warning=30); error: default 20.', $refusal->summary());
             self::assertSame(['--cyclomatic-warning'], array_map(static fn(ConfigurationOrigin $origin): ?string => $origin->locator(), $refusal->sources()));
             self::assertNull($refusal->position());
         }

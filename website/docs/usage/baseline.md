@@ -38,6 +38,15 @@ mean absence. Equal path sets and exclusion definitions can establish equality
 without a metadata scan; changed definitions require evidence about their delta.
 A project subject always requires whole-region coverage.
 
+A missing exact file or declaration needs a positively present recorded root
+that contains its path before absence becomes stale. A directory alias can
+supply that evidence when its canonical target contains the subject. A removed
+recorded root or unknown metadata cannot. A run-wide producer's deleted exact
+subject can still be stale; a present subject requires its wider population.
+Without a current member proving PSR-4 containment, namespace absence needs the
+whole region. Without a baseline entry, `baseline:explain` instead requires a
+captured source root, a selected containing root and positive directory presence.
+
 A complete comparable missing group is **stale**. An absent unselected producer
 is **unmeasured**; an absent incomparable entry is **outside coverage**. A present
 incomparable group is **not-compared** and keeps its own severity, accepted level
@@ -57,6 +66,16 @@ Check, update, cleanup, explain and rename-channels preflight present documents
 once before analysis/carry. Invalid grammar refuses early; configured channel
 semantics are resolved later from the same immutable byte snapshot. Storage and
 lock failures are environment exit 3.
+
+Generate, update and writing cleanup prepare a private sibling before analysis.
+The parent must permit creation and replacement even when the final file exists.
+They publish complete bytes atomically after identity and content-hash checks;
+no-op update/cleanup preserve the final bytes and inode. SIGINT/SIGTERM before
+publication discard the own sibling and return 128 + signal. These staged
+commands require pcntl, default SIGINT/SIGTERM handlers and no registered
+event-loop signal callbacks. Unavailable capability refuses with exit 3 before
+preparation or analysis. Replacing handlers during the operation is unsupported.
+SIGKILL, cleanup failure and already published targets are outside that guarantee.
 
 ### Generate
 
@@ -118,6 +137,19 @@ Other entries follow ordinary tightening. Unknown delta, changed generated
 policy without sufficient proof, incomplete analysis or unavailable required
 groups refuses the whole write. The options cannot combine.
 
+An absent `file:` entry is removable as `exclusions-removed-population` only
+when a complete inventory and the exact recorded-scope run prove its own
+present PHP file newly excluded, with unchanged generated policy. Cleanup
+offers the same selector. Relation entries without source provenance still
+refuse when their required group is unavailable. Update names every outcome
+before refusing the whole write; successful entries are never published alone.
+`--accept-new` uses the ordinary scope guard; `--force` bypasses only that guard.
+
+Repeated JSON member names refuse only for envelope and subject keys in a fully
+recognized canonical layout. Entry objects and noncanonical fallback retain
+native `json_decode` last-member behavior; duplicate detection is not guaranteed
+there, including a canonical prefix followed by a declined layout.
+
 Normalized accepted payload is preserved for arbitrary human JSON input.
 Exact unchanged entry bytes are guaranteed only for canonical writer-produced
 entries; arbitrary field order and numeric spelling may be normalized.
@@ -132,7 +164,9 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 Default cleanup lists candidates without writing. Remove only reviewed selectors;
 repeat --remove for several entries. A shrinking group that still fires is not
 stale. Unmeasured/outside entries do not prove repair. Old undeclared subject
-levels remain inert rather than becoming zero-count groups.
+levels remain inert rather than becoming zero-count groups. If a selector names
+only inert duplicate-identity contenders for the same identity, removing it
+removes every contender. Other selector collisions still refuse as ambiguous.
 
 ### Carry a baseline onto renamed channels
 

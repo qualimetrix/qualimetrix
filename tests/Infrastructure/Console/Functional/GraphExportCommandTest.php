@@ -22,7 +22,9 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use ReflectionProperty;
+use RuntimeException;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(GraphExportCommand::class)]
@@ -92,6 +94,31 @@ final class GraphExportCommandTest extends TestCase
         self::assertStringContainsString('digraph', $output);
         self::assertStringContainsString('ClassA', $output);
         self::assertStringContainsString('ClassB', $output);
+    }
+
+    #[Test]
+    public function itExportsAQuietGraphWithNoProgressOption(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Source.php',
+            '<?php namespace App; final class Source { public function use(Model $model): void {} }',
+        );
+
+        $tester = $this->createCommandTester();
+        try {
+            $exit = $tester->execute([
+                'paths' => [$this->tempDir],
+                '--no-progress' => true,
+            ], ['capture_stderr_separately' => true]);
+        } catch (InvalidOptionException $exception) {
+            self::assertSame('The "--no-progress" option does not exist.', $exception->getMessage());
+            self::fail('Graph export must accept --no-progress.');
+        }
+
+        self::assertSame(0, $exit, $tester->getErrorOutput());
+        self::assertStringStartsWith('digraph', $tester->getDisplay());
+        self::assertStringContainsString('Source', $tester->getDisplay());
+        self::assertSame('', $tester->getErrorOutput());
     }
 
     #[Test]
@@ -528,6 +555,31 @@ final class GraphExportCommandTest extends TestCase
         self::assertSame(4, $tester->getStatusCode());
         self::assertSame("existing bytes\n", file_get_contents($destination));
         self::assertStringContainsString('Analysis incomplete: 1 of 2', $tester->getErrorOutput());
+    }
+
+    #[Test]
+    public function itHoldsAPrivateGraphSiblingBeforeAnalysisAndDiscardsItOnFailure(): void
+    {
+        file_put_contents($this->tempDir . '/Source.php', '<?php final class Source {}');
+        $destination = $this->tempDir . '/graph.json';
+        file_put_contents($destination, 'OLD GRAPH');
+        $observed = null;
+        $analyzer = self::createStub(DependencyGraphAnalyzerInterface::class);
+        $analyzer->method('analyze')->willReturnCallback(function () use (&$observed, $destination): never {
+            $entries = scandir($this->tempDir);
+            self::assertIsArray($entries);
+            $observed = array_values(array_diff($entries, ['.', '..', 'Source.php', 'graph.json']));
+            self::assertSame('OLD GRAPH', file_get_contents($destination));
+            throw new RuntimeException('Stop after observing the staged graph.');
+        });
+        $tester = $this->createCommandTesterWithAnalyzer($analyzer);
+        $tester->execute(['paths' => [$this->tempDir . '/Source.php'], '--format' => 'json', '--output' => $destination]);
+
+        self::assertSame(1, $tester->getStatusCode());
+        self::assertIsArray($observed);
+        self::assertCount(1, $observed, 'Graph output must hold a private sibling while analysis runs.');
+        self::assertSame('OLD GRAPH', file_get_contents($destination));
+        self::assertSame(['Source.php', 'graph.json'], array_values(array_diff((array) scandir($this->tempDir), ['.', '..'])));
     }
 
     /**

@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -172,7 +173,7 @@ final class InProcess
 
         $this->aliases = $registry->getAllCliAliases();
         $this->checkCommand = new Command('check');
-        CheckCommandDefinition::addOptions($this->checkCommand, $registry);
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $this->checkCommand, $registry);
 
         if ($typed) {
             $universe = $container->get(ChannelUniverse::class);
@@ -187,8 +188,9 @@ final class InProcess
 
             $this->legacyResolver = null;
             $this->legacyRuleOptionsParser = null;
-            $this->inputAdapter = new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution);
+            $this->inputAdapter = new ConfigurationInputAdapter(new RuleOptionDocumentForms(), $pipeline, new ErrorStream(), $execution);
             $this->ruleInputValidator = new RuleInputValidator(
+                new RuleOptionDocumentForms(),
                 $registry,
                 $universe,
                 $optionsBuild,

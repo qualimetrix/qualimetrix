@@ -24,7 +24,7 @@ final class HookStatusCommand extends AbstractHookCommand
 
         $isSymlink = is_link($hookPath);
 
-        if (!self::hookExists($hookPath)) {
+        if (!$this->files->exists($hookPath)) {
             $output->writeln('Status: <comment>NOT INSTALLED</comment>');
             $output->writeln('');
             $output->writeln('To install the hook, run:');
@@ -61,7 +61,7 @@ final class HookStatusCommand extends AbstractHookCommand
         $target = readlink($hookPath);
         $output->writeln(\sprintf('Type: <info>Symlink</info> → %s', $target === false ? 'unknown' : $target));
 
-        if ($this->danglingLink($hookPath, $output)) {
+        if ($this->files->danglingLink($hookPath, $output)) {
             $output->writeln('');
             $output->writeln('<error>Warning: the symlink leads nowhere, so this hook does nothing.</error>');
             $output->writeln('Earlier releases installed a symlink into a script this package no longer ships.');
@@ -85,9 +85,9 @@ final class HookStatusCommand extends AbstractHookCommand
 
     private function contentsOf(string $hookPath, OutputInterface $output): string
     {
-        $this->judge($hookPath, $output);
+        $this->files->judge($hookPath, $output);
 
-        return self::read($hookPath);
+        return $this->files->read($hookPath);
     }
 
     private function reportOwnership(string $contents, OutputInterface $output): void

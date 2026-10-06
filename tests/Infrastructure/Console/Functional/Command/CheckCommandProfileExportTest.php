@@ -76,12 +76,8 @@ final class CheckCommandProfileExportTest extends TestCase
         self::assertSame([], array_values(array_filter(self::filesIn($this->directory), is_file(...))));
     }
 
-    /**
-     * An existing export target is written in place, so a writable file in a
-     * directory that cannot be written is exported to, not refused.
-     */
     #[Test]
-    public function itExportsIntoAWritableFileInADirectoryItCannotWrite(): void
+    public function itRefusesAProfileWhoseParentCannotHoldAReplacementSibling(): void
     {
         if (\function_exists('posix_geteuid') && posix_geteuid() === 0) {
             self::markTestSkipped('Directory permissions do not bind root.');
@@ -97,9 +93,10 @@ final class CheckCommandProfileExportTest extends TestCase
             chmod($sealed, 0o755);
         }
 
-        self::assertNotSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
-        self::assertStringContainsString('Profile exported to', $tester->getErrorOutput());
-        self::assertNotSame('', file_get_contents($sealed . '/p.json'));
+        self::assertSame(3, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertStringContainsString('cannot create a temporary file', $tester->getDisplay());
+        self::assertSame('', file_get_contents($sealed . '/p.json'));
+        self::assertSame(['p.json'], array_values(array_diff((array) scandir($sealed), ['.', '..'])));
     }
 
     /** A native profile write can fail after the report; stdout remains one JSON document. */
@@ -122,7 +119,7 @@ final class CheckCommandProfileExportTest extends TestCase
                 function qmxProfileWrite($stream, string $bytes): int|false
                 {
                     $uri = \stream_get_meta_data($stream)['uri'] ?? '';
-                    if (\realpath($uri) !== \realpath($GLOBALS['qmx_profile_target'])) {
+                    if (\realpath(\dirname($uri)) !== \realpath(\dirname($GLOBALS['qmx_profile_target'])) || !\str_starts_with(\basename($uri), '.qmx-')) {
                         return \fwrite($stream, $bytes);
                     }
                     ++$GLOBALS['qmx_profile_hits'];
@@ -168,7 +165,10 @@ final class CheckCommandProfileExportTest extends TestCase
         self::assertArrayHasKey('summary', $report);
         self::assertStringContainsString('Environment error:', $run['stderr']);
         self::assertStringContainsString('--profile', $run['stderr']);
-        self::assertSame('', file_get_contents($target));
+        self::assertSame('old profile', file_get_contents($target));
+        $entries = scandir($this->directory);
+        self::assertIsArray($entries);
+        self::assertSame([], array_values(array_filter($entries, static fn(string $name): bool => str_starts_with($name, '.qmx-'))));
     }
 
     /** @return iterable<string, array{string}> */

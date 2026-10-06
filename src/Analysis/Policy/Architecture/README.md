@@ -91,9 +91,11 @@ malformed criterion or target is refused even under a file that replaces
 `layers` or the target list. Static-layer name grammar, fixed exclude capture
 placement, pattern and selector syntax, match and relation kinds, the coverage
 mode and a positive expansion ceiling are also judged in each writing layer,
-using the same parsers as the resolved validators. Layer references,
-source/target capture compatibility, template bindings and cycles are judged
-on the merged value only.
+using the same parsers as the resolved validators. `LayersValidator` also judges
+each written list for duplicate names or patterns, missing membership criteria
+and invalid template bindings before another list can replace it. Allow-layer
+references, source/target capture compatibility and cycles require the merged
+document and are judged there.
 An allow source name's syntax is judged even when its value is `~`. Its
 membership is judged after merging against the names the merged `layers`
 declares, in the words of its writing layer (`allow: {infrq: ~}` is refused):

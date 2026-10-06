@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -55,7 +56,7 @@ final class CliAliasKeyWalkAgreementTest extends TestCase
         self::assertNotSame([], $aliases, 'No CLI alias found — the subject of this test is empty');
 
         $command = new \Symfony\Component\Console\Command\Command('check');
-        \Qualimetrix\Infrastructure\Console\CheckCommandDefinition::addOptions($command, $ruleRegistry);
+        \Qualimetrix\Infrastructure\Console\CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, $ruleRegistry);
         foreach ($aliases as $alias) {
             $target = $parser->aliasTarget($alias);
             self::assertNotNull($target, \sprintf('Alias "%s" is registered but has no target', $alias));
@@ -65,7 +66,7 @@ final class CliAliasKeyWalkAgreementTest extends TestCase
             $address = $surface->locate($target['option']);
             self::assertNotNull($address, \sprintf('--%s addresses an unrecognised key', $alias));
             self::assertFalse($address->level === null && $surface->levelNamed($address->key) !== null, \sprintf('--%s addresses a level slot instead of an option', $alias));
-            $schema = $surface->schemaAt($address);
+            $schema = (new RuleOptionDocumentForms())->schemaAt($surface, $address);
             $form = $schema->scalar->forms[0] ?? $schema->collection?->element->scalar->forms[0] ?? null;
             $text = match ($form) {
                 \Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm::Boolean => true,
@@ -76,7 +77,7 @@ final class CliAliasKeyWalkAgreementTest extends TestCase
             };
             $text = $schema->scalar->forms === [] ? json_encode([$text], \JSON_THROW_ON_ERROR) : $text;
             $input = new \Symfony\Component\Console\Input\ArrayInput(['--' . $alias => $text], $command->getDefinition());
-            $writes = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser($parser))->pathWrites($input);
+            $writes = (new \Qualimetrix\Infrastructure\Console\CliOptionsParser(new RuleOptionDocumentForms(), $parser))->pathWrites($input);
             self::assertCount(1, $writes, \sprintf('--%s did not produce exactly one authored record', $alias));
             self::assertSame(['rules', $target['rule'], ...($address->level === null ? [] : [$address->level]), $address->key], $writes[0]->path);
             $resolved = \Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::authoredConfiguration([], $execution->allRules(), $writes);

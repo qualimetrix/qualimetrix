@@ -178,6 +178,11 @@ final class StubRuleCoverage
 
                 return ProjectEntryPresence::Absent;
             }
+
+            public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
+            {
+                return ProjectEntryPresence::Present;
+            }
         };
 
         return new RunCoverage(
@@ -195,6 +200,11 @@ final class StubRuleCoverage
             ),
             ['App\\' => ['src/']],
             $tree,
+            \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(
+                new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(),
+                ($analysis ?? new AnalysisCoverage(array_values($files), [], []))->analyzedFiles,
+                [],
+            ),
         );
     }
 }

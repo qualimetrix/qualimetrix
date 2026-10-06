@@ -56,7 +56,14 @@ document keeps, for every leaf, the layer that won it and, for every merged
 node, the layers that contributed. A value whose invalidity is visible without
 the merged context — its form, a forbidden empty value or membership of a
 closed dictionary — is judged in every layer that writes it. Constraints that
-depend on other resolved values are judged only on the winner. Reporting owns
+depend on other resolved values are judged only on the winner. Coupling reuses one
+selector parser for authored and resolved lists, including the 256-selector
+ceiling. Architecture judges intrinsic layer-list consistency before replacement;
+references to the merged layer set remain a resolved-document judgement. Cache
+declares its section in Infrastructure rather than teaching Configuration its
+directory grammar. `ConfigSchema::EXCLUDE` uses the authored root spelling for
+the resolved result key as well; the former `EXCLUDES`/`excludes` API is removed.
+Reporting owns
 the format dictionary and declares its per-layer judgement; an unknown format
 cannot be hidden by a later `--format`. A cache directory cannot be empty even
 when a later layer supplies a valid directory. Run, Console and Parallel
@@ -181,9 +188,11 @@ to the exact `ResolvedValueInterface` declaration for CBO `22` and ClassRank
 `0.00618924` against the scaled `0.00608863` boundary, and to the exact
 `NodeSchema` declaration for CBO `20`. A second interface or a split of the
 declaration language would preserve the readers and obscure the public subject.
-After intrinsic validators moved into the owning sections, the ClassRank
-exception stopped matching and was removed. The two exact CBO exceptions still
-name the shared value port and declaration language; no sibling is enrolled.
+After intrinsic validators moved into the owning sections, the exact ClassRank
+exception for `ResolvedValueInterface` still matches and remains: its inbound
+reach is the intended readership of the shared value port. The two exact CBO
+exceptions also still name that port and the declaration language; no sibling
+is enrolled.
 
 `CouplingAnalysis` reads its own declared section and builds the executable
 framework matcher. Its `Ca=2`, `Ce=11` shape gives Instability `0.846154`.

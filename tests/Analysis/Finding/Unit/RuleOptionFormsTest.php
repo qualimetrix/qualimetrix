@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassOptions;
 use Qualimetrix\Analysis\Evidence\Design\GodClass\GodClassRule;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionForms;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 
 #[CoversClass(RuleOptionForms::class)]
@@ -24,7 +25,7 @@ final class RuleOptionFormsTest extends TestCase
     #[Test]
     public function itUsesIndependentDeclaredKeysForDataClassAxes(): void
     {
-        $forms = RuleValidatorMapFactory::build([DataClassRule::class])[DataClassRule::NAME];
+        $forms = RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [DataClassRule::class])[DataClassRule::NAME];
         self::assertInstanceOf(RuleOptionForms::class, $forms);
 
         self::assertSame('integer at least 0', $forms->formOf(DataClassRule::NAME, null, 'warning')->describe());
@@ -35,7 +36,7 @@ final class RuleOptionFormsTest extends TestCase
     #[Test]
     public function itFindsOnlyGodClassWarningAxis(): void
     {
-        $forms = RuleValidatorMapFactory::build([GodClassRule::class])[GodClassRule::NAME];
+        $forms = RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [GodClassRule::class])[GodClassRule::NAME];
         self::assertInstanceOf(RuleOptionForms::class, $forms);
 
         self::assertSame('integer at least 0', $forms->formOf(GodClassRule::NAME, null, 'warning')->describe());
@@ -46,7 +47,7 @@ final class RuleOptionFormsTest extends TestCase
     #[Test]
     public function itReadsBothComplexityLevelsFromTheirOwnDeclarations(): void
     {
-        $forms = RuleValidatorMapFactory::build([ComplexityRule::class])[ComplexityRule::NAME];
+        $forms = RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [ComplexityRule::class])[ComplexityRule::NAME];
         self::assertInstanceOf(RuleOptionForms::class, $forms);
 
         self::assertSame(['callable', 'class'], $forms->levels());
@@ -58,7 +59,7 @@ final class RuleOptionFormsTest extends TestCase
     #[Test]
     public function itKeepsNumberFormsOnFractionalRules(): void
     {
-        $map = RuleValidatorMapFactory::build([MaintainabilityRule::class, InstabilityRule::class]);
+        $map = RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), [MaintainabilityRule::class, InstabilityRule::class]);
         $maintainability = $map[MaintainabilityRule::NAME];
         $instability = $map[InstabilityRule::NAME];
         self::assertInstanceOf(RuleOptionForms::class, $maintainability);

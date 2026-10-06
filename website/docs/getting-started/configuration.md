@@ -13,7 +13,10 @@ warned about and not loaded when neither exact name exists. An exact file
 beside a near name is loaded without that warning. `--config` selects its named
 file explicitly, independently of automatic discovery.
 
-If the working directory cannot be listed, discovery refuses with exit 3.
+A near-name warning is suppressed only when that same physical file was already
+selected as a custom preset; the same basename elsewhere does not suppress it.
+The two-file refusal identifies both files. If the working directory cannot be
+listed, discovery refuses with exit 3 and names the directory.
 
 Every command that reads the document judges all its context-free values,
 even when it consumes only some sections. The command's CLI profile does not
@@ -133,6 +136,8 @@ Also available as a CLI option: `--suppress-path` (merged with YAML config).
     `architecture.circular-dependency` violations, for the same reason as `suppress_namespaces`
     below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
     metrics must not double as an undocumented way to disable architecture enforcement.
+    Git reporting likewise retains these project-scoped findings in both strict
+    and non-strict mode; see [Git Integration](../usage/git-integration.md).
 
     Which findings are exempt is a **declared property of the channel**, not something read off
     the spelling of the rule name — a rule is not exempt because it happens to be called
@@ -814,6 +819,12 @@ dictionary. A file's `format: bogus` or `cache: {dir: ""}` is still refused
 under a valid `--format` or `--cache-dir`. A constraint depending on other
 resolved values is judged on the winner. Text refusals name the writing layer;
 JSON publishes it in `source`.
+
+This includes every `coupling.framework_namespaces` list's nonempty namespace
+patterns, valid regex syntax and 256-selector ceiling, and each
+`architecture.layers` list's unique names and patterns, membership criteria and
+template bindings. A higher list cannot hide those defects. Architecture allow
+references and cycles still require the merged set of layers.
 
 - **`~` means "not written".** A key written `~`, or left empty (`key:`), leaves
   the value to the layer below. The key itself is still recognised: a misspelt
@@ -1499,7 +1510,18 @@ Configuration error: Key "Fail_On" in configuration file "qmx.yaml" is not writt
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
+The same spelling rule applies to rule-option keys and level segments in
+`--rule-opt`. A wrong-case rule owner suggests the exact registered name. CLI
+refusals include the complete authored flag/value expression alongside the
+option source.
+
 ### Type errors
+
+Symfony YAML reads unquoted `+2` and `2.0` as floats. Integer options refuse
+both in the file, `--rule-opt` and dedicated aliases, name the parsed float and
+explain that an integer should be written as `2`. File refusals name the path;
+CLI refusals also retain the complete authored expression. Quoted `"+2"` stays
+a string. Exponent notation and overflow remain refused by integer options.
 
 If a value has the wrong type, you'll get a clear message instead of silent fallback to defaults:
 

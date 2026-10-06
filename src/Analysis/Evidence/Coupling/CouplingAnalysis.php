@@ -4,22 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Coupling;
 
-use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedListInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
-use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
+use Qualimetrix\Analysis\Evidence\Coupling\Configuration\FrameworkNamespaceSelectorParser;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Pattern\SelectorDefinition;
 
-/**
- * @qmx-threshold coupling.instability warning=0.85 -- The Coupling configuration-document adapter has Ca=2 and Ce=11 (I=0.84615); the next outward dependency, Ce=12 (I=0.85714), remains a warning.
- */
 final class CouplingAnalysis implements CouplingConfiguratorInterface
 {
     /** @var list<NamespacePattern> */
@@ -51,28 +42,7 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
             return [];
         }
 
-        if (!$selectors instanceof ResolvedListInterface) {
-            $selectors->refuse('Framework namespace selectors must be a list.');
-        }
-
-        return $this->validatedSelectors($selectors);
-    }
-
-    /** @return list<NamespacePattern> */
-    private function validatedSelectors(ResolvedListInterface $selectors): array
-    {
-        $patterns = [];
-        foreach ($selectors->items() as $selector) {
-            $patterns[] = $this->namespacePattern($selector);
-        }
-
-        try {
-            new NamespaceMatcher($patterns);
-        } catch (InvalidArgumentException $e) {
-            throw self::refusalFrom($selectors, $e);
-        }
-
-        return $patterns;
+        return FrameworkNamespaceSelectorParser::parseList($selectors);
     }
 
     public function isFramework(string $fqcn): bool
@@ -125,40 +95,4 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
         return $this->frameworkNamespaces === [];
     }
 
-    private function namespacePattern(ResolvedValueInterface $selector): NamespacePattern
-    {
-        $value = $selector->plain();
-
-        if (!\is_array($value) || \count($value) !== 1) {
-            $selector->refuse(
-                'Framework namespace selectors must be one-entry mappings: {exact: value}, {subtree: value}, or {regex: value}; bare strings are not supported.',
-            );
-        }
-
-        $kind = array_key_first($value);
-        $pattern = \is_string($kind) ? $value[$kind] : null;
-        if (!\is_string($kind) || !\is_string($pattern) || $pattern === '') {
-            $selector->refuse(
-                'Framework namespace selectors must name exact, subtree, or regex with a non-empty string value.',
-            );
-        }
-
-        try {
-            return new NamespacePattern(SelectorDefinition::fromKindAndValue($kind, $pattern));
-        } catch (InvalidArgumentException $e) {
-            throw self::refusalFrom($selector, $e);
-        }
-    }
-
-    private static function refusalFrom(ResolvedValueInterface $value, InvalidArgumentException $cause): ConfigurationRefusal
-    {
-        $writers = $value->contributors();
-
-        return ConfigurationRefusal::acrossLayers(
-            array_map(static fn(Provenance $writer): ConfigurationOrigin => $writer->origin, $writers),
-            $writers[\count($writers) - 1]->position(),
-            $cause->getMessage(),
-            $cause,
-        );
-    }
 }

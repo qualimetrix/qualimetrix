@@ -50,6 +50,14 @@ final class RunTargetSession
         }
 
         try {
+            $signal = $this->runTargets->interruptedSignal();
+            if ($signal !== null) {
+                if ($cleanup !== null) {
+                    $this->presentCleanupFailure($output, null, $cleanup);
+                }
+
+                return 128 + $signal;
+            }
             return $this->presentOutcome($output, $envelopeFormat, $result, $primary, $cleanup);
         } finally {
             $this->outputPublished = false;

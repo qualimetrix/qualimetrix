@@ -7,69 +7,79 @@ namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDefinition;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection;
 
-/** The declared form of a rule option value and its refusal wording. */
+/** The immutable declaration of a rule option value. */
 final readonly class RuleOptionShape
 {
-    public ?RuleOptionWordSet $words;
+    public const string PLAIN = 'plain';
+    public const string WORDS = 'words';
+    public const string LIST = 'list';
+    public const string MAP = 'map';
+    public const string UNION = 'union';
 
-    private function __construct(private RuleOptionDefinition $definition)
-    {
-        $this->words = $definition->words;
-    }
+    /**
+     * @param list<self> $alternatives
+     * @param ?Closure(ResolvedValueInterface, list<string>): void $layerJudge
+     *
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Eight immutable
+     *                declaration facts describe one shape, rather than injected collaborators.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Named factories compose
+     *                these eight independent declaration facts; grouping them hides the vocabulary.
+     */
+    private function __construct(
+        public string $kind,
+        public ?RuleOptionValueForm $plain = null,
+        public ?RuleOptionWordSet $words = null,
+        public ?self $element = null,
+        public array $alternatives = [],
+        public bool $nullable = false,
+        public int|float|null $minimum = null,
+        public ?Closure $layerJudge = null,
+    ) {}
 
     public static function boolean(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::Boolean));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::Boolean);
     }
 
     public static function integer(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::WholeNumber));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::WholeNumber);
     }
 
     public static function number(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::Number));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::Number);
     }
 
     public static function signedNumber(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::SignedNumber));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::SignedNumber);
     }
 
     public static function text(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::Text));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::Text);
     }
 
     public static function nonEmptyText(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::NonEmptyText));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::NonEmptyText);
     }
 
     public static function listOf(self $element): self
     {
-        $plural = $element->definition->plain !== null && !$element->definition->nullable
-            ? $element->definition->plain->describeMany() : $element->describe();
-        return new self(new RuleOptionDefinition(compound: new CompoundRuleOptionForm(CompoundOptionKind::List, $element, elementPlural: $plural)));
+        return new self(self::LIST, element: $element);
     }
 
     public static function mapOf(self $value): self
     {
-        $plural = $value->definition->plain !== null && !$value->definition->nullable
-            ? $value->definition->plain->describeMany() : $value->describe();
-        return new self(new RuleOptionDefinition(compound: new CompoundRuleOptionForm(CompoundOptionKind::Map, $value, elementPlural: $plural)));
+        return new self(self::MAP, element: $value);
     }
 
     public static function block(): self
     {
-        return new self(new RuleOptionDefinition(plain: RuleOptionValueForm::Block));
+        return new self(self::PLAIN, plain: RuleOptionValueForm::Block);
     }
 
     public static function either(self ...$alternatives): self
@@ -77,17 +87,8 @@ final readonly class RuleOptionShape
         if (\count($alternatives) < 2) {
             throw new LogicException('A union of forms needs at least two alternatives.');
         }
-        $bareTextList = \count($alternatives) === 2
-            && $alternatives[0]->definition->plain === RuleOptionValueForm::Text
-            && $alternatives[1]->definition->compound?->kind === CompoundOptionKind::List
-            && $alternatives[1]->definition->compound->element?->definition->plain === RuleOptionValueForm::Text
-                ? $alternatives[1] : null;
 
-        return new self(new RuleOptionDefinition(compound: new CompoundRuleOptionForm(
-            CompoundOptionKind::Union,
-            alternatives: array_values($alternatives),
-            bareTextList: $bareTextList,
-        )));
+        return new self(self::UNION, alternatives: array_values($alternatives));
     }
 
     public static function words(RuleOptionWordSet $words): self
@@ -100,54 +101,27 @@ final readonly class RuleOptionShape
                 throw new LogicException('A closed set of words cannot carry a blank word.');
             }
         }
-        return new self(new RuleOptionDefinition(words: $words));
+
+        return new self(self::WORDS, words: $words);
     }
 
     public function orNull(): self
     {
-        return new self($this->definition->orNull());
+        return new self($this->kind, $this->plain, $this->words, $this->element, $this->alternatives, true, $this->minimum, $this->layerJudge);
     }
 
     public function atLeast(int|float $minimum): self
     {
-        if (!\in_array($this->definition->plain, [RuleOptionValueForm::WholeNumber, RuleOptionValueForm::Number, RuleOptionValueForm::SignedNumber], true)) {
+        if (!\in_array($this->plain, [RuleOptionValueForm::WholeNumber, RuleOptionValueForm::Number, RuleOptionValueForm::SignedNumber], true)) {
             throw new LogicException('A numeric floor requires a numeric rule option form.');
         }
-        return new self($this->definition->atLeast($minimum));
+
+        return new self($this->kind, $this->plain, $this->words, $this->element, $this->alternatives, $this->nullable, $minimum, $this->layerJudge);
     }
 
     /** @param Closure(ResolvedValueInterface, list<string>): void $judge */
     public function judgedInEachLayer(Closure $judge): self
     {
-        return new self($this->definition->judgedInEachLayer($judge));
-    }
-
-    public function matches(mixed $value): bool
-    {
-        return $this->definition->matches($value);
-    }
-
-    public function asNodeSchema(?NodeSchema $block = null): NodeSchema
-    {
-        return (new RuleOptionSchemaProjection($this->definition))->project($block);
-    }
-
-    public function describe(): string
-    {
-        $described = match (true) {
-            $this->definition->plain !== null => $this->definition->plain->describe(),
-            $this->definition->words !== null => $this->definition->words->describe(),
-            $this->definition->compound !== null => $this->definition->compound->describe(),
-            default => throw new LogicException('Unknown rule option shape.'),
-        };
-        return $this->definition->nullable ? $described . ' or null' : $described;
-    }
-
-    public function describeWritten(mixed $written): string
-    {
-        return $this->words?->describeWritten($written)
-            ?? $this->definition->plain?->describeOutOfRange($written)
-            ?? $this->definition->compound?->describeOutOfRange($written)
-            ?? RuleOptionValueForm::describeWritten($written);
+        return new self($this->kind, $this->plain, $this->words, $this->element, $this->alternatives, $this->nullable, $this->minimum, $judge);
     }
 }

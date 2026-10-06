@@ -120,14 +120,12 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         [$runtimeConfigurator, $command, $ruleInputValidator, $execution] = $this->runtimeServices();
         $runtimeConfigurator->resetRunState();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
-        // Well-formed for the engine, so the document composes and the refusal
-        // comes from the architecture owner inside configure(), after the
-        // owners resolved before it.
+        // The authored list passes document judgement; the merged allow cycle
+        // is refused by the architecture owner inside configure().
         $invalidDocument = $this->document([
             'architecture' => ['layers' => [
                 ['name' => 'app', 'patterns' => ['App\\First']],
-                ['name' => 'app', 'patterns' => ['App\\Second']],
-            ]],
+            ], 'allow' => ['app' => ['app']]],
         ]);
         $input = new ArrayInput(['--profile' => true], $command->getDefinition());
 
@@ -135,7 +133,8 @@ final class RuntimeConfigurationIsolationTest extends TestCase
             $runtimeConfigurator->configure($invalidDocument, new \Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration($this->runConfigurationFor($invalidDocument), $this->cacheConfiguration($invalidDocument, $projectRoot), $this->parallelConfiguration($invalidDocument)), $ruleInputValidator->resolve($invalidDocument, $input), $input, new BufferedOutput());
             self::fail('Invalid architecture configuration must fail before mutating owner stores or effects.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertStringContainsString('duplicate layer name "app"', $refusal->getMessage());
+            self::assertStringContainsString('directed cycle', $refusal->getMessage());
+            self::assertStringContainsString('app -> app', $refusal->getMessage());
         }
 
         $this->assertDefaultOwnerState($runtimeConfigurator);

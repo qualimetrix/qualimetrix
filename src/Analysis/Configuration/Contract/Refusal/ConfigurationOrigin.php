@@ -15,23 +15,34 @@ final readonly class ConfigurationOrigin
         private ConfigurationSource $source,
         private ?string $locator,
         private ?self $importer,
+        private ?string $authoredExpression,
     ) {}
 
     public static function of(ConfigurationSource $source, ?string $locator = null): self
     {
-        return new self($source, $locator, null);
+        return new self($source, $locator, null, null);
     }
 
     /** This source as read through `$importer`, which named it. */
     public function importedThrough(self $importer): self
     {
-        return new self($this->source, $this->locator, $importer);
+        return new self($this->source, $this->locator, $importer, $this->authoredExpression);
     }
 
     /** The same source with a narrower name — an option within the command line. */
     public function locatedAt(string $locator): self
     {
-        return new self($this->source, $locator, $this->importer);
+        return new self($this->source, $locator, $this->importer, $this->authoredExpression);
+    }
+
+    public function locatedAtAuthoredWrite(string $locator, string $expression): self
+    {
+        return new self($this->source, $locator, $this->importer, $expression);
+    }
+
+    public function authoredExpression(): ?string
+    {
+        return $this->authoredExpression;
     }
 
     public function source(): ConfigurationSource
@@ -60,6 +71,9 @@ final readonly class ConfigurationOrigin
     public function describe(): string
     {
         $own = $this->locator === null ? $this->unnamed() : $this->named($this->locator);
+        if ($this->source === ConfigurationSource::CommandLine && $this->authoredExpression !== null) {
+            $own .= \sprintf(' (written as %s)', $this->authoredExpression);
+        }
 
         return $this->importer === null ? $own : \sprintf('%s (imported by %s)', $own, $this->importer->describe());
     }

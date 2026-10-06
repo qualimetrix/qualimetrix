@@ -325,7 +325,7 @@ final class RuleProducerPreparationTest extends TestCase
         $baseline = new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty());
 
         (new InlineDirectiveRun(self::createStub(InlineDirectivePolicyInterface::class), $spy))
-            ->verdicts([], LevelActivity::empty(), $context, $executor, $baseline, $sweep);
+            ->verdicts([], LevelActivity::empty(), \Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageFacts::fromMeasured(new \Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement(), [], []), $context, $executor, $baseline, $sweep);
 
         self::assertSame($sweep, $spy->received?->sweep);
     }

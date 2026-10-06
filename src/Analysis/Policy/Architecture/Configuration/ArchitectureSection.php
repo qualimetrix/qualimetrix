@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NameVocabulary;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
@@ -56,7 +57,11 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
                 ...$criteria,
                 'pending' => NodeSchema::scalar(ScalarForm::Boolean),
                 'exclude' => NodeSchema::map($criteria),
-            ])->judgedInEachLayer(LayerCriterionNormalizer::ofLayerEntry(...))),
+            ])->judgedInEachLayer(LayerCriterionNormalizer::ofLayerEntry(...)))->judgedInEachLayer(
+                static function (ResolvedValueInterface $layers, array $path): void {
+                    (new LayersValidator())->validate(SectionSpot::node($path, $layers));
+                },
+            ),
             'allow' => NodeSchema::namedMap(
                 NodeSchema::list(NodeSchema::opaque()->judgedInEachLayer(CarriedValueForm::ofAllowTarget(...))),
                 NameVocabulary::fromSibling('layers', self::layerNames(...), self::refersToALayer(...)),

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Symfony\Component\Console\Command\Command;
@@ -24,7 +25,7 @@ final class CheckCommandDefinitionTest extends TestCase
             CircularDependencyRule::class,
         ]);
 
-        CheckCommandDefinition::addOptions($command, $registry);
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, $registry);
 
         $definition = $command->getDefinition();
 
@@ -44,7 +45,7 @@ final class CheckCommandDefinitionTest extends TestCase
             ComplexityRule::class,
         ]);
 
-        CheckCommandDefinition::addOptions($command, $registry);
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, $registry);
 
         $definition = $command->getDefinition();
 
@@ -64,7 +65,7 @@ final class CheckCommandDefinitionTest extends TestCase
             ComplexityRule::class,
         ]);
 
-        $ruleOptionNames = CheckCommandDefinition::addOptions($command, $registry);
+        $ruleOptionNames = CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, $registry);
 
         self::assertNotEmpty($ruleOptionNames);
         self::assertContains('cyclomatic-warning', $ruleOptionNames);
@@ -82,7 +83,7 @@ final class CheckCommandDefinitionTest extends TestCase
         $command = new Command('test');
         $registry = new RuleRegistry([]);
 
-        CheckCommandDefinition::addOptions($command, $registry);
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, $registry);
 
         $definition = $command->getDefinition();
 
@@ -102,7 +103,7 @@ final class CheckCommandDefinitionTest extends TestCase
     {
         $command = new Command('test');
 
-        CheckCommandDefinition::addOptions($command, new RuleRegistry([]));
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, new RuleRegistry([]));
 
         $description = $command->getDefinition()->getOption('output')->getDescription();
 

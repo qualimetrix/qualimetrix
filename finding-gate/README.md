@@ -582,6 +582,14 @@ changing those constructors also updates the channel probe.
 
 ## Execution, controls and independent checks
 
+The reference tree uses the candidate's installed dependencies. Before artifact
+comparison, the gate compares both `composer.lock` documents through PHP's native
+JSON decoder. Only the top-level `content-hash`, which tracks root
+`composer.json` freshness, is excluded. Object member order is insignificant;
+all other decoded values, scalar types, object/list distinctions and list order
+must match. Malformed JSON and non-object lock documents are refused. This
+compares decoded lock facts, not installed vendor contents or lock-file bytes.
+
 `composer check:gate` runs the end-to-end captures and both self-tests.
 Its **Gate captures and witnesses (composer check:gate)** CI context runs on
 every pull request and on pushes to `main`. Locally it is required when
@@ -615,6 +623,17 @@ at declared scopes and rejects everything else. Tolerations must be exercised;
 idle tolerations fail. Corpus controls require exact full scopes, preventing
 a `text` expectation from absorbing `text-verbose` or another case.
 Green controls are held to all declaration counts, not just exit 0.
+
+The config-precedence, threshold-raising and directive-placement controls
+require their finding counts, records and unchanged report surfaces. They do
+not require equality of the whole `directives` surface: its project-scope
+metadata has a declared transition. Directive record values still have exact
+semantic expectations; the ordinary gate judges the declared metadata diff.
+
+The failed-derivation control requires an invalid captured publication and
+hashes the declaration index and directory before and after the run. Complete
+expressible measurements may still be written when other semantic residuals
+remain; that is the derivation policy, rather than a failed no-write check.
 
 The `ranking-input-order` control requires an order mismatch on JSON findings.
 It does not require one on the `scoped-layers` baseline source: that

@@ -494,6 +494,26 @@ final class BaselineUpdaterTest extends TestCase
     }
 
     #[Test]
+    public function itRemovesOnlyTheGroupProvenGoneByTheNewExclusion(): void
+    {
+        $excluded = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 40, 'duplication.clone', 'duplication.clone');
+        $survivor = FindingFactory::magnitude(SymbolPath::forMethod('App', 'New', 'bar'), 20);
+        $excludedEntry = new BaselineEntry(BaselineIdentity::forFinding($excluded), [40], 1);
+        $survivorEntry = new BaselineEntry(BaselineIdentity::forFinding($survivor), [30], 1);
+        $baseline = new Baseline(new DateTimeImmutable(), ['src'], [$excludedEntry, $survivorEntry], self::fixtureExclusions());
+        $coverage = $this->coverageWithExclusions($baseline, ['exact:src/Foo.php']);
+
+        $result = $this->updater()->recordExclusions($baseline, [$survivor], $coverage, []);
+
+        self::assertNull($result->writeRefusal);
+        self::assertTrue($result->changed);
+        self::assertCount(1, $result->baseline->entries);
+        self::assertSame($survivorEntry->identity->key(), $result->baseline->entries[0]->identity->key());
+        self::assertSame($excludedEntry->identity->key(), $result->outcomes[0]->identity->key());
+        self::assertSame('exclusions-removed-population', $result->outcomes[0]->reasonCode);
+    }
+
+    #[Test]
     public function itRefusesTheWholeExclusionRecordWhenItsProofIsUnavailable(): void
     {
         $finding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 100, 'duplication.clone', 'duplication.clone');
@@ -538,8 +558,13 @@ final class BaselineUpdaterTest extends TestCase
             {
                 return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
             }
+
+            public function hasDirectory(AbsolutePath $directory): \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence
+            {
+                return \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Present;
+            }
         };
-        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage($current->scope, $current->analysis, new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions($patterns, $includeGenerated ? \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include : \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude), $current->universe, $current->psr4Roots, $tree);
+        return new \Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage($current->scope, $current->analysis, new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions($patterns, $includeGenerated ? \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include : \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude), $current->universe, $current->psr4Roots, $tree, $current->subjectCoverage);
     }
 
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Finding> $measured */

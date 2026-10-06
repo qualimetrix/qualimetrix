@@ -11,7 +11,22 @@ use Qualimetrix\Core\Path\AbsolutePath;
 
 final class CacheDirectoryEligibility
 {
-    public static function unusableReason(AbsolutePath $directory): ?string
+    public static function unusableMessage(AbsolutePath $directory): ?string
+    {
+        $reason = self::unusableReason($directory);
+        if ($reason === null) {
+            return null;
+        }
+
+        return \sprintf(
+            'Cache directory "%s" is not writable or cannot be created: %s Point cache.dir (or --cache-dir)'
+            . ' at a writable path, or disable the cache with --no-cache.',
+            $directory->value(),
+            $reason,
+        );
+    }
+
+    private static function unusableReason(AbsolutePath $directory): ?string
     {
         $nearest = self::nearestExistingComponent($directory->value());
         if ($nearest === null) {
