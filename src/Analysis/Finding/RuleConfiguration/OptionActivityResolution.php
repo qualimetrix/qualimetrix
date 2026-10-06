@@ -57,7 +57,7 @@ final class OptionActivityResolution
         }
         $text = \is_bool($value) ? ($value ? 'true' : 'false') : $value;
         return $writer->path === null
-            ? ($writer->origin->locator() ?? '--rule-opt') . '=' . $text
+            ? ($writer->origin->authoredExpression() ?? (($writer->origin->locator() ?? '--rule-opt') . '=' . $text))
             : $writer->displayPath() . ': ' . $text;
     }
 }

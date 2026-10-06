@@ -52,14 +52,14 @@ final class CliOptionsParserTest extends TestCase
         ]);
         foreach ([
             'nosuch.rule' => 'Rule option owner "nosuch.rule" does not match any registered producer rule.',
-            'COMPLEXITY.CCN' => 'Rule option owner "COMPLEXITY.CCN" does not match any registered producer rule.',
+            'COMPLEXITY.CCN' => 'Rule option owner "COMPLEXITY.CCN" does not match any registered producer rule. Did you mean "complexity.ccn"?',
             'design.lcom' => 'Rule option owner "design.lcom" does not match any registered producer rule. Did you mean "cohesion.lcom"?',
         ] as $owner => $summary) {
             try {
                 $parser->pathWrites(new ArrayInput(['--rule-opt' => [$owner . ':enabled=false']], $definition));
                 self::fail('An unregistered owner was accepted.');
             } catch (ConfigurationRefusal $error) {
-                self::assertSame($summary, $error->summary());
+                self::assertSame($summary . ' Written: --rule-opt=' . $owner . ':enabled=false.', $error->summary());
                 self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::CommandLine, $error->sources()[0]->source());
                 self::assertSame('--rule-opt', $error->sources()[0]->locator());
                 self::assertNull($error->position());
@@ -155,6 +155,7 @@ final class CliOptionsParserTest extends TestCase
             ['rules', 'complexity.ccn', 'suppress-namespaces'],
             'unknown:App',
             '--rule-opt',
+            '--rule-opt=complexity.ccn:suppress-namespaces=unknown:App',
             $surface->schemaAt(new \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress(null, 'suppress-namespaces')),
             [['unknown' => 'App']],
         );
@@ -163,6 +164,7 @@ final class CliOptionsParserTest extends TestCase
             self::fail('The invalid CLI selector was accepted.');
         } catch (ConfigurationRefusal $error) {
             self::assertSame('Option "suppress_namespaces.0" for rule "complexity.ccn" Unknown selector kind "unknown"; expected exact, subtree, or regex.', $error->summary());
+            self::assertSame('--rule-opt=complexity.ccn:suppress-namespaces=unknown:App', $error->sources()[0]->authoredExpression());
             self::assertSame(\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource::CommandLine, $error->sources()[0]->source());
             self::assertSame('--rule-opt', $error->sources()[0]->locator());
             self::assertNull($error->position());
@@ -231,7 +233,7 @@ final class CliOptionsParserTest extends TestCase
             CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: $writes));
             self::fail('Overlapping rule option writes must be refused.');
         } catch (ConfigurationRefusal $refusal) {
-            self::assertSame('Options --mi-warning and --rule-opt both write overlapping rule option paths.', $refusal->summary());
+            self::assertSame('Options --mi-warning=30 and --rule-opt=maintainability.mi:warning=50 both write overlapping rule option paths.', $refusal->summary());
         }
     }
 

@@ -44,7 +44,7 @@ final readonly class CliOptionsParser
         $optionName = $record['optionName'];
         if ($optionName === '--rule-opt') {
             $parsed = $this->ruleOptionsParser->parseAuthoredRuleOption($record['text']);
-            return $addressing->pathWrite($parsed['rule'], $parsed['option'], $parsed['text'], $optionName);
+            return $addressing->pathWrite($parsed['rule'], $parsed['option'], $parsed['text'], $optionName, '--rule-opt=' . $record['text']);
         }
 
         $alias = substr($optionName, 2);
@@ -67,6 +67,6 @@ final readonly class CliOptionsParser
             );
         }
 
-        return $addressing->pathWrite($target['rule'], $target['option'], $record['text'], $optionName);
+        return $addressing->pathWrite($target['rule'], $target['option'], $record['text'], $optionName, $optionName . '=' . $record['text']);
     }
 }

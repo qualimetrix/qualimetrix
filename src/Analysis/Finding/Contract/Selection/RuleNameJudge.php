@@ -85,6 +85,11 @@ final readonly class RuleNameJudge
 
     private function closestTo(string $written): ?string
     {
+        foreach ($this->producers as $producer) {
+            if (strcasecmp($written, $producer) === 0) {
+                return $producer;
+            }
+        }
         $dot = strrpos($written, '.');
         $sameLeaf = $dot === false ? [] : array_values(array_filter($this->producers, static fn(string $name): bool => str_ends_with($name, substr($written, $dot))));
         if (\count($sameLeaf) === 1) {

@@ -1150,6 +1150,11 @@ search there. Assets and special entries are not inferred missing PHP. The
 whole root can establish completeness without usable declared autoload code;
 an arbitrary subset cannot.
 
+An `omitted-composer-root` reason retains `cause` and `visitedLevels`. Its
+`candidate`, `startDirectory` and `lastDirectory` fields appear only for paths
+inside the project, relative to its root. An absent main manifest contributes
+no omitted-root reason.
+
 | Format                                      | Project scope representation                                    |
 | ------------------------------------------- | --------------------------------------------------------------- |
 | `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document               |

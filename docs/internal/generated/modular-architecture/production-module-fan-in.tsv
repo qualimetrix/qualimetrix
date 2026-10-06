@@ -25,9 +25,9 @@ Qualimetrix\Analysis\Configuration\Contract\Document\Schema\TextRequirement	Anal
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite	Analysis.Configuration	2	1
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	5	4
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	48	7
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	4	3
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	6	4
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	49	7
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	5	3
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	8	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	10	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
@@ -265,7 +265,7 @@ Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestFacts	Analysis.Pro
 Qualimetrix\Analysis\ProjectManifest\Contract\ComposerManifestReaderInterface	Analysis.ProjectManifest	10	6
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssue	Analysis.ProjectManifest	2	2
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestIssueKind	Analysis.ProjectManifest	2	1
-Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	3	2
+Qualimetrix\Analysis\ProjectManifest\Contract\ManifestReadState	Analysis.ProjectManifest	4	3
 Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface	Analysis.ProjectManifest	4	3
 Qualimetrix\Analysis\Run\Configuration\ProjectScopeCoverage	Analysis.Run	2	1
 Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface	Analysis.Run	3	2
@@ -278,6 +278,7 @@ Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface	A
 Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface	Analysis.Run	3	2
 Qualimetrix\Analysis\Run\Contract\Configuration\AuthoredExclude	Analysis.Run	1	1
 Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy	Analysis.Run	2	1
+Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship	Analysis.Run	4	1
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReason	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind	Analysis.Run	1	1
@@ -315,7 +316,7 @@ Qualimetrix\Core\FileTarget\ResolvedTarget	Core.FileTarget	9	2
 Qualimetrix\Core\FileTarget\TargetKind	Core.FileTarget	7	2
 Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	6	3
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
-Qualimetrix\Core\Path\AbsolutePath	Core.Path	81	14
+Qualimetrix\Core\Path\AbsolutePath	Core.Path	83	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	18	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	99	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4

@@ -207,7 +207,13 @@ final class CheckCommand extends Command
         $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration);
         $scopeResolution = $resolvedScope->scope;
 
-        (new AnalysisInputPathValidator())->validate($scopeResolution->paths, $document);
+        (new AnalysisInputPathValidator())->validate(
+            $scopeResolution->paths,
+            $document,
+            $runConfiguration->projectScope->universe->pathsAuthored
+                ? \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored
+                : \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred,
+        );
 
         $projectRoot = $runConfiguration->projectRoot;
         foreach ($resolvedScope->warnings as $warning) {

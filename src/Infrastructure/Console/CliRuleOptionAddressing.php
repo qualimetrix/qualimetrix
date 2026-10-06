@@ -47,16 +47,16 @@ final readonly class CliRuleOptionAddressing
         return $address === null ? null : $surface->schemaAt($address)->scalar->forms !== [ScalarForm::Boolean];
     }
 
-    public function pathWrite(string $rule, string $option, string $text, string $optionName): CommandLinePathWrite
+    public function pathWrite(string $rule, string $option, string $text, string $optionName, string $authoredExpression): CommandLinePathWrite
     {
         $problem = $this->ruleNames->judge($rule);
         if ($problem !== null) {
-            throw ConfigurationRefusal::aboutCommandLineInput($optionName, $problem->summary);
+            throw ConfigurationRefusal::aboutCommandLineInput($optionName, $problem->summary . ' Written: ' . $authoredExpression . '.');
         }
         $surface = $this->parser->surfaceFor($rule)
             ?? throw new LogicException('An admitted producer must supply its option schema.');
         $address = $surface->locate($option)
-            ?? throw ConfigurationRefusal::aboutCommandLineInput($optionName, self::unknownOption($surface, $rule, $option));
+            ?? throw ConfigurationRefusal::aboutCommandLineInput($optionName, self::unknownOption($surface, $rule, $option) . ' Written: ' . $authoredExpression . '.');
 
         $path = ['rules', $rule];
         if ($address->level !== null) {
@@ -64,7 +64,12 @@ final readonly class CliRuleOptionAddressing
         }
         $path[] = $address->key;
 
-        return new CommandLinePathWrite($path, $text, $optionName, $surface->schemaAt($address), $this->selectorPayload($address, $text, $optionName));
+        try {
+            $selectorPayload = $this->selectorPayload($address, $text, $optionName);
+        } catch (ConfigurationRefusal $refusal) {
+            throw ConfigurationRefusal::aboutCommandLineInput($optionName, $refusal->summary() . ' Written: ' . $authoredExpression . '.', $refusal);
+        }
+        return new CommandLinePathWrite($path, $text, $optionName, $authoredExpression, $surface->schemaAt($address), $selectorPayload);
     }
 
     /** @return ?list<array<string, string>> */
@@ -84,8 +89,22 @@ final readonly class CliRuleOptionAddressing
     {
         $parts = explode('.', $option, 2);
         $level = \count($parts) === 2 ? $surface->levelNamed($parts[0]) : null;
-        return $level === null
+        if ($level === null && \count($parts) === 2) {
+            foreach ($surface->levels() as $declared) {
+                if (ConfigKeySpelling::sameWords($parts[0], $declared)) {
+                    return \sprintf('Level "%s" of rule "%s" is not a declared spelling. Write "%s".', $parts[0], $rule, $declared);
+                }
+            }
+        }
+        $wording = $level === null
             ? RuleOptionRefusalWording::notAnOptionOfRule($option, $rule, $surface->writableAt(null))
             : RuleOptionRefusalWording::notAnOptionAtLevel($parts[1], $rule, $level, $surface->writableAt($level));
+        $written = $level === null ? $option : $parts[1];
+        foreach ($surface->writableAt($level) as $canonical) {
+            if (ConfigKeySpelling::sameWords($written, $canonical)) {
+                return $wording . \sprintf(' Write "%s".', $canonical);
+            }
+        }
+        return $wording;
     }
 }

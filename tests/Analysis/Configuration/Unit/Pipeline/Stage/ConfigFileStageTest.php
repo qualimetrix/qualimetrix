@@ -21,6 +21,53 @@ use Qualimetrix\Core\Path\AbsolutePath;
 #[CoversClass(ConfigFileStage::class)]
 final class ConfigFileStageTest extends TestCase
 {
+    #[Test]
+    public function itAttributesTheExactNameCollisionToBothFiles(): void
+    {
+        touch($this->directory . '/qmx.yaml');
+        touch($this->directory . '/qmx.yml');
+        try {
+            (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory)));
+            self::fail('Both exact names must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame([$this->directory . '/qmx.yaml', $this->directory . '/qmx.yml'], array_map(static fn($origin): ?string => $origin->locator(), $refusal->sources()));
+            self::assertSame([ConfigurationSource::ConfigFile, ConfigurationSource::ConfigFile], array_map(static fn($origin): ConfigurationSource => $origin->source(), $refusal->sources()));
+            self::assertNull($refusal->position());
+        }
+    }
+
+    #[Test]
+    public function itDoesNotWarnAboutTheNearNameConsumedAsACustomPreset(): void
+    {
+        touch($this->directory . '/qmx-ci.yaml');
+        $layer = (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(
+            AbsolutePath::fromString($this->directory),
+            presetNames: ['./qmx-ci.yaml'],
+        ));
+        self::assertTrue($layer === null || $layer->diagnostics === []);
+    }
+
+    #[Test]
+    public function itStillWarnsForANearNameWhenThePresetIsElsewhere(): void
+    {
+        touch($this->directory . '/qmx-ci.yaml');
+        $other = sys_get_temp_dir() . '/qmx-other-preset-' . bin2hex(random_bytes(6));
+        mkdir($other);
+        touch($other . '/qmx-ci.yaml');
+        try {
+            $layer = (new ConfigFileStage($this->loader))->apply(new ConfigurationResolutionRequest(
+                AbsolutePath::fromString($this->directory),
+                presetNames: [$other . '/qmx-ci.yaml'],
+            ));
+            self::assertNotNull($layer);
+            self::assertCount(1, $layer->diagnostics);
+            self::assertSame('qmx-ci.yaml', $layer->diagnostics[0]->sources[0]->origin->locator());
+        } finally {
+            unlink($other . '/qmx-ci.yaml');
+            rmdir($other);
+        }
+    }
+
     private string $directory;
     private ConfigLoaderInterface&MockObject $loader;
 
@@ -145,11 +192,16 @@ final class ConfigFileStageTest extends TestCase
     public function itRefusesAnUnlistableAutoDiscoveryDirectory(): void
     {
         $this->loader->expects(self::never())->method('read');
-        $this->expectException(ConfigurationRefusal::class);
-
-        (new ConfigFileStage($this->loader))->apply(
-            new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory . '/missing')),
-        );
+        try {
+            (new ConfigFileStage($this->loader))->apply(
+                new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory . '/missing')),
+            );
+            self::fail('The missing directory must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString($this->directory . '/missing', $refusal->summary());
+            self::assertNotSame(ConfigurationSource::ConfigFile, $refusal->sources()[0]->source());
+            self::assertNotSame('.', $refusal->sources()[0]->locator());
+        }
     }
 
     #[Test]

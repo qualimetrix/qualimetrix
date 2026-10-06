@@ -80,7 +80,13 @@ final readonly class BaselineRun implements BaselineRunInterface
             $output,
         );
         $this->configurationInputAdapter->writeDiagnostics($document, $output, $findingConfiguration->diagnostics);
-        (new AnalysisInputPathValidator())->validate($configuration->paths, $document);
+        (new AnalysisInputPathValidator())->validate(
+            $configuration->paths,
+            $document,
+            $configuration->projectScope->universe->pathsAuthored
+                ? \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Authored
+                : \Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship::Inferred,
+        );
 
         if ($input->hasOption('accept-new')) {
             foreach (CommandLineSpelling::options($input, 'accept-new') as $code) {

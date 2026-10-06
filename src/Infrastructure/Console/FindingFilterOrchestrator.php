@@ -172,8 +172,8 @@ final readonly class FindingFilterOrchestrator
         $valueScope = $this->valueScope($result, $resolvedScope);
         $measurement = $result->measured->projectScope ?? throw new LogicException('A pipeline result requires measured project scope');
         $judgement = $measurement->judgement();
-        $source = $this->composerReader->read($measurement->universe->projectRoot)->source();
-        $reasons = $this->observedProjectScopeReasons->forMainSource($source);
+        $facts = $this->composerReader->read($measurement->universe->projectRoot);
+        $reasons = $this->observedProjectScopeReasons->forMainSource($facts->source(), $facts->state, $measurement->universe->projectRoot);
         $namespaces = $result->measured->namespaceTree?->getAllNamespaces();
         $unjudged = $this->unboundSuppressionAudit->unjudgedValues(
             $options->suppressPaths,

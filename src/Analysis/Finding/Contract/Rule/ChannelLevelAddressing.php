@@ -278,6 +278,12 @@ final readonly class ChannelLevelAddressing
         $level = ChannelLevelSelector::levelHalf($raw);
 
         if ($level === null) {
+            $writtenLevel = ChannelLevelSelector::levelHalfText($raw);
+            foreach (self::levelWords() as $declared) {
+                if ($writtenLevel !== null && strcasecmp($writtenLevel, $declared) === 0) {
+                    return ChannelLevelRefusalWording::misCasedLevel($subject, $raw, $writtenLevel, $declared);
+                }
+            }
             return ChannelLevelRefusalWording::noLevelAfterSeparator($subject, $raw, self::levelWords());
         }
 

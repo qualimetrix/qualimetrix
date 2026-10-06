@@ -13,7 +13,10 @@ warned about and not loaded when neither exact name exists. An exact file
 beside a near name is loaded without that warning. `--config` selects its named
 file explicitly, independently of automatic discovery.
 
-If the working directory cannot be listed, discovery refuses with exit 3.
+A near-name warning is suppressed only when that same physical file was already
+selected as a custom preset; the same basename elsewhere does not suppress it.
+The two-file refusal identifies both files. If the working directory cannot be
+listed, discovery refuses with exit 3 and names the directory.
 
 Every command that reads the document judges all its context-free values,
 even when it consumes only some sections. The command's CLI profile does not
@@ -1505,7 +1508,18 @@ Configuration error: Key "Fail_On" in configuration file "qmx.yaml" is not writt
 Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 ```
 
+The same spelling rule applies to rule-option keys and level segments in
+`--rule-opt`. A wrong-case rule owner suggests the exact registered name. CLI
+refusals include the complete authored flag/value expression alongside the
+option source.
+
 ### Type errors
+
+Symfony YAML reads unquoted `+2` and `2.0` as floats. Integer options refuse
+both in the file, `--rule-opt` and dedicated aliases, name the parsed float and
+explain that an integer should be written as `2`. File refusals name the path;
+CLI refusals also retain the complete authored expression. Quoted `"+2"` stays
+a string. Exponent notation and overflow remain refused by integer options.
 
 If a value has the wrong type, you'll get a clear message instead of silent fallback to defaults:
 

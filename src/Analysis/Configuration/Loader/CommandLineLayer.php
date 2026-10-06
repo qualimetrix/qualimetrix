@@ -34,21 +34,21 @@ final class CommandLineLayer
 
         $seen = [];
         foreach ($request->cliPathWrites as $write) {
-            foreach ($seen as [$path, $optionName]) {
+            foreach ($seen as [$path, $expression]) {
                 if (self::prefix($path, $write->path) || self::prefix($write->path, $path)) {
                     throw ConfigurationRefusal::aboutCommandLineInput(
                         $write->optionName,
-                        \sprintf('Options %s and %s both write overlapping rule option paths.', $optionName, $write->optionName),
+                        \sprintf('Options %s and %s both write overlapping rule option paths.', $expression, $write->authoredExpression),
                     );
                 }
             }
-            $seen[] = [$write->path, $write->optionName];
+            $seen[] = [$write->path, $write->authoredExpression];
             $tree = self::placed(
                 $tree,
                 $write->path,
                 $write->selectorValue === null
-                    ? CommandLineValue::read($write->text, $write->target, $write->optionName, $write->path)
-                    : CommandLineValue::selector($write->selectorValue, $write->target, $write->optionName, $write->path),
+                    ? CommandLineValue::read($write->text, $write->target, $write->optionName, $write->path, $write->authoredExpression)
+                    : CommandLineValue::selector($write->selectorValue, $write->target, $write->optionName, $write->path, $write->authoredExpression),
             );
         }
 

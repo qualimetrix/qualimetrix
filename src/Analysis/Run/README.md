@@ -47,6 +47,10 @@ writing layer must supply a non-empty list of non-empty strings, including a
 layer overridden by CLI paths. Existence and canonical input boundaries depend on the final run and are judged
 after merging. Authored exclusions are measured during discovery, including when
 they remove a written root.
+`Contract\Configuration\PathsAuthorship` distinguishes authored paths from
+Composer-inferred defaults. Console input validation consumes that observation
+so a missing inferred target names its Composer source; no path provenance is
+reconstructed from the selected file spelling.
 
 `AnalysisResult::fromRun()` composes Run's `MeasuredRunResult`, Inline's
 `DirectiveObservations`, nullable rule execution and a separate late-published

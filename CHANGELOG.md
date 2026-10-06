@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- CLI rule-option keys and level segments now accept only the declared snake,
+  camel and kebab spellings, matching YAML. Replace previously folded wrong-case
+  segments with the spelling named by the refusal. `CommandLinePathWrite`
+  construction requires the complete authored flag/value expression after the
+  option name; carry the original text rather than a reconstructed statement.
+  Published `omitted-composer-root` paths are now project-relative and absent
+  outside the project; an absent main manifest adds no such reason. Consumers
+  must treat those path fields as optional relative paths.
+
 - Duplication merges balanced segments with identical normalized content into
   one copy group before coverage reduction. Previously split groups could reuse
   one occurrence key; affected baseline keys can become stale while copies gain
@@ -1011,6 +1020,11 @@ What changes for a configuration you already have:
   none. A consumer comparing the key set exactly must accept it.
 
 ### Changed
+
+- Integer option refusals now explain the parsed float value: Symfony YAML reads
+  `+2` and `2.0` as floats, so write `2` for an integer. The file, dedicated
+  alias and `--rule-opt` doors share that explanation; CLI refusals retain the
+  complete authored expression. Integer admission itself is unchanged.
 
 - Inert baseline contenders for one duplicate identity produce one
   `baseline.unused-entry` finding with their count. Removing their shared

@@ -1144,6 +1144,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Configuration\\FrameworkNamespaceSelectorParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
         }
       ]
     },
@@ -1344,6 +1348,10 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Configuration\\FrameworkNamespaceSelectorParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
         }
       ]
     },
@@ -1368,6 +1376,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\RunPathSelection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
         }
       ]
     },
@@ -14227,6 +14239,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Configuration\\ManifestScopeEvidence"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
         }
       ]
     },
@@ -14543,8 +14559,25 @@
       "path": "src/Analysis/Run/Contract/Configuration/PathsAuthorship.php",
       "kind": "enum",
       "owner": "Analysis.Run",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisPreflight"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand"
+        }
+      ]
     },
     "Qualimetrix\\Analysis\\Run\\Contract\\Configuration\\ProjectScopeMeasurement": {
       "path": "src/Analysis/Run/Contract/Configuration/ProjectScopeMeasurement.php",
@@ -15976,6 +16009,14 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryComparability"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ObservedProjectScopeReasons"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
         }
       ]
     },

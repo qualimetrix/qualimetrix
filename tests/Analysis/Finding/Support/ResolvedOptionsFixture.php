@@ -266,6 +266,7 @@ final class ResolvedOptionsFixture
                         $path,
                         \is_array($value) ? '' : (string) json_encode($value, \JSON_THROW_ON_ERROR),
                         '--rule-opt',
+                        '--rule-opt=' . $producer->name . ':' . $option . '=' . (\is_array($value) ? '[selector]' : (string) json_encode($value, \JSON_THROW_ON_ERROR)),
                         $surface->schemaAt($address),
                         \is_array($value) ? $value : null,
                     );

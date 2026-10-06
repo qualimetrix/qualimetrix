@@ -18,6 +18,43 @@ final class PresetResolver
     /** @var list<string> */
     private const array BUILT_IN_PRESETS = ['ci', 'legacy', 'strict'];
 
+    /** @param list<string> $values
+     * @return list<string>
+     */
+    public static function names(array $values): array
+    {
+        $names = [];
+        foreach ($values as $value) {
+            foreach (explode(',', $value) as $part) {
+                $name = trim($part);
+                if ($name === '') {
+                    throw ConfigurationRefusal::aboutCommandLineInput(
+                        '--preset',
+                        \sprintf('Option --preset was written with an empty preset name ("--preset=%s"). Name a preset between every pair of commas, or omit --preset entirely.', $value),
+                    );
+                }
+                $names[] = $name;
+            }
+        }
+        return array_values(array_unique($names));
+    }
+
+    /** @param list<string> $values
+     * @return list<string>
+     */
+    public static function selectedPhysicalPaths(array $values, string $workingDirectory): array
+    {
+        $resolver = new self();
+        $paths = [];
+        foreach (self::names($values) as $name) {
+            $path = $resolver->resolve($name, $workingDirectory);
+            $physical = realpath($path);
+            $paths[] = $physical === false ? $path : $physical;
+        }
+
+        return array_values(array_unique($paths));
+    }
+
     /**
      * Resolves a preset name or path to an absolute file path.
      *

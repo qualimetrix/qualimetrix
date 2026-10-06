@@ -116,7 +116,7 @@ final class AuthoredSelection
     private static function written(Provenance $provenance, string $fallback, string $path, string $value): string
     {
         return $provenance->path === null
-            ? ($provenance->origin->locator() ?? $fallback) . '=' . $value
+            ? ($provenance->origin->authoredExpression() ?? (($provenance->origin->locator() ?? $fallback) . '=' . $value))
             : $path . ': ' . $value;
     }
 

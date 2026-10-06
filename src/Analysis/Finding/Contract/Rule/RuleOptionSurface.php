@@ -95,10 +95,8 @@ final readonly class RuleOptionSurface
      */
     public function levelNamed(string $writtenKey): ?string
     {
-        $normalized = ConfigKeySpelling::normalize($writtenKey);
-
         foreach ($this->levelOptionsClasses as $slot => $_) {
-            if (ConfigKeySpelling::normalize((string) $slot) === $normalized) {
+            if (\in_array($writtenKey, ConfigKeySpelling::acceptedSpellings((string) $slot), true)) {
                 return (string) $slot;
             }
         }
@@ -271,6 +269,10 @@ final readonly class RuleOptionSurface
         $spelling = $keySet?->spellingOf(ConfigKeySpelling::normalize($key));
         if ($spelling === null && $level === null) {
             $spelling = FrameworkOptionKeys::declared()->spellingOf(ConfigKeySpelling::normalize($key));
+        }
+
+        if ($spelling !== null && !\in_array($key, ConfigKeySpelling::acceptedSpellings($spelling), true)) {
+            return null;
         }
 
         return $spelling === null ? null : new RuleOptionAddress($level, $spelling);

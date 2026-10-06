@@ -1973,7 +1973,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineLayerTest::itPlacesIndependentRuleWritesAtTheirCanonicalPaths
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineLayerTest::itRefusesRepeatedAndPrefixOverlapsBeforeMerge
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itAdmitsQuotedCommaAsOneBareElementOnlyWhereTheSchemaAllowsIt
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itExplainsWhyAnAuthoredPositiveDecimalIsNotAnInteger
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itJudgesNumbersAndQuotedScalarsAgainstTheDeclaredForm
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itKeepsTheAuthoredExpressionWhenYamlScalarSyntaxIsMalformed
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itParsesBooleanIntegerFloatAndStringThroughTheirDeclaredForms
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itReadsOnlyFlowListsAndPreservesQuotedCommas
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\CommandLineValueTest::itRefusesNullAndMappingsAtTheCliDoor
@@ -2087,6 +2089,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itKeepsTheProductionAndDevelopmentTargetsApart
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itPublishesDiscoveredPathsFromTheInvocationDirectory
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ComposerDiscoveryStageTest::itReturnsNullWhenComposerDeclaresNoAutoloadTargets
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itAttributesTheExactNameCollisionToBothFiles
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itDoesNotWarnAboutTheNearNameConsumedAsACustomPreset
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHandsTheAutoDetectedDocumentToItsDeclaredOwners
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHandsTheOriginalWrittenValueToTheEngineForJudgement
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itHasConfigFileSourceIdentity
@@ -2102,6 +2106,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"prefix variant"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReportsANearConfigNameWithoutLoadingIt"suffix variant"
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itReturnsNullWhenNoConfigFileExists
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itStillWarnsForANearNameWhenThePresetIsElsewhere
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\ConfigFileStageTest::itUsesTheExplicitConfigPathInsteadOfAutoDetection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\DefaultsStageTest::itContributesOnlySourceProvenanceBecauseDefaultsAreOwnerLocal
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage\PresetStageTest::itHasPresetSourceIdentity
@@ -4685,6 +4690,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsEveryCopyOfABlockUnderTheDefaultMemoryLimit"99 copies"
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Functional\DuplicationMemoryLimitProcessTest::itReportsRunsOfARepeatedStatementUnderALowMemoryLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itDoesNotAdmitABlockWhenOnlyACommentReachesMinLines
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itGivesEveryDetectorCopyAUniqueIdentityForSplitSameContentEvidence
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itGivesTheUntouchedCopiesNewFindingsWhenAPartialCopyAddsABlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenAnExactCopyIsAdded
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicateCopyIdentityTest::itKeepsTheBlockAndEveryCopysIdentityWhenCodeOutsideTheMatchIsAdded
@@ -4729,6 +4735,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itRetainsDistantFirstAndAllSubsequentDuplicateOccurrences
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationDetectorTest::itUsesEachCopysOriginalByteRangeForItsHint
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itDetectsCp1251HtmlWithAStableHexContentHash
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itDoesNotAdmitTrailingHtmlNewlineAsAnotherCoveredCodeLine
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itMatchesEqualHtmlButExcludesADifferentMarkupCopy
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Integration\DuplicationNormalizationTest::itMatchesKeywordCastAndMagicConstantCaseThroughTheDetector
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itClassifiesALargeDuplicateAsAnError
@@ -4753,6 +4760,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRefusesRetiredWarningAndThresholdConfigurationKeysAtTheirAuthoredAddresses
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyBelowTheErrorBoundaryAsAWarning
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsACopyShorterThanMinLinesAtItsOwnValue
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReportsEveryCopyWithUniqueIdentityAfterRealFinderEvidence
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itRequiresPositiveAuthoredMinimumsAndErrorBoundary
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itReusesFileSubjectsWithinOneInvocationWithoutSharingCopyOccurrences
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::itUsesEachCopysCoveredCodeLinesAndHintInItsFinding
@@ -4794,6 +4802,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itLeavesAWindowThatContinuesAnEarlierMatchToThatMatch
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsEveryCopyInALargeBucketAsOneBlock
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itReportsTwoCopiesAsOneBlock
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itUnitesSplitEvidenceForTheSameNormalizedContent
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAMatchWhoseCopiesAllLieInsideALongerOne
@@ -6228,6 +6237,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itAcceptsAPairInsideASetWhenOneMemberReportsAtTheLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itJudgesLevelFreeTextAgainstTheSetAsWell
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itKeepsTheSubjectLessWordingOfEveryRefusalUnchanged
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itNamesTheMisCasedLevelAndKeepsTheCallersSubject
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itQuantifiesCoverageOverEveryChannelOfTheProducer
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itRefusesAPairInsideASetWhoseOnlyMemberDoesNotReportAtTheLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelLevelAddressingTest::itRefusesARulePairByLevelThenByRuleAndOnlyThenAdvises
@@ -6273,7 +6283,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itActivatesAWrittenBandOnANormallyMutedClass
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itDefersConstructionAndReplacesEveryMaterializedObjectWithTheInvocationSnapshot
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsFallingDefaultsEqualityAndSeverityBoundaries
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsFullCliStatementsInSelectionAndActivity
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsTheFullCliExpressionForAMutedMode
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsTheRootOffSwitchAboveAuthoredMutedLevelBands
+ - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itKeepsTheWrittenFilterExpressionInsteadOfRebuildingItsList
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesAnUnwrittenBandHalfAsTheOwningDefault"error below the owning warning default"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesAnUnwrittenBandHalfAsTheOwningDefault"warning above the owning error default"
  - Qualimetrix\Tests\Analysis\Finding\Unit\Contract\Configuration\RuleOptionsBuildTest::itNamesBothWinningLayersAndAddressesTheHigherWriter"expanded shorthand retains its authored path"
@@ -6740,6 +6753,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAddsTheFrameworkKeysAtTheRulesOwnDepthAndNeverInsideASlot
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itAnswersToASlotNameUnderAnySpelling
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itCountsASlotNameAmongTheKeysWritableAtTheRulesOwnDepth
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itDoesNotFoldWrongCaseIntoAnAcceptedKeyOrLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itHasNoLevelsForARuleThatIsNotHierarchical
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itKeepsTheAuthoredSuppressionSpellingsInStepWithTheOwner
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionSurfaceTest::itLocatesABareTargetAtTheRulesOwnDepth
@@ -8340,6 +8354,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesADisabledFileCopyAsNotMeasured
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itDoesNotListAnEntryThatIsStillMeasuredAndDeclared
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itKeepsAValidAndInertEntryWithTheSameSelectorAmbiguous
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itKeepsDifferentInertReasonsWithTheSameSelectorAmbiguous
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itLeavesUndeclaredLevelsToTheLoaderAndIgnoresAnUnknownProducer
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAStaleEntryWhoseIdentityDidNotAppearInTheRun
@@ -8351,6 +8367,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNeverRemovesAnythingWhenOnlyListingCandidates
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesEveryInertContenderOfOneDuplicateIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesExactlyTheNamedEntryAndLeavesItsNeighbours
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesOneOfTwoEntriesDifferingOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itReportsASelectorThatNamesNothing
@@ -8577,6 +8594,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ChannelRenameMapTest::itRefusesAMapFileItCannotRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itDeclaresAnEnabledWarningProjectRuleThatEmitsNothingDuringMeasurement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itHonoursTheCommittedAuditSelection
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itReportsOneFindingForAllInertContendersOfADuplicateIdentity
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryBinding\UnusedEntryAuditTest::itReportsOnlyStaleAndInertEntriesWithTheirOwnReasons
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itCanCallADeletedFileSubjectStaleEvenWhenItsProducerReadsTheRun
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntryComparabilityTest::itComparesAnExactAnalyzedPresentFileWithoutComposerOrSnapshot
@@ -9976,6 +9994,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itClassifiesMissingGitReferenceAsInputErrorBeforePayload
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFormatsIncompleteAnalysisAndGivesItExitCodePriority
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itNamesComposerJsonForAMissingInferredAutoloadTarget
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itNamesInferredComposerTargetsThroughPreflightAndBaseline#0
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itNamesInferredComposerTargetsThroughPreflightAndBaseline#1
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsABareNamespaceDrillDownSelector
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAChannelAsRuleOptionOwner
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsARetiredRuleOptionInTheSpellingTheCommandLineUsed
@@ -10330,11 +10351,19 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"flag maxWarning"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itAcceptsEveryCanonicalSpellingThroughBothDoors"flag max_warning"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itAnswersWithAParseableEnvelopeUnderJsonFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itExplainsYamlFloatInterpretationAtEveryIntegerDoor#0
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itExplainsYamlFloatInterpretationAtEveryIntegerDoor#1
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itExplainsYamlFloatInterpretationAtEveryIntegerDoor#2
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itExplainsYamlFloatInterpretationAtEveryIntegerDoor#3
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itExplainsYamlFloatInterpretationAtEveryIntegerDoor#4
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itExplainsYamlFloatInterpretationAtEveryIntegerDoor#5
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itFramesEveryRefusalAsAConfigurationErrorRegardlessOfDoorOrCause
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itKeepsTheFullAuthoredRuleStatementInAnEarlyValueRefusal
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itPrintsTheAuthoredSpellingThroughBothDoors"configuration file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itPrintsTheAuthoredSpellingThroughBothDoors"rule-opt flag"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRefusesAnUnrecognisedLevelKeyWithEachDoorsOwnSource
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRefusesAnUnrecognisedTopLevelKeyWithEachDoorsOwnSource
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRefusesTheMiscalledLevelInsteadOfFoldingItsCase
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRefusesTheSameTypoWithEachDoorsOwnSource
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"configuration file"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleOptionKeyDoorSymmetryTest::itRunsToCompletionWhenTheSameOptionIsSpelledCorrectly"rule-opt flag"
@@ -10782,6 +10811,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itListsOnlyStagesThatDefineTheMeasuredSet
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itPassesTheCapturedRunConfigurationToAnalysisOnce
  - Qualimetrix\Tests\Infrastructure\Console\Unit\MeasuredFindingSetTest::itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ObservedProjectScopeReasonsTest::itDoesNotPublishAnAbsoluteCandidateOutsideTheProject
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ObservedProjectScopeReasonsTest::itOmitsRootSearchReasonsWhenTheManifestIsAbsent
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ObservedProjectScopeReasonsTest::itPublishesOnlyProjectRelativeOmissionLocations
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"quiet"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"silent"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itRefusesAReadOnlyBorrowedStreamWithoutChangingOrClosingIt

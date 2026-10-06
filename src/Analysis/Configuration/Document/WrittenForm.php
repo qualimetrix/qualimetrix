@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Document;
 
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Document\Resolved\ResolvedScalar;
 
@@ -40,7 +41,11 @@ final class WrittenForm
         }
 
         if ($forms !== []) {
-            throw $at->refusal(self::hinted(\sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar)), $schema));
+            $refusal = \sprintf('%s must be %s, got %s.', ucfirst($at->where()), $expected, get_debug_type($node->scalar));
+            if (\is_float($node->scalar) && \in_array(ScalarForm::Integer, $forms, true)) {
+                $refusal .= \sprintf(' Value was read as float (%s). YAML interprets +2 and 2.0 as float; write 2 for an integer.', var_export($node->scalar, true));
+            }
+            throw $at->refusal(self::hinted($refusal, $schema));
         }
 
         ScalarConstraints::judge($schema->scalar, $node->scalar, $at);

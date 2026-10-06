@@ -524,7 +524,10 @@ this object. SARIF (`QMX-RUN-PROJECT-SCOPE`), GitHub (`run.project-scope`), HTML
 and human formats render the scope explanation; `gitlab` and `checkstyle` have
 no diagnostic entry because their consumers treat every entry as a finding.
 Auxiliary install issues explain ancestry limits without changing main-project
-coverage. `coverage.excluded` counts named authored entries separately from
+coverage. An `omitted-composer-root` reason retains `cause` and `visitedLevels`.
+Its `candidate`, `startDirectory` and `lastDirectory` are published only when
+inside the project, relative to its root. An absent main manifest contributes no
+omitted-root reason. `coverage.excluded` counts named authored entries separately from
 `discovered`: analyzed PHP plus generated-excluded PHP plus selected failed
 terminal entries. Named exclusions are outside that sum; failures may name
 directories, links or special entries rather than PHP files. A complete

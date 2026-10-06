@@ -174,6 +174,16 @@ final class RuleOptionSurfaceTest extends TestCase
         self::assertNull($surface->locate('zzNotALevel.threshold'));
     }
 
+    #[Test]
+    public function itDoesNotFoldWrongCaseIntoAnAcceptedKeyOrLevel(): void
+    {
+        $surface = RuleOptionSurface::of(HierarchicalOptionsStub::class);
+        foreach (['Callable.warning', 'callable.Warning', 'class.Max_Warning', 'Enabled', 'Class'] as $written) {
+            self::assertNull($surface->locate($written), $written);
+        }
+        self::assertNull($surface->levelNamed('Callable'));
+    }
+
     /**
      * A dotted target whose first segment names no slot is one key, not a
      * missing level: nothing in the grammar reserves a dot for depth, and

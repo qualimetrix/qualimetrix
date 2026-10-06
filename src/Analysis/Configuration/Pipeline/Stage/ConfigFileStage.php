@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Configuration\Document\AuthoredLayer;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
+use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use UnexpectedValueException;
 
 /**
@@ -85,11 +86,13 @@ final class ConfigFileStage implements ConfigurationStageInterface
             return [$request->configFilePath, []];
         }
 
-        return $this->findConfigFile($request->workingDirectory->value());
+        return $this->findConfigFile($request->workingDirectory->value(), PresetResolver::selectedPhysicalPaths($request->presetNames, $request->workingDirectory->value()));
     }
 
-    /** @return array{?string, list<ConfigurationDiagnostic>} */
-    private function findConfigFile(string $dir): array
+    /** @param list<string> $selectedPresetPaths
+     * @return array{?string, list<ConfigurationDiagnostic>}
+     */
+    private function findConfigFile(string $dir, array $selectedPresetPaths): array
     {
         try {
             $entries = [];
@@ -98,16 +101,20 @@ final class ConfigFileStage implements ConfigurationStageInterface
             }
             sort($entries, \SORT_STRING);
         } catch (UnexpectedValueException) {
-            throw ConfigurationRefusal::aboutConfigFileDocument(
-                '.',
-                'Configuration directory cannot be listed: .',
+            throw ConfigurationRefusal::aboutInput(
+                ConfigurationOrigin::of(ConfigurationSource::Resolved),
+                \sprintf('Configuration directory cannot be listed: %s', $dir),
             );
         }
 
         $exact = array_values(array_intersect($entries, self::CONFIG_FILE_NAMES));
         if (\count($exact) > 1) {
-            throw ConfigurationRefusal::aboutConfigFileDocument(
-                '.',
+            throw ConfigurationRefusal::acrossLayers(
+                [
+                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $dir . '/qmx.yaml'),
+                    ConfigurationOrigin::of(ConfigurationSource::ConfigFile, $dir . '/qmx.yml'),
+                ],
+                null,
                 'Both qmx.yaml and qmx.yml exist; keep exactly one configuration file.',
             );
         }
@@ -119,6 +126,10 @@ final class ConfigFileStage implements ConfigurationStageInterface
         $diagnostics = [];
         foreach ($entries as $entry) {
             if (!self::isNearConfigName($entry)) {
+                continue;
+            }
+            $physical = realpath($dir . '/' . $entry);
+            if ($physical !== false && \in_array($physical, $selectedPresetPaths, true)) {
                 continue;
             }
 

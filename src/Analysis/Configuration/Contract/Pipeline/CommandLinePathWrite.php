@@ -17,6 +17,7 @@ final readonly class CommandLinePathWrite
         public array $path,
         public string $text,
         public string $optionName,
+        public string $authoredExpression,
         public NodeSchema $target,
         public ?array $selectorValue = null,
     ) {}

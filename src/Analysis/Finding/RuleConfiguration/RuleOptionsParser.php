@@ -51,17 +51,21 @@ final readonly class RuleOptionsParser
         $colon = strpos($text, ':');
         $equals = $colon === false ? false : strpos($text, '=', $colon + 1);
         if ($colon === false || $colon === 0 || $equals === false || $equals <= $colon + 1) {
-            throw ConfigurationRefusal::aboutCommandLineInput('--rule-opt', \sprintf('Invalid --rule-opt "%s". Expected RULE:OPTION=VALUE.', $text));
+            throw ConfigurationRefusal::aboutCommandLineInput('--rule-opt', \sprintf('Invalid --rule-opt=%s. Expected RULE:OPTION=VALUE.', $text));
         }
         $rule = substr($text, 0, $colon);
         $authoredOption = substr($text, $colon + 1, $equals - $colon - 1);
-        RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
+        try {
+            RetiredSuppressionOptions::refuseRuleOption([trim($authoredOption) => null]);
+        } catch (ConfigurationRefusal $refusal) {
+            throw ConfigurationRefusal::aboutCommandLineInput('--rule-opt', $refusal->summary() . ' Written: --rule-opt=' . $text . '.', $refusal);
+        }
         $value = substr($text, $equals + 1);
         if (trim($value) === '') {
             throw ConfigurationRefusal::aboutCommandLineInput(
                 '--rule-opt',
                 \sprintf(
-                    'Option "%s" of rule "%s" was written with an empty value ("--rule-opt %s"). '
+                    'Option "%s" of rule "%s" was written with an empty value ("--rule-opt=%s"). '
                     . 'Write a value after "=", or omit this --rule-opt entry entirely to use the option\'s default.',
                     ConfigKeySpelling::normalize($authoredOption),
                     $rule,

@@ -24,6 +24,14 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 #[CoversClass(ChannelLevelAddressing::class)]
 final class ChannelLevelAddressingTest extends TestCase
 {
+    #[Test]
+    public function itNamesTheMisCasedLevelAndKeepsTheCallersSubject(): void
+    {
+        $addressing = $this->addressing();
+        self::assertSame('"coupling.cbo:Namespace" names level "Namespace" with the wrong case. Write "namespace".', $addressing->problemWith('coupling.cbo:Namespace'));
+        self::assertSame('Written selector names level "Namespace" with the wrong case. Write "namespace".', $addressing->problemWith('coupling.cbo:Namespace', 'Written selector'));
+    }
+
     /** @var array<string, list<SymbolLevel>> */
     private const array UNIVERSE = [
         'coupling.cbo' => [SymbolLevel::Class_, SymbolLevel::Namespace_],

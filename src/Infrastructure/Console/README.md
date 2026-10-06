@@ -207,6 +207,13 @@ way PHP folds class names; layer matching itself stays case-sensitive.
 | 3    | Configuration, input or environment refusal             |
 | 4    | Analysis incomplete; policy result is not authoritative |
 
+Missing inferred autoload targets are attributed to `composer.json`, with the
+offending target and a single error prefix. Explicit paths retain their own source. Automatic
+configuration discovery names both files when exact names collide. A near-name
+warning is suppressed only for the same physical file already selected as a
+custom preset; an unrelated file with the same basename still warns. An
+unlistable working directory is a directory failure, not a fictitious file.
+
 Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
 owners are input errors (exit 3); a bare group prefix is refused with the
 `NAME.*` spelling named when that spelling would match. `ConfigurationInputAdapter`
@@ -564,7 +571,8 @@ The configuration input adapter resolves the complete declared document and
 builds the actual invocation channel snapshot. Measurement commands perform
 RuleEnablementResolver decide → RuleOptionsBuild build → conclude before runtime
 publication. Aliases and rule-opt contribute to one authored CLI layer with the
-same YAML value grammar, duplicate-write refusal and actual option locator.
+same YAML value grammar, duplicate-write refusal, actual option locator and
+complete authored flag/value expression.
 `RuleOptionArgv` preserves repeated tokens before Symfony folds scalar options;
 `AuthoredRuleOptionWrites` retains the bound-input fallback.
 `CliRuleOptionAddressing` judges aliases and addresses through the single

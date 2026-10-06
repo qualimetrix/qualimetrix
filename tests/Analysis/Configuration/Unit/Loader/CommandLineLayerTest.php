@@ -22,12 +22,13 @@ final class CommandLineLayerTest extends TestCase
     public function itPlacesIndependentRuleWritesAtTheirCanonicalPaths(): void
     {
         $layer = CommandLineLayer::of($this->request([
-            new CommandLinePathWrite(['rules', 'complexity.ccn', 'warning'], '10', '--ccn-warning', NodeSchema::scalar(ScalarForm::Integer)),
-            new CommandLinePathWrite(['rules', 'complexity.ccn', 'class', 'error'], '20', '--rule-opt', NodeSchema::scalar(ScalarForm::Integer)),
+            new CommandLinePathWrite(['rules', 'complexity.ccn', 'warning'], '10', '--ccn-warning', '--ccn-warning=10', NodeSchema::scalar(ScalarForm::Integer)),
+            new CommandLinePathWrite(['rules', 'complexity.ccn', 'class', 'error'], '20', '--rule-opt', '--rule-opt=complexity.ccn:class.error=20', NodeSchema::scalar(ScalarForm::Integer)),
         ]));
 
         self::assertSame(['rules' => ['complexity.ccn' => ['warning' => 10, 'class' => ['error' => 20]]]], $layer->root->plain());
         self::assertSame('--ccn-warning', $layer->root->children['rules']->children['complexity.ccn']->children['warning']->locator);
+        self::assertSame('--ccn-warning=10', $layer->root->children['rules']->children['complexity.ccn']->children['warning']->authoredExpression);
     }
 
     #[Test]
@@ -37,13 +38,13 @@ final class CommandLineLayerTest extends TestCase
             $first = $second === ['warning'] ? ['warning'] : ['class', 'warning'];
             try {
                 CommandLineLayer::of($this->request([
-                    new CommandLinePathWrite(['rules', 'complexity.ccn', ...$first], '10', '--first', NodeSchema::scalar(ScalarForm::Integer)),
-                    new CommandLinePathWrite(['rules', 'complexity.ccn', ...$second], '20', '--second', NodeSchema::scalar(ScalarForm::Integer)),
+                    new CommandLinePathWrite(['rules', 'complexity.ccn', ...$first], '10', '--first', '--first=10', NodeSchema::scalar(ScalarForm::Integer)),
+                    new CommandLinePathWrite(['rules', 'complexity.ccn', ...$second], '20', '--second', '--second=20', NodeSchema::scalar(ScalarForm::Integer)),
                 ]));
                 self::fail('The overlapping writes should be refused.');
             } catch (ConfigurationRefusal $refusal) {
-                self::assertStringContainsString('--first', $refusal->getMessage());
-                self::assertStringContainsString('--second', $refusal->getMessage());
+                self::assertStringContainsString('--first=10', $refusal->getMessage());
+                self::assertStringContainsString('--second=20', $refusal->getMessage());
             }
         }
     }

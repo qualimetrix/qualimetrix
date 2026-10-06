@@ -230,7 +230,11 @@ distinct meaning without a mode flag.
 `levelOptionsClasses()` are the owner declarations. `RuleOptionSurface` combines
 those declarations with framework-owned `enabled` and suppression keys, and
 provides the same accepted root/level sets to the document schema and listing.
-The constructor is not another dictionary. `RulesSection` is registered for
+Root keys and level segments use only the declared snake, camel and kebab
+spellings at every door; a case mismatch is refused with the accepted spelling.
+Rule-owner case mismatches suggest the exact registered owner. CLI refusals
+retain the complete authored expression rather than reconstructing it from
+canonical keys. The constructor is not another dictionary. `RulesSection` is registered for
 `rules`, `only_rules` and `disabled_rules`; no undeclared raw rule subtree remains.
 
 The named external operations are published by

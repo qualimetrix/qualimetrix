@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Run\Contract\Configuration\PathsAuthorship;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\AnalysisInputPathValidator;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
@@ -45,6 +46,7 @@ final class AnalysisInputPathValidatorTest extends TestCase
             (new AnalysisInputPathValidator())->validate(
                 [AbsolutePath::fromString($this->directory . '/missing.php'), AbsolutePath::fromString($text)],
                 $this->document(),
+                PathsAuthorship::Authored,
             );
             self::fail('Expected an input-path refusal.');
         } catch (ConfigurationRefusal $refusal) {
@@ -60,7 +62,7 @@ final class AnalysisInputPathValidatorTest extends TestCase
         file_put_contents($upperCase, '<?php');
 
         $this->expectException(ConfigurationRefusal::class);
-        (new AnalysisInputPathValidator())->validate([AbsolutePath::fromString($upperCase)], $this->document());
+        (new AnalysisInputPathValidator())->validate([AbsolutePath::fromString($upperCase)], $this->document(), PathsAuthorship::Authored);
     }
 
     #[Test]
@@ -73,6 +75,7 @@ final class AnalysisInputPathValidatorTest extends TestCase
             (new AnalysisInputPathValidator())->validate(
                 [AbsolutePath::fromString($this->directory), AbsolutePath::fromString($php)],
                 $this->document(),
+                PathsAuthorship::Authored,
             );
         } catch (ConfigurationRefusal $refusal) {
             self::fail('Valid paths must reach discovery: ' . $refusal->summary());
