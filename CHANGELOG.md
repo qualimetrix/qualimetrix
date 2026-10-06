@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ConfigSchema::EXCLUDES` and the `excludes` resolved result key are removed.
+  Use `ConfigSchema::EXCLUDE` and `exclude`; YAML `exclude:` and CLI `--exclude`
+  keep their spelling. `ConfigurationRoot::Cache` is removed; register Cache's
+  `CacheSection` declaration instead of taking its directory grammar from
+  Configuration. Invalid Coupling framework selectors, oversized selector
+  lists and intrinsic Architecture layer-list defects now refuse in their authored
+  layer even when a later layer replaces the list. Correct the lower layer rather
+  than relying on its replacement to hide the defect.
+
 - Baseline version 13 becomes version 14 with required
   `exclusions: {patterns, generated}`. Preserve accepted entries and explicitly
   record the definition under which they were accepted when migrating.

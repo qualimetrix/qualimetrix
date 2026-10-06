@@ -22,6 +22,14 @@ Parsing PHP into AST is the most expensive operation. Caching avoids repeated pa
 
 ## Components
 
+### CacheSection
+
+Declares the `cache` document root and judges each authored layer, including a
+directory that a higher layer overrides. `acceptedDirectory()` is shared with
+`CacheConfigurationResolver`, keeping the nonempty-directory grammar and the
+`.qmx-cache` default with Cache. `ParserConfigurator` registers the section
+explicitly; Configuration has no cache-specific root declaration.
+
 ### CacheInterface
 
 **Methods:**

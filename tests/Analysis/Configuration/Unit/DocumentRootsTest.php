@@ -61,7 +61,7 @@ final class DocumentRootsTest extends TestCase
             );
             self::fail('A known root requires its declared owner.');
         } catch (\Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal $refusal) {
-            self::assertSame('Unknown key "coupling" in configuration file "/project/qmx.yaml". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev, cache.', $refusal->summary());
+            self::assertSame('Unknown key "coupling" in configuration file "/project/qmx.yaml". Accepted keys: exclude, suppress_paths, suppress_namespaces, include_generated, include_autoload_dev.', $refusal->summary());
             self::assertSame('/project/qmx.yaml', $refusal->sources()[0]->locator());
             self::assertSame(['coupling'], $refusal->position()?->segments);
         }
@@ -79,7 +79,7 @@ final class DocumentRootsTest extends TestCase
     public function itPlacesEveryFlatKeyInTheDocument(): void
     {
         self::assertSame(['cache', 'dir'], DocumentRoots::pathOf(ConfigSchema::CACHE_DIR));
-        self::assertSame(['exclude'], DocumentRoots::pathOf(ConfigSchema::EXCLUDES));
+        self::assertSame(['exclude'], DocumentRoots::pathOf(ConfigSchema::EXCLUDE));
         self::assertSame(['disabled_rules'], DocumentRoots::pathOf(ConfigSchema::DISABLED_RULES));
         self::assertSame(['exclude_health'], DocumentRoots::pathOf(ConfigSchema::EXCLUDE_HEALTH));
     }

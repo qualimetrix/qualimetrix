@@ -53,7 +53,7 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
     #[Test]
     public function itStillWritesNothingForAnArrayOptionNobodyRepeated(): void
     {
-        self::assertArrayNotHasKey(ConfigSchema::EXCLUDES, self::overrides([]));
+        self::assertArrayNotHasKey(ConfigSchema::EXCLUDE, self::overrides([]));
     }
 
     #[Test]
@@ -71,7 +71,7 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
     {
         self::assertSame(
             [['subtree' => 'build'], ['regex' => '(?:[^/]+/)*cache']],
-            self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDES] ?? null,
+            self::overrides(['exclude' => ['subtree:build', 'regex:(?:[^/]+/)*cache']])[ConfigSchema::EXCLUDE] ?? null,
         );
     }
 
@@ -79,7 +79,7 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
     public function itNamesTheOptionThatWroteEachValue(): void
     {
         self::assertSame(
-            [ConfigSchema::EXCLUDES => '--exclude', ConfigSchema::FORMAT => '--format', ConfigSchema::DISABLED_RULES => '--disable-rule'],
+            [ConfigSchema::EXCLUDE => '--exclude', ConfigSchema::FORMAT => '--format', ConfigSchema::DISABLED_RULES => '--disable-rule'],
             self::request(['exclude' => ['subtree:build'], 'format' => 'json', 'disable-rule' => ['size.loc']])->cliOptionNames,
         );
     }

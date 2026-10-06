@@ -37,6 +37,7 @@ Infrastructure/
 │   ├── FileCache.php
 │   ├── CacheFactory.php
 │   ├── CacheKeyGenerator.php
+│   ├── CacheSection.php              # Cache-owned document declaration
 │   └── CacheWriteException.php      # Cache write failure exception
 ├── Composer/
 │   ├── ComposerManifestReader.php  # One typed manifest snapshot per analysed root and invocation

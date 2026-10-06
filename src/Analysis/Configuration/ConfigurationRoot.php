@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration;
 
-use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\DocumentSectionSchemaInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\ScalarForm;
@@ -19,7 +18,6 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
     case SuppressNamespaces = 'suppress_namespaces';
     case IncludeGenerated = 'include_generated';
     case IncludeAutoloadDev = 'include_autoload_dev';
-    case Cache = 'cache';
 
     public function declaration(): SectionDeclaration
     {
@@ -38,17 +36,7 @@ enum ConfigurationRoot: string implements DocumentSectionSchemaInterface
             self::SuppressNamespaces->value => $selectors,
             self::IncludeGenerated->value => $boolean,
             self::IncludeAutoloadDev->value => $boolean,
-            self::Cache->value => NodeSchema::map(['dir' => self::directory(), 'enabled' => $boolean]),
         ];
-    }
-
-    private static function directory(): NodeSchema
-    {
-        return NodeSchema::scalar(ScalarForm::String)->judgedInEachLayer(static function (ResolvedValueInterface $directory): void {
-            if ($directory->plain() === '') {
-                $directory->refuse('Invalid value for "cache.dir": a directory path cannot be empty. Omit the key to use the default (.qmx-cache).');
-            }
-        });
     }
 
     /**

@@ -56,7 +56,14 @@ document keeps, for every leaf, the layer that won it and, for every merged
 node, the layers that contributed. A value whose invalidity is visible without
 the merged context — its form, a forbidden empty value or membership of a
 closed dictionary — is judged in every layer that writes it. Constraints that
-depend on other resolved values are judged only on the winner. Reporting owns
+depend on other resolved values are judged only on the winner. Coupling reuses one
+selector parser for authored and resolved lists, including the 256-selector
+ceiling. Architecture judges intrinsic layer-list consistency before replacement;
+references to the merged layer set remain a resolved-document judgement. Cache
+declares its section in Infrastructure rather than teaching Configuration its
+directory grammar. `ConfigSchema::EXCLUDE` uses the authored root spelling for
+the resolved result key as well; the former `EXCLUDES`/`excludes` API is removed.
+Reporting owns
 the format dictionary and declares its per-layer judgement; an unknown format
 cannot be hidden by a later `--format`. A cache directory cannot be empty even
 when a later layer supplies a valid directory. Run, Console and Parallel

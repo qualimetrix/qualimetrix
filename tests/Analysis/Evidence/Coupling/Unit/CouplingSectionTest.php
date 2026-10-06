@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Tests\Analysis\Configuration\Support\LayeredDocument;
 
 #[CoversClass(CouplingSection::class)]
@@ -72,5 +73,29 @@ final class CouplingSectionTest extends TestCase
     {
         yield 'no kind' => [[]];
         yield 'two kinds' => [['exact' => 'App', 'subtree' => 'Symfony']];
+        yield 'invalid regex' => [['regex' => '(']];
+        yield 'empty exact' => [['exact' => '']];
+    }
+
+    #[Test]
+    public function itRefusesAShadowedSelectorListBeyondItsOwnBudget(): void
+    {
+        $selectors = array_map(
+            static fn(int $index): array => ['exact' => 'Vendor\\N' . $index],
+            range(0, SelectorDefinition::MAX_SELECTOR_COUNT),
+        );
+
+        try {
+            LayeredDocument::of([
+                ['source' => 'preset:broken', 'values' => ['coupling' => ['frameworkNamespaces' => $selectors]]],
+                ['source' => 'qmx.yaml', 'values' => ['coupling' => ['frameworkNamespaces' => [['subtree' => 'Symfony']]]]],
+            ], AbsolutePath::fromString('/project'), new CouplingSection());
+            self::fail('A replaced selector list must still obey its own size limit.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertSame(ConfigurationSource::Preset, $refusal->sources()[0]->source());
+            self::assertSame('preset:broken', $refusal->sources()[0]->locator());
+            self::assertSame(['coupling', 'frameworkNamespaces'], $refusal->position()?->segments);
+            self::assertStringContainsString('more than 256', $refusal->summary());
+        }
     }
 }

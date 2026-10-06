@@ -13,6 +13,7 @@ use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Cache\CacheSection;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -37,6 +38,7 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(CacheConfigurationStoreInterface::class, CacheConfigurationStore::class);
         $container->register(CacheConfigurationResolver::class);
         $container->setAlias(CacheConfigurationResolverInterface::class, CacheConfigurationResolver::class);
+        $container->register(CacheSection::class)->setAutoconfigured(true);
 
         $container->register(CacheFactory::class)
             ->setArguments([new Reference(CacheConfigurationStoreInterface::class)])

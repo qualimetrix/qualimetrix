@@ -22,12 +22,9 @@ final readonly class CouplingSection implements DocumentSectionSchemaInterface
                 'exact' => NodeSchema::scalar(ScalarForm::String),
                 'subtree' => NodeSchema::scalar(ScalarForm::String),
                 'regex' => NodeSchema::scalar(ScalarForm::String),
-            ])->judgedInEachLayer(static function (ResolvedValueInterface $selector): void {
-                $value = $selector->plain();
-                if (!\is_array($value) || \count($value) !== 1) {
-                    $selector->refuse('Framework namespace selectors must be one-entry mappings: {exact: value}, {subtree: value}, or {regex: value}.');
-                }
-            })),
+            ]))->judgedInEachLayer(static function (ResolvedValueInterface $selectors): void {
+                FrameworkNamespaceSelectorParser::parseList($selectors);
+            }),
         ]));
     }
 }

@@ -29,7 +29,7 @@ final class ConfigSchema
     // -------------------------------------------------------------------------
 
     public const string PATHS = 'paths';
-    public const string EXCLUDES = 'excludes';
+    public const string EXCLUDE = 'exclude';
     public const string FORMAT = 'format';
     public const string RULES = 'rules';
     public const string DISABLED_RULES = 'disabled_rules';
@@ -112,7 +112,7 @@ final class ConfigSchema
     public const array ENTRIES = [
         // Top-level keys with explicit types
         [self::PATHS, self::PATHS, self::LIST, null],
-        ['exclude', self::EXCLUDES, self::LIST, null],
+        [self::EXCLUDE, self::EXCLUDE, self::LIST, null],
         [self::FORMAT, self::FORMAT, self::SCALAR, null],
         [self::RULES, self::RULES, self::MIXED, null],
         ['disabledRules', self::DISABLED_RULES, self::LIST, null],

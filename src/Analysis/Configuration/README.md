@@ -247,13 +247,18 @@ refusal names `option --format`.
 The root dictionary is closed: `ConfigSchema` enumerates the accepted root
 keys. `ConfigurationRoot` declares the roots with Configuration-owned value
 forms. Run declares `paths`, Console declares `fail_on` and `memory_limit`,
-Parallel declares `parallel`, and Reporting declares `format`; the evidence
+Parallel declares `parallel`, Infrastructure Cache declares `cache`, and Reporting declares `format`; the evidence
 and policy owners declare their own sections. Each owner registers its section
 autoconfigured, and the container hands those instances to
 `ConfigurationPipeline`. Every accepted root has an actual registered declaration. A known but
 undeclared root is a configuration error, not an unread transport escape;
 an unknown root is refused, `~` or not. A suggestion offers the canonical key, whatever the style of the
 key it answers.
+
+`ConfigSchema::EXCLUDE` names both the authored `exclude` root and its resolved
+result key. The former `EXCLUDES` constant and `excludes` result key are removed.
+`Infrastructure\\Cache\\CacheSection` owns cache forms and the default directory;
+`ParserConfigurator` registers that section explicitly with the document engine.
 
 `YamlConfigLoader` returns the positioned authored document. The stage supplies
 its real ConfigFile or Preset origin; the document engine reads it against all

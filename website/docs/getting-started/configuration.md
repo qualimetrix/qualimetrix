@@ -815,6 +815,12 @@ under a valid `--format` or `--cache-dir`. A constraint depending on other
 resolved values is judged on the winner. Text refusals name the writing layer;
 JSON publishes it in `source`.
 
+This includes every `coupling.framework_namespaces` list's nonempty namespace
+patterns, valid regex syntax and 256-selector ceiling, and each
+`architecture.layers` list's unique names and patterns, membership criteria and
+template bindings. A higher list cannot hide those defects. Architecture allow
+references and cycles still require the merged set of layers.
+
 - **`~` means "not written".** A key written `~`, or left empty (`key:`), leaves
   the value to the layer below. The key itself is still recognised: a misspelt
   key is refused even when its value is `~`. Under a map keyed by names

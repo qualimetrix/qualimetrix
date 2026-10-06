@@ -77,7 +77,7 @@ final class RunConfigurationResolverTest extends TestCase
     public function itResolvesOwnerDefaultsAndLastPathContributionAgainstTheInvocationRoot(): void
     {
         $configuration = (new RunConfigurationResolver(new ProjectScopeCoverage(new ComposerManifestReader())))->resolve(LayeredDocument::of([
-            ['source' => 'composer', 'values' => ['paths' => ['lib'], 'excludes' => [['subtree' => 'build']]]],
+            ['source' => 'composer', 'values' => ['paths' => ['lib'], 'exclude' => [['subtree' => 'build']]]],
             ['source' => 'cli', 'values' => ['paths' => ['src'], 'include_generated' => true]],
         ], AbsolutePath::fromString(sys_get_temp_dir())));
 

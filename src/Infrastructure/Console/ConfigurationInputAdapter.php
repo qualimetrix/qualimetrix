@@ -169,7 +169,7 @@ final class ConfigurationInputAdapter
             return;
         }
 
-        $this->put($values, $names, ConfigSchema::EXCLUDES, array_map(
+        $this->put($values, $names, ConfigSchema::EXCLUDE, array_map(
             function (string $selector): array {
                 $definition = $this->selectorDecoder->decodePath($selector, '--exclude')->definition;
 
