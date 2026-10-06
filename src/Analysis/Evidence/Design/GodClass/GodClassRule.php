@@ -182,9 +182,9 @@ final class GodClassRule extends AbstractRule
      * the (up to 4) evaluable God Class criteria matched — as `metricValue`
      * (see the emission above), not any individual criterion's value. Higher
      * is worse: {@see determineSeverity()} returns `Severity::Error` when
-     * `$matchedCount === $evaluableCount` (line 165, all evaluable criteria
+     * `$matchedCount === $evaluableCount` (all evaluable criteria
      * matched) and `Severity::Warning` when `$matchedCount >=
-     * $options->minCriteria` (line 169) — both branches escalate as the
+     * $options->minCriteria` — both branches escalate as the
      * count grows.
      *
      * @return array<string, ChannelDeclaration>

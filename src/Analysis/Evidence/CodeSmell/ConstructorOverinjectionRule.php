@@ -58,7 +58,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
      * parameter count (`$parameterCountValue` — see the emission above) as
      * `metricValue`, judged worse the higher it goes:
      * {@see ConstructorOverinjectionOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 67) and `$value >= $this->warning` (line 71).
+     * $this->error` and `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */

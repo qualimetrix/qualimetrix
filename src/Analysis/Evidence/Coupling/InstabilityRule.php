@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -119,11 +120,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
      * (`$instabilityValue` — see {@see analyzeClassLevel()} and
      * {@see analyzeNamespaceLevel()}) as `metricValue`, judged worse the
      * higher it goes: {@see ClassInstabilityOptions::getSeverity()}'s
-     * `$instability >= $this->maxError` (line 61) / `$instability >=
-     * $this->maxWarning` (line 65) at the class level, and
+     * `$instability >= $this->maxError` / `$instability >=
+     * $this->maxWarning` at the class level, and
      * {@see NamespaceInstabilityOptions::getSeverity()}'s `$instability >=
-     * $this->maxError` (line 62) / `$instability >= $this->maxWarning`
-     * (line 66) at the namespace level.
+     * $this->maxError` / `$instability >= $this->maxWarning`
+     * at the namespace level.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -200,7 +201,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
                 $instabilityValue,
                 $ca,
                 $ce,
@@ -266,7 +267,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     ruleName: $this->getName(),
                     code: self::NAME,
                     message: \sprintf(
-                        'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                        'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,

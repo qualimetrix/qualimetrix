@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -115,10 +116,10 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      * `metricValue` (`$npathValue` in {@see analyzeMethodLevel()},
      * `$maxNpathValue` in {@see analyzeClassLevel()}), judged worse the higher
      * it goes: {@see MethodNpathComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 48) / `$value >= $this->warning` (line 52) at the
+     * $this->error` / `$value >= $this->warning` at the
      * callable level, and
      * {@see ClassNpathComplexityOptions::getSeverity()}'s `$value >=
-     * $this->maxError` (line 48) / `$value >= $this->maxWarning` (line 52)
+     * $this->maxError` / `$value >= $this->maxWarning`
      * at the class level.
      *
      * @return array<string, ChannelDeclaration>
@@ -210,7 +211,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         $chain = $this->formatChain($metrics);
 
         return [
-            'message' => \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
+            'message' => \sprintf('NPath complexity (execution paths) is %s (%s), ' . ThresholdCrossing::of($npathValue, $threshold)->value . ' threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
             'recommendation' => \sprintf('NPath complexity: %s (threshold: %s)%s — explosive number of execution paths', $displayValue, $threshold, $chain !== '' ? ". {$chain}" : ''),
         ];
     }
@@ -254,7 +255,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
                     code: self::NAME,
-                    message: \sprintf('Maximum method NPath complexity is %s (%s), exceeds threshold of %s. Refactor the most complex methods', $displayValue, $categoryLabel, $threshold),
+                    message: \sprintf('Maximum method NPath complexity is %s (%s), ' . ThresholdCrossing::of($maxNpathValue, $threshold)->value . ' threshold of %s. Refactor the most complex methods', $displayValue, $categoryLabel, $threshold),
                     severity: $severity,
                     metricValue: $maxNpathValue,
                     recommendation: \sprintf('Max NPath complexity: %s (threshold: %s) — explosive number of execution paths', $displayValue, $threshold),

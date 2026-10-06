@@ -159,7 +159,7 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('Method has 4 parameters, reaches threshold of 4. Consider introducing a parameter object', $findings[0]->message);
         self::assertSame(4, $findings[0]->metricValue);
         self::assertSame('code-smell.long-parameter-list', $findings[0]->ruleName);
         self::assertSame('code-smell.long-parameter-list', $findings[0]->code);
@@ -185,7 +185,7 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
-        self::assertSame('Method has 6 parameters, exceeds threshold of 6. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('Method has 6 parameters, reaches threshold of 6. Consider introducing a parameter object', $findings[0]->message);
     }
 
     #[Test]
@@ -801,10 +801,10 @@ final class LongParameterListRuleTest extends TestCase
 
         self::assertCount(2, $findings);
         self::assertSame($regularSubject->toCanonical(), $findings[0]->subject->toCanonical());
-        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $findings[0]->message);
+        self::assertSame('Method has 4 parameters, reaches threshold of 4. Consider introducing a parameter object', $findings[0]->message);
         self::assertSame(4, $findings[0]->threshold);
         self::assertSame($voSubject->toCanonical(), $findings[1]->subject->toCanonical());
-        self::assertSame('VO constructor has 8 promoted parameters, exceeds threshold of 8. Consider splitting the value object', $findings[1]->message);
+        self::assertSame('VO constructor has 8 promoted parameters, reaches threshold of 8. Consider splitting the value object', $findings[1]->message);
         self::assertSame(8, $findings[1]->threshold);
     }
 

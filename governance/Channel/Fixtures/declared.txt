@@ -133,7 +133,7 @@ security.hardcoded-credentials - class
 security.sensitive-parameter - callable
 security.sql-injection - callable
 security.xss - callable
-size.class-count higher namespace judges:size.class-count.sum
+size.class-count higher namespace judges:size.class-count
 size.method-count higher class judges:size.method-count
 size.property-count higher class judges:size.property-count
 suppression.unmatched-namespace - project

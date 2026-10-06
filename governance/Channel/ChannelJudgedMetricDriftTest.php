@@ -30,13 +30,11 @@ use RuntimeException;
  * requires it to be one of the metrics the channel declared, measured on that
  * finding's own subject.
  *
- * **The comparison is not equality, and cannot be.** Three measured classes
- * of published magnitude differ from the raw catalog value of a base key:
+ * **The comparison is not equality, and cannot be.** Published magnitude
+ * can differ from the raw catalog value of a base key:
  *
  * - rounding — {@see \Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule}
  *   publishes `round($miValue, 1)`;
- * - aggregate spelling — {@see \Qualimetrix\Analysis\Evidence\Size\ClassCountRule}
- *   judges `size.class-count.sum`, not the base key;
  * - a key chosen by configuration — {@see \Qualimetrix\Analysis\Evidence\Coupling\CboRule}
  *   reads `coupling.cbo` or `coupling.cbo-app` depending on its `scope`
  *   option, and a complexity channel reads a base key at callable level and
@@ -49,22 +47,16 @@ use RuntimeException;
  *
  * **What that buys, measured, and what it does not.** The rounding class is
  * genuinely exercised: `maintainability.mi` publishes 49.5 where the
- * catalog holds 49.4541…, so a strict equality here would be red. The
- * aggregate class is not: on every subject `size.class-count` fires on in
- * this corpus, the base key and `size.class-count.sum` hold the same number,
- * so a declaration naming the base spelling would pass too. The aggregate
- * spelling is pinned by registry assembly (the key must exist) and by the
- * tracked declaration fixture, not by this run — stated here so that a green
- * run is not read as more than it is.
+ * catalog holds 49.4541…, so a strict equality here would be red.
+ * `size.class-count` now judges its own namespace count; its published
+ * subtree `.sum` remains a separate metric.
  *
- * The "any one candidate is enough" rule is exercised unevenly for the same
- * reason, and the split is worth knowing:
+ * The "any one candidate is enough" rule has two relevant limits here:
  *
- * - the three complexity channels naming a base key and its `.max` aggregate
- *   **are** exercised: the base key exists only on `method`/`function`
- *   subjects and the aggregate only on `class`/`namespace` ones, so the
- *   subject-scoped lookup really does check that the level picked the right
- *   key;
+ * - the three complexity channels name a base key at `method`/`function`
+ *   level and its `.max` aggregate at `class`/`namespace` level. The lookup
+ *   is subject-scoped; this description does not assert that their numeric
+ *   values diverge in the current corpus;
  * - `coupling.cbo` is **not**: it names `coupling.cbo` and `coupling.cbo-app`,
  *   and on all twelve classes of the `coupling` corpus case the two hold the
  *   same number, because no fixture there depends on a symbol outside the

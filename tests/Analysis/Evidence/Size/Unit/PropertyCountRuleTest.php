@@ -179,7 +179,7 @@ final class PropertyCountRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(12, $findings[0]->threshold);
-        self::assertSame('Property count is 12, exceeds threshold of 12. Consider splitting the class or using composition', $findings[0]->message);
+        self::assertSame('Property count is 12, reaches threshold of 12. Consider splitting the class or using composition', $findings[0]->message);
         self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 

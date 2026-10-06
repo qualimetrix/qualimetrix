@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -65,7 +66,7 @@ final class PropertyCountRule extends AbstractRule
      * (`$propertyCountValue` — see the emission above) as `metricValue`,
      * judged worse the higher it goes:
      * {@see PropertyCountOptions::getSeverity()}'s `$value >= $this->error`
-     * (line 68) / `$value >= $this->warning` (line 72).
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -123,7 +124,7 @@ final class PropertyCountRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $message = \sprintf(
-            'Property count is %d, exceeds threshold of %d. Consider splitting the class or using composition',
+            'Property count is %d, ' . ThresholdCrossing::of($propertyCountValue, $threshold)->value . ' threshold of %d. Consider splitting the class or using composition',
             $propertyCountValue,
             $threshold,
         );

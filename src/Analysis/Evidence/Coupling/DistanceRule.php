@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -176,7 +177,7 @@ final class DistanceRule extends AbstractRule
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
+                'Distance from main sequence is %.2f (A=%.2f, I=%.2f), ' . ThresholdCrossing::of($distanceValue, $threshold)->value . ' threshold of %.2f. Balance abstractness and stability',
                 $distanceValue,
                 $abstractness,
                 $instability,
@@ -250,8 +251,8 @@ final class DistanceRule extends AbstractRule
      * (`$distanceValue` — see the emission above) as `metricValue`, judged
      * worse the higher it goes:
      * {@see DistanceOptions::getSeverity()}'s `$distance >=
-     * $this->maxDistanceError` (line 95) / `$distance >=
-     * $this->maxDistanceWarning` (line 99).
+     * $this->maxDistanceError` / `$distance >=
+     * $this->maxDistanceWarning`.
      *
      * @return array<string, ChannelDeclaration>
      */

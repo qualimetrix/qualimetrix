@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -68,10 +69,10 @@ final class LongParameterListRule extends AbstractRule
      * report the same magnitude (`$parameterCountValue`), differing only in
      * which threshold pair gates them. Both are `higher`-is-worse:
      * {@see LongParameterListOptions::getVoSeverity()}'s `$value >=
-     * $this->voError` (line 110) / `$value >= $this->voWarning` (line 114)
+     * $this->voError` / `$value >= $this->voWarning`
      * for the VO branch, and {@see LongParameterListOptions::getSeverity()}'s
-     * `$value >= $this->error` (line 94) / `$value >= $this->warning`
-     * (line 98) for the regular branch. One declaration covers both.
+     * `$value >= $this->error` / `$value >= $this->warning`
+     * for the regular branch. One declaration covers both.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -161,7 +162,7 @@ final class LongParameterListRule extends AbstractRule
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
-            message: \sprintf('%s has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
+            message: \sprintf('%s has %d parameters, ' . ThresholdCrossing::of($parameterCountValue, $threshold)->value . ' threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
             severity: $severity,
             metricValue: $parameterCountValue,
             recommendation: \sprintf('Parameters: %d (threshold: %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
@@ -194,7 +195,7 @@ final class LongParameterListRule extends AbstractRule
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
-            message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCount, $threshold),
+            message: \sprintf('VO constructor has %d promoted parameters, ' . ThresholdCrossing::of($parameterCount, $threshold)->value . ' threshold of %d. Consider splitting the value object', $parameterCount, $threshold),
             severity: $severity,
             metricValue: $parameterCount,
             recommendation: \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCount, $threshold),

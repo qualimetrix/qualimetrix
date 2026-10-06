@@ -270,6 +270,10 @@ final class ClassRankRuleTest extends TestCase
         } else {
             self::assertCount(1, $targetFindings);
             self::assertSame($expectedSeverity, $targetFindings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($classRank === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $targetFindings[0]->message);
+            self::assertSame($classRank, $targetFindings[0]->metricValue);
+            self::assertEquals($selectedThreshold, $targetFindings[0]->threshold);
         }
     }
 
@@ -280,6 +284,7 @@ final class ClassRankRuleTest extends TestCase
     {
         yield 'below warning' => [0.01, 0.02, 0.05, null];
         yield 'at warning' => [0.02, 0.02, 0.05, Severity::Warning];
+        yield 'raw above warning, same four-digit display' => [0.020049, 0.02, 0.05, Severity::Warning];
         yield 'between warning and error' => [0.03, 0.02, 0.05, Severity::Warning];
         yield 'at error' => [0.05, 0.02, 0.05, Severity::Error];
         yield 'above error' => [0.10, 0.02, 0.05, Severity::Error];
@@ -323,8 +328,8 @@ final class ClassRankRuleTest extends TestCase
         $targetPath = SymbolPath::forClass('App', 'Hub');
         $targetInfo = self::subjectInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
-        // 0.015 would be below unscaled warning (0.02), but above scaled warning (0.01)
-        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.015)->with('coupling.ca', 2);
+        // 0.01 reaches scaled warning and remains below unscaled warning (0.02)
+        $targetBag = (new MetricBag())->with('coupling.class-rank', 0.01)->with('coupling.ca', 2);
         $normalBag = (new MetricBag())->with('coupling.class-rank', 0.001)->with('coupling.ca', 2);
 
         $classes = $this->createDummyClasses(399);
@@ -347,6 +352,7 @@ final class ClassRankRuleTest extends TestCase
 
         self::assertCount(1, $targetFindings);
         self::assertSame(Severity::Warning, $targetFindings[0]->severity);
+        self::assertStringContainsString('ClassRank is 0.0100, reaches threshold of 0.0100', $targetFindings[0]->message);
     }
 
     #[Test]
@@ -419,6 +425,7 @@ final class ClassRankRuleTest extends TestCase
 
         self::assertCount(1, $targetFindings);
         self::assertSame(Severity::Error, $targetFindings[0]->severity);
+        self::assertStringContainsString('exceeds threshold of 0.0125', $targetFindings[0]->message);
     }
 
     #[Test]

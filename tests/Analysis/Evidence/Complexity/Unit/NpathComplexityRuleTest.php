@@ -188,7 +188,7 @@ final class NpathComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('complexity.npath.max', 600); // Above warning (500), below error (1000)
+        $metricBag = (new MetricBag())->with('complexity.npath.max', 500); // At warning (500), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -205,8 +205,8 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('Maximum method NPath complexity is 600 (moderate), exceeds threshold of 500', $findings[0]->message);
-        self::assertSame(600, $findings[0]->metricValue);
+        self::assertStringContainsString('Maximum method NPath complexity is 500 (moderate), reaches threshold of 500', $findings[0]->message);
+        self::assertSame(500, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -460,6 +460,8 @@ final class NpathComplexityRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($npath === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 

@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -112,10 +113,10 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      * `$maxCognitiveValue` in {@see analyzeClassLevel()}), judged worse the
      * higher it goes:
      * {@see MethodCognitiveComplexityOptions::getSeverity()}'s `$value >=
-     * $this->error` (line 48) / `$value >= $this->warning` (line 52) at the
+     * $this->error` / `$value >= $this->warning` at the
      * callable level, and
      * {@see ClassCognitiveComplexityOptions::getSeverity()}'s `$value >=
-     * $this->maxError` (line 50) / `$value >= $this->maxWarning` (line 54)
+     * $this->maxError` / `$value >= $this->maxWarning`
      * at the class level.
      *
      * @return array<string, ChannelDeclaration>
@@ -190,7 +191,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
-            message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
+            message: \sprintf('Cognitive complexity is %d, ' . ThresholdCrossing::of($cognitiveValue, $threshold)->value . ' threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
             severity: $severity,
             metricValue: $cognitiveValue,
             recommendation: \sprintf('Cognitive complexity: %d (threshold: %d)%s — deeply nested, hard to follow', $cognitiveValue, $threshold, $breakdown !== '' ? ". {$breakdown}" : ''),
@@ -252,7 +253,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
-            message: \sprintf('Maximum method cognitive complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
+            message: \sprintf('Maximum method cognitive complexity is %d, ' . ThresholdCrossing::of($maximum, $threshold)->value . ' threshold of %d. Refactor the most complex methods', $maximum, $threshold),
             severity: $severity,
             metricValue: $maximum,
             recommendation: \sprintf('Max cognitive complexity: %d (threshold: %d) — deeply nested, hard to follow', $maximum, $threshold),
