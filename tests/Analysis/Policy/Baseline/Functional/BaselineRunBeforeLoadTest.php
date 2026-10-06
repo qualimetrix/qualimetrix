@@ -202,6 +202,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineCleanupCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,
@@ -218,6 +219,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineUpdateCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             StubRuleCoverage::everyRuleRan(),
@@ -233,7 +235,8 @@ final class BaselineRunBeforeLoadTest extends TestCase
         $command = new BaselineExplainCommand(
             $this->measuredRun($configured),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations),
             new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
             $declarations,
         );

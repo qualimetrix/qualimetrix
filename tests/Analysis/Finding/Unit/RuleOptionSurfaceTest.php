@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 
-use PHPUnit\Framework\Attributes\CoversClass;
+use LogicException;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
@@ -19,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 #[CoversClass(RuleOptionSurface::class)]
@@ -121,8 +123,9 @@ final class RuleOptionSurfaceTest extends TestCase
 
         self::assertContains('selector', $surface->writableAt(null));
         self::assertSame('selector', $surface->locate('selector')?->key);
-        self::assertTrue($surface->ownKeySet()->shapeOf('selector')?->matches(['subtree' => 'App']));
-        self::assertFalse($surface->ownKeySet()->shapeOf('selector')->matches('App'));
+        $shape = $surface->ownKeySet()->shapeOf('selector') ?? throw new LogicException('Missing selector form.');
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, ['subtree' => 'App']));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 'App'));
     }
 
     #[Test]

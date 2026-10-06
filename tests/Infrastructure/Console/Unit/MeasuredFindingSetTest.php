@@ -197,6 +197,7 @@ final class MeasuredFindingSetTest extends TestCase
         $projector = new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new class implements GitScopeQueryInterface {
                 public function resolve(GitScopeRequest $request): GitScopeResult
@@ -210,6 +211,7 @@ final class MeasuredFindingSetTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
         return new MeasuredFindingSet($analyzer, $projector);

@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 use Closure;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
-
 use PHPUnit\Framework\Attributes\Test;
 
 use PHPUnit\Framework\TestCase;
+
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -31,6 +31,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
@@ -509,7 +510,7 @@ final class RulesCommandTest extends TestCase
             $snapshots,
             new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
             new RuleListingPresenter(),
-            new ConfigurationInputAdapter($pipeline, new ErrorStream(), $execution),
+            new ConfigurationInputAdapter(new RuleOptionDocumentForms(), $pipeline, new ErrorStream(), $execution),
             $computedMetrics,
         );
     }

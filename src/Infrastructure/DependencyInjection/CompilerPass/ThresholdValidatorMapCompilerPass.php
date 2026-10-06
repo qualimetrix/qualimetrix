@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Builds the rule-name => OverrideValidatorInterface map from tagged rule
@@ -42,9 +45,9 @@ final class ThresholdValidatorMapCompilerPass implements CompilerPassInterface, 
         }
 
         /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
-        $validators = RuleValidatorMapFactory::build($ruleClasses);
-
         $container->getDefinition(ThresholdOverrideExtractor::class)
-            ->setArgument('$validators', $validators);
+            ->setArgument('$validators', (new Definition())
+                ->setFactory([RuleValidatorMapFactory::class, 'build'])
+                ->setArguments([new Reference(RuleOptionDocumentFormsInterface::class), $ruleClasses]));
     }
 }

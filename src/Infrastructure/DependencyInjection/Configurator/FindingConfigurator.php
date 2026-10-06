@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -23,6 +25,8 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
 
     public function configure(ContainerBuilder $container): void
     {
+        $container->register(RuleOptionDocumentForms::class);
+        $container->setAlias(RuleOptionDocumentFormsInterface::class, RuleOptionDocumentForms::class);
         $container->register(RuleOptionsRegistry::class);
         $container->setAlias(RuleConfigurationInterface::class, RuleOptionsRegistry::class)
             ->setPublic(true);

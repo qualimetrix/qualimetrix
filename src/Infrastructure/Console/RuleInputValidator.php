@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedCo
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -22,6 +23,7 @@ use Symfony\Component\Console\Input\InputInterface;
 final readonly class RuleInputValidator
 {
     public function __construct(
+        private RuleOptionDocumentFormsInterface $documentForms,
         private RuleRegistryInterface $ruleRegistry,
         private RuleChannelSnapshotFactoryInterface $ruleChannelSnapshotFactory,
         private RuleOptionsBuild $optionsBuild,
@@ -54,7 +56,7 @@ final readonly class RuleInputValidator
     /** @return list<string> */
     public function configureCheckCommand(Command $command): array
     {
-        return CheckCommandDefinition::addOptions($command, $this->ruleRegistry);
+        return CheckCommandDefinition::addOptions($this->documentForms, $command, $this->ruleRegistry);
     }
 
     private function validateWorkers(InputInterface $input): void

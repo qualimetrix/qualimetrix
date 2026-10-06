@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationSt
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
@@ -499,6 +500,7 @@ final class AmphpParallelStrategyTest extends TestCase
         return new AmphpParallelStrategy(
             new FileProcessingTaskFactory(
                 new LcomCollectionConfigurationStore(),
+                new RuleOptionDocumentForms(),
                 DependencyVisitor::class,
                 $collectorClasses,
                 $derivedCollectorClasses,

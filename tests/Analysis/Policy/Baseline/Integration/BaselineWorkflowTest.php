@@ -20,6 +20,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryRunFacts;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryThresholdSources;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\CurrentMeasurement;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -136,7 +138,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 3: Load baseline from file
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $loadedBaseline = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
 
         self::assertSame($baseline->count(), $loadedBaseline->count());
         self::assertSame(0, \count($loadedBaseline->inertEntries));
@@ -156,15 +158,12 @@ final class BaselineWorkflowTest extends TestCase
         self::assertSame([], $stage->apply($findings)->findings);
 
         $channels = self::createStub(ChannelIdentityInterface::class);
-        $explanation = (new BoundaryExplanationService($channels, StubRuleCoverage::everyRuleRan()))->explain(
+        $explanation = (new BoundaryExplanationService($channels, StubRuleCoverage::everyRuleRan(), $declarations))->explain(
             $findings[0]->subject->toCanonical(),
             null,
             $loadedBaseline,
-            $findings,
-            [],
-            [],
-            $declarations,
-            StubRuleCoverage::completeFor($loadedBaseline),
+            new BoundaryThresholdSources([], []),
+            new BoundaryRunFacts($findings, StubRuleCoverage::completeFor($loadedBaseline), null),
         );
         self::assertSame('accepted', $explanation->boundaries[0]->baseline?->verdict);
         self::assertSame([15.0], $explanation->boundaries[0]->baseline->accepted?->magnitudes);
@@ -206,7 +205,7 @@ final class BaselineWorkflowTest extends TestCase
             . 'write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
-        $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
     }
 
     #[Test]
@@ -255,7 +254,7 @@ final class BaselineWorkflowTest extends TestCase
         ], $subjectEntries);
         self::assertArrayNotHasKey('type', $subjectEntries[0]['edge']);
 
-        $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $loaded = (new BaselineLoader(new BaselineEntryParser($declarations)))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
         $expectedIdentities = [
             BaselineIdentity::forFinding($untyped),
             BaselineIdentity::forFinding($typed),
@@ -306,7 +305,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Load baseline
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $loadedBaseline = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);
 
         // Current findings: only method1 (method2 was fixed)
@@ -379,7 +378,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Load baseline — paths kept as-is (relative)
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-        $loadedBaseline = $loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->baselinePath));
+        $loadedBaseline = $loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->baselinePath));
 
         // The ceiling should accept the original findings
         $stage = new BaselineCeilingStage($loadedBaseline, $declarations, StubRuleCoverage::completeFor($loadedBaseline), []);

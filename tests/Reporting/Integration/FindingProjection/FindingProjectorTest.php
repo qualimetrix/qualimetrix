@@ -101,7 +101,7 @@ final class FindingProjectorTest extends TestCase
         ));
 
         $options = new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([])),
             gitScope: $this->createGitScope(),
         );
 
@@ -129,7 +129,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipeline();
 
         $result = $this->project($pipeline, [], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([])),
         ));
 
         self::assertSame(
@@ -162,7 +162,7 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$ignored], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $ignored->subject->toCanonical() => [
                     ['channel' => $ignored->channel()->code, 'magnitudes' => [25]],
                 ],
@@ -193,7 +193,7 @@ final class FindingProjectorTest extends TestCase
         ];
 
         $result = $this->project($pipeline, [$finding], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
@@ -266,7 +266,7 @@ final class FindingProjectorTest extends TestCase
         // Nothing is staged, so the git-scope stage narrows the report to
         // nothing at all.
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($baselinePath),
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath),
             gitScope: $this->createGitScope(),
         ));
 
@@ -283,7 +283,7 @@ final class FindingProjectorTest extends TestCase
         $finding = $this->makeFinding('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [25]],
                 ],
@@ -318,7 +318,7 @@ final class FindingProjectorTest extends TestCase
         );
 
         $result = $this->project($this->createPipeline(), [$first, $second], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $first->subject->toCanonical() => [
                     ['channel' => $first->channel()->code, 'count' => 1],
                 ],
@@ -353,7 +353,7 @@ final class FindingProjectorTest extends TestCase
         // A magnitude list on an occurrence channel: the entry claims a
         // boundary the channel's findings cannot be compared against.
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $finding->subject->toCanonical() => [
                     ['channel' => $finding->channel()->code, 'magnitudes' => [1]],
                 ],
@@ -404,7 +404,7 @@ final class FindingProjectorTest extends TestCase
         $subjectKey = self::subjectKey('App\\Nowhere', 'Ghost', 'src/Nowhere/Ghost.php');
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $subjectKey => [
                     ['channel' => 'nonexistent.channel', 'count' => 1],
                 ],
@@ -436,7 +436,7 @@ final class FindingProjectorTest extends TestCase
         $finding = $this->makeFinding('src/Service/UserService.php');
 
         $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([])),
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([])),
         ));
 
         self::assertSame(['src'], $result->baselineScope);
@@ -471,7 +471,7 @@ final class FindingProjectorTest extends TestCase
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
+        $result = $this->project($this->createPipeline(), [$finding], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)));
 
         $this->assertUnusedAudit($result, 'stale');
         self::assertSame(1, $result->removedCountBy(FindingFilterStage::Baseline));
@@ -502,7 +502,7 @@ final class FindingProjectorTest extends TestCase
             ],
         ]);
 
-        $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
+        $result = $this->project($this->createPipeline(), [$stillFiring], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)));
 
         self::assertNotContains($stillFiring, $result->findings, 'The surviving entry must still suppress its finding.');
         $this->assertUnusedAudit($result, 'stale');
@@ -555,7 +555,7 @@ final class FindingProjectorTest extends TestCase
         $pipeline = $this->createPipelineIgnoringLine21();
 
         $result = $this->project($pipeline, [$measured, $annotated], new FindingProjectionOptions(
-            baselineDocument: BaselineLoader::preflight($this->writeBaselineFile([
+            baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->writeBaselineFile([
                 $measured->subject->toCanonical() => [
                     ['channel' => $measured->channel()->code, 'count' => 1],
                 ],
@@ -593,14 +593,14 @@ final class FindingProjectorTest extends TestCase
         $applied = $this->project(
             $this->createPipelineIgnoringLine21(),
             [$measured, $annotated],
-            new FindingProjectionOptions(baselineDocument: BaselineLoader::preflight($baselinePath)),
+            new FindingProjectionOptions(baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)),
         );
 
         $disabled = $this->project(
             $this->createPipelineIgnoringLine21(),
             [$measured, $annotated],
             new FindingProjectionOptions(
-                baselineDocument: BaselineLoader::preflight($baselinePath),
+                baselineDocument: (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath),
                 annotationSuppressionDisabled: true,
             ),
         );
@@ -1083,6 +1083,7 @@ final class FindingProjectorTest extends TestCase
         return new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new ReportingGitScopeQuery(),
             unusedEntryAudit: new UnusedEntryAudit((function () {
@@ -1091,6 +1092,7 @@ final class FindingProjectorTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
     }
 
@@ -1110,6 +1112,7 @@ final class FindingProjectorTest extends TestCase
         $projector = new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             $query,
             unusedEntryAudit: new UnusedEntryAudit((function () {
@@ -1118,6 +1121,7 @@ final class FindingProjectorTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
         return $projector->project($findings, [], new FindingProjectionOptions(gitScope: new GitScopeRequest(

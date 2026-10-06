@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
 use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Core\FileTarget\TargetPath;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
@@ -107,6 +108,26 @@ final class BaselineRecordExclusionsTest extends TestCase
         self::assertStringContainsString('exclusions-removed-population', $record->getDisplay());
         self::assertSame([], $this->payload()['entries']);
         self::assertSame(['exact:src/Foo.php'], $this->payload()['exclusions']['patterns']);
+    }
+
+    #[Test]
+    public function itNamesTheNewlyExcludedFileWhenCleanupOffersItsEntry(): void
+    {
+        file_put_contents($this->root . '/src/Foo.php', '<?php goto done; done: echo 1;');
+        $generated = $this->execute(BaselineGenerateCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['code-smell.goto']]);
+        self::assertSame(0, $generated->getStatusCode(), $generated->getDisplay() . $generated->getErrorOutput());
+        self::assertNotEmpty($this->payload()['entries']);
+        $before = (string) file_get_contents($this->path);
+        $config = (string) file_get_contents($this->root . '/qmx.yaml');
+        file_put_contents($this->root . '/qmx.yaml', "exclude: [{exact: 'src/Foo.php'}]\n" . $config);
+
+        $cleanup = $this->execute(BaselineCleanupCommand::class, ['baseline' => $this->path, 'paths' => ['src'], '--only-rule' => ['code-smell.goto']]);
+
+        self::assertSame(0, $cleanup->getStatusCode(), $cleanup->getDisplay() . $cleanup->getErrorOutput());
+        self::assertStringContainsString('file:src/Foo.php', $cleanup->getDisplay());
+        self::assertStringContainsString('this identity belongs to a file newly excluded from analysis', $cleanup->getDisplay());
+        self::assertStringNotContainsString('nothing reported for this identity', $cleanup->getDisplay());
+        self::assertSame($before, file_get_contents($this->path));
     }
 
     #[Test]

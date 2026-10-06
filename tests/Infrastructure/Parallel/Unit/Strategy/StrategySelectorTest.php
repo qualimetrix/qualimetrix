@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
@@ -95,6 +96,7 @@ final class StrategySelectorTest extends TestCase
         $profiler = self::createStub(ProfilerInterface::class);
         $parallel = new AmphpParallelStrategy(new FileProcessingTaskFactory(
             new LcomCollectionConfigurationStore(),
+            new RuleOptionDocumentForms(),
             DependencyVisitor::class,
         ));
         $sequential = new SequentialStrategy($profiler);

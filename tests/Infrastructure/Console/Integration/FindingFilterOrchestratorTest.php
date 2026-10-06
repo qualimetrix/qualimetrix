@@ -465,7 +465,7 @@ final class FindingFilterOrchestratorTest extends TestCase
             $output,
             new ResolvedCheckScope($scopeResolution, [], $measurement),
             new FindingProjectionOptions(
-                baselineDocument: \is_string($baselinePath) && $baselinePath !== '' ? BaselineLoader::preflight($baselinePath) : null,
+                baselineDocument: \is_string($baselinePath) && $baselinePath !== '' ? (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath) : null,
             ),
             new RunConfiguration([], $scopeResolution->projectRoot, GeneratedFilePolicy::Exclude, $measurement, [], AutoloadDevPolicy::Exclude),
         );
@@ -481,6 +481,7 @@ final class FindingFilterOrchestratorTest extends TestCase
         $pipeline = new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new class implements GitScopeQueryInterface {
                 public function resolve(GitScopeRequest $request): GitScopeResult
@@ -494,6 +495,7 @@ final class FindingFilterOrchestratorTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
 
         return new FindingFilterOrchestrator($pipeline, new ErrorStream(), self::silentSuppressionAudit(), $reader, new \Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons($reader, $anchor), new ProjectTree(new EntryInspector()), StubRuleCoverage::everyRuleRan());

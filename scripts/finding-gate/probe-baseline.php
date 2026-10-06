@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -52,18 +53,31 @@ assert($rules instanceof RuleRegistryInterface);
 assert($snapshot instanceof RuleChannelSnapshotFactoryInterface);
 $command = new Command('check');
 $command->setApplication(new Application());
-CheckCommandDefinition::addOptions($command, $rules);
+$optionDependencies = [$command, $rules];
+$optionConstructor = new ReflectionMethod(CheckCommandDefinition::class, 'addOptions');
+if ($optionConstructor->getNumberOfRequiredParameters() === 3) {
+    array_unshift($optionDependencies, new RuleOptionDocumentForms());
+} elseif ($optionConstructor->getNumberOfRequiredParameters() !== 2) {
+    throw new RuntimeException('The probe does not support this check option signature.');
+}
+$optionConstructor->invokeArgs(null, $optionDependencies);
 $command->mergeApplicationDefinition(false);
 $arguments = new ArgvInput(['probe', ...array_slice($arguments, 1)], $command->getDefinition());
 $constructor = new ReflectionMethod(ConfigurationInputAdapter::class, '__construct');
 $dependencies = [$pipeline, new ErrorStream()];
-if ($constructor->getNumberOfRequiredParameters() === 3
-    && ($constructor->getParameters()[2]->getType() instanceof ReflectionNamedType)
-    && $constructor->getParameters()[2]->getType()->getName() === RuleExecutionInterface::class) {
+$parameters = $constructor->getParameters();
+$firstType = $parameters[0]->getType();
+if ($firstType instanceof ReflectionNamedType && $firstType->getName() === \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface::class) {
+    array_unshift($dependencies, new RuleOptionDocumentForms());
+}
+$next = $parameters[count($dependencies)] ?? null;
+if ($next !== null && $next->getType() instanceof ReflectionNamedType
+    && $next->getType()->getName() === RuleExecutionInterface::class) {
     $execution = $container->get(RuleExecutionInterface::class);
     assert($execution instanceof RuleExecutionInterface);
     $dependencies[] = $execution;
-} elseif ($constructor->getNumberOfRequiredParameters() !== 2) {
+}
+if ($constructor->getNumberOfRequiredParameters() !== count($dependencies)) {
     throw new RuntimeException('The probe does not support this configuration adapter constructor.');
 }
 $adapter = (new ReflectionClass(ConfigurationInputAdapter::class))->newInstanceArgs($dependencies);

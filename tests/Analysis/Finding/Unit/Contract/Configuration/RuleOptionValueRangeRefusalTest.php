@@ -26,6 +26,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -273,7 +274,7 @@ final class RuleOptionValueRangeRefusalTest extends TestCase
         $input = new ArrayInput(['--rule-opt' => [$ruleOpt]], new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]));
-        $writes = (new CliOptionsParser($parser))->pathWrites($input);
+        $writes = (new CliOptionsParser(new RuleOptionDocumentForms(), $parser))->pathWrites($input);
         if ($expectedPath !== null) {
             self::assertCount(1, $writes);
             self::assertSame($expectedPath, $writes[0]->path);

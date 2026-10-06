@@ -129,8 +129,12 @@ Reporting/
 suppression, configured path exclusion, configured namespace exclusion,
 Baseline ceiling, optional annotation rejoin, and Git scope last. Git scope is
 queried through `GitScopeQueryInterface`; its Infrastructure adapter never
-leaks into Reporting. Git changes only the reported list and cannot alter the
-measured, accepted, or stale Baseline facts.
+leaks into Reporting. Infrastructure composes the declared `ChannelFileScope`
+once and injects it into `FindingProjector`; configured exclusions and Git
+projection use that same value. Reporting carries no capability-registration
+factory. Git changes only the reported list and cannot alter the measured,
+accepted, or stale Baseline facts. `BaselineDocumentReader` acquires and judges
+the held document before analysis; `BaselineLoader` interprets those bytes.
 
 Reporting-owned `OutputFormat` carries the resolved formatter name to the
 Console presenter without adding output policy to the transitional runtime

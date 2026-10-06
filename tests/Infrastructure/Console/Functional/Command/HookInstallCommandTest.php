@@ -241,7 +241,7 @@ final class HookInstallCommandTest extends TestCase
     private function install(array $input, ?string $binary = self::BINARY): ApplicationTester
     {
         $errorStream = new ErrorStream();
-        $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator($binary), $errorStream);
+        $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator($binary), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction($errorStream));
         $application = new Application($errorStream, new RefusalPresenter($errorStream), new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
         $application->setAutoExit(false);
         $application->addCommand($command);
@@ -310,7 +310,7 @@ final class HookInstallCommandTest extends TestCase
     #[Test]
     public function itAdvertisesTheDocsAddressInItsHelp(): void
     {
-        $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator(self::BINARY), new ErrorStream());
+        $command = new HookInstallCommand(new GitRepositoryLocator(), $this->locator(self::BINARY), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }

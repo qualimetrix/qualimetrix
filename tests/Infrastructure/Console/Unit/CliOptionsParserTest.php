@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -43,7 +44,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itRefusesUnregisteredRuleOptionOwnersWithTheirActualCliOrigin(): void
     {
-        $parser = new CliOptionsParser(new RuleOptionsParser([], [
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), new RuleOptionsParser([], [
             'complexity.ccn' => \Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions::class,
             'cohesion.lcom' => LcomOptions::class,
         ]));
@@ -70,7 +71,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itTargetsTheDeclaredSchemaAndKeepsSelectorPayloadPlain(): void
     {
-        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
         $definition = new InputDefinition([
             new InputOption('distance-warning', null, InputOption::VALUE_REQUIRED),
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -91,7 +92,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itDecodesTheDistanceNamespaceSelectorAfterRawRuleOptionParsing(): void
     {
-        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]);
@@ -115,7 +116,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itRefusesABareDistanceNamespaceCliValue(): void
     {
-        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([DistanceRule::class]));
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]);
@@ -131,7 +132,7 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itDecodesPerRuleSuppressionSelectors(): void
     {
-        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([ComplexityRule::class]));
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([ComplexityRule::class]));
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
         ]);
@@ -156,7 +157,7 @@ final class CliOptionsParserTest extends TestCase
             'unknown:App',
             '--rule-opt',
             '--rule-opt=complexity.ccn:suppress-namespaces=unknown:App',
-            $surface->schemaAt(new \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress(null, 'suppress-namespaces')),
+            (new RuleOptionDocumentForms())->schemaAt($surface, new \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress(null, 'suppress-namespaces')),
             [['unknown' => 'App']],
         );
         try {
@@ -181,7 +182,7 @@ final class CliOptionsParserTest extends TestCase
             'cbo-error' => ['rule' => 'coupling.cbo', 'option' => 'error'],
         ], ['maintainability.mi' => MaintainabilityOptions::class, 'coupling.cbo' => CboOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -219,7 +220,7 @@ final class CliOptionsParserTest extends TestCase
             '--mi-warning' => '30',
         ], $definition);
 
-        $cliParser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([MaintainabilityRule::class]));
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([MaintainabilityRule::class]));
         $writes = $cliParser->pathWrites($input);
         self::assertCount(2, $writes);
         self::assertSame(['rules', 'maintainability.mi', 'warning'], $writes[0]->path);
@@ -244,7 +245,7 @@ final class CliOptionsParserTest extends TestCase
             'param-type-coverage-warning' => ['rule' => 'design.type-coverage.param', 'option' => 'warning'],
         ], ['design.type-coverage.param' => TypeCoverageOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -264,9 +265,9 @@ final class CliOptionsParserTest extends TestCase
     #[Test]
     public function itNormalizesAliasValuesToBooleans(): void
     {
-        $cliParser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
         $command = new Command('check');
-        CheckCommandDefinition::addOptions($command, new RuleRegistry([CircularDependencyRule::class]));
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, new RuleRegistry([CircularDependencyRule::class]));
         $definition = $command->getDefinition();
         self::assertFalse($definition->getOption('circular-deps')->acceptValue());
 
@@ -298,7 +299,7 @@ final class CliOptionsParserTest extends TestCase
             'ccn-warning' => ['rule' => 'complexity.ccn', 'option' => 'callable.warning'],
         ], ['complexity.ccn' => ComplexityRule::getOptionsClass()]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -322,7 +323,7 @@ final class CliOptionsParserTest extends TestCase
             'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
         ], ['architecture.circular-dependency' => CircularDependencyOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -347,7 +348,7 @@ final class CliOptionsParserTest extends TestCase
             'circular-deps' => ['rule' => 'architecture.circular-dependency', 'option' => 'enabled'],
         ], ['architecture.circular-dependency' => CircularDependencyOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -369,7 +370,7 @@ final class CliOptionsParserTest extends TestCase
             'threshold' => ['rule' => 'coupling.distance', 'option' => 'max-distance-warning'],
         ], ['coupling.distance' => DistanceOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -393,7 +394,7 @@ final class CliOptionsParserTest extends TestCase
             'threshold' => ['rule' => 'coupling.distance', 'option' => 'max-distance-warning'],
         ], ['coupling.distance' => DistanceOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -429,7 +430,7 @@ final class CliOptionsParserTest extends TestCase
             'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
         ], ['cohesion.lcom' => LcomOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -460,7 +461,7 @@ final class CliOptionsParserTest extends TestCase
             'lcom-exclude-methods' => ['rule' => 'cohesion.lcom', 'option' => 'excludeMethods'],
         ], ['cohesion.lcom' => LcomOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),
@@ -481,7 +482,7 @@ final class CliOptionsParserTest extends TestCase
     public function itRefusesAnEmptyValueOnABooleanAliasAtTheRealCliDefinition(): void
     {
         $command = new Command('check');
-        CheckCommandDefinition::addOptions($command, new RuleRegistry([CircularDependencyRule::class]));
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, new RuleRegistry([CircularDependencyRule::class]));
         $definition = $command->getDefinition();
         self::assertFalse($definition->getOption('circular-deps')->acceptValue());
 
@@ -500,7 +501,7 @@ final class CliOptionsParserTest extends TestCase
             'mi-error' => ['rule' => 'maintainability.mi', 'option' => 'error'],
         ], ['maintainability.mi' => MaintainabilityOptions::class]);
 
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
+        $cliParser = new CliOptionsParser(new RuleOptionDocumentForms(), $ruleOptionsParser);
 
         $definition = new InputDefinition([
             new InputOption('rule-opt', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY),

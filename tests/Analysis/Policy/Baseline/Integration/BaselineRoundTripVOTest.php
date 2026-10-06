@@ -144,7 +144,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $this->writer->write($this->severalSubjects(), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
         $first = (string) file_get_contents($path);
 
-        $this->writer->write($this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
+        $this->writer->write($this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path)), \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
 
         self::assertSame($first, (string) file_get_contents($path));
     }
@@ -208,7 +208,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $path = $this->tempDir . '/baseline.json';
         $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), AbsolutePath::fromString('/home/user/project'));
 
-        return $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        return $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
     }
 
     private static function fixtureExclusions(): \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions

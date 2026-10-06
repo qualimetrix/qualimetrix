@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-
 use PHPUnit\Framework\Attributes\Test;
+
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -46,7 +47,7 @@ final class RuleOptionAliasRangeRefusalTest extends TestCase
             self::fail('a negative value written through --max-cycle-size was accepted');
         } catch (ConfigurationRefusal $refusal) {
             self::assertSame(
-                'Option --max-cycle-size must be at least 0, got -1.',
+                'Option --max-cycle-size (written as --max-cycle-size=-1) must be at least 0, got -1.',
                 $refusal->getMessage(),
             );
             self::assertSame(ConfigurationSource::CommandLine, $refusal->sources()[0]->source());
@@ -69,10 +70,10 @@ final class RuleOptionAliasRangeRefusalTest extends TestCase
     private function fromAlias(string $value): RuleOptionsInterface
     {
         $command = new Command('check');
-        CheckCommandDefinition::addOptions($command, new RuleRegistry([CircularDependencyRule::class]));
+        CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, new RuleRegistry([CircularDependencyRule::class]));
 
         $input = new ArrayInput(['--max-cycle-size' => $value], $command->getDefinition());
-        $parser = new CliOptionsParser((new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
+        $parser = new CliOptionsParser(new RuleOptionDocumentForms(), (new RuleOptionsParserFactory())->createFromClasses([CircularDependencyRule::class]));
         $writes = $parser->pathWrites($input);
         self::assertCount(1, $writes);
         self::assertSame(['rules', 'architecture.circular-dependency', 'max-cycle-size'], $writes[0]->path);

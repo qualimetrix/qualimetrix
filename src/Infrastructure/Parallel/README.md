@@ -32,7 +32,13 @@ of this namespace.
 `FileProcessingTask` carries by name what the container registered —
 `WorkerComposition`: collectors, derived collectors, the traversal participant
 and the rules — beside the per-file path, the cache directory, the Cohesion
-configuration current at task creation, and the memory limit.
+configuration current at task creation, and the memory limit. It also carries
+the registered `RuleOptionDocumentFormsInterface` service instance through PHP
+serialization. Main DI and worker inline validators therefore use the same
+Finding interpretation; workers import only its public interface. The task
+factory, task constructor and `WorkerBootstrap::getFileProcessor()` require
+that service. Processor reuse includes its serialized class and state in the
+cache identity, alongside the existing project and collector configuration.
 
 **Memory limit.** A worker is a separate process that starts under `php.ini`,
 and the coordinator's `ini_set()` does not cross the process boundary.

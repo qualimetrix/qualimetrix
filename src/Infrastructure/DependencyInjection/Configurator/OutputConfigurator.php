@@ -9,11 +9,13 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
@@ -56,6 +58,7 @@ use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\ExitPolicySection;
 use Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction;
 use Qualimetrix\Infrastructure\Console\MeasuredFindingSet;
 use Qualimetrix\Infrastructure\Console\MemoryLimitSection;
 use Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons;
@@ -199,7 +202,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 . 'BaselineConflictException.php,BaselineEntryRejection.php,'
                 . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
                 . 'BaselineDocumentLayout.php,BaselineEntryOrder.php,BaselineEntryPayload.php,'
-                . 'BaselineFormatVersion.php,BaselineFileShape.php,'
+                . 'BaselineFormatVersion.php,BaselineFileShape.php,BoundaryThresholdSources.php,BoundaryRunFacts.php,'
                 . 'BaselineExclusionShape.php,CanonicalEnvelope.php,BaselineEntryShape.php,CurrentAbsentMeasurement.php,'
                 . 'ChannelRenameMap.php,ChannelRenameReport.php,ChannelRenameRefusal.php,'
                 . 'ExplainedSubject.php,Ceiling/**,Contract/**,EntryBinding/**}',
@@ -249,6 +252,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
         $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
 
+        $container->register(ChannelFileScope::class)
+            ->setFactory([DeclaredChannelFileScope::class, 'create']);
+
         $container->register($suppressionFilter);
         $container->setAlias(AnnotationSuppressionInterface::class, $suppressionFilter)
             ->setPublic(true);
@@ -265,9 +271,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(AnnotationSuppressionInterface::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
                 new Reference(GitScopeQueryInterface::class),
                 new Reference(UnusedEntryAudit::class),
+                new Reference(ChannelFileScope::class),
             ]);
 
         // MeasuredFindingSet — the single definition of the set a baseline
@@ -395,6 +403,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerHookDelivery(ContainerBuilder $container): void
     {
+        $container->register(HookFileTransaction::class)
+            ->setArgument('$errorStream', new Reference(ErrorStream::class));
         // GitRepositoryLocator (shared by hook commands)
         $container->register(GitRepositoryLocator::class);
         $container->setAlias(GitRepositoryLocatorInterface::class, GitRepositoryLocator::class);
@@ -408,7 +418,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
-                new Reference(ErrorStream::class),
+                new Reference(HookFileTransaction::class),
             ])
             ->setPublic(true);
 
@@ -417,7 +427,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
-                new Reference(ErrorStream::class),
+                new Reference(HookFileTransaction::class),
             ])
             ->setPublic(true);
 
@@ -426,7 +436,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(GitRepositoryLocator::class),
                 new Reference(RunningBinaryLocator::class),
-                new Reference(ErrorStream::class),
+                new Reference(HookFileTransaction::class),
             ])
             ->setPublic(true);
     }
@@ -529,6 +539,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(BaselineUpdater::class),
                 new Reference(BaselineWriter::class),
                 new Reference(RunRuleCoverage::class),
@@ -540,6 +551,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(BaselineCleaner::class),
                 new Reference(BaselineWriter::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),
@@ -554,6 +566,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(BaselineRenameChannelsCommand::class)
             ->setArguments([
                 new Reference(BaselineChannelRenamer::class),
+                new Reference(BaselineDocumentReader::class),
             ])
             ->addMethodCall(...$refusalPresenterCall)
             ->setPublic(true);
@@ -562,6 +575,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineLoader::class),
+                new Reference(BaselineDocumentReader::class),
                 new Reference(BoundaryExplanationService::class),
                 new Reference(BaselineConfiguredThresholds::class),
                 new Reference(ChannelDeclarationRegistryInterface::class),

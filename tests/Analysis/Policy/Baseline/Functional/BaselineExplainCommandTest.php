@@ -601,7 +601,8 @@ final class BaselineExplainCommandTest extends TestCase
                 metrics: $metrics,
             ),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge(), $coverage ?? StubRuleCoverage::everyRuleRan()),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new BoundaryExplanationService(self::producerEdge(), $coverage ?? StubRuleCoverage::everyRuleRan(), $declarations),
             new BaselineConfiguredThresholds(
                 self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
                 $registry,
@@ -637,7 +638,8 @@ final class BaselineExplainCommandTest extends TestCase
         $command = new BaselineExplainCommand(
             new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),
             new BaselineLoader(new BaselineEntryParser($declarations)),
-            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan()),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+            new BoundaryExplanationService(self::producerEdge(), StubRuleCoverage::everyRuleRan(), $declarations),
             new BaselineConfiguredThresholds(self::ruleRegistry([]), new RuleOptionsRegistry()),
             $declarations,
         );

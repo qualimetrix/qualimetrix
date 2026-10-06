@@ -17,6 +17,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionKeyMetadata;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
 
 #[CoversClass(RuleOptionKeySet::class)]
 #[CoversClass(RuleOptionKeyMetadata::class)]
@@ -219,7 +221,7 @@ final class RuleOptionKeySetTest extends TestCase
             ]);
 
         self::assertSame(['callable', 'class', 'enabled'], $set->acceptedForDisplay());
-        self::assertSame('a block of options or null', $set->shapeOf('callable')?->describe());
-        self::assertTrue($set->shapeOf('class')?->matches(null));
+        self::assertSame('a block of options or null', (new RuleOptionShapeWording())->describe($set->shapeOf('callable') ?? throw new LogicException('Missing callable form.')));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($set->shapeOf('class') ?? throw new LogicException('Missing class form.'), null));
     }
 }

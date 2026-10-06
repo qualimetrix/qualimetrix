@@ -27,7 +27,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itIsAddressedAsHookStatus(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         self::assertSame('hook:status', $command->getName());
     }
@@ -35,7 +35,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itDefinesNoCustomOptions(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
         $definition = $command->getDefinition();
 
         // HookStatusCommand defines no custom options (only inherited --help, etc.)
@@ -45,7 +45,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itDefinesNoArguments(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
         $definition = $command->getDefinition();
 
         self::assertSame([], $definition->getArguments());
@@ -59,7 +59,7 @@ final class HookStatusCommandTest extends TestCase
     #[Test]
     public function itAdvertisesTheDocsAddressInItsHelp(): void
     {
-        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new ErrorStream());
+        $command = new HookStatusCommand(new GitRepositoryLocator(), new RunningBinaryLocator(), new \Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction(new ErrorStream()));
 
         self::assertStringContainsString('Docs: ' . ProductIdentity::llmsTxtUrl(), $command->getHelp());
     }

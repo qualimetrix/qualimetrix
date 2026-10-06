@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\ErrorStream;
@@ -121,6 +122,6 @@ final class EmptyCliValueReachesItsOwnerTest extends TestCase
             }
         };
 
-        return (new ConfigurationInputAdapter($pipeline, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)))->adapt($input, '/project');
+        return (new ConfigurationInputAdapter(new RuleOptionDocumentForms(), $pipeline, new ErrorStream(), self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)))->adapt($input, '/project');
     }
 }

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Reporting\Unit\FindingProjection;
+namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope;
 
 /**
  * What the assembled scope answers, against channel names written out here.

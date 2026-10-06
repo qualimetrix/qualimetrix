@@ -38,6 +38,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -87,7 +88,7 @@ final class RuleOptionsBuildTest extends TestCase
             $address = $surface->locate($option);
             self::assertNotNull($address);
             $path = ['rules', 'complexity.ccn', ...explode('.', $option)];
-            $writes[] = new CommandLinePathWrite($path, $text, '--rule-opt', '--rule-opt=complexity.ccn:' . $option . '=' . $text, $surface->schemaAt($address));
+            $writes[] = new CommandLinePathWrite($path, $text, '--rule-opt', '--rule-opt=complexity.ccn:' . $option . '=' . $text, (new RuleOptionDocumentForms())->schemaAt($surface, $address));
         }
         $configuration = self::prepareLayers([CommandLineLayer::of(new ConfigurationResolutionRequest(
             AbsolutePath::fromString('/project'),
@@ -118,7 +119,7 @@ final class RuleOptionsBuildTest extends TestCase
         $address = $surface->locate('mode');
         self::assertNotNull($address);
         $layer = CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: [
-            new CommandLinePathWrite(['rules', 'architecture.unassigned-class', 'mode'], 'ignore', '--rule-opt', '--rule-opt=architecture.unassigned-class:mode=ignore', $surface->schemaAt($address)),
+            new CommandLinePathWrite(['rules', 'architecture.unassigned-class', 'mode'], 'ignore', '--rule-opt', '--rule-opt=architecture.unassigned-class:mode=ignore', (new RuleOptionDocumentForms())->schemaAt($surface, $address)),
         ]));
         $document = DocumentComposer::compose(new DocumentSchema([new RulesSection($execution, 'rules'), new RulesSection($execution, 'only_rules'), new RulesSection($execution, 'disabled_rules')]), [$layer]);
         $stated = (new RuleEnablementResolver())->decide($document, ResolvedOptionsFixture::universe($metadata));
@@ -394,7 +395,7 @@ final class RuleOptionsBuildTest extends TestCase
         $address = $surface->locate('callable.warning');
         self::assertNotNull($address);
         $cli = CommandLineLayer::of(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'), cliPathWrites: [
-            new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '30', '--cyclomatic-warning', '--cyclomatic-warning=30', $surface->schemaAt($address)),
+            new CommandLinePathWrite(['rules', 'complexity.ccn', 'callable', 'warning'], '30', '--cyclomatic-warning', '--cyclomatic-warning=30', (new RuleOptionDocumentForms())->schemaAt($surface, $address)),
         ]));
         try {
             self::buildLayers([self::file(['complexity.ccn' => ['callable' => ['error' => 12]]]), $cli]);

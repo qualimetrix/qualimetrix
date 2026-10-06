@@ -36,6 +36,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -198,7 +199,7 @@ final class ResolvedOptionsFixture
      */
     public static function values(string $optionsClass, array $options): ResolvedRuleOptionValues
     {
-        $entry = RuleOptionSurface::of($optionsClass)->schema();
+        $entry = (new RuleOptionDocumentForms())->schema(RuleOptionSurface::of($optionsClass));
         $section = new class ($entry) implements DocumentSectionSchemaInterface {
             public function __construct(private readonly NodeSchema $entry) {}
             public function declaration(): SectionDeclaration
@@ -267,7 +268,7 @@ final class ResolvedOptionsFixture
                         \is_array($value) ? '' : (string) json_encode($value, \JSON_THROW_ON_ERROR),
                         '--rule-opt',
                         '--rule-opt=' . $producer->name . ':' . $option . '=' . (\is_array($value) ? '[selector]' : (string) json_encode($value, \JSON_THROW_ON_ERROR)),
-                        $surface->schemaAt($address),
+                        (new RuleOptionDocumentForms())->schemaAt($surface, $address),
                         \is_array($value) ? $value : null,
                     );
                 }

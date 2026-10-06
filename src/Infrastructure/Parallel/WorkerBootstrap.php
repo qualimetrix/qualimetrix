@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorI
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
@@ -66,11 +67,13 @@ final class WorkerBootstrap
      * @param AbsolutePath|null $cacheDir Cache directory (null to disable caching)
      * @param LcomCollectionConfiguration $lcomConfiguration Exact Cohesion-owned worker configuration
      * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
+     * @param RuleOptionDocumentFormsInterface $documentForms Finding's serialized document forms service
      */
     public static function getFileProcessor(
         AbsolutePath $projectRoot,
         array $collectorClasses,
         string $dependencyTraversalParticipantClass,
+        RuleOptionDocumentFormsInterface $documentForms,
         array $derivedCollectorClasses = [],
         ?AbsolutePath $cacheDir = null,
         LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
@@ -83,6 +86,7 @@ final class WorkerBootstrap
             $projectRoot,
             $collectorClasses,
             $dependencyTraversalParticipantClass,
+            $documentForms,
             $derivedCollectorClasses,
             $cacheDir,
             $lcomConfiguration,
@@ -99,6 +103,7 @@ final class WorkerBootstrap
             $projectRoot,
             $collectorClasses,
             $dependencyTraversalParticipantClass,
+            $documentForms,
             $lcomConfiguration,
             $derivedCollectorClasses,
             $cacheDir,
@@ -130,6 +135,7 @@ final class WorkerBootstrap
         AbsolutePath $projectRoot,
         array $collectorClasses,
         string $dependencyTraversalParticipantClass,
+        RuleOptionDocumentFormsInterface $documentForms,
         array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
         LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
@@ -155,6 +161,7 @@ final class WorkerBootstrap
             . '|' . $collectorsHash
             . '|' . $rulesHash
             . '|' . $configHash
+            . '|' . md5(serialize($documentForms))
             . '|' . $dependencyTraversalParticipantClass;
     }
 
@@ -170,6 +177,7 @@ final class WorkerBootstrap
         AbsolutePath $projectRoot,
         array $collectorClasses,
         string $dependencyTraversalParticipantClass,
+        RuleOptionDocumentFormsInterface $documentForms,
         LcomCollectionConfiguration $lcomConfiguration,
         array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
@@ -195,7 +203,7 @@ final class WorkerBootstrap
         );
 
         // Build per-rule threshold-override validator map (static lookup, no DI)
-        $validators = RuleValidatorMapFactory::build($ruleClasses);
+        $validators = RuleValidatorMapFactory::build($documentForms, $ruleClasses);
         $thresholdOverrideExtractor = new ThresholdOverrideExtractor($validators);
         $sourceControlExtractorClass = self::validatedImplementationClass(
             self::SOURCE_CONTROL_EXTRACTOR_CLASS,

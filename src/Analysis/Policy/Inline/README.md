@@ -242,7 +242,10 @@ physical sites on one line share that label.
 
 `RuleValidatorMapFactory` builds the same map for sequential and real worker
 collection and refuses a missing class with its FQCN; a real rule declaring no
-threshold support is still skipped normally.
+threshold support is still skipped normally. It receives Finding's
+`RuleOptionDocumentFormsInterface` to project declared threshold shapes. Main
+container compilation and worker bootstrap supply the same private Finding
+implementation, so accepted forms and refusal wording share one interpretation.
 Extraction internals never cross Run or the serialized worker payload.
 
 ## Change recipe

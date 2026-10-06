@@ -22,6 +22,9 @@ Finding/
 │   ├── Control/          # finding control scope vocabulary
 │   ├── Filter/           # Ordered finding-filter stages and results
 │   ├── Rule/             # Rule authoring contracts
+│   │   ├── RuleOptionShape.php # immutable recursive option declaration
+│   │   ├── RuleOptionSurface.php # accepted addresses and declaration lookup
+│   │   ├── RuleOptionDocumentFormsInterface.php # named CLI and Inline document forms
 │   │   └── Override/     # numeric validation and authored request
 │   │       ├── ThresholdOverrideRequest.php # values, syntax and written axes
 │   │       ├── OverrideAxis.php # warning or error
@@ -35,11 +38,11 @@ Finding/
 │   ├── ProducerOptionsBuild.php # immutable options for one producer
 │   ├── OptionActivityResolution.php # per-cell mode and level activity
 │   ├── ThresholdBandRefusal.php # winning authored and default halves
-│   └── OptionForms/      # private declaration and document projection
-│       ├── RuleOptionDefinition.php # scalar, word or compound declaration
-│       ├── CompoundRuleOptionForm.php # list/map/union matching and wording
-│       ├── CompoundOptionKind.php  # the three compound kinds
-│       ├── RuleOptionSchemaProjection.php # the document form of one declaration
+│   └── OptionForms/      # private declaration interpretation
+│       ├── RuleOptionShapeMatcher.php # value matching
+│       ├── RuleOptionShapeWording.php # declared and written form descriptions
+│       ├── RuleOptionSchemaProjection.php # document form of one declaration
+│       ├── RuleOptionDocumentForms.php # root/level/framework document forms
 │       ├── RuleOptionDeclarations.php # disjoint recognition states
 │       └── RuleOptionKeyMetadata.php # bands, shorthands, axes and retirements
 ├── Selection/            # private authored selection and retired-name advice
@@ -219,12 +222,16 @@ here: `RuleOptionKeySet::withLevelSlots()` takes them from
 `levelOptionsClasses()`, which stays the single source of a slot's existence
 and form.
 
-The private `OptionForms` collaborators own compound matching and schema
-projection. `RuleOptionShape` keeps the declaration DSL and its narrow
-`asNodeSchema()` operation; it does not import compound methods through a
-trait. `RuleOptionKeySet` combines the recognition declaration and its metadata
-without duplicating either. Root and level schema projection retain their
-distinct meaning without a mode flag.
+`RuleOptionShape` holds immutable recursive declaration data and preserves the
+authoring DSL. Private `OptionForms` interpreters own matching, wording and
+schema projection; the published shape imports none of them.
+`RuleOptionSurface::shapeAt()` returns the declared root, level or framework
+shape. CLI and Inline receive `RuleOptionDocumentFormsInterface` for
+`schema(surface)` and `schemaAt(surface, address)`; its private implementation
+projects the same declaration facts into `NodeSchema`.
+`RuleOptionKeySet` combines recognition and metadata without duplicating either.
+Root and level schema projection retain their distinct meaning.
+See [ADR 0099](../../../docs/adr/0099-rule-option-shape-is-a-declaration.md).
 
 `RuleOptionsInterface::acceptedOptionKeys()` and each hierarchical
 `levelOptionsClasses()` are the owner declarations. `RuleOptionSurface` combines

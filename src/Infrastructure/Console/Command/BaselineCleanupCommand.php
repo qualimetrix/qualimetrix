@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupCandidate;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
@@ -50,6 +51,7 @@ final class BaselineCleanupCommand extends BaselineCommand
     public function __construct(
         private readonly BaselineRunInterface $baselineRun,
         private readonly BaselineLoader $loader,
+        private readonly BaselineDocumentReader $documentReader,
         private readonly BaselineCleaner $cleaner,
         private readonly BaselineWriter $writer,
         private readonly ChannelDeclarationRegistryInterface $declarations,
@@ -97,7 +99,7 @@ final class BaselineCleanupCommand extends BaselineCommand
         // refused beside the candidates it should have been copied from.
         $written = CommandLineSpelling::options($input, 'remove');
 
-        $document = BaselineLoader::preflight($baselinePath);
+        $document = $this->documentReader->preflight($baselinePath);
 
         return $this->withPreparedTarget(
             $document->target,
@@ -244,6 +246,7 @@ final class BaselineCleanupCommand extends BaselineCommand
     {
         return match ($candidate->reason) {
             BaselineCleanupReason::Stale => 'nothing reported for this identity',
+            BaselineCleanupReason::ExclusionsRemovedPopulation => 'this identity belongs to a file newly excluded from analysis',
             BaselineCleanupReason::ProducerDidNotRun => 'not measured: this invocation did not run the rule for'
                 . ' this channel at this level',
             BaselineCleanupReason::LevelNotDeclared => 'level not declared: this channel does not report at the'

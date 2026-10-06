@@ -33,7 +33,8 @@ Baseline/
 ├── BaselineExclusionShape.php   # Closed recorded-exclusion grammar and indexed refusals
 ├── BaselineEntryShape.php       # Closed raw entry and edge keys before value normalization
 ├── GroupAcceptance.php          # Acceptance policy over complete groups
-├── BaselineLoader.php           # Loads the exact typed-subject version 14 file; envelope failures throw ConfigurationRefusal (Analysis/Configuration)
+├── BaselineDocumentReader.php   # Acquires and judges held document bytes before analysis
+├── BaselineLoader.php           # Semantically loads entries from the held version 14 document
 ├── CanonicalBaselineReader.php  # Reads the held canonical bytes, or declines to the full-document decoder
 ├── CanonicalEnvelope.php        # Pure canonical envelope-line recognition and depth-bounded decoding
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
@@ -65,6 +66,8 @@ Baseline/
 ├── ChannelRenameRefusal.php     # A carry the product understood and declined; the file is left byte-identical
 │
 ├── BoundaryExplanationService.php # `baseline:explain`: assembles the explained identities and sources
+├── BoundaryThresholdSources.php # readonly invocation configured and inline thresholds
+├── BoundaryRunFacts.php         # readonly measured findings, coverage and optional symbol locations
 ├── CurrentBoundaryMeasurement.php # Projects independent current evidence and the whole ceiling verdict
 ├── CurrentAbsentMeasurement.php # Proves file or aggregate absence only for unrecorded identities
 ├── IdentityBoundaryExplanation.php # Joins one identity with its configured threshold and annotation
@@ -160,7 +163,7 @@ also require deliberate identity migration; regenerating is a new acceptance.
 | `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode`         | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                              | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
 | `BaselineGenerator`          | `generate(list<Finding>, list<string>, RecordedExclusions): BaselineCapture`                                                          | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member.            | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
 | `ExplainedSubject`           | `identities()`, `index()`, `recordFor()`, `subjectFor()` over baseline, measured findings and an optional `MetricRepositoryInterface` | Answers which identities bear on the requested symbol and which exact subject and location the run measured for it. Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository; a logical projection invents no declaration subject. Static because the answer is a pure function of the run data handed in.                                                              | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
-| `BoundaryExplanationService` | measured findings, threshold maps, declarations, RunCoverage, optional `MetricRepositoryInterface` -> `BoundaryExplanation`           | Turns the identities and subject `ExplainedSubject` resolved into boundaries: status, independent CurrentMeasurement, baseline source, configured threshold and annotation. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value. | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
+| `BoundaryExplanationService` | `BoundaryThresholdSources`, `BoundaryRunFacts` with constructor declarations -> `BoundaryExplanation`                                 | Turns the identities and subject `ExplainedSubject` resolved into boundaries: status, independent CurrentMeasurement, baseline source, configured threshold and annotation. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value. | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
 
 These owners retain only their subject dependencies: baseline and capture VOs,
 channel declarations and the clock, or repository/subject/path and Finding-owned
@@ -298,6 +301,11 @@ Incomplete analysis exits 4 before classification or mutation.
 ## Explaining a Boundary
 
 `BoundaryExplanationService` answers one `EffectiveBoundary` per identity.
+Channel declarations are constructor dependencies. `BoundaryThresholdSources`
+retains the invocation's configured and inline threshold arrays;
+`BoundaryRunFacts` retains measured findings, coverage and optional repository
+locations. These readonly carriers are invocation evidence and are excluded
+from the service prototype.
 Its mandatory `Contract\CurrentMeasurement now` is independent of its nullable
 baseline source, configured threshold and inline override. No baseline or an
 inert entry can still have a current measured group. Known valid entries read
@@ -444,7 +452,7 @@ available.
 
 ### Reads
 
-`BaselineLoader::preflight()` physically acquires one immutable
+`BaselineDocumentReader::preflight()` physically acquires one immutable
 `Contract\BaselineDocument` before analysis for check, update, cleanup, explain
 and rename-channels. `BaselineFileShape` judges closed document grammar, including
 unknown envelope, entry, edge and exclusion keys, before configured semantics.

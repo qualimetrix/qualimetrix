@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineChannelRenamer;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameMap;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameRefusal;
 use Qualimetrix\Analysis\Policy\Baseline\ChannelRenameReport;
@@ -42,6 +42,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
 {
     public function __construct(
         private readonly BaselineChannelRenamer $renamer,
+        private readonly BaselineDocumentReader $documentReader,
     ) {
         parent::__construct();
     }
@@ -104,7 +105,7 @@ final class BaselineRenameChannelsCommand extends BaselineCommand
         $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
         $mapPath = CommandLineSpelling::requiredArgument($input, 'map');
 
-        $document = BaselineLoader::preflight($baselinePath);
+        $document = $this->documentReader->preflight($baselinePath);
         self::assertMapReadable($mapPath);
 
         $map = self::loadMap($mapPath);

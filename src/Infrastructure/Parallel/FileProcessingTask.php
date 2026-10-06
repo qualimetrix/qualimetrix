@@ -8,6 +8,7 @@ use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -47,6 +48,7 @@ final class FileProcessingTask implements Task
         private readonly AbsolutePath $filePath,
         private readonly AbsolutePath $projectRoot,
         private readonly WorkerComposition $composition,
+        private readonly RuleOptionDocumentFormsInterface $documentForms,
         private readonly string $memoryLimit,
         private readonly ?AbsolutePath $cacheDir = null,
         private readonly LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
@@ -80,6 +82,7 @@ final class FileProcessingTask implements Task
             cacheDir: $this->cacheDir,
             lcomConfiguration: $this->lcomConfiguration,
             ruleClasses: $this->composition->ruleClasses,
+            documentForms: $this->documentForms,
         );
 
         // Process the file

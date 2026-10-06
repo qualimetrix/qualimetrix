@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -15,6 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 final readonly class CliOptionsParser
 {
     public function __construct(
+        private RuleOptionDocumentFormsInterface $documentForms,
         private RuleOptionsParser $ruleOptionsParser,
         private CliSelectorDecoder $selectorDecoder = new CliSelectorDecoder(),
     ) {}
@@ -26,7 +28,7 @@ final readonly class CliOptionsParser
      */
     public function pathWrites(InputInterface $input, ?array $records = null): array
     {
-        $addressing = new CliRuleOptionAddressing($this->ruleOptionsParser, $this->selectorDecoder);
+        $addressing = new CliRuleOptionAddressing($this->ruleOptionsParser, $this->documentForms, $this->selectorDecoder);
         $records ??= AuthoredRuleOptionWrites::fromInput($input, $addressing->aliasForms());
         usort($records, static fn(array $a, array $b): int => $a['ordinal'] <=> $b['ordinal']);
 

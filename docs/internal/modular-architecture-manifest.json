@@ -77,6 +77,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms"
         }
       ]
     },
@@ -767,7 +771,7 @@
         {
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
         }
       ]
@@ -787,7 +791,7 @@
         {
           "owner": "Analysis.Finding",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Configuration\\Contract\\Document\\Schema\\NodeSchema"
         },
         {
@@ -832,14 +836,6 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionShape"
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionSchemaProjection"
         },
         {
@@ -877,6 +873,14 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheSection"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionDocumentFormsInterface"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms"
         }
       ]
     },
@@ -1045,7 +1049,7 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms"
         }
       ]
     },
@@ -1352,6 +1356,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\AnalysisInputPathValidator"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader"
         }
       ]
     },
@@ -1744,15 +1752,15 @@
       "consumers": [
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionSurface"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\RuleOptionsParser"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms"
         }
       ]
     },
@@ -1819,8 +1827,8 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CircularDependencyConfigurator"
         },
         {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope"
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DeclaredChannelFileScope"
         }
       ]
     },
@@ -5484,10 +5492,6 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService"
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExplainedSubject"
         },
         {
@@ -5533,6 +5537,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\MeasuredRunResult"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryRunFacts"
         }
       ]
     },
@@ -7194,11 +7202,23 @@
       "consumers": [
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\GitScopeFindingFilter"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DeclaredChannelFileScope"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\GitScopeFindingFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\ConfiguredExclusionProjection"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
         }
       ]
     },
@@ -8161,11 +8181,11 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope"
+          "source_fqcn": "Qualimetrix\\Reporting\\ReportProjectScope"
         },
         {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\ReportProjectScope"
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DeclaredChannelFileScope"
         }
       ]
     },
@@ -11787,29 +11807,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\CompoundOptionKind": {
-      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/CompoundOptionKind.php",
-      "kind": "enum",
-      "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\CompoundRuleOptionForm": {
-      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/CompoundRuleOptionForm.php",
-      "kind": "class",
-      "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDeclarations": {
       "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDeclarations.php",
-      "kind": "class",
-      "owner": "Analysis.Finding",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDefinition": {
-      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDefinition.php",
       "kind": "class",
       "owner": "Analysis.Finding",
       "visibility": "internal",
@@ -12369,8 +12368,8 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator"
         },
         {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope"
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DeclaredChannelFileScope"
         }
       ]
     },
@@ -13004,10 +13003,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand"
         },
         {
           "owner": "Reporting",
@@ -21500,13 +21495,6 @@
         }
       ]
     },
-    "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope": {
-      "path": "src/Reporting/FindingProjection/DeclaredChannelFileScope.php",
-      "kind": "class",
-      "owner": "Reporting",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions": {
       "path": "src/Reporting/FindingProjection/FindingProjectionOptions.php",
       "kind": "class",
@@ -22395,10 +22383,6 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\ProcessStreams"
         },
         {
@@ -22407,7 +22391,11 @@
         },
         {
           "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22427,7 +22415,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22454,18 +22442,6 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\FileCache"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
-        },
-        {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         },
@@ -22480,6 +22456,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22498,24 +22478,16 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentWriter"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
-        },
-        {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22579,11 +22551,11 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22617,15 +22589,7 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineGenerateCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
         },
         {
           "owner": "Infrastructure.Console",
@@ -22646,6 +22610,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCommand"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22665,18 +22637,6 @@
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookInstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\HookUninstallCommand"
-        },
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
         },
         {
@@ -22686,6 +22646,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -22704,10 +22668,6 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\FileCache"
         },
         {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\AbstractHookCommand"
-        },
-        {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheDirectoryEligibility"
         },
@@ -22716,16 +22676,20 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetAccess"
         },
         {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\RunTargets"
         },
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RunTarget\\TargetCollisions"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction"
         }
       ]
     },
@@ -23018,12 +22982,12 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun"
         },
         {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope"
-        },
-        {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\BaselineFilterReporter"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DeclaredChannelFileScope"
         }
       ]
     },
@@ -23441,6 +23405,173 @@
       "path": "src/Analysis/Policy/Baseline/ExclusionRemovedPopulation.php",
       "kind": "class",
       "owner": "Analysis.Policy.Baseline",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleOptionDocumentFormsInterface": {
+      "path": "src/Analysis/Finding/Contract/Rule/RuleOptionDocumentFormsInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Inline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CheckCommandDefinition"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliOptionsParser"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\CliRuleOptionAddressing"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ConfigurationInputAdapter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ThresholdValidatorMapCompilerPass"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator"
+        },
+        {
+          "owner": "Infrastructure.Parallel",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask"
+        },
+        {
+          "owner": "Infrastructure.Parallel",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTaskFactory"
+        },
+        {
+          "owner": "Infrastructure.Parallel",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionDocumentForms": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionDocumentForms.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\FindingConfigurator",
+          "relation": "composition_binding",
+          "operations": [
+            "service_alias",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionShapeMatcher": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionShapeMatcher.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Finding\\RuleConfiguration\\OptionForms\\RuleOptionShapeWording": {
+      "path": "src/Analysis/Finding/RuleConfiguration/OptionForms/RuleOptionShapeWording.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineDocumentReader": {
+      "path": "src/Analysis/Policy/Baseline/BaselineDocumentReader.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRenameChannelsCommand"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryRunFacts": {
+      "path": "src/Analysis/Policy/Baseline/BoundaryRunFacts.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryThresholdSources": {
+      "path": "src/Analysis/Policy/Baseline/BoundaryThresholdSources.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineExplainCommand"
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Hook\\HookFileTransaction": {
+      "path": "src/Infrastructure/Console/Hook/HookFileTransaction.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": [
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+          "relation": "composition_binding",
+          "operations": [
+            "service_reference",
+            "service_registration"
+          ]
+        }
+      ]
+    },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DeclaredChannelFileScope": {
+      "path": "src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
       "visibility": "internal",
       "consumers": []
     }

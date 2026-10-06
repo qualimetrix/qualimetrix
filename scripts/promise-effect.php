@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\PromiseEffect;
 
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -222,7 +223,7 @@ function repeatableDoors(Ledger $ledger, string $root): array
         throw new LedgerError('the container did not yield the rule registry the CLI door is built from');
     }
 
-    CheckCommandDefinition::addOptions($command, $registry);
+    CheckCommandDefinition::addOptions(new RuleOptionDocumentForms(), $command, $registry);
     $definition = $command->getDefinition();
     $flags = [];
 

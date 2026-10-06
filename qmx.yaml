@@ -610,6 +610,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionBand'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusal'
@@ -644,12 +645,12 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\FindingExclusionLedger'
         - 'Qualimetrix\Analysis\Finding\FindingPublication'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionActivityResolution'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDeclarations'
-        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDefinition'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionKeyMetadata'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher'
+        - 'Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\ProducerOptionsBuild'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionValueWrittenness'
         - 'Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser'
@@ -773,6 +774,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupRemoval'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentLayout'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentWriter'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEdge'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntry'
@@ -799,6 +801,8 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation'
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService'
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryRunFacts'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryThresholdSources'
         - 'Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader'
         - 'Qualimetrix\Analysis\Policy\Baseline\CanonicalEnvelope'
         - 'Qualimetrix\Analysis\Policy\Baseline\Ceiling\Absence'
@@ -1152,6 +1156,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\FindingFilterOrchestrator'
         - 'Qualimetrix\Infrastructure\Console\FormatOptionPairs'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
+        - 'Qualimetrix\Infrastructure\Console\Hook\HookFileTransaction'
         - 'Qualimetrix\Infrastructure\Console\Hook\PreCommitHook'
         - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
@@ -1224,6 +1229,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ContainerConfiguratorInterface'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CouplingConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DependencyModelConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DesignConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator'
@@ -1327,7 +1333,6 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult'
-        - 'Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionResult'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjector'
@@ -1670,6 +1675,7 @@ architecture:
       - analysis-evidence-cohesion
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
+      - analysis-finding
       - analysis-policy-inline
       - analysis-run
       - core-path
@@ -1691,13 +1697,11 @@ architecture:
       - external
     reporting:
       - analysis-configuration
-      - analysis-evidence-circulardependency
       - analysis-evidence-computedmetrics
       - analysis-evidence-computedmetrics-health
       - analysis-evidence-measurement
       - analysis-evidence-prioritization
       - analysis-finding
-      - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
       - analysis-projectmanifest
@@ -1782,8 +1786,6 @@ rules:
       coupling.cbo:namespace:
         # Baseline joins acceptance, scope, measurement and finding contracts; namespace union 19 follows those boundaries.
         - exact: 'Qualimetrix\Analysis\Policy\Baseline'
-        # Projection joins typed filters, baseline audit and inline contracts; namespace union17 reflects those boundaries. Class CBO stays active.
-        - exact: 'Qualimetrix\Reporting\FindingProjection'
         # Authored directive values are shared contracts: inbound namespace union 17.
         - exact: 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive'
         # Shared run policies and scope records: Ca=30, Ce=9, namespace CBO=16.
@@ -2473,10 +2475,6 @@ rules:
       - exact: src/Infrastructure/Console/Application.php
       - exact: src/Infrastructure/Console/Command/GraphExportCommand.php
       - exact: src/Infrastructure/Console/Command/BaselineRenameChannelsCommand.php
-      # Private extraction takes these commands from five methods to six: TCC is
-      # absent and LCOM stays 2, so the formula alone drops health from 75.36 to 40.
-      - exact: src/Infrastructure/Console/Command/HookInstallCommand.php
-      - exact: src/Infrastructure/Console/Command/HookUninstallCommand.php
       # TCC=0/LCOM=3 measure three independent refusal facts, not its static
       # factories; health 30 stays unchanged when those factories are moved.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php

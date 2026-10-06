@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
@@ -50,6 +51,7 @@ final class BaselineUpdateCommand extends BaselineCommand
     public function __construct(
         private readonly BaselineRunInterface $baselineRun,
         private readonly BaselineLoader $loader,
+        private readonly BaselineDocumentReader $documentReader,
         private readonly BaselineUpdater $updater,
         private readonly BaselineWriter $writer,
         private readonly RunRuleCoverage $ruleCoverage,
@@ -81,7 +83,7 @@ final class BaselineUpdateCommand extends BaselineCommand
         $baselinePath = CommandLineSpelling::requiredArgument($input, 'baseline');
 
         [$channels, $recordExclusions] = self::updateOptions($input);
-        $document = BaselineLoader::preflight($baselinePath);
+        $document = $this->documentReader->preflight($baselinePath);
 
         return $this->withPreparedTarget(
             $document->target,

@@ -68,6 +68,7 @@ Console/
 ├── RunningBinaryLocator.php         # Where the qmx binary running this process lives on disk
 ├── RunningBinaryLocatorInterface.php
 ├── Hook/
+│   ├── HookFileTransaction.php   # identity-fenced hook publication, backup and restoration
 │   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
 ├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
@@ -371,6 +372,10 @@ does not create a missing destination, and preserves an existing destination.
 **HookStatusCommand** — check hook status
 **HookUninstallCommand** — remove the hook, if it is ours
 
+`HookFileTransaction` owns target judgement, identity checks, backup, replacement,
+removal and restoration. Commands retain option parsing, repository discovery,
+messages and the exit ladder; status reads the same hook-owned file facts.
+
 The hook's contents are generated rather than shipped: `/scripts/` is excluded
 from the composer distribution, so a script living there reaches no consumer
 ([ADR 0068](../../../docs/adr/0068-the-pre-commit-hook-is-generated-not-shipped.md)).
@@ -467,7 +472,13 @@ Normalized accepted payload is preserved for arbitrary human JSON input.
 Exact unchanged entry bytes are guaranteed only for canonical writer-produced
 entries; arbitrary field order and numeric spelling may be normalized.
 
+`BaselineDocumentReader` acquires and judges the held input before analysis;
+`BaselineLoader` loads semantic entries from that same `BaselineDocument`.
+
 `BoundaryExplanationService` answers one `EffectiveBoundary` per identity.
+Channel declarations are constructor dependencies. Invocation threshold arrays
+travel in `BoundaryThresholdSources`; measured findings, coverage and optional
+symbol locations travel in `BoundaryRunFacts`.
 Its mandatory `Contract\CurrentMeasurement now` is independent of its nullable
 baseline source, configured threshold and inline override. No baseline or an
 inert entry can still have a current measured group. Known valid entries read
@@ -597,7 +608,8 @@ complete authored flag/value expression.
 `RuleOptionArgv` preserves repeated tokens before Symfony folds scalar options;
 `AuthoredRuleOptionWrites` retains the bound-input fallback.
 `CliRuleOptionAddressing` judges aliases and addresses through the single
-`RuleOptionSurface` declaration. `ConfigurationInputAdapter` owns ingress
+`RuleOptionSurface` declaration and receives `RuleOptionDocumentFormsInterface`
+for its document interpretation. `ConfigurationInputAdapter` owns ingress
 and delegates diagnostic publication to `ConfigurationDiagnosticsPublisher`.
 The shared document/run doors and mandatory scope remain unchanged.
 

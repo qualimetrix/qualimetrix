@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Document\Schema\NodeSchema;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\ThresholdOverrideRequest;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Rule\Override\OverrideValidationFailure;
@@ -20,6 +21,7 @@ final readonly class RuleOptionForms implements OverrideValidatorInterface
         public string $producer,
         private RuleOptionSurface $surface,
         public OverrideValidatorInterface $strategy,
+        private RuleOptionDocumentFormsInterface $documentForms,
     ) {}
 
     /** @return list<string|null> */
@@ -41,7 +43,7 @@ final readonly class RuleOptionForms implements OverrideValidatorInterface
         $key = $this->keyAt($producer, $level, $overrideAxis)
             ?? throw new LogicException('No declared form for this override axis.');
 
-        return $this->surface->schemaAt(new RuleOptionAddress($level, $key));
+        return $this->documentForms->schemaAt($this->surface, new RuleOptionAddress($level, $key));
     }
 
     private function keyAt(string $producer, ?string $level, string $overrideAxis): ?string

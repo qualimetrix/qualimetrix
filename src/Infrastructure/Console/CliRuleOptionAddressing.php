@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionAddress;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionRefusalWording;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge;
@@ -21,8 +22,11 @@ final readonly class CliRuleOptionAddressing
 {
     private RuleNameJudge $ruleNames;
 
-    public function __construct(private RuleOptionsParser $parser, private CliSelectorDecoder $selectors)
-    {
+    public function __construct(
+        private RuleOptionsParser $parser,
+        private RuleOptionDocumentFormsInterface $documentForms,
+        private CliSelectorDecoder $selectors,
+    ) {
         $this->ruleNames = new RuleNameJudge($parser->producerNames());
     }
 
@@ -33,7 +37,7 @@ final readonly class CliRuleOptionAddressing
         foreach ($this->parser->getAliasNames() as $alias) {
             $target = $this->parser->aliasTarget($alias);
             $surface = $target === null ? null : $this->parser->surfaceFor($target['rule']);
-            $acceptsText = $surface === null ? null : self::acceptsText($surface, $target['option']);
+            $acceptsText = $surface === null ? null : self::acceptsText($surface, $target['option'], $this->documentForms);
             if ($acceptsText !== null) {
                 $forms[$alias] = $acceptsText;
             }
@@ -41,10 +45,10 @@ final readonly class CliRuleOptionAddressing
         return $forms;
     }
 
-    public static function acceptsText(RuleOptionSurface $surface, string $option): ?bool
+    public static function acceptsText(RuleOptionSurface $surface, string $option, RuleOptionDocumentFormsInterface $documentForms): ?bool
     {
         $address = $surface->locate($option);
-        return $address === null ? null : $surface->schemaAt($address)->scalar->forms !== [ScalarForm::Boolean];
+        return $address === null ? null : $documentForms->schemaAt($surface, $address)->scalar->forms !== [ScalarForm::Boolean];
     }
 
     public function pathWrite(string $rule, string $option, string $text, string $optionName, string $authoredExpression): CommandLinePathWrite
@@ -69,7 +73,7 @@ final readonly class CliRuleOptionAddressing
         } catch (ConfigurationRefusal $refusal) {
             throw ConfigurationRefusal::aboutCommandLineInput($optionName, $refusal->summary() . ' Written: ' . $authoredExpression . '.', $refusal);
         }
-        return new CommandLinePathWrite($path, $text, $optionName, $authoredExpression, $surface->schemaAt($address), $selectorPayload);
+        return new CommandLinePathWrite($path, $text, $optionName, $authoredExpression, $this->documentForms->schemaAt($surface, $address), $selectorPayload);
     }
 
     /** @return ?list<array<string, string>> */

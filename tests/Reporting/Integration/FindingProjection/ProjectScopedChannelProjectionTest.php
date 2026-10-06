@@ -134,6 +134,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
         return new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new ReportingGitScopeQuery(),
             unusedEntryAudit: new UnusedEntryAudit((function () {
@@ -142,6 +143,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
     }
 

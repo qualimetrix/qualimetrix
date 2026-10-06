@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\FindingProjection;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryAudit;
@@ -23,9 +25,11 @@ final readonly class FindingProjector
     public function __construct(
         private AnnotationSuppressionInterface $annotationSuppression,
         BaselineLoader $baselineLoader,
+        private BaselineDocumentReader $documentReader,
         private ChannelDeclarationRegistryInterface $declarations,
         private GitScopeQueryInterface $gitScopeQuery,
         UnusedEntryAudit $unusedEntryAudit,
+        private ChannelFileScope $fileScope,
     ) {
         $this->baselineProjection = new BaselineFindingProjection($baselineLoader, $declarations, $unusedEntryAudit);
     }
@@ -34,7 +38,7 @@ final readonly class FindingProjector
 
     public function preflightBaseline(string $path): BaselineDocument
     {
-        return BaselineLoader::preflight($path);
+        return $this->documentReader->preflight($path);
     }
 
     /**
@@ -56,7 +60,7 @@ final readonly class FindingProjector
         $restored = $annotation->suppressed;
         $removed = [FindingFilterStage::Suppression->value => $options->annotationSuppressionDisabled ? [] : $restored];
 
-        foreach (ConfiguredExclusionProjection::stages($options) as $stage) {
+        foreach (ConfiguredExclusionProjection::stages($options, $this->fileScope) as $stage) {
             $outcome = $stage->apply($findings);
             $findings = $outcome->findings;
             $removed[$stage->stage()->value] = $outcome->removed;
@@ -96,12 +100,11 @@ final readonly class FindingProjector
             $git = $this->gitScopeQuery->resolve($options->gitScope);
             $pathSet = array_fill_keys($git->paths, true);
             $namespaceSet = array_fill_keys($git->namespaces, true);
-            $fileScope = DeclaredChannelFileScope::create();
             $filter = new GitScopeFindingFilter(
                 $pathSet,
                 $namespaceSet,
                 $options->gitScope->includeParentNamespaces,
-                $fileScope,
+                $this->fileScope,
             );
             $outcome = (new PredicateFilterStage(FindingFilterStage::GitScope, $filter))->apply(array_values($findings));
             $findings = $outcome->findings;

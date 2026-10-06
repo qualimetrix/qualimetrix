@@ -49,6 +49,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
 use Symfony\Component\Yaml\Yaml;
 
 final readonly class CrossCheckReport
@@ -200,7 +202,7 @@ final class CrossCheck
                     continue;
                 }
 
-                $described = $shape->describe();
+                $described = (new RuleOptionShapeWording())->describe($shape);
             }
 
             ++$comparedRows;
@@ -270,7 +272,7 @@ final class CrossCheck
         $written = $this->formsOf($door);
         $value = $written[$form] ?? null;
 
-        if ($shape->matches($value)) {
+        if ((new RuleOptionShapeMatcher())->matches($shape, $value)) {
             return true;
         }
 
@@ -285,7 +287,7 @@ final class CrossCheck
 
             $filled = $form === 'list' ? [$element] : ['a' => $element];
 
-            if ($shape->matches($filled)) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, $filled)) {
                 return true;
             }
         }

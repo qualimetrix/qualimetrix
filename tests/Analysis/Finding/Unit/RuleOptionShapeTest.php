@@ -19,16 +19,14 @@ use Qualimetrix\Analysis\Configuration\Document\LayerReading;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundOptionKind;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\CompoundRuleOptionForm;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDefinition;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionSchemaProjection;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
 
 #[CoversClass(RuleOptionShape::class)]
 #[CoversClass(RuleOptionSchemaProjection::class)]
-#[CoversClass(RuleOptionDefinition::class)]
-#[CoversClass(CompoundRuleOptionForm::class)]
-#[CoversClass(CompoundOptionKind::class)]
+#[CoversClass(RuleOptionShapeMatcher::class)]
+#[CoversClass(RuleOptionShapeWording::class)]
 #[CoversClass(RuleOptionValueForm::class)]
 final class RuleOptionShapeTest extends TestCase
 {
@@ -36,7 +34,7 @@ final class RuleOptionShapeTest extends TestCase
     #[DataProvider('provideAcceptedValues')]
     public function itAcceptsAValueOfTheFormItNames(RuleOptionShape $shape, mixed $value): void
     {
-        self::assertTrue($shape->matches($value));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, $value));
     }
 
     /**
@@ -73,7 +71,7 @@ final class RuleOptionShapeTest extends TestCase
     #[DataProvider('provideRefusedValues')]
     public function itRefusesAValueOfAnyOtherForm(RuleOptionShape $shape, mixed $value): void
     {
-        self::assertFalse($shape->matches($value));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, $value));
     }
 
     /**
@@ -101,7 +99,7 @@ final class RuleOptionShapeTest extends TestCase
     #[DataProvider('provideDescriptions')]
     public function itNamesTheFormItExpects(RuleOptionShape $shape, string $expected): void
     {
-        self::assertSame($expected, $shape->describe());
+        self::assertSame($expected, (new RuleOptionShapeWording())->describe($shape));
     }
 
     /**
@@ -166,7 +164,7 @@ final class RuleOptionShapeTest extends TestCase
     {
         $text = RuleOptionShape::text();
         $list = RuleOptionShape::listOf($text);
-        $schema = RuleOptionShape::either($text, $list)->asNodeSchema();
+        $schema = (new RuleOptionSchemaProjection())->project(RuleOptionShape::either($text, $list));
         self::assertSame('a list or one element', $schema->describe());
         $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/scope.yaml');
         $reader = new LayerReading();
@@ -177,7 +175,7 @@ final class RuleOptionShapeTest extends TestCase
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('The declared union has no document form.');
-        RuleOptionShape::either($text, RuleOptionShape::either($text, $list))->asNodeSchema();
+        (new RuleOptionSchemaProjection())->project(RuleOptionShape::either($text, RuleOptionShape::either($text, $list)));
     }
 
     #[Test]
@@ -185,11 +183,11 @@ final class RuleOptionShapeTest extends TestCase
     {
         $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
-        self::assertTrue($shape->matches('warning'));
-        self::assertFalse($shape->matches('warnin'));
-        self::assertFalse($shape->matches(''));
-        self::assertFalse($shape->matches(7331));
-        self::assertFalse($shape->matches(['warning']));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, 'warning'));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 'warnin'));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, ''));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 7331));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, ['warning']));
     }
 
     #[Test]
@@ -201,9 +199,9 @@ final class RuleOptionShapeTest extends TestCase
         // declaring a closed set exists to close.
         $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
-        self::assertFalse($shape->matches('WARNING'));
-        self::assertFalse($shape->matches('Error'));
-        self::assertTrue($shape->matches('warning'));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 'WARNING'));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 'Error'));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, 'warning'));
     }
 
     #[Test]
@@ -211,11 +209,11 @@ final class RuleOptionShapeTest extends TestCase
     {
         self::assertSame(
             'one of "info", "warning", "error"',
-            RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'))->describe(),
+            (new RuleOptionShapeWording())->describe(RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'))),
         );
         self::assertSame(
             'one of "all", "application" or null',
-            RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull()->describe(),
+            (new RuleOptionShapeWording())->describe(RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull()),
         );
     }
 
@@ -224,9 +222,9 @@ final class RuleOptionShapeTest extends TestCase
     {
         $shape = RuleOptionShape::words(RuleOptionWordSet::of('all', 'application'))->orNull();
 
-        self::assertTrue($shape->matches(null));
-        self::assertTrue($shape->matches('application'));
-        self::assertFalse($shape->matches('applicaton'));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, null));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, 'application'));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, 'applicaton'));
     }
 
     #[Test]
@@ -234,16 +232,16 @@ final class RuleOptionShapeTest extends TestCase
     {
         $shape = RuleOptionShape::words(RuleOptionWordSet::of('info', 'warning', 'error'));
 
-        self::assertSame('"warnin"', $shape->describeWritten('warnin'));
-        self::assertSame('a whole number', $shape->describeWritten(7331));
-        self::assertSame('an empty string', $shape->describeWritten(''));
+        self::assertSame('"warnin"', (new RuleOptionShapeWording())->describeWritten($shape, 'warnin'));
+        self::assertSame('a whole number', (new RuleOptionShapeWording())->describeWritten($shape, 7331));
+        self::assertSame('an empty string', (new RuleOptionShapeWording())->describeWritten($shape, ''));
     }
 
     #[Test]
     public function itNamesAWrittenValueByItsFormForEveryShapeButAClosedSet(): void
     {
-        self::assertSame('a string', RuleOptionShape::text()->describeWritten('warnin'));
-        self::assertSame('a list', RuleOptionShape::listOf(RuleOptionShape::text())->describeWritten(['a']));
+        self::assertSame('a string', (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::text(), 'warnin'));
+        self::assertSame('a list', (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::listOf(RuleOptionShape::text()), ['a']));
     }
 
     /**
@@ -255,17 +253,17 @@ final class RuleOptionShapeTest extends TestCase
     #[Test]
     public function itRefusesANegativeValueForABuiltInNumberAndKeepsZero(): void
     {
-        self::assertFalse(RuleOptionShape::integer()->matches(-1));
-        self::assertFalse(RuleOptionShape::number()->matches(-0.5));
-        self::assertFalse(RuleOptionShape::number()->matches(-3));
-        self::assertTrue(RuleOptionShape::integer()->matches(0));
-        self::assertTrue(RuleOptionShape::number()->matches(0.0));
-        self::assertFalse(RuleOptionShape::listOf(RuleOptionShape::integer())->matches([1, -1]));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches(RuleOptionShape::integer(), -1));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches(RuleOptionShape::number(), -0.5));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches(RuleOptionShape::number(), -3));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches(RuleOptionShape::integer(), 0));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches(RuleOptionShape::number(), 0.0));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches(RuleOptionShape::listOf(RuleOptionShape::integer()), [1, -1]));
         self::assertFalse(RuleOptionValueForm::WholeNumber->accepts(-1));
         self::assertTrue(RuleOptionValueForm::WholeNumber->accepts(0));
 
         foreach ([[RuleOptionShape::number(), -0.5], [RuleOptionShape::integer(), -1]] as [$shape, $invalid]) {
-            $schema = NodeSchema::map(['boundary' => $shape->atLeast(-1)->asNodeSchema()]);
+            $schema = NodeSchema::map(['boundary' => (new RuleOptionSchemaProjection())->project($shape->atLeast(-1))]);
             $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/floor.yaml');
             $reader = new LayerReading();
             self::assertSame(0, $reader->readRoot($schema, new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => 0])), 0)?->plain()['boundary']);
@@ -288,17 +286,17 @@ final class RuleOptionShapeTest extends TestCase
     {
         $shape = RuleOptionShape::signedNumber()->orNull();
 
-        self::assertTrue($shape->matches(-2.5));
-        self::assertTrue($shape->matches(-2));
-        self::assertTrue($shape->matches(7));
-        self::assertFalse($shape->matches('-2'));
-        self::assertSame('a number or null', $shape->describe());
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, -2.5));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, -2));
+        self::assertTrue((new RuleOptionShapeMatcher())->matches($shape, 7));
+        self::assertFalse((new RuleOptionShapeMatcher())->matches($shape, '-2'));
+        self::assertSame('a number or null', (new RuleOptionShapeWording())->describe($shape));
     }
 
     #[Test]
     public function itAppliesAnExplicitSignedFloorToAuthoredDocumentValues(): void
     {
-        $schema = NodeSchema::map(['boundary' => RuleOptionShape::signedNumber()->atLeast(-1)->asNodeSchema()]);
+        $schema = NodeSchema::map(['boundary' => (new RuleOptionSchemaProjection())->project(RuleOptionShape::signedNumber()->atLeast(-1))]);
         $origin = ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/floor.yaml');
         $reader = new LayerReading();
         $valid = new AuthoredLayer($origin, AuthoredNode::fromPlain(['boundary' => -1]));
@@ -322,15 +320,15 @@ final class RuleOptionShapeTest extends TestCase
     #[Test]
     public function itNamesTheValueThatWasOutOfRange(): void
     {
-        self::assertSame('-1', RuleOptionShape::integer()->orNull()->describeWritten(-1));
-        self::assertSame('-0.5', RuleOptionShape::number()->describeWritten(-0.5));
+        self::assertSame('-1', (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::integer()->orNull(), -1));
+        self::assertSame('-0.5', (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::number(), -0.5));
         self::assertSame(
             '-1',
-            RuleOptionShape::either(RuleOptionShape::integer(), RuleOptionShape::text())->describeWritten(-1),
+            (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::either(RuleOptionShape::integer(), RuleOptionShape::text()), -1),
         );
-        self::assertSame('a string', RuleOptionShape::integer()->describeWritten('-1'));
-        self::assertSame('a number', RuleOptionShape::integer()->describeWritten(-1.5));
-        self::assertSame('a non-negative number', RuleOptionShape::number()->describe());
+        self::assertSame('a string', (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::integer(), '-1'));
+        self::assertSame('a number', (new RuleOptionShapeWording())->describeWritten(RuleOptionShape::integer(), -1.5));
+        self::assertSame('a non-negative number', (new RuleOptionShapeWording())->describe(RuleOptionShape::number()));
     }
 
     #[Test]

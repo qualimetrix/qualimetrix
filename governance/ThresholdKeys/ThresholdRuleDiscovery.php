@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionValueForm;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
 use ReflectionClass;
 use RuntimeException;
 use SplFileInfo;
@@ -148,7 +149,7 @@ final class ThresholdRuleDiscovery
                         'warning' => \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::acceptedSpellings($band->warning),
                         'error' => \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::acceptedSpellings($band->error),
                         'threshold' => \Qualimetrix\Analysis\Configuration\ConfigKeySpelling::acceptedSpellings($band->shorthand),
-                        'form' => $shape->matches(1.5) ? RuleOptionValueForm::Number : RuleOptionValueForm::WholeNumber,
+                        'form' => (new RuleOptionShapeMatcher())->matches($shape, 1.5) ? RuleOptionValueForm::Number : RuleOptionValueForm::WholeNumber,
                     ];
                 }
             }

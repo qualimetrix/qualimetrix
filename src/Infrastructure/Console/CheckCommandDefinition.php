@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionSurface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Command\Command;
@@ -24,7 +25,7 @@ final class CheckCommandDefinition
      *
      * @return list<string> Names of rule-specific options (to be hidden from --help)
      */
-    public static function addOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
+    public static function addOptions(RuleOptionDocumentFormsInterface $documentForms, Command $command, RuleRegistryInterface $ruleRegistry): array
     {
         self::addPresetOptions($command);
         self::addPathArgument($command);
@@ -38,7 +39,7 @@ final class CheckCommandDefinition
         self::addProfileOptions($command);
         self::addFormatterOptions($command);
         self::addHealthOptions($command);
-        $ruleOptionNames = self::addDynamicRuleOptions($command, $ruleRegistry);
+        $ruleOptionNames = self::addDynamicRuleOptions($command, $ruleRegistry, $documentForms);
         self::addGenericRuleOptions($command);
 
         return $ruleOptionNames;
@@ -323,9 +324,9 @@ final class CheckCommandDefinition
     /**
      * @return list<string> Names of dynamically registered rule options
      */
-    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry): array
+    private static function addDynamicRuleOptions(Command $command, RuleRegistryInterface $ruleRegistry, RuleOptionDocumentFormsInterface $documentForms): array
     {
-        $booleanAliases = self::detectBooleanAliases($ruleRegistry);
+        $booleanAliases = self::detectBooleanAliases($ruleRegistry, $documentForms);
         $optionNames = [];
 
         foreach ($ruleRegistry->getAllCliAliases() as $alias => $info) {
@@ -358,7 +359,7 @@ final class CheckCommandDefinition
      *
      * @return list<string>
      */
-    private static function detectBooleanAliases(RuleRegistryInterface $ruleRegistry): array
+    private static function detectBooleanAliases(RuleRegistryInterface $ruleRegistry, RuleOptionDocumentFormsInterface $documentForms): array
     {
         $booleanAliases = [];
 
@@ -372,7 +373,7 @@ final class CheckCommandDefinition
             $surface = RuleOptionSurface::of($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                if (CliRuleOptionAddressing::acceptsText($surface, $optionName) === false) {
+                if (CliRuleOptionAddressing::acceptsText($surface, $optionName, $documentForms) === false) {
                     $booleanAliases[] = $alias;
                 }
             }

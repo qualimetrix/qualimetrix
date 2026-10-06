@@ -114,6 +114,7 @@ Infrastructure/
 │   │   ├── CircularDependencyConfigurator.php
 │   │   ├── DuplicationConfigurator.php
 │   │   ├── AnalysisConfigurator.php
+│   │   ├── DeclaredChannelFileScope.php # capability declarations composed into one projection scope
 │   │   └── OutputConfigurator.php
 │   ├── ProjectManifest/
 │   │   └── ProjectManifestConfigurator.php # Shared invocation snapshot and exact public aliases
@@ -299,6 +300,13 @@ for every producer, not lazy services or raw CLI readers.
 **GlobalCollectorCompilerPass:**
 - Collects services with tag `qmx.global_collector`
 - Injects into `GlobalCollectorRunner`
+
+`FindingConfigurator` registers the private document-forms implementation and
+its `RuleOptionDocumentFormsInterface` alias. CLI input adapters and validators
+receive that contract through autowiring; inline compiler wiring and worker
+bootstrap supply the same interpretation. `OutputConfigurator` composes one
+`ChannelFileScope` from declared capability channels and supplies it to Reporting.
+It also wires the held `BaselineDocumentReader` separately from semantic loading.
 
 **RuleOptionsCompilerPass:**
 - Prepares producer-specific options for Finding's private executable rules

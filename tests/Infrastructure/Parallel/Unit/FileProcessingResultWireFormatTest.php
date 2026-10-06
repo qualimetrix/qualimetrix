@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -56,6 +57,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
         $task = new FileProcessingTask(
             filePath: AbsolutePath::fromString('/tmp/x.php'),
             projectRoot: AbsolutePath::fromString('/tmp'),
+            documentForms: new RuleOptionDocumentForms(),
             composition: new WorkerComposition([], self::TRAVERSAL_PARTICIPANT_CLASS),
             memoryLimit: '256M',
             cacheDir: AbsolutePath::fromString('/tmp/cache'),

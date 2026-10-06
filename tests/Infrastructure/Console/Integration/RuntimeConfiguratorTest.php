@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Integration;
 
 use InvalidArgumentException;
-
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfig
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
@@ -161,6 +162,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->snapshotFactory = $snapshotFactoryOverride ?? $staticChannels;
         $metadata = [new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(LcomRule::NAME, LcomRule::getOptionsClass(), LcomRule::getDescription(), [], false)];
         $ruleInputValidator = new RuleInputValidator(
+            new RuleOptionDocumentForms(),
             $ruleRegistry,
             $this->snapshotFactory,
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),

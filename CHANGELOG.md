@@ -261,6 +261,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baseline; remove those duplicates. Entry-object and noncanonical duplicates
   retain native last-member behavior, without a detection guarantee.
 
+- PHP option-schema consumers must replace
+  `RuleOptionShape::{matches,asNodeSchema,describe,describeWritten}` and
+  `RuleOptionSurface::{schema,schemaAt}` with document forms requested through
+  the injected `RuleOptionDocumentFormsInterface`. The surface now exposes
+  declaration-only `shapeAt()`. Supply the forms contract when constructing
+  CLI adapters, validators and parsers or building inline validator maps.
+  Worker task factories, tasks and bootstrap calls also require that contract;
+  carry the configured serializable forms service with each task rather than
+  constructing a private implementation in the worker.
+  Existing option-authoring factories and accepted values are unchanged.
+  [ADR 0099](docs/adr/0099-rule-option-shape-is-a-declaration.md) records the
+  declaration and private-interpretation boundary.
+
+- PHP baseline consumers must move `BaselineLoader::preflight()` and
+  `assertReadable()` calls to an injected `BaselineDocumentReader` instance;
+  semantic loading still consumes the held `BaselineDocument`.
+  `BoundaryExplanationService` now receives channel declarations in its
+  constructor and accepts `BoundaryThresholdSources` and `BoundaryRunFacts`
+  in `explain()` instead of separate invocation arrays and run facts. Update
+  direct construction and calls while preserving their existing evidence.
+
 - `CommandLinePathWrite` construction requires the complete authored
   flag/value expression after the option name; carry the original text rather
   than a reconstructed statement.

@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\ResolvedRuleOptions;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -164,7 +165,7 @@ final class RuleOptionKeyNormalizationTest extends TestCase
             new InputOption('long-parameter-list-vo-error', null, InputOption::VALUE_REQUIRED),
             new InputOption('param-type-coverage-error', null, InputOption::VALUE_REQUIRED),
         ]);
-        $writes = (new CliOptionsParser($this->ruleOptionsParser))->pathWrites(new ArrayInput($inputOptions, $definition));
+        $writes = (new CliOptionsParser(new RuleOptionDocumentForms(), $this->ruleOptionsParser))->pathWrites(new ArrayInput($inputOptions, $definition));
         $metadata = [
             new RuleMetadata('code-smell.long-parameter-list', LongParameterListOptions::class, '', [], false),
             new RuleMetadata('design.type-coverage.param', TypeCoverageOptions::class, '', [], false),

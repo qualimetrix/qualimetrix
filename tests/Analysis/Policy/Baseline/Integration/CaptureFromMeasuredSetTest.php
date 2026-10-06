@@ -81,7 +81,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
     {
         $gone = self::finding('src/Gone.php', 'App', 'Gone');
         $baselinePath = $this->writeBaseline($this->capture([$gone]));
-        $result = $this->project($this->createPipeline(), [], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
+        $result = $this->project($this->createPipeline(), [], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)));
         self::assertCount(1, $result->findings);
         self::assertSame('baseline.unused-entry', $result->findings[0]->channel()->code);
         self::assertSame([], $result->measuredFindings);
@@ -120,7 +120,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
             $baseline = (new BaselineLoader(new BaselineEntryParser(new StubChannelDeclarationRegistry([
                 'code-smell.goto' => ChannelDeclaration::occurrence(SymbolLevel::File),
-            ]))))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+            ]))))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::assertSame([
                 'patterns' => ['subtree:src/Legacy', 'subtree:src/Nothing'],
                 'generated' => 'included',
@@ -255,7 +255,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         // check
         $this->suppressions = $suppressions;
-        $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions(BaselineLoader::preflight($baselinePath)));
+        $result = $this->project($pipeline, [$kept, $ignoredMember], new FindingProjectionOptions((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($baselinePath)));
 
         self::assertSame([], $result->findings);
         self::assertSame(0, $result->staleEntryCount());
@@ -309,6 +309,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         return new FindingProjector(
             new SuppressionFilter(),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             $declarations,
             new class implements \Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface {
                 public function resolve(\Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest $request): \Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult
@@ -322,6 +323,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
                 return $execution;
             })()),
+            fileScope: \Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope::create(),
         );
     }
 

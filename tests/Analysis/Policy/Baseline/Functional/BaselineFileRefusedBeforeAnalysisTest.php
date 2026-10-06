@@ -207,8 +207,8 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $link = $this->tempDir . '/link.json';
         symlink($present, $link);
 
-        BaselineLoader::assertReadable($link);
-        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($link));
+        (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->assertReadable($link);
+        $baseline = (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($link));
 
         self::assertSame([], $baseline->entries);
     }
@@ -223,13 +223,13 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $late = null;
 
         try {
-            BaselineLoader::assertReadable($this->missing);
+            (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->assertReadable($this->missing);
         } catch (ConfigurationRefusal $refusal) {
             $early = $refusal->getMessage();
         }
 
         try {
-            (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->missing));
+            (new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())))->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->missing));
         } catch (ConfigurationRefusal $refusal) {
             $late = $refusal->getMessage();
         }
@@ -253,12 +253,13 @@ final class BaselineFileRefusedBeforeAnalysisTest extends TestCase
         $clock = new FixedClock('2026-09-01T00:00:00+00:00');
 
         $command = match ($name) {
-            'cleanup' => new BaselineCleanupCommand($run, $loader, new BaselineCleaner($clock), new BaselineWriter(), $declarations, StubRuleCoverage::everyRuleRan()),
-            'update' => new BaselineUpdateCommand($run, $loader, new BaselineUpdater($declarations, $clock), new BaselineWriter(), StubRuleCoverage::everyRuleRan()),
+            'cleanup' => new BaselineCleanupCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(), new BaselineCleaner($clock), new BaselineWriter(), $declarations, StubRuleCoverage::everyRuleRan()),
+            'update' => new BaselineUpdateCommand($run, $loader, new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(), new BaselineUpdater($declarations, $clock), new BaselineWriter(), StubRuleCoverage::everyRuleRan()),
             'explain' => new BaselineExplainCommand(
                 $run,
                 $loader,
-                new BoundaryExplanationService(self::createStub(ChannelIdentityInterface::class), StubRuleCoverage::everyRuleRan()),
+                new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
+                new BoundaryExplanationService(self::createStub(ChannelIdentityInterface::class), StubRuleCoverage::everyRuleRan(), $declarations),
                 new BaselineConfiguredThresholds(self::emptyRuleRegistry(), new RuleOptionsRegistry()),
                 $declarations,
             ),

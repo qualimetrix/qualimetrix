@@ -288,6 +288,7 @@ final class BaselineCleanupCommandTest extends TestCase
         $command = new BaselineCleanupCommand(
             new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             $declarations,

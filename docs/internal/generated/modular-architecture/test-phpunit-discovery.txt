@@ -8178,6 +8178,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itReportsAnUnselectedProducerAsNotComparedOnUpdate
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMeasuredSetSeamTest::itValidatesDynamicComputedSelectorsForEveryBaselineLifecycleCommand
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itNamesTheNewlyExcludedFileWhenCleanupOffersItsEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRecordsTheDefinitionAndMakesTheAffectedAggregateComparable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRefusesDifferentPathsEvenUnderForceWithoutWriting
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRefusesToInferAnArchitectureSourceFromATargetIdentity
@@ -11116,6 +11117,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\RuleRegistryCompilerPassTest::itSkipsServicesWithNullClass
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\RuleRegistryCompilerPassTest::itThrowsOnDuplicateNameConstants
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\RuleRegistryCompilerPassTest::itThrowsWhenARegisteredRuleDeclaresNoNameConstant
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator\DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itCompletesAnEmptyRangeEndpointWithHead"three-dot left"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itCompletesAnEmptyRangeEndpointWithHead"three-dot right"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itCompletesAnEmptyRangeEndpointWithHead"two-dot left"
@@ -11870,8 +11873,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itRefusesABareNumberWhereASelectorBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itRefusesAMapWhereAListOfEntriesBelongs
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\Configuration\ConfiguredFindingExclusionsResolverTest::itStillRefusesABareNumberWhereANamespaceBelongs
- - Qualimetrix\Tests\Reporting\Unit\FindingProjection\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
- - Qualimetrix\Tests\Reporting\Unit\FindingProjection\DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesALedgerExclusionToItsRecordedProducerEvenWhenTheFindingsOwnRuleNameDiffers
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheBaselineMechanismToTheOccurrenceKeyAndDependencyEdgeWhenPresent
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheBaselineMechanismToTheSubjectAndChannel

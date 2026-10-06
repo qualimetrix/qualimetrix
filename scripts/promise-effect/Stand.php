@@ -18,6 +18,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\FrameworkOptionKeys;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeMatcher;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionShapeWording;
 
 final readonly class Cell
 {
@@ -1589,7 +1591,7 @@ final class Stand
             /** @var mixed $declared */
             $declared = self::parse($leaf);
 
-            if (!$shape->matches($declared)) {
+            if (!(new RuleOptionShapeMatcher())->matches($shape, $declared)) {
                 // Keep the exact authored magnitude for the frozen product:
                 // its older shape may refuse a selector that the current
                 // product accepts. An old-lawful substitute would measure a
@@ -1689,7 +1691,7 @@ final class Stand
             /** @var mixed $candidate */
             $candidate = self::parse($literals[$form]);
 
-            if ($shape->matches($candidate)) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, $candidate)) {
                 return $candidate;
             }
         }
@@ -1702,11 +1704,11 @@ final class Stand
             /** @var mixed $scalar */
             $scalar = self::parse($literals[$form]);
 
-            if ($shape->matches([$scalar])) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, [$scalar])) {
                 return [$scalar];
             }
 
-            if ($shape->matches(['a' => $scalar])) {
+            if ((new RuleOptionShapeMatcher())->matches($shape, ['a' => $scalar])) {
                 return ['a' => $scalar];
             }
         }
@@ -1725,7 +1727,7 @@ final class Stand
                 /** @var mixed $alternate */
                 $alternate = self::parse($declaredLeaf);
 
-                if ($shape->matches($alternate)) {
+                if ((new RuleOptionShapeMatcher())->matches($shape, $alternate)) {
                     return $alternate;
                 }
             }
@@ -1736,7 +1738,7 @@ final class Stand
         }
 
         throw new LedgerError(
-            'pair probe: the declared shape "' . $shape->describe() . '" of "' . $subject
+            'pair probe: the declared shape "' . (new RuleOptionShapeWording())->describe($shape) . '" of "' . $subject
             . '" accepts none of the eight forms this stand can write, and '
             . ($leafKey === null ? 'no leaf was named' : 'effect-magnitudes.tsv declares nothing for its leaf'),
         );

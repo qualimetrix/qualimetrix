@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
@@ -37,7 +38,8 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
         // WorkerCountDetector for auto-detecting CPU cores
         $container->register(WorkerCountDetector::class);
 
-        $container->register(FileProcessingTaskFactory::class);
+        $container->register(FileProcessingTaskFactory::class)
+            ->setArgument('$documentForms', new Reference(RuleOptionDocumentFormsInterface::class));
 
         // AmphpParallelStrategy for parallel processing via amphp/parallel
         // The logger is what makes the parallel path observable. The selector

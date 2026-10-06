@@ -242,6 +242,7 @@ final class BaselineUpdateCommandTest extends TestCase
         $command = new BaselineUpdateCommand(
             new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir), onMeasure: $onMeasure),
             new BaselineLoader(new BaselineEntryParser($declarations)),
+            new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader(),
             new BaselineUpdater($declarations, new FixedClock('2026-09-01T00:00:00+00:00')),
             new BaselineWriter(),
             StubRuleCoverage::everyRuleRan(),

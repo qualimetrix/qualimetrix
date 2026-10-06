@@ -354,7 +354,7 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->put($contents, 'preflight.json');
 
         try {
-            BaselineLoader::preflight($path);
+            (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path);
             self::fail('Invalid document grammar was accepted before the run.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString($reason, $refusal->getMessage());
@@ -366,7 +366,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $original = self::canonicalDocument();
         $path = $this->put($original, 'held.json');
-        $document = BaselineLoader::preflight($path);
+        $document = (new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path);
         file_put_contents($path, str_replace('["src","tests"]', '["changed"]', $original));
 
         $loaded = $this->loader->load($document);
@@ -381,7 +381,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessageMatches('/not found/');
 
-        $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($this->tempDir . '/absent.json'));
+        $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->tempDir . '/absent.json'));
     }
 
     /**
@@ -395,7 +395,7 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/absent.json';
 
         try {
-            $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+            $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::fail('Expected a ConfigurationRefusal.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertCount(1, $refusal->sources());
@@ -577,8 +577,8 @@ final class BaselineLoaderTest extends TestCase
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
         );
 
-        self::assertNotNull($reader->read(BaselineLoader::preflight($this->put($canonical, 'canonical.json'))));
-        self::assertNull($reader->read(BaselineLoader::preflight($this->put($reflowed, 'reflowed.json'))));
+        self::assertNotNull($reader->read((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->put($canonical, 'canonical.json'))));
+        self::assertNull($reader->read((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($this->put($reflowed, 'reflowed.json'))));
     }
 
     private function put(string $json, string $name): string
@@ -733,7 +733,7 @@ final class BaselineLoaderTest extends TestCase
         self::assertNotNull(json_decode($document, true, 512, \JSON_THROW_ON_ERROR));
         $path = $this->put($document, 'duplicate-canonical.json');
         try {
-            $this->loader->load(BaselineLoader::preflight($path));
+            $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
             self::fail('A repeated canonical JSON member must be refused.');
         } catch (ConfigurationRefusal $refusal) {
             self::assertStringContainsString('duplicate', strtolower($refusal->summary()));
@@ -766,7 +766,7 @@ final class BaselineLoaderTest extends TestCase
 
         self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
 
-        $loaded = $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
 
         self::assertCount(1, $loaded->entries, 'the whole-document path keeps one of the two');
         self::assertSame(
@@ -789,7 +789,7 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->put($repeated, 'repeated-envelope.json');
 
         self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
-        self::assertSame(['src', 'tests'], $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path))->scope);
+        self::assertSame(['src', 'tests'], $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path))->scope);
     }
 
     #[Test]
@@ -964,6 +964,6 @@ final class BaselineLoaderTest extends TestCase
         $path = $this->tempDir . '/' . $name;
         file_put_contents($path, $json);
 
-        return $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path));
+        return $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
     }
 }

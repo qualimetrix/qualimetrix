@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\WmcRule;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 
 #[CoversClass(RuleValidatorMapFactory::class)]
@@ -21,6 +22,6 @@ final class RuleValidatorMapFactoryTest extends TestCase
         $this->expectExceptionMessage('Nope\\MissingRule');
 
         /** @phpstan-ignore argument.type (deliberately passing an unloadable rule class) */
-        RuleValidatorMapFactory::build(['Nope\\MissingRule', WmcRule::class]);
+        RuleValidatorMapFactory::build(new RuleOptionDocumentForms(), ['Nope\\MissingRule', WmcRule::class]);
     }
 }
