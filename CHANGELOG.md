@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `ResolvedTarget` construction requires retained private-group membership
+  evidence as its final argument. Obtain resolved targets through
+  `TargetPath::resolve()` so claim, replacement and lock rechecks use the same
+  membership policy. See ADR 0096.
+
 - `ConfigSchema::EXCLUDES` and the `excludes` resolved result key are removed.
   Use `ConfigSchema::EXCLUDE` and `exclude`; YAML `exclude:` and CLI `--exclude`
   keep their spelling. `ConfigurationRoot::Cache` is removed; register Cache's
@@ -984,6 +989,11 @@ What changes for a configuration you already have:
   none. A consumer comparing the key set exactly must accept it.
 
 ### Changed
+
+- Group-writable parents with a provably private primary group no longer refuse
+  the owner's symbolic link or report false exposure. Complete supported NSS
+  membership evidence is required; uncertain membership retains the refusal.
+  See ADR 0096.
 
 - `baseline:update --accept-new=channel` adds comparable measured identities
   only for explicitly named channels while preserving existing accepted

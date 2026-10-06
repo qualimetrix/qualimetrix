@@ -19,7 +19,7 @@ final class FileReplacement
         $temporary = self::prepareTemporary($target, $path);
         try {
             self::writeAll($target, $temporary, $bytes);
-            $now = TargetPath::resolve($target->spelling);
+            $now = TargetPath::resolve($target->spelling, $target->membership());
             if (!$target->sameAs($now)) {
                 throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $target->spelling, 'target changed before replacement');
             }

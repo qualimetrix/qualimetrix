@@ -21,13 +21,13 @@ final class HeldLock
 
     public static function acquire(ResolvedTarget $lockFile, float $timeoutSeconds): self
     {
-        if (!$lockFile->sameAs(TargetPath::resolve($lockFile->spelling))) {
+        if (!$lockFile->sameAs(TargetPath::resolve($lockFile->spelling, $lockFile->membership()))) {
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $lockFile->spelling, 'lock target changed before acquisition');
         }
 
         $deadline = hrtime(true) / 1e9 + $timeoutSeconds;
         do {
-            $now = TargetPath::resolve($lockFile->spelling);
+            $now = TargetPath::resolve($lockFile->spelling, $lockFile->membership());
             $path = self::lockPath($lockFile, $now);
             if ($now->kind === TargetKind::Absent) {
                 self::createLockName($lockFile, $path);

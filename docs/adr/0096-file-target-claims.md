@@ -22,7 +22,15 @@ entry-control judgement, held resources, temporary siblings and publication.
 Capability policy and Console delivery stay outside Core.
 
 A symbolic link is trusted by control of its parent directory entry, not by
-ownership of the link. Group or other write permission permits placement;
+ownership of the link. Other write permission permits placement. Group write
+also permits placement unless complete membership evidence proves that the
+group is the effective user's primary group, with no other primary or
+supplementary member. Core owns the membership port: static filesystem callers
+need the same judgement without depending on an Infrastructure adapter. The
+native producer supports per-source `files` and `systemd` enumeration, checked
+against keyed POSIX records. Unknown NSS sources, explicit `initgroups`, failed
+or incomplete enumeration and unsupported platforms keep the conservative
+refusal. The selected port follows the resolved target through every recheck;
 sticky mode protects some existing entries against replacement but does not
 protect a previously absent name. Root ownership of a closed directory is
 trusted. The effective process uid comes from POSIX, never the script owner.

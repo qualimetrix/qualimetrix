@@ -16,15 +16,20 @@ final readonly class EntryControl
         private ?string $writableBy,
     ) {}
 
-    public static function of(DirectoryFacts $parent, EntryFacts $entry, int $effectiveUid): self
-    {
+    public static function of(
+        DirectoryFacts $parent,
+        EntryFacts $entry,
+        int $effectiveUid,
+        ?PrivateGroupMembership $membership = null,
+    ): self {
         $foreign = $parent->owner !== $effectiveUid && $parent->owner !== 0;
-        $group = ($parent->mode & 0020) !== 0;
+        $group = ($parent->mode & 0020) !== 0
+            && !($membership ?? new NativePrivateGroupMembership())->isPrivatePrimaryGroup($effectiveUid, $parent->group);
         $other = ($parent->mode & 0002) !== 0;
         $writable = $group || $other;
         $swappable = $foreign || ($writable && !self::stickyProtects($parent, $entry, $effectiveUid));
         $placeable = $entry->type === 0040000 ? $swappable : ($foreign || $writable);
-        $writableBy = self::writableBy($parent);
+        $writableBy = self::writableBy($parent, $group);
         $changedBy = $foreign ? 'user ' . $parent->owner : $writableBy;
 
         return new self($placeable, $swappable, $changedBy, $foreign, $group, $other, $writableBy);
@@ -57,12 +62,12 @@ final readonly class EntryControl
         return ($parent->mode & 01000) !== 0 && ($entry->owner === $effectiveUid || $entry->owner === 0);
     }
 
-    private static function writableBy(DirectoryFacts $parent): ?string
+    private static function writableBy(DirectoryFacts $parent, bool $groupExposed): ?string
     {
         if (($parent->mode & 0002) !== 0) {
             return 'others';
         }
 
-        return ($parent->mode & 0020) !== 0 ? 'group ' . $parent->group : null;
+        return $groupExposed ? 'group ' . $parent->group : null;
     }
 }

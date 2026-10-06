@@ -13,7 +13,7 @@ final class TargetClaim
     /** @return array{ResolvedTarget, resource, bool} */
     public static function open(ResolvedTarget $judged): array
     {
-        $now = TargetPath::resolve($judged->spelling);
+        $now = TargetPath::resolve($judged->spelling, $judged->membership());
         if (!$judged->sameAs($now)) {
             throw new FileTargetFailure(FileTargetFailureKind::IdentityChanged, $judged->spelling, 'target changed before it could be claimed');
         }

@@ -216,6 +216,12 @@ refuses on both ordinary and thread-safe PHP. Writable exposure elsewhere in
 the path is reported on stderr before analysis. Component swaps, ACLs,
 hard-link provenance and non-local filesystems retain their platform limits.
 
+An owned link in a 0775 directory is accepted when the directory group is
+proved to be the effective user's private primary group: no other primary or
+supplementary member. The native check supports complete per-source `files`
+and `systemd` NSS enumeration. Unknown sources, explicit `initgroups`, failed
+enumeration or unsupported platforms keep the conservative refusal.
+
 `/dev/stdout`, `/dev/stderr`, `/dev/fd/N`, `/proc/self/fd/N`,
 `/proc/thread-self/fd/N`, `php://stdout`, `php://stderr` and `php://fd/N`
 address an existing process stream; `/proc` spellings require procfs.

@@ -39,11 +39,13 @@ Core/
 │   ├── HeldLock.php
 │   ├── HeldTarget.php
 │   ├── NativeCall.php
+│   ├── NativePrivateGroupMembership.php
 │   ├── NewName.php
 │   ├── PathExposure.php
 │   ├── PathInspection.php
 │   ├── PathWalk.php
 │   ├── ProcessOwner.php
+│   ├── PrivateGroupMembership.php
 │   ├── ResolvedTarget.php
 │   ├── TargetClaim.php
 │   ├── TargetKind.php
@@ -955,6 +957,14 @@ only to declared exact consumers; publication and lifecycle policy remain
 with each consuming subject. A failed temporary-sibling preparation retains the
 requested destination and the native temporary-path cause. An inaccessible
 existing parent cannot establish that the final name is absent.
+
+Group write is exposure unless `PrivateGroupMembership` proves that the group
+is the effective user's sole primary group, with no other primary or
+supplementary members. `NativePrivateGroupMembership` checks keyed POSIX facts
+against complete per-source NSS enumeration for supported `files` and `systemd`
+configurations; unavailable or ambiguous evidence stays exposed.
+`TargetPath::resolve()` accepts an optional membership port, and `ResolvedTarget`
+retains it through claim, replacement and lock rechecks.
 
 Existing regular files open without truncation and are checked against their
 judged inode before a write. An unwritten exclusive name is removed on release

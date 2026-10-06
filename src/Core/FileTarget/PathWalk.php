@@ -19,8 +19,12 @@ final class PathWalk
     private int $hops = 0;
 
     /** @param Closure(string): ?int $descriptorAt */
-    public function __construct(private readonly string $spelling, string $absolutePath, private readonly Closure $descriptorAt)
-    {
+    public function __construct(
+        private readonly string $spelling,
+        string $absolutePath,
+        private readonly Closure $descriptorAt,
+        private readonly PrivateGroupMembership $membership,
+    ) {
         $this->todo = explode('/', ltrim($absolutePath, '/'));
         $this->inspection = new PathInspection([], []);
     }
@@ -89,7 +93,7 @@ final class PathWalk
             throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'a descriptor cannot have path components after it');
         }
 
-        return new ResolvedTarget($this->spelling, TargetKind::Descriptor, null, $descriptor, null, $this->inspection);
+        return new ResolvedTarget($this->spelling, TargetKind::Descriptor, null, $descriptor, null, $this->inspection, $this->membership);
     }
 
     private function absentTarget(string $candidate, string $part, string $warning): ResolvedTarget
@@ -118,7 +122,7 @@ final class PathWalk
             throw new FileTargetFailure(FileTargetFailureKind::Unopenable, $this->spelling, 'cannot inspect target through a non-searchable parent', $detail);
         }
 
-        return new ResolvedTarget($this->spelling, TargetKind::Absent, AbsolutePath::fromString($candidate), null, null, $this->inspection);
+        return new ResolvedTarget($this->spelling, TargetKind::Absent, AbsolutePath::fromString($candidate), null, null, $this->inspection, $this->membership);
     }
 
     /**
@@ -137,7 +141,7 @@ final class PathWalk
         $effectiveUid = $parentStat['uid'] === 0 && ($parentStat['mode'] & 0022) === 0
             ? 0
             : ProcessOwner::effectiveUid($parent);
-        $control = EntryControl::of(DirectoryFacts::fromStat($parentStat), EntryFacts::fromStat($entry), $effectiveUid);
+        $control = EntryControl::of(DirectoryFacts::fromStat($parentStat), EntryFacts::fromStat($entry), $effectiveUid, $this->membership);
 
         return [$parent, $control, $effectiveUid];
     }
@@ -191,6 +195,7 @@ final class PathWalk
             null,
             FileIdentity::fromStat($entry),
             $this->inspection,
+            $this->membership,
         );
     }
 
