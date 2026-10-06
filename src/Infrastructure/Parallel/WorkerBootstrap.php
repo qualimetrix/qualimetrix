@@ -12,7 +12,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
@@ -61,36 +60,26 @@ final class WorkerBootstrap
      * configuration. If configuration changes, a new processor is created.
      *
      * @param AbsolutePath $projectRoot Project root directory
-     * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names from DI
-     * @param string $dependencyTraversalParticipantClass Validated class-string at the worker trust boundary
-     * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Cache directory (null to disable caching)
      * @param LcomCollectionConfiguration $lcomConfiguration Exact Cohesion-owned worker configuration
-     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      * @param RuleOptionDocumentFormsInterface $documentForms Finding's serialized document forms service
      */
     public static function getFileProcessor(
         AbsolutePath $projectRoot,
-        array $collectorClasses,
-        string $dependencyTraversalParticipantClass,
+        WorkerComposition $composition,
         RuleOptionDocumentFormsInterface $documentForms,
-        array $derivedCollectorClasses = [],
         ?AbsolutePath $cacheDir = null,
         LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
-        array $ruleClasses = [],
     ): FileProcessorInterface {
-        $dependencyTraversalParticipantClass = self::validateDependencyTraversalParticipantClass(
-            $dependencyTraversalParticipantClass,
+        self::validateDependencyTraversalParticipantClass(
+            $composition->dependencyTraversalParticipantClass,
         );
         $newCacheKey = self::buildCacheKey(
             $projectRoot,
-            $collectorClasses,
-            $dependencyTraversalParticipantClass,
+            $composition,
             $documentForms,
-            $derivedCollectorClasses,
             $cacheDir,
             $lcomConfiguration,
-            $ruleClasses,
         );
 
         // Return cached processor if configuration hasn't changed
@@ -101,13 +90,10 @@ final class WorkerBootstrap
         // Create new processor
         self::$processor = self::createFileProcessor(
             $projectRoot,
-            $collectorClasses,
-            $dependencyTraversalParticipantClass,
+            $composition,
             $documentForms,
             $lcomConfiguration,
-            $derivedCollectorClasses,
             $cacheDir,
-            $ruleClasses,
         );
         self::$cacheKey = $newCacheKey;
 
@@ -123,33 +109,23 @@ final class WorkerBootstrap
         self::$cacheKey = null;
     }
 
-    /**
-     * Builds a unique cache key for the configuration.
-     *
-     * @param list<class-string<MetricCollectorInterface>> $collectorClasses
-     * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
-     * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
-     */
+    /** Builds a unique cache key for the configuration. */
     private static function buildCacheKey(
         AbsolutePath $projectRoot,
-        array $collectorClasses,
-        string $dependencyTraversalParticipantClass,
+        WorkerComposition $composition,
         RuleOptionDocumentFormsInterface $documentForms,
-        array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
         LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
-        array $ruleClasses = [],
     ): string {
         // Include collector and rule classes in cache key to detect changes.
         // Sort each list so a permutation of the same set produces an identical
         // hash — DI tag iteration is deterministic within a process, but the
         // cache should not depend on registration order across processes.
-        $sortedCollectors = $collectorClasses;
+        $sortedCollectors = $composition->collectorClasses;
         sort($sortedCollectors);
-        $sortedDerived = $derivedCollectorClasses;
+        $sortedDerived = $composition->derivedCollectorClasses;
         sort($sortedDerived);
-        $sortedRules = $ruleClasses;
+        $sortedRules = $composition->ruleClasses;
         sort($sortedRules);
 
         $collectorsHash = md5(implode('|', $sortedCollectors) . '||' . implode('|', $sortedDerived));
@@ -162,33 +138,24 @@ final class WorkerBootstrap
             . '|' . $rulesHash
             . '|' . $configHash
             . '|' . md5(serialize($documentForms))
-            . '|' . $dependencyTraversalParticipantClass;
+            . '|' . $composition->dependencyTraversalParticipantClass;
     }
 
-    /**
-     * Creates a new FileProcessor with collectors from passed class names.
-     *
-     * @param list<class-string<MetricCollectorInterface>> $collectorClasses
-     * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
-     * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
-     */
+    /** Creates a new FileProcessor with collectors from passed class names. */
     private static function createFileProcessor(
         AbsolutePath $projectRoot,
-        array $collectorClasses,
-        string $dependencyTraversalParticipantClass,
+        WorkerComposition $composition,
         RuleOptionDocumentFormsInterface $documentForms,
         LcomCollectionConfiguration $lcomConfiguration,
-        array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
-        array $ruleClasses = [],
     ): FileProcessorInterface {
         $parser = WorkerParserFactory::create($cacheDir);
 
         // Create collectors from class names
-        $collectors = self::instantiateCollectors($collectorClasses, $lcomConfiguration);
-        $derivedCollectors = self::instantiateDerivedCollectors($derivedCollectorClasses, $lcomConfiguration);
+        $collectors = self::instantiateCollectors($composition->collectorClasses, $lcomConfiguration);
+        $derivedCollectors = self::instantiateDerivedCollectors($composition->derivedCollectorClasses, $lcomConfiguration);
 
+        $dependencyTraversalParticipantClass = $composition->dependencyTraversalParticipantClass;
         /** @var DependencyTraversalParticipantInterface $dependencyTraversalParticipant */
         $dependencyTraversalParticipant = new $dependencyTraversalParticipantClass();
         $fileMeasurementCollectorClass = self::validatedImplementationClass(
@@ -203,7 +170,7 @@ final class WorkerBootstrap
         );
 
         // Build per-rule threshold-override validator map (static lookup, no DI)
-        $validators = RuleValidatorMapFactory::build($documentForms, $ruleClasses);
+        $validators = RuleValidatorMapFactory::build($documentForms, $composition->ruleClasses);
         $thresholdOverrideExtractor = new ThresholdOverrideExtractor($validators);
         $sourceControlExtractorClass = self::validatedImplementationClass(
             self::SOURCE_CONTROL_EXTRACTOR_CLASS,

@@ -76,12 +76,9 @@ final class FileProcessingTask implements Task
         // WorkerBootstrap caches the processor for reuse across tasks in the same worker
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: $this->projectRoot,
-            collectorClasses: $this->composition->collectorClasses,
-            dependencyTraversalParticipantClass: $this->composition->dependencyTraversalParticipantClass,
-            derivedCollectorClasses: $this->composition->derivedCollectorClasses,
+            composition: $this->composition,
             cacheDir: $this->cacheDir,
             lcomConfiguration: $this->lcomConfiguration,
-            ruleClasses: $this->composition->ruleClasses,
             documentForms: $this->documentForms,
         );
 

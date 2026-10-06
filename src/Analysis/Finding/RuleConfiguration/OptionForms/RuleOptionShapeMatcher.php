@@ -15,17 +15,34 @@ final readonly class RuleOptionShapeMatcher
         if ($value === null) {
             return $shape->nullable;
         }
-        if ($shape->minimum !== null && (\is_int($value) || \is_float($value)) && $value < $shape->minimum) {
+        if (!$this->meetsMinimum($shape, $value)) {
             return false;
         }
 
         return match ($shape->kind) {
-            RuleOptionShape::PLAIN => $shape->plain?->accepts($value) ?? throw new LogicException('Missing plain rule option form.'),
-            RuleOptionShape::WORDS => $shape->words?->contains($value) ?? throw new LogicException('Missing rule option word set.'),
+            RuleOptionShape::PLAIN => $this->matchesPlain($shape, $value),
+            RuleOptionShape::WORDS => $this->matchesWord($shape, $value),
             RuleOptionShape::LIST, RuleOptionShape::MAP => $this->container($shape, $value),
             RuleOptionShape::UNION => $this->union($shape, $value),
             default => throw new LogicException('Unknown rule option shape.'),
         };
+    }
+
+    private function meetsMinimum(RuleOptionShape $shape, mixed $value): bool
+    {
+        return $shape->minimum === null
+            || (!\is_int($value) && !\is_float($value))
+            || $value >= $shape->minimum;
+    }
+
+    private function matchesPlain(RuleOptionShape $shape, mixed $value): bool
+    {
+        return $shape->plain?->accepts($value) ?? throw new LogicException('Missing plain rule option form.');
+    }
+
+    private function matchesWord(RuleOptionShape $shape, mixed $value): bool
+    {
+        return $shape->words?->contains($value) ?? throw new LogicException('Missing rule option word set.');
     }
 
     private function container(RuleOptionShape $shape, mixed $value): bool

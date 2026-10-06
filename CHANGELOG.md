@@ -270,6 +270,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Worker task factories, tasks and bootstrap calls also require that contract;
   carry the configured serializable forms service with each task rather than
   constructing a private implementation in the worker.
+  Bootstrap calls group collector, derived-collector, traversal and rule class
+  metadata in the existing `WorkerComposition` instead of four separate arguments.
   Existing option-authoring factories and accepted values are unchanged.
   [ADR 0099](docs/adr/0099-rule-option-shape-is-a-declaration.md) records the
   declaration and private-interpretation boundary.

@@ -14,8 +14,8 @@ final readonly class RuleOptionShapeWording
     public function describe(RuleOptionShape $shape): string
     {
         $described = match ($shape->kind) {
-            RuleOptionShape::PLAIN => $shape->plain?->describe() ?? throw new LogicException('Missing plain rule option form.'),
-            RuleOptionShape::WORDS => $shape->words?->describe() ?? throw new LogicException('Missing rule option word set.'),
+            RuleOptionShape::PLAIN => $this->plain($shape),
+            RuleOptionShape::WORDS => $this->word($shape),
             RuleOptionShape::LIST => 'a list of ' . $this->elementPlural($shape),
             RuleOptionShape::MAP => 'a map of ' . $this->elementPlural($shape),
             RuleOptionShape::UNION => implode(' or ', array_map($this->describe(...), $shape->alternatives)),
@@ -26,6 +26,23 @@ final readonly class RuleOptionShapeWording
     }
 
     public function describeWritten(RuleOptionShape $shape, mixed $written): string
+    {
+        return $this->declaredWrittenForm($shape, $written)
+            ?? $this->numericUnionWrittenForm($shape, $written)
+            ?? RuleOptionValueForm::describeWritten($written);
+    }
+
+    private function plain(RuleOptionShape $shape): string
+    {
+        return $shape->plain?->describe() ?? throw new LogicException('Missing plain rule option form.');
+    }
+
+    private function word(RuleOptionShape $shape): string
+    {
+        return $shape->words?->describe() ?? throw new LogicException('Missing rule option word set.');
+    }
+
+    private function declaredWrittenForm(RuleOptionShape $shape, mixed $written): ?string
     {
         if ($shape->words !== null) {
             $word = $shape->words->describeWritten($written);
@@ -39,17 +56,25 @@ final readonly class RuleOptionShapeWording
                 return $outOfRange;
             }
         }
-        if ($shape->kind === RuleOptionShape::UNION && (\is_int($written) || \is_float($written))) {
-            $ordinary = RuleOptionValueForm::describeWritten($written);
-            foreach ($shape->alternatives as $alternative) {
-                $described = $this->describeWritten($alternative, $written);
-                if ($described !== $ordinary) {
-                    return $described;
-                }
+
+        return null;
+    }
+
+    private function numericUnionWrittenForm(RuleOptionShape $shape, mixed $written): ?string
+    {
+        if ($shape->kind !== RuleOptionShape::UNION || (!\is_int($written) && !\is_float($written))) {
+            return null;
+        }
+
+        $ordinary = RuleOptionValueForm::describeWritten($written);
+        foreach ($shape->alternatives as $alternative) {
+            $described = $this->describeWritten($alternative, $written);
+            if ($described !== $ordinary) {
+                return $described;
             }
         }
 
-        return RuleOptionValueForm::describeWritten($written);
+        return null;
     }
 
     private function elementPlural(RuleOptionShape $shape): string

@@ -37,7 +37,9 @@ the registered `RuleOptionDocumentFormsInterface` service instance through PHP
 serialization. Main DI and worker inline validators therefore use the same
 Finding interpretation; workers import only its public interface. The task
 factory, task constructor and `WorkerBootstrap::getFileProcessor()` require
-that service. Processor reuse includes its serialized class and state in the
+that service. Bootstrap takes the already serialized `WorkerComposition` as
+its metadata argument, rather than separate collector, derived-collector,
+traversal and rule class arguments. Processor reuse includes its serialized class and state in the
 cache identity, alongside the existing project and collector configuration.
 
 **Memory limit.** A worker is a separate process that starts under `php.ini`,

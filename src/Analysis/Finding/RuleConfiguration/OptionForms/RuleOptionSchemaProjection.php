@@ -35,17 +35,28 @@ final readonly class RuleOptionSchemaProjection
 
     private function plain(RuleOptionShape $shape, ?NodeSchema $block): NodeSchema
     {
-        return match ($shape->plain ?? throw new LogicException('Missing plain rule option form.')) {
+        return match ($shape->plain) {
             RuleOptionValueForm::Boolean => NodeSchema::scalar(ScalarForm::Boolean),
-            RuleOptionValueForm::WholeNumber => NodeSchema::scalar(ScalarForm::Integer)->atLeast(max(0, $shape->minimum ?? 0)),
-            RuleOptionValueForm::Number => NodeSchema::scalar(ScalarForm::Number)->atLeast(max(0, $shape->minimum ?? 0)),
-            RuleOptionValueForm::SignedNumber => $shape->minimum === null
-                ? NodeSchema::scalar(ScalarForm::Number)
-                : NodeSchema::scalar(ScalarForm::Number)->atLeast($shape->minimum),
             RuleOptionValueForm::Text => NodeSchema::scalar(ScalarForm::String),
             RuleOptionValueForm::NonEmptyText => NodeSchema::scalar(ScalarForm::String)->nonEmpty(),
             RuleOptionValueForm::Block => $block ?? throw new LogicException('A block needs its declared child schema.'),
+            default => $this->numeric($shape),
         };
+    }
+
+    private function numeric(RuleOptionShape $shape): NodeSchema
+    {
+        if (!\in_array($shape->plain, [RuleOptionValueForm::WholeNumber, RuleOptionValueForm::Number, RuleOptionValueForm::SignedNumber], true)) {
+            throw new LogicException('Missing plain rule option form.');
+        }
+
+        $form = $shape->plain === RuleOptionValueForm::WholeNumber ? ScalarForm::Integer : ScalarForm::Number;
+        $schema = NodeSchema::scalar($form);
+        $minimum = $shape->plain === RuleOptionValueForm::SignedNumber
+            ? $shape->minimum
+            : max(0, $shape->minimum ?? 0);
+
+        return $minimum === null ? $schema : $schema->atLeast($minimum);
     }
 
     private function word(RuleOptionShape $shape): NodeSchema
@@ -64,19 +75,30 @@ final readonly class RuleOptionSchemaProjection
 
     private function union(RuleOptionShape $shape): NodeSchema
     {
+        if ($this->admitsBareText($shape)) {
+            return $this->project($shape->alternatives[1])->admittingBareElement();
+        }
+
+        return $this->scalarUnion($shape);
+    }
+
+    private function admitsBareText(RuleOptionShape $shape): bool
+    {
         $alternatives = $shape->alternatives;
-        if (\count($alternatives) === 2
+
+        return \count($alternatives) === 2
             && $alternatives[0]->kind === RuleOptionShape::PLAIN
             && $alternatives[0]->plain === RuleOptionValueForm::Text
             && $alternatives[1]->kind === RuleOptionShape::LIST
             && $alternatives[1]->element?->kind === RuleOptionShape::PLAIN
-            && $alternatives[1]->element->plain === RuleOptionValueForm::Text) {
-            return $this->project($alternatives[1])->admittingBareElement();
-        }
+            && $alternatives[1]->element->plain === RuleOptionValueForm::Text;
+    }
 
+    private function scalarUnion(RuleOptionShape $shape): NodeSchema
+    {
         $forms = [];
         $minimum = null;
-        foreach ($alternatives as $alternative) {
+        foreach ($shape->alternatives as $alternative) {
             $schema = $this->project($alternative);
             if ($schema->scalar->forms === [] || $schema->scalar->words !== null || $schema->scalar->textRequirement === TextRequirement::NonBlank) {
                 throw new LogicException('The declared union has no document form.');
