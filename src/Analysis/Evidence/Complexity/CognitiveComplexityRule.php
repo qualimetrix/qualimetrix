@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -163,7 +162,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
             if ($severity !== null) {
                 $findings[] = $this->callableFinding(
-                    $methodInfo,
+                    new Location($methodInfo->file, $methodInfo->line),
                     $subject,
                     $this->formatBreakdown($metrics->entries('cognitive-complexity.increments')),
                     $cognitiveValue,
@@ -177,7 +176,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     }
 
     private function callableFinding(
-        SymbolInfo $methodInfo,
+        Location $location,
         MetricSubject $subject,
         string $breakdown,
         int $cognitiveValue,
@@ -186,7 +185,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     ): Finding {
 
         return new Finding(
-            location: new Location($methodInfo->file, $methodInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
@@ -225,7 +224,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
 
             /** @var ClassCognitiveComplexityOptions $effectiveClassOptions */
             $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
-            $finding = $this->classFinding($classInfo, $subject, $maxCognitiveValue, $effectiveClassOptions);
+            $finding = $this->classFinding(new Location($classInfo->file, $classInfo->line), $subject, $maxCognitiveValue, $effectiveClassOptions);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -235,7 +234,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     }
 
     private function classFinding(
-        SymbolInfo $classInfo,
+        Location $location,
         MetricSubject $subject,
         int $maximum,
         ClassCognitiveComplexityOptions $options,
@@ -248,7 +247,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         $threshold = $severity === Severity::Error ? $options->maxError : $options->maxWarning;
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),

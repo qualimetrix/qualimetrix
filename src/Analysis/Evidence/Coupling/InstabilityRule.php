@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -153,7 +152,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->classFinding($classInfo, $context, $classOptions);
+            $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+
+            $finding = $this->classFinding(new Location($classInfo->file, $classInfo->line), $subject, $context, $classOptions);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -163,15 +167,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     private function classFinding(
-        SymbolInfo $classInfo,
+        Location $location,
+        MetricSubject $subject,
         AnalysisContext $context,
         ClassInstabilityOptions $options,
     ): ?Finding {
-        $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return null;
-        }
-
         $metrics = $context->metrics->get($subject->toSymbolPath());
         $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
         if ($instability === null) {
@@ -195,7 +195,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxError : $effectiveOptions->maxWarning;
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),

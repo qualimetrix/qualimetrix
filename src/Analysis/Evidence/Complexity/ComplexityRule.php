@@ -20,7 +20,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -247,7 +246,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
             /** @var ClassComplexityOptions $effectiveClassOptions */
             $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
-            $finding = $this->classFinding($classInfo, $subject, $maxCcnValue, $effectiveClassOptions);
+            $finding = $this->classFinding(new Location($classInfo->file, $classInfo->line), $subject, $maxCcnValue, $effectiveClassOptions);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -257,7 +256,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     private function classFinding(
-        SymbolInfo $classInfo,
+        Location $location,
         MetricSubject $subject,
         int $maximum,
         ClassComplexityOptions $options,
@@ -275,7 +274,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         [$severity, $threshold] = $projection;
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
