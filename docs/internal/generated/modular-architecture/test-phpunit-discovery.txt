@@ -2287,15 +2287,23 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itReportsAnEntryThatHasNoExtraField
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itReportsEveryEntryWhenTheAllowedPrefixListIsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentRuleTest::itReportsItsNameAndDescription
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSelectionTest::itPublishesBooleanArgumentsFromAnonymousAndNamedMethods"anonymous class method"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSelectionTest::itPublishesBooleanArgumentsFromAnonymousAndNamedMethods"named method"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSmellsTest::itPreservesPromotedPropertyEvidence
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentSmellsTest::itReadsTheTypeDeclarationOnly
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"break is not an attempt exit"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"break after work ends an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"call in early guard still precedes later work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"comment after the try skips nothing"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch skips a fallback"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch with nothing to skip"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue skips a fallback"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue with nothing to skip"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"early guard return does not excuse catch"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"guard before work is not an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before continue"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before return"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"no exit at all"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"preceded guard remains a known indistinguishable shape"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return ends the try"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return in a branch, more work after it"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"try nested below the loop body"
@@ -2355,16 +2363,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorBooleanArgumentTest::itMarksRegularMethodBoolArgumentAsNotPromoted
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorBooleanArgumentTest::itMarksStaticFactoryMethodBoolArgumentAsNotPromoted
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDetectsAFullyQualifiedExitCall
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDetectsALiteralVariableVariableSpellingOfASuperglobal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDetectsAllSuperglobalVariables
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDetectsGlobalsAsASuperglobalAccess
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotDetectAVariableVariableSpellingOfASuperglobal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagACatchBlockThatHandlesTheException
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagAnEmptyCatchInAForeachThatReturnsAsAChainOfResponsibilityPattern
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagAnEmptyCatchWithACommentInAForeachThatReturnsAsAChainOfResponsibilityPattern
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagCountInsideAClosureUsedInALoopCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagCountInsideAnArrowFunctionUsedInALoopCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagDebugBacktrace
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagDebugFunctionsInsideADebugApiMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagPrintRCalledWithReturnTrue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagVarExportCalledWithANamedReturnArgument
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itDoesNotFlagVarExportCalledWithReturnTrue
@@ -2382,6 +2389,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsCountUsedDirectlyInALoopCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsDebugFunctionsOutsideADebugApiMethod
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsDebugPrintBacktrace
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsOutputEvenInsideMethodsNamedLikeDebugApis
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsPrintRCalledWithoutReturnTrue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsSizeofUsedInALoopCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itFlagsVarExportCalledWithAnExplicitFalseReturnArgument
@@ -2390,6 +2398,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itKeepsTheChainExceptionForATryThatEndsByReturningAFoundValue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itKeepsTheChainExceptionForAnAttemptThatReturnsOnSuccessAndCollectsOtherwise
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itRecognizesFullyQualifiedAndUppercaseSpellingsOfNamedCalls
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorTest::itRecognizesLiteralAndConcatenatedVariableVariablesButNotUnknownNames
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itAboveErrorThreshold
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itAnalyzeDisabledReturnsEmpty
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ConstructorOverinjectionRuleTest::itAtErrorThreshold
@@ -2432,6 +2441,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::itReportsTheCorrectOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::itReturnsNoFindingsWhenNoSmellIsRecorded
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itAppliesTheNamedReturnFlagOnlyToFunctionsThatHaveOne
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itAppliesThePositionalReturnFlagOnlyToFunctionsThatHaveOne
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itDetectsDebugZvalDump
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itDoesNotDetectDebugBacktraceBecauseItOnlyReturnsData
@@ -2498,6 +2508,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsSeverityPositiveValue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itOptionsSeverityZeroValue
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itProducesNoFindingsWhenTheMetricBagHasNoIdenticalOperandEntries
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itProjectsADeclarationEntryToItsLogicalSymbol
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itWithDuplicateCondition
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itWithDuplicateMatchArm
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\IdenticalSubExpressionRuleTest::itWithIdenticalOperands
@@ -2710,6 +2721,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::itReportsAFindingForEachDirectSuperglobalAccess
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\SuperglobalsRuleTest::itReportsItsNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itDetectsCyclesAndPreventsInfiniteRecursion
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itDoesNotResolveAnUnimportedTraitFromAnotherNamespace
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itDoesNotTrackSelfClassAsConstant
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itDoesNothingForEmptyClassStatements
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itHandlesEmptyTraitWithNoTraitUseStatements
@@ -2717,7 +2729,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itHandlesTraitWithoutNamespace
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itIgnoresNonTraitUseStatements
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itLooksUpTraitByFullyQualifiedName
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itLooksUpTraitByShortName
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itRecordsMethodCallsFromSimpleTraitUsage
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itRecordsPropertyAndConstantFromTraitUsage
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\TraitUsageResolverTest::itRecordsStaticMethodPropertyAndConstantUsagesFromTrait
@@ -2778,6 +2789,24 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itContinuesCheckingConstantsWhenMagicMethodsPresent
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsALiteralCallableArrayAsAUsage
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsAMethodCallSpelledInAnotherCaseAsAUsage
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"callable array fully qualified"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"callable array self"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"callable array short"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"callable array string class"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"callable string fully qualified"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"callable string self"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"closure from callable"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"first class self"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"first class short"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"fully qualified"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"import alias"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"lowercase short"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"namespace relative"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"new short receiver"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"self"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"short name"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsEveryOwnClassUseForm"static"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itCountsQualifiedAndNewOwnClassReceiversAsUses
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDetectsMultipleUnusedMembers
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDetectsUnusedConstantAmongMultipleOnOneLine
@@ -2795,6 +2824,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotFlagUsedPromotedConstructorProperty
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotFollowMutualRecursionBetweenUnusedMethods
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotLeakNestedClosureReceiverProofToOuterMethod
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotResolveAShortCallableStringThroughTheCurrentNamespace
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotShareSameClassReceiverProofWithArrowFunction
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotShareSameClassReceiverProofWithNestedClosure
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itDoesNotTrackTraitDefinitionItself
@@ -2843,6 +2873,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itSkipsPropertyDetectionWhenMagicSetPresent
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itStillFlagsPrivateMemberWhenTraitIsExternal
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itTracksMultipleClassesIndependently
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateCollectorTest::itUsesTheForwardDeclaredTraitFromTheImportedNamespace
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itDeclaresUnusedPrivateOptionsAsItsOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itExposesItsRuleNameAndDescription
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\UnusedPrivateRuleTest::itPreservesTheUnnamedEntryWordingAndRecommendation
@@ -3983,6 +4014,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itRespectsBoundaryThresholds"at warning"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itRespectsBoundaryThresholds"below warning"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itRespectsBoundaryThresholds"between warning and error"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itRespectsBoundaryThresholds"raw above warning, same four-digit display"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itReturnsANonEmptyDescription
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itReturnsAScaleFactorOfFourAt1600Classes
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\ClassRankRuleTest::itReturnsAScaleFactorOfHalfAt25Classes
@@ -4121,6 +4153,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itRespectsDistanceThresholdBoundaries"at warning threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itRespectsDistanceThresholdBoundaries"below warning threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itRespectsDistanceThresholdBoundaries"maximum distance"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itRespectsDistanceThresholdBoundaries"raw above warning, same two-digit display"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCorrectDescription
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCorrectName
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\DistanceRuleTest::itReturnsCorrectOptionsClass
@@ -4173,6 +4206,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"at error threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"at warning threshold"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"below warning threshold"
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itRespectsInstabilityThresholdBoundaries"raw above warning, same two-digit display"
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsClassAndNamespaceLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsCorrectDescription
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\InstabilityRuleTest::itReturnsCorrectName
@@ -5446,9 +5480,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CommandInjectionRuleTest::itReturnsNoFindingsWhenNoFindings
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"builtin intersection union"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"comment"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"extra statement"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"fully qualified builtin"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"named intersection union"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"nullable builtin"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"relative builtin"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"self and parent"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"union builtin"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"union with qualified builtin"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itAcceptsOnlyWholeNativeTypeSyntax"whole placeholder"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"array element assignment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"array key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"assignment"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"camelCase dotted value"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"capitalized dotted value"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"class constant"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"coalescing assignment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"define"
@@ -5465,20 +5512,33 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"plus-separated secret"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"property assignment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"property default"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"sensitive accessor name"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"slash-separated secret"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"static property assignment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesEverySupportedLiteralShape"uuid-shaped secret"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"PascalCase path"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"SendGrid dotted token"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"capitalized dotted password"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"hyphen and digit password"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"lowercase dotted passphrase"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"lowercase hyphenated key"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"lowercase translation key"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"plain secret"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"redacted placeholder"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"short vendor password"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"unqualified Slack token name"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"vendor accessor string"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itClassifiesFixtureAndVendorValues"vendor type string"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itJudgesTheSlackValueWhenTokenIsConfiguredAsSensitive
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"array element assignment with a variable key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"bare key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"bare token"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"cache key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"channel name constant"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dot identifier with a hyphenated segment"
- - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dot identifier with a word per segment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dot identifier"
- - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with a digit inside a segment"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with a digit inside a lowercase segment"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with a snake-case segment"
- - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted identifier with capitalised segments"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"dotted value of lowercase hyphen-joined words has the shape of a key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"empty string"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"human message"
@@ -5496,8 +5556,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"short string"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsEveryNamedSensitiveValueExclusion"token storage"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itRejectsNonStringAndMalformedDefineValues
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itReportsEveryNamespaceAndGlobalConstantDeclarator
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\CredentialLiteralsTest::itTreatsFirstClassCallableCapturesAsNonInvocations
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsCollectorTest::itAssignsClassInitializersToTheirExactClassAndTopLevelCodeToTheFile
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsCollectorTest::itCollectsEachFileConstantUnderTheFileSubject
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsCollectorTest::itCollectsWithNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsCollectorTest::itCollectsWithTwoFindings
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
@@ -5515,6 +5577,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itPreservesRepositoryFileAndEntryOrderAcrossBatches
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itProducesCorrectMessageForEnumCasePattern
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itProjectsEveryCredentialPatternToItsExactMessage
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itRejectsAnUnknownCredentialPattern
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\HardcodedCredentialsRuleTest::itReturnsNoFindingsWhenNoFindings
@@ -5537,6 +5600,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itCollectsMultipleSecurityPatterns
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itCollectsWithNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itDeliberatelyDoesNotProvideCallableMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itProjectsTheResolvedReadNameRatherThanParsingTheContextText
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itProvidesExpectedMetrics
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternCollectorTest::itReturnsCorrectName
@@ -5561,6 +5625,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"string collision ordinal"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"unknown logical kind"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"unknown subject kind"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDeduplicatesNestedSqlQueriesByTheActualGlobalsReadNode
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsCommandInjection"$_SERVER not dangerous"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsCommandInjection"$_SESSION not dangerous"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsCommandInjection"backticks with braced superglobal"
@@ -5717,6 +5782,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"subquery without a superglobal behind a call inside a reporting concatenation"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itReportsASuperglobalReadOnceWhateverWrapsIt"two statements, two findings"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itResetsClearsState
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"SQL file"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"XSS file"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"command file"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"credential callable"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"credential class"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"credential file"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"sensitive anonymous file"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityRuleSelectionTest::itPublishesEachProducedCredentialOrSecurityPatternLevel"sensitive named callable"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveNameMatcherTest::itDetectsExtraSensitiveNames
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveNameMatcherTest::itDoesNotAffectDefaultBehaviorWithExtraSensitiveNames
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveNameMatcherTest::itDoesNotMatchNonSensitiveNames"CACHE_KEY"
@@ -5842,15 +5915,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itHasCorrectNameAndCategory
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itLoadsOptionsFromArray
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itProjectsANamedCallableToItsLogicalSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itRejectsWrongOptionsTypeInConstructor
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itReturnsNoFindingsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterRuleTest::itReturnsNoFindingsWhenNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"$accessToken param"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"$credentials param"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"alias to the built-in attribute on a promoted property"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"alias to the built-in attribute"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"arrow function with $secret"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"case-insensitive built-in attribute"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"closure with $password"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"function with $password"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"function with no params"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"group import alias from an unrelated namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"isPassword is not sensitive (prefix blacklist)"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"method with $apiKey"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"method with $secret"
@@ -5859,6 +5937,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"passwordField is not sensitive (suffix blacklist)"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"promoted constructor property with $password"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"promoted property with attribute"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"unqualified namespace attribute is not the built-in"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"unrelated imported attribute with the same short name"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"with SensitiveParameter attribute unqualified"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itDetectsSensitiveParameters"with SensitiveParameter attribute"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SensitiveParameterVisitorTest::itResetsClearsState
@@ -5904,6 +5984,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"$_REQUEST nested element"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"$_SERVER is not user input"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"$_SESSION is not user input"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"GLOBALS key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"any other call"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"array key"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"assignment"
@@ -5911,6 +5992,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"coalesce, superglobal on the left"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"comparison"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"concat, superglobal on the right"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"constant concatenated variable name"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"element of a coalesced superglobal"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"error suppression"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"first of two superglobals"
@@ -5919,6 +6001,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"int cast"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"interpolation"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"isset"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"literal variable name"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"match arm result"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"match subject is not its value"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SuperglobalAnalyzerTest::itFindsTheSuperglobalWhoseValueTheExpressionCarries"method call"
@@ -5989,13 +6072,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itProvidesZeroStructuralMetricsForAStatementOnlyGlobalFile
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itReportsImplementingEnumsPerNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itResetsState
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itFollowsSumWhenSumCrossesThresholdButBaseDoesNot
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesError
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesWarning
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsDescription
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsName
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGetsOptionsClass
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itJudgesEachNamespaceByItsOwnClassesIncludingParents
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itJudgesOwnCountWhenParentSubtreeIsLarger
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itLoadsOptionsCustomValuesFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itLoadsOptionsDefaultsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itRejectsWrongOptionsTypeInConstructor
@@ -6006,7 +6090,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itRespectsBoundaryThresholds"below warning"
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenDisabled
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itStaysSilentWhenBaseCrossesThresholdButSumDoesNot
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itStaysSilentWhenOnlySubtreeCountCrossesThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itUsesConstructorDefaultsForAnEmptyBodyAndHonoursExplicitDisablement
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsATrailingBlankLineBeforeTheTerminatingBreak
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsComplexFile
@@ -6071,6 +6155,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itIncludesStaticProperties
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProjectsTheSameClassMetricsAsTheFileBagIncludingDegenerateWoc
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itProvides
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itRecognizesAnExceptionBaseImportedWithDifferentAliasCase
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturns100WocForAClassWithoutPublicMembers
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\MethodCountCollectorTest::itReturnsZeroCountsForEmptyClass
@@ -7000,6 +7085,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillDeclinesToJudgeAValueServedFromAnUnanalysedRoot
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itStillJudgesAnAnchoredNamespaceValueOnAWholeProjectRun
  - Qualimetrix\Tests\Analysis\Finding\Unit\SuppressionBinding\ValueScopeJudgementTest::itWithholdsALiteralUnderRemovedCodeButJudgesItsNeighbour
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"integer equality"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"mixed numeric equality"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"same displayed precision"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itNamesTheRawNumericCrossing"strictly above"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdCrossingTest::itRefusesValuesBelowTheSelectedThreshold
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFieldsAreAccessible
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFloatThresholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itMatchesExact
@@ -9679,6 +9769,23 @@ Available tests:
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a method is a callable"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"a namespace"
  - Qualimetrix\Tests\Core\Symbol\Unit\SymbolLevelProjectionTest::itProjectsEveryDeclarationKindOntoItsAggregationLevel"the project"
+ - Qualimetrix\Tests\Core\Unit\Ast\NameResolutionTest::itAnnotatesTheOriginalNameNodesBeforeConsumersVisitTheirParents
+ - Qualimetrix\Tests\Core\Unit\Ast\NameResolutionTest::itCollectsAliasErrorsWithoutFailingTheFile
+ - Qualimetrix\Tests\Core\Unit\Ast\ResolvedNameTest::itExplainsAnUnannotatedNamespaceOrUseItemName
+ - Qualimetrix\Tests\Core\Unit\Ast\ResolvedNameTest::itReadsOnlyAnAnnotatedClassNameAndComparesItCaseInsensitively
+ - Qualimetrix\Tests\Core\Unit\Ast\ResolvedNameTest::itRejectsAnUnqualifiedFunctionNameAsARuntimeResolution
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"GLOBALS concatenated key"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"GLOBALS direct"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"GLOBALS double quoted key"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"GLOBALS key"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"case differs"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"concatenated variable variable"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"direct"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"double quoted variable variable"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"literal variable variable"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"unknown GLOBALS key"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"unknown name"
+ - Qualimetrix\Tests\Core\Unit\Ast\SuperglobalReadTest::itRecognizesOnlyFiniteAstNames"unknown variable variable"
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itAbsorbsMovementInsideTheEpsilonBand
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itAbsorbsMovementInsideTheEpsilonBandWhenLowerIsWorse
  - Qualimetrix\Tests\Core\Unit\Observation\WorseDirectionTest::itDecidesGroupAcceptanceWhenHigherIsWorse

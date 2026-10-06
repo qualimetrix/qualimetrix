@@ -1947,6 +1947,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ControlFlow\\AttemptWork": {
+      "path": "src/Analysis/Evidence/CodeSmell/ControlFlow/AttemptWork.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CodeSmell",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ControlFlow\\ChainOfAttempts": {
       "path": "src/Analysis/Evidence/CodeSmell/ControlFlow/ChainOfAttempts.php",
       "kind": "class",
@@ -2045,6 +2052,13 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LiteralCallableUse": {
+      "path": "src/Analysis/Evidence/CodeSmell/LiteralCallableUse.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CodeSmell",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions": {
       "path": "src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php",
       "kind": "class",
@@ -2054,6 +2068,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule": {
       "path": "src/Analysis/Evidence/CodeSmell/LongParameterListRule.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.CodeSmell",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\OwnClassReference": {
+      "path": "src/Analysis/Evidence/CodeSmell/OwnClassReference.php",
       "kind": "class",
       "owner": "Analysis.Evidence.CodeSmell",
       "visibility": "internal",
@@ -4420,10 +4441,6 @@
         },
         {
           "owner": "Analysis.Evidence.Size",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector"
         },
         {
@@ -6141,6 +6158,13 @@
     },
     "Qualimetrix\\Analysis\\Evidence\\Security\\CommandInjectionRule": {
       "path": "src/Analysis/Evidence/Security/CommandInjectionRule.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Security",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Security\\Credential\\CredentialDeclarations": {
+      "path": "src/Analysis/Evidence/Security/Credential/CredentialDeclarations.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Security",
       "visibility": "internal",
@@ -11769,6 +11793,70 @@
         }
       ]
     },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\ThresholdCrossing": {
+      "path": "src/Analysis/Finding/Contract/ThresholdCrossing.php",
+      "kind": "enum",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Cohesion",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Complexity",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\NocRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
+        }
+      ]
+    },
     "Qualimetrix\\Analysis\\Finding\\Contract\\Threshold\\ThresholdOverride": {
       "path": "src/Analysis/Finding/Contract/Threshold/ThresholdOverride.php",
       "kind": "class",
@@ -15619,6 +15707,58 @@
         }
       ]
     },
+    "Qualimetrix\\Core\\Ast\\NameResolution": {
+      "path": "src/Core/Ast/NameResolution.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\FileMeasurement\\CompositeCollector"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Ast\\ResolvedName": {
+      "path": "src/Core/Ast/ResolvedName.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\OwnClassReference"
+        },
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\TraitUsageResolver"
+        },
+        {
+          "owner": "Analysis.Evidence.Security",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountVisitor"
+        }
+      ]
+    },
+    "Qualimetrix\\Core\\Ast\\SuperglobalRead": {
+      "path": "src/Core/Ast/SuperglobalRead.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CodeSmell",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellVisitor"
+        },
+        {
+          "owner": "Analysis.Evidence.Security",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SuperglobalAnalyzer"
+        }
+      ]
+    },
     "Qualimetrix\\Core\\Exception\\ParseException": {
       "path": "src/Core/Exception/ParseException.php",
       "kind": "class",
@@ -17681,6 +17821,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+        },
+        {
+          "owner": "Analysis.Evidence.Size",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountVisitor"
         }
       ]
     },
@@ -17712,14 +17856,6 @@
         },
         {
           "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Complexity",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule"
         },
         {
@@ -17733,10 +17869,6 @@
         {
           "owner": "Analysis.Evidence.Coupling",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule"
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule"
         },
         {
           "owner": "Analysis.Evidence.Design",
@@ -18416,10 +18548,6 @@
         },
         {
           "owner": "Analysis.Evidence.CodeSmell",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellFinding"
-        },
-        {
-          "owner": "Analysis.Evidence.CodeSmell",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector"
         },
         {
@@ -18565,10 +18693,6 @@
         {
           "owner": "Analysis.Evidence.Prioritization",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact\\ClassRankResolver"
-        },
-        {
-          "owner": "Analysis.Evidence.Security",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternFinding"
         },
         {
           "owner": "Analysis.Evidence.Size",

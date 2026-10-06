@@ -72,9 +72,6 @@
       {"channel":"complexity.ccn","magnitudes":[11]},
       {"channel":"complexity.cognitive","magnitudes":[26]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule::analyze@src/Analysis/Evidence/Size/ClassCountRule.php": [
-      {"channel":"complexity.ccn","magnitudes":[12]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector::getClassesWithMetrics@src/Analysis/Evidence/Size/MethodCountCollector.php": [
       {"channel":"complexity.ccn","magnitudes":[10]}
     ],
@@ -261,14 +258,8 @@
     "file:src/Analysis/Evidence/Coupling/RfcCollector.php": [
       {"channel":"duplication.clone","occurrence":"cefc013a6edbedf0","magnitudes":[25]}
     ],
-    "file:src/Analysis/Evidence/Design/Inheritance/InheritanceDepthVisitor.php": [
-      {"channel":"duplication.clone","occurrence":"9860184dcb71d29b","magnitudes":[27]}
-    ],
     "file:src/Analysis/Evidence/Size/MethodCountCollector.php": [
       {"channel":"duplication.clone","occurrence":"cefc013a6edbedf0","magnitudes":[25]}
-    ],
-    "file:src/Analysis/Evidence/Size/MethodCountVisitor.php": [
-      {"channel":"duplication.clone","occurrence":"9860184dcb71d29b","magnitudes":[27]}
     ],
     "file:src/Infrastructure/DependencyInjection/Configurator/CodeSmellConfigurator.php": [
       {"channel":"duplication.clone","occurrence":"64c438da29a6276a","magnitudes":[20]}
@@ -276,11 +267,14 @@
     "file:src/Infrastructure/DependencyInjection/Configurator/SecurityConfigurator.php": [
       {"channel":"duplication.clone","occurrence":"64c438da29a6276a","magnitudes":[20]}
     ],
+    "ns:Qualimetrix\\Analysis\\Configuration\\Document": [
+      {"channel":"size.class-count","magnitudes":[18]}
+    ],
     "ns:Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage": [
       {"channel":"health.cohesion","magnitudes":[25]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\CodeSmell": [
-      {"channel":"coupling.cbo","magnitudes":[17]}
+      {"channel":"coupling.cbo","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Complexity": [
       {"channel":"size.class-count","magnitudes":[21]}
@@ -295,10 +289,10 @@
       {"channel":"coupling.cbo","magnitudes":[20]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"coupling.instability","magnitudes":[0.953846]}
+      {"channel":"coupling.instability","magnitudes":[0.954545]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
-      {"channel":"coupling.instability","magnitudes":[0.941176]}
+      {"channel":"coupling.instability","magnitudes":[0.942308]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Maintainability": [
       {"channel":"coupling.cbo","magnitudes":[16]}
@@ -309,10 +303,25 @@
     "ns:Qualimetrix\\Analysis\\Evidence\\Prioritization\\Impact": [
       {"channel":"health.cohesion","magnitudes":[43.8]}
     ],
+    "ns:Qualimetrix\\Analysis\\Evidence\\Security": [
+      {"channel":"size.class-count","magnitudes":[21]}
+    ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Size": [
       {"channel":"size.class-count","magnitudes":[15]}
     ],
+    "ns:Qualimetrix\\Analysis\\Finding\\Contract": [
+      {"channel":"size.class-count","magnitudes":[24]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration": [
+      {"channel":"size.class-count","magnitudes":[15]}
+    ],
+    "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer": [
+      {"channel":"size.class-count","magnitudes":[22]}
+    ],
     "ns:Qualimetrix\\Core\\FileTarget": [
+      {"channel":"size.class-count","magnitudes":[23]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Console\\Command": [
       {"channel":"size.class-count","magnitudes":[23]}
     ],
     "ns:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator": [

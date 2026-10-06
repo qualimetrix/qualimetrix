@@ -52,7 +52,6 @@ Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding	Analysis.Evidence.CodeS
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellFinding	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
@@ -60,6 +59,7 @@ Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions	Analysis.Evidence.CodeS
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Ast\SuperglobalRead	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
@@ -128,11 +128,13 @@ Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\CodeSmell\OwnClassReference	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	contract
@@ -152,6 +154,7 @@ Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressio
 Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\CodeSmell\TraitUsageResolver	Analysis.Evidence.CodeSmell	Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeCollector	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeCollector	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeCollector	Analysis.Evidence.CodeSmell	Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	contract
@@ -258,6 +261,7 @@ Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Quali
 Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Cohesion\LcomRule	Analysis.Evidence.Cohesion	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -333,9 +337,9 @@ Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Eviden
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface	Analysis.Evidence.Measurement	contract
@@ -364,9 +368,9 @@ Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Comple
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	contract
@@ -442,6 +446,7 @@ Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.C
 Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
@@ -471,6 +476,7 @@ Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qu
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Complexity\WmcRule	Analysis.Evidence.Complexity	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -666,6 +672,7 @@ Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
@@ -734,6 +741,7 @@ Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Q
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Coupling\DistanceRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -761,9 +769,9 @@ Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Couplin
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule	Analysis.Evidence.Coupling	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Coupling\NamespaceCboOptions	Analysis.Evidence.Coupling	Qualimetrix\Analysis\Finding\Contract\Rule\BandDirection	Analysis.Finding	contract
@@ -928,6 +936,7 @@ Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Eviden
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\InheritanceRule	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
@@ -961,6 +970,7 @@ Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Desig
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Design\Inheritance\NocRule	Analysis.Evidence.Design	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -1146,6 +1156,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope	Analysis
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector	Analysis.Evidence.Measurement	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface	Analysis.Evidence.DependencyModel	contract
+Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector	Analysis.Evidence.Measurement	Qualimetrix\Core\Ast\NameResolution	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedCollectorExecutionPlan	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -1246,7 +1257,6 @@ Qualimetrix\Analysis\Evidence\Security\SecurityPatternFinding	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Security\SecurityPatternFinding	Analysis.Evidence.Security	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Security\SecurityPatternFinding	Analysis.Evidence.Security	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Security\SecurityPatternFinding	Analysis.Evidence.Security	Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	contract
-Qualimetrix\Analysis\Evidence\Security\SecurityPatternFinding	Analysis.Evidence.Security	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions	Analysis.Evidence.Security	Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions	Analysis.Evidence.Security	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions	Analysis.Evidence.Security	Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	contract
@@ -1275,6 +1285,8 @@ Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Security\SensitiveParameterVisitor	Analysis.Evidence.Security	Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Security\SensitiveParameterVisitor	Analysis.Evidence.Security	Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Security\SensitiveParameterVisitor	Analysis.Evidence.Security	Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Security\SensitiveParameterVisitor	Analysis.Evidence.Security	Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	contract
+Qualimetrix\Analysis\Evidence\Security\SuperglobalAnalyzer	Analysis.Evidence.Security	Qualimetrix\Core\Ast\SuperglobalRead	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountCollector	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountCollector	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountCollector	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	contract
@@ -1293,7 +1305,6 @@ Qualimetrix\Analysis\Evidence\Size\ClassCountOptions	Analysis.Evidence.Size	Qual
 Qualimetrix\Analysis\Evidence\Size\ClassCountOptions	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountOptions	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountOptions	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
-Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	contract
@@ -1304,6 +1315,7 @@ Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualime
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\ClassCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -1354,12 +1366,15 @@ Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualim
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface	Analysis.Evidence.Measurement	contract
+Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	Analysis.Evidence.Size	Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	contract
+Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector	Analysis.Evidence.Size	Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	contract
@@ -1396,6 +1411,7 @@ Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qual
 Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	contract
 Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	contract
 Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	Analysis.Evidence.Size	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract

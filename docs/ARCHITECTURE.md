@@ -59,7 +59,7 @@ an uncovered project class fail even when it has no dependency edges.
 Every test, support file, and fixture directory is governed by the same
 manifest; `test-topology.tsv` in the generated directory reports how many of
 each. Self-analysis runs against the versioned v14 root baseline, whose
-121 groups across 103 subjects are checked against the file itself by
+124 groups across 106 subjects are checked against the file itself by
 `DocumentationConsistencyTest`, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
@@ -198,7 +198,7 @@ including empty baseline generation. See
 
 ### DO NOT Violate
 
-1. **Core imports nothing from the project outside `Core`** — its only external types are `PhpParser\Node` and `Composer\InstalledVersions`; no control enforces that list (see `src/Core/README.md`)
+1. **Core imports nothing from the project outside `Core`** — its external types are `Composer\InstalledVersions` and php-parser types confined to `Core/Ast/`; no control enforces that list (see `src/Core/README.md`)
 2. **Rules are stateless** — they do not perform AST traversal, only read metrics
 3. **Collectors are stateful per-file** — they reset between files via `reset()`
 4. **Atomic cache writes** — via tmp + rename (race condition protection)
