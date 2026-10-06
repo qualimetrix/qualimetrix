@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell;
 
 use PhpParser\Node;
+use PhpParser\Node\Arg;
 use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\StaticPropertyFetch;
@@ -18,14 +20,16 @@ use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\MagicConst;
 use PhpParser\Node\Scalar\String_;
+use Qualimetrix\Core\Ast\ResolvedName;
 
 /**
  * Shared logic for classifying AST nodes as member usages.
  *
- * Recognises six patterns:
+ * Recognises member references through:
  * - $this->method() / $sameClass->method() → usedMethods (lowercase: method names are case-insensitive)
  * - self::method() / static:: → usedMethods
  * - a literal callable [$this, 'method'] / [self::class, 'method'] / [static::class, …] → usedMethods
+ * - a literal callable string such as 'self::method' or 'App\Subject::method' → usedMethods
  * - $this->property           → usedProperties
  * - self::$prop / static::    → usedProperties
  * - self::CONST / static::    → usedConstants
@@ -44,7 +48,7 @@ trait UsageTrackingTrait
         array $sameClassReceiverVariables = [],
         ?string $callingMethod = null,
     ): void {
-        $method = $this->referencedMethod($node, $sameClassReceiverVariables);
+        $method = $this->referencedMethod($node, $data, $sameClassReceiverVariables);
         if ($method !== null) {
             if ($method !== $callingMethod) {
                 $data->usedMethods[$method] = true;
@@ -53,14 +57,14 @@ trait UsageTrackingTrait
             return;
         }
 
-        $property = $this->referencedProperty($node);
+        $property = $this->referencedProperty($node, $data);
         if ($property !== null) {
             $data->usedProperties[$property] = true;
 
             return;
         }
 
-        $constant = $this->referencedConstant($node);
+        $constant = $this->referencedConstant($node, $data);
         if ($constant !== null) {
             $data->usedConstants[$constant] = true;
         }
@@ -71,19 +75,20 @@ trait UsageTrackingTrait
      *
      * @return ?string Lowercase method name
      */
-    private function referencedMethod(Node $node, array $sameClassReceiverVariables): ?string
+    private function referencedMethod(Node $node, UnusedPrivateClassData $data, array $sameClassReceiverVariables): ?string
     {
         return match (true) {
-            $node instanceof MethodCall => $this->isSameClassReceiver($node->var, $sameClassReceiverVariables)
+            $node instanceof MethodCall => $this->isSameClassReceiver($node->var, $data, $sameClassReceiverVariables)
                 ? $this->lowerIdentifier($node->name)
                 : null,
-            $node instanceof StaticCall => $this->isSelfOrStaticClass($node->class) ? $this->lowerIdentifier($node->name) : null,
-            $node instanceof Array_ => $this->callableArrayMethod($node, $sameClassReceiverVariables),
+            $node instanceof StaticCall => $this->isOwnClassNode($node->class, $data) ? $this->lowerIdentifier($node->name) : null,
+            $node instanceof Array_ => $this->callableArrayMethod($node, $data, $sameClassReceiverVariables),
+            $node instanceof Arg && $node->value instanceof String_ => $this->callableStringMethod($node->value->value, $data),
             default => null,
         };
     }
 
-    private function referencedProperty(Node $node): ?string
+    private function referencedProperty(Node $node, UnusedPrivateClassData $data): ?string
     {
         if ($node instanceof PropertyFetch) {
             return $node->var instanceof Variable && $node->var->name === 'this' && $node->name instanceof Identifier
@@ -92,16 +97,16 @@ trait UsageTrackingTrait
         }
 
         return $node instanceof StaticPropertyFetch
-            && $this->isSelfOrStaticClass($node->class)
+            && $this->isOwnClassNode($node->class, $data)
             && $node->name instanceof Node\VarLikeIdentifier
             ? $node->name->toString()
             : null;
     }
 
-    private function referencedConstant(Node $node): ?string
+    private function referencedConstant(Node $node, UnusedPrivateClassData $data): ?string
     {
         return $node instanceof ClassConstFetch
-            && $this->isSelfOrStaticClass($node->class)
+            && $this->isOwnClassNode($node->class, $data)
             && $node->name instanceof Identifier
             && $node->name->toString() !== 'class'
             ? $node->name->toString()
@@ -113,7 +118,7 @@ trait UsageTrackingTrait
      *
      * @param array<string, true> $sameClassReceiverVariables
      */
-    private function callableArrayMethod(Array_ $node, array $sameClassReceiverVariables): ?string
+    private function callableArrayMethod(Array_ $node, UnusedPrivateClassData $data, array $sameClassReceiverVariables): ?string
     {
         if (\count($node->items) !== 2) {
             return null;
@@ -124,7 +129,7 @@ trait UsageTrackingTrait
             return null;
         }
 
-        return $this->isSameClassCallableReceiver($receiver->value, $sameClassReceiverVariables)
+        return $this->isSameClassCallableReceiver($receiver->value, $data, $sameClassReceiverVariables)
             ? strtolower($method->value->value)
             : null;
     }
@@ -140,15 +145,19 @@ trait UsageTrackingTrait
     /**
      * @param array<string, true> $sameClassReceiverVariables
      */
-    private function isSameClassCallableReceiver(Expr $receiver, array $sameClassReceiverVariables): bool
+    private function isSameClassCallableReceiver(Expr $receiver, UnusedPrivateClassData $data, array $sameClassReceiverVariables): bool
     {
         if ($receiver instanceof ClassConstFetch) {
-            return $this->isSelfOrStaticClass($receiver->class)
+            return $this->isOwnClassNode($receiver->class, $data)
                 && $receiver->name instanceof Identifier
                 && $receiver->name->toLowerString() === 'class';
         }
 
-        return $receiver instanceof MagicConst\Class_ || $this->isSameClassReceiver($receiver, $sameClassReceiverVariables);
+        if ($receiver instanceof String_) {
+            return $this->isOwnClassString($receiver->value, $data);
+        }
+
+        return $receiver instanceof MagicConst\Class_ || $this->isSameClassReceiver($receiver, $data, $sameClassReceiverVariables);
     }
 
     /**
@@ -156,8 +165,12 @@ trait UsageTrackingTrait
      *
      * @param array<string, true> $sameClassReceiverVariables
      */
-    private function isSameClassReceiver(Expr $receiver, array $sameClassReceiverVariables): bool
+    private function isSameClassReceiver(Expr $receiver, UnusedPrivateClassData $data, array $sameClassReceiverVariables): bool
     {
+        if ($receiver instanceof New_) {
+            return $this->isOwnClassNode($receiver->class, $data);
+        }
+
         return $receiver instanceof Variable
             && ($receiver->name === 'this' || (\is_string($receiver->name) && isset($sameClassReceiverVariables[$receiver->name])));
     }
@@ -167,9 +180,45 @@ trait UsageTrackingTrait
         return $name instanceof Identifier ? $name->toLowerString() : null;
     }
 
-    private function isSelfOrStaticClass(Node $class): bool
+    private function isOwnClassNode(Node $class, UnusedPrivateClassData $data): bool
     {
-        return $class instanceof Name && $this->isSelfOrStatic($class);
+        if (!$class instanceof Name) {
+            return false;
+        }
+
+        if ($this->isSelfOrStatic($class)) {
+            return true;
+        }
+
+        $resolved = ResolvedName::className($class);
+
+        return $resolved !== null && $this->isOwnClassString($resolved, $data);
+    }
+
+    private function isOwnClassString(string $class, UnusedPrivateClassData $data): bool
+    {
+        if (\in_array(strtolower($class), ['self', 'static'], true)) {
+            return true;
+        }
+
+        $own = ($data->namespace === null || $data->namespace === '')
+            ? $data->className
+            : $data->namespace . '\\' . $data->className;
+
+        return ResolvedName::sameClass(ltrim($class, '\\'), $own);
+    }
+
+    private function callableStringMethod(string $callable, UnusedPrivateClassData $data): ?string
+    {
+        $separator = strrpos($callable, '::');
+        if ($separator === false || $separator === 0 || $separator === \strlen($callable) - 2) {
+            return null;
+        }
+
+        $class = substr($callable, 0, $separator);
+        $method = substr($callable, $separator + 2);
+
+        return $this->isOwnClassString($class, $data) ? strtolower($method) : null;
     }
 
     private function isSelfOrStatic(Name $name): bool

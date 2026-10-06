@@ -260,6 +260,7 @@ final class DataClassDetectionTest extends TestCase
         $collector->useDeclarationIndex(new FileDeclarationIndex());
 
         $ast = (new ParserFactory())->createForHostVersion()->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
         $traverser = new NodeTraverser();
         $traverser->addVisitor($collector->getVisitor());
         $traverser->traverse($ast);

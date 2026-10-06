@@ -79,6 +79,7 @@ final class ClassProducerOrdinalTest extends TestCase
 
         try {
             $ast = (new ParserFactory())->createForHostVersion()->parse($source) ?? [];
+            \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
             $collector = new $producer();
             $registrar = (new DeclarationRegistrarFactory())->createForFile();
             $traverser = new NodeTraverser();

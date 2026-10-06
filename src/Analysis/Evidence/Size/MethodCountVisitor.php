@@ -9,12 +9,12 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Core\Ast\ResolvedName;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
 /**
  * Visitor for counting methods and properties in classes by visibility.
@@ -81,19 +81,11 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
      */
     private array $classStack = [];
 
-    /**
-     * Map of alias/short name => FQN from `use` statements in the current namespace.
-     *
-     * @var array<string, string>
-     */
-    private array $useImports = [];
-
     public function reset(): void
     {
         $this->classMetrics = [];
         $this->currentNamespace = null;
         $this->classStack = [];
-        $this->useImports = [];
     }
 
     /**
@@ -121,32 +113,6 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         // Track namespace
         if ($node instanceof Node\Stmt\Namespace_) {
             $this->currentNamespace = $node->name?->toString() ?? '';
-            $this->useImports = [];
-
-            return null;
-        }
-
-        // Track use imports for parent class resolution
-        if ($node instanceof Use_ && $node->type === Use_::TYPE_NORMAL) {
-            foreach ($node->uses as $use) {
-                $alias = $use->getAlias()->toString();
-                $fqn = $use->name->toString();
-                $this->useImports[$alias] = $fqn;
-            }
-
-            return null;
-        }
-
-        if ($node instanceof GroupUse && $node->type === Use_::TYPE_NORMAL) {
-            $prefix = $node->prefix->toString();
-
-            foreach ($node->uses as $use) {
-                if ($use->type === Use_::TYPE_NORMAL || $use->type === Use_::TYPE_UNKNOWN) {
-                    $alias = $use->getAlias()->toString();
-                    $fqn = $prefix . '\\' . $use->name->toString();
-                    $this->useImports[$alias] = $fqn;
-                }
-            }
 
             return null;
         }
@@ -214,7 +180,6 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         // Exit namespace scope
         if ($node instanceof Node\Stmt\Namespace_) {
             $this->currentNamespace = null;
-            $this->useImports = [];
         }
 
         return null;
@@ -427,7 +392,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
     /**
      * Check if a class extends a known exception base class.
      *
-     * Resolves the parent class name via use imports and checks against
+     * Resolves the parent class name and checks against
      * the list of standard PHP exception/error classes.
      */
     private function isExceptionClass(Class_ $node): bool
@@ -436,7 +401,10 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
             return false;
         }
 
-        $parentFqn = $this->resolveClassName($node->extends);
+        $parentFqn = ResolvedName::className($node->extends);
+        if ($parentFqn === null) {
+            return false;
+        }
 
         // Strip leading backslash for comparison
         $parentFqn = ltrim($parentFqn, '\\');
@@ -449,40 +417,8 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
             ? substr($parentFqn, $lastBackslash + 1)
             : $parentFqn;
 
-        return \in_array($shortName, self::EXCEPTION_BASE_CLASSES, true);
-    }
+        $canonical = PhpBuiltinClassRegistry::canonicalName($shortName);
 
-    /**
-     * Resolve class name to FQN using use imports.
-     */
-    private function resolveClassName(Node\Name $name): string
-    {
-        if ($name->isFullyQualified()) {
-            return $name->toString();
-        }
-
-        $className = $name->toString();
-
-        // Check use imports: for "Foo\Bar", the first part "Foo" might be an alias
-        $parts = explode('\\', $className);
-        $firstPart = $parts[0];
-
-        if (isset($this->useImports[$firstPart])) {
-            if (\count($parts) === 1) {
-                return $this->useImports[$firstPart];
-            }
-
-            // Replace alias with full path
-            $parts[0] = $this->useImports[$firstPart];
-
-            return implode('\\', $parts);
-        }
-
-        // Prepend current namespace
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $className;
-        }
-
-        return $className;
+        return $canonical !== null && \in_array($canonical, self::EXCEPTION_BASE_CLASSES, true);
     }
 }

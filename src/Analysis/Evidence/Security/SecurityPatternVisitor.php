@@ -114,7 +114,7 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Declar
         }
 
         foreach ($this->sqlInjectionDetector->reads($node) as $read) {
-            $this->reportedReads[spl_object_id($read)] = true;
+            $this->reportedReads[spl_object_id($read->node)] = true;
         }
 
         $this->addLocations($locations);
@@ -131,6 +131,7 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Declar
                 line: $location->line,
                 context: $location->context,
                 subjectId: $this->currentFileEntrySubjectId(),
+                superglobal: $location->superglobal,
             );
         }
     }

@@ -13,6 +13,7 @@ final readonly class SecurityPatternLocation
         public string $type,
         public int $line,
         public string $context,
+        public string $superglobal,
         public ?string $subjectId = null,
     ) {}
 }

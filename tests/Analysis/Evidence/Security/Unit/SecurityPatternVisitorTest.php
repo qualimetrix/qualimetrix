@@ -803,6 +803,18 @@ PHP;
         );
     }
 
+    #[Test]
+    public function itDeduplicatesNestedSqlQueriesByTheActualGlobalsReadNode(): void
+    {
+        $locations = $this->analyze(<<<'PHP'
+<?php
+$q = "SELECT * FROM t WHERE id = " . $GLOBALS['_GET']['id'];
+PHP, 'sql_injection');
+
+        self::assertCount(1, $locations);
+        self::assertSame('_GET', $locations[0]->superglobal);
+    }
+
     /**
      * Every wrapper the superglobal search looks through, around one value.
      *

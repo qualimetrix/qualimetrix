@@ -979,6 +979,7 @@ PHP;
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $this->collector->useDeclarationIndex(new FileDeclarationIndex());
 
@@ -1010,10 +1011,19 @@ PHP;
         }
     }
 
+    #[Test]
+    public function itRecognizesAnExceptionBaseImportedWithDifferentAliasCase(): void
+    {
+        $metrics = $this->collectMetrics('<?php namespace App; use RuntimeException as Be; class Failure extends be {}');
+
+        self::assertSame(1, $metrics->get('design.is-exception:App\\Failure'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());

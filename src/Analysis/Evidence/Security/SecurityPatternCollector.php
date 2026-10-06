@@ -69,7 +69,7 @@ final class SecurityPatternCollector extends AbstractCollector
             foreach ($locations as $location) {
                 $bag = $bag->withEntry("security.{$type}", [
                     'line' => $location->line,
-                    'superglobal' => $this->extractSuperglobalName($location->context),
+                    'superglobal' => $location->superglobal,
                     ...$this->visitor->getSubjectComponents($location),
                 ]);
             }
@@ -78,20 +78,4 @@ final class SecurityPatternCollector extends AbstractCollector
         return $bag;
     }
 
-    /**
-     * Extract the superglobal name from a context string.
-     *
-     * Context strings contain superglobal references like "$_GET['id']".
-     * Returns the bare superglobal name (e.g. '_GET'), or empty string if unknown.
-     */
-    private function extractSuperglobalName(string $context): string
-    {
-        foreach (['_GET', '_POST', '_REQUEST', '_COOKIE'] as $name) {
-            if (str_contains($context, $name)) {
-                return $name;
-            }
-        }
-
-        return '';
-    }
 }

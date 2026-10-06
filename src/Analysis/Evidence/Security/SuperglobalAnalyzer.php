@@ -13,10 +13,10 @@ use PhpParser\Node\Expr\Cast;
 use PhpParser\Node\Expr\ErrorSuppress;
 use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\Ternary;
-use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\InterpolatedStringPart;
 use PhpParser\Node\MatchArm;
 use PhpParser\Node\Scalar\InterpolatedString;
+use Qualimetrix\Core\Ast\SuperglobalRead;
 
 /**
  * Finds a dangerous superglobal ($_GET, $_POST, $_REQUEST, $_COOKIE) whose
@@ -49,9 +49,7 @@ final readonly class SuperglobalAnalyzer
      */
     public function findSuperglobal(Expr|InterpolatedStringPart ...$parts): ?string
     {
-        $name = ($this->readsInParts($parts)[0] ?? null)?->name;
-
-        return \is_string($name) ? $name : null;
+        return ($this->readsInParts($parts)[0] ?? null)?->name;
     }
 
     /**
@@ -60,16 +58,14 @@ final readonly class SuperglobalAnalyzer
      *
      * @param array<Expr|InterpolatedStringPart> $parts
      *
-     * @return list<Variable>
+     * @return list<SuperglobalRead>
      */
     public function readsInParts(array $parts): array
     {
         $reads = [];
         foreach ($parts as $part) {
-            if ($part instanceof Variable) {
-                if (\is_string($part->name) && \in_array($part->name, self::DANGEROUS_SUPERGLOBALS, true)) {
-                    $reads[] = $part;
-                }
+            if ($part instanceof Expr && ($read = SuperglobalRead::in($part)) !== null && \in_array($read->name, self::DANGEROUS_SUPERGLOBALS, true)) {
+                $reads[] = $read;
             } elseif ($part instanceof Expr) {
                 array_push($reads, ...$this->readsInParts($this->valueOperands($part)));
             }
