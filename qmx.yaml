@@ -829,6 +829,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryOptions'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntrySelector'
+        - 'Qualimetrix\Analysis\Policy\Baseline\ExclusionRemovedPopulation'
         - 'Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject'
         - 'Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance'
         - 'Qualimetrix\Analysis\Policy\Baseline\IdentityBoundaryExplanation'

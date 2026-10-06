@@ -19,6 +19,11 @@ final class RunCoverage
 {
     private ?ProjectTreeSnapshot $snapshot = null;
 
+    /** @var ?array<string, true> */
+    private ?array $completeFiles = null;
+
+    private int $distinctFileQueries = 0;
+
     /** @var array<string, ProjectEntryPresence> */
     private array $filePresence = [];
 
@@ -38,7 +43,24 @@ final class RunCoverage
 
     public function hasFile(RelativePath $file): ProjectEntryPresence
     {
-        return $this->filePresence[$file->value()] ??= $this->tree->hasFile($this->universe->projectRoot, $file);
+        $key = $file->value();
+        if (isset($this->filePresence[$key])) {
+            return $this->filePresence[$key];
+        }
+
+        ++$this->distinctFileQueries;
+        if ($this->distinctFileQueries > 1 && str_ends_with($key, '.php') && $this->inDenominator($file)) {
+            if ($this->snapshot === null) {
+                $this->snapshot();
+            }
+            if ($this->snapshot !== null && $this->snapshot->complete()) {
+                return $this->filePresence[$key] = $this->completeSnapshotContains($file)
+                    ? ProjectEntryPresence::Present
+                    : ProjectEntryPresence::Absent;
+            }
+        }
+
+        return $this->filePresence[$key] = $this->tree->hasFile($this->universe->projectRoot, $file);
     }
 
     public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
@@ -54,5 +76,38 @@ final class RunCoverage
     public function snapshot(): ProjectTreeSnapshot
     {
         return $this->snapshot ??= $this->tree->snapshot($this->universe);
+    }
+
+    public function completeSnapshotContains(RelativePath $file): bool
+    {
+        $snapshot = $this->snapshot();
+        if (!$snapshot->complete()) {
+            return false;
+        }
+
+        $this->completeFiles ??= array_fill_keys(
+            array_map(static fn(RelativePath $path): string => $path->value(), $snapshot->phpFiles),
+            true,
+        );
+
+        return isset($this->completeFiles[$file->value()]);
+    }
+
+    private function inDenominator(RelativePath $file): bool
+    {
+        foreach ($file->segments() as $segment) {
+            if (\in_array($segment, ['vendor', 'node_modules', '.git'], true)) {
+                return false;
+            }
+        }
+
+        $absolute = $this->universe->projectRoot->joinRelative($file);
+        foreach ($this->universe->denominator as $target) {
+            if ($absolute->equals($target['path']) || $absolute->tryRelativizeTo($target['path']) !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

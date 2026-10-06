@@ -9,7 +9,7 @@ check	--all,--baseline,--cache-dir,--class,--clear-cache,--config,--detail,--dis
 completion	--debug
 debug:layer-assignment	--config,--format,--no-progress,--preset
 directives	--config,--disable-rule,--format,--no-progress,--only-rule,--preset,--rule-opt,--sweep
-graph:export	--config,--direction,--exclude,--exclude-namespace,--format,--include-autoload-dev,--include-generated,--memory-limit,--namespace,--no-cache,--no-clusters,--output,--preset,--workers
+graph:export	--config,--direction,--exclude,--exclude-namespace,--format,--include-autoload-dev,--include-generated,--memory-limit,--namespace,--no-cache,--no-clusters,--no-progress,--output,--preset,--workers
 help	--format,--raw
 hook:install	--force
 hook:status	

@@ -110,8 +110,7 @@ final class BaselineLoaderTest extends TestCase
     }
 
     /**
-     * Version 11 is the immediate predecessor, not a historical format: it
-     * has exact declaration subjects already. It is still refused rather than
+     * Version 11 already has exact declaration subjects. It is still refused rather than
      * converted because there is no converter for the redundant "count" field
      * or the occurrence-key change. Baseline compatibility is not maintained.
      */
@@ -120,12 +119,26 @@ final class BaselineLoaderTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'Baseline version 11 cannot be converted automatically: version 14 drops the redundant "count" field '
+            'Baseline version 11 cannot be converted automatically: version 12 drops the redundant "count" field '
             . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
             . 'and write a new version 14 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 11, "entries": "never parsed"}');
+    }
+
+    #[Test]
+    public function itNamesVersionThirteenAsTheOrdinalIdentityBreakForVersionTwelve(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'Baseline version 12 cannot be converted automatically: version 13 replaces the file position in a '
+            . 'declaration key with an assigned ordinal, and no converter can recover which declaration a stored '
+            . 'position meant. Run a fresh analysis and write a new version 14 baseline (or regenerate and review '
+            . 'the accepted state).',
+        );
+
+        $this->loadJson('{"version": 12, "entries": "never parsed"}');
     }
 
     #[Test]
@@ -698,11 +711,36 @@ final class BaselineLoaderTest extends TestCase
         }
     }
 
-    /**
-     * The divergence the guard exists for: `json_decode` keeps the last of two
-     * identical keys and yields one entry, while a streaming reader that kept
-     * both would yield two — and the second one suppresses.
-     */
+    /** @return iterable<string, array{string, list<string>}> */
+    public static function canonicalDuplicateKeys(): iterable
+    {
+        $document = self::canonicalDocument();
+        yield 'envelope' => [
+            str_replace("  \"scope\": [\"src\",\"tests\"],\n", "  \"scope\": [\"src\"],\n  \"scope\": [\"src\",\"tests\"],\n", $document),
+            ['scope'],
+        ];
+        yield 'subject bucket' => [
+            str_replace('"class:App\\\\Legacy\\\\Report"', '"callable:App\\\\OrderService::calculate"', $document),
+            ['entries', 'callable:App\OrderService::calculate'],
+        ];
+    }
+
+    /** @param list<string> $position */
+    #[Test]
+    #[DataProvider('canonicalDuplicateKeys')]
+    public function itRefusesCanonicalDuplicateJsonMembersAtTheirKeyPosition(string $document, array $position): void
+    {
+        self::assertNotNull(json_decode($document, true, 512, \JSON_THROW_ON_ERROR));
+        $path = $this->put($document, 'duplicate-canonical.json');
+        try {
+            $this->loader->load(BaselineLoader::preflight($path));
+            self::fail('A repeated canonical JSON member must be refused.');
+        } catch (ConfigurationRefusal $refusal) {
+            self::assertStringContainsString('duplicate', strtolower($refusal->summary()));
+            self::assertSame($position, $refusal->position()?->segments);
+        }
+    }
+
     #[Test]
     public function itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse(): void
     {
@@ -723,6 +761,7 @@ final class BaselineLoaderTest extends TestCase
             . "  }\n"
             . "}\n";
 
+        $repeated = str_replace("  \"version\":", " \"version\":", $repeated);
         $path = $this->put($repeated, 'repeated-subject.json');
 
         self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
@@ -737,12 +776,6 @@ final class BaselineLoaderTest extends TestCase
         );
     }
 
-    /**
-     * Unlike a repeated subject key, a repeated envelope field would not make
-     * the two paths disagree — both would keep the last. The guard is here so
-     * the reader never has to be the one picking a winner, and it is pinned so
-     * that intent cannot be dropped silently.
-     */
     #[Test]
     public function itDeclinesARepeatedEnvelopeField(): void
     {
@@ -752,17 +785,47 @@ final class BaselineLoaderTest extends TestCase
             self::canonicalDocument(),
         );
 
+        $repeated = str_replace("  \"version\":", " \"version\":", $repeated);
         $path = $this->put($repeated, 'repeated-envelope.json');
 
         self::assertNull(CanonicalBaselineReader::grammarEnvelope($repeated, $path));
         self::assertSame(['src', 'tests'], $this->loader->load(\Qualimetrix\Analysis\Policy\Baseline\BaselineLoader::preflight($path))->scope);
     }
 
-    /**
-     * An entry decoded on its own starts counting nesting from zero, while the
-     * same entry inside the document is already three containers deep. Equal
-     * budgets there would mean one path reading what the other refuses.
-     */
+    #[Test]
+    public function itRetainsTheDocumentedRepeatedKeyLimitForNoncanonicalFallback(): void
+    {
+        $document = '{"version":14,"generated":"2026-08-05T12:00:00+03:00","scope":["src"],"scope":["src","tests"],"exclusions":{"patterns":[],"generated":"excluded"},"entries":{}}';
+
+        $loaded = $this->loadJson($document, 'noncanonical-repeated-scope.json');
+
+        self::assertSame(['src', 'tests'], $loaded->scope);
+
+        $laterDecline = str_replace(
+            "  }\n}",
+            " }\n}",
+            str_replace("  \"scope\": [\"src\",\"tests\"],\n", "  \"scope\": [\"src\"],\n  \"scope\": [\"src\",\"tests\"],\n", self::canonicalDocument()),
+        );
+        self::assertSame(['src', 'tests'], $this->loadJson($laterDecline, 'late-noncanonical-repeat.json')->scope);
+    }
+
+    #[Test]
+    public function itRetainsNativeLastKeyBehaviorForCanonicalEntryObjects(): void
+    {
+        $document = str_replace(
+            '{"channel":"complexity.ccn","magnitudes":[25]}',
+            '{"channel":"invalid.first","channel":"complexity.ccn","magnitudes":[25]}',
+            self::canonicalDocument(),
+        );
+
+        $loaded = $this->loadJson($document, 'canonical-repeated-entry-member.json');
+
+        self::assertContains(
+            'complexity.ccn',
+            array_map(static fn($entry): string => $entry->identity->channel->code, $loaded->entries),
+        );
+    }
+
     #[Test]
     public function itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath(): void
     {

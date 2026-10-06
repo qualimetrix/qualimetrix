@@ -18,6 +18,7 @@ final readonly class BaselineEntryUpdateOutcome
         public ?string $reasonCode = null,
         public ?AcceptedLevel $previousLevel = null,
         public ?AcceptedLevel $currentLevel = null,
+        public ?EntrySelector $selector = null,
     ) {}
 
     public static function accepted(BaselineIdentity $identity): self
@@ -32,6 +33,16 @@ final readonly class BaselineEntryUpdateOutcome
             BaselineUpdateDisposition::ReRecorded,
             previousLevel: new AcceptedLevel($previous->magnitudes, $previous->count),
             currentLevel: new AcceptedLevel($current->magnitudes, $current->count),
+        );
+    }
+
+    public static function removed(BaselineEntry $entry): self
+    {
+        return new self(
+            $entry->identity,
+            BaselineUpdateDisposition::Removed,
+            reasonCode: BaselineCleanupReason::ExclusionsRemovedPopulation->value,
+            selector: $entry->selector(),
         );
     }
 

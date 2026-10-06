@@ -17,11 +17,18 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineCleanupReason;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
 use Qualimetrix\Analysis\Policy\Baseline\RunRuleCoverage;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
@@ -38,6 +45,46 @@ use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\StubRuleCoverage;
 #[CoversClass(RunCoverageGap::class)]
 final class BaselineCleanerTest extends TestCase
 {
+    #[Test]
+    public function itOffersAFileEntryWhoseOwnPopulationWasNewlyExcluded(): void
+    {
+        $finding = FindingFactory::magnitude(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')), 40, 'duplication.clone', 'duplication.clone');
+        $entry = new BaselineEntry(BaselineIdentity::forFinding($finding), [40], 1);
+        $baseline = self::baselineOf($entry);
+        $baseCoverage = StubRuleCoverage::completeFor($baseline);
+        $tree = new class implements ProjectTreeQueryInterface {
+            public function snapshot(\Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse $universe): ProjectTreeSnapshot
+            {
+                return new ProjectTreeSnapshot([RelativePath::fromString('src/Foo.php')], [], true);
+            }
+
+            public function hasFile(AbsolutePath $root, RelativePath $file): ProjectEntryPresence
+            {
+                return ProjectEntryPresence::Present;
+            }
+
+            public function hasDirectory(AbsolutePath $directory): ProjectEntryPresence
+            {
+                return ProjectEntryPresence::Present;
+            }
+        };
+        $coverage = new RunCoverage(
+            $baseCoverage->scope,
+            $baseCoverage->analysis,
+            new RecordedExclusions(['exact:src/Foo.php'], GeneratedFilePolicy::Exclude),
+            $baseCoverage->universe,
+            $baseCoverage->psr4Roots,
+            $tree,
+            $baseCoverage->subjectCoverage,
+        );
+
+        $candidates = $this->cleaner()->candidates($baseline, [], StubChannelDeclarationRegistry::withDefaults(), [], $coverage);
+
+        self::assertCount(1, $candidates);
+        self::assertSame(BaselineCleanupReason::ExclusionsRemovedPopulation, $candidates[0]->reason);
+        self::assertSame($entry->selector()->value, $candidates[0]->selector->value);
+    }
+
     #[Test]
     public function itListsAStaleEntryWhoseIdentityDidNotAppearInTheRun(): void
     {

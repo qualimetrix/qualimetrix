@@ -29,7 +29,7 @@ Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	49	7
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	5	3
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	8	1
-Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	10	4
+Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	11	4
 Qualimetrix\Analysis\Configuration\RetiredSuppressionOptions	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\SelectorYamlDecoder	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
@@ -286,7 +286,7 @@ Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse	Analysis.Ru
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	11	3
 Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface	Analysis.Run	2	2
 Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface	Analysis.Run	1	1
-Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence	Analysis.Run	4	1
+Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence	Analysis.Run	5	1
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface	Analysis.Run	4	2
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeQueryInterface	Analysis.Run	4	3
 Qualimetrix\Analysis\Run\Contract\Discovery\ProjectTreeSnapshot	Analysis.Run	1	1
@@ -319,7 +319,7 @@ Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	8	3
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	84	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	18	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	99	22
+Qualimetrix\Core\Path\RelativePath	Core.Path	100	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4
 Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	18	6
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2

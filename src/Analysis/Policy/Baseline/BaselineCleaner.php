@@ -105,6 +105,16 @@ final readonly class BaselineCleaner
             }
 
             $status = $judgement->statusFor($entry->identity);
+            if (\in_array($judgement->reasonFor($entry->identity), ['outside-coverage', 'exclusions-differ'], true)
+                && ExclusionRemovedPopulation::proves($entry, $baseline, $coverage)) {
+                $candidates[] = new BaselineCleanupCandidate(
+                    $entry->selector(),
+                    $entry->identity->describe(),
+                    BaselineCleanupReason::ExclusionsRemovedPopulation,
+                );
+
+                continue;
+            }
             if ($status === 'stale' || $status === 'unmeasured') {
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),

@@ -1428,6 +1428,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEntryShape"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\CanonicalBaselineReader"
         }
       ]
     },
@@ -14974,6 +14978,10 @@
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Ceiling\\EntryJudgement"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExclusionRemovedPopulation"
         }
       ]
     },
@@ -16505,6 +16513,10 @@
         {
           "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\ProjectScope\\SubjectCoverageObservation"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\ExclusionRemovedPopulation"
         }
       ]
     },
@@ -23422,6 +23434,13 @@
       "path": "src/Infrastructure/Console/RunTarget/StagedSignalGuard.php",
       "kind": "class",
       "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Baseline\\ExclusionRemovedPopulation": {
+      "path": "src/Analysis/Policy/Baseline/ExclusionRemovedPopulation.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Baseline",
       "visibility": "internal",
       "consumers": []
     }

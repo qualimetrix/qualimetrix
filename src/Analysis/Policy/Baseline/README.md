@@ -47,10 +47,11 @@ Baseline/
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
 ├── BaselineEntryTightening.php  # Reconciles one existing entry against the whole ceiling outcome
+├── ExclusionRemovedPopulation.php # Proves that a file identity's own population was newly excluded
 ├── NewIdentityAcceptance.php    # Captures complete comparable identities of explicitly selected channels
 ├── BaselineUpdateResult.php     # VO: the updated baseline, one outcome per entry, and whether anything actually changed
 ├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
-├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / refused / skipped / accepted / re-recorded
+├── BaselineUpdateDisposition.php  # Enum: updated / unchanged / removed / refused / skipped / accepted / re-recorded
 ├── BaselineUpdateRefusalReason.php # Enum: why update refused to tighten an entry
 │
 ├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
@@ -240,6 +241,14 @@ bypass the ordinary scope guard, but cannot establish comparability or make
 incomplete evidence acceptable. `--record-exclusions` always requires exact
 recorded paths. Full ceiling judgement precedes report Git scope and hook
 projection; narrow run-dependent channels can therefore become not-compared.
+The ordinary guard also applies to `--accept-new`; `--force` bypasses only that
+guard, never acceptance coverage.
+
+`RunCoverage` uses the measured subject index for analyzed paths and memoizes
+exact file and directory answers. The first distinct file lookup remains exact;
+repeated PHP lookups inside the Composer denominator share one complete snapshot
+and path set. Incomplete/unknown inventories, paths outside the denominator and
+built-in omitted directory floors retain exact metadata queries.
 
 ### `BaselineUpdater` — direction-aware monotonic tightening
 
@@ -260,6 +269,15 @@ whose sole comparison obstacle is the exclusion change, preserving modes.
 Other entries follow ordinary tightening. Unknown delta, changed generated
 policy without sufficient proof, incomplete analysis or unavailable required
 groups refuses the whole write. The options cannot combine.
+
+An absent `file:` entry can instead be removed as
+`exclusions-removed-population` when its own PHP file is present in a complete
+inventory, the run covers exactly the recorded paths, generated policy is
+unchanged, and the new authored exclusion alone removes that file. Cleanup
+offers the same selector for review. Relation identities do not retain source
+provenance, so a target declaration and occurrence hash cannot establish this
+proof; their unavailable groups still refuse. Update prints every named outcome
+before refusing the whole write and never publishes only the successful entries.
 
 Normalized accepted payload is preserved for arbitrary human JSON input.
 Exact unchanged entry bytes are guaranteed only for canonical writer-produced
@@ -435,6 +453,12 @@ The canonical recognizer scans held bytes line by line; a declined layout uses
 full-document decoding over those same bytes. No second path acquisition or
 alternate grammar is introduced. The snapshot's target and content hash remain
 the publication/CAS provenance.
+
+Repeated member names refuse only at the envelope and subject-key levels of a
+fully recognized canonical layout, where the existing reader observes decoded
+names. Entry objects and noncanonical fallback use native `json_decode`, which
+keeps the last repeated member; duplicate detection is not promised there. A
+canonical prefix followed by a declined layout retains the same fallback limit.
 
 A single local measurement on identical 185,517-entry inputs compared the old
 load(path) with preflight(path) plus configured load(document). Canonical input

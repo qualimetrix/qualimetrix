@@ -250,6 +250,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   outside the project; an absent main manifest adds no such reason. Consumers
   must treat those path fields as optional relative paths.
 
+- `baseline:update --accept-new` now uses the ordinary recorded-scope guard;
+  rerun over that scope or explicitly use `--force`, which still cannot supply
+  missing acceptance evidence. `--record-exclusions` names all entry outcomes
+  before a whole-write refusal. It removes absent `file:` entries only when
+  their own present PHP population is proven newly excluded; cleanup offers
+  those selectors. Relation entries without source provenance still refuse.
+  Review `removed` outcomes and `exclusions-removed-population` before cleanup.
+  Repeated envelope and subject keys now refuse in a fully recognized canonical
+  baseline; remove those duplicates. Entry-object and noncanonical duplicates
+  retain native last-member behavior, without a detection guarantee.
+
 - `CommandLinePathWrite` construction requires the complete authored
   flag/value expression after the option name; carry the original text rather
   than a reconstructed statement.

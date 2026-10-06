@@ -16,6 +16,8 @@ enum BaselineCleanupReason: string
     /** The entry's identity did not appear in the measured set ({@see Baseline::staleEntries()}). */
     case Stale = 'stale';
 
+    case ExclusionsRemovedPopulation = 'exclusions-removed-population';
+
     /**
      * The entry's identity did not appear because this invocation did not
      * publish its declared channel-level pair ({@see RunRuleCoverage}): the

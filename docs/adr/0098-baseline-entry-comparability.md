@@ -137,6 +137,22 @@ whose sole comparison obstacle is the exclusion delta, preserving their mode.
 Unavailable required groups or an unknown delta refuse the write. The two
 update options cannot be combined.
 
+An absent file identity may be removed when a complete inventory and an exact
+recorded-scope run prove its own present PHP file newly excluded, with unchanged
+generated policy. Update and cleanup share this positive proof and name
+`exclusions-removed-population`. Relation identities retain the target and an
+occurrence hash without source provenance, so they cannot establish the same
+proof. Inferring a source from that hash or changing baseline identity/storage
+would introduce another contract; unavailable relation groups remain refusals.
+Every outcome is printed before a whole-write refusal, without partial publication.
+`--accept-new` uses the ordinary scope guard; `--force` bypasses only the guard.
+
+The canonical reader can refuse repeated decoded envelope and subject names
+only after recognizing the complete layout. Entry objects and noncanonical
+fallback are decoded by native `json_decode`, which loses repeated names and
+keeps the last member. Recovering them would require another JSON lexer, so
+those paths explicitly carry no duplicate-member refusal guarantee.
+
 These are two explicit exceptions to the ordinary-update rules of
 [ADR 0017](0017-baseline-ceiling.md). `--accept-new` may add identities only
 for named channels and does not tighten existing entries. `--record-exclusions`

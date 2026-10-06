@@ -118,8 +118,10 @@ final readonly class BaselineUpdater
         $refusal = null;
         $capture = new GroupCapture($this->declarations);
         foreach ($baseline->entries as $entry) {
-            [$written, $outcome, $entryRefusal] = $this->recordEntry($entry, $groups[$entry->identity->key()] ?? null, $baseline, $coverage->exclusions, $judgement, $tightening, $capture);
-            $entries[] = $written;
+            [$written, $outcome, $entryRefusal] = $this->recordEntry($entry, $groups[$entry->identity->key()] ?? null, $baseline, $coverage, $judgement, $tightening, $capture);
+            if ($written !== null) {
+                $entries[] = $written;
+            }
             $outcomes[] = $outcome;
             $refusal = $entryRefusal ?? $refusal;
         }
@@ -132,21 +134,29 @@ final readonly class BaselineUpdater
     /**
      * @param ?non-empty-list<Finding> $group
      *
-     * @return array{BaselineEntry, BaselineEntryUpdateOutcome, ?BaselineUpdateRefusalReason}
+     * @return array{?BaselineEntry, BaselineEntryUpdateOutcome, ?BaselineUpdateRefusalReason}
      */
     private function recordEntry(
         BaselineEntry $entry,
         ?array $group,
         Baseline $baseline,
-        RecordedExclusions $exclusions,
+        RunCoverage $coverage,
         CeilingOutcome $judgement,
         BaselineEntryTightening $tightening,
         GroupCapture $capture,
     ): array {
         $reason = $judgement->reasonFor($entry->identity);
         if ($reason === 'metadata-unknown' || $reason === 'analysis-incomplete'
-            || (!$baseline->exclusions->equals($exclusions) && $reason === 'producer-not-measured')) {
+            || (!$baseline->exclusions->equals($coverage->exclusions) && $reason === 'producer-not-measured')) {
             return [$entry, BaselineEntryUpdateOutcome::notCompared($entry->identity, $reason), BaselineUpdateRefusalReason::ComparisonMetadataUnknown];
+        }
+        if ($group === null && !$baseline->exclusions->equals($coverage->exclusions)) {
+            if (ExclusionRemovedPopulation::proves($entry, $baseline, $coverage)) {
+                return [null, BaselineEntryUpdateOutcome::removed($entry), null];
+            }
+            $refusal = BaselineUpdateRefusalReason::RequiredGroupUnavailable;
+
+            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, $refusal), $refusal];
         }
         if ($reason === 'exclusions-differ') {
             return self::recaptureEntry($entry, $group, $capture);

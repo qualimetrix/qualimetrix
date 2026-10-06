@@ -1681,6 +1681,7 @@ Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader	Analysis.Policy.Baseline	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
+Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader	Analysis.Policy.Baseline	Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	contract
 Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageInterface	Analysis.Finding	contract
@@ -1754,6 +1755,8 @@ Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule	Analysis.Polic
 Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule	Analysis.Policy.Baseline	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Analysis\Policy\Baseline\ExclusionRemovedPopulation	Analysis.Policy.Baseline	Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence	Analysis.Run	contract
+Qualimetrix\Analysis\Policy\Baseline\ExclusionRemovedPopulation	Analysis.Policy.Baseline	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject	Analysis.Policy.Baseline	Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface	Analysis.Evidence.Measurement	contract
 Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Analysis\Policy\Baseline\ExplainedSubject	Analysis.Policy.Baseline	Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	contract

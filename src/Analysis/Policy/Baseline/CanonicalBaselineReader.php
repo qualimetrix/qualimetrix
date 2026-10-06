@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use JsonException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\BaselineDocument;
 use stdClass;
 
@@ -77,6 +78,8 @@ final class CanonicalBaselineReader
 
     private string $path;
 
+    private ?RefusedPosition $duplicate = null;
+
     public function __construct(
         private readonly ?BaselineEntryParser $entryParser,
     ) {}
@@ -108,6 +111,7 @@ final class CanonicalBaselineReader
         $this->bytes = $bytes;
         $this->offset = 0;
         $this->path = $path;
+        $this->duplicate = null;
 
         if ($this->readLine() !== '{') {
             return null;
@@ -137,6 +141,14 @@ final class CanonicalBaselineReader
             BaselineFileShape::envelope([...$fields, 'entries' => []], $this->path);
         } catch (ConfigurationRefusal) {
             return null;
+        }
+
+        if ($this->duplicate !== null) {
+            throw ConfigurationRefusal::atBaselineFileKey(
+                $this->path,
+                $this->duplicate,
+                'Duplicate baseline JSON member at ' . implode(' › ', $this->duplicate->segments),
+            );
         }
 
         return [
@@ -172,8 +184,12 @@ final class CanonicalBaselineReader
 
             $field = CanonicalEnvelope::parseLine($line);
 
-            if ($field === null || \array_key_exists($field[0], $fields)) {
+            if ($field === null) {
                 return null;
+            }
+
+            if (\array_key_exists($field[0], $fields)) {
+                $this->duplicate ??= RefusedPosition::closed([$field[0]], $field[0], BaselineFileShape::ENVELOPE);
             }
 
             $fields[$field[0]] = $field[1];
@@ -211,8 +227,12 @@ final class CanonicalBaselineReader
         while (true) {
             $subjectKey = $this->parseSubjectLine($this->readLine());
 
-            if ($subjectKey === null || isset($seen[$subjectKey])) {
+            if ($subjectKey === null) {
                 return null;
+            }
+
+            if (isset($seen[$subjectKey])) {
+                $this->duplicate ??= RefusedPosition::open(['entries', $subjectKey], $subjectKey);
             }
 
             $seen[$subjectKey] = true;

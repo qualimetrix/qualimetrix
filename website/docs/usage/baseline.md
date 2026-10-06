@@ -137,6 +137,19 @@ Other entries follow ordinary tightening. Unknown delta, changed generated
 policy without sufficient proof, incomplete analysis or unavailable required
 groups refuses the whole write. The options cannot combine.
 
+An absent `file:` entry is removable as `exclusions-removed-population` only
+when a complete inventory and the exact recorded-scope run prove its own
+present PHP file newly excluded, with unchanged generated policy. Cleanup
+offers the same selector. Relation entries without source provenance still
+refuse when their required group is unavailable. Update names every outcome
+before refusing the whole write; successful entries are never published alone.
+`--accept-new` uses the ordinary scope guard; `--force` bypasses only that guard.
+
+Repeated JSON member names refuse only for envelope and subject keys in a fully
+recognized canonical layout. Entry objects and noncanonical fallback retain
+native `json_decode` last-member behavior; duplicate detection is not guaranteed
+there, including a canonical prefix followed by a declined layout.
+
 Normalized accepted payload is preserved for arbitrary human JSON input.
 Exact unchanged entry bytes are guaranteed only for canonical writer-produced
 entries; arbitrary field order and numeric spelling may be normalized.

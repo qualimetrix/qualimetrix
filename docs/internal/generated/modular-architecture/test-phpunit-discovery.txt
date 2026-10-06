@@ -8048,6 +8048,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UndecidableMembershipTest::itStillObservesATupleWhenTheTemplatesExcludeCannotBeDecided
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itCarriesTheMigrationWithoutTighteningOldAcceptance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itLeavesTheFileUntouchedWhenTheNamedChannelWasNotMeasured
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itLetsForceBypassOnlyTheScopeGuardWithoutInventingAcceptance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itRefusesAcceptNewWhenTheRunDoesNotCoverTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineAcceptNewTest::itRefusesInvalidAcceptanceChannelsBeforeAnalysis
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
@@ -8178,6 +8180,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineMigrateCommandTest::itDoesNotOfferTheRetiredMigrationCommandOrRewriteAVersionFiveFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRecordsTheDefinitionAndMakesTheAffectedAggregateComparable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRefusesDifferentPathsEvenUnderForceWithoutWriting
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRefusesToInferAnArchitectureSourceFromATargetIdentity
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itRemovesARecordedGroupThatTheNewExclusionProvesGone
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRecordExclusionsTest::itReportsNamedEntryOutcomesBeforeRefusingAnUnavailableRecapture
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAContentRefusalWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersAMalformedMapWithThree
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineRenameChannelsCommandTest::itAnswersARefusalInTheChosenFormat
@@ -8370,6 +8375,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnInertEntryWithItsOwnReason
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNamesTheRetiredProjectCopyLevelAndKeepsAPresentFileCopy
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNeverRemovesAnythingWhenOnlyListingCandidates
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itOffersAFileEntryWhoseOwnPopulationWasNewlyExcluded
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesEveryInertContenderOfOneDuplicateIdentity
@@ -8495,6 +8501,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsOnlyThePreflightBytesAfterSourceReplacement
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsTheContractOfTheCurrentVersion
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNamesVersionThirteenAsTheOrdinalIdentityBreakForVersionTwelve
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNormalizesAScopeTheFileSpelledLoosely
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"invalid JSON"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itPreflightsGrammarBeforeSemanticLoad"numeric entry object key"
@@ -8504,6 +8511,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecognisesTheCanonicalLayoutAndDeclinesAnyOther
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecordsTheContentHashOfTheFileItRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRefusesAnUnreadableEnvelopeAsAWholeDocumentCarrier
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRefusesCanonicalDuplicateJsonMembersAtTheirKeyPosition"envelope"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRefusesCanonicalDuplicateJsonMembersAtTheirKeyPosition"subject bucket"
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#2
@@ -8519,6 +8528,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV14Baseline
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV14Review
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV14Guidance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetainsNativeLastKeyBehaviorForCanonicalEntryObjects
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRetainsTheDocumentedRepeatedKeyLimitForNoncanonicalFallback
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
@@ -8547,6 +8558,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryOnAChannelNoRuleDeclares
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesAnEntryWhoseShapeDisagreesWithItsChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRefusesTheWholeExclusionRecordWhenItsProofIsUnavailable
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRemovesOnlyTheGroupProvenGoneByTheNewExclusion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenAnUpdatedEntryWritesBackTheSamePayload
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itReportsNoChangeWhenEveryEntryIsSkipped
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineUpdaterTest::itRerecordsOnlyExclusionAffectedGroupsWithTheirModes
@@ -8631,6 +8643,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupAcceptanceTest::itRejectsAnOccurrenceCountLargerThanStored
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupMeasurementTest::itCountsOccurrenceMembersRegardlessOfMetricValue
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\GroupMeasurementTest::itRefusesTheWholeMagnitudeGroupWhenOneMemberIsNotFinite
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunCoverageLookupTest::itMemoizesAnExactUnknownAnswerWithoutClaimingAbsence
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunCoverageLookupTest::itQueriesAnOmittedBuiltInFloorExactlyAfterUsingTheInventory
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunCoverageLookupTest::itStillQueriesAnOutOfDenominatorFileExactly
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunCoverageLookupTest::itUsesOneCompleteInventoryForManyDistinctFiles
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itAllowsAnEqualScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\RunScopeTest::itChecksEveryRecordedPathIndependently
@@ -10309,6 +10325,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itAdvertisesTheDocsAddressOnlyInHelpNeverInStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itAppliesGeneratedFilePolicyFromThePreparedRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itCommitsGraphRuntimeOptionsToTheSameStoresItsAnalyzerReads
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsAQuietGraphWithNoProgressOption
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsAnEmptyGraphForACompleteNamedExclusion
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout

@@ -118,6 +118,47 @@ final class BaselineAcceptNewTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAcceptNewWhenTheRunDoesNotCoverTheRecordedScope(): void
+    {
+        $this->emptyBaseline();
+        $before = (string) file_get_contents($this->path);
+        [$tester, $pipeline] = $this->command();
+
+        $tester->execute([
+            'baseline' => $this->path,
+            'paths' => ['src/Foo.php'],
+            '--accept-new' => ['architecture.layer-violation'],
+            '--no-progress' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(1, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(1, $pipeline->calls);
+        self::assertStringContainsString('does not cover', $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame($before, file_get_contents($this->path));
+    }
+
+    #[Test]
+    public function itLetsForceBypassOnlyTheScopeGuardWithoutInventingAcceptance(): void
+    {
+        $this->emptyBaseline();
+        $before = (string) file_get_contents($this->path);
+        [$tester, $pipeline] = $this->command();
+
+        $tester->execute([
+            'baseline' => $this->path,
+            'paths' => ['src/Foo.php'],
+            '--accept-new' => ['architecture.layer-violation'],
+            '--force' => true,
+            '--no-progress' => true,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay() . $tester->getErrorOutput());
+        self::assertSame(1, $pipeline->calls);
+        self::assertStringContainsString('outside-coverage', $tester->getDisplay());
+        self::assertSame($before, file_get_contents($this->path));
+    }
+
+    #[Test]
     public function itRefusesInvalidAcceptanceChannelsBeforeAnalysis(): void
     {
         $this->emptyBaseline();

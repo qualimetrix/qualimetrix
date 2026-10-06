@@ -92,7 +92,7 @@ final class BaselineUpdateCommand extends BaselineCommand
     /** @param list<FindingChannel> $channels */
     private function updatePrepared(InputInterface $input, OutputInterface $output, string $baselinePath, array $channels, bool $recordExclusions, BaselineDocument $document, PreparedTarget $prepared, StagedSignalGuard $guard): int
     {
-        $measured = $channels !== [] || $recordExclusions
+        $measured = $recordExclusions
             ? new LoadedBaselineRun($this->baselineRun->measure($input, $output), $this->loader->load($document))
             : $this->measureAgainstBaseline($this->baselineRun, $this->loader, $input, $output, $document);
 
@@ -109,6 +109,7 @@ final class BaselineUpdateCommand extends BaselineCommand
             default => $this->updater->update($measured->baseline, $context->findings(), $context->coverage, $gaps),
         };
         if ($result->writeRefusal !== null) {
+            self::report($result, $output);
             throw ConfigurationRefusal::aboutCommandLineInput('--record-exclusions', $result->writeRefusal->description());
         }
 
@@ -153,9 +154,10 @@ final class BaselineUpdateCommand extends BaselineCommand
         }
         $output->writeln(\sprintf('%d accepted, %d re-recorded', $counts['accepted'] ?? 0, $counts['re-recorded'] ?? 0));
         $output->writeln(\sprintf(
-            '%d updated, %d unchanged, %d not compared, %d refused, %d skipped',
+            '%d updated, %d unchanged, %d removed, %d not compared, %d refused, %d skipped',
             $counts[BaselineUpdateDisposition::Updated->value] ?? 0,
             $counts[BaselineUpdateDisposition::Unchanged->value] ?? 0,
+            $counts[BaselineUpdateDisposition::Removed->value] ?? 0,
             $counts[BaselineUpdateDisposition::NotCompared->value] ?? 0,
             $counts[BaselineUpdateDisposition::Refused->value] ?? 0,
             $counts[BaselineUpdateDisposition::Skipped->value] ?? 0,
@@ -168,6 +170,12 @@ final class BaselineUpdateCommand extends BaselineCommand
 
         return match ($outcome->disposition) {
             BaselineUpdateDisposition::ReRecorded => self::reRecordedLine($result, $index),
+            BaselineUpdateDisposition::Removed => \sprintf(
+                '  removed  %s [%s] (%s)',
+                $outcome->identity->describe(),
+                $outcome->selector === null ? '' : $outcome->selector->value,
+                $outcome->reasonCode ?? 'unknown reason',
+            ),
             BaselineUpdateDisposition::NotCompared => \sprintf(
                 '  not compared  %s (%s)',
                 $outcome->identity->describe(),

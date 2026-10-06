@@ -261,7 +261,6 @@ rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructu
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Console/RuntimeLoggerConfigurator.php	Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/DependencyInjection/Configurator/ConfigurationConfigurator.php	Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator	warning	1
 rule-path-suppression	coupling.instability	coupling.instability	src/Infrastructure/Rule/ChannelUniverse.php	Qualimetrix\Infrastructure\Rule\ChannelUniverse	warning	1
-rule-path-suppression	design.data-class	design.data-class	src/Analysis/Policy/Baseline/Contract/RunCoverage.php	Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage	warning	1
 rule-path-suppression	design.god-class	design.god-class	src/Reporting/Formatter/Health/HealthTextFormatter.php	Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter	warning	1
 rule-path-suppression	design.noc	design.noc	src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	error	1
 rule-path-suppression	design.noc	design.noc	src/Analysis/Finding/Contract/Rule/AbstractRule.php	Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule	error	1
