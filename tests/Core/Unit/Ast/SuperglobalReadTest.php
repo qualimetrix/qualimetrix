@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Core\Ast\Unit;
+namespace Qualimetrix\Tests\Core\Unit\Ast;
 
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Variable;

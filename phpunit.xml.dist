@@ -25,7 +25,6 @@
 
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/Core/Ast/Unit</directory>
             <directory>tests/Core/FileTarget/Unit</directory>
             <directory>tests/Core/Path/Unit</directory>
             <directory>tests/Core/Symbol/Unit</directory>
