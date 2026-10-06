@@ -15,6 +15,8 @@ use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Core\Time\ClockInterface;
 
 /**
+ * @qmx-threshold coupling.cbo 21 -- BaselineUpdateInvocation adds a third reader; the update lifecycle retains Ce 17
+ *
  * `baseline:update`: ordinary tightening plus explicit acceptance and
  * exclusion recapture against a fresh measured run (ADR 0017).
  *

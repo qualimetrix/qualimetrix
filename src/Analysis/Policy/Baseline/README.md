@@ -36,6 +36,7 @@ Baseline/
 ├── BaselineDocumentReader.php   # Acquires and judges held document bytes before analysis
 ├── BaselineLoader.php           # Semantically loads entries from the held version 14 document
 ├── CanonicalBaselineReader.php  # Reads the held canonical bytes, or declines to the full-document decoder
+├── CanonicalSubjectReader.php   # Existing canonical subject blocks and entry admission through the reader's line source
 ├── CanonicalEnvelope.php        # Pure canonical envelope-line recognition and depth-bounded decoding
 ├── BaselineWriter.php           # Turns a Baseline into the document's fields, and refuses two entries of one identity
 ├── BaselineDocumentLayout.php   # How a baseline document is spelled: one entry per line, float representation pinned
@@ -81,7 +82,9 @@ Baseline/
 │   ├── BaselineCeilingStage.php # FindingFilterStageInterface: applies entries as ceilings over groups
 │   ├── Absence.php              # Proven absence classification
 │   ├── EntryComparability.php   # Full-group comparison evidence
-│   ├── EntryJudgement.php       # Present-group acceptance and absent-entry classification
+│   ├── EntryJudgement.php       # Present-group acceptance
+│   ├── EntryAbsenceProof.php    # Positive evidence and ordered reasons for absent entries
+│   ├── RecordedRootPresence.php # Recorded-root containment and tri-state directory evidence
 │   ├── ExclusionDelta.php       # Changed discovery definition evidence
 │   ├── GroupCapture.php         # Complete finite-vector capture
 │   ├── GroupMeasurement.php     # Declared group measurement

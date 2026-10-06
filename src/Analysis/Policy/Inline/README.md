@@ -43,6 +43,7 @@ Inline/
 │   │   ├── AuthoredDirectiveGroup.php # one authored @qmx-threshold, its bindings, site and subjects
 │   │   ├── DirectiveMaskingCoalition.php # which threshold directives of one rule hide one another
 │   │   ├── DirectiveUsage.php      # what each authored suppression did
+│   │   ├── DirectiveMeasurability.php # addressed producer and subject-coverage evidence
 │   │   ├── ExecutionFingerprint.php # what one rule execution produced, compared as a whole
 │   │   ├── MaskingOutcome.php      # what the sweep decided about one group, before it is reported
 │   │   ├── StaleDirectiveFinding.php # the finding that says a directive silenced nothing
@@ -231,6 +232,9 @@ authored state and severity gate; no separate reset exists.
 produced findings and the recorded `LevelActivity`. Usage judges what rules
 produced, before report exclusions and selection, rather than re-deriving
 producer activity from configuration.
+`DirectiveMeasurability` judges addressed producer and subject coverage before
+that accounting. An enabled but uncovered channel takes precedence over a
+disabled producer; unknown coverage cannot establish an inert directive.
 
 `AnnotationSuppressionResult` carries kept/suppressed findings and the first
 actually applied `DirectiveSite` for each suppressed finding in match order.

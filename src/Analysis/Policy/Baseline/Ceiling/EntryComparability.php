@@ -67,7 +67,7 @@ final readonly class EntryComparability
             if ($delta->currentlyExcluded($file)) {
                 return self::refused(IncomparabilityReason::OutsideCoverage);
             }
-            $rootPresence = self::recordedRootPresence($file, $recordedScope, $run);
+            $rootPresence = RecordedRootPresence::forFile($file, $recordedScope, $run);
             if ($rootPresence !== ProjectEntryPresence::Present) {
                 return self::refused($rootPresence === ProjectEntryPresence::Unknown
                     ? IncomparabilityReason::MetadataUnknown
@@ -79,56 +79,6 @@ final readonly class EntryComparability
                 : self::refused(IncomparabilityReason::OutsideCoverage);
         }
         return self::judgePresentFile($file, $run, $recordedScope, $delta);
-    }
-
-    private static function recordedRootPresence(RelativePath $file, RunScope $recordedScope, RunCoverage $run): ProjectEntryPresence
-    {
-        $unknown = false;
-        foreach ($recordedScope->paths() as $recorded) {
-            if (str_starts_with($recorded, '/')) {
-                $directory = self::absoluteRecordedDirectory($recorded, $file, $run);
-                if ($directory === null) {
-                    continue;
-                }
-            } else {
-                if (!RunScope::fromRecorded([$recorded])->coversPath($file->value())) {
-                    continue;
-                }
-                $directory = $recorded === $file->value() ? \dirname($recorded) : $recorded;
-            }
-            $absolute = str_starts_with($directory, '/')
-                ? \Qualimetrix\Core\Path\AbsolutePath::fromString($directory)
-                : ($directory === '.'
-                ? $run->universe->projectRoot
-                : $run->universe->projectRoot->joinRelative(RelativePath::fromString($directory)));
-            $presence = $run->hasDirectory($absolute);
-            if ($presence === ProjectEntryPresence::Present) {
-                return $presence;
-            }
-            $unknown = $unknown || $presence === ProjectEntryPresence::Unknown;
-        }
-
-        return $unknown ? ProjectEntryPresence::Unknown : ProjectEntryPresence::Absent;
-    }
-
-    private static function absoluteRecordedDirectory(string $recorded, RelativePath $file, RunCoverage $run): ?string
-    {
-        $currentRoot = realpath($run->universe->projectRoot->value());
-        if ($currentRoot === false) {
-            return null;
-        }
-
-        $subject = rtrim($currentRoot, '/') . '/' . $file->value();
-        $recordedDirectory = realpath($recorded);
-        if ($recordedDirectory !== false && is_dir($recorded) && str_starts_with($subject, rtrim($recordedDirectory, '/') . '/')) {
-            return $recorded;
-        }
-        $parent = \dirname($recorded);
-        $recordedParent = realpath($parent);
-
-        return $recordedParent !== false && $subject === rtrim($recordedParent, '/') . '/' . basename($recorded)
-            ? $parent
-            : null;
     }
 
     private static function judgePresentFile(RelativePath $file, RunCoverage $run, RunScope $recordedScope, ExclusionDelta $delta): self

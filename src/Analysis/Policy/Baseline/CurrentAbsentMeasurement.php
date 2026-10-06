@@ -60,20 +60,35 @@ final class CurrentAbsentMeasurement
     /** @return array{string, ?string} */
     private static function verifiedCurrentAbsence(RelativePath $file, RunCoverage $coverage, ValueReach $reach, SymbolLevel $level): array
     {
-        $captured = false;
-        foreach ($coverage->universe->denominator as $target) {
-            if (RunScope::record([$target['path']], $coverage->universe->projectRoot)->coversPath($file->value())) {
-                $captured = true;
-                break;
-            }
-        }
-        if (!$captured || !$coverage->scope->coversPath($file->value())) {
+        if (!self::capturedTarget($file, $coverage) || !$coverage->scope->coversPath($file->value())) {
             return [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'];
         }
         if ((new ExclusionDelta($coverage->exclusions, $coverage->exclusions))->currentlyExcluded($file)) {
             return [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'];
         }
 
+        return match (self::selectedRootPresence($file, $coverage)) {
+            ProjectEntryPresence::Present => $coverage->subjectCoverage->covers($reach, $level, SubjectCoverageObservation::verifiedAbsentFile($file))
+                ? [CurrentMeasurement::NOTHING_REPORTED, null]
+                : [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'],
+            ProjectEntryPresence::Unknown => [CurrentMeasurement::OUTSIDE_COVERAGE, 'metadata-unknown'],
+            ProjectEntryPresence::Absent => [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'],
+        };
+    }
+
+    private static function capturedTarget(RelativePath $file, RunCoverage $coverage): bool
+    {
+        foreach ($coverage->universe->denominator as $target) {
+            if (RunScope::record([$target['path']], $coverage->universe->projectRoot)->coversPath($file->value())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function selectedRootPresence(RelativePath $file, RunCoverage $coverage): ProjectEntryPresence
+    {
         $unknown = false;
         foreach ($coverage->scope->paths() as $path) {
             if (str_starts_with($path, '/') || !RunScope::fromRecorded([$path])->coversPath($file->value())) {
@@ -85,16 +100,12 @@ final class CurrentAbsentMeasurement
                 : $coverage->universe->projectRoot->joinRelative(RelativePath::fromString($directory));
             $presence = $coverage->hasDirectory($absolute);
             if ($presence === ProjectEntryPresence::Present) {
-                return $coverage->subjectCoverage->covers($reach, $level, SubjectCoverageObservation::verifiedAbsentFile($file))
-                    ? [CurrentMeasurement::NOTHING_REPORTED, null]
-                    : [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'];
+                return ProjectEntryPresence::Present;
             }
             $unknown = $unknown || $presence === ProjectEntryPresence::Unknown;
         }
 
-        return $unknown
-            ? [CurrentMeasurement::OUTSIDE_COVERAGE, 'metadata-unknown']
-            : [CurrentMeasurement::OUTSIDE_COVERAGE, 'outside-coverage'];
+        return $unknown ? ProjectEntryPresence::Unknown : ProjectEntryPresence::Absent;
     }
 
     /** @return array{string, ?string} */

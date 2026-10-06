@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Baseline\Ceiling;
 
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
-use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
-use Qualimetrix\Analysis\Finding\Contract\ProjectScope\SubjectCoverageObservation;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
@@ -20,7 +18,7 @@ use Qualimetrix\Analysis\Policy\Baseline\RunCoverageGap;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
-/** Judges a baseline entry against present findings or proven absence. */
+/** Judges a baseline entry against present findings. */
 final readonly class EntryJudgement
 {
     /** @param array<string, RunCoverageGap> $ruleGaps Keyed by identity. */
@@ -53,11 +51,11 @@ final readonly class EntryJudgement
         if (($entry->magnitudes === null) !== $occurrence) {
             return GroupCeilingVerdict::reported();
         }
-        return $this->comparePresent($entry, $identity, $group, $declaration);
+        return $this->comparePresent($entry, $identity, $group, $declaration->direction);
     }
 
     /** @param non-empty-list<Finding> $group */
-    private function comparePresent(BaselineEntry $entry, BaselineIdentity $identity, array $group, ChannelDeclaration $declaration): GroupCeilingVerdict
+    private function comparePresent(BaselineEntry $entry, BaselineIdentity $identity, array $group, ?WorseDirection $direction): GroupCeilingVerdict
     {
         $region = SubjectRegion::forIdentity(
             $identity,
@@ -73,7 +71,7 @@ final readonly class EntryJudgement
             return GroupCeilingVerdict::accepted();
         }
 
-        return self::judgeMeasuredGroup($entry, $group, $declaration->direction);
+        return self::judgeMeasuredGroup($entry, $group, $direction);
     }
 
     /** @param non-empty-list<Finding> $group */
@@ -92,52 +90,6 @@ final readonly class EntryJudgement
             );
 
         return $accepted ? GroupCeilingVerdict::accepted() : GroupCeilingVerdict::breached(self::levelOf($entry));
-    }
-
-    public function classifyAbsent(BaselineEntry $entry): Absence
-    {
-        if (!$this->coverage->analysis->isComplete()) {
-            return Absence::unmeasured(IncomparabilityReason::AnalysisIncomplete);
-        }
-        if (isset($this->ruleGaps[$entry->identity->key()])) {
-            return Absence::unmeasured(IncomparabilityReason::ProducerNotMeasured);
-        }
-        $declaration = $this->declarations->declarationFor($entry->identity->channel);
-        if ($declaration === null || $declaration->isConfigurationError()) {
-            return Absence::notCompared(IncomparabilityReason::ProducerNotMeasured);
-        }
-        $level = MetricSubject::levelOfCanonical($entry->identity->subjectKey);
-        if (!\in_array($level, $declaration->levels, true)) {
-            return Absence::notCompared(IncomparabilityReason::ProducerNotMeasured);
-        }
-        $reach = $this->declarations->reachAt($entry->identity->channel, $level);
-        $subjectFile = SubjectRegion::subjectFile($entry->identity);
-        $presence = $subjectFile === null ? null : $this->coverage->hasFile($subjectFile);
-        if ($presence === \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Unknown) {
-            return Absence::notCompared(IncomparabilityReason::MetadataUnknown);
-        }
-        if ($presence === \Qualimetrix\Analysis\Run\Contract\Discovery\ProjectEntryPresence::Absent) {
-            $comparison = EntryComparability::judge(Region::file($subjectFile), $this->baseline, $this->coverage);
-            if ($comparison->canCompare() && !$this->coverage->subjectCoverage->covers($reach, $level, SubjectCoverageObservation::verifiedAbsentFile($subjectFile))) {
-                $comparison = EntryComparability::refused(IncomparabilityReason::OutsideCoverage);
-            }
-        } else {
-            $region = SubjectRegion::forIdentity(
-                $entry->identity,
-                $reach,
-                $this->coverage->psr4Roots,
-            );
-            $comparison = EntryComparability::judge($region, $this->baseline, $this->coverage);
-            if ($comparison->canCompare() && $region->kind !== 'file' && !$this->coverage->subjectCoverage->covers($reach, $level, SubjectCoverageObservation::nonlocalRegion())) {
-                $comparison = EntryComparability::refused(IncomparabilityReason::OutsideCoverage);
-            }
-        }
-        if ($comparison->canCompare()) {
-            return Absence::stale();
-        }
-        return $comparison->reason === IncomparabilityReason::OutsideCoverage
-            ? Absence::outsideCoverage()
-            : Absence::notCompared($comparison->reason ?? IncomparabilityReason::MetadataUnknown);
     }
 
     private static function levelOf(BaselineEntry $entry): AcceptedLevel

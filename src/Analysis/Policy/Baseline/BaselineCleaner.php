@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage;
+use Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome;
 use Qualimetrix\Analysis\Policy\Baseline\Contract\RunCoverage;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Time\ClockInterface;
@@ -66,60 +67,12 @@ final readonly class BaselineCleaner
         $candidates = [];
 
         foreach ($baseline->entries as $entry) {
-            $declaration = $declarations->declarationFor($entry->identity->channel);
-
-            if ($declaration === null) {
+            $reason = self::candidateReason($entry, $baseline, $declarations, $judgement, $coverage);
+            if ($reason !== null) {
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
-                    BaselineCleanupReason::ChannelNotDeclared,
-                );
-
-                continue;
-            }
-
-            // Listed on its own cause, ahead of staleness, for the same
-            // reason an undeclared channel is: the entry can never be
-            // applied, and "stale" would send the user looking for a symbol
-            // that moved rather than at a channel that may not be accepted
-            // at all. Unlike staleness, this holds even while the finding is
-            // still being measured.
-            if ($declaration->isConfigurationError()) {
-                $candidates[] = new BaselineCleanupCandidate(
-                    $entry->selector(),
-                    $entry->identity->describe(),
-                    BaselineCleanupReason::ChannelIsConfigurationError,
-                );
-
-                continue;
-            }
-
-            if (!\in_array(MetricSubject::levelOfCanonical($entry->identity->subjectKey), $declaration->levels, true)) {
-                $candidates[] = new BaselineCleanupCandidate(
-                    $entry->selector(),
-                    $entry->identity->describe(),
-                    BaselineCleanupReason::LevelNotDeclared,
-                );
-
-                continue;
-            }
-
-            $status = $judgement->statusFor($entry->identity);
-            if (\in_array($judgement->reasonFor($entry->identity), ['outside-coverage', 'exclusions-differ'], true)
-                && ExclusionRemovedPopulation::proves($entry, $baseline, $coverage)) {
-                $candidates[] = new BaselineCleanupCandidate(
-                    $entry->selector(),
-                    $entry->identity->describe(),
-                    BaselineCleanupReason::ExclusionsRemovedPopulation,
-                );
-
-                continue;
-            }
-            if ($status === 'stale' || $status === 'unmeasured') {
-                $candidates[] = new BaselineCleanupCandidate(
-                    $entry->selector(),
-                    $entry->identity->describe(),
-                    $status === 'unmeasured' ? BaselineCleanupReason::ProducerDidNotRun : BaselineCleanupReason::Stale,
+                    $reason,
                 );
             }
         }
@@ -134,6 +87,30 @@ final readonly class BaselineCleaner
         }
 
         return $candidates;
+    }
+
+    private static function candidateReason(BaselineEntry $entry, Baseline $baseline, ChannelDeclarationRegistryInterface $declarations, CeilingOutcome $judgement, RunCoverage $coverage): ?BaselineCleanupReason
+    {
+        $declaration = $declarations->declarationFor($entry->identity->channel);
+        if ($declaration === null) {
+            return BaselineCleanupReason::ChannelNotDeclared;
+        }
+        if ($declaration->isConfigurationError()) {
+            return BaselineCleanupReason::ChannelIsConfigurationError;
+        }
+        if (!\in_array(MetricSubject::levelOfCanonical($entry->identity->subjectKey), $declaration->levels, true)) {
+            return BaselineCleanupReason::LevelNotDeclared;
+        }
+        if (\in_array($judgement->reasonFor($entry->identity), ['outside-coverage', 'exclusions-differ'], true)
+            && ExclusionRemovedPopulation::proves($entry, $baseline, $coverage)) {
+            return BaselineCleanupReason::ExclusionsRemovedPopulation;
+        }
+
+        return match ($judgement->statusFor($entry->identity)) {
+            'stale' => BaselineCleanupReason::Stale,
+            'unmeasured' => BaselineCleanupReason::ProducerDidNotRun,
+            default => null,
+        };
     }
 
     /**
@@ -221,16 +198,21 @@ final readonly class BaselineCleaner
         }
 
         foreach ($matches as $match) {
-            if (!$match instanceof InertBaselineEntry
-                || $match->reason !== InertEntryReason::DuplicateIdentity
-                || $match->identity === null
-                || !$match->identity->equals($identity)
-                || $match->selector->value !== $selector->value) {
+            if (!self::sameDuplicateContender($match, $identity, $selector)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static function sameDuplicateContender(BaselineEntry|InertBaselineEntry $match, BaselineIdentity $identity, EntrySelector $selector): bool
+    {
+        return $match instanceof InertBaselineEntry
+            && $match->reason === InertEntryReason::DuplicateIdentity
+            && $match->identity !== null
+            && $match->identity->equals($identity)
+            && $match->selector->value === $selector->value;
     }
 
     /**
