@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Core\Ast;
+namespace Qualimetrix\Tests\Core\Ast\Unit;
 
 use LogicException;
 use PhpParser\Node\Expr\FuncCall;
