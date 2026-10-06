@@ -86,6 +86,9 @@
         },
         "classmap": [
             "tools/phpstan/tests/Fixtures/"
+        ],
+        "exclude-from-classmap": [
+            "tests/**/Fixtures/"
         ]
     },
     "bin": [

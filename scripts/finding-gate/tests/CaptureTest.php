@@ -6,6 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use ArrayObject;
 use FilesystemIterator;
+use LogicException;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -360,7 +361,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itAcceptsOnlyMeasuredDerivedCandidateCaptureExits(): void
     {
-        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
             foreach ([false, true] as $deriving) {
                 self::declareCaptureExits($root, $deriving ? [] : [['exit', 'graph:export', 'tree|graph:export', '1', '0']]);
@@ -387,7 +388,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itRefusesIntentOnlyAndInexactCaptureExitMeasurements(): void
     {
-        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
             foreach (['intent-only', 'unlicensed', 'wrong-invocation', 'wrong-command', 'wrong-derived', 'incomplete-multiset', 'candidate-mismatch'] as $fault) {
                 $command = $fault === 'wrong-command' ? 'rules' : 'graph:export';
@@ -425,7 +426,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itKeepsRawUnknownAndIncompleteCapturePopulationsRefused(): void
     {
-        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
             foreach (['unknown-replay', 'empty-exit', 'missing-exit', 'empty-publication', 'reference-exit', 'reference-unknown', 'reference-missing', 'reference-empty-publication'] as $fault) {
                 $to = $fault === 'unknown-replay' ? '70' : '0';
@@ -518,7 +519,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itAcceptsObservableDirectivesAndTheirExactMeasuredExitTransition(): void
     {
-        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
             $directives = json_decode($artifacts['case:alpha|directives'], true, 512, \JSON_THROW_ON_ERROR);
             self::assertNotEmpty($directives['directives']);
@@ -555,7 +556,7 @@ final class CaptureTest extends TestCase
     #[Test]
     public function itRefusesIncompleteOrUnrecognizedDirectivesAndNeighboringCommandExits(): void
     {
-        [$root, $temporary, $artifacts] = self::capturePublicationFixture();
+        [$root, $temporary, $artifacts] = self::stagePublicationFixture();
         try {
             foreach ([['directives', '1'], ['directives', '4'], ['graph:export', '2'], ['rules', '2']] as [$surface, $exit]) {
                 self::declareCaptureExits($root, [], []);
@@ -891,15 +892,49 @@ final class CaptureTest extends TestCase
     }
 
     /** @return array{0:string,1:string,2:array<string,string>} */
-    private static function capturePublicationFixture(): array
+    private static function stagePublicationFixture(): array
     {
         $root = SyntheticTree::create(SyntheticTree::captureFixture());
         $temporary = Fs::temporaryDirectory('capture-population-test-');
         try {
-            $context = self::captureContext($root, $temporary);
-            $run = new TreeRun($root, $temporary, 'candidate', $context->maps, false, CapturePlan::forCorpus($context->corpus, $context->declarations->surfaces), $context->declarations->structuralMaps);
+            $corpus = Corpus::load($root);
+            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $answers = json_decode(Fs::read($root . '/replay/answers.json'), true, 512, \JSON_THROW_ON_ERROR);
+            if (!\is_array($answers)) {
+                throw new LogicException('Synthetic answers must be an object.');
+            }
+            $artifacts = [];
+            foreach ($plan->invocations() as $descriptor) {
+                $key = $descriptor['scope'] . '|' . $descriptor['surface'];
+                $answer = $answers[$key] ?? null;
+                if (!\is_array($answer)) {
+                    throw new LogicException('No synthetic answer for ' . $key);
+                }
+                $publication = $descriptor['surface'] === 'baseline-file' ? ($answer['file'] ?? null) : ($answer['stdout'] ?? null);
+                if (!\is_string($publication)) {
+                    throw new LogicException('No synthetic publication for ' . $key);
+                }
+                if ($descriptor['surface'] === 'format:summary') {
+                    $issues = $answer['summaryIssues'] ?? null;
+                    if (!\is_array($issues) || array_filter($issues, static fn(mixed $issue): bool => !\is_string($issue)) !== []) {
+                        throw new LogicException('No synthetic summary issues for ' . $key);
+                    }
+                    $publication = "Analysis complete\n\nTop issues by impact\n" . implode('', $issues);
+                }
+                $artifacts[$key] = $publication;
+                $exit = $descriptor['surface'] === 'baseline-file' ? 'baseline:generate' : $descriptor['surface'];
+                $artifacts[$descriptor['scope'] . '|exit:' . $exit] = (string) ($answer['exit'] ?? 0);
+                $stderr = $answer['stderr'] ?? '';
+                if ($descriptor['surface'] === 'check:output') {
+                    $stderr = str_replace('{{output}}', $temporary . '/output.json', $stderr);
+                }
+                $artifacts[$descriptor['scope'] . '|stderr:' . $descriptor['surface']] = $stderr;
+                if ($descriptor['outputFileKind'] !== null) {
+                    $artifacts[$descriptor['scope'] . '|' . $descriptor['outputFileKind']] = $answer['file'] ?? '';
+                }
+            }
 
-            return [$root, $temporary, $run->rules() + $run->forCase($context->corpus->cases[0])->artifacts];
+            return [$root, $temporary, $artifacts];
         } catch (Throwable $error) {
             SyntheticTree::remove($root);
             Fs::removeRecursively($temporary);
