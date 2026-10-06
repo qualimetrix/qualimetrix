@@ -30,6 +30,12 @@ final class ExactSurfaceAuthority
         $surface = Surfaces::surfaceClass($key);
         $case = str_starts_with($key, 'case:') ? substr($key, 5, (int) strpos($key, '|') - 5) : null;
         $bearing = $case !== null && ReportViews::recordBearingSurface($surface);
+        $refusalSides = [];
+        if ($surface === 'baseline-file') {
+            foreach (['candidate', 'reference'] as $side) {
+                $refusalSides[$side] = self::declaredBaselineRefusal($key, $side, $run);
+            }
+        }
         $source = $bearing ? self::source($surface, $case) : null;
         $rawSources = $source === null ? [] : [$source];
         $residualViews = [$key];
@@ -86,7 +92,8 @@ final class ExactSurfaceAuthority
         $schemas = [];
         if ($case !== null) {
             foreach ($run->declarations->fields->requiredPublications($case) as $publication) {
-                if (!isset($schemaViews[$publication['report'] . "\0" . $publication['view']])) {
+                if (($refusalSides[$publication['side']] ?? false)
+                    || !isset($schemaViews[$publication['report'] . "\0" . $publication['view']])) {
                     continue;
                 }
                 $schemas[] = [
@@ -100,7 +107,10 @@ final class ExactSurfaceAuthority
         $required = [];
         foreach ($sources as $sourceKey => $roles) {
             foreach (['candidate', 'reference'] as $side) {
-                foreach (array_unique($roles) as $role) {
+                $sideRoles = ($refusalSides[$side] ?? false)
+                    ? ['capture', 'surface', 'normalization', 'path', 'outcome']
+                    : array_unique($roles);
+                foreach ($sideRoles as $role) {
                     $required[] = ['side' => $side, 'key' => $sourceKey, 'role' => $role];
                 }
                 if ($side === 'candidate') {
@@ -111,7 +121,9 @@ final class ExactSurfaceAuthority
         if ($bearing && !\in_array($surface, ['format:metrics', 'format:suppressed', 'directives'], true)) {
             $required[] = ['side' => '*', 'key' => 'finding', 'role' => 'tuple-schema'];
             foreach (['candidate', 'reference'] as $side) {
-                $required[] = ['side' => $side, 'key' => 'case:' . $case . '|format:json', 'role' => 'tuple'];
+                if (!($refusalSides[$side] ?? false)) {
+                    $required[] = ['side' => $side, 'key' => 'case:' . $case . '|format:json', 'role' => 'tuple'];
+                }
             }
         }
         return ['rawSources' => $rawSources, 'residualViews' => $residualViews, 'required' => $required, 'schemas' => $schemas];
@@ -124,6 +136,9 @@ final class ExactSurfaceAuthority
             throw new GateError('An exact surface has no complete visible publication: ' . $pair->key);
         }
         $framed = self::frame('visible', $visible);
+        if ($pair->surface === 'baseline-file' && self::declaredBaselineRefusal($pair->key, $side, $run)) {
+            return $framed . self::baselineRefusalFrame($pair->key, $visible, $capture, $run);
+        }
         if (!ReportViews::recordBearingSurface($pair->surface)) {
             return $framed;
         }
@@ -146,6 +161,42 @@ final class ExactSurfaceAuthority
         $slot = $capture->rankings[$source] ?? throw new GateError('An exact surface has no complete finding authority: ' . $source);
         [$physical, $ranking] = self::rawPopulation($slot, $source, $side, $run);
         return $framed . self::frame('physical-records', $physical) . self::frame('ranking-records', $ranking);
+    }
+
+    private static function declaredBaselineRefusal(string $key, string $side, RunContext $run): bool
+    {
+        if (Surfaces::surfaceClass($key) !== 'baseline-file' || !str_starts_with($key, 'case:')) {
+            return false;
+        }
+        $case = substr($key, 5, (int) strpos($key, '|') - 5);
+        if ($run->declarations->outcomes->of($case) === null || !$run->declarations->exactSurfaces->has($key)) {
+            return false;
+        }
+        foreach ($run->corpus->cases as $definition) {
+            if ($definition->id === $case) {
+                return CaseOutcome::of($definition, $side) === CaseOutcome::REFUSAL;
+            }
+        }
+        return false;
+    }
+
+    private static function baselineRefusalFrame(string $key, string $visible, CaptureResult $capture, RunContext $run): string
+    {
+        $scope = substr($key, 0, (int) strpos($key, '|'));
+        $file = $capture->artifacts[$key] ?? null;
+        $exit = $capture->artifacts[$scope . '|exit:baseline:generate'] ?? null;
+        $stderr = $capture->artifacts[$scope . '|stderr:baseline-file'] ?? null;
+        $refusal = $capture->artifacts[$scope . '|format:json'] ?? null;
+        $envelope = \is_string($refusal) ? json_decode($refusal, true) : null;
+        if ($visible !== '' || $file !== '' || !\is_string($exit) || !ctype_digit($exit)
+            || (int) $exit < 1 || (int) $exit > 255 || $exit === '70'
+            || !\is_string($stderr) || $stderr === '' || !\is_array($envelope)
+            || !\is_string($envelope['error'] ?? null) || $envelope['error'] === '') {
+            throw new GateError('A declared baseline refusal has no absent file, non-analysis exit, stderr and JSON refusal.');
+        }
+        return self::frame('baseline-exit', $exit)
+            . self::frame('baseline-stderr', $run->normalization->normalize('stderr:baseline-file', $stderr))
+            . self::frame('refusal', $run->normalization->normalize('format:json', $refusal));
     }
 
     /** @param array{ranked:array{stdout:string,stderr:string,exit:int},physical:?array{stdout:string,stderr:string,exit:int}} $slot

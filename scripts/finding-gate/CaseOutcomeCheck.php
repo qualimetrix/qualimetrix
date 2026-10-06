@@ -78,6 +78,9 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
         if ($exit === null || $stdout === null || $stderr === null || !ctype_digit($exit)
             || (int) $exit < 1 || (int) $exit > 255 || $exit === '70'
             || ($case->outcomeExit !== null && $exit !== (string) $case->outcomeExit)) {
+            if ($outcome === CaseOutcome::REFUSAL) {
+                $this->report->sourceEvidence($side, $scope . '|format:json', 'outcome', false);
+            }
             $this->mismatch($side . ' / ' . $case->id, 'The case did not end with its exact declared non-analysis exit.');
             return;
         }
@@ -86,7 +89,10 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
             if (!\is_array($payload) || array_keys($payload) !== $this->refusalFields($side)
                 || !\is_string($payload['error'] ?? null) || $payload['error'] === '' || ($payload['exit_code'] ?? null) !== (int) $exit
                 || (isset($payload['position']) && !\is_array($payload['position']))) {
+                $this->report->sourceEvidence($side, $scope . '|format:json', 'outcome', false);
                 $this->mismatch($side . ' / ' . $case->id, 'The JSON refusal differs from its publisher or has incoherent error/exit_code/position values.');
+            } else {
+                $this->report->sourceEvidence($side, $scope . '|format:json', 'outcome', true);
             }
             return;
         }
@@ -124,13 +130,34 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
                 $this->mismatch('case:' . $case->id, 'The analysis side of the declared transition did not produce a complete analysis.');
                 continue;
             }
+            $baselineKey = 'case:' . $case->id . '|baseline-file';
+            $needsBaselineRefusal = $run->declarations->exactSurfaces->has($baselineKey);
             $snapshot = $this->refusalSnapshot($case, $refused);
             if ($snapshot === null) {
+                if ($needsBaselineRefusal) {
+                    $this->report->sourceEvidence($refusalSide, $baselineKey, 'outcome', false);
+                }
                 continue;
             }
             if (!$this->deriving && $snapshot !== $row['output']) {
+                if ($needsBaselineRefusal) {
+                    $this->report->sourceEvidence($refusalSide, $baselineKey, 'outcome', false);
+                }
                 $this->mismatch('case:' . $case->id, 'The refusal stdout, stderr, exit or file differs from its exact declared snapshot.');
                 continue;
+            }
+            if ($needsBaselineRefusal && (!$this->report->sourceValid($refusalSide, 'case:' . $case->id . '|format:json', 'outcome')
+                || ($refused[$baselineKey] ?? null) !== ''
+                || !\is_string($baselineExit = $refused['case:' . $case->id . '|exit:baseline:generate'] ?? null)
+                || !ctype_digit($baselineExit) || (int) $baselineExit < 1 || (int) $baselineExit > 255 || $baselineExit === '70'
+                || !\is_string($baselineStderr = $refused['case:' . $case->id . '|stderr:baseline-file'] ?? null)
+                || $baselineStderr === '')) {
+                $this->report->sourceEvidence($refusalSide, $baselineKey, 'outcome', false);
+                $this->mismatch('case:' . $case->id . ' / baseline:generate', 'The declared refusal did not retain an absent baseline, a non-analysis exit and populated stderr.');
+                continue;
+            }
+            if ($needsBaselineRefusal) {
+                $this->report->sourceEvidence($refusalSide, $baselineKey, 'outcome', true);
             }
             $this->measured[$case->id] = $snapshot;
             $run->declarations->outcomes->credit($case->id);

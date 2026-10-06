@@ -540,6 +540,13 @@ prerequisites when those schema changes apply. These validity checks do not
 extend the document's frame or make a finding-source residual select its exact
 route.
 
+Only a selected exact `baseline-file` with a declared outcome transition may
+frame a refusing side without a baseline document. It requires an absent file,
+a non-analysis `baseline:generate` exit, nonempty stderr and a validated JSON
+refusal; its exact frame retains that exit, stderr and refusal publication.
+The analyzing side retains its complete document, finding authority and schema
+prerequisites. The G8 refusal snapshot still covers only `check` invocations.
+
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;
 carrying them forward creates stale exceptions.
