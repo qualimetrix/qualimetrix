@@ -6151,17 +6151,17 @@ D	form|yaml|computed_metrics|string-number	string-number	report	REFUSES	no	PROMI
 D	form|yaml|coupling.framework_namespaces|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling.framework_namespaces|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling.framework_namespaces|int	int	report	REFUSES	no	PROMISED	refused
-D	form|yaml|coupling.framework_namespaces|list	list	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|coupling.framework_namespaces|list	list	report	OK	no	PROMISED	effect distinguishable and the producer reachable
 D	form|yaml|coupling.framework_namespaces|map	map	report	REFUSES	no	PROMISED	refused
-D	form|yaml|coupling.framework_namespaces|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|coupling.framework_namespaces|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|coupling.framework_namespaces|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling.framework_namespaces|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling|bool	bool	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling|float	float	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling|int	int	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling|list	list	report	REFUSES	no	PROMISED	refused
-D	form|yaml|coupling|map	map	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
-D	form|yaml|coupling|null	null	report	NOT OBSERVABLE	no	PROMISED	omitted == equivalent
+D	form|yaml|coupling|map	map	report	OK	no	PROMISED	effect distinguishable and the producer reachable
+D	form|yaml|coupling|null	null	report	OK	no	PROMISED	`~` behaved as an omitted key
 D	form|yaml|coupling|string-nonnumber	string-nonnumber	report	REFUSES	no	PROMISED	refused
 D	form|yaml|coupling|string-number	string-number	report	REFUSES	no	PROMISED	refused
 D	form|yaml|disabled_rules|bool	bool	report	REFUSES	no	PROMISED	refused

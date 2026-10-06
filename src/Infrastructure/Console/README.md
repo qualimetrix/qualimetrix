@@ -383,7 +383,8 @@ does not create a missing destination, and preserves an existing destination.
 removal and restoration. Commands retain option parsing, repository discovery,
 messages and the exit ladder; status reads the same hook-owned file facts.
 `HookBackupTransaction` performs judged backup creation while the file
-transaction retains removal and restoration.
+transaction retains removal and restoration. Both share `HookEntryAccess` for
+guarded reads, identity checks and one set of directory-exposure warnings.
 
 The hook's contents are generated rather than shipped: `/scripts/` is excluded
 from the composer distribution, so a script living there reaches no consumer
