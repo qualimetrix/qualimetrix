@@ -49,10 +49,11 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * - Use `includeNamespaces` option to override auto-detection
  * - Use `suppress_namespaces` (universal per-rule option) to exclude specific namespaces
  *
- * @qmx-threshold coupling.cbo 21 -- Raw CBO 20: this hierarchical rule's own dependencies plus
- *                the per-rule channel, shape and judged-metric declarations every producer must
- *                name (ADR 0031, ADR 0046). Those declaration types are metadata the rule states
- *                about itself, not collaborators it calls. 21 gets one-edge headroom.
+ * @qmx-threshold coupling.cbo 22 -- Raw CBO 21 includes the ThresholdCrossing wording contract
+ *                and the per-rule channel, shape and judged-metric declarations every producer
+ *                must name. Moving finding emission would only relocate these dependencies;
+ *                the declarations state rule metadata rather than called collaborators.
+ *                22 retains one-edge headroom.
  */
 #[CliAlias('distance-warning', 'max_distance_warning')]
 #[CliAlias('distance-error', 'max_distance_error')]
