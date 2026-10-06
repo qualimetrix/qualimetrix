@@ -166,6 +166,12 @@ optional note for intentionally empty coverage from its report: it constructs
 it as `scope.note`. The command passes no separate note parameter.
 `ReportCoverageProjection` transfers named `excluded` separately from `discovered`,
 which sums analyzed PHP, generated-excluded PHP and selected failed terminal entries.
+Published omitted-Composer-root reasons retain their cause and visited-level
+count, but candidate/start/last paths are optional project-relative paths only
+when they lie inside the project. An absent main manifest supplies no omitted-root
+reason. The projection uses existing observations rather than probing another
+filesystem or exposing absolute paths outside the analysed project.
+
 Project scope preserves skipped `{channel, option, pattern}` values. A channel is
 in `unjudgedChannels` only when none of its values was judged; a partial channel
 can be absent there while its skipped values remain named.
