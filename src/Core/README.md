@@ -3,10 +3,9 @@
 ## Overview
 
 Core contains neutral primitives with no natural capability owner. It imports
-nothing from the project outside `Core`, and outside PHP itself it names two
-external types: `PhpParser\Node` (`Ast/FileParserInterface.php`) and
-`Composer\InstalledVersions` (`Version.php`, served by the declared
-`composer-runtime-api` platform package).
+nothing from the project outside `Core`. PHP-parser types are confined to
+`Core/Ast/`; `Version.php` uses `Composer\InstalledVersions` from the declared
+`composer-runtime-api` platform package.
 
 No control holds Core to that list. The generated `qmx.yaml` lets every owner
 reach its `external` layer, and
@@ -23,7 +22,10 @@ external import in Core is a review decision, and this paragraph is its record.
 ```
 Core/
 ├── Ast/
-│   └── FileParserInterface.php            # AST parsing contract
+│   ├── FileParserInterface.php            # AST parsing contract
+│   ├── NameResolution.php                 # Class-name resolution before collection
+│   ├── ResolvedName.php                   # Resolved declaration-name query
+│   └── SuperglobalRead.php               # Finite direct superglobal read shapes
 ├── Exception/
 │   └── ParseException.php                 # Parse error value
 ├── Environment/

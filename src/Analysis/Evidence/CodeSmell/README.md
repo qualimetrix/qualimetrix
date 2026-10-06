@@ -39,13 +39,16 @@ The following functions are detected:
 - `debug_print_backtrace`, `debug_zval_dump`
 
 `debug_backtrace` is not detected: it returns data and belongs to ordinary error handling.
-A positional `true` second argument is return mode only for `print_r` and `var_export`;
-the named `return: true` argument is honoured for every function. Names are matched as
-written — `use function` aliases are not resolved.
+A positional `true` second argument or named `return: true` is return mode only
+for `print_r` and `var_export`. Calls inside methods named `dump`, `dd`, or
+`debug` are still detected; an intentional call needs a reasoned `@qmx-ignore`.
+Names are matched as written — `use function` aliases are not resolved.
 
 ## Superglobals
 
-The following are detected by their plain variable name (a variable-variable spelling such as `${'_GET'}` is not):
+The following are detected as plain variables, literal variable-variable names
+such as `${'_GET'}` or `${'_'.'GET'}`, and literal `$GLOBALS['_GET']` reads.
+An unknown dynamic name such as `$$name` cannot be identified:
 - `$_GET`, `$_POST`, `$_REQUEST`
 - `$_COOKIE`, `$_SESSION`
 - `$_SERVER`, `$_FILES`, `$_ENV`
@@ -54,10 +57,13 @@ The following are detected by their plain variable name (a variable-variable spe
 ## Empty Catch: chain of attempts
 
 An empty catch is exempt only when its `try` is a direct statement of a `foreach` body and can
-end the search on success: it holds a `return`, or a `continue` that skips statements after the
-try, at its top level or inside its `if` branches
+end the search on success after work: it holds a `return` or `break`, or a
+`continue` that skips statements after the try, at its top level or inside its `if` branches
 (`ControlFlow/ChainOfAttempts.php`). A try nested deeper, one inside a closure, and one whose
 `continue` skips nothing are reported.
+An early guard inside the `try`, after a preparatory call but before useful
+work, can still make the empty `catch` look like a valid chain of attempts:
+`$y = prepare($x); if ($y === null) continue; work($y);`.
 
 ## Usage
 

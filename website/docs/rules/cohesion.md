@@ -19,7 +19,7 @@ a property or call one another through `$this->method()`, excludes static,
 constructor and destructor methods, and groups stateless constant methods
 into one virtual node.
 
-The default warning/error thresholds are `3` and `5`. Readonly classes are
+The default warning/error thresholds are `3` and `5`, inclusive at equality. Readonly classes are
 excluded by default, and classes must have at least three methods. You can also
 exclude interface-mandated methods from the graph:
 

@@ -156,6 +156,11 @@ Declare a project aggregation on the own-scope key, never on the rollup —
 measures the difference rather than reading the name, by checking that a parent's
 folded value does not move when a child gains a type nothing references.
 
+`size.class-count` is the own namespace count at every namespace level;
+`size.class-count.sum` remains the published subtree aggregate. The class-count
+rule judges the own value, so a parent's finding is not caused solely by its
+children's classes.
+
 `NamespaceToProjectAggregator` also publishes
 `size.symbol-declaring-namespace-count`: the number of namespaces that declare
 at least one type, counted from the symbols rather than from the tree walk the

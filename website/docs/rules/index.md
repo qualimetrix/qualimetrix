@@ -1,6 +1,6 @@
 # Rules Overview
 
-Qualimetrix ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are exceeded.
+Qualimetrix ships with a set of built-in rules that check your PHP code for common quality problems. Each rule looks at a specific aspect of your code -- complexity, size, coupling, design, maintainability, or common bad practices -- and reports violations when thresholds are reached or crossed, according to each rule's direction.
 
 ## Rule IDs and Judged Metrics
 

@@ -479,8 +479,8 @@ A class with 20 simple getter/setter methods (each with complexity 1) has WMC = 
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
-| Warning | > 50      | Warning  |
-| Error   | > 80      | Error    |
+| Warning | >= 50     | Warning  |
+| Error   | >= 80     | Error    |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->

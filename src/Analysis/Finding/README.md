@@ -7,6 +7,7 @@ The Finding capability owns analysis-rule vocabulary, rule execution, rule confi
 ```text
 Finding/
 ├── Contract/             # Published metadata, configuration, finding, channel, and filter contracts
+│   ├── ThresholdCrossing.php # Raw value against selected effective threshold
 │   ├── Configuration/    # completed carrier and public typed options construction
 │   │   ├── FindingConfiguration.php
 │   │   └── RuleOptionsBuild.php
@@ -62,6 +63,11 @@ Finding/
 `RuleMaterialization` owns lazy instance caches and ordered producer metadata;
 `FindingPublication` owns the one execution exclusion ledger. Late publication
 uses the same channel selection without mutating the completed ledger.
+
+`ThresholdCrossing` supplies wording from a raw numeric value and the selected
+effective threshold: equality reaches it and a strictly greater value exceeds
+it, regardless of display rounding. A value below that boundary is not a
+crossing. Rule-specific lower-is-worse messages keep their own wording.
 
 `RuleExecutionInterface::execute()` returns `RuleExecutionResult` (in `Contract/`)
 rather than a bare finding list: `$produced` (everything rules and their

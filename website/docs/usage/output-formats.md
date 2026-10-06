@@ -158,7 +158,7 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 
 ```
 src/Repository/OrderRepository.php: error[coupling.class-rank]: ClassRank is 0.6491, exceeds threshold of 0.3536 (scaled for 2 classes). This class is a critical hub — changes have wide impact (OrderRepository)
-src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, exceeds threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
+src/Repository/OrderRepository.php: warning[complexity.ccn]: Cyclomatic complexity is 10, reaches threshold of 10. Consider extracting methods or simplifying conditions (OrderRepository::findByCriteria)
 src/Service/UserService.php:9: warning[code-smell.error-suppression]: Error suppression (@) on file_get_contents() - handle errors explicitly
 src/Service/UserService.php: warning[complexity.ccn]: Cyclomatic complexity is 14, exceeds threshold of 10. Consider extracting methods or simplifying conditions (UserService::calculate)
 

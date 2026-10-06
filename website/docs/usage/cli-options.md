@@ -441,6 +441,11 @@ Filters violations and worst offenders to the selected namespaces. Shows subtree
 
 Project-wide findings (`architecture.coverage-gap` and the other diagnostics that judge the run as a whole) are never selected by a namespace selector: they belong to no namespace.
 
+Named detector findings use their declaration namespace. File-subject findings
+still follow the existing file-subject namespace selection behavior; a file in
+a namespace is not guaranteed to appear in that namespace's drill-down solely
+because of its path.
+
 The same matching rule governs the health drill-down and the worst-offender lists this option turns on, and the `include_namespaces` option of `coupling.distance`.
 
 A pattern that selects no analysed namespace is refused with exit 3, and the

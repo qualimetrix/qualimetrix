@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `size.class-count` now judges classes declared directly in each namespace,
+  including parents, instead of the `size.class-count.sum` subtree value.
+  Namespace findings and baselines can change. The `.sum` metric remains
+  published; consumers that need descendant totals can keep reading it.
+- Findings from 15 code-smell and security detector channels inside named
+  classes, methods, and functions now carry the exact declaration symbol and
+  namespace instead of a file symbol with null namespace. Update consumers of
+  report symbols and namespace grouping. Baseline identity still uses the
+  unchanged subject and occurrence key; file-scope and anonymous evidence
+  still use a file symbol and null namespace.
+- Ranking and health consumers that use those detector symbols now attribute
+  named findings to their declarations: class ranking uses the class's own
+  rank and functions use the function median. Recheck rank-ordered and grouped
+  reports rather than assuming a former file maximum or file grouping.
+- Hardcoded-credential values with uppercase dotted segments are now judged
+  rather than exempted as configuration keys. Lowercase dotted keys, whole
+  angle-bracket placeholders, and native built-in PHP type syntax remain
+  exempt. Review new findings; the bare name `token8` remains outside default
+  sensitive-name matching.
+- Debug-output calls are now reported even inside methods named `dump`, `dd`,
+  or `debug`. Add a reasoned `@qmx-ignore code-smell.debug-code` at an
+  intentional call instead of relying on the containing method's name.
+
 - Inline directive migration: An exact `@qmx-*` tag in the middle of a comment
   line, after another tag, or inside a list item now refuses; start its own
   physical comment line, or quote a literal example with paired backticks or a
@@ -1204,6 +1227,11 @@ What changes for a configuration you already have:
 
 ### Changed
 
+- Affected higher-is-worse threshold messages now say `reaches` at equality
+  and `exceeds` only above the selected effective threshold, comparing raw
+  values before display rounding. The inclusive `>=` finding boundary and
+  machine fields are unchanged; lower-is-worse messages are unchanged.
+
 - Integer option refusals now explain the parsed float value: Symfony YAML reads
   `+2` and `2.0` as floats, so write `2` for an integer. The file, dedicated
   alias and `--rule-opt` doors share that explanation; CLI refusals retain the
@@ -1442,6 +1470,18 @@ What changes for a configuration you already have:
   copy of a duplicate block can be told apart.
 
 ### Fixed
+
+- Class-name-sensitive detectors resolve imported class names before
+  collection, including own-class references that previously escaped unused
+  private member detection.
+- Direct superglobal detectors recognize literal variable-variable names and
+  literal `$GLOBALS` keys; an unknown dynamic name still cannot be inferred.
+- Empty-catch detection now recognizes successful work before loop exit, and
+  the debug-code return-mode exemption applies only to `print_r` and
+  `var_export`.
+- Namespace and global `const` declarations contribute hardcoded-credential
+  evidence, including multiple declarators; native built-in type spellings
+  are filtered by parsed syntax rather than a broad string heuristic.
 
 - Staged report and profile replacements keep their temporary contents owner-only
   before publication, including when replacing an existing file with mode 0600.
