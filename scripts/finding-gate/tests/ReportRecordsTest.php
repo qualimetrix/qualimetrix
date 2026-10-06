@@ -30,6 +30,15 @@ final class ReportRecordsTest extends TestCase
         SyntheticTree::remove($this->root);
     }
 
+    #[Test]
+    public function itRefusesAnEmptyCheckstylePublicationAsAGateError(): void
+    {
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('The checkstyle projection is not a readable checkstyle XML document.');
+
+        ReportRecords::checkstyle('');
+    }
+
     /** @param array<string,mixed> $record */
     #[Test]
     #[DataProvider('schemas')]
