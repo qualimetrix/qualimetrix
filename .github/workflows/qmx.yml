@@ -187,12 +187,11 @@ jobs:
 
       - name: Run full validation
         env:
-          QMX_PHPUNIT_PROFILE: '1'
           # Feeds the name half of scripts/check-private-leaks.sh, which runs
           # first inside `composer check`. Absent secret = path and shape checks
           # only; the term list must never be committed.
           QMX_PRIVATE_TERMS: ${{ secrets.QMX_PRIVATE_TERMS }}
-        run: composer --verbose check
+        run: composer check
 
       - name: Upload qmx results (if failed)
         if: failure()
