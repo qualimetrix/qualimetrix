@@ -624,6 +624,12 @@ idle tolerations fail. Corpus controls require exact full scopes, preventing
 a `text` expectation from absorbing `text-verbose` or another case.
 Green controls are held to all declaration counts, not just exit 0.
 
+The config-precedence, threshold-raising and directive-placement controls
+require their finding counts, records and unchanged report surfaces. They do
+not require equality of the whole `directives` surface: its project-scope
+metadata has a declared transition. Directive record values still have exact
+semantic expectations; the ordinary gate judges the declared metadata diff.
+
 The `ranking-input-order` control requires an order mismatch on JSON findings.
 It does not require one on the `scoped-layers` baseline source: that
 unknown-scope source publishes one finding. Baseline-source ranking permutations
