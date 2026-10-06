@@ -500,6 +500,7 @@ Available tests:
  - QmxFindingGate\Tests\RankingOrderTest::itKeepsComplementOccurrencesWhoseOrdinalsCoincide
  - QmxFindingGate\Tests\RankingOrderTest::itPreservesDuplicateOccurrencesAndSelectsTheEarliestIndexPairs
  - QmxFindingGate\Tests\RankingOrderTest::itRefusesUnequalOccurrencePopulations
+ - QmxFindingGate\Tests\ReferenceTreeTest::itComparesNativeLockFactsExceptRootContentHash
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement#0
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itCanonicalizesAnEmptyDeltaIndexOnlyForACompleteGreenMeasurement#1
  - QmxFindingGate\Tests\RefusalDeclarationsTest::itDerivesRefusalDeltasOnEveryStructuredRefusalSurface
@@ -9607,6 +9608,7 @@ Available tests:
  - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itPreservesWorldWriteForeignOwnerAndStickyJudgements
  - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itTreatsDirectoriesAsUnplaceableWhenStickyProtectsThem
  - Qualimetrix\Tests\Core\FileTarget\Unit\EntryControlTest::itTreatsStickyAsProtectionAgainstReplacementButNotPlacement
+ - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itCreatesPrivateSiblingsAndRestoresTheUmaskWithoutChangingPublishedModes
  - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itNamesTheRequestedTargetWhenTheReadOnlyParentRefusesATemporarySibling
  - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itPublishesACompleteReplacementWithTheOldMode
  - Qualimetrix\Tests\Core\FileTarget\Unit\FileReplacementTest::itRefusesAnAppearedNameWithoutOverwritingIt
@@ -10234,6 +10236,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsCleanWhenTheOnlyFindingIsAnAppliedBoundaryThatMovedNothingElse
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsFourWhenTheRunCouldNotParsePartOfTheTree
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExitsTwoOnAnInertDirective
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itExplainsAnUnmeasuredNocDirectiveOnASelectedParent
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itKeepsFileOwnedUnusedDirectivesUnderBroadNamespaceExclusions
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"every level of it"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\DirectivesCommandTest::itLeavesADirectiveUnmeasuredWhenItsRuleIsSwitchedOff"the level the directive sits on"
