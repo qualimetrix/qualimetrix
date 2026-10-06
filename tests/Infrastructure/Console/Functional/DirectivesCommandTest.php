@@ -107,6 +107,34 @@ final class DirectivesCommandTest extends TestCase
     }
 
     #[Test]
+    public function itExplainsAnUnmeasuredNocDirectiveOnASelectedParent(): void
+    {
+        $this->writeSource('Parent.php', <<<'SOURCE'
+            <?php
+            // @qmx-ignore-file design.noc -- child lies outside this selection
+            namespace Fixture;
+            class ParentClass {}
+            SOURCE);
+        $this->writeSource('Child.php', <<<'SOURCE'
+            <?php
+            namespace Fixture;
+            class ChildClass extends ParentClass {}
+            SOURCE);
+        file_put_contents($this->tempDir . '/composer.json', '{"autoload":{"psr-4":{"Fixture\\\\":"src/"}}}');
+
+        $tester = $this->audit([
+            'paths' => [$this->tempDir . '/src/Parent.php'],
+            '--only-rule' => ['design.noc'],
+        ]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getErrorOutput());
+        self::assertStringContainsString(
+            'unmeasured: the selected run cannot establish absence for the addressed channel.',
+            $tester->getDisplay(),
+        );
+    }
+
+    #[Test]
     public function itExitsCleanWhenEveryDirectiveStillDoesSomething(): void
     {
         $this->writeSource('Live.php', self::sevenParameterMethod(
