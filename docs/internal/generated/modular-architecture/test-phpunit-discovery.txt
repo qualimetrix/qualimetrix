@@ -107,6 +107,7 @@ Available tests:
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesMergingDuplicatePublishedArtifacts
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesSupplyingAnObservedSideTwiceEvenWhenEmpty
  - QmxFindingGate\Tests\CaptureResultTest::itRefusesUnclassifiedPrivateCaptureSlots
+ - QmxFindingGate\Tests\CaptureTest::itAcceptsNativeSuccessfulCandidatePopulationAfterDeclaredReferenceRefusal
  - QmxFindingGate\Tests\CaptureTest::itAcceptsObservableDirectivesAndTheirExactMeasuredExitTransition
  - QmxFindingGate\Tests\CaptureTest::itAcceptsOnlyMeasuredDerivedCandidateCaptureExits
  - QmxFindingGate\Tests\CaptureTest::itCapturesCompleteAuthorityWithoutChangingSemanticArguments
@@ -172,6 +173,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseInputTranslationTest::itPreservesContainedDirectoryLinksAndNeverLoadsCaseCode
  - QmxFindingGate\Tests\CaseInputTranslationTest::itRefusesUnsupportedDocumentTargetsAndSymbolPathGeometry
  - QmxFindingGate\Tests\CaseInputTranslationTest::itTranslatesConfigAndPresetStructuralInputsOnlyOnReference
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itCreditsOnlyTheDeclaredAbsentBaselineRefusal
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide
@@ -538,6 +540,7 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itReadsPublishedHtmlViolationsWithCompleteFieldsAndInstanceBudgets
  - QmxFindingGate\Tests\ReportRecordsTest::itRefusesAChangedSarifRuleIndexBeforeCanonicalizingTheCatalog
  - QmxFindingGate\Tests\ReportRecordsTest::itRefusesAnAbsentObservedListInsteadOfTreatingItAsEmpty
+ - QmxFindingGate\Tests\ReportRecordsTest::itRefusesAnEmptyCheckstylePublicationAsAGateError
  - QmxFindingGate\Tests\ReportRecordsTest::itRefusesAnObservedPublicationWithoutAnIdentityReadinessVerdict
  - QmxFindingGate\Tests\ReportRecordsTest::itRefusesAnUnannouncedMetricSubjectPresenceChangeInEitherDirection
  - QmxFindingGate\Tests\ReportRecordsTest::itRefusesDirectivesJsonWhoseExitDisagreesWithTheProcess
@@ -583,6 +586,7 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itComparesTheWholeHtmlRefusalWithoutRequiringAnAnalysisPayload
  - QmxFindingGate\Tests\SurfaceComparisonTest::itDeclaresA244LineNonRecordDeltaAndRefusesANeighbouringByte
  - QmxFindingGate\Tests\SurfaceComparisonTest::itDerivesFreshRecordIntentionsBeforeConsideringAnExactMetricSurface
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itFramesOnlyAnAbsentDeclaredBaselineRefusalAndKeepsAnalysisAuthority
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsAnInvalidExactSupplierUnmeasuredWhileDerivingAValidNeighbour
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsDistinctRawRankingNumbersBeyondFloatPrecision
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsRejectedBaselineSourceLocalWithoutSilencingUnknownAuthority
