@@ -136,6 +136,8 @@ Also available as a CLI option: `--suppress-path` (merged with YAML config).
     `architecture.circular-dependency` violations, for the same reason as `suppress_namespaces`
     below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
     metrics must not double as an undocumented way to disable architecture enforcement.
+    Git reporting likewise retains these project-scoped findings in both strict
+    and non-strict mode; see [Git Integration](../usage/git-integration.md).
 
     Which findings are exempt is a **declared property of the channel**, not something read off
     the spelling of the rule name — a rule is not exempt because it happens to be called

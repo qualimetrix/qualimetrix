@@ -634,11 +634,11 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Git scope options
 
-Publish findings relative to changed files while retaining project-scoped diagnostics. See [Git Integration](git-integration.md) for the full guide.
+Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle and layer-violation findings. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
-Limit publication by Git while preserving selected analysis paths. Non-strict mode also retains relevant namespace/project findings; project-scoped configuration channels remain visible:
+Limit publication by Git while preserving selected analysis paths. Non-strict mode also retains relevant namespace/project findings; declared project-scoped findings remain visible:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD
@@ -647,7 +647,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Limit code findings to changed files without namespace/project widening. All nine project-scoped configuration channels remain visible even in strict mode:
+Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles and layer violations, remain visible even in strict mode:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict

@@ -647,11 +647,11 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Опции области Git
 
-Публикация находок относительно изменённых файлов с сохранением project-scoped диагностики. Полное руководство смотрите в разделе [Интеграция с Git](git-integration.md).
+Публикация находок относительно изменённых файлов с сохранением объявленной project-scoped диагностики, в том числе циклов и нарушений слоёв архитектуры. Полное руководство смотрите в разделе [Интеграция с Git](git-integration.ru.md).
 
 ### `--report`
 
-Ограничивает публикацию по Git, сохраняя выбранные пути анализа. Обычный режим также сохраняет соответствующие namespace/project находки; project-scoped configuration channels остаются видимыми:
+Ограничивает публикацию по Git, сохраняя выбранные пути анализа. Обычный режим также сохраняет соответствующие namespace/project находки; объявленные project-scoped находки остаются видимыми:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD
@@ -660,7 +660,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Ограничивает code-находки изменёнными файлами без namespace/project расширения. Все девять project-scoped configuration channels сохраняются и в strict-режиме:
+Ограничивает file-scoped находки изменёнными файлами без namespace/project расширения. Объявленные project-scoped находки, включая циклы и нарушения слоёв архитектуры, сохраняются и в strict-режиме:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict

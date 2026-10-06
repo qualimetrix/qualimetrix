@@ -109,9 +109,9 @@ The Infrastructure adapter for Reporting's
 - By default includes parent namespaces when a changed file declares one
 - Indexes every namespace declaration in a changed PHP file, including multiple bracketed blocks
 - Uses `lstat` and does not read namespace source through file links
-- `--report-strict` requests no namespace/project widening of code findings
-- Keeps all nine project-scoped configuration channels independently of changed files, including strict mode
-- Keeps code findings located in changed files. In non-strict mode also keeps namespace findings in changed namespaces and ancestors even when their location names another file, and location-free project findings when changed PHP files are nonempty.
+- `--report-strict` requests no namespace/project widening of file-scoped findings
+- Keeps declared project-scoped findings independently of changed files in both modes; this currently includes `architecture.circular-dependency` cycle findings and `architecture.layer-violation` findings
+- Keeps file-scoped findings located in changed files. In non-strict mode also keeps namespace findings in changed namespaces and ancestors even when their location names another file, and location-free project findings when changed PHP files are nonempty.
 
 Diff paths use `--no-relative` from the captured repository context. Empty range
 endpoints become `HEAD` before reference validation. A refusal of this flag names
@@ -120,29 +120,29 @@ the Git 2.28 requirement; there is no separate version probe. See the
 
 ## Use Cases
 
-| Scenario      | --report        | Description                                        |
-| ------------- | --------------- | -------------------------------------------------- |
-| Full analysis | (not specified) | Analyze everything, show all findings              |
-| Pre-commit    | git:staged      | Full analysis, show findings in staged files only  |
-| PR review     | git:main..HEAD  | Full analysis, show findings in changed files only |
+| Scenario      | --report        | Description                                                           |
+| ------------- | --------------- | --------------------------------------------------------------------- |
+| Full analysis | (not specified) | Analyze everything, show all findings                                 |
+| Pre-commit    | git:staged      | Full analysis, show staged-file and declared project-scoped findings  |
+| PR review     | git:main..HEAD  | Full analysis, show changed-file and declared project-scoped findings |
 
 ## CLI Options
 
-| Option             | Description                                                              |
-| ------------------ | ------------------------------------------------------------------------ |
-| `--report=<scope>` | Which findings to show in the report                                     |
-| `--report-strict`  | Changed-file code findings plus project-scoped configuration diagnostics |
+| Option             | Description                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `--report=<scope>` | Which findings to show in the report                                                                            |
+| `--report-strict`  | Changed-file findings plus declared project-scoped findings, including architecture cycles and layer violations |
 
 ## Examples
 
 ```bash
-# Pre-commit: show findings in staged files only
+# Pre-commit: show staged-file and declared project-scoped findings
 bin/qmx check src/ --report=git:staged
 
-# PR review: show findings in changed files only
+# PR review: show changed-file and declared project-scoped findings
 bin/qmx check src/ --report=git:main..HEAD
 
-# Strict mode: only findings in changed files (exclude parent namespaces)
+# Strict mode: changed-file and declared project-scoped findings
 bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # Combined with baseline

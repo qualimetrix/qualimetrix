@@ -7,7 +7,8 @@ Git reporting keeps the selected analysis paths and limits published findings re
 `--report` filters publication after analyzing the selected paths. It does not
 promise faster collection or prove that a finding was introduced by this commit.
 Changed-file findings remain alongside relevant namespace/project results and
-project-scoped configuration diagnostics.
+declared project-scoped diagnostics, including project-scoped architecture cycle
+and layer-violation findings.
 
 ---
 
@@ -99,16 +100,19 @@ bin/qmx check src/ --report=git:abc1234..HEAD
 A code finding with a file location is kept by that file, including duplication.
 Non-strict mode also keeps namespace findings in changed PHP namespaces and their
 ancestors, and location-free project findings when changed PHP files are nonempty.
-All nine project-scoped configuration channels are kept independently of changed
-files, including strict mode: Git filtering does not hide configuration mistakes.
+Channels declared project-scoped are kept independently of changed files in
+both modes. This currently includes `architecture.circular-dependency` cycle
+findings and `architecture.layer-violation` findings, even in strict mode.
+Do not use a Git report as a changed-file-only architecture report.
 See the channel list and measured questions under
 [Project scope](output-formats.md#project-scope-in-every-format).
 Namespace queries do not read source through file links.
 
 ## --report-strict
 
-Strict mode limits code findings to changed files and removes namespace/project
-widening. Project-scoped configuration diagnostics remain:
+Strict mode limits file-scoped findings to changed files and removes
+namespace/project widening. Declared project-scoped findings, including
+architecture cycles and layer violations, remain:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -156,7 +160,7 @@ git commit -m "refactor: simplify UserService"
 # On your feature branch, check against main
 bin/qmx check src/ --report=git:main..HEAD
 
-# Strict mode: changed-file code findings plus project-scoped diagnostics
+# Strict mode: changed-file findings plus declared project-scoped findings
 bin/qmx check src/ --report=git:main..HEAD --report-strict
 
 # With JSON output for CI

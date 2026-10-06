@@ -188,9 +188,11 @@ to the exact `ResolvedValueInterface` declaration for CBO `22` and ClassRank
 `0.00618924` against the scaled `0.00608863` boundary, and to the exact
 `NodeSchema` declaration for CBO `20`. A second interface or a split of the
 declaration language would preserve the readers and obscure the public subject.
-After intrinsic validators moved into the owning sections, the ClassRank
-exception stopped matching and was removed. The two exact CBO exceptions still
-name the shared value port and declaration language; no sibling is enrolled.
+After intrinsic validators moved into the owning sections, the exact ClassRank
+exception for `ResolvedValueInterface` still matches and remains: its inbound
+reach is the intended readership of the shared value port. The two exact CBO
+exceptions also still name that port and the declaration language; no sibling
+is enrolled.
 
 `CouplingAnalysis` reads its own declared section and builds the executable
 framework matcher. Its `Ca=2`, `Ce=11` shape gives Instability `0.846154`.
