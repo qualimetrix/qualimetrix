@@ -89,9 +89,7 @@ final class TokenNormalizer
                 $types[] = $type;
             }
             $startLines[] = $line;
-            $endLines[] = $type === \T_INLINE_HTML && $text !== '' && ($text[\strlen($text) - 1] === "\n" || $text[\strlen($text) - 1] === "\r")
-                ? max($line, $currentLine - 1)
-                : $currentLine;
+            $endLines[] = self::physicalEndLine($type, $text, $line, $currentLine);
             $startBytes[] = $startByte;
             $endBytes[] = $byte;
         }
@@ -114,6 +112,13 @@ final class TokenNormalizer
         }
 
         return new TokenStream($values, $this->packCoordinates($startLines, $endLines, $startBytes, $endBytes), $dataMask);
+    }
+
+    private static function physicalEndLine(int $type, string $text, int $line, int $currentLine): int
+    {
+        return $type === \T_INLINE_HTML && $text !== '' && ($text[\strlen($text) - 1] === "\n" || $text[\strlen($text) - 1] === "\r")
+            ? max($line, $currentLine - 1)
+            : $currentLine;
     }
 
     /**

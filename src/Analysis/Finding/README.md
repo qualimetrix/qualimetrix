@@ -46,7 +46,8 @@ Finding/
 │       ├── RuleOptionDeclarations.php # disjoint recognition states
 │       └── RuleOptionKeyMetadata.php # bands, shorthands, axes and retirements
 ├── Selection/            # private authored selection and retired-name advice
-│   ├── AuthoredSelection.php # every authored writer and name judgement
+│   ├── AuthoredSelection.php # every authored writer and its provenance
+│   ├── AuthoredSelectionDiagnostics.php # selector and namespace-channel judgement
 │   ├── SelectionSpecificity.php # selector-cell membership and rank
 │   ├── SelectionRefusals.php # contradictory or ineffective authored choices
 │   ├── SelectionCauses.php # complete decisive ties and source ordering

@@ -31,6 +31,7 @@ Duplication/
 │   ├── CopyCoverIndex.php
 │   ├── DuplicateBlock.php
 │   ├── DuplicateBlockFinder.php
+│   ├── DuplicateContentMerger.php # collision-checked content groups and copy reduction
 │   ├── DuplicateLocation.php
 │   ├── DuplicateMatchCandidates.php
 │   └── DuplicateSearchRequest.php
@@ -183,6 +184,10 @@ Each finding names at most ten other copies in its message and related
 locations, and counts the rest. `DuplicateBlockFinder` keeps candidate lengths
 and packed positions until non-reportable contained witnesses are removed,
 then constructs blocks from the retained connected evidence.
+`DuplicateContentMerger` groups verified segments by complete token content,
+checks hash collisions token by token, and reduces sorted unique reportable
+copies. Its streams and reduction callback live only for that merge; the finder
+releases request state at the end of each search.
 
 `TokenStream` retains token values, a data mask and interleaved packed
 coordinates. `startLine(int)`, `endLine(int)`, `coveredPrefix(int)`,
