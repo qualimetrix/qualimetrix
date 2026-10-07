@@ -29,7 +29,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumen
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Infrastructure\Console\CliOptionsParser;
@@ -1787,7 +1787,7 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $options = $this->factory->create('architecture.unassigned-class', UnassignedClassOptions::class);
         self::assertInstanceOf(UnassignedClassOptions::class, $options);
-        self::assertSame(\Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode::Ignore, $options->mode);
+        self::assertSame(\Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode::Ignore, $options->mode);
         self::assertNull($options->getSeverity(1));
     }
 

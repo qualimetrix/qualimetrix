@@ -8,9 +8,10 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveValidator;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use RecursiveDirectoryIterator;
@@ -449,6 +450,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         $layerPolicyKeys = [
             ...array_keys(LayerViolationRule::channelDeclarations()),
             ...array_keys(UnassignedClassRule::channelDeclarations()),
+            ...array_keys(LayerDeclarationRule::channelDeclarations()),
             ...array_keys(LayerDeclarationValidator::channelDeclarations()),
         ];
 

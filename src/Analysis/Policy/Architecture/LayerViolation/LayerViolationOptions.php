@@ -13,44 +13,12 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionWordSet;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
- * Options for {@see LayerViolationRule}.
+ * Options for forbidden-edge findings only. Declaration diagnostics and
+ * unassigned-class findings each have independent producer options.
  *
- * One options set for the layer-policy verdicts on the code and on the
- * declaration: the rule and its configuration validator both read this
- * instance, because `--rule-opt=architecture.layer-violation:*` has always
- * addressed that family as a whole. Two things are configured here:
- * - {@see $enabled} — silences this rule and the five declaration verdicts.
- *   It does **not** silence `architecture.unassigned-class`: the shared walk
- *   runs for either producer, and each consumer checks its own gate before
- *   emitting. It used to, and that was the coupling ADR 0030's split exists to
- *   remove — one producer's option silencing another producer's channel.
- * - {@see $severity} — the severity of every reported `architecture.layer-violation`.
- *
- * `architecture.unassigned-class` is configured by
- * {@see UnassignedClassOptions} instead: it became a producer of its own, and
- * a gate read from a sibling's options would be a gate nobody looking at the
- * sibling expects to find.
- *
- * The five verdicts on the declaration itself belong to
- * {@see LayerDeclarationValidator} and are configuration errors by virtue of
- * that — which ones is read off its `channelDeclarations()`, the authority,
- * rather than spelled out here, because a list written twice is a list that
- * disagrees with itself the first time a diagnostic is added.
- * They fail the run without consulting `fail_on` and cannot be accepted by
- * the ratchet, so their severity controls nothing but the word printed beside
- * the finding. `unreachable_layer_severity`, `potential_shadow_severity` and
- * `empty_template_severity` are therefore removed rather than kept as knobs
- * that look behavioural and are not; the declared option surface rejects them by name
- * instead of ignoring them, because silently accepting `info` for a channel
- * that gates unconditionally is exactly the lie the removal exists to end.
- * `architecture.coverage-gap` never had such a key: it is governed by the
- * architecture section's own `coverage-gap: ignore|warn|error`, and `ignore`
- * remains the supported way to decline the diagnostic outright.
- *
- * Layer definitions and the allow-list live in {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration}
- * (resolved per-run by {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::getPreparedConfiguration()}),
- * not in this Options DTO, because the data is shared between the rule and
- * future architecture-aware metrics/reporters.
+ * Removed declaration severity keys retain refusal wording so an authored
+ * setting cannot silently become inert. Coverage severity still belongs to
+ * the architecture section's `coverage-gap: ignore|warn|error` setting.
  */
 final readonly class LayerViolationOptions implements RuleOptionsInterface
 {

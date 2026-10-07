@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass
 use LogicException;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
@@ -30,9 +31,10 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKeySet;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary;
 use Qualimetrix\Analysis\Policy\Inline\Directive\UnusedDirectiveRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -487,7 +489,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $container->getDefinition(ChannelUniverse::class)->getArgument('$staticDeclarations');
 
         self::assertNull($declarations[LayerViolationRule::NAME]->description);
-        self::assertNotNull($declarations[LayerViolationRule::DOUBTED_ASSIGNMENT_NAME]->description);
+        self::assertNotNull($declarations[ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME]->description);
         // Stamped as a configuration error, and still carrying its own text.
         self::assertTrue($declarations['architecture.coverage-gap']->isConfigurationError());
         self::assertNotNull($declarations['architecture.coverage-gap']->description);

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\ShadowedClass;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -68,8 +68,8 @@ final class PotentialShadowDiagnostic
                 location: Location::none(),
                 subject: MetricSubject::aggregate(SymbolPath::forProject()),
                 symbolPath: SymbolPath::forProject(),
-                ruleName: LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                code: LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                ruleName: ArchitectureChannels::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                code: ArchitectureChannels::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 message: \sprintf(
                     'Layer "%s" (%s) shadows layer "%s" (%s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
                     $pair['assigned'],

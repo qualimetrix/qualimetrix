@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 
 /**
  * Selects what to do with analysed class-like declarations that match no

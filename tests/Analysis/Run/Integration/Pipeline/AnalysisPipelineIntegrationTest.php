@@ -54,7 +54,7 @@ use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -599,11 +599,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
             // Both producers of the layer policy, because the span is skipped
             // only when nothing that reads the policy is selected — see
-            // LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES.
+            // ArchitectureChannels::PRODUCERS.
             [$withoutLayers, $architectureDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
-                ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
+                ...ArchitectureChannels::PRODUCERS,
             );
             self::assertSame([], self::findingsNamed($withoutLayers->findings(), LayerViolationRule::NAME));
             self::assertNotEmpty(self::findingsNamed($withoutLayers->findings(), CircularDependencyRule::NAME));

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -27,13 +28,14 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationBinding;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DeclarationReach;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -73,7 +75,7 @@ final class LayerViolationRuleTest extends TestCase
     public function itExposesItsNameCliAliasesChannelsAndDescriptionPerContract(): void
     {
         $options = new LayerViolationOptions();
-        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), $this->processor));
+        $rule = new LayerViolationRule($options, new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor));
 
         self::assertSame('architecture.layer-violation', $rule->getName());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
@@ -83,14 +85,8 @@ final class LayerViolationRuleTest extends TestCase
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
         ], CliAliasReader::read(LayerViolationRule::class));
-        // Three channels, and the second and third are the rule's rather than
-        // the configuration validator's on purpose: an `exclude:` clause that
-        // removed nothing leaves the run's conclusions wider than asked for,
-        // which is debt a project may accept, and an assignment in doubt is
-        // information that must never gate — neither is a declaration that
-        // cannot be honoured.
         self::assertSame(
-            ['architecture.layer-violation', 'architecture.unmatched-exclude', 'architecture.doubted-assignment'],
+            ['architecture.layer-violation'],
             array_keys(LayerViolationRule::channelDeclarations()),
         );
         self::assertStringContainsString('layer', strtolower($rule::getDescription()));

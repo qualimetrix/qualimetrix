@@ -14,12 +14,10 @@ External owners use only the contracts in `Contract/`:
   immutable `ConfigurationDocument` and returns configuration
   warnings after the Console logger is available.
 - `LayerPolicyPreparationInterface` is the Run-owned sequential preparation
-  boundary. Disabling the rule clears state and does no class-universe or
-  template-expansion work. It also carries the literal names of the diagnostic
-  channels the producer emits under rule names other than its own — three from
-  the rules (`unassigned-class`, `unmatched-exclude`, `doubted-assignment`),
-  five from its configuration validator — and the project-scoped
-  subset of them.
+  boundary. When no layer-policy producer runs, it clears state and does no
+  class-universe or template-expansion work.
+- `ArchitectureChannels` owns the literal channel names, the three preparation
+  producer names, and their project-scoped subset; it carries no lifecycle.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
 - Configuration and preparation failures are surfaced as
@@ -46,13 +44,15 @@ Architecture/
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
 │   └── Expansion/              # observed-template expansion
-├── LayerViolation/             # two rules, declaration validator
-│   └── Observation/            # the shared walk and the evidence it records
+├── Observation/                # the shared walk, evidence and bounded diagnostic samples
+├── LayerViolation/             # forbidden dependency edges and routing guidance
+├── LayerDeclaration/           # declaration diagnostics and configuration validator
+├── UnassignedClass/            # analysed-class assignment summary and mode
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
-`Configuration/`, `Layer/`, `Layer/Expansion/`, `LayerViolation/` (with its
-`Observation/`), and the policy coordinator are internal zones of one leaf. The
+`Configuration/`, `Layer/`, `Layer/Expansion/`, `Observation/`,
+`LayerViolation/`, `LayerDeclaration/`, `UnassignedClass/`, and the policy coordinator are internal zones of one leaf. The
 manifest-backed Architecture topology test enforces their exact DAG; sibling
 internals are not a public API. The generated qmx projection enforces the leaf owner boundary.
 
@@ -290,81 +290,56 @@ nested anonymous class instead (ADR 0071). The dependency the edge still
 represents is unaffected; only its reading as a declaration fact about its
 recorded source is narrowed.
 
-`LayerViolation/` is four subjects, not one. The first is `Observation/`:
-`LayerEvidenceCollector` walks the analysed classes and the dependency graph
-**once per run** — memoised weakly by
-the run's `AnalysisContext`, so nothing survives into the next run — and returns
-one `LayerEvidence`: the edges the allow-list rejects, per-layer tallies of what
-each layer was ASSIGNED, what it MATCHED at all and what its `exclude:` clause
-REMOVED, the shadow evidence, the classes outside every layer, and the coverage
-state. The exclusion tally exists because membership collapses "the clause
-removed it" and "no criterion caught it" into the same absence:
-`MembershipResult::excluded()` keeps the two apart and `LayerRegistry::excludedLayers()`
-is the second exit of the one cached walk `resolveAll()` already performs;
-`undecidedLayers()` is the third, for the gap the run could not decide.
-Assignment is untouched by that — `resolveAll()` still returns no layer for an
-excluded class, so `debug:layer-assignment` and the shadow evidence read
-exactly what they read before. It short-circuits to `null`
-when the producer is disabled or no layers are declared, so "report nothing" has
-one answer rather than two. It answers to both consumer gates — the rule's
-`enabled` and `UnassignedClassOptions::$mode` — and materialises the
-outside-every-layer set when either of them, or the coverage mode, has a use
-for it. The class walk and the edge walk each hand their half to the merge as a
-typed value (`ClassWalkEvidence`, `EdgeWalkEvidence`) — each carrying the same
-six symbol-set columns and the undecidable and doubted symbols it booked — and a rejected edge and a
-shadowed class travel as `ForbiddenEdge` and `ShadowedClass` rather than array
-shapes, so the `Dependency` and `MatchedCriterion` they carry count as coupling
-of those value objects; the lists that hold them are still typed in PHPDoc
-only. `Observation/` reads its two consumers' gates through the generic
-`RuleOptionsInterface` and its code references nothing in `LayerViolation/`,
-which the topology test enforces as a zone of its own; the two rules, the validator and
-the diagnostics built from the evidence read it.
+`Observation/` owns `LayerEvidenceCollector`: one class and dependency-edge
+walk per `AnalysisContext`, memoised weakly so nothing survives into the next
+run. Its `LayerEvidence` carries forbidden edges, assignment/match/exclusion
+tallies, contested symbols, coverage and shadows. `ClassWalkEvidence` and
+`EdgeWalkEvidence` carry the two halves of that observation; `ForbiddenEdge`
+and `ShadowedClass` retain their exact dependency and criterion facts.
+`DiagnosticSampleList` formats bounded samples without policy semantics.
+The collector reads three independent enabled gates through `RuleOptionsInterface`
+and returns no evidence when all three are off or no layers are declared.
+It has no dependency on any of the verdict folders.
 
-Two rules report on the **code** over that one walk. `LayerViolationRule` emits
-`architecture.layer-violation` per forbidden edge and
-`architecture.unmatched-exclude` per layer whose `exclude:` clause removed
-nothing while the layer's own criteria caught something — a layer wider than
-its declaration asks for, which is debt rather than a broken configuration, so
-it is the rule's channel at a fixed `warning` and not the validator's. The
-"caught something" half of the predicate is what keeps it from restating
-`architecture.unreachable-layer`: the clause is evaluated only after the
-positive criteria succeed, so a layer that matched nothing never offered it
-anything to remove. A clause that could not be answered for some symbol its
-layer caught is not reported: "removed nothing" has not been shown for it.
-The rule's third channel, `architecture.doubted-assignment`, is built by
-`DoubtedAssignmentDiagnostic`, reading the same population the coverage text
-names.
-`UnassignedClassRule` emits the magnitude channel
-`architecture.unassigned-class`, gated by its own single `mode` option and built
-by `UnassignedClassSummary`; both are ordinary debt a baseline may accept. Being
-a producer of its own is why `LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES`
-names two rules: the run prepares the policy when either is selected, and asking
-about one of two left `--only-rule=architecture.unassigned-class` reaching an
-unprepared collector.
+`LayerViolation/` owns only forbidden-edge findings. `LayerViolationRule` emits
+`architecture.layer-violation` per forbidden edge; its CLI aliases and severity
+option still govern that producer alone.
 
-`LayerDeclarationValidator` is the verdict on the **declaration** and is a
-`ConfigurationValidatorInterface`, not a rule — which is the whole statement
-that its five channels are configuration errors. `DeclaredLayerReachability`
-builds four of them: `architecture.coverage-gap`, `architecture.unreachable-layer`,
-`architecture.pending-layer-matched` and `architecture.empty-template`;
-`PotentialShadowDiagnostic` renders `architecture.potential-shadow` from the
-shadow evidence, which no other verdict reads. `unreachable-layer` and
-`empty-template` say that no class matches a declaration, so the validator
-withholds them unless measured `ProjectScopeJudgement::judgesNamespaceClaims()`
-permits declaration absence. `architecture.unmatched-exclude` asks that same
-question. Missing observed PHP, authored removal hiding PHP, generated removal
-and an unknown denominator can withhold it; covering written path roots alone
-is insufficient. Scope warnings and `projectScope` name these measured doors.
-A whole-root fallback can establish filesystem completeness without declared
-Composer code; a subset cannot assume it. The validator declares `architecture.layer-violation`
-as its producer, so all five are registered, addressed, excluded, described and
-switched off exactly as they were while the rule declared them, and it runs in
-the rule's slot so their position in an unsorted report is unchanged.
-`DiagnosticSampleList` formats the bounded FQN samples
-`architecture.coverage-gap`, `architecture.doubted-assignment` and
-`architecture.unassigned-class` print, and is the
-one piece of code shared across the code/declaration split — a narrow
-formatting utility with no policy semantics of its own.
+`LayerDeclaration/` owns `LayerDeclarationRule`, its enabled-only
+`LayerDeclarationOptions`, and `LayerDeclarationValidator`. The rule emits
+`architecture.unmatched-exclude` at fixed warning when an exclusion removed
+nothing despite positive matches, and `architecture.doubted-assignment` at
+fixed info from the contested population. An undecidable exclusion cannot be
+called inert. These are ordinary occurrence findings a baseline may accept.
+The validator belongs to `architecture.layer-declaration` and emits five
+configuration-error occurrences: `architecture.coverage-gap`,
+`architecture.unreachable-layer`, `architecture.pending-layer-matched`,
+`architecture.empty-template`, and `architecture.potential-shadow`.
+`DeclaredLayerReachability` builds the first four; `PotentialShadowDiagnostic`
+renders the last from observed shadows.
+
+All five validator channels declare `ChannelSelectionRole::FilterExempt`.
+An unrelated `--only-rule` or `--exclude-rule` filter cannot hide them. Selecting
+just one still leaves the other four live; explicitly disabling those four
+isolates it. Disabling a diagnostic, its `:project` cell, the declaration
+producer or its group still works, as does `enabled: false`. Disabled
+layer-violation options do not control declaration findings. The channel names,
+levels, descriptions, severities, occurrence shape, documentation page and
+15-minute remediation stay unchanged. The declaration producer has no channel
+named after itself. Existing channel publication order is retained.
+
+`UnassignedClass/` owns the separate magnitude producer
+`architecture.unassigned-class`, its mode options and summary. Preparation
+reads `ArchitectureChannels::PRODUCERS` and the final `RuleEnablement::runs`
+answer for all three producers. The collector's disjunction permits declaration
+judgement when the forbidden-edge and unassigned-class consumers are disabled.
+
+`unreachable-layer`, `empty-template` and `unmatched-exclude` infer absence and
+require measured `ProjectScopeJudgement::judgesNamespaceClaims()`. Missing
+observed PHP, authored/generated removal and an unknown denominator can withhold
+that judgement. A whole-root fallback can establish filesystem completeness;
+a subset cannot assume it. Coverage, matched pending layers and observed shadows
+remain valid on the measured slice. Selection does not manufacture scope.
 
 A layer declared `pending: true` — reserved for code not
 written yet — is exempt from `architecture.unreachable-layer` and is reported
@@ -385,17 +360,16 @@ graph and class universe.
 
 ## Declared options and preparation
 
-`LayerViolationOptions` and `UnassignedClassOptions` use `fromResolved` and
-owner-declared forms. Framework `enabled` is legal for both producers. Unassigned
+`LayerViolationOptions`, `LayerDeclarationOptions` and `UnassignedClassOptions`
+use `fromResolved` and owner-declared forms. Framework `enabled` is legal for all three producers. Unassigned
 mode independently determines reportability: false+warn is lawful and off,
 explicit true+ignore refuses, and warn/error activates an otherwise enabled
 producer. Retired severity keys refuse through their declared replacement hint.
 
 Preparation reads final `RuleEnablement::runs` for each producer. The shared
-layer evidence walk is needed when either lawful producer runs; it must not gate
-one producer through a sibling's options. Reset, no-layer short-circuiting,
-The captured project universe and all layer assignment judgments are unchanged.
-DoD retains either-producer preparation, no work for muted/off producers and
+layer evidence walk is needed when any lawful producer runs; it must not gate
+one producer through a sibling's options. Reset, no-layer short-circuiting, the captured project universe and all layer assignment judgments are unchanged.
+DoD retains three-producer preparation, no work for muted/off producers and
 full authored provenance of malformed options.
 
 ## Locality

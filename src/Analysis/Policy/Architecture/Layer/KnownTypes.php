@@ -19,7 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * mistyped one, while a criterion naming a type it met may still hold for a
  * class whose chain the run could not follow to the end. Only the second is a
  * reason to doubt rather than to report, which is what
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::reachedCounts()}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence::reachedCounts()}
  * asks.
  *
  * The install is the last source asked, because it reads files: a type only

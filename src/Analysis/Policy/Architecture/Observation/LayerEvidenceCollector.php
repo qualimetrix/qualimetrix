@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation;
+namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use LogicException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -16,7 +16,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use WeakMap;
 
 /**
- * Walks one run's classes and dependency edges once and answers both layer
+ * Walks one run's classes and dependency edges once and answers the layer
  * verdicts from the same observation.
  *
  * **Why the walk is shared rather than repeated.** The class walk visits every
@@ -33,14 +33,14 @@ use WeakMap;
  * "stateless rules" contract intact where it matters: no count from one
  * `analyze()` can reach the next, because the key that would carry it is gone.
  *
- * The short-circuits live here rather than in the two callers so that
- * "disabled" and "no layers declared" have one answer instead of two that can
- * drift: both produce `null`, and both verdicts report nothing. A third state
+ * The short-circuits live here rather than in the callers so that
+ * "disabled" and "no layers declared" have one answer instead of answers that can
+ * drift: both produce `null`, and all verdicts report nothing. A third state
  * — the policy not prepared at all — is deliberately not one of them: it
- * throws, because memoising its emptiness would silence both verdicts for the
+ * throws, because memoising its emptiness would silence all verdicts for the
  * whole run.
  *
- * @qmx-threshold coupling.instability warning=0.82 -- Ca=3, Ce=13 (I=0.8125): three verdicts read this collector, and it names what the shared walk reads (run context, prepared policy, layer-matching primitives, the options contract both consumers' gates answer through) and the typed values it emits. Four of those edges are the value objects that replaced positional tuples and array shapes: `ClassWalkEvidence` and `EdgeWalkEvidence` are new, while `ForbiddenEdge` and `ShadowedClass` now carry, as counted edges of their own, the `Dependency` and `MatchedCriterion` the shapes named only in PHPDoc. The threshold is inclusive: 0.82 keeps today's 0.8125 silent and reports the next efferent edge, which takes Ce to 14 and instability to 0.824.
+ * @qmx-threshold coupling.instability warning=0.82 -- Ca=3, Ce=13 (I=0.8125): three verdicts read this collector, and it names what the shared walk reads (run context, prepared policy, layer-matching primitives, the options contract all consumers' gates answer through) and the typed values it emits. Four of those edges are the value objects that replaced positional tuples and array shapes: `ClassWalkEvidence` and `EdgeWalkEvidence` are new, while `ForbiddenEdge` and `ShadowedClass` now carry, as counted edges of their own, the `Dependency` and `MatchedCriterion` the shapes named only in PHPDoc. The threshold is inclusive: 0.82 keeps today's 0.8125 silent and reports the next efferent edge, which takes Ce to 14 and instability to 0.824.
  */
 final class LayerEvidenceCollector
 {
@@ -48,19 +48,17 @@ final class LayerEvidenceCollector
     private WeakMap $memo;
 
     /**
-     * Both consumers' options, because what the walk materialises depends on
-     * which of them the configuration turned on. They are two objects since
-     * `architecture.unassigned-class` became a producer of its own, and this
-     * collector is where the disjunction between them belongs — it is the one
-     * place that knows both.
+     * All three consumers' options, because what the walk materialises depends on
+     * which of them the configuration turned on. Each producer has its own enabled gate; this collector owns their disjunction.
      *
      * Typed as the generic options contract because each one's gate is all
-     * the walk reads of it: naming the two classes would point this directory
+     * the walk reads of it: naming their classes would point this directory
      * back at the verdicts that read it.
      */
     public function __construct(
         private readonly RuleOptionsInterface $layerViolation,
         private readonly RuleOptionsInterface $unassignedClass,
+        private readonly RuleOptionsInterface $layerDeclaration,
         private readonly ArchitecturePolicy $processor,
     ) {
         $this->memo = new WeakMap();
@@ -96,7 +94,7 @@ final class LayerEvidenceCollector
         // the exact coupling the split exists to remove. Publication stays
         // each consumer's own decision: the rule, the validator and the
         // unassigned-class rule each check their own gate before emitting.
-        if (!$this->layerViolation->isEnabled() && !$this->unassignedClass->isEnabled()) {
+        if (!$this->layerViolation->isEnabled() && !$this->unassignedClass->isEnabled() && !$this->layerDeclaration->isEnabled()) {
             return null;
         }
 
@@ -105,7 +103,7 @@ final class LayerEvidenceCollector
         // Refused rather than memoised. An unprepared policy is not "no
         // layers": it is a caller that reached the verdicts before the run
         // primed them, and the memo would pin that emptiness to this context
-        // for the rest of the run — both verdicts silently reporting nothing
+        // for the rest of the run — all verdicts silently reporting nothing
         // even after preparation. The run reaches this only through
         // RuleProducerPreparation, which either prepares the policy or leaves
         // the producer out of the selection entirely; anything else is a wiring
@@ -201,7 +199,7 @@ final class LayerEvidenceCollector
      *    matched at all, winning or not (feeds
      *    `architecture.pending-layer-matched`, which is silent exactly where
      *    a layer matched nothing — see
-     *    {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability::pendingLayersMatched()}).
+     *    {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability::pendingLayersMatched()}).
      * 2. The `excluded` column of `symbolSets` — per-layer set of the distinct classes the
      *    layer's `exclude:` clause removed (feeds
      *    `architecture.unmatched-exclude`).

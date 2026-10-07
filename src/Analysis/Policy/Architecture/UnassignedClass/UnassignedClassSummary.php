@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -21,10 +23,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *
  * Kept apart from the per-edge diagnostic: this channel shares its sample
  * formatting with the unrelated `architecture.coverage-gap` diagnostic (both
- * delegate to {@see DiagnosticSampleList}), but nothing else — it is debt a
+ * delegate to {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList}), but nothing else — it is debt a
  * project can record and pay down, gated by {@see UnassignedClassMode}, and
  * it is why this class has one consumer rather than sharing a class with the
- * five configuration-error diagnostics {@see LayerDeclarationValidator} owns.
+ * five configuration-error diagnostics {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator} owns.
  *
  * @internal Consumed by {@see UnassignedClassRule}.
  */
@@ -42,7 +44,7 @@ final class UnassignedClassSummary
      *
      * The declaration keeps the default classification — findings acceptable
      * as debt — which is a deliberate difference from the five configuration
-     * diagnostics {@see LayerDeclarationValidator} declares. A rule cannot
+     * diagnostics {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator} declares. A rule cannot
      * state the other classification at all: it follows from the producing
      * type, and this channel is declared by a rule. Those describe a policy
      * that no longer matches the code, which is never legitimate to accept. This
@@ -75,7 +77,7 @@ final class UnassignedClassSummary
             return [];
         }
 
-        // Exhaustive for the same reason {@see DeclaredLayerReachability::coverage()} is.
+        // Exhaustive for the same reason {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability::coverage()} is.
         $severity = match ($mode) {
             UnassignedClassMode::Warn => Severity::Warning,
             UnassignedClassMode::Error => Severity::Error,
@@ -87,8 +89,8 @@ final class UnassignedClassSummary
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
-            ruleName: LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
-            code: LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
+            ruleName: ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
+            code: ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
             message: \sprintf(
                 '%d of %d analysed class-like declaration(s) (%.1f%%) are not assigned to any declared layer.',
                 $count,

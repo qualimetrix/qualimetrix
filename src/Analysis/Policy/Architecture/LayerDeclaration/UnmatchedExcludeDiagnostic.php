@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
@@ -10,7 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -29,15 +29,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * baseline. An inert exclude clause is not that: the declaration parses, every
  * layer resolves, and the consequence is a wider layer — ordinary debt a
  * project may accept and pay down. So the finding goes through
- * {@see LayerViolationRule} and answers to `fail_on`, `--disable-rule` and the
+ * {@see LayerDeclarationRule} and answers to `fail_on`, `--disable-rule` and the
  * baseline like any other.
  *
- * Extracted from that rule for the reason {@see LayerViolationFinding} and
- * {@see UnassignedClassSummary} were: the rule owns the decision to report,
+ * A separate finding builder for the reason {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding} and
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary} were: the rule owns the decision to report,
  * and a finding's own text and severity are a separate subject that would
  * otherwise put the rule over its coupling ceiling.
  *
- * @internal Consumed by {@see LayerViolationRule}.
+ * @internal Consumed by {@see LayerDeclarationRule}.
  */
 final class UnmatchedExcludeDiagnostic
 {
@@ -51,7 +51,7 @@ final class UnmatchedExcludeDiagnostic
 
     /**
      * The severity the channel reports at, and deliberately not
-     * {@see LayerViolationOptions::$severity}: that option is documented as
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions::$severity}: that option is documented as
      * the severity of every reported `architecture.layer-violation`, and a
      * project that raises its forbidden edges to `error` has said nothing
      * about how loudly it wants to hear that one of its exclude clauses is

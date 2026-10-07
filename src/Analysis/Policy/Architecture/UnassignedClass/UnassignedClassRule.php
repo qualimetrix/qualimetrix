@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
@@ -11,14 +11,14 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
 
 /**
  * How much of the analysed code no declared layer claims.
  *
  * A rule of its own rather than a second channel on
- * {@see LayerViolationRule}, because the two answer different questions about
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}, because the two answer different questions about
  * different subjects: a forbidden edge is a fact about one dependency, this is
  * a fact about the run. They were one rule only because they read one walk,
  * and they still do — {@see LayerEvidenceCollector} is shared, so splitting
@@ -28,7 +28,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvi
  * {@see UnassignedClassOptions::$mode}. Its findings are ordinary debt a
  * project rolling a layer policy out can accept in the ratchet and pay down,
  * which is why this is a rule rather than one of the configuration-error
- * diagnostics {@see LayerDeclarationValidator} owns.
+ * diagnostics {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator} owns.
  *
  * **Statelessness:** nothing this rule computes survives an `analyze()` call.
  * The shared per-run structure lives in the collector, keyed weakly by the
@@ -37,7 +37,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvi
 #[CliAlias('unassigned-class-mode', 'mode')]
 final class UnassignedClassRule extends AbstractRule
 {
-    public const string NAME = LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
+    public const string NAME = ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
 
     /**
      * How much of the analysed code is unclaimed is a real measured count,

@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 /**
  * Formats a bounded, deterministic sample of FQNs for a diagnostic message
  * that lists examples out of a set larger than a message should print whole.
  *
- * Shared by {@see DeclaredLayerReachability::coverage()},
- * {@see DoubtedAssignmentDiagnostic::forDoubts()} and
- * {@see UnassignedClassSummary::unassignedClasses()}: each builds a
+ * Shared by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability::coverage()},
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DoubtedAssignmentDiagnostic::forDoubts()} and
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary::unassignedClasses()}: each builds a
  * `sprintf`-style text naming a few classes out of a larger set, and each is
  * gated separately (by {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode}
- * or by {@see UnassignedClassMode}), so none owns the formatting for the
+ * or by {@see \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode}), so none owns the formatting for the
  * others.
  *
  * Sorted before slicing so CI diffs stay stable: `metrics->all()` iteration
  * order is not stable under parallel collection.
  *
- * @internal Consumed by {@see DeclaredLayerReachability}, {@see DoubtedAssignmentDiagnostic} and
- *           {@see UnassignedClassSummary}.
+ * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability}, {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DoubtedAssignmentDiagnostic} and
+ *           {@see \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary}.
  */
 final class DiagnosticSampleList
 {

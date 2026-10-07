@@ -23,7 +23,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
  * `architecture.`; that read a behavioural property out of a naming
  * convention, and it broke the moment selectors stopped matching on prefixes.
  * Each capability now declares its own project-scoped channel keys
- * ({@see \Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS},
+ * ({@see \Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels::PROJECT_SCOPED_CHANNELS},
  * {@see \Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS}),
  * and the composition root hands them here.
  *

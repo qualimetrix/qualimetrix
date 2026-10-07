@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 
 use Qualimetrix\Analysis\Finding\Contract\Rule\ModeGatedOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ResolvedRuleOptionValues;
@@ -17,7 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * It is also the only gate in fact and not only in intent, which took one fix
  * after the split: the shared walk in
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector} read the
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector} read the
  * layer-violation rule's `enabled` as its entry condition, so
  * `layer-violation: {enabled: false}` silenced this channel from a sibling's
  * options. The walk now runs for either producer and every consumer checks its

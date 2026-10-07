@@ -105,7 +105,7 @@ final class UnmatchedFrameworkNamespaceRule extends AbstractRule
      * Occurrence, and reported on the project: the finding counts nothing and
      * belongs to no declaration — the selector is a fact about the run's
      * configuration, the way `architecture.unreachable-layer` is
-     * ({@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability}).
+     * ({@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability}).
      *
      * @return array<string, ChannelDeclaration>
      */

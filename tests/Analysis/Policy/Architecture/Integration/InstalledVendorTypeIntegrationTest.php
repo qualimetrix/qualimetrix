@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -62,7 +63,7 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
 
         self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
 
-        $doubt = $this->findingsOn($tester, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = $this->findingsOn($tester, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertCount(1, $doubt, 'The layer kept out of the error is named where the doubt is.');
         self::assertStringContainsString('"repositories"', (string) ($doubt[0]['message'] ?? ''));
     }

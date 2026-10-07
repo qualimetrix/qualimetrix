@@ -83,15 +83,15 @@ annotation.unresolved-directive - file config-error
 annotation.unsupported-threshold - file config-error follows-addressed-rule
 annotation.unused-directive - file
 architecture.circular-dependency higher project
-architecture.coverage-gap - project config-error
+architecture.coverage-gap - project config-error filter-exempt
 architecture.doubted-assignment - project
-architecture.empty-template - project config-error
+architecture.empty-template - project config-error filter-exempt
 architecture.layer-violation - class
-architecture.pending-layer-matched - project config-error
-architecture.potential-shadow - project config-error
+architecture.pending-layer-matched - project config-error filter-exempt
+architecture.potential-shadow - project config-error filter-exempt
 architecture.unassigned-class higher project
 architecture.unmatched-exclude - project
-architecture.unreachable-layer - project config-error
+architecture.unreachable-layer - project config-error filter-exempt
 baseline.unused-entry - project
 code-smell.boolean-argument - callable,file
 code-smell.constructor-overinjection higher callable judges:code-smell.parameter-count

@@ -50,6 +50,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot',
         'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment',
@@ -57,27 +58,18 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface',
         'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DiagnosticSampleList',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DoubtedAssignmentDiagnostic',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DoubtedAssignmentDiagnostic',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\PotentialShadowDiagnostic',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedExcludeDiagnostic',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerRoutingGuidance',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ClassWalkEvidence',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\EdgeWalkEvidence',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ForbiddenEdge',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass',
         'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\PotentialShadowDiagnostic',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary',
-        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePatternCompiler',
@@ -108,6 +100,17 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\ClassWalkEvidence',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\EdgeWalkEvidence',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\ForbiddenEdge',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector',
+        'Qualimetrix\Analysis\Policy\Architecture\Observation\ShadowedClass',
+        'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode',
+        'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions',
+        'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule',
+        'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary',
     ];
 
     /** @var array<string, list<string>> */
@@ -118,8 +121,10 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Configuration' => ['Contract', 'Configuration/Allow', 'Layer'],
         'Layer/Expansion' => ['Contract', 'Configuration', 'Configuration/Allow', 'Layer'],
         'ArchitecturePolicy' => ['Contract', 'Configuration', 'Layer', 'Layer/Expansion'],
-        'LayerViolation/Observation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
-        'LayerViolation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer', 'LayerViolation/Observation'],
+        'Observation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
+        'LayerViolation' => ['Contract', 'Configuration', 'Layer', 'Observation'],
+        'LayerDeclaration' => ['Contract', 'Configuration', 'Layer', 'Observation'],
+        'UnassignedClass' => ['Contract', 'Configuration', 'Observation'],
     ];
 
     #[Test]
@@ -160,7 +165,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
     {
         self::assertNotContains('ArchitecturePolicy', self::ALLOWED['Layer']);
         self::assertNotContains('Layer/Expansion', self::ALLOWED['Configuration']);
-        self::assertNotContains('LayerViolation', self::ALLOWED['LayerViolation/Observation']);
+        self::assertNotContains('LayerViolation', self::ALLOWED['Observation']);
         self::assertArrayNotHasKey('*', self::ALLOWED);
         foreach (self::ALLOWED as $allowed) {
             self::assertNotContains('*', $allowed);
@@ -178,13 +183,13 @@ final class ArchitectureInternalTopologyTest extends TestCase
 
         $observationReverse = $this->architectureDependencies(
             '<?php use Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationOptions; function probe(LayerViolationOptions $options): void {}',
-            'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\Observation\\Probe',
+            'Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\Probe',
         );
         self::assertSame(
             ['Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationOptions'],
             $observationReverse,
         );
-        self::assertSame($observationReverse, $this->disallowedDependencies('LayerViolation/Observation', $observationReverse));
+        self::assertSame($observationReverse, $this->disallowedDependencies('Observation', $observationReverse));
 
         $groupedDependencies = $this->architectureDependencies(
             '<?php use Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\{Expansion\\LayerExpansionStage as Stage}; new Stage();',
@@ -223,8 +228,10 @@ final class ArchitectureInternalTopologyTest extends TestCase
             str_contains($path, '/Contract/') => 'Contract',
             str_contains($path, '/Configuration/Allow/') => 'Configuration/Allow',
             str_contains($path, '/Layer/Expansion/') => 'Layer/Expansion',
-            str_contains($path, '/LayerViolation/Observation/') => 'LayerViolation/Observation',
+            str_contains($path, '/Observation/') => 'Observation',
             str_contains($path, '/LayerViolation/') => 'LayerViolation',
+            str_contains($path, '/LayerDeclaration/') => 'LayerDeclaration',
+            str_contains($path, '/UnassignedClass/') => 'UnassignedClass',
             str_ends_with($path, '/ArchitecturePolicy.php') => 'ArchitecturePolicy',
             str_contains($path, '/Configuration/') => 'Configuration',
             str_contains($path, '/Layer/') => 'Layer',

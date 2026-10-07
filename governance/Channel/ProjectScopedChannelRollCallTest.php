@@ -70,7 +70,7 @@ final class ProjectScopedChannelRollCallTest extends TestCase
     private const array NON_DECLARING_MENTIONS = [
         'src/Analysis/Finding/Contract/Filter/ChannelFileScope.php'
             => 'a {@see} in the docblock of the type the declarations are assembled into',
-        'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php'
+        'src/Analysis/Policy/Architecture/LayerDeclaration/DeclaredLayerReachability.php'
             => 'a {@see} in a docblock explaining what one capability declares about one channel',
         'src/Infrastructure/DependencyInjection/Configurator/DeclaredChannelFileScope.php'
             => 'the assembly under test: it spreads every declaration into the scope',

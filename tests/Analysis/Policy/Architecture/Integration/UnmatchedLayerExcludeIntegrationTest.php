@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -19,7 +21,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * point of the channel is what a run *says*.
  *
  * A unit test of the predicate would pass with the channel never reaching a
- * report: the finding is built inside {@see LayerViolationRule}, but the
+ * report: the finding is built inside {@see LayerDeclarationRule}, but the
  * evidence it reads is filled by a walk two classes away, and the level and
  * severity it publishes at only exist once the container has assembled the
  * channel registry. So every case here runs `check` end to end and reads the
@@ -29,7 +31,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * and a run where the same shape of clause removes a class must be silent —
  * a producer that always fires would pass the first half alone.
  */
-#[CoversClass(LayerViolationRule::class)]
+#[CoversClass(LayerDeclarationRule::class)]
 final class UnmatchedLayerExcludeIntegrationTest extends TestCase
 {
     private string $fixture = '';
@@ -80,7 +82,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
     {
         $tester = $this->check($this->config("        patterns: ['Sample\\Controller\\NoSuchSubtree\\**']"));
 
-        $findings = $this->findingsOn($tester, LayerViolationRule::UNMATCHED_EXCLUDE_NAME);
+        $findings = $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME);
 
         self::assertCount(1, $findings);
         self::assertSame('warning', $findings[0]['severity'] ?? null);
@@ -100,7 +102,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
     {
         $tester = $this->check($this->config("        patterns: ['Sample\\Controller\\Legacy\\**']"));
 
-        self::assertSame([], $this->findingsOn($tester, LayerViolationRule::UNMATCHED_EXCLUDE_NAME));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME));
     }
 
     /**
@@ -129,7 +131,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
 
         $tester = $this->check($yaml);
 
-        self::assertSame([], $this->findingsOn($tester, LayerViolationRule::UNMATCHED_EXCLUDE_NAME));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME));
         self::assertNotSame(
             [],
             $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
@@ -156,7 +158,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
 
         self::assertSame(
             [],
-            $this->findingsOn($this->check($yaml), LayerViolationRule::UNMATCHED_EXCLUDE_NAME),
+            $this->findingsOn($this->check($yaml), ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME),
         );
     }
 
@@ -174,7 +176,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
     {
         $tester = $this->check($this->config("        patterns: ['Sample\\Controller\\NoSuchSubtree\\**']"));
 
-        self::assertNotSame([], $this->findingsOn($tester, LayerViolationRule::UNMATCHED_EXCLUDE_NAME));
+        self::assertNotSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME));
         self::assertSame(0, $tester->getStatusCode(), $tester->getErrorOutput());
     }
 
@@ -203,7 +205,7 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
         ));
 
         self::assertSame(
-            [LayerViolationRule::UNMATCHED_EXCLUDE_NAME],
+            [ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME],
             array_map(static fn(array $finding): mixed => $finding['rule'] ?? null, $gating),
         );
         self::assertSame(Severity::Warning->getExitCode(), $tester->getStatusCode(), $tester->getErrorOutput());
@@ -232,11 +234,11 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
 
         self::assertSame(
             [],
-            $this->findingsOn($this->check($working), LayerViolationRule::UNMATCHED_EXCLUDE_NAME),
+            $this->findingsOn($this->check($working), ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME),
             'Beta holds nothing to exclude, but the clause is not the author\'s mistake — it works in Alpha.',
         );
 
-        $reported = $this->findingsOn($this->check($inert), LayerViolationRule::UNMATCHED_EXCLUDE_NAME);
+        $reported = $this->findingsOn($this->check($inert), ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME);
 
         self::assertCount(1, $reported, 'One clause, one finding, however many layers it expanded to.');
         self::assertStringContainsString('domain-{module}', (string) ($reported[0]['message'] ?? ''));
@@ -267,9 +269,30 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
             [],
             $this->findingsOn(
                 $this->check($yaml, paths: ['src/Controller']),
-                LayerViolationRule::UNMATCHED_EXCLUDE_NAME,
+                ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
             ),
         );
+    }
+
+    #[Test]
+    public function itBuildsDeclarationEvidenceWhenBothOtherConsumerOptionsAreDisabled(): void
+    {
+        $yaml = str_replace('coverage-gap: ignore', 'coverage-gap: error', $this->config("        patterns: ['Sample\\Controller\\NoSuchSubtree\\**']"));
+        $yaml .= "\nrules:\n  architecture.layer-violation:\n    enabled: false\n  architecture.unassigned-class:\n    enabled: false\n";
+        $tester = $this->check($yaml);
+        self::assertSame(2, $tester->getStatusCode());
+        self::assertCount(1, $this->findingsOn($tester, ArchitectureChannels::COVERAGE_DIAGNOSTIC_NAME));
+        self::assertCount(1, $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itKeepsTheUnassignedClassMaterialisationOnItsOwnOptionsService(): void
+    {
+        $yaml = $this->config("        patterns: ['Sample\\Controller\\NoSuchSubtree\\**']");
+        $yaml .= "\nrules:\n  architecture.layer-violation:\n    enabled: false\n  architecture.layer-declaration:\n    enabled: false\n  architecture.unassigned-class:\n    mode: warn\n";
+        $tester = $this->check($yaml);
+        self::assertCount(1, $this->findingsOn($tester, ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME));
     }
 
     private function template(string $suffix): string

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation;
+namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation;
+namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 
@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigura
  * It exists because two verdicts read the same walk:
  * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}
  * judges the edges,
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator}
  * judges the declaration itself. Before the split both lived in one `analyze()` and shared local
  * variables; a shared collector plus this value object is what replaces those
  * locals without walking the graph twice and without making either verdict

@@ -2,22 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole;
 use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
 /**
  * The verdict on the layer *declaration*: five ways a `layers:` block can fail
  * to describe the code it is supposed to describe.
  *
- * Its sibling {@see LayerViolationRule} judges the code — a forbidden edge is
+ * Its sibling {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule} judges the code — a forbidden edge is
  * debt a project can record and pay down. Nothing here is: a layer that can
  * never be reached, a pending layer that already matches, a layer shadowed by
  * a broader one declared earlier, an empty template, and a declaration with a
@@ -26,7 +27,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  * class with a flag on some of its channels.
  *
  * Both read one
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence},
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence},
  * produced once per run by the shared {@see LayerEvidenceCollector}: `coverage` needs the coverage state,
  * `unreachable-layer` the merged assignment hits and the symbols each layer
  * could still own while the run could not decide them, `pending-layer-matched` the
@@ -35,35 +36,27 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
  */
 final class LayerDeclarationValidator implements ConfigurationValidatorInterface
 {
-    public const string COVERAGE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME;
+    public const string COVERAGE_DIAGNOSTIC_NAME = ArchitectureChannels::COVERAGE_DIAGNOSTIC_NAME;
 
-    public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
+    public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
 
-    public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
+    public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = ArchitectureChannels::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
 
-    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = ArchitectureChannels::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
 
-    public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
+    public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = ArchitectureChannels::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
 
-    /**
-     * The producer's options as well as the walk, because the walk now runs
-     * for either producer of the family (ADR 0030): "is there evidence" and
-     * "may this validator report" became two questions, and the five
-     * declaration verdicts belong to `architecture.layer-violation`, so they
-     * answer to its `enabled`.
-     */
     public function __construct(
         private readonly LayerEvidenceCollector $evidence,
-        private readonly LayerViolationOptions $options,
     ) {}
 
     public static function producerRuleName(): string
     {
-        return LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
+        return ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME;
     }
 
     /**
-     * Shared with {@see LayerViolationRule}, the rule this validator belongs
+     * Shared with {@see LayerDeclarationRule}, the rule this validator belongs
      * to: registry assembly refuses the two declaring different shapes under
      * one producer name.
      */
@@ -93,7 +86,9 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
 
         $declarations = [];
         foreach ($descriptions as $name => $description) {
-            $declarations[$name] = ChannelDeclaration::occurrence(SymbolLevel::Project)->describedAs($description);
+            $declarations[$name] = ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs($description)
+                ->selectedAs(ChannelSelectionRole::FilterExempt);
         }
 
         return $declarations;
@@ -121,10 +116,6 @@ final class LayerDeclarationValidator implements ConfigurationValidatorInterface
      */
     public function validate(AnalysisContext $context): array
     {
-        if (!$this->options->isEnabled()) {
-            return [];
-        }
-
         $evidence = $this->evidence->collect($context);
 
         if ($evidence === null) {

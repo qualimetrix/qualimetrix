@@ -18,8 +18,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\ConfigurationValidatorRegistry;
@@ -168,7 +168,7 @@ final class ChannelUniverseCoverageTest extends TestCase
             LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
             LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
         ] as $siblingCode) {
-            self::assertSame(LayerViolationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
+            self::assertSame(LayerDeclarationRule::NAME, $universe->producerOf($siblingCode), $siblingCode);
         }
 
         // One channel reporting at two levels: the level used to be a suffix
@@ -217,7 +217,7 @@ final class ChannelUniverseCoverageTest extends TestCase
         // shares no suffix relation with the channel.
         self::assertFalse($universe->hasRule('architecture'));
         self::assertSame(
-            LayerViolationRule::NAME,
+            LayerDeclarationRule::NAME,
             $universe->producerOf(LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME),
         );
     }

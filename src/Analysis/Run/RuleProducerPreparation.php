@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
@@ -53,7 +55,7 @@ final readonly class RuleProducerPreparation
         // alone. As a producer of its own it is not, and asking about one of
         // two left `--only-rule=architecture.unassigned-class` reaching an
         // unprepared policy. The list is the capability's, not the run's.
-        foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
+        foreach (ArchitectureChannels::PRODUCERS as $producerRuleName) {
             if ($this->producerGate->isEnabled($producerRuleName)) {
                 $enabled = true;
 

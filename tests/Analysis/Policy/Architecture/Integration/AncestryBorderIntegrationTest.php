@@ -12,8 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -93,7 +93,7 @@ final class AncestryBorderIntegrationTest extends TestCase
 
         $gap = array_values(array_filter(
             $findings,
-            static fn(Finding $finding): bool => $finding->ruleName === LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
+            static fn(Finding $finding): bool => $finding->ruleName === ArchitectureChannels::COVERAGE_DIAGNOSTIC_NAME,
         ));
         self::assertCount(1, $gap);
         self::assertStringContainsString('could not fully decide', $gap[0]->message);
@@ -357,7 +357,7 @@ final class AncestryBorderIntegrationTest extends TestCase
             static fn(Finding $finding): string => $finding->message,
             array_filter(
                 $findings,
-                static fn(Finding $finding): bool => $finding->ruleName === LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                static fn(Finding $finding): bool => $finding->ruleName === ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
             ),
         ));
     }

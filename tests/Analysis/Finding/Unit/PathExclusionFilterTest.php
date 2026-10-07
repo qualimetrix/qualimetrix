@@ -15,8 +15,8 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Pattern\PathMatcher;
@@ -213,7 +213,7 @@ final class PathExclusionFilterTest extends TestCase
     private static function declaredFileScope(): ChannelFileScope
     {
         return new ChannelFileScope([
-            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ArchitectureChannels::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
         ]);
     }
@@ -222,7 +222,7 @@ final class PathExclusionFilterTest extends TestCase
     private static function declaredProjectScopedChannelKeys(): array
     {
         return [
-            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...ArchitectureChannels::PROJECT_SCOPED_CHANNELS,
             ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
         ];
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Run\Unit;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -26,12 +27,15 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveSweepScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
@@ -113,7 +117,7 @@ final class RuleProducerPreparationTest extends TestCase
 
         $this->preparation(
             architecture: $architecture,
-            disabled: LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
+            disabled: ArchitectureChannels::PRODUCERS,
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -125,8 +129,9 @@ final class RuleProducerPreparationTest extends TestCase
      * @param list<string> $only
      */
     #[Test]
-    #[TestWith([[LayerPolicyPreparationInterface::PRODUCER_RULE_NAME]])]
-    #[TestWith([[LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME]])]
+    #[TestWith([[ArchitectureChannels::PRODUCER_RULE_NAME]])]
+    #[TestWith([[ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME]])]
+    #[TestWith([[ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME]])]
     public function itPreparesArchitecturePolicyForEitherOfItsProducersAlone(array $only): void
     {
         $graph = self::createStub(DependencyGraphInterface::class);
@@ -137,7 +142,7 @@ final class RuleProducerPreparationTest extends TestCase
         $this->preparation(
             architecture: $architecture,
             only: $only,
-            ruleOptions: [LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['mode' => 'warn']],
+            ruleOptions: [ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['mode' => 'warn']],
         )->prepareArchitecture($graph, [], self::createStub(ProfilerInterface::class));
     }
 
@@ -202,14 +207,16 @@ final class RuleProducerPreparationTest extends TestCase
      */
     #[Test]
     #[TestWith([[
-        LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false],
-        LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => false,
+        ArchitectureChannels::PRODUCER_RULE_NAME => ['enabled' => false],
+        ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => false,
+        ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME => false,
     ]])]
     #[TestWith([[
-        LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => false,
-        LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['enabled' => false],
+        ArchitectureChannels::PRODUCER_RULE_NAME => false,
+        ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => ['enabled' => false],
+        ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME => ['enabled' => false],
     ]])]
-    public function itSkipsArchitecturePreparationWhenBothProducersAreSwitchedOffByTheirOptions(array $ruleOptions): void
+    public function itSkipsArchitecturePreparationWhenAllThreeProducersAreSwitchedOffByTheirOptions(array $ruleOptions): void
     {
         $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
         $architecture->expects(self::never())->method('prepare');
@@ -225,15 +232,15 @@ final class RuleProducerPreparationTest extends TestCase
     }
 
     #[Test]
-    public function itResetsArchitecturePolicyWhenLayerViolationIsOffAndUnassignedClassIsMuted(): void
+    public function itPreparesArchitecturePolicyForDeclarationWhenTheOldProducersAreInactive(): void
     {
         $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
-        $architecture->expects(self::never())->method('prepare');
-        $architecture->expects(self::once())->method('reset');
+        $architecture->expects(self::once())->method('prepare');
+        $architecture->expects(self::never())->method('reset');
 
         $this->preparation(
             architecture: $architecture,
-            ruleOptions: [LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => ['enabled' => false]],
+            ruleOptions: [ArchitectureChannels::PRODUCER_RULE_NAME => ['enabled' => false]],
         )->prepareArchitecture(
             self::createStub(DependencyGraphInterface::class),
             [],
@@ -347,17 +354,19 @@ final class RuleProducerPreparationTest extends TestCase
         array $ruleOptions = [],
     ): RuleProducerPreparation {
         $metadata = [
-            new RuleMetadata(LayerPolicyPreparationInterface::PRODUCER_RULE_NAME, LayerViolationOptions::class, '', [], false),
-            new RuleMetadata(LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, UnassignedClassOptions::class, '', [], false),
+            new RuleMetadata(ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME, LayerDeclarationOptions::class, '', [], false),
+            new RuleMetadata(ArchitectureChannels::PRODUCER_RULE_NAME, LayerViolationOptions::class, '', [], false),
+            new RuleMetadata(ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, UnassignedClassOptions::class, '', [], false),
             new RuleMetadata(CircularDependencyPreparationInterface::PRODUCER_RULE_NAME, CircularDependencyOptions::class, '', [], false),
             new RuleMetadata('duplication.clone', CodeDuplicationOptions::class, '', [], false),
         ];
         $channelsByProducer = [
-            LayerPolicyPreparationInterface::PRODUCER_RULE_NAME => [
-                ...LayerViolationRule::channelDeclarations(),
+            ArchitectureChannels::PRODUCER_RULE_NAME => LayerViolationRule::channelDeclarations(),
+            ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME => [
+                ...LayerDeclarationRule::channelDeclarations(),
                 ...LayerDeclarationValidator::channelDeclarations(),
             ],
-            LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => UnassignedClassRule::channelDeclarations(),
+            ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME => UnassignedClassRule::channelDeclarations(),
             CircularDependencyPreparationInterface::PRODUCER_RULE_NAME => CircularDependencyRule::channelDeclarations(),
             'duplication.clone' => CodeDuplicationRule::channelDeclarations(),
         ];

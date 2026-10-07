@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation;
+namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 /**
  * What {@see LayerEvidenceCollector}'s walk over the analysed classes

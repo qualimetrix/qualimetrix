@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Governance\Channel;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
@@ -12,8 +13,8 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\JudgedMetrics;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -103,7 +104,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      *
      * An "emitting name" is a real rule's `NAME` constant, one of the five
      * `*_DIAGNOSTIC_NAME` constants {@see LayerDeclarationValidator} emits
-     * under, {@see LayerViolationRule::UNMATCHED_EXCLUDE_NAME}, one of the
+     * under, {@see ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME}, one of the
      * three {@see UnboundSuppressionOptions} channel constants, the LCOM
      * method-exclusion diagnostic, or one of the four inline-directive
      * diagnostic names — these producers all emit under names other
@@ -290,8 +291,8 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
         $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
-        $names[] = LayerViolationRule::UNMATCHED_EXCLUDE_NAME;
-        $names[] = LayerViolationRule::DOUBTED_ASSIGNMENT_NAME;
+        $names[] = ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
+        $names[] = ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
 
         $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;
@@ -350,11 +351,17 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             $acceptabilitySpec = null;
             $noWarningBoundary = false;
             $followsAddressedRule = false;
+            $filterExempt = false;
 
             foreach ($optional as $token) {
                 if ($token === 'no-warning-boundary') {
                     self::assertFalse($noWarningBoundary, 'Duplicate no-warning-boundary token for ' . $channelKey);
                     $noWarningBoundary = true;
+                    continue;
+                }
+                if ($token === 'filter-exempt') {
+                    self::assertFalse($filterExempt, 'Duplicate filter-exempt token for ' . $channelKey);
+                    $filterExempt = true;
                     continue;
                 }
                 if ($token === 'follows-addressed-rule') {
@@ -383,6 +390,9 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             }
             if ($followsAddressedRule) {
                 $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::FollowsAddressedRule);
+            }
+            if ($filterExempt) {
+                $declaration = $declaration->selectedAs(\Qualimetrix\Analysis\Finding\Contract\ChannelSelectionRole::FilterExempt);
             }
             $declarations[$channelKey] = $declaration;
         }

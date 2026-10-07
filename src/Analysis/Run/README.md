@@ -318,7 +318,9 @@ The mandatory `ProjectScopeMeasurement`, captured universe, authored paths
 and whole-project verdict remain the authority. Selection does not manufacture
 complete coverage or turn a partial run into a project-wide absence statement.
 DoD preserves reset/prepare ordering, independent either-producer participants
-and zero inspection for an inactive producer.
+and zero inspection for an inactive producer. Architecture preparation consults
+all three `ArchitectureChannels::PRODUCERS`: forbidden edges, declaration
+diagnostics and unassigned classes; each producer retains its own gate.
 
 ## Locality
 

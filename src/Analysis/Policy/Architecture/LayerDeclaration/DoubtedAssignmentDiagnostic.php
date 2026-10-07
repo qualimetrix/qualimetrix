@@ -2,18 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * Builds `architecture.doubted-assignment`, the third channel of
- * {@see LayerViolationRule}: the symbols whose layer the run could not fully
- * decide, and the layers that could not answer about them.
+ * Builds `architecture.doubted-assignment` for {@see LayerDeclarationRule}:
+ * the symbols whose layer the run could not fully decide, and the layers that
+ * could not answer about them.
  *
  * It is the rule's, not {@see LayerDeclarationValidator}'s: a doubt is
  * information about how far the layer verdicts can be trusted, reported at
@@ -25,7 +27,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Extracted for the reason {@see UnmatchedExcludeDiagnostic} was: the rule
  * owns the decision to report, and a finding's own text is a separate subject.
  *
- * @internal Consumed by {@see LayerViolationRule}.
+ * @internal Consumed by {@see LayerDeclarationRule}.
  */
 final class DoubtedAssignmentDiagnostic
 {

@@ -26,9 +26,9 @@ final class RegisteredRules
 {
     /**
      * A count of `RuleRegistryInterface::getClasses()`. `bin/qmx rules`
-     * reports 55, because it counts producers rather than classes.
+     * reports 56, because it counts producers rather than classes.
      */
-    public const int COUNT = 49;
+    public const int COUNT = 50;
 
     /** @return list<class-string> */
     public static function classes(): array

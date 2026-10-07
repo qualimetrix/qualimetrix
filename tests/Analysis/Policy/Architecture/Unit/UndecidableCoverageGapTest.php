@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,16 +21,16 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DoubtedAssignmentDiagnostic;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DoubtedAssignmentDiagnostic;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -218,7 +219,7 @@ final class UndecidableCoverageGapTest extends TestCase
             'Vendor\\Lib\\Middle',
         );
 
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertSame(Severity::Info, $doubt->severity);
         self::assertStringContainsString('1 assigned symbol(s) rest on a layer the run could not fully decide', $doubt->message);
@@ -246,7 +247,7 @@ final class UndecidableCoverageGapTest extends TestCase
             'Vendor\\Lib\\Middle',
         );
 
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString('Vendor\\Lib\\Middle', $doubt->message);
         self::assertStringContainsString('1 outside the analysed paths', $doubt->message);
@@ -279,7 +280,7 @@ final class UndecidableCoverageGapTest extends TestCase
             CoverageMode::Ignore,
         );
 
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertSame(Severity::Info, $doubt->severity);
         self::assertNull(self::findingOn($findings, LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME));
@@ -307,7 +308,7 @@ final class UndecidableCoverageGapTest extends TestCase
             'Vendor\\Lib\\Middle',
         );
 
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString('"models" (2 assigned in doubt)', $doubt->message);
         self::assertStringContainsString('"controllers" (1 assigned in doubt)', $doubt->message);
@@ -329,7 +330,7 @@ final class UndecidableCoverageGapTest extends TestCase
         );
 
         self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString('2 symbol(s) are in no layer because a layer could not answer about them', $doubt->message);
         self::assertStringContainsString('"controllers" (2 in no layer)', $doubt->message);
@@ -401,7 +402,7 @@ final class UndecidableCoverageGapTest extends TestCase
         self::assertStringContainsString('could not answer the criteria about 1 analysed class(es)', $unreachable[0]->message);
         self::assertStringContainsString('None of the 1 type(s) the criteria name (' . $typeName . ')', $unreachable[0]->message);
         self::assertStringContainsString('either a name is mistyped, or the type is reachable only through code', $unreachable[0]->message);
-        self::assertNotNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
+        self::assertNotNull(self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
     }
 
     /**
@@ -435,7 +436,7 @@ final class UndecidableCoverageGapTest extends TestCase
         );
 
         self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString('"handlers"', $doubt->message);
     }
@@ -461,7 +462,7 @@ final class UndecidableCoverageGapTest extends TestCase
 
         self::assertNull(self::findingOn($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
         self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        self::assertNotNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
+        self::assertNotNull(self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -483,7 +484,7 @@ final class UndecidableCoverageGapTest extends TestCase
 
         self::assertNotNull(self::findingOn($findings, LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
         self::assertNotNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        self::assertNull(self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME));
+        self::assertNull(self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -527,7 +528,7 @@ final class UndecidableCoverageGapTest extends TestCase
             'Vendor\\Lib\\Middle',
         );
 
-        self::assertNull(self::findingOn($findings, LayerViolationRule::UNMATCHED_EXCLUDE_NAME));
+        self::assertNull(self::findingOn($findings, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME));
     }
 
     #[Test]
@@ -545,7 +546,7 @@ final class UndecidableCoverageGapTest extends TestCase
             null,
         );
 
-        $inert = self::findingOn($findings, LayerViolationRule::UNMATCHED_EXCLUDE_NAME);
+        $inert = self::findingOn($findings, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME);
         self::assertNotNull($inert);
         self::assertStringContainsString('removed no class', $inert->message);
     }
@@ -623,7 +624,7 @@ final class UndecidableCoverageGapTest extends TestCase
         );
 
         self::assertNull(self::findingOn($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString(
             'Layers that would own some of them if an unanswered "exclude" removed them: "repos" (1 assigned in doubt)',
@@ -662,7 +663,7 @@ final class UndecidableCoverageGapTest extends TestCase
             $unreachable[0]->message,
         );
         self::assertStringNotContainsString('could not answer the criteria', $unreachable[0]->message);
-        $doubt = self::findingOn($findings, LayerViolationRule::DOUBTED_ASSIGNMENT_NAME);
+        $doubt = self::findingOn($findings, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
         self::assertNotNull($doubt);
         self::assertStringContainsString('removed them: "vendspecial" (1 assigned in doubt)', $doubt->message);
     }

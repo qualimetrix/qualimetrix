@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
+namespace Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration;
 
 use Qualimetrix\Analysis\Finding\Contract\Finding;
+
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -31,7 +33,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  *   fall outside every declared layer, seen through the mode that also
  *   classifies out-of-tree namespaces. That breadth is what makes the number
  *   unusable as a gate on one's own code — see `architecture.unassigned-class`
- *   in {@see UnassignedClassSummary} for the narrower one.
+ *   in {@see \Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary} for the narrower one.
  * - `architecture.unreachable-layer` — a declared layer that was ASSIGNED
  *   nothing and could not have been: no class and no dependency-edge end
  *   landed in it, and no analysed class would once the run answered what it
@@ -48,10 +50,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * sentences from, and is built by {@see DoubtedAssignmentDiagnostic}: it is
  * the rule's channel, not a configuration error.
  *
- * Extracted from {@see LayerViolationRule}: the rule carries seven channels,
- * and the per-edge policy decision is the only one that needs the rule's own
- * options and collaborators. Keeping the declaration diagnostics here is what
- * lets it stay within its coupling ceiling.
+ * The validator owns when these diagnostics run; this builder owns their
+ * declaration-specific predicates and finding text.
  *
  * @internal Consumed by {@see LayerDeclarationValidator}.
  */
@@ -117,8 +117,8 @@ final class DeclaredLayerReachability
             location: Location::none(),
             subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
-            ruleName: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
-            code: LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
+            ruleName: ArchitectureChannels::COVERAGE_DIAGNOSTIC_NAME,
+            code: ArchitectureChannels::COVERAGE_DIAGNOSTIC_NAME,
             message: \sprintf(
                 'Architecture coverage-gap: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.%s',
                 $state['sourceEdges'],
@@ -244,7 +244,7 @@ final class DeclaredLayerReachability
      * criteria name is one the run met. "Matches no class" and "shadowed" are
      * conclusions the run did not reach there, and this channel fails the
      * run; `architecture.doubted-assignment` names the layer instead.
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::reachedCounts()} decides which contests count.
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence::reachedCounts()} decides which contests count.
      *
      * A contest that does not count is said in the finding rather than
      * dropped, in the words that are true of it: a layer that could not
@@ -256,10 +256,10 @@ final class DeclaredLayerReachability
      * @param list<LayerDefinition> $definitions In declaration order.
      * @param array<string, int> $reachedCounts Layer name → number of symbols assigned to the
      *                                          layer or analysed classes it could still own,
-     *                                          from {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::reachedCounts()}.
+     *                                          from {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence::reachedCounts()}.
      * @param array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool}> $contests
      *                                                                                                                                                                                     Every declared layer → what it could still own, from
-     *                                                                                                                                                                                     {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence::contests()}.
+     *                                                                                                                                                                                     {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence::contests()}.
      *
      * @return list<Finding>
      */
@@ -274,7 +274,7 @@ final class DeclaredLayerReachability
             }
 
             $findings[] = self::projectDiagnostic(
-                LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                     $layerName,
@@ -346,7 +346,7 @@ final class DeclaredLayerReachability
      * **The number reported is how many distinct symbols the layer's criteria
      * matched** — a class counted once however many dependency edges it sits
      * at an end of. The caller counts a set for exactly that reason
-     * ({@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector::tallyMatchedEnd()}): tallying every match
+     * ({@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector::tallyMatchedEnd()}): tallying every match
      * event instead reported edge multiplicity, so two classes joined by four
      * edges read as eight and the number answered no question anyone asks.
      *
@@ -370,7 +370,7 @@ final class DeclaredLayerReachability
             }
 
             $findings[] = self::projectDiagnostic(
-                LayerPolicyPreparationInterface::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
+                ArchitectureChannels::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Layer "%s" is declared "pending: true" — code not written yet — but its criteria (%s) matched %d distinct symbol(s) during analysis (each counted once, whether seen as an analysed declaration or as an end of a dependency edge). A match counts even when a layer declared earlier won the assignment, so the layer may own nothing while the code it describes already exists. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                     $layerName,
@@ -413,7 +413,7 @@ final class DeclaredLayerReachability
 
         foreach ($emptyTemplateNames as $template) {
             $findings[] = self::projectDiagnostic(
-                LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+                ArchitectureChannels::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
                 \sprintf(
                     'Template layer "%s" expanded to zero concrete layers — no class in the analysed codebase '
                     . 'matched the template\'s criteria. Common causes: (1) a typo in the template name or '
@@ -434,7 +434,7 @@ final class DeclaredLayerReachability
      * All three diagnostics judge the declaration as a whole, so they carry
      * the project subject and no location — there is no single line to point
      * at, and pointing at one would make the finding look file-scoped when
-     * {@see LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS} says it is not.
+     * {@see ArchitectureChannels::PROJECT_SCOPED_CHANNELS} says it is not.
      */
     private static function projectDiagnostic(string $channelName, string $message, string $recommendation): Finding
     {
