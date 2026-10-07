@@ -54,6 +54,26 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    public function itCapturesDetailedTextThroughTheExistingTextFormat(): void
+    {
+        $tree = SyntheticTree::clean();
+        $tree['candidateAnswers']['case:alpha|format:text-detail'] = ['env' => true];
+        $root = SyntheticTree::create($tree);
+        $temporary = Fs::temporaryDirectory('detailed-text-capture-test-');
+        try {
+            $corpus = Corpus::load($root);
+            $plan = CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate'));
+            $capture = (new TreeRun($root, $temporary, 'candidate', RenameMaps::fromPairs([]), false, $plan, DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+            $document = json_decode($capture->artifacts['case:alpha|format:text-detail'], true, 512, \JSON_THROW_ON_ERROR);
+            self::assertIsArray($document);
+            self::assertSame(['-f', 'text', '--detail=all'], \array_slice($document['argv'], -3));
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
     public function itSharesLiveCaptureRolesAndReleasesTheirRun(): void
     {
         $root = SyntheticTree::create(SyntheticTree::clean());

@@ -47,7 +47,7 @@ final class ProjectScopePublicationTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function noticeFormats(): iterable
     {
-        foreach (['sarif', 'github', 'html', 'text', 'text-verbose', 'summary', 'health'] as $format) {
+        foreach (['sarif', 'github', 'html', 'text', 'summary', 'health'] as $format) {
             yield $format => [$format];
         }
     }
@@ -260,7 +260,7 @@ final class ProjectScopePublicationTest extends TestCase
         /** @var FormatterRegistryInterface $registry */
         $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
 
-        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: '/project'));
+        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: '/project'))->body;
     }
 
     /** @return array<mixed> */

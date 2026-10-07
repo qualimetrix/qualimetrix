@@ -7,11 +7,12 @@ namespace QmxFindingGate;
 /** Finding lines keep their location and message; a parenthesis inside a message is never stripped. */
 final class ProseRecords
 {
-    public const array SURFACES = ['format:summary', 'format:text', 'format:text-verbose', 'format:github', 'show-suppressed'];
+    public const array SURFACES = ['format:summary', 'format:text', 'format:text-detail', 'format:text-verbose', 'format:github', 'show-suppressed'];
 
     public const array FIELDS = [
         'format:summary' => ['code', 'file', 'line', 'message', 'severity', 'rank', 'debt', 'score'],
         'format:text' => ['code', 'file', 'line', 'message', 'severity', 'symbol'],
+        'format:text-detail' => ['code', 'file', 'line', 'message', 'severity', 'symbol'],
         'format:text-verbose' => ['code', 'file', 'line', 'message', 'severity', 'symbol'],
         'format:github' => ['code', 'file', 'line', 'message', 'severity'],
         'show-suppressed' => ['code', 'file', 'line', 'message', 'severity', 'symbol'],

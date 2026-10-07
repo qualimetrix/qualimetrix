@@ -9,7 +9,9 @@ use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -33,7 +35,7 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
         private readonly HintRenderer $hintRenderer,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $color = new AnsiColor($context->useColor);
         $terminalWidth = $context->terminalWidth > 0 ? $context->terminalWidth : self::DEFAULT_TERMINAL_WIDTH;
@@ -62,7 +64,12 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
         }
 
-        return implode("\n", $lines) . "\n";
+        return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string

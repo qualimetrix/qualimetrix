@@ -61,7 +61,7 @@ final class SarifFormatterTest extends TestCase
             metricValue: 31,
             recommendation: 'Recommended repair',
         )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
-        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext());
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext())->body;
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
     }
@@ -81,7 +81,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
     }
@@ -103,7 +103,7 @@ final class SarifFormatterTest extends TestCase
         $data = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings([$make(101), $make(202)])->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         $results = $data['runs'][0]['results'];
         self::assertNotSame(
@@ -122,7 +122,7 @@ final class SarifFormatterTest extends TestCase
         $withUnrelated = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings([$make(101), $unrelated])->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(
             $results[0]['partialFingerprints']['primaryLocationLineHash'],
@@ -144,7 +144,7 @@ final class SarifFormatterTest extends TestCase
         $data = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings($findings)->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
         $fingerprints = [];
         foreach ($data['runs'][0]['results'] as $result) {
             $fingerprints[$result['message']['text']] = $result['partialFingerprints']['primaryLocationLineHash'];
@@ -167,7 +167,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Verify SARIF structure
@@ -217,7 +217,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -285,7 +285,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -326,7 +326,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -359,7 +359,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $results = $data['runs'][0]['results'];
@@ -386,7 +386,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -421,7 +421,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $rules = $data['runs'][0]['tool']['driver']['rules'];
@@ -461,7 +461,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -504,7 +504,7 @@ final class SarifFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Already-relative path should remain unchanged
@@ -529,7 +529,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -555,7 +555,7 @@ final class SarifFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -584,7 +584,7 @@ final class SarifFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(basePath: '/Users/dev/My Project');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $run = $data['runs'][0];
@@ -628,7 +628,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $rules = $data['runs'][0]['tool']['driver']['rules'];
@@ -664,7 +664,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $rule = $data['runs'][0]['tool']['driver']['rules'][0];
@@ -696,7 +696,7 @@ final class SarifFormatterTest extends TestCase
             ->build();
 
         $data = json_decode(
-            $this->formatter->format($report, new FormatterContext(basePath: '/Users/dev/My Project')),
+            $this->formatter->format($report, new FormatterContext(basePath: '/Users/dev/My Project'))->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -729,7 +729,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $data = json_decode($this->formatter->format($report, new FormatterContext(basePath: '/p')), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format($report, new FormatterContext(basePath: '/p'))->body, true, 512, \JSON_THROW_ON_ERROR);
         $related = $data['runs'][0]['results'][0]['relatedLocations'][0];
 
         self::assertArrayNotHasKey('physicalLocation', $related);
@@ -759,7 +759,7 @@ final class SarifFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -800,7 +800,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -827,7 +827,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -863,7 +863,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $result = $data['runs'][0]['results'][0];
@@ -906,7 +906,7 @@ final class SarifFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $rules = $data['runs'][0]['tool']['driver']['rules'];

@@ -18,7 +18,7 @@ use Qualimetrix\Reporting\Report;
  */
 final class GitLabCodeQualityFormatter implements FormatterInterface
 {
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $issues = [];
 
@@ -54,17 +54,29 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             ];
         }
 
-        return PublishedUtf8::encodeJson(
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJson(
             $issues,
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
-            static fn(array $issues, int $repairs): array => [...$issues, [
-                'description' => PublishedUtf8::describe($repairs),
-                'check_name' => PublishedUtf8::REPAIR_CHECK,
-                'fingerprint' => md5(PublishedUtf8::REPAIR_CHECK),
-                'severity' => 'info',
-                'location' => ['path' => '_project', 'lines' => ['begin' => 1]],
-            ]],
+            static function (array $issues, int $count) use (&$repairs): array {
+                $repairs = $count;
+
+                return [...$issues, [
+                    'description' => PublishedUtf8::describe($repairs),
+                    'check_name' => PublishedUtf8::REPAIR_CHECK,
+                    'fingerprint' => md5(PublishedUtf8::REPAIR_CHECK),
+                    'severity' => 'info',
+                    'location' => ['path' => '_project', 'lines' => ['begin' => 1]],
+                ]];
+            },
         );
+
+        return new FormattedReport($body, $repairs);
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string

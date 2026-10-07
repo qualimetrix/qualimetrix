@@ -8,7 +8,9 @@ use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\Formatter\PublishedFinding;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
@@ -29,7 +31,7 @@ final class SarifFormatter implements FormatterInterface
         private readonly SarifRuleCollector $ruleCollector,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $rules = $this->ruleCollector->collectRules($report->findings);
         $repairs = 0;
@@ -95,10 +97,11 @@ final class SarifFormatter implements FormatterInterface
             'runs' => [$run],
         ];
 
-        return PublishedUtf8::encodeJson(
+        $body = PublishedUtf8::encodeJson(
             $sarif,
             \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
-            static function (array $sarif, int $repairs): array {
+            static function (array $sarif, int $count) use (&$repairs): array {
+                $repairs = $count;
                 $sarif['runs'][0] = self::withNotification(
                     $sarif['runs'][0],
                     'warning',
@@ -110,6 +113,13 @@ final class SarifFormatter implements FormatterInterface
             },
             $repairs,
         );
+
+        return new FormattedReport($body, $repairs);
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string

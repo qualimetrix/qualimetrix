@@ -985,7 +985,7 @@ final class RankingCheckTest extends TestCase
         self::publish($tree, 'candidateAnswers', $candidateRecords, $candidateIssues, 0);
         $candidateReadable = $tree;
         self::completeReadableAnswers($candidateReadable, $candidateRecords);
-        foreach (['format:gitlab', 'format:checkstyle', 'format:text', 'format:text-verbose', 'show-suppressed', 'format:github'] as $surface) {
+        foreach (['format:gitlab', 'format:checkstyle', 'format:text', 'format:text-detail', 'show-suppressed', 'format:github'] as $surface) {
             $tree['candidateAnswers']['case:alpha|' . $surface] = $candidateReadable['answers']['case:alpha|' . $surface];
         }
         $tree['candidateDeclarations'][DeclaredFields::INDEX] = Tsv::render(DeclaredFields::COLUMNS, [
@@ -1296,7 +1296,7 @@ final class RankingCheckTest extends TestCase
         }
         $tree['answers']['case:alpha|format:gitlab'] = ['stdout' => ValueCheck::value($gitlab)];
         $tree['answers']['case:alpha|format:checkstyle'] = ['stdout' => $checkstyle . '</checkstyle>'];
-        foreach (['format:text', 'format:text-verbose', 'show-suppressed'] as $surface) {
+        foreach (['format:text', 'format:text-detail', 'show-suppressed'] as $surface) {
             $tree['answers']['case:alpha|' . $surface] = ['stdout' => $prose];
         }
         $tree['answers']['case:alpha|format:github'] = ['stdout' => $github];

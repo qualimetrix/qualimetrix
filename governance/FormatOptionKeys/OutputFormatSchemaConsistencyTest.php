@@ -548,9 +548,6 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
      * comparison table. Taking it from a list inside this test instead would
      * mean a new format could be added, documented, and left unguarded without
      * anything noticing.
-     *
-     * `text-verbose` is the one deliberate difference: it is deprecated and
-     * hidden from the product's listing while the page still documents it.
      */
     #[Test]
     public function itCoversEveryFormatThePageCallsMachineReadable(): void
@@ -560,7 +557,7 @@ final class OutputFormatSchemaConsistencyTest extends TestCase
 
         self::assertSame(
             $accepted,
-            array_values(array_diff($tabled, ['text-verbose'])),
+            $tabled,
             'The comparison table and the formats the product accepts have diverged.',
         );
 

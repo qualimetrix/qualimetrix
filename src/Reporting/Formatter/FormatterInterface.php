@@ -11,9 +11,11 @@ use Qualimetrix\Reporting\Report;
 interface FormatterInterface
 {
     /**
-     * Formats the report to a string for output.
+     * Formats the report body and its publication diagnostics.
      */
-    public function format(Report $report, FormatterContext $context): string;
+    public function format(Report $report, FormatterContext $context): FormattedReport;
+
+    public function publicationKind(): PublicationKind;
 
     /**
      * Returns unique formatter name (used in --format=NAME).

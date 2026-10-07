@@ -46,6 +46,7 @@ use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\DrillDown\FindingFilter;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
@@ -102,7 +103,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->expects(self::once())->method('format')->willReturn('rendered');
+        $formatter->expects(self::once())->method('format')->willReturn(new FormattedReport('rendered'));
 
         $registry = $this->createMock(FormatterRegistryInterface::class);
         $registry->expects(self::once())->method('get')->with('json')->willReturn($formatter);
@@ -128,7 +129,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('');
+        $formatter->method('format')->willReturn(new FormattedReport(''));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
         $finding = $this->finding(Severity::Warning);
@@ -152,7 +153,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('');
+        $formatter->method('format')->willReturn(new FormattedReport(''));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
         $finding = $this->finding(Severity::Warning);
@@ -175,14 +176,14 @@ final class ResultPresenterTest extends TestCase
         $formatter = $this->createMock(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
         $formatter->expects(self::once())->method('format')->willReturnCallback(
-            static function (Report $report): string {
+            static function (Report $report): FormattedReport {
                 self::assertNotNull($report->coverage);
                 self::assertSame(
                     'Parse error in src/Broken.php; dependency /external/project/shared.php',
                     $report->coverage->failures[0]->message,
                 );
 
-                return '';
+                return new FormattedReport('');
             },
         );
         $registry = self::createStub(FormatterRegistryInterface::class);
@@ -315,7 +316,7 @@ final class ResultPresenterTest extends TestCase
                 $stub = new \ReflectionMethod(\PHPUnit\Framework\TestCase::class, 'createStub');
                 $formatter = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterInterface::class);
                 $formatter->method('getDefaultGroupBy')->willReturn(\Qualimetrix\Reporting\GroupBy::None);
-                $formatter->method('format')->willReturn('rendered');
+                $formatter->method('format')->willReturn(new \Qualimetrix\Reporting\Formatter\FormattedReport('rendered'));
                 $registry = $stub->invoke(null, \Qualimetrix\Reporting\Formatter\FormatterRegistryInterface::class);
                 $registry->method('get')->willReturn($formatter);
                 $method = static fn (string $name, ...$args) => (new \ReflectionMethod($fixture, $name))->invoke($fixture, ...$args);
@@ -546,7 +547,7 @@ final class ResultPresenterTest extends TestCase
     {
         $formatter = self::createStub(FormatterInterface::class);
         $formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
-        $formatter->method('format')->willReturn('No violations found.');
+        $formatter->method('format')->willReturn(new FormattedReport('No violations found.'));
         $registry = self::createStub(FormatterRegistryInterface::class);
         $registry->method('get')->willReturn($formatter);
 

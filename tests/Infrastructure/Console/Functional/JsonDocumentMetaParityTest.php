@@ -140,7 +140,7 @@ final class JsonDocumentMetaParityTest extends TestCase
         \assert($registry instanceof FormatterRegistryInterface);
 
         $document = json_decode(
-            $registry->get('json')->format(ReportBuilder::create()->build(), new FormatterContext()),
+            $registry->get('json')->format(ReportBuilder::create()->build(), new FormatterContext())->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,

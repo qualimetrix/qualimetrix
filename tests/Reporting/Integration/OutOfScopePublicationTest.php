@@ -212,7 +212,7 @@ final class OutOfScopePublicationTest extends TestCase
             useColor: false,
             basePath: '/project',
             namespace: $outOfScope === null ? null : NamespacePatternStub::subtree('App'),
-        ));
+        ))->body;
     }
 
     private static function finding(): Finding

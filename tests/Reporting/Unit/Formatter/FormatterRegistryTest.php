@@ -9,8 +9,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistry;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -116,7 +118,7 @@ final class FormatterRegistryTest extends TestCase
         $formatter = $registry->get('text');
         $report = new Report([], 0, 0, 0.0, 0, 0);
 
-        self::assertSame('second', $formatter->format($report, new FormatterContext()));
+        self::assertSame('second', $formatter->format($report, new FormatterContext())->body);
     }
 
     #[Test]
@@ -139,15 +141,6 @@ final class FormatterRegistryTest extends TestCase
         self::assertSame(['rank-by', 'top', 'violations'], $registry->declaredFormatOptionKeys());
     }
 
-    #[Test]
-    public function itDeclaresKeysOfFormattersHiddenFromListings(): void
-    {
-        $registry = new FormatterRegistry([$this->createKeyDeclaringFormatter('text-verbose', ['top'])]);
-
-        self::assertSame([], $registry->getAvailableNames());
-        self::assertSame(['top'], $registry->declaredFormatOptionKeys());
-    }
-
     /** @param list<string> $keys */
     private function createKeyDeclaringFormatter(string $name, array $keys): FormatterInterface
     {
@@ -158,9 +151,14 @@ final class FormatterRegistryTest extends TestCase
                 private readonly array $keys,
             ) {}
 
-            public function format(Report $report, FormatterContext $context): string
+            public function format(Report $report, FormatterContext $context): FormattedReport
             {
-                return '';
+                return new FormattedReport('');
+            }
+
+            public function publicationKind(): PublicationKind
+            {
+                return PublicationKind::Prose;
             }
 
             public function getName(): string
@@ -188,9 +186,14 @@ final class FormatterRegistryTest extends TestCase
                 private readonly string $output,
             ) {}
 
-            public function format(Report $report, FormatterContext $context): string
+            public function format(Report $report, FormatterContext $context): FormattedReport
             {
-                return $this->output;
+                return new FormattedReport($this->output);
+            }
+
+            public function publicationKind(): PublicationKind
+            {
+                return PublicationKind::Prose;
             }
 
             public function getName(): string

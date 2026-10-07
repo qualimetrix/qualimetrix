@@ -21,7 +21,7 @@ final class CoverageProjectionFormatterTest extends TestCase
     /** @return iterable<string, array{string, ReportCoverage}> */
     public static function matrix(): iterable
     {
-        $formats = ['text', 'text-verbose', 'summary', 'health', 'json', 'metrics', 'sarif', 'gitlab', 'checkstyle', 'github', 'html', 'suppressed'];
+        $formats = ['text', 'summary', 'health', 'json', 'metrics', 'sarif', 'gitlab', 'checkstyle', 'github', 'html', 'suppressed'];
         $states = [
             'empty' => new ReportCoverage(0, 0, 0, 0),
             'complete' => new ReportCoverage(1, 1, 0, 0),
@@ -53,7 +53,7 @@ final class CoverageProjectionFormatterTest extends TestCase
                 ->suppressionComposition(new SuppressionComposition([]))
                 ->build(),
             new FormatterContext(useColor: false),
-        );
+        )->body;
 
         match ($format) {
             'json', 'metrics', 'suppressed' => self::assertJsonCoverage($output, $coverage),
@@ -99,7 +99,7 @@ final class CoverageProjectionFormatterTest extends TestCase
                 ->suppressionComposition(new SuppressionComposition([]))
                 ->build(),
             new FormatterContext(useColor: false),
-        );
+        )->body;
 
         self::assertStringContainsString(
             'Analysis incomplete: 1 of 2 discovered entries failed (1 ' . $kind . '); policy results are not authoritative.',

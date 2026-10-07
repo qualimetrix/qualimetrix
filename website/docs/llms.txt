@@ -42,7 +42,7 @@ vendor/bin/qmx check src/ --preset=strict              # built-in preset (also: 
 vendor/bin/qmx check src/ --fail-on=warning            # exit code threshold for CI (none|warning|error, default: error)
 ```
 
-Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why), `text-verbose` (deprecated, use `text --detail`).
+Output formats: `summary` (default), `text`, `json`, `checkstyle`, `sarif`, `gitlab`, `github`, `metrics`, `health` (text table), `html` (interactive treemap), `suppressed` (machine-readable composition of what was suppressed and why).
 
 Presets: `strict` (greenfield, tight thresholds), `legacy` (relaxed thresholds), `ci`. Composable: `--preset=strict,ci`.
 

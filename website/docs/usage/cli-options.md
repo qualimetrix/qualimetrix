@@ -190,7 +190,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
+Available formats: `summary`, `text`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -258,7 +258,7 @@ unwritable stdout sends its refusal to stderr.
 Group violations in the output. Default depends on the formatter.
 
 ```bash
-bin/qmx check src/ --format=text-verbose --group-by=rule
+bin/qmx check src/ --format=text --detail=all --group-by=rule
 ```
 
 Available values: `none`, `file`, `rule`, `severity`, `class`, `namespace`.

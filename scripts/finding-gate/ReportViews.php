@@ -13,7 +13,7 @@ final class ReportViews
         'check:baseline', 'check:baseline-source', 'check:output:file', 'check:parallel', 'directives',
         'format:checkstyle', 'format:github', 'format:gitlab', 'format:html', 'format:json',
         'format:metrics', 'format:sarif', 'format:summary', 'format:suppressed', 'format:text',
-        'format:text-verbose', 'show-suppressed',
+        'format:text-detail', 'format:text-verbose', 'show-suppressed',
     ];
 
     public static function recordBearingSurface(string $surface): bool

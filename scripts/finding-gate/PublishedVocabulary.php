@@ -146,7 +146,8 @@ final class PublishedVocabulary
     public const UNREADABLE = [
         'summary' => 'prints the message as prose after a bare channel name',
         'text' => 'prints the message as prose after a bare channel name',
-        'text-verbose' => 'prints the message as prose after a bare channel name',
+        'text-detail' => 'prints the message as prose after a bare channel name',
+        'text-verbose' => 'withdrawn reference surface; prints the message as prose after a bare channel name',
         'github' => 'prints the message as prose after "::"',
         'metrics' => 'publishes measured metrics, not finding records',
         'health' => 'publishes health scores, not finding records',

@@ -81,7 +81,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('<!DOCTYPE html>', $output);
         self::assertStringContainsString('<html lang="en">', $output);
@@ -97,7 +97,7 @@ final class HtmlFormatterTest extends TestCase
         ]);
         $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(1)->coverage($coverage)->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString(
             'data-qmx-coverage="incomplete"',
@@ -119,7 +119,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // CSS should be inlined (no __CSS__ placeholder)
         self::assertStringNotContainsString('__CSS__', $output);
@@ -135,7 +135,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // JS should be inlined (no placeholders)
         self::assertStringNotContainsString('__D3_JS__', $output);
@@ -151,7 +151,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.3)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // JSON data should be embedded (no __DATA__ placeholder)
         self::assertStringNotContainsString('__DATA__', $output);
@@ -169,7 +169,7 @@ final class HtmlFormatterTest extends TestCase
     {
         $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(0)->duration(0.1)->build();
 
-        $output = $this->formatter->format($report, new FormatterContext(options: ['project-name' => '__APP_JS__ and __D3_JS__']));
+        $output = $this->formatter->format($report, new FormatterContext(options: ['project-name' => '__APP_JS__ and __D3_JS__']))->body;
 
         self::assertSame('__APP_JS__ and __D3_JS__', self::payload($output)['project']['name']);
     }
@@ -186,9 +186,9 @@ final class HtmlFormatterTest extends TestCase
         try {
             $report = ReportBuilder::create()->filesAnalyzed(1)->filesSkipped(0)->duration(0.1)->build();
 
-            $named = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root)));
-            $unnamed = self::payload($this->formatter->format($report, new FormatterContext(basePath: $bare)));
-            $explicit = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root, options: ['project-name' => 'Chosen'])));
+            $named = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root))->body);
+            $unnamed = self::payload($this->formatter->format($report, new FormatterContext(basePath: $bare))->body);
+            $explicit = self::payload($this->formatter->format($report, new FormatterContext(basePath: $root, options: ['project-name' => 'Chosen']))->body);
         } finally {
             unlink($root . '/composer.json');
             rmdir($bare);
@@ -219,7 +219,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // The project name "<project>" uses angle brackets, so JSON_HEX_TAG
         // must escape them. The literal string "<project>" should NOT appear
@@ -238,7 +238,7 @@ final class HtmlFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(scopedReporting: true);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('"scopedReporting":true', $output);
     }
@@ -252,7 +252,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.0)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // Should produce valid HTML with minimal data
         self::assertStringContainsString('<!DOCTYPE html>', $output);
@@ -268,7 +268,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('"hints"', $output);
         self::assertStringContainsString('"metricHints"', $output);
@@ -292,7 +292,7 @@ final class HtmlFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertStringContainsString('id="report-footer"', $output);
     }

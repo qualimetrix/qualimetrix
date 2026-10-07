@@ -399,6 +399,7 @@ final class SyntheticTree
         $answers[Surfaces::key($scope, 'format:checkstyle')] = ['stdout' => $checkstyle . '</checkstyle>'];
         $answers[Surfaces::key($scope, 'format:text')] = ['stdout' => $prose === '' ? "No findings\n" : $prose];
         $answers[Surfaces::key($scope, 'format:github')] = ['stdout' => $github === '' ? "No findings\n" : $github];
+        $answers[Surfaces::key($scope, 'format:text-detail')] = $answers[Surfaces::key($scope, 'format:text')];
         $answers[Surfaces::key($scope, 'format:text-verbose')] = $answers[Surfaces::key($scope, 'format:text')];
         $answers[Surfaces::key($scope, 'format:suppressed')] = ['stdout' => self::json(['suppressed' => [], 'byMechanism' => [], 'neverMatched' => []])];
         $answers[Surfaces::key($scope, 'show-suppressed')] = $answers[Surfaces::key($scope, 'format:text')];

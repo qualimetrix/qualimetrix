@@ -43,7 +43,7 @@ final class HarnessSelfTest
         $scope = 'case:alpha|format:text';
         $expectation = new Expectation($class, $scope, exactScope: true);
         $this->same(true, $expectation->matches($class, $scope), 'an exact expectation matches its complete scope');
-        foreach (['case:alpha|format:text-verbose', 'candidate / ' . $scope, $scope . '|record:{}', 'case:alpha-neighbour|format:text'] as $neighbour) {
+        foreach (['case:alpha|format:text-detail', 'candidate / ' . $scope, $scope . '|record:{}', 'case:alpha-neighbour|format:text'] as $neighbour) {
             $this->same(false, $expectation->matches($class, $neighbour), 'an exact expectation rejects ' . $neighbour);
         }
         $this->same(false, $expectation->matches(\QmxFindingGate\FailureClass::VALUE_MISMATCH, $scope), 'the exact scope does not license another failure class');

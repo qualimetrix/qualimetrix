@@ -21,7 +21,7 @@ final class CheckstyleFormatter implements FormatterInterface
 {
     private const VERSION = '3.0';
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $xml = new XMLWriter();
         $xml->openMemory();
@@ -64,7 +64,12 @@ final class CheckstyleFormatter implements FormatterInterface
         $xml->endElement(); // checkstyle
         $xml->endDocument();
 
-        return $xml->outputMemory();
+        return new FormattedReport($xml->outputMemory(), $repairs);
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::XmlDocument;
     }
 
     public function getName(): string

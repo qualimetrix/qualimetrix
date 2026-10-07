@@ -6,7 +6,9 @@ namespace Qualimetrix\Reporting\Formatter\Html;
 
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -26,7 +28,7 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
         private readonly HealthHintProjector $hintProjector,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $data = $this->treeBuilder->build($report, $context, $context->scopedReporting);
         $data['hints'] = $this->hintProjector->project();
@@ -87,7 +89,12 @@ final class HtmlFormatter implements FormatterInterface, FormatOptionKeysInterfa
             ), $rendered);
         }
 
-        return $rendered;
+        return new FormattedReport($rendered, $repairs);
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::HtmlDocument;
     }
 
     public function getName(): string

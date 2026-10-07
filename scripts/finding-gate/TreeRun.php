@@ -64,7 +64,9 @@ final class TreeRun
             $file = null;
             $assertCache = false;
             if (str_starts_with($surface, 'format:')) {
-                $command = [...$check, '-f', substr($surface, 7)];
+                $command = $surface === 'format:text-detail'
+                    ? [...$check, '-f', 'text', '--detail=all']
+                    : [...$check, '-f', substr($surface, 7)];
             } elseif ($surface === 'show-suppressed') {
                 $command = [...$check, '-f', 'text', '--show-suppressed'];
             } elseif ($surface === 'directives') {

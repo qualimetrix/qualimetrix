@@ -1,7 +1,6 @@
 # Output Formats
 
-Qualimetrix supports 12 output formats (including the deprecated
-`text-verbose`). Choose the one that fits your workflow.
+Qualimetrix supports 11 output formats. Choose the one that fits your workflow.
 
 ```bash
 bin/qmx check src/ --format=<format>
@@ -173,23 +172,6 @@ Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
 - A violation pinned to a specific statement carries a line number: `file:line: severity[violationCode]: message (symbol)`.
 - A class- or method-level finding whose rule judges the whole declaration rather than one statement — for example `complexity.ccn`, `complexity.wmc`, `coupling.class-rank` — omits the line segment instead: `file: severity[violationCode]: message (symbol)`, even though the same finding carries a `line` in `--format=json`.
 - A project-level finding (no owning file at all — e.g. an `architecture.unreachable-layer` finding) drops the file segment too: `[project]: severity[violationCode]: message`, with no trailing `(symbol)`. On this project's own self-analysis this third form is common, not an edge case: `bin/qmx check src/Analysis/Evidence/Complexity --format=text` prints project-level lines for a majority of the output.
-
----
-
-## text-verbose
-
-<!-- llms:skip-begin -->
-!!! warning "Deprecated"
-    `text-verbose` is deprecated. Use `--format=text --detail` instead, which provides the same grouped, multi-line violation output alongside the compact one-line format.
-
-    ```bash
-    # Replaces: bin/qmx check src/ --format=text-verbose
-    bin/qmx check src/ --format=text --detail
-    ```
-<!-- llms:skip-end -->
-<!-- llms-only
-Deprecated. Use `--format=text --detail` instead.
--->
 
 ---
 
@@ -1086,20 +1068,19 @@ closes it. A complete intentionally empty set (`analyzed=0`, `failed=0`,
 Incomplete exit 4 takes priority over success and policy findings. `check`
 retains the selected diagnostic report, whose policy result is not authoritative.
 
-| Format         | Coverage representation                                                                                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `summary`      | Human coverage sentence after the header                                                                                   |
-| `text`         | Human coverage sentence after the violation summary                                                                        |
-| `text-verbose` | Same projection as `text --detail`                                                                                         |
-| `health`       | Human coverage sentence after the header                                                                                   |
-| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
-| `metrics`      | The same top-level `coverage` object as `json`                                                                             |
-| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                                   |
-| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`                         |
-| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                               |
-| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                                    |
-| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                               |
-| `suppressed`   | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| Format       | Coverage representation                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `summary`    | Human coverage sentence after the header                                                                                   |
+| `text`       | Human coverage sentence after the violation summary                                                                        |
+| `health`     | Human coverage sentence after the header                                                                                   |
+| `json`       | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
+| `metrics`    | The same top-level `coverage` object as `json`                                                                             |
+| `sarif`      | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                                   |
+| `gitlab`     | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`                         |
+| `checkstyle` | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                               |
+| `github`     | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                                    |
+| `html`       | Embedded `coverage` data; incomplete runs also show a visible warning banner                                               |
+| `suppressed` | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `excluded`, `failed`, `failures[]` |
 
 For `json` and `metrics`, each `failures[]` item has `path`, `kind`
 and `message`. Human formats report measured counts without claiming every named
@@ -1156,14 +1137,14 @@ An `omitted-composer-root` reason retains `cause` and `visitedLevels`. Its
 inside the project, relative to its root. An absent main manifest contributes
 no omitted-root reason.
 
-| Format                                      | Project scope representation                                    |
-| ------------------------------------------- | --------------------------------------------------------------- |
-| `json`, `metrics`, `suppressed`             | Top-level `projectScope` object in every document               |
-| `sarif`                                     | Invocation notification with descriptor `QMX-RUN-PROJECT-SCOPE` |
-| `github`                                    | `::notice title=run.project-scope::` line                       |
-| `html`                                      | Banner above the report                                         |
-| `summary`, `text`, `text-verbose`, `health` | A `Project scope …` line                                        |
-| `gitlab`, `checkstyle`                      | No scope entry: every entry is a finding to their consumers     |
+| Format                          | Project scope representation                                    |
+| ------------------------------- | --------------------------------------------------------------- |
+| `json`, `metrics`, `suppressed` | Top-level `projectScope` object in every document               |
+| `sarif`                         | Invocation notification with descriptor `QMX-RUN-PROJECT-SCOPE` |
+| `github`                        | `::notice title=run.project-scope::` line                       |
+| `html`                          | Banner above the report                                         |
+| `summary`, `text`, `health`     | A `Project scope …` line                                        |
+| `gitlab`, `checkstyle`          | No scope entry: every entry is a finding to their consumers     |
 
 The object retains five fields: `state`, `uncoveredAutoloadTargets[]`,
 `unjudgedChannels[]`, `unjudgedValues[]`, `reasons[]`. Each skipped value has
@@ -1185,20 +1166,19 @@ Unavailable search metadata inside an actual removed run entry also withholds
 only declaration absence, with the actual `unlistable` evidence retained.
 ## Comparison table
 
-| Format         | Readable    | Machine   | Grouping                     | CI Integration             |
-| -------------- | ----------- | --------- | ---------------------------- | -------------------------- |
-| `summary`      | Best        | No        | Health scores, drill-down    | Any (exit code)            |
-| `text`         | Good        | Parseable | `--group-by`                 | Any (exit code)            |
-| `text-verbose` | Good        | No        | `--group-by` (default: file) | Any (exit code)            |
-| `json`         | No          | Yes       | Built-in (by file)           | Custom scripts             |
-| `metrics`      | No          | Yes       | Built-in (by symbol)         | Custom scripts, dashboards |
-| `checkstyle`   | No          | Yes       | Built-in (by file)           | Jenkins, SonarQube         |
-| `sarif`        | No          | Yes       | Built-in                     | GitHub, VS Code, JetBrains |
-| `gitlab`       | No          | Yes       | Flat list                    | GitLab MR widget           |
-| `github`       | No          | No        | Flat list                    | GitHub Actions annotations |
-| `health`       | Good        | No        | Health dimensions            | Quick checks, CI           |
-| `html`         | Interactive | No        | Treemap hierarchy            | Reports, reviews           |
-| `suppressed`   | No          | Yes       | Flat multiset by mechanism   | Suppression auditing       |
+| Format       | Readable    | Machine   | Grouping                   | CI Integration             |
+| ------------ | ----------- | --------- | -------------------------- | -------------------------- |
+| `summary`    | Best        | No        | Health scores, drill-down  | Any (exit code)            |
+| `text`       | Good        | Parseable | `--group-by`               | Any (exit code)            |
+| `json`       | No          | Yes       | Built-in (by file)         | Custom scripts             |
+| `metrics`    | No          | Yes       | Built-in (by symbol)       | Custom scripts, dashboards |
+| `checkstyle` | No          | Yes       | Built-in (by file)         | Jenkins, SonarQube         |
+| `sarif`      | No          | Yes       | Built-in                   | GitHub, VS Code, JetBrains |
+| `gitlab`     | No          | Yes       | Flat list                  | GitLab MR widget           |
+| `github`     | No          | No        | Flat list                  | GitHub Actions annotations |
+| `health`     | Good        | No        | Health dimensions          | Quick checks, CI           |
+| `html`       | Interactive | No        | Treemap hierarchy          | Reports, reviews           |
+| `suppressed` | No          | Yes       | Flat multiset by mechanism | Suppression auditing       |
 
 ### Exit codes
 

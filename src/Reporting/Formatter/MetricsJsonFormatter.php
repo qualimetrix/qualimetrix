@@ -59,7 +59,7 @@ final class MetricsJsonFormatter implements FormatterInterface
         SymbolType::Function_,
     ];
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $symbols = [];
 
@@ -122,7 +122,10 @@ final class MetricsJsonFormatter implements FormatterInterface
             'outOfScope' => self::outOfScope($report),
         ];
 
-        return PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+        $repairs = 0;
+        $body = PublishedUtf8::encodeJsonObject($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES, $repairs);
+
+        return new FormattedReport($body, $repairs);
     }
 
     /**
@@ -141,6 +144,11 @@ final class MetricsJsonFormatter implements FormatterInterface
             'warnings' => $outOfScope->warningCount,
             'info' => $outOfScope->infoCount,
         ];
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::JsonDocument;
     }
 
     public function getName(): string

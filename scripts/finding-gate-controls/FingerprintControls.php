@@ -118,7 +118,7 @@ final class FingerprintControls
      *   row then translates on the reference side. Renaming the code alone
      *   leaves the `rule` field standing while the row rewrites it on the
      *   reference side; measured, that failed here on the smells case's `html`,
-     *   `json` and `text-verbose` surfaces and on `tree|rules`, none of which
+     *   `json` and `text-detail` surfaces and on `tree|rules`, none of which
      *   says anything about fingerprints. The lcom objection this replaces was
      *   never about lcom: it was about a map row rewriting a field the mutation
      *   had left alone. What makes the rename expressible at all is stated where

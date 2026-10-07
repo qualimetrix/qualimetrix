@@ -316,7 +316,7 @@ final class CheckCommandBaselineTest extends TestCase
         $this->git('git config user.name Test');
         $this->git('git add .');
         $this->git('git commit -qm initial');
-        $findingFormats = ['text', 'text-verbose', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary'];
+        $findingFormats = ['text', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary'];
         foreach ([...$findingFormats, 'metrics', 'health', 'suppressed'] as $format) {
             $options = ['--baseline' => $this->baselinePath, '--format' => $format, '--report' => 'git:staged'];
             foreach (['warning' => 1, 'error' => 0, 'none' => 0] as $policy => $exit) {
@@ -368,7 +368,7 @@ final class CheckCommandBaselineTest extends TestCase
             'exclusions' => ['patterns' => [], 'generated' => 'excluded'],
             'entries' => ['file:src/Gone.php' => [['channel' => 'code-smell.goto', 'count' => 1]]],
         ], \JSON_THROW_ON_ERROR));
-        foreach (['text', 'text-verbose', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary', 'metrics', 'health', 'suppressed'] as $format) {
+        foreach (['text', 'json', 'checkstyle', 'sarif', 'gitlab', 'github', 'html', 'summary', 'metrics', 'health', 'suppressed'] as $format) {
             $tester = $this->runCheck(['--baseline' => $this->baselinePath, '--format' => $format, '--fail-on' => 'none']);
             self::assertSame(4, $tester->getStatusCode(), $format . ': ' . $tester->getDisplay());
             self::assertStringNotContainsString('is stale', $tester->getDisplay());

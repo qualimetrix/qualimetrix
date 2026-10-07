@@ -52,7 +52,7 @@ final class TextFormatterTest extends TestCase
             metricValue: 31,
             recommendation: 'Recommended repair',
         )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
-        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), $this->plainContext);
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), $this->plainContext)->body;
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
     }
@@ -78,7 +78,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('0 error(s), 0 warning(s) in 42 file(s)', $output);
         self::assertStringContainsString('Qualimetrix ', $output);
@@ -103,7 +103,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         $lines = explode("\n", rtrim($output, "\n"));
 
@@ -137,7 +137,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString(
             'Cyclomatic complexity of 31 exceeds threshold (accepted at 25, now 31) (UserService::calculateDiscount)',
@@ -165,7 +165,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
         $lines = explode("\n", rtrim($output, "\n"));
 
         self::assertSame(
@@ -202,7 +202,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         $lines = explode("\n", rtrim($output, "\n"));
 
@@ -233,7 +233,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.05)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('warning[cohesion.lcom]: LCOM is 5 (UserService)', $output);
     }
@@ -255,7 +255,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('src/Service/UserService.php: error[namespace-size]: Namespace contains 16 classes (namespace: App\Service)', $output);
     }
@@ -277,7 +277,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('src/Service/UserService.php: warning[file-size]: File is too large', $output);
     }
@@ -299,7 +299,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('src/functions.php: warning[cyclomatic-complexity]: Function has complexity of 20 (myComplexFunction)', $output);
     }
@@ -321,7 +321,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
         $lines = explode("\n", $output);
         $findingLine = $lines[0];
 
@@ -353,7 +353,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString('[complexity.callable]', $output);
         self::assertStringNotContainsString('[complexity]', $output);
@@ -378,7 +378,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Should contain ANSI escape codes
         self::assertStringContainsString("\e[", $output);
@@ -403,7 +403,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringNotContainsString("\e[", $output);
     }
@@ -433,7 +433,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         // Default groupBy=None sorts by severity first: error before warning
         $posError = strpos($output, 'Error A');
@@ -463,7 +463,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Summary should be bold red when errors present
         self::assertStringContainsString("\e[1;31mQualimetrix ", $output);
@@ -481,7 +481,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, $colorContext);
+        $output = $this->formatter->format($report, $colorContext)->body;
 
         // Summary should be bold green when no findings
         self::assertStringContainsString("\e[1;32mQualimetrix ", $output);
@@ -515,7 +515,7 @@ final class TextFormatterTest extends TestCase
             ->build();
 
         $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         // Groups by file
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
@@ -550,7 +550,7 @@ final class TextFormatterTest extends TestCase
             ->build();
 
         $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         self::assertStringContainsString('No violations found.', $output);
         self::assertStringContainsString('0 error(s), 0 warning(s) in 5 file(s)', $output);
@@ -579,7 +579,7 @@ final class TextFormatterTest extends TestCase
             detailLimit: 0,
             isGroupByExplicit: true,
         );
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         // Should group by rule, not file
         self::assertStringContainsString('complexity.ccn (1)', $output);
@@ -620,7 +620,7 @@ final class TextFormatterTest extends TestCase
 
         // Limit to 1 displayed finding, but debt breakdown must still show all rules
         $context = new FormatterContext(useColor: false, detailLimit: 1);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
 
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.ccn', $output);
@@ -672,7 +672,7 @@ final class TextFormatterTest extends TestCase
             detailLimit: 1,
             isGroupByExplicit: $groupBy !== null,
         );
-        $output = $this->formatter->format($builder->build(), $context);
+        $output = $this->formatter->format($builder->build(), $context)->body;
         $listing = strstr($output, 'Technical debt by rule:', true);
 
         self::assertStringContainsString('... and 1 more', $output);
@@ -693,7 +693,7 @@ final class TextFormatterTest extends TestCase
         $namespace = \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Clean');
 
         foreach ([null, 0] as $detailLimit) {
-            $output = $this->formatter->format($report, new FormatterContext(useColor: true, namespace: $namespace, detailLimit: $detailLimit));
+            $output = $this->formatter->format($report, new FormatterContext(useColor: true, namespace: $namespace, detailLimit: $detailLimit))->body;
 
             self::assertStringNotContainsString('No violations found.', $output);
             self::assertStringNotContainsString("\e[1;32mQualimetrix", $output);
@@ -715,7 +715,7 @@ final class TextFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, $this->plainContext);
+        $output = $this->formatter->format($report, $this->plainContext)->body;
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }
@@ -730,7 +730,7 @@ final class TextFormatterTest extends TestCase
             ->build();
 
         $detailContext = new FormatterContext(useColor: false, detailLimit: 0);
-        $output = $this->formatter->format($report, $detailContext);
+        $output = $this->formatter->format($report, $detailContext)->body;
 
         self::assertStringContainsString(ProductIdentity::pointerText(), $output);
     }

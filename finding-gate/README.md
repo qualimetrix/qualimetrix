@@ -168,8 +168,8 @@ text; analysis and incomplete outcomes require a readable report payload.
 and output-file keys, their command class and any ranking source. An absent
 required key, an unknown key or an invalid source is refused.
 
-Per case, the table captures the twelve `check` formats:
-`summary`, `text`, `text-verbose`, `json`, `checkstyle`, `sarif`,
+Per case, the table captures the eleven `check` formats and detailed text:
+`summary`, `text`, `text --detail=all` (capture key `format:text-detail`), `json`, `checkstyle`, `sarif`,
 `gitlab`, `github`, `metrics`, `health`, `html` and `suppressed`.
 It also captures `--show-suppressed`, `directives`, `rules`,
 `graph:export`, baseline generation and named baseline explanations,
@@ -631,7 +631,7 @@ with its own repository. It resolves the reference before cloning and leaves
 the developer's tree unchanged. A red control requires its declared failures
 at declared scopes and rejects everything else. Tolerations must be exercised;
 idle tolerations fail. Corpus controls require exact full scopes, preventing
-a `text` expectation from absorbing `text-verbose` or another case.
+a `text` expectation from absorbing detailed text or another case.
 Green controls are held to all declaration counts, not just exit 0.
 
 The config-precedence, threshold-raising and directive-placement controls

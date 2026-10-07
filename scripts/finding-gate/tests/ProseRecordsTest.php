@@ -65,9 +65,9 @@ final class ProseRecordsTest extends TestCase
         $finding = self::finding('Diagnostic');
         $finding['recommendation'] = 'Use another operation.';
         $text = "src/A.php (1 violation)\n  ERROR at line 3  A::run\n    Use another operation.  [a.b]\n\n";
-        $entries = ProseRecords::extract('format:text-verbose', $text);
+        $entries = ProseRecords::extract('format:text-detail', $text);
         self::assertSame([1, 2], $entries[0]['lines']);
-        self::assertTrue(ProseRecords::matches('format:text-verbose', $entries[0]['fields'], $finding));
+        self::assertTrue(ProseRecords::matches('format:text-detail', $entries[0]['fields'], $finding));
         self::assertSame("src/A.php (1 violation)\n\n", ProseRecords::erase($text, $entries[0]['lines']));
     }
 

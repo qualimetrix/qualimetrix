@@ -57,6 +57,7 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
     {
         yield 'empty string' => [''];
         yield 'unknown name' => ['zzz'];
+        yield 'retired name' => ['text-verbose'];
     }
 
     #[Test]
@@ -80,7 +81,6 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
     {
         yield 'json' => ['json'];
         yield 'text' => ['text'];
-        yield 'a hidden formatter the listing omits' => ['text-verbose'];
     }
 
     #[Test]
@@ -141,7 +141,7 @@ final class OutputFormatRefusesUnexecutableValuesTest extends TestCase
 
             public function has(string $name): bool
             {
-                return \in_array($name, [...$this->getAvailableNames(), 'text-verbose'], true);
+                return \in_array($name, $this->getAvailableNames(), true);
             }
 
             public function getAvailableNames(): array

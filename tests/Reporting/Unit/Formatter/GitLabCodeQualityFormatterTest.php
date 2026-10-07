@@ -45,7 +45,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             metricValue: 31,
             recommendation: 'Recommended repair',
         )->reportedUncompared(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25.0], 1), 'analysis-incomplete');
-        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext());
+        $output = $this->formatter->format(ReportBuilder::create()->addFinding($finding)->filesAnalyzed(1)->build(), new FormatterContext())->body;
         self::assertStringContainsString('accepted at 25; not compared: analysis-incomplete', $output);
         self::assertStringNotContainsString('now 31', $output);
     }
@@ -65,7 +65,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
     }
@@ -79,7 +79,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Empty report should return empty array
@@ -114,7 +114,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Should have 2 issues
@@ -164,7 +164,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Verify GitLab severity mapping
@@ -189,7 +189,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('info', $data[0]['severity']);
@@ -216,8 +216,8 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->build();
 
         // Format twice
-        $output1 = $this->formatter->format($report, new FormatterContext());
-        $output2 = $this->formatter->format($report, new FormatterContext());
+        $output1 = $this->formatter->format($report, new FormatterContext())->body;
+        $output2 = $this->formatter->format($report, new FormatterContext())->body;
 
         $data1 = json_decode($output1, true, 512, \JSON_THROW_ON_ERROR);
         $data2 = json_decode($output2, true, 512, \JSON_THROW_ON_ERROR);
@@ -246,7 +246,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings([$make(101), $make(202)])->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNotSame($data[0]['fingerprint'], $data[1]['fingerprint']);
 
@@ -261,7 +261,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $withUnrelated = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings([$make(101), $unrelated])->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame($data[0]['fingerprint'], $withUnrelated[0]['fingerprint']);
     }
@@ -280,7 +280,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($this->formatter->format(
             ReportBuilder::create()->addFindings($findings)->build(),
             new FormatterContext(),
-        ), true, 512, \JSON_THROW_ON_ERROR);
+        )->body, true, 512, \JSON_THROW_ON_ERROR);
         $fingerprints = array_column($data, 'fingerprint', 'description');
         $prefix = 'r.edge:file:src/Foo.php';
 
@@ -324,7 +324,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // All fingerprints should be unique
@@ -360,7 +360,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Presentation text does not participate in the canonical identity.
@@ -386,7 +386,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -411,7 +411,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -454,7 +454,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -478,7 +478,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
@@ -515,7 +515,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(
@@ -531,7 +531,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->filesSkipped(0)
             ->duration(0.1)
             ->build();
-        $plainOutput = $this->formatter->format($plainReport, new FormatterContext());
+        $plainOutput = $this->formatter->format($plainReport, new FormatterContext())->body;
         $plainData = json_decode($plainOutput, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame($plainData[0]['fingerprint'], $data[0]['fingerprint']);
@@ -555,7 +555,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(basePath: '/home/user/project');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);

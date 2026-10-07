@@ -50,7 +50,7 @@ final class InvalidUtf8PublicationTest extends TestCase
     /** @return iterable<string, array{string}> */
     public static function proseFormats(): iterable
     {
-        foreach (['summary', 'text', 'text-verbose', 'github', 'health'] as $format) {
+        foreach (['summary', 'text', 'github', 'health'] as $format) {
             yield $format => [$format];
         }
     }
@@ -205,7 +205,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         /** @var FormatterRegistryInterface $registry */
         $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
 
-        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath));
+        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath))->body;
     }
 
     private function readable(string $format, string $output): string

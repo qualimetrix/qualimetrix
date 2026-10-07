@@ -26,7 +26,7 @@ use Qualimetrix\Reporting\ReportProjectScope;
  */
 final class GithubActionsFormatter implements FormatterInterface
 {
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $lines = [];
 
@@ -48,10 +48,15 @@ final class GithubActionsFormatter implements FormatterInterface
         }
 
         if ($lines === [] && ($report->coverage === null || $report->coverage->isComplete())) {
-            return '';
+            return new FormattedReport('');
         }
 
-        return implode("\n", $lines) . "\n";
+        return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string

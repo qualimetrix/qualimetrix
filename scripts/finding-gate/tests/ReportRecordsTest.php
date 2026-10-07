@@ -6,6 +6,7 @@ namespace QmxFindingGate\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use QmxFindingGate\{CaseOutcome, ChannelSplit, Corpus, Declarations, DeclaredFields, DeclaredRecords, FailureClass, Fs, GateError, GateReport, MetricVocabulary, Normalization, Options, RecordCheck, RecordDerivation, RecordStage, RenameMaps, ReportRecords, RunContext, SurfacePair, SyntheticTree, Tsv, ValueCheck};
 use ReflectionProperty;
@@ -1326,7 +1327,7 @@ final class ReportRecordsTest extends TestCase
         $record['line'] = 17;
         $texts = [
             'format:text' => "src/A.php: error[a.b]: M (A)\n",
-            'format:text-verbose' => "src/A.php (1 violation)\n  ERROR  A\n    M  [a.b]\n",
+            'format:text-detail' => "src/A.php (1 violation)\n  ERROR  A\n    M  [a.b]\n",
             'format:summary' => "  1. [ERR] 20.0  src/A.php  [15min]\n         a.b: M\n",
         ];
         foreach ($texts as $surface => $text) {
@@ -1352,7 +1353,7 @@ final class ReportRecordsTest extends TestCase
     {
         $record = array_replace(self::finding(), ['file' => null, 'line' => null, 'subject' => 'project:', 'symbol' => '', 'severity' => 'warning', 'recommendation' => "Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}"]);
         $texts = [
-            'format:text-verbose' => "[project] (1 violation)\n  WARN\n    Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}  [a.b]\n\nTechnical debt by rule:\n  a.b ~15min\n",
+            'format:text-detail' => "[project] (1 violation)\n  WARN\n    Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}  [a.b]\n\nTechnical debt by rule:\n  a.b ~15min\n",
             'format:summary' => "Top issues by impact\n  1. [WRN] 20.0  [project]  [15min]\n         a.b: Break this cycle.\nCycle data: {\"cycle\":[\"A\",\"B\"]}\n1 violation (1 warning) | Tech debt: 15min\n",
         ];
         foreach ($texts as $surface => $text) {
@@ -1374,7 +1375,7 @@ final class ReportRecordsTest extends TestCase
         }
         $this->expectException(GateError::class);
         $this->expectExceptionMessage('complete published advice and channel terminator');
-        \QmxFindingGate\ProseRecords::extract('format:text-verbose', "[project] (1 violation)\n  WARN\n    Break this cycle.\nCycle data: {}\n\n");
+        \QmxFindingGate\ProseRecords::extract('format:text-detail', "[project] (1 violation)\n  WARN\n    Break this cycle.\nCycle data: {}\n\n");
     }
 
     #[Test]
@@ -1419,7 +1420,7 @@ final class ReportRecordsTest extends TestCase
     {
         $record = array_replace(self::finding(), ['line' => 16, 'severity' => 'warning', 'recommendation' => "Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}"]);
         $texts = [
-            'format:text-verbose' => "src/A.php (1 violation)\n  WARN  A\n    Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}  [a.b]\n\nTechnical debt by rule:\n",
+            'format:text-detail' => "src/A.php (1 violation)\n  WARN  A\n    Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}  [a.b]\n\nTechnical debt by rule:\n",
             'format:summary' => "Top issues by impact\n  1. [WRN] 20.0  src/A.php  [15min]\n         a.b: Move the layer.\nDep data: {\"type\":\"type_hint\",\"target\":\"App\\\\B\"}\n1 violation (1 warning) | Tech debt: 15min\n",
         ];
         foreach ($texts as $surface => $text) {
@@ -1442,7 +1443,7 @@ final class ReportRecordsTest extends TestCase
         $a = array_replace(self::finding(), ['recommendation' => "New advice.\nDep data: new"]);
         $b = array_replace($a, ['recommendation' => "Old advice.\nDep data: old\nExtra evidence: old"]);
         $keeper = array_replace(self::finding(), ['code' => 'c.d', 'rule' => 'c.d', 'channel' => 'c.d', 'recommendation' => 'Keep this neighbour.']);
-        foreach (['format:text-verbose', 'format:summary'] as $surface) {
+        foreach (['format:text-detail', 'format:summary'] as $surface) {
             $run = $this->context();
             $check = RecordCheck::create($run);
             $texts = [];
@@ -1528,7 +1529,7 @@ final class ReportRecordsTest extends TestCase
                 $artifacts += [
                     'case:alpha|format:text' => 'src/A.php:1: error[a.b]: ' . $expected . " (A)\n",
                     'case:alpha|format:github' => '::error file=src/A.php,line=1,title=a.b::' . $expected . "\n",
-                    'case:alpha|format:text-verbose' => "src/A.php (1 violation)\n  ERROR at line 1  A\n    Advice" . $suffix . "  [a.b]\n",
+                    'case:alpha|format:text-detail' => "src/A.php (1 violation)\n  ERROR at line 1  A\n    Advice" . $suffix . "  [a.b]\n",
                     'case:alpha|format:summary' => "  1. [ERR] 20.0  src/A.php:1  [15min]\n         a.b: Advice" . $suffix . "\n",
                     'case:alpha|format:checkstyle' => '<checkstyle><file name="src/A.php"><error line="1" severity="error" source="qmx.a.b" message="' . $expected . '"/></file></checkstyle>',
                 ];
@@ -1547,7 +1548,7 @@ final class ReportRecordsTest extends TestCase
         $record = array_replace(self::finding(), ['subject' => 'ns:App\\Service', 'symbol' => 'App\\Service', 'line' => 3]);
         $texts = [
             'format:text' => "src/A.php: error[a.b]: M (namespace: App\\Service)\n",
-            'format:text-verbose' => "src/A.php (1 violation)\n  ERROR\n    M  [a.b]\n",
+            'format:text-detail' => "src/A.php (1 violation)\n  ERROR\n    M  [a.b]\n",
             'format:summary' => "  1. [ERR] 20.0  src/A.php  [15min]\n         a.b: M (namespace: App\\Service)\n",
             'show-suppressed' => "src/A.php (1 violation)\n  ERROR\n    M  [a.b]\n",
         ];
@@ -1567,7 +1568,7 @@ final class ReportRecordsTest extends TestCase
         $record = array_replace(self::finding(), ['subject' => 'declaration:callable:App\\A::run@src/A.php', 'symbol' => 'src/A.php', 'line' => 10]);
         $texts = [
             'format:text' => "src/A.php:10: error[a.b]: M\n",
-            'format:text-verbose' => "src/A.php (1 violation)\n  ERROR at line 10\n    M  [a.b]\n",
+            'format:text-detail' => "src/A.php (1 violation)\n  ERROR at line 10\n    M  [a.b]\n",
             'format:summary' => "  1. [ERR] 20.0  src/A.php:10  [15min]\n         a.b: M\n",
             'show-suppressed' => "src/A.php (1 violation)\n  ERROR at line 10\n    M  [a.b]\n",
         ];
@@ -1584,18 +1585,21 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsClassAndNamespaceFindingInstancesDistinctDespiteMatchingAdviceAndLocation(): void
+    #[TestWith(['format:text-detail'])]
+    #[TestWith(['format:text-verbose'])]
+    public function itKeepsClassAndNamespaceFindingInstancesDistinctDespiteMatchingAdviceAndLocation(string $surface): void
     {
+        self::assertTrue(\QmxFindingGate\ReportViews::recordBearingSurface($surface));
         $class = array_replace(self::finding(), ['symbol' => 'App\\A', 'line' => 3]);
         $namespace = array_replace($class, ['subject' => 'ns:App\\Service', 'symbol' => 'App\\Service']);
         $valid = "src/A.php (2 violations)\n  ERROR  A\n    M  [a.b]\n\n  ERROR\n    M  [a.b]\n";
         foreach ([$valid, str_replace('  ERROR  A', '  ERROR', $valid), str_replace("  ERROR\n", "  ERROR  A\n", $valid)] as $text) {
             $run = $this->context();
-            $artifacts = self::artifacts([$class, $namespace]) + ['case:alpha|format:text-verbose' => $text];
+            $artifacts = self::artifacts([$class, $namespace]) + ['case:alpha|' . $surface => $text];
             $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
             self::assertSame($text === $valid ? [] : [FailureClass::RECORD_PROJECTION_MISMATCH], $run->report->failureClasses());
             if ($text !== $valid) {
-                self::assertSame('candidate / case:alpha|format:text-verbose', $run->report->raised()[0]['scope']);
+                self::assertSame('candidate / case:alpha|' . $surface, $run->report->raised()[0]['scope']);
             }
         }
     }

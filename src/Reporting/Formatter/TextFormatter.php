@@ -36,18 +36,20 @@ final class TextFormatter implements FormatterInterface
         private readonly DetailedFindingRenderer $detailedRenderer,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $formatted = $context->isDetailEnabled()
             ? $this->formatDetailed($report, $context)
             : $this->formatFlat($report, $context);
 
-        // The single point every `text` path reaches, flat or --detail alike —
-        // `text-verbose` delegates here too, so it inherits the pointer rather
-        // than needing its own.
         $color = new AnsiColor($context->useColor);
 
-        return $formatted . $color->dim(ProductIdentity::pointerText()) . "\n";
+        return new FormattedReport($formatted . $color->dim(ProductIdentity::pointerText()) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string

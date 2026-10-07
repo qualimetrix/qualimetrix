@@ -14,7 +14,9 @@ use Qualimetrix\Reporting\Formatter\Ansi\AnsiColor;
 use Qualimetrix\Reporting\Formatter\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface;
 use Qualimetrix\Reporting\Formatter\FormatOptionValue;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
@@ -40,7 +42,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         private readonly HealthScoreResolver $healthScoreResolver,
     ) {}
 
-    public function format(Report $report, FormatterContext $context): string
+    public function format(Report $report, FormatterContext $context): FormattedReport
     {
         $color = new AnsiColor($context->useColor);
         $terminalWidth = $context->terminalWidth > 0 ? $context->terminalWidth : self::DEFAULT_TERMINAL_WIDTH;
@@ -61,7 +63,7 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
             $lines[] = '';
             $this->appendPointer($color, $lines);
 
-            return implode("\n", $lines) . "\n";
+            return new FormattedReport(implode("\n", $lines) . "\n");
         }
 
         // Separate overall from dimension scores
@@ -83,7 +85,12 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         $lines[] = '';
         $this->appendPointer($color, $lines);
 
-        return implode("\n", $lines) . "\n";
+        return new FormattedReport(implode("\n", $lines) . "\n");
+    }
+
+    public function publicationKind(): PublicationKind
+    {
+        return PublicationKind::Prose;
     }
 
     public function getName(): string

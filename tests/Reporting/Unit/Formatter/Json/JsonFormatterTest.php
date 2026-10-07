@@ -85,7 +85,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.5)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         self::assertJson($output);
     }
@@ -99,7 +99,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.15)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Meta section
@@ -135,7 +135,7 @@ final class JsonFormatterTest extends TestCase
     #[Test]
     public function itPublishesTheConfigurationDiagnosticsSectionEvenWhenEmpty(): void
     {
-        $empty = json_decode($this->formatter->format(ReportBuilder::create()->build(), new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $empty = json_decode($this->formatter->format(ReportBuilder::create()->build(), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
         self::assertArrayHasKey('configurationDiagnostics', $empty);
         self::assertSame([], $empty['configurationDiagnostics']);
 
@@ -147,7 +147,7 @@ final class JsonFormatterTest extends TestCase
             ],
         ];
         $report = ReportBuilder::create()->configurationDiagnostics([$diagnostic])->build();
-        $data = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([$diagnostic], $data['configurationDiagnostics']);
     }
@@ -156,7 +156,7 @@ final class JsonFormatterTest extends TestCase
     public function itProducesIso8601Timestamp(): void
     {
         $report = new Report([], 0, 0, 0.0, 0, 0);
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $timestamp = $data['meta']['timestamp'];
@@ -195,7 +195,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.23)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Findings are flat list, sorted by severity (error first)
@@ -242,7 +242,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.01)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // message field always uses the raw finding message
@@ -275,7 +275,7 @@ final class JsonFormatterTest extends TestCase
             topIssues: [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10.0, null, 30, 3)],
         );
 
-        $data = json_decode($this->formatter->format($report, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $data = json_decode($this->formatter->format($report, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame($data['violations'][0]['message'], $data['topIssues'][0]['message']);
         self::assertSame('Cyclomatic complexity is 79, exceeds threshold of 20.', $data['topIssues'][0]['message']);
@@ -322,7 +322,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNotNull($data['health']);
@@ -364,7 +364,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(scopedReporting: true);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Health is always shown now — full graph is always available
@@ -399,7 +399,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['worstNamespaces']);
@@ -442,7 +442,7 @@ final class JsonFormatterTest extends TestCase
             ],
         );
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['worstClasses']);
@@ -477,7 +477,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -506,7 +506,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(detailLimit: 0);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -535,7 +535,7 @@ final class JsonFormatterTest extends TestCase
 
         // --detail + --format-opt violations=5 → explicit opt wins
         $context = new FormatterContext(detailLimit: 0, options: ['violations' => '5']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(5, $data['violations']);
@@ -559,7 +559,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(options: ['violations' => '0']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([], $data['violations']);
@@ -587,7 +587,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['violations' => 'all']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -623,7 +623,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Only Payment findings (boundary-aware: App\Payment and App\Payment\Gateway)
@@ -673,8 +673,8 @@ final class JsonFormatterTest extends TestCase
             outOfScope: new OutOfScopeFindings(1, 0, 0),
         );
 
-        $plainData = json_decode($this->formatter->format($plain, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
-        $scopedData = json_decode($this->formatter->format($selected, new FormatterContext()), true, 512, \JSON_THROW_ON_ERROR);
+        $plainData = json_decode($this->formatter->format($plain, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+        $scopedData = json_decode($this->formatter->format($selected, new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(array_keys($plainData['summary']), array_keys($scopedData['summary']));
         self::assertSame(5.4, $plainData['summary']['debtPer1kLoc']);
@@ -709,7 +709,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $data = json_decode(
-            $this->formatter->format($report, new FormatterContext(options: ['violations' => '1'])),
+            $this->formatter->format($report, new FormatterContext(options: ['violations' => '1']))->body,
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -732,7 +732,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame([], $data['violations']);
@@ -757,7 +757,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(class: 'App\Payment\PayService');
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(1, $data['violations']);
@@ -794,7 +794,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
 
         // Should produce valid JSON (NaN/INF would break json_encode)
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
@@ -852,7 +852,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('test.a', $data['violations'][0]['code']);
@@ -898,7 +898,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // JSON severity uses the enum value ('info', 'warning', 'error')
@@ -944,7 +944,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('code-smell.eval', $data['violations'][0]['code']);
@@ -969,7 +969,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $v = $data['violations'][0];
@@ -995,7 +995,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $v = $data['violations'][0];
@@ -1021,7 +1021,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(options: ['top' => '2']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['worstNamespaces']);
@@ -1053,7 +1053,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         // Should not throw — NaN/INF are sanitized to null
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNull($data['health']['test']['score']);
@@ -1065,7 +1065,7 @@ final class JsonFormatterTest extends TestCase
     {
         $report = new Report([], 10, 0, 0.5, 0, 0);
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertNull($data['health']);
@@ -1089,7 +1089,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Payment'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['worstNamespaces']);
@@ -1124,7 +1124,7 @@ final class JsonFormatterTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('--format-opt violations=invalid reached a formatter unparsed');
 
-        $this->formatter->format($report, $context);
+        $this->formatter->format($report, $context)->body;
     }
 
     #[Test]
@@ -1146,7 +1146,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(scopedReporting: true);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Scoped reporting: offenders and health are always shown (full graph available)
@@ -1183,7 +1183,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1)
             ->build();
 
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(2, $data['violations']);
@@ -1231,7 +1231,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Should use namespace-level scores, not project-level
@@ -1293,7 +1293,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\Service'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Should build worst classes from namespace classes
@@ -1326,7 +1326,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\NonExistent'));
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Returns null when namespace has no health data (no misleading fallback)
@@ -1353,7 +1353,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(55, $data['violationsMeta']['total']);
@@ -1382,7 +1382,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         $report = $builder->build();
-        $output = $this->formatter->format($report, new FormatterContext());
+        $output = $this->formatter->format($report, new FormatterContext())->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(10, $data['violationsMeta']['total']);
@@ -1411,7 +1411,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['limit' => '5']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(5, $data['violations']);
@@ -1441,7 +1441,7 @@ final class JsonFormatterTest extends TestCase
 
         $report = $builder->build();
         $context = new FormatterContext(options: ['limit' => '0']);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(55, $data['violations']);
@@ -1468,7 +1468,7 @@ final class JsonFormatterTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('violations and limit reached the formatter together');
 
-        $this->formatter->format($report, new FormatterContext(options: ['violations' => '3', 'limit' => '10']));
+        $this->formatter->format($report, new FormatterContext(options: ['violations' => '3', 'limit' => '10']))->body;
     }
 
     #[Test]
@@ -1489,7 +1489,7 @@ final class JsonFormatterTest extends TestCase
             ->build();
 
         $context = new FormatterContext(groupBy: GroupBy::None);
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayNotHasKey('violationGroups', $data);
@@ -1534,7 +1534,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         // Flat findings are always present
@@ -1593,7 +1593,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('violationGroups', $data);
@@ -1641,7 +1641,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('violationGroups', $data);
@@ -1687,7 +1687,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => '4'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertCount(4, $data['violations']);
@@ -1715,7 +1715,7 @@ final class JsonFormatterTest extends TestCase
             groupBy: GroupBy::ClassName,
             isGroupByExplicit: true,
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('violationGroups', $data);
@@ -1770,7 +1770,7 @@ final class JsonFormatterTest extends TestCase
             isGroupByExplicit: true,
             options: ['violations' => 'all'],
         );
-        $output = $this->formatter->format($report, $context);
+        $output = $this->formatter->format($report, $context)->body;
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $keys = array_keys($data['violationGroups']);

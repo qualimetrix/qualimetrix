@@ -190,7 +190,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
+Доступные форматы: `summary`, `text`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`, `suppressed`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -262,7 +262,7 @@ SIGINT/SIGTERM до публикации удаляют собственный �
 Группировка нарушений в выводе. Значение по умолчанию зависит от форматтера.
 
 ```bash
-bin/qmx check src/ --format=text-verbose --group-by=rule
+bin/qmx check src/ --format=text --detail=all --group-by=rule
 ```
 
 Доступные значения: `none`, `file`, `rule`, `severity`, `class`, `namespace`.

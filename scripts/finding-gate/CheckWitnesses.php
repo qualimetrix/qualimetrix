@@ -505,7 +505,7 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|format:text-detail', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:alpha|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
             ),
@@ -640,7 +640,7 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|format:text-detail', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:gamma|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                 ],
                 [[FailureClass::FINDING_TUPLE_MISMATCH, 'reference / gamma / finding #0']],
@@ -723,7 +723,7 @@ final class CheckWitnesses
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:sarif', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:summary', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
-                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text-verbose', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
+                    [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|format:text-detail', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::RECORD_PROJECTION_MISMATCH, 'candidate / case:omega|show-suppressed', 'RecordStage::applyStage <- SurfaceComparison::applyRegisteredStages'],
                     [FailureClass::CANDIDATE_INPUT_REFUSED, 'case:omega', 'CoverageCheck::inputRefused <- Gate::compare'],
                 ],
@@ -800,8 +800,8 @@ final class CheckWitnesses
                 self::WHOLE_RUN,
                 static function (array $tree): array {
                     $answers = SyntheticTree::caseAnswers('alpha', $tree['findings']['alpha'], false, []);
-                    $tree['answers']['case:alpha|format:text-verbose'] = [...$answers['case:alpha|format:text-verbose'], 'exit' => 3];
-                    $tree['candidateAnswers']['case:alpha|format:text-verbose'] = $answers['case:alpha|format:text-verbose'];
+                    $tree['answers']['case:alpha|format:text-detail'] = [...$answers['case:alpha|format:text-detail'], 'exit' => 3];
+                    $tree['candidateAnswers']['case:alpha|format:text-detail'] = $answers['case:alpha|format:text-detail'];
 
                     return $tree;
                 },
@@ -992,14 +992,14 @@ final class CheckWitnesses
                     }
 
                     $answers = SyntheticTree::caseAnswers('alpha', $tree['candidateFindings']['alpha'] ?? $tree['findings']['alpha'], false, []);
-                    $tree['candidateAnswers']['case:alpha|format:text-verbose'] = $answers['case:alpha|format:text-verbose'];
-                    $tree['candidateAnswers']['case:alpha|format:text-verbose']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:text-verbose']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . $lines;
-                    $tree['declaredDelta']['case:alpha|format:text-verbose'] = self::NO_DIFF;
+                    $tree['candidateAnswers']['case:alpha|format:text-detail'] = $answers['case:alpha|format:text-detail'];
+                    $tree['candidateAnswers']['case:alpha|format:text-detail']['stdout'] = ($tree['candidateAnswers']['case:alpha|format:text-detail']['stdout'] ?? throw new GateError('A renderer-backed witness requires stdout.')) . $lines;
+                    $tree['declaredDelta']['case:alpha|format:text-detail'] = self::NO_DIFF;
 
                     return $tree;
                 },
-                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-verbose', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareFinalBytes']],
-                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:text-verbose']],
+                [[FailureClass::DELTA_TOO_LARGE, 'case:alpha|format:text-detail', 'DeclaredDeltaCheck::checkAgainstDeclaredDelta#1 <- SurfaceComparison::compareFinalBytes']],
+                [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:text-detail']],
             ),
             self::witness(
                 'delta-overreach',
@@ -1022,7 +1022,7 @@ final class CheckWitnesses
                     [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:html', 'SurfaceComparison::mismatch <- Gate::compare'],
                     [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:sarif', 'SurfaceComparison::mismatch <- Gate::compare'],
                     [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text', 'SurfaceComparison::mismatch <- Gate::compare'],
-                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text-verbose', 'SurfaceComparison::mismatch <- Gate::compare'],
+                    [FailureClass::SURFACE_MISMATCH, 'case:alpha|format:text-detail', 'SurfaceComparison::mismatch <- Gate::compare'],
                     [FailureClass::SURFACE_MISMATCH, 'case:alpha|show-suppressed', 'SurfaceComparison::mismatch <- Gate::compare'],
                 ],
                 [[FailureClass::DELTA_MISMATCH, 'case:alpha|format:json']],

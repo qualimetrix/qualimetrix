@@ -20,6 +20,7 @@ use Qualimetrix\Reporting\DrillDown\OutOfScopeFindings;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
+use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
@@ -85,14 +86,6 @@ final class ResultPresenter
         $profiler->start('reporting', 'pipeline');
 
         $format = $outputFormat->value;
-
-        // Deprecation warning for text-verbose (stderr only, not in formatted output)
-        if ($format === 'text-verbose') {
-            $this->errorStream->write(
-                $output,
-                '<comment>Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.</comment>',
-            );
-        }
 
         $formatter = $this->formatterRegistry->get($format);
         $context = $this->formatterContextFactory->create(
@@ -264,7 +257,7 @@ final class ResultPresenter
      * status for the caller to reconcile with `ExitCodeResolver`.
      */
     private function writeOutput(
-        string $formattedOutput,
+        FormattedReport $formattedOutput,
         string $format,
         InputInterface $input,
         OutputInterface $output,
@@ -273,7 +266,7 @@ final class ResultPresenter
         $target = CommandLineSpelling::option($input, 'output');
 
         if ($target !== null) {
-            $runTargets->write('--output', $formattedOutput);
+            $runTargets->write('--output', $formattedOutput->body);
 
             $this->errorStream->write(
                 $output,
@@ -291,7 +284,7 @@ final class ResultPresenter
             );
         }
 
-        OutputHelper::write($output, $formattedOutput);
+        OutputHelper::write($output, $formattedOutput->body);
     }
 
     private function isOutputTty(OutputInterface $output): bool
