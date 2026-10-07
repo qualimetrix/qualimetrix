@@ -45,7 +45,7 @@ final class ProjectScopeReadersTest extends TestCase
             ],
             'src/Analysis/Policy/Architecture/ArchitecturePolicy.php' => [],
             'src/Analysis/Policy/Architecture/Contract/UnmatchedTypeWarningInterface.php' => [],
-            'src/Analysis/Policy/Architecture/Layer/KnownTypes.php' => [],
+            'src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php' => [],
             'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedTypeDiagnostic.php' => [],
             'src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' => ['cohesion.unmatched-exclude-method'],

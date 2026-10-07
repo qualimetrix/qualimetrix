@@ -79,6 +79,7 @@ src/Reporting/GraphProjection/DotExporter.php	Qualimetrix\Reporting\GraphProject
 src/Reporting/GraphProjection/DotExporterOptions.php	Qualimetrix\Reporting\GraphProjection\DotExporterOptions	"output projection"	Reporting
 src/Reporting/GraphProjection/JsonGraphExporter.php	Qualimetrix\Reporting\GraphProjection\JsonGraphExporter	"output projection"	Reporting
 src/Reporting/GraphProjection/NamespaceFilter.php	Qualimetrix\Reporting\GraphProjection\NamespaceFilter	"output projection"	Reporting
+src/Reporting/GraphProjection/NamespaceSelection.php	Qualimetrix\Reporting\GraphProjection\NamespaceSelection	"output projection"	Reporting
 src/Reporting/GroupBy.php	Qualimetrix\Reporting\GroupBy	"output projection"	Reporting
 src/Reporting/Health/HealthHintProjector.php	Qualimetrix\Reporting\Health\HealthHintProjector	"output projection"	Reporting
 src/Reporting/Health/HealthScoreResolver.php	Qualimetrix\Reporting\Health\HealthScoreResolver	"output projection"	Reporting

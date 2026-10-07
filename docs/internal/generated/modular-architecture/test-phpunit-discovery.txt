@@ -6633,15 +6633,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"trailing dot"
  - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"wildcard without dot"
  - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRoundTripsToItsAuthoredForm
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itExcludesLayerViolationRuleInExcludedSourceNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itExcludesLayerViolationUsingTheDeclarationNamespaceForAFileSymbol
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersFileSymbolFindingWhoseSubjectNamespaceMatches
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersSuppressedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureCoverageDiagnosticEvenIfNamePrefixMatchesByCoincidence
- - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureRuleEvenWhenItIsAFileSymbolFindingInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsFileAggregatesWhenARegexMatchesTheEmptyString
- - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsLayerViolationRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itNeverComparesTheProjectAggregateDisplayValue
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWhoseSubjectNamespaceDoesNotMatch
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolFindingWithoutDeclaringNamespace
@@ -6654,13 +6654,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itPinsTheHashOfFixedInputsAsLiteralHexToCatchMechanismDrift
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itRejectsAnEmptyKindOrEvidenceName
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itTruncatesTheSameSha256ItWouldHaveReturnedInFull
+ - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itExcludesLayerViolationRuleInExcludedSourcePath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersRegexPattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersSuppressedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsArchitectureProjectWideDiagnosticsRegardlessOfPathMatcher
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedPath
- - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsLayerViolationRuleInExcludedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itPassesEmptyFilePath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itPassesNonMatchingPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itPassesWhenNoPrefixes
@@ -8508,9 +8508,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itKeepsAGroupWithOneIgnoredMemberAcceptedAcrossGenerateAndCheck
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itNeverCapturesTheLateUnusedEntryAudit
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itRecordsTheCompleteResolvedExclusionDefinitionThroughGenerate
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesAnEntryForAnArchitectureFindingInsideAnExcludedNamespace
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAFindingRemovedByAnIgnoreTag
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAFindingRemovedByPathExclusion
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForALayerViolationInsideAnExcludedSourceNamespace
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CaptureFromMeasuredSetTest::itWritesNoEntryForAnOrdinaryFindingRemovedByNamespaceExclusion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\CboAggregateBreachTest::itBreachesAClassCboEntryAfterAnotherFileChanges
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\ConfigurationErrorChannelRejectionTest::itDoesNotCaptureAConfigurationErrorFindingIntoAGeneratedBaseline
@@ -11414,8 +11414,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\RuleRegistryCompilerPassTest::itSkipsServicesWithNullClass
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\RuleRegistryCompilerPassTest::itThrowsOnDuplicateNameConstants
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\CompilerPass\RuleRegistryCompilerPassTest::itThrowsWhenARegisteredRuleDeclaresNoNameConstant
+ - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator\DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped
  - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
- - Qualimetrix\Tests\Infrastructure\DependencyInjection\Unit\Configurator\DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itCompletesAnEmptyRangeEndpointWithHead"three-dot left"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itCompletesAnEmptyRangeEndpointWithHead"three-dot right"
  - Qualimetrix\Tests\Infrastructure\Git\Integration\GitClientTest::itCompletesAnEmptyRangeEndpointWithHead"two-dot left"
@@ -11998,20 +11998,24 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itCollectsInertEntriesFromTheLoadedBaseline
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itDoesNotMeasureAFindingRemovedByAnIgnoreTag
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itDoesNotMeasureAFindingRemovedByPathExclusion
+ - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itDoesNotMeasureALayerViolationInsideAnExcludedSourceNamespace
+ - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itExcludesLayerViolationsFromReportsForExcludedSourceNamespaces
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itHasANullBaselineScopeWithoutABaseline
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itHasNoInertEntriesWithoutABaseline
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itKeepsAFindingThatHasNoNamespaceToExclude
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itKeepsApplyingSiblingEntriesWhenOneChannelOfASymbolIsRepaired
- - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itKeepsArchitectureRuleFindingsInExcludedNamespaces
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itKeepsTheConfiguredSeverityWhenTheEntryCannotBeApplied
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itLetsAnIgnoreTagWinOverAnEntryThatWouldHaveAcceptedTheFinding
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itMarksNothingStaleOnAGitScopedRun
- - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itMeasuresAnArchitectureFindingInsideAnExcludedNamespace
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itMeasuresTheSameSetWhetherOrNotAnnotationsAreDisabled
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itMeasuresTheSetAfterSuppressionWhenNoLaterStageRuns
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itMergesConfiguredAndCommandLineNamespaceExclusions
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itMergesConfiguredAndCommandLinePathExclusions
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itOmitsStagesTheRunHasNothingToFeed
+ - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itProjectsLayerViolationByItsSourceFileAndNamespace"Git non-strict"
+ - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itProjectsLayerViolationByItsSourceFileAndNamespace"Git strict"
+ - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itProjectsLayerViolationByItsSourceFileAndNamespace"global source namespace"
+ - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itProjectsLayerViolationByItsSourceFileAndNamespace"global source path"
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itRemovesAFindingCoveredByAnIgnoreTag
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itRemovesFindingsInAnExcludedNamespace
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\FindingProjectorTest::itRemovesFindingsInChildNamespacesOfAnExcludedOne

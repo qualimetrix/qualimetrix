@@ -617,6 +617,10 @@
         {
           "owner": "Infrastructure.Cache",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Cache\\CacheSection"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassLayerRequirement"
         }
       ]
     },
@@ -3514,11 +3518,11 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ClassContextFactory"
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\KnownTypes"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -3550,7 +3554,11 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\NameSpellingIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\NameSpellingIndex"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
         }
       ]
     },
@@ -3626,15 +3634,15 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerPolicy"
         },
         {
           "owner": "Analysis.Policy.Baseline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineEdge"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
         }
       ]
     },
@@ -8370,7 +8378,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\KnownTypes"
         },
         {
           "owner": "Analysis.Run",
@@ -9019,6 +9027,14 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ClassEvidenceWalk"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk"
         }
       ]
     },
@@ -10956,6 +10972,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ClassEvidenceWalk"
         }
       ]
     },
@@ -12590,6 +12610,10 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver"
         },
         {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter"
+        },
+        {
           "owner": "Infrastructure.DependencyInjection",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
@@ -12621,11 +12645,47 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter"
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         }
       ]
     },
@@ -12833,15 +12893,15 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext": {
-      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ClassContext": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory": {
-      "path": "src/Analysis/Policy/Architecture/Layer/ClassContextFactory.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ClassContextFactory": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContextFactory.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -12917,8 +12977,8 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes": {
-      "path": "src/Analysis/Policy/Architecture/Layer/KnownTypes.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\KnownTypes": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -15907,7 +15967,7 @@
         },
         {
           "owner": "Infrastructure.Composer",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredSupertypeReader"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredClassLikeFactExtractor"
         }
       ]
     },
@@ -16578,10 +16638,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor"
         },
         {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyContext"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthCollector"
         },
@@ -16908,6 +16964,18 @@
         {
           "owner": "Analysis.Policy.Inline",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\Audit\\DirectiveMeasurability"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\AggregateMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
         }
       ]
     },
@@ -17042,7 +17110,7 @@
         },
         {
           "owner": "Reporting.GraphProjection",
-          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
         }
       ]
     },
@@ -17206,7 +17274,7 @@
         },
         {
           "owner": "Reporting.GraphProjection",
-          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
         }
       ]
     },
@@ -17246,7 +17314,7 @@
         },
         {
           "owner": "Reporting.GraphProjection",
-          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
         }
       ]
     },
@@ -17350,6 +17418,14 @@
         {
           "owner": "Reporting.GraphProjection",
           "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter"
         }
       ]
     },
@@ -17504,20 +17580,20 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\ClassLikeHandler"
         },
         {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyContext"
-        },
-        {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\ExternalSupertypes"
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
         },
         {
           "owner": "Infrastructure.Composer",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredSupertypeReader"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredClassLikeFactExtractor"
         }
       ]
     },
@@ -17580,10 +17656,6 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor"
         },
         {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyContext"
-        },
-        {
           "owner": "Analysis.Evidence.Design",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance\\InheritanceDepthResolver"
         },
@@ -17606,6 +17678,10 @@
         {
           "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\ClassLikeDeclaration"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder"
         }
       ]
     },
@@ -17672,16 +17748,8 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
         {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyContext"
-        },
-        {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\CallableWithMetrics"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
         },
         {
           "owner": "Analysis.Evidence.Measurement",
@@ -17697,7 +17765,15 @@
         },
         {
           "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder"
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyIdentityCanonicalizer"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
         }
       ]
     },
@@ -17958,6 +18034,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\UnmatchedTypeDiagnostic"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
         }
       ]
     },
@@ -18005,7 +18085,15 @@
       "consumers": [
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ClassContextFactory"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ImplicitStringability"
         }
       ]
     },
@@ -18036,16 +18124,20 @@
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Configuration\\LayerCriterionNormalizer"
         },
         {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
-        },
-        {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountVisitor"
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\KnownTypes"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
         }
       ]
     },
@@ -18125,10 +18217,6 @@
         },
         {
           "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
         },
         {
@@ -18154,6 +18242,14 @@
         {
           "owner": "Analysis.Evidence.Size",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\AggregateMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
         }
       ]
     },
@@ -18593,10 +18689,6 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\LayerEvidenceCollector"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassSummary"
         },
         {
@@ -18718,6 +18810,10 @@
         {
           "owner": "Analysis.Run",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ClassEvidenceWalk"
         }
       ]
     },
@@ -18857,10 +18953,6 @@
         },
         {
           "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyContext"
-        },
-        {
-          "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\NamespaceCouplings"
         },
         {
@@ -18906,10 +18998,6 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
         },
         {
           "owner": "Analysis.Evidence.Measurement",
@@ -18977,7 +19065,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ClassContextFactory"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -18985,7 +19073,7 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\KnownTypes"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -19073,7 +19161,39 @@
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\NameSpellingIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\NameSpellingIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyIdentityCanonicalizer"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\NamespaceCouplingBuilder"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\AggregateMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerAssignment\\LayerAssignmentProjection"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
+        },
+        {
+          "owner": "Reporting.GraphProjection",
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter"
         }
       ]
     },
@@ -19166,10 +19286,6 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\InMemoryMetricRepository"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
         },
         {
           "owner": "Analysis.Evidence.Measurement",
@@ -24269,10 +24385,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
-        },
-        {
           "owner": "Analysis.Run",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
@@ -24425,7 +24537,7 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\KnownTypes",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\KnownTypes",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
         },
         {
@@ -24473,7 +24585,7 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\NameSpellingIndex",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\NameSpellingIndex",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface"
         },
         {
@@ -24517,6 +24629,14 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
         }
       ]
     },
@@ -24544,11 +24664,17 @@
       "consumers": [
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter"
         },
         {
           "owner": "Infrastructure.Console",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter"
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignment"
         },
         {
           "owner": "Infrastructure.Console",
@@ -24624,13 +24750,19 @@
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         },
         {
           "owner": "Infrastructure.Console",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentTextPresenter",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter",
+          "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentCommand",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentShadowVerdict"
         },
         {
@@ -24668,10 +24800,6 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
-        },
-        {
           "owner": "Analysis.Evidence.CircularDependency",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
@@ -24694,6 +24822,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ForbiddenEdge",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations"
         }
       ]
     },
@@ -24726,11 +24858,15 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\ExternalSupertypeSourceInterface"
+        },
+        {
+          "owner": "Infrastructure.Composer",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredClassLikeFactExtractor"
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\NameSpellingIndex": {
-      "path": "src/Analysis/Policy/Architecture/Layer/NameSpellingIndex.php",
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\NameSpellingIndex": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php",
       "kind": "class",
       "owner": "Analysis.Policy.Architecture",
       "visibility": "internal",
@@ -24802,24 +24938,12 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
-        },
-        {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\NamespaceMetricIndex"
         },
         {
           "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContextFactory"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\NameSpellingIndex"
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\NameSpellingIndex"
         },
         {
           "owner": "Analysis.Run",
@@ -24834,8 +24958,20 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\Composer\\DeclaredSupertypeReader"
         },
         {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyIdentityCanonicalizer"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry"
+        },
+        {
           "owner": "Reporting.GraphProjection",
-          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceFilter"
+          "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection"
         }
       ]
     },
@@ -24883,16 +25019,16 @@
       "visibility": "contract",
       "consumers": [
         {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder"
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex"
-        },
-        {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\NamespaceMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.DependencyModel",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyIdentityCanonicalizer"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
         }
       ]
     },
@@ -24911,6 +25047,125 @@
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator"
         }
       ]
+    },
+    "Qualimetrix\\Infrastructure\\Composer\\ComposerClassPathLookup": {
+      "path": "src/Infrastructure/Composer/ComposerClassPathLookup.php",
+      "kind": "class",
+      "owner": "Infrastructure.Composer",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\LayerEvidenceTally": {
+      "path": "src/Analysis/Policy/Architecture/Observation/LayerEvidenceTally.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\ImplicitStringability": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/ImplicitStringability.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\Ancestry": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/Ancestry.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Composer\\DeclaredClassLikeFactExtractor": {
+      "path": "src/Infrastructure/Composer/DeclaredClassLikeFactExtractor.php",
+      "kind": "class",
+      "owner": "Infrastructure.Composer",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyRecorder": {
+      "path": "src/Analysis/Evidence/DependencyModel/Extraction/DependencyRecorder.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\AggregateMetricIndex": {
+      "path": "src/Analysis/Evidence/Measurement/Repository/AggregateMetricIndex.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\CanonicalGraphInput": {
+      "path": "src/Analysis/Evidence/DependencyModel/CanonicalGraphInput.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\ClassEvidenceWalk": {
+      "path": "src/Analysis/Policy/Architecture/Observation/ClassEvidenceWalk.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter": {
+      "path": "src/Infrastructure/Console/Command/Debug/LayerAssignmentJsonPresenter.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyIdentityCanonicalizer": {
+      "path": "src/Analysis/Evidence/DependencyModel/DependencyIdentityCanonicalizer.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerAssignment\\LayerAssignmentProjection": {
+      "path": "src/Analysis/Policy/Architecture/LayerAssignment/LayerAssignmentProjection.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\NamespaceSelection": {
+      "path": "src/Reporting/GraphProjection/NamespaceSelection.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\NamespaceCouplingBuilder": {
+      "path": "src/Analysis/Evidence/DependencyModel/NamespaceCouplingBuilder.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\ClassContext\\DeclarationRelations": {
+      "path": "src/Analysis/Policy/Architecture/Layer/ClassContext/DeclarationRelations.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Policy\\Architecture\\Observation\\EdgeEvidenceWalk": {
+      "path": "src/Analysis/Policy/Architecture/Observation/EdgeEvidenceWalk.php",
+      "kind": "class",
+      "owner": "Analysis.Policy.Architecture",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex": {
+      "path": "src/Analysis/Evidence/Measurement/Repository/LogicalClassMetricIndex.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "internal",
+      "consumers": []
     }
   },
   "enforcement_seams": {}
