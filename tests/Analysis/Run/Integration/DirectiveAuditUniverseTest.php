@@ -11,17 +11,20 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependency
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -132,6 +135,7 @@ final class DirectiveAuditUniverseTest extends TestCase
         $collection->method('collect')->willReturn(new CollectionPhaseOutput(
             [$relative],
             [],
+            [],
             [self::FILE => [new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File, position: 0)]],
         ));
 
@@ -147,6 +151,7 @@ final class DirectiveAuditUniverseTest extends TestCase
             },
         );
         $rules->method('allRules')->willReturn([]);
+        $rules->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
 
         // The pipeline asks the executor which of the late findings this run's
         // selection publishes. Nothing here selects anything, so the honest
@@ -161,7 +166,7 @@ final class DirectiveAuditUniverseTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([]);
         $graphBuilder = self::createStub(DependencyGraphBuilderInterface::class);
-        $graphBuilder->method('build')->willReturn(AdjacencyGraphBuilder::empty());
+        $graphBuilder->method('build')->willReturn(new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), []));
         $repositoryFactory = self::createStub(MetricRepositoryFactoryInterface::class);
         $repositoryFactory->method('create')->willReturn(new InMemoryMetricRepository());
 

@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Console\Unit\Command;
 
 use Closure;
+
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-
 use PHPUnit\Framework\TestCase;
 
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
@@ -33,10 +34,11 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\ProductIdentity;
@@ -282,7 +284,7 @@ final class RulesCommandTest extends TestCase
         $options = new LayerViolationOptions();
         $rule = new LayerViolationRule(
             $options,
-            new LayerEvidenceCollector($options, new UnassignedClassOptions(), new ArchitecturePolicy()),
+            new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), new ArchitecturePolicy()),
         );
 
         $tester = new CommandTester($this->createCommand([$rule]));

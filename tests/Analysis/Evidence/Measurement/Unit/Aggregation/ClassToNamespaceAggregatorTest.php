@@ -94,6 +94,37 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     }
 
     #[Test]
+    public function itAggregatesCaseVariantsIntoOneNamespace(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        foreach ([['App\\Web', 'First', 'src/First.php'], ['App\\web', 'Second', 'src/Second.php']] as [$namespace, $class, $path]) {
+            $file = RelativePath::fromString($path);
+            $repository->add(SymbolPath::forClass($namespace, $class), new MetricBag(), $file, 2);
+            $repository->add(
+                SymbolPath::forFile($file),
+                MetricBag::fromArray(['size.class-count' => 1]),
+                $file,
+                1,
+            );
+        }
+        $repository->add(
+            SymbolPath::forNamespace('App\\web'),
+            MetricBag::fromArray(['size.class-count' => 2, 'size.class-count.count' => 2]),
+            RelativePath::fromString('src/Second.php'),
+            2,
+        );
+
+        (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, [
+            new MetricDefinition('size.class-count', SymbolLevel::File, [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+            ]),
+        ]);
+
+        self::assertSame(['App\\Web'], $repository->getNamespaces());
+        self::assertSame(2, $repository->get(SymbolPath::forNamespace('APP\\WEB'))->get('size.class-count.sum'));
+    }
+
+    #[Test]
     public function itKeepsExplicitCountTotalsExactAcrossTheNamespaceTree(): void
     {
         $repository = new InMemoryMetricRepository();

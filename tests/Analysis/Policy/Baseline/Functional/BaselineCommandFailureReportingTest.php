@@ -273,6 +273,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
             new RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
 
         $errorStream = new ErrorStream();
@@ -312,6 +313,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             new RuleOptionsBuild(self::createStub(RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
             new RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
     }
 

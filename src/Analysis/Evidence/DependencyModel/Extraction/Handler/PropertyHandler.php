@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Property;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 final readonly class PropertyHandler implements NodeDependencyHandlerInterface
@@ -26,6 +27,6 @@ final readonly class PropertyHandler implements NodeDependencyHandlerInterface
             TypeDependencyHelper::processType($node->type, DependencyType::PropertyType, $context);
         }
 
-        TypeDependencyHelper::processAttributes($node->attrGroups, $node->getStartLine(), $context);
+        TypeDependencyHelper::processAttributes($node->attrGroups, $node->getStartLine(), AttributeSite::Property, $context);
     }
 }

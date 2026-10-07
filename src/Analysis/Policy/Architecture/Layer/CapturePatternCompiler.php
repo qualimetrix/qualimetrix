@@ -24,16 +24,25 @@ final class CapturePatternCompiler
     /** @var array<string, true> */
     private array $seenVariables = [];
 
+    private string $literalPrefix = '';
+
+    private bool $projectsLiteralSubtree = true;
+
     public function __construct(private readonly string $source) {}
 
-    /** @return array{string, list<string>, list<string>} */
+    /** @return array{string, list<string>, list<string>, ?string} */
     public function compile(): array
     {
         while ($this->cursor < \strlen($this->source)) {
             $this->consumeToken();
         }
 
-        return [$this->regex . ')\\z~', $this->variables, $this->multiSegmentVariables];
+        return [
+            $this->regex . ')\\z~',
+            $this->variables,
+            $this->multiSegmentVariables,
+            $this->projectsLiteralSubtree ? $this->literalPrefix : null,
+        ];
     }
 
     private function consumeToken(): void
@@ -61,6 +70,7 @@ final class CapturePatternCompiler
         }
 
         if (str_starts_with($remaining, '\\**\\')) {
+            $this->projectsLiteralSubtree = false;
             $this->regex .= '\\\\(?:[^\\\\]+\\\\)*';
             $this->cursor += 4;
 
@@ -68,6 +78,7 @@ final class CapturePatternCompiler
         }
 
         $this->regex .= preg_quote('\\', '~');
+        $this->literalPrefix .= '\\';
         $this->cursor++;
     }
 
@@ -82,6 +93,7 @@ final class CapturePatternCompiler
 
     private function consumeCapture(): void
     {
+        $this->projectsLiteralSubtree = false;
         [$variableName, $multiSegment, $advance] = self::parseCapture($this->source, $this->cursor);
 
         if (isset($this->seenVariables[$variableName])) {
@@ -116,6 +128,7 @@ final class CapturePatternCompiler
 
     private function consumeWildcard(): void
     {
+        $this->projectsLiteralSubtree = false;
         if ($this->cursor === 0 && str_starts_with($this->source, '**\\')) {
             $this->regex .= '(?:[^\\\\]+\\\\)*';
             $this->cursor += 3;
@@ -136,6 +149,7 @@ final class CapturePatternCompiler
 
     private function consumeSingleCharacterWildcard(): void
     {
+        $this->projectsLiteralSubtree = false;
         $this->regex .= '[^\\\\]';
         $this->cursor++;
     }
@@ -143,6 +157,7 @@ final class CapturePatternCompiler
     private function consumeLiteral(string $char): void
     {
         $this->regex .= preg_quote($char, '~');
+        $this->literalPrefix .= $char;
         $this->cursor++;
     }
 

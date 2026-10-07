@@ -57,6 +57,7 @@ final class ManifestScopeRefusalTest extends TestCase
                 self::assertSame($state === 'unmeasured' ? [
                     'architecture.empty-template',
                     'architecture.unmatched-exclude',
+                    'architecture.unmatched-type',
                     'architecture.unreachable-layer',
                     'cohesion.unmatched-exclude-method',
                     'coupling.unmatched-framework-namespace',

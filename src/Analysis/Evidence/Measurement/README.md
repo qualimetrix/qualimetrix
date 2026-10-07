@@ -22,7 +22,12 @@ Measurement/
 ├── Contract/           # named cross-owner metric and repository promises
 ├── FileMeasurement/    # file collectors and derived metrics
 ├── Namespace_/         # project namespace attribution
-├── Repository/         # in-memory repository and indexes
+├── Repository/
+│   ├── InMemoryMetricRepository.php # routes the public repository contract
+│   ├── AggregateMetricIndex.php     # project/file/namespace metrics and source info
+│   ├── LogicalClassMetricIndex.php  # folded class metrics and spelling evidence
+│   ├── MetricSubjectIndex.php       # exact declarations and callable lookup
+│   └── NamespaceMetricIndex.php     # namespace attribution and spelling evidence
 └── Visitor/             # AST visitor state and metadata
 ```
 
@@ -108,6 +113,33 @@ differ are two declarations sharing a number, and that is a `LogicException`.
 projects logical classes and namespaces. A duplicate FQN declaration is an
 exact fact; a logical-class projection is deliberately deduplicated before
 namespace aggregation.
+
+`Core\Symbol\ClassNameSpelling` supplies ASCII-only identity folding and the
+byte-smallest canonical observed name. Consumers joining logical findings to
+class or namespace measurements use that identity; exact source declaration
+subjects retain their authored paths and ordinals.
+
+Logical class and namespace projections use PHP's case-insensitive class-name
+identity. Each index retains every observed spelling, chooses the byte-smallest
+spelling as its canonical projection, and publishes groups with more than one
+spelling through `MetricRepositoryInterface::mixedSpellings()`. Exact
+`DeclarationPath` subjects are never rewritten or merged by that projection.
+Repository merges carry the complete spelling observations from both inputs;
+rebuilding the canonical indexes does not count their metric bags a second
+time. Namespace aggregation therefore sees one namespace for case variants and
+counts every distinct exact declaration once. Global function writes rekey
+existing namespace bags when the canonical spelling changes; repository merges
+choose the combined spelling before merging bags and preserve scalar precedence,
+structured entries and source metadata.
+
+The repository delegates each identity domain to one internal index. Exact
+declarations and callable ambiguity stay in `MetricSubjectIndex`; folded class
+identity and its spelling observations stay in `LogicalClassMetricIndex`;
+project, file, and namespace aggregate bags stay in `AggregateMetricIndex`.
+`NamespaceMetricIndex` remains the attribution view over those stored facts.
+Exact class declarations and callable owners enter the logical class view
+through `LogicalClassMetricIndex::project()`, so every exact write path applies
+the same location-free projection before namespace attribution.
 
 Enriching one of those subjects with a single computed value is
 `addSubjectScalar()`, the declaration-addressed counterpart of `addScalar()`.

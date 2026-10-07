@@ -418,19 +418,23 @@ final class ChannelEmissionStaticGuardTest extends TestCase
                 . ' user configuration rather than by a constant this resolver could read.',
             'src/Analysis/Policy/Architecture/LayerViolation/LayerViolationFinding.php' =>
                 'LayerViolationRule delegates to this value object.',
-            'src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassSummary.php' =>
+            'src/Analysis/Policy/Architecture/UnassignedClass/UnassignedClassSummary.php' =>
                 'UnassignedClassRule delegates to this summary.',
-            'src/Analysis/Policy/Architecture/LayerViolation/UnmatchedExcludeDiagnostic.php' =>
-                'LayerViolationRule delegates its second channel here, and the channel name arrives as an'
+            'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedExcludeDiagnostic.php' =>
+                'LayerDeclarationRule delegates architecture.unmatched-exclude here; the channel name arrives as an'
                 . ' argument rather than a constant on this class, so the resolver has nothing to read even'
                 . ' if it followed the call.',
-            'src/Analysis/Policy/Architecture/LayerViolation/DoubtedAssignmentDiagnostic.php' =>
-                'LayerViolationRule delegates architecture.doubted-assignment here, the same shape as'
+            'src/Analysis/Policy/Architecture/LayerDeclaration/DoubtedAssignmentDiagnostic.php' =>
+                'LayerDeclarationRule delegates architecture.doubted-assignment here, the same shape as'
                 . ' UnmatchedExcludeDiagnostic above.',
-            'src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php' =>
+            'src/Analysis/Policy/Architecture/LayerDeclaration/LayerOverlapDiagnostic.php' =>
+                'LayerDeclarationRule delegates partial non-pattern precedence findings here.',
+            'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedTypeDiagnostic.php' =>
+                'LayerDeclarationRule delegates architecture.unmatched-type findings here.',
+            'src/Analysis/Policy/Architecture/LayerDeclaration/DeclaredLayerReachability.php' =>
                 'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
                 . ' rule class chain leads here at all.',
-            'src/Analysis/Policy/Architecture/LayerViolation/PotentialShadowDiagnostic.php' =>
+            'src/Analysis/Policy/Architecture/LayerDeclaration/PotentialShadowDiagnostic.php' =>
                 'Reached from LayerDeclarationValidator, like DeclaredLayerReachability above.',
             'src/Analysis/Policy/Inline/Directive/InlineDirectiveValidator.php' =>
                 'A configuration validator, like the one above.',

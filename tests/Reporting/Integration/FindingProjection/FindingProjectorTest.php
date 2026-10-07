@@ -6,14 +6,21 @@ namespace Qualimetrix\Tests\Reporting\Integration\FindingProjection;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
@@ -29,6 +36,7 @@ use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -218,19 +226,9 @@ final class FindingProjectorTest extends TestCase
         self::assertSame([$kept], $result->measuredFindings);
     }
 
-    /**
-     * `suppress_namespaces` does not apply to `architecture.*` at all, so
-     * those findings are in the measured set even inside an excluded
-     * namespace — and are therefore captured. This is the one documented
-     * exception to "an exclusion keeps a finding out of the baseline", and
-     * the reason the exclusion case is written on an ordinary channel.
-     */
     #[Test]
-    public function itMeasuresAnArchitectureFindingInsideAnExcludedNamespace(): void
+    public function itDoesNotMeasureALayerViolationInsideAnExcludedSourceNamespace(): void
     {
-        // The real channel, not a synthesised descendant of it: immunity is a
-        // property the capability declares per channel, so an invented
-        // `architecture.layer-violation.callable` is correctly not immune.
         $architecture = $this->makeFinding(
             'src/Foo/Service.php',
             'App\\Foo',
@@ -244,7 +242,7 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($pipeline, [$architecture, $ordinary], new FindingProjectionOptions());
 
-        self::assertSame([$architecture], $result->measuredFindings);
+        self::assertSame([], $result->measuredFindings);
     }
 
     /**
@@ -849,11 +847,8 @@ final class FindingProjectorTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsArchitectureRuleFindingsInExcludedNamespaces(): void
+    public function itExcludesLayerViolationsFromReportsForExcludedSourceNamespaces(): void
     {
-        // The real channel, not a synthesised descendant of it: immunity is a
-        // property the capability declares per channel, so an invented
-        // `architecture.layer-violation.callable` is correctly not immune.
         $architecture = $this->makeFinding(
             'src/Foo/Service.php',
             'App\\Foo',
@@ -867,8 +862,79 @@ final class FindingProjectorTest extends TestCase
 
         $result = $this->project($pipeline, [$architecture, $ordinary], new FindingProjectionOptions());
 
-        self::assertSame([$architecture], $result->findings);
-        self::assertSame(1, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
+        self::assertSame([], $result->findings);
+        self::assertSame(2, $result->removedCountBy(FindingFilterStage::NamespaceExclusion));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function sourceScopeDoors(): iterable
+    {
+        yield 'Git strict' => ['strict'];
+        yield 'Git non-strict' => ['non-strict'];
+        yield 'global source path' => ['path'];
+        yield 'global source namespace' => ['namespace'];
+    }
+
+    #[Test]
+    #[DataProvider('sourceScopeDoors')]
+    public function itProjectsLayerViolationByItsSourceFileAndNamespace(string $door): void
+    {
+        $sourceSymbol = SymbolPath::forClass('App\\Source', 'Sender');
+        $sourceFile = RelativePath::fromString('src/Source/Sender.php');
+        $source = DeclarationPath::of($sourceSymbol, $sourceFile, DeclarationOrdinal::fromRank(0));
+        $targetSymbol = SymbolPath::forClass('App\\Target', 'Receiver');
+        $targetFile = RelativePath::fromString('src/Target/Receiver.php');
+        $target = DeclarationPath::of($targetSymbol, $targetFile, DeclarationOrdinal::fromRank(0));
+        $dependency = Dependency::ofKind($source, new LogicalClassPath($targetSymbol), DependencyType::New_, new Location($sourceFile, 12));
+        $from = new LayerMatch('source', [new MatchedCriterion(MatchedCriterionKind::Pattern, 'App\\Source\\**')], true);
+        $to = new LayerMatch('target', [new MatchedCriterion(MatchedCriterionKind::Pattern, 'App\\Target\\**')], true);
+        $finding = (new LayerViolationFinding(
+            $dependency,
+            $from,
+            $to,
+            [MetricSubject::declaration($target)],
+            LayerViolationRule::NAME,
+            Severity::Warning,
+            'Remove the forbidden dependency',
+        ))->toFindings()[0];
+        self::assertSame($source->toCanonical(), $finding->subject->declarationPath()?->toCanonical());
+        self::assertSame($sourceFile, $finding->location->file);
+        self::assertSame($targetSymbol->toCanonical(), $finding->dependencyTarget?->toCanonical());
+        self::assertNotNull($finding->occurrenceKey);
+
+        $git = $door === 'strict' || $door === 'non-strict';
+        if ($git) {
+            $removed = $this->projectWithSyntheticGitScope(
+                [$finding],
+                new GitScopeResult([$targetFile->value()], ['App\\Source', 'App\\Target']),
+                $door === 'non-strict',
+            );
+            $kept = $this->projectWithSyntheticGitScope(
+                [$finding],
+                new GitScopeResult([$sourceFile->value()], ['App\\Source']),
+                $door === 'non-strict',
+            );
+            $stage = FindingFilterStage::GitScope;
+        } else {
+            $sourceOptions = $door === 'path'
+                ? new FindingProjectionOptions(suppressPaths: $this->paths($sourceFile->value()))
+                : new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Source'));
+            $targetOptions = $door === 'path'
+                ? new FindingProjectionOptions(suppressPaths: $this->paths($targetFile->value()))
+                : new FindingProjectionOptions(suppressNamespaces: $this->namespaces('App\\Target'));
+            $removed = $this->project($this->createPipeline(), [$finding], $sourceOptions);
+            $kept = $this->project($this->createPipeline(), [$finding], $targetOptions);
+            $stage = $door === 'path' ? FindingFilterStage::PathExclusion : FindingFilterStage::NamespaceExclusion;
+        }
+
+        self::assertSame([], $removed->findings);
+        self::assertSame($git ? [$finding] : [], $removed->measuredFindings);
+        self::assertSame([$finding], $removed->removedBy($stage));
+        self::assertSame([$finding], $kept->findings);
+        self::assertSame([$finding], $kept->measuredFindings);
+        self::assertSame([], $kept->removedBy($stage));
+        self::assertSame($targetSymbol->toCanonical(), $kept->findings[0]->dependencyTarget?->toCanonical());
+        self::assertSame($finding->occurrenceKey, $kept->findings[0]->occurrenceKey);
     }
 
     // -- Git scope --

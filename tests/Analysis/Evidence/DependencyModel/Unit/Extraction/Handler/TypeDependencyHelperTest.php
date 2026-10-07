@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(TypeDependencyHelper::class)]
@@ -158,6 +159,8 @@ PHP;
         if ($ast === null) {
             return [];
         }
+
+        NameResolution::resolve($ast);
 
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $this->traverser = new NodeTraverser();

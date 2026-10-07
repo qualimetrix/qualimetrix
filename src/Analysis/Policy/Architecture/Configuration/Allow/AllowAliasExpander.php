@@ -57,8 +57,7 @@ final class AllowAliasExpander
         'type_reference' => [
             DependencyType::TypeHint,
             DependencyType::PropertyType,
-            DependencyType::IntersectionType,
-            DependencyType::UnionType,
+            DependencyType::ConstantType,
         ],
         'runtime_check' => [
             DependencyType::Catch_,
@@ -100,10 +99,18 @@ final class AllowAliasExpander
     /** The sentence refusing `$token`, naming both vocabularies in full. */
     public static function unknownTokenMessage(string $context, string $token): string
     {
+        $shapeAdvice = \in_array($token, ['union_type', 'intersection_type'], true)
+            ? \sprintf(
+                " '%s' names a type shape, not a relation kind; use 'type_reference' or a concrete type position; shape is graph metadata.",
+                $token,
+            )
+            : '';
+
         return \sprintf(
-            "%s.relations: unknown relation kind '%s'. Known direct values: %s. Known aliases: %s.",
+            "%s.relations: unknown relation kind '%s'.%s Known direct values: %s. Known aliases: %s.",
             $context,
             $token,
+            $shapeAdvice,
             self::renderDirectValues(),
             self::renderAliases(),
         );

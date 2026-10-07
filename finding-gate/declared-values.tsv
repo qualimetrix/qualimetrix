@@ -1,1 +1,144 @@
 kind	key	level	reason
+exit	check	*	The independent spelling fixture gains a real circular-dependency error when references join their PHP class identity.
+field	file	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+field	message	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+field	metricValue	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+field	ranking.coupling.class-rank	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+field	ranking.impactScore	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+field	recommendation	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+field	techDebtMinutes	*	Publish source-owned dependency facts and pattern-only shadow explanations; folding the independent spelling fixture changes measured finding values and their ranking.
+metric	code-smell.parameter-count.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	code-smell.parameter-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	code-smell.parameter-count.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	code-smell.unreachable-code.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	cohesion.lcom.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	cohesion.lcom.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.ccn.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.ccn.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.ccn.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.ccn.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.cognitive.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.cognitive.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.cognitive.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.cognitive.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.npath.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.npath.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.npath.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	complexity.wmc	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.ca	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ca.sum	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo-app	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo-app.avg	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo-app.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo-app.max	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo-app.p95	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo-app.sum	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo.avg	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo.max	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo.p95	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.cbo.sum	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce-framework.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce-packages.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce.avg	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce.max	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce.p95	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.ce.sum	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.class-rank	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.class-rank.avg	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.class-rank.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.class-rank.max	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.class-rank.p95	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.distance-own.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.instability	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.instability.avg	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.instability.count	*	Use PHP class identity for dependency positions, self-reference removal and namespace coupling aggregation.
+metric	coupling.rfc-external.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc-external.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc-external.p95	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc-external.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc-own.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc-own.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc-own.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc.p95	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	coupling.rfc.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.dit	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.dit.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.dit.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.dit.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.dit.p95	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.is-data-class.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.noc	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.noc.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.noc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.noc.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.noc.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.type-coverage.return	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.type-coverage.return.total.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.type-coverage.return.typed.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	design.woc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.bugs.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.bugs.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.difficulty.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.difficulty.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.difficulty.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.effort.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.effort.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.effort.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.time.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.time.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.volume.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.volume.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.halstead.volume.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.mi.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.mi.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	maintainability.mi.min	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.abstract-class-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-count.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-loc.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-loc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-loc.p95	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.class-loc.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.cloc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.enum-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.function-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.getter-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.implementing-enum-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.interface-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.lloc	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.lloc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.lloc.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.loc	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.loc.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.loc.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.private.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.protected.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.public.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.public.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.public.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.total.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.total.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-count.total.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-statement-count.avg	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-statement-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-statement-count.max	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.method-statement-count.sum	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.promoted-property-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.property-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.property-count.private.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.property-count.protected.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.property-count.public.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.setter-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.symbol-class-count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.symbol-method-count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.
+metric	size.trait-count.count	*	Fold the case-spelled logical classes and namespaces in the independent spelling fixture; exact declaration metrics remain separately owned.

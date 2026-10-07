@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Pipeline;
 
-use PhpParser\Node;
-use PhpParser\Node\Stmt\ClassLike;
-use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
@@ -23,10 +21,9 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Throwable;
 
 /**
@@ -58,8 +55,8 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         $failures = [];
         /** @var list<Dependency> $dependencies */
         $dependencies = [];
-        /** @var array<string, LogicalClassPath> $logicalClassUniverse */
-        $logicalClassUniverse = [];
+        /** @var list<ClassLikeDeclaration> $classLikeDeclarations */
+        $classLikeDeclarations = [];
 
         foreach ($files as $file) {
             $path = PathFactory::published(PathFactory::fromCliArgument($file->getPathname(), $projectRoot), $projectRoot);
@@ -73,15 +70,14 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
 
             try {
                 $ast = $this->fileParser->parseContent($file, $source);
+                NameResolution::resolve($ast);
                 $traverser = new NodeTraverser();
                 $registrar = $this->beginNumbering($traverser);
                 $traverser->addVisitor($this->dependencyVisitor);
                 $this->dependencyVisitor->beginFile($path, $registrar->index());
                 $traverser->traverse($ast);
                 array_push($dependencies, ...$this->dependencyVisitor->dependencies());
-                foreach (self::declaredLogicalClasses($ast) as $class) {
-                    $logicalClassUniverse[$class->toCanonical()] = $class;
-                }
+                array_push($classLikeDeclarations, ...$this->dependencyVisitor->classLikeDeclarations());
                 $analyzedFiles[] = $path;
             } catch (ParseException $e) {
                 $failures[] = new AnalysisFailure($path, AnalysisFailureKind::Parse, $e->getMessage());
@@ -103,9 +99,12 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             );
         }
 
+        $build = $this->graphBuilder->build($dependencies, $classLikeDeclarations);
+
         return new DependencyGraphAnalysisResult(
-            $this->graphBuilder->build($dependencies, array_values($logicalClassUniverse)),
+            $build->graph,
             $coverage,
+            $build->mixedSpellings,
         );
     }
 
@@ -123,34 +122,4 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         return $registrar;
     }
 
-    /**
-     * Graph-only analysis has no metric repository, so it discovers the
-     * declared logical class universe directly from the parsed AST.
-     *
-     * @param array<Node> $nodes
-     *
-     * @return list<LogicalClassPath>
-     */
-    private static function declaredLogicalClasses(array $nodes, string $namespace = ''): array
-    {
-        $classes = [];
-        foreach ($nodes as $node) {
-            if ($node instanceof Namespace_) {
-                array_push($classes, ...self::declaredLogicalClasses(
-                    $node->stmts,
-                    $node->name?->toString() ?? '',
-                ));
-
-                continue;
-            }
-
-            if (!$node instanceof ClassLike || $node->name === null) {
-                continue;
-            }
-
-            $classes[] = new LogicalClassPath(SymbolPath::forClass($namespace, $node->name->toString()));
-        }
-
-        return $classes;
-    }
 }

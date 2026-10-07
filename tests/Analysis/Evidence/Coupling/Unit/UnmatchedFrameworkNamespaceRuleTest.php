@@ -234,7 +234,7 @@ final class UnmatchedFrameworkNamespaceRuleTest extends TestCase
 
     private function edge(SymbolPath $source, SymbolPath $target): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of($source, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             DependencyType::TypeHint,

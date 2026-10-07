@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -23,7 +24,7 @@ use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGrap
  * {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy}.
  *
  * Wires a concrete {@see ArchitecturePolicy} through the same lifecycle
- * the pipeline uses in production: {@code bind} → {@code prepare}. The
+ * the pipeline uses in production: {@code replace} → {@code prepare}. The
  * graph and metric repository are optional — pass them when the rule needs
  * them, otherwise empty stand-ins are used.
  */
@@ -49,7 +50,7 @@ final class ProcessorBuilder
             return $processor;
         }
 
-        $processor->bind($configuration);
+        $processor->replace(new ArchitectureFactoryResult($configuration));
         $processor->prepare(
             $graph ?? AdjacencyGraphBuilder::empty(),
             self::classPathsFromRepository($repository),

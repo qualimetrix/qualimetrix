@@ -71,7 +71,7 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
         NameResolution::resolve($ast);
 
         if ($this->collectors === [] && $this->dependencyTraversalParticipant === null) {
-            return new CollectionOutput(new MetricBag(), []);
+            return new CollectionOutput(new MetricBag(), [], []);
         }
 
         $traverser = new NodeTraverser();
@@ -81,6 +81,7 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
         return new CollectionOutput(
             $this->collectMetrics($file, $ast, $filePath),
             $this->dependencyTraversalParticipant?->dependencies() ?? [],
+            $this->dependencyTraversalParticipant?->classLikeDeclarations() ?? [],
         );
     }
 

@@ -584,6 +584,11 @@ class TestDependencyTraversalParticipant extends NodeVisitorAbstract implements 
     {
         return [];
     }
+
+    public function classLikeDeclarations(): array
+    {
+        return [];
+    }
 }
 
 final class AlternateDependencyTraversalParticipant extends TestDependencyTraversalParticipant {}

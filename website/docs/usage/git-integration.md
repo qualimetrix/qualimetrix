@@ -7,8 +7,8 @@ Git reporting keeps the selected analysis paths and limits published findings re
 `--report` filters publication after analyzing the selected paths. It does not
 promise faster collection or prove that a finding was introduced by this commit.
 Changed-file findings remain alongside relevant namespace/project results and
-declared project-scoped diagnostics, including project-scoped architecture cycle
-and layer-violation findings.
+declared project-scoped diagnostics, including architecture cycle findings.
+Layer violations belong to their source file.
 
 ---
 
@@ -102,8 +102,9 @@ Non-strict mode also keeps namespace findings in changed PHP namespaces and thei
 ancestors, and location-free project findings when changed PHP files are nonempty.
 Channels declared project-scoped are kept independently of changed files in
 both modes. This currently includes `architecture.circular-dependency` cycle
-findings and `architecture.layer-violation` findings, even in strict mode.
-Do not use a Git report as a changed-file-only architecture report.
+findings and project-scoped diagnostics, even in strict mode.
+`architecture.layer-violation` remains only when its source file changed, in
+both modes. Changing only the target does not retain an outgoing violation.
 See the channel list and measured questions under
 [Project scope](output-formats.md#project-scope-in-every-format).
 Namespace queries do not read source through file links.
@@ -112,7 +113,7 @@ Namespace queries do not read source through file links.
 
 Strict mode limits file-scoped findings to changed files and removes
 namespace/project widening. Declared project-scoped findings, including
-architecture cycles and layer violations, remain:
+architecture cycles, remain. Layer violations follow their source file:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict

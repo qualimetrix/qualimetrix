@@ -221,7 +221,7 @@ final class RelationsFilterIntegrationTest extends TestCase
 
         $holder = $container->get(ArchitecturePolicyConfiguratorInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $holder);
-        $holder->bind($result->configuration);
+        $holder->replace($result);
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);

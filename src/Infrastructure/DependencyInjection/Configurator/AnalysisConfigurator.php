@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
@@ -37,6 +38,7 @@ use Qualimetrix\Analysis\Run\Discovery\ProjectTree;
 use Qualimetrix\Analysis\Run\Discovery\ProjectWalk;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Composer\InstalledExternalClassSpelling;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -126,11 +128,15 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ]);
         $container->setAlias(CollectionOrchestratorInterface::class, self::COLLECTION_ORCHESTRATOR);
 
+        $container->register(InstalledExternalClassSpelling::class)
+            ->setAutowired(true);
+        $container->setAlias(ExternalClassSpellingInterface::class, InstalledExternalClassSpelling::class);
+
         // DependencyModel publishes the builder only through its contract.
         $container->register(
             'dependency_model.graph_builder',
             'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder',
-        );
+        )->setArgument('$externalClassSpelling', new Reference(ExternalClassSpellingInterface::class));
         $container->setAlias(DependencyGraphBuilderInterface::class, 'dependency_model.graph_builder')
             ->setPublic(true);
 

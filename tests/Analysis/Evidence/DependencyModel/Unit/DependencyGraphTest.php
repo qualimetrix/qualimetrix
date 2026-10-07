@@ -7,13 +7,16 @@ namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -27,7 +30,7 @@ final class DependencyGraphTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->builder = new DependencyGraphBuilder();
+        $this->builder = new DependencyGraphBuilder(new UnplacedExternalClassSpelling());
     }
 
     #[Test]
@@ -203,7 +206,12 @@ final class DependencyGraphTest extends TestCase
     {
         $standalone = new LogicalClassPath(SymbolPath::fromClassFqn('App\\Standalone'));
 
-        $graph = $this->builder->build([], [$standalone]);
+        $graph = $this->builder->build([], [ClassLikeDeclaration::of(
+            DeclarationPath::of($standalone->symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+            ClassType::Class_,
+            false,
+            false,
+        )])->graph;
 
         self::assertSame([$standalone->symbolPath], $graph->getAllClasses());
         self::assertSame(0, $graph->getClassCe($standalone->symbolPath));
@@ -583,7 +591,7 @@ final class DependencyGraphTest extends TestCase
     {
         $sourcePath = SymbolPath::fromClassFqn($source);
 
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of($sourcePath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,
@@ -594,13 +602,13 @@ final class DependencyGraphTest extends TestCase
     /** @param list<Dependency> $dependencies */
     private function build(array $dependencies): DependencyGraphInterface
     {
-        /** @var array<string, LogicalClassPath> $universe */
+        /** @var array<string, ClassLikeDeclaration> $universe */
         $universe = [];
         foreach ($dependencies as $dependency) {
-            $source = new LogicalClassPath($dependency->sourceLogical());
-            $universe[$source->toCanonical()] = $source;
+            $source = ClassLikeDeclaration::of($dependency->source, ClassType::Class_, false, false);
+            $universe[$source->logical->toCanonical()] = $source;
         }
 
-        return $this->builder->build($dependencies, array_values($universe));
+        return $this->builder->build($dependencies, array_values($universe))->graph;
     }
 }

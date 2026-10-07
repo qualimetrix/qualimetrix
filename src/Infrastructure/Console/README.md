@@ -74,7 +74,7 @@ Console/
 │   ├── HookBackupTransaction.php # judged, identity-fenced creation of a hook backup
 │   ├── HookEntryAccess.php         # shared guarded hook IO, identity checks and exposure warnings
 │   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
-├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
+├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment inspection
 ├── Progress/
 │   ├── ConsoleProgressBar.php
 │   ├── ProgressConfigurator.php      # Whether this run shows a frame, and on what
@@ -89,7 +89,8 @@ Console/
     ├── HookStatusCommand.php        # Check hook status
     ├── HookUninstallCommand.php     # Remove pre-commit hook
     └── Debug/
-        ├── LayerAssignmentCommand.php # Validate input, configure runtime, and publish JSON
+        ├── LayerAssignmentCommand.php # Validate input, configure runtime, and route presentation
+        ├── LayerAssignmentJsonPresenter.php # Render the complete assignment as JSON
         └── LayerAssignmentTextPresenter.php # Render measured layer assignments as text
 ```
 
@@ -186,20 +187,46 @@ whether a name is wrong, the other what to say about it.
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file
 filtering, collection, dependency-graph and class-set preparation needed to
-query `LayerAssignmentInspectorInterface`; the command retains input validation, runtime
-configuration, error mapping and rendering. This keeps both declarations below
-their constructor-dependency thresholds without introducing a public port.
+query `LayerAssignmentInspectorInterface`; the command retains input validation,
+runtime configuration, error mapping and presentation routing. The text and
+JSON presenters each receive the complete `LayerAssignment`, so format-specific
+branching and shadow projection do not remain in the command. The text presenter
+also owns the documentation pointer after every enabled-policy report; disabled
+policy output and JSON omit it. This keeps the
+adapter declarations below their complexity thresholds without introducing a
+public port.
 
-`LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath)` receives the captured
-configuration directly and delegates to `ProjectFilesInterface` with its universe,
-aliases and generated policy. It does not reconstruct config from paths/excludes/root
-or expose `resolveIncludingGenerated()`.
+Debug JSON publishes `meta`, canonical `fqn`, `policyDisabled`, `edgeEndOnly`,
+assignment and contender evidence. An enabled shadow carries `reported` and,
+when exempt, the typed `exemption`; disabled shadow output omits both fields and
+the text omits diagnostic guidance. All arguments other than empty input are
+resolved through observed identities after collection, never an identifier regex.
+See [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
 
-The resolver also owns the answer to "was this class analysed at all": an FQN
-that names no analysed declaration raises `ConfigurationRefusal` (exit 3)
-instead of reaching the inspector, so "never analysed" and "analysed, no layer
-matched" stop sharing the `(no layer)` report. Membership folds ASCII case the
-way PHP folds class names; layer matching itself stays case-sensitive.
+The JSON presenter uses Reporting's `PublishedUtf8` contract: invalid UTF-8
+bytes in observed names become U+FFFD, and `invalidUtf8Replaced` counts repaired
+strings. Valid UTF-8 output omits that key.
+
+`LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath, bool)` receives the
+captured configuration and final Architecture producer enablement directly and
+delegates to `ProjectFilesInterface` with its universe, aliases and generated
+policy. It does not reconstruct config from paths/excludes/root or expose
+`resolveIncludingGenerated()`.
+
+The inspector resolves the authored argument through Architecture's observed
+name index after collection. That population contains analysed declarations
+and dependency-graph declarations, classes and edge ends, without the
+Composer-install-only fallback. The canonical observed spelling drives both
+layer matching and output; a graph-end-only name is accepted and marked as
+such. A miss raises `ConfigurationRefusal` (exit 3), so "not observed" and
+"observed, no layer matched" do not share the `(no layer)` report.
+
+The command judges only an empty argument before collection. It does not parse
+PHP name grammar: high-byte declaration names and differently cased input are
+resolved from parser-derived identities, while any other non-empty spelling is
+an ordinary observed-name miss. Final Finding enablement is mandatory; when no
+Architecture producer runs, a known type still resolves but the text and JSON
+state that the policy is disabled instead of claiming an active diagnostic.
 
 **Arguments:**
 - `paths` (required, array) — paths for analysis

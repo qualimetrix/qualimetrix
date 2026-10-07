@@ -9,22 +9,29 @@ use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -47,8 +54,11 @@ use Qualimetrix\Core\Pattern\PathPattern;
 use Qualimetrix\Core\Pattern\SelectorDefinition;
 use Qualimetrix\Core\Pattern\SelectorKind;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\MixedSpelling;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 use SplFileInfo;
 
 #[CoversClass(AnalysisPipeline::class)]
@@ -68,7 +78,7 @@ final class AnalysisPipelineTest extends TestCase
         $collection = $this->createMock(CollectionOrchestratorInterface::class);
         $collection->expects(self::once())->method('collect')
             ->with([$file], self::isInstanceOf(MetricRepositoryInterface::class), $root)
-            ->willReturn(new CollectionPhaseOutput([$relative], []));
+            ->willReturn(new CollectionPhaseOutput([$relative], [], classLikeDeclarations: []));
 
         $pipeline = $this->pipeline($discovery, $collection);
         $configuration = new RunConfiguration(
@@ -101,7 +111,7 @@ final class AnalysisPipelineTest extends TestCase
         $projectFiles = $this->createMock(ProjectFilesInterface::class);
         $projectFiles->expects(self::once())->method('discover')->with(self::identicalTo($configuration))->willReturn(self::discovered([]));
         $collection = self::createStub(CollectionOrchestratorInterface::class);
-        $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
+        $collection->method('collect')->willReturn(new CollectionPhaseOutput([], [], classLikeDeclarations: []));
 
         $result = $this->pipeline($projectFiles, $collection)->analyze($configuration);
 
@@ -122,7 +132,7 @@ final class AnalysisPipelineTest extends TestCase
             static function (array $files, MetricRepositoryInterface $repository, AbsolutePath $root) use (&$seenRoots): CollectionPhaseOutput {
                 $seenRoots[] = $root->value();
 
-                return new CollectionPhaseOutput([], []);
+                return new CollectionPhaseOutput([], [], classLikeDeclarations: []);
             },
         );
         $pipeline = $this->pipeline($discovery, $collection);
@@ -145,6 +155,42 @@ final class AnalysisPipelineTest extends TestCase
         ));
 
         self::assertSame([$firstRoot->value(), $secondRoot->value()], $seenRoots);
+    }
+
+    #[Test]
+    public function itReportsEachMixedSpellingGroupOnceAcrossRepositoryAndGraph(): void
+    {
+        $root = AbsolutePath::fromString(\dirname(__DIR__, 5));
+        $discovery = self::createStub(ProjectFilesInterface::class);
+        $discovery->method('discover')->willReturn(self::discovered([]));
+        $collection = self::createStub(CollectionOrchestratorInterface::class);
+        $collection->method('collect')->willReturn(new CollectionPhaseOutput([], [], classLikeDeclarations: []));
+        $repository = new InMemoryMetricRepository();
+        $repository->add(SymbolPath::fromClassFqn('App\\Service'), new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(), null, null);
+        $repository->add(SymbolPath::fromClassFqn('app\\service'), new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(), null, null);
+        $mixed = new MixedSpelling('external', ['App\\Service', 'app\\service'], 'App\\Service');
+        $logger = new RecordingLogger();
+
+        $this->pipeline(
+            $discovery,
+            $collection,
+            $repository,
+            new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), [$mixed]),
+            $logger,
+        )->analyze(new RunConfiguration(
+            pathExcludes: [],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Include,
+            projectScope: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeMeasurement(universe: new \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeUniverse(projectRoot: $root, pathsAuthored: true, denominator: [], prunedTargets: [], reasons: [], namespaceMapUsable: true, pathResolutions: []), paths: [$root], scopeState: \Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeState::Covered, uncoveredRoots: []),
+            authoredPathExcludes: [],
+            autoloadDevPolicy: \Qualimetrix\Analysis\Run\Contract\Configuration\AutoloadDevPolicy::Exclude,
+        ));
+
+        $warnings = array_values(array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'));
+        self::assertSame([
+            'mixed spelling: App\\Service, app\\service → App\\Service',
+            'mixed spelling: App, app → App',
+        ], array_column($warnings, 'message'));
     }
 
     #[Test]
@@ -181,7 +227,7 @@ final class AnalysisPipelineTest extends TestCase
             $discovery = self::createStub(ProjectFilesInterface::class);
             $discovery->method('discover')->willReturn(self::discovered([]));
             $collection = self::createStub(CollectionOrchestratorInterface::class);
-            $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
+            $collection->method('collect')->willReturn(new CollectionPhaseOutput([], [], classLikeDeclarations: []));
 
             $result = $this->pipeline($discovery, $collection)->analyze(
                 new RunConfiguration(
@@ -209,6 +255,9 @@ final class AnalysisPipelineTest extends TestCase
     private function pipeline(
         ProjectFilesInterface $discovery,
         CollectionOrchestratorInterface $collection,
+        ?MetricRepositoryInterface $repository = null,
+        ?DependencyGraphBuild $graphBuild = null,
+        ?LoggerInterface $logger = null,
     ): AnalysisPipeline {
         $profiler = self::createStub(ProfilerInterface::class);
         $ruleConfiguration = new RuleOptionsRegistry();
@@ -219,7 +268,7 @@ final class AnalysisPipelineTest extends TestCase
             $producerGate,
             $profiler,
         );
-        $layerPolicy = self::createStub(LayerPolicyPreparationInterface::class);
+        $layerPolicy = self::architectureStub();
         $circular = self::createStub(CircularDependencyPreparationInterface::class);
         $preparation = new RuleProducerPreparation(
             $layerPolicy,
@@ -240,14 +289,15 @@ final class AnalysisPipelineTest extends TestCase
         $computed = new ComputedMetricEvaluator($catalog, $profiler);
 
         $graphBuilder = self::createStub(DependencyGraphBuilderInterface::class);
-        $graphBuilder->method('build')->willReturn(AdjacencyGraphBuilder::empty());
+        $graphBuilder->method('build')->willReturn($graphBuild ?? new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), []));
 
-        $repository = new InMemoryMetricRepository();
+        $repository ??= new InMemoryMetricRepository();
         $repositoryFactory = self::createStub(MetricRepositoryFactoryInterface::class);
         $repositoryFactory->method('create')->willReturn($repository);
 
         $rules = self::createStub(RuleExecutionInterface::class);
         $rules->method('execute')->willReturn(new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()));
+        $rules->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $rules->method('allRules')->willReturn([]);
 
         return new AnalysisPipeline(
@@ -262,6 +312,21 @@ final class AnalysisPipelineTest extends TestCase
             $graphBuilder,
             $repositoryFactory,
             $profiler,
+            $logger ?? new NullLogger(),
         );
+    }
+
+    private static function architectureStub(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface
+    {
+        return new class implements LayerPolicyPreparationInterface, UnmatchedTypeWarningInterface {
+            public function prepare(DependencyGraphInterface $graph, iterable $classUniverse): void {}
+
+            public function reset(): void {}
+
+            public function notJudgedWarning(\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement $scope): ?string
+            {
+                return null;
+            }
+        };
     }
 }

@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -38,6 +39,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -45,6 +47,7 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -54,7 +57,7 @@ use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -85,6 +88,7 @@ use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -166,7 +170,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             null,
             $paths,
             [],
-            new CollectionPhaseOutput([], $failures),
+            new CollectionPhaseOutput([], $failures, classLikeDeclarations: []),
             [],
             [],
             [],
@@ -199,6 +203,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new CollectionPhaseOutput(
                 [$lateFailure, $survivor],
                 [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
+                [],
             ),
             [],
             [],
@@ -260,7 +265,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 return new CollectionPhaseOutput([
                     RelativePath::fromString('lost/Bad.php'),
                     RelativePath::fromString('Keep.php'),
-                ], []);
+                ], [], classLikeDeclarations: []);
             },
         );
         $participant = new class implements FileSetInspectionParticipantInterface {
@@ -303,6 +308,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new RuleExclusionStats(),
             LevelActivity::empty(),
         ));
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $ruleExecutor->method('publishable')->willReturn([]);
         $producerGate = new RuleSelectorProducerGate($registry);
         $pipeline = TestPipelineBuilder::create()
@@ -366,7 +372,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: create dependencies between two classes
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
@@ -423,13 +429,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceA.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA')),
                 DependencyType::New_,
@@ -441,8 +447,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $graphBuilder = AdjacencyGraphBuilder::builder();
         $graph = $graphBuilder->build(
             $dependencies,
-            array_map(static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()), $dependencies),
-        );
+            array_map(static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ), $dependencies),
+        )->graph;
         $detector = new CircularDependencyDetector();
         $cycles = $detector->detect($graph);
         self::assertNotEmpty($cycles, 'Sanity check: CircularDependencyDetector should find cycles');
@@ -599,11 +610,11 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
             // Both producers of the layer policy, because the span is skipped
             // only when nothing that reads the policy is selected — see
-            // LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES.
+            // ArchitectureChannels::PRODUCERS.
             [$withoutLayers, $architectureDisabledSpans] = $run(
                 $cyclicRoot,
                 $architectureDocument,
-                ...LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES,
+                ...ArchitectureChannels::PRODUCERS,
             );
             self::assertSame([], self::findingsNamed($withoutLayers->findings(), LayerViolationRule::NAME));
             self::assertNotEmpty(self::findingsNamed($withoutLayers->findings(), CircularDependencyRule::NAME));
@@ -630,13 +641,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\PaymentRepository')),
                 DependencyType::New_,
@@ -680,6 +691,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
             \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(),
         ));
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
             $dependencies,
@@ -738,7 +750,16 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $fixtureFiles,
         );
         $universe = array_map(
-            static fn(string $fqn): LogicalClassPath => new LogicalClassPath(SymbolPath::fromClassFqn($fqn)),
+            static fn(string $fqn): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                DeclarationPath::of(
+                    SymbolPath::fromClassFqn($fqn),
+                    RelativePath::fromString('fixture.php'),
+                    DeclarationOrdinal::fromRank(0),
+                ),
+                ClassType::Class_,
+                false,
+                false,
+            ),
             [
                 'Fixtures\\CouplingProject\\Core\\AbstractEntity',
                 'Fixtures\\CouplingProject\\Core\\EntityInterface',
@@ -768,8 +789,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $container = (new ContainerFactory())->create();
         $builder = $container->get(DependencyGraphBuilderInterface::class);
         self::assertInstanceOf(DependencyGraphBuilderInterface::class, $builder);
-        $sequentialGraph = $builder->build($sequential['dependencies'], $universe);
-        $parallelGraph = $builder->build($parallel['dependencies'], $universe);
+        $sequentialGraph = $builder->build($sequential['dependencies'], $universe)->graph;
+        $parallelGraph = $builder->build($parallel['dependencies'], $universe)->graph;
 
         $isolatedClass = SymbolPath::fromClassFqn('Fixtures\\CouplingProject\\Isolated\\StandaloneClass');
         self::assertSame([], $sequentialGraph->getClassDependencies($isolatedClass));
@@ -1055,7 +1076,7 @@ PHP);
 
                 return new CollectionPhaseOutput([
                     RelativePath::fromString('dummy.php'),
-                ], [], dependencies: $dependencies);
+                ], [], [], dependencies: $dependencies);
             },
         );
 
@@ -1116,7 +1137,7 @@ PHP);
 
                 return new CollectionPhaseOutput([
                     RelativePath::fromString('dummy.php'),
-                ], [], dependencies: $dependencies);
+                ], [], [], dependencies: $dependencies);
             },
         );
 

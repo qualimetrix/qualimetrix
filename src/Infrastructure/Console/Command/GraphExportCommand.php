@@ -110,7 +110,7 @@ final class GraphExportCommand extends Command
                 'exclude-namespace',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Exclude these namespaces',
+                'Exclude these namespaces (a value matching no analyzed class is refused with exit code 3)',
             )
             ->setHelp(\sprintf('Docs: %s', ProductIdentity::llmsTxtUrl()));
     }
@@ -158,6 +158,13 @@ final class GraphExportCommand extends Command
         ]);
 
         $result = $this->analyzeDependencyGraph($prepared->runConfiguration);
+        foreach ($result->mixedSpellings as $mixed) {
+            $this->logger->warning(\sprintf(
+                'mixed spelling: %s → %s',
+                implode(', ', $mixed->spellings),
+                $mixed->canonical,
+            ));
+        }
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);
@@ -168,7 +175,7 @@ final class GraphExportCommand extends Command
         }
 
         $this->logGraphBuilt($result);
-        $this->assertIncludeNamespacesBind($result, $request);
+        $this->assertNamespaceFiltersBind($result, $request);
         $content = $this->projection->project($result->graph, $request);
         $this->publishGraph($output, $outputFile, $content, $format);
         $this->runTargetSession->markOutputPublished();
@@ -229,29 +236,44 @@ final class GraphExportCommand extends Command
         }
     }
 
-    /**
-     * An include namespace matching nothing renders a graph the caller cannot
-     * tell apart from a genuinely empty one, so it is refused rather than
-     * drawn. The
-     * excluding sibling `--exclude-namespace` deliberately keeps its silence:
-     * a miss there leaves the graph exactly as it would have been, and the
-     * caller loses nothing.
-     *
-     * @throws ConfigurationRefusal
-     */
-    private function assertIncludeNamespacesBind(DependencyGraphAnalysisResult $result, GraphProjectionRequest $request): void
+    /** @throws ConfigurationRefusal */
+    private function assertNamespaceFiltersBind(DependencyGraphAnalysisResult $result, GraphProjectionRequest $request): void
     {
         $unbound = $this->projection->unboundIncludeNamespaces($result->graph, $request);
-        if ($unbound === []) {
+        if ($unbound !== []) {
+            throw ConfigurationRefusal::aboutCommandLineInput(
+                '--namespace',
+                \sprintf(
+                    'No analyzed class belongs to %s: %s.',
+                    \count($unbound) === 1 ? 'namespace' : 'namespaces',
+                    implode(', ', array_map(static fn(string $namespace): string => '"' . $namespace . '"', $unbound)),
+                ),
+            );
+        }
+
+        $unboundExcludes = $this->projection->unboundExcludeNamespaces($result->graph, $request);
+        if ($unboundExcludes === []) {
             return;
         }
 
+        $written = implode(', ', array_map(
+            static fn(array $entry): string => '"' . $entry['selector'] . '"',
+            $unboundExcludes,
+        ));
+        $suggestions = array_values(array_filter(array_map(
+            static fn(array $entry): ?string => $entry['suggestion'] === null
+                ? null
+                : \sprintf('For "%s", did you mean "%s"?', $entry['selector'], $entry['suggestion']),
+            $unboundExcludes,
+        )));
+
         throw ConfigurationRefusal::aboutCommandLineInput(
-            '--namespace',
+            '--exclude-namespace',
             \sprintf(
-                'No analyzed class belongs to %s: %s.',
-                \count($unbound) === 1 ? 'namespace' : 'namespaces',
-                implode(', ', array_map(static fn(string $namespace): string => '"' . $namespace . '"', $unbound)),
+                'No analyzed class belongs to excluded %s: %s.%s',
+                \count($unboundExcludes) === 1 ? 'namespace' : 'namespaces',
+                $written,
+                $suggestions === [] ? '' : ' ' . implode(' ', $suggestions),
             ),
         );
     }

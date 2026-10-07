@@ -25,7 +25,7 @@ final class RuleOptionsDefaultsTest extends TestCase
         self::assertInstanceOf(RuleExecutionInterface::class, $execution);
         $snapshot = ResolvedOptionsFixture::ready(FindingConfiguration::none(), $execution->allRules())->resolvedOptions;
         self::assertNotNull($snapshot);
-        self::assertCount(55, $snapshot->all());
+        self::assertCount(56, $snapshot->all());
         $disabled = [];
         foreach ($snapshot->all() as $producer => $options) {
             $class = $options::class;

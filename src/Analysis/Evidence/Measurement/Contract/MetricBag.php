@@ -11,7 +11,6 @@ use RuntimeException;
 /**
  * Provider-owned metric value bag shared across collection, aggregation, and rules.
  *
- * @qmx-threshold coupling.cbo 68 -- Stable Measurement contract fan-in has raw CBO 67 after the declaration-index delivery edge and one-edge headroom.
  * @qmx-threshold coupling.class-rank warning=0.035 error=0.035 -- Intentional Measurement
  *                contract hub: MetricBag is the shared metric-value carrier nearly every
  *                collector and rule reads, so ClassRank scoring it high is structural, not a

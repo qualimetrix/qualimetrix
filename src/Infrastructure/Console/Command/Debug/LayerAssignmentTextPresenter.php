@@ -4,38 +4,49 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
+use Qualimetrix\Core\ProductIdentity;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Human-readable layer assignment and the limits of its collected evidence.
- *
- * @phpstan-type Resolution array{matches: list<LayerAssignmentMatch>, hasLayers: bool, undecided: list<string>, chainStopsAt: list<string>, contenders: list<string>, firstEstablished: string|null, reportedShadows: list<string>}
  */
 final readonly class LayerAssignmentTextPresenter
 {
     public function __construct(private OutputInterface $output) {}
 
-    /**
-     * @param Resolution $resolution
-     * @param list<LayerAssignmentMatch> $shadowed
-     */
-    public function render(string $fqn, array $resolution, array $shadowed): void
+    public function render(string $fqn, LayerAssignment $assignment): void
     {
-        $matches = $resolution['matches'];
-        $undecided = $resolution['undecided'];
+        $this->renderAssignment($fqn, $assignment);
+        if (!$assignment->policyDisabled) {
+            $this->output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+        }
+    }
+
+    private function renderAssignment(string $fqn, LayerAssignment $assignment): void
+    {
+        $matches = $assignment->matches;
+        $undecided = $assignment->undecidedLayers;
 
         $this->output->writeln(\sprintf('Class: <info>%s</info>', $fqn));
         $this->output->writeln('');
 
+        if ($assignment->policyDisabled) {
+            $this->output->writeln('  Architecture layer policy is disabled in this configuration.');
+
+            return;
+        }
+
         if ($matches === [] && $undecided !== []) {
-            $this->renderUndecided($undecided, $resolution['chainStopsAt']);
+            $this->renderUndecided($undecided, $assignment->chainStopsAt);
 
             return;
         }
 
         if ($matches === []) {
-            $this->renderNoLayer($resolution);
+            $this->renderNoLayer($assignment);
 
             return;
         }
@@ -43,18 +54,17 @@ final readonly class LayerAssignmentTextPresenter
         $assigned = $matches[0];
         $this->output->writeln(\sprintf('  Assigned to: <info>%s</info>', $assigned->layerName));
         $this->output->writeln(\sprintf('    Matched by: <comment>%s</comment>', self::describeCriteria($assigned)));
-        $this->renderAssignmentUncertainty($resolution);
+        $this->renderAssignmentUncertainty($assignment);
         $this->output->writeln('');
 
-        $this->renderAdditionalMatches($resolution, $shadowed);
+        $this->renderAdditionalMatches($assignment);
     }
 
-    /** @param Resolution $resolution */
-    private function renderNoLayer(array $resolution): void
+    private function renderNoLayer(LayerAssignment $assignment): void
     {
         $this->output->writeln('  Assigned to: <comment>(no layer)</comment>');
         $this->output->writeln('');
-        if (!$resolution['hasLayers']) {
+        if (!$assignment->hasLayers) {
             $this->output->writeln('  Suggestion: no layers are declared in the configuration. Add an');
             $this->output->writeln('  <comment>architecture.layers</comment> section to qmx.yaml to start enforcing');
             $this->output->writeln('  layer boundaries.');
@@ -64,10 +74,9 @@ final readonly class LayerAssignmentTextPresenter
         }
     }
 
-    /** @param Resolution $resolution */
-    private function renderAssignmentUncertainty(array $resolution): void
+    private function renderAssignmentUncertainty(LayerAssignment $assignment): void
     {
-        $undecided = $resolution['undecided'];
+        $undecided = $assignment->undecidedLayers;
         if ($undecided !== []) {
             // The assignment is not withdrawn by an unanswered layer — see
             // `LayerRegistry::undecidedLayers()` for why — but printing it
@@ -76,20 +85,16 @@ final readonly class LayerAssignmentTextPresenter
             // assignment (those declared before the first match the run
             // established), so "it can change" is true of every one of them.
             $this->output->writeln(\sprintf('    Could not be decided: <comment>%s</comment>', implode(', ', $undecided)));
-            $this->output->writeln(\sprintf('    Could be owned by: <comment>%s</comment>', implode(', ', $resolution['contenders'])));
-            $this->output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $resolution['chainStopsAt'])));
+            $this->output->writeln(\sprintf('    Could be owned by: <comment>%s</comment>', implode(', ', $assignment->contenders)));
+            $this->output->writeln(\sprintf('    The chain stops at: <comment>%s</comment>', implode(', ', $assignment->chainStopsAt)));
             $this->output->writeln('    The assignment above is what the answered layers give; it can change');
             $this->output->writeln('    once every link of this class\'s inheritance chain is analysed.');
         }
     }
 
-    /**
-     * @param Resolution $resolution
-     * @param list<LayerAssignmentMatch> $shadowed
-     */
-    private function renderAdditionalMatches(array $resolution, array $shadowed): void
+    private function renderAdditionalMatches(LayerAssignment $assignment): void
     {
-        $alsoMatching = \array_slice($resolution['matches'], 1);
+        $alsoMatching = \array_slice($assignment->matches, 1);
 
         $this->output->writeln('  Would also match (in declaration order):');
         if ($alsoMatching === []) {
@@ -111,7 +116,7 @@ final readonly class LayerAssignmentTextPresenter
             ));
         }
 
-        $this->renderShadowHint($resolution, $shadowed);
+        $this->renderShadowHint($assignment);
     }
 
     /**
@@ -120,35 +125,42 @@ final readonly class LayerAssignmentTextPresenter
      * says nothing about this class: a match whose `exclude:` went unanswered
      * neither shadows nor is shadowed, and a layer broader than the one it
      * loses to is the narrow-before-broad idiom rather than a defect.
-     *
-     * @param Resolution $resolution
-     * @param list<LayerAssignmentMatch> $shadowed
      */
-    private function renderShadowHint(array $resolution, array $shadowed): void
+    private function renderShadowHint(LayerAssignment $assignment): void
     {
-        $shadowedBy = $resolution['firstEstablished'];
-        if ($shadowedBy === null || $shadowed === []) {
+        $shadowedBy = $assignment->firstEstablished;
+        if ($shadowedBy === null || $assignment->shadowVerdicts === []) {
+            return;
+        }
+
+        $reported = array_values(array_filter(
+            $assignment->shadowVerdicts,
+            static fn(LayerAssignmentShadowVerdict $verdict): bool => $verdict->reported(),
+        ));
+        $exempt = array_values(array_filter(
+            $assignment->shadowVerdicts,
+            static fn(LayerAssignmentShadowVerdict $verdict): bool => !$verdict->reported(),
+        ));
+        if ($exempt !== []) {
+            $this->output->writeln('');
+            $this->output->writeln('  First-match exemptions:');
+            foreach ($exempt as $verdict) {
+                $this->output->writeln(\sprintf(
+                    '    - %s: %s',
+                    $verdict->match->layerName,
+                    $verdict->exemption?->value,
+                ));
+            }
+        }
+        if ($reported === []) {
             return;
         }
 
         $this->output->writeln('');
         $this->output->writeln('  Diagnostic hint:');
-        $reported = $resolution['reportedShadows'];
-        if ($reported === []) {
-            $this->output->writeln(\sprintf(
-                "    The later matches lose the class to '<info>%s</info>', and no diagnostic reports",
-                $shadowedBy,
-            ));
-            $this->output->writeln('    them as a shadow: a broader layer after a narrower one is how declaration');
-            $this->output->writeln('    order is meant to be used, and a match whose exclude: went unanswered may');
-            $this->output->writeln('    not match at all.');
-
-            return;
-        }
-
         $this->output->writeln(\sprintf(
             "    Class is shadowed: would have matched '<info>%s</info>' if '<info>%s</info>' was declared later.",
-            $reported[0],
+            $reported[0]->match->layerName,
             $shadowedBy,
         ));
         $this->output->writeln('    See <comment>architecture.potential-shadow</comment> diagnostic for the broader picture.');

@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -10,3 +10,3 @@
+-Qualimetrix dev-main: 1 error(s), 9 warning(s) in 8 file(s)
+-Analysis complete: 8 analyzed, 0 generated file(s) excluded.
+-Technical debt: 1d 17min
++Qualimetrix dev-main: 0 error(s), 10 warning(s) in 8 file(s)
++Analysis complete: 8 analyzed, 0 generated file(s) excluded.
++Technical debt: 6h 43min

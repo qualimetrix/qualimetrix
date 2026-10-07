@@ -129,9 +129,10 @@ has unseen descendants: a named `IncompleteUniverse` cause withholds both
 questions without listing it. An asset or non-regular entry is not inferred
 missing PHP. Removed-entry and generated-PHP counts keep their different units.
 
-Six declaration-absence channels ask the first question:
+Seven declaration-absence channels ask the first question:
 `architecture.empty-template`, `architecture.unmatched-exclude`,
-`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
+`architecture.unreachable-layer`, `architecture.unmatched-type`,
+`cohesion.unmatched-exclude-method`,
 `coupling.unmatched-framework-namespace` and `suppression.unmatched-namespace`.
 `discovery.unmatched-exclude`, `suppression.unmatched-path` and
 `suppression.unmatched-rule-ledger` use selector/path completeness; rule-ledger
@@ -192,7 +193,13 @@ duration negative.
   contracts, not a generic lifecycle or graph-participant registry.
 - `RuleProducerPreparation` coordinates their final producer enablement, reset and
   profiling with file-set inspection while `AnalysisPipeline` retains the
-  complete phase order. It stores no capability result.
+  complete phase order. It stores no capability result. Its Architecture input
+  implements the preparation and `UnmatchedTypeWarningInterface` promises on
+  the same object. After execution, it asks the pure warning query only when
+  `ChannelPublication` publishes `architecture.layer-declaration` /
+  `architecture.unmatched-type` / `project`. The pipeline logs a returned warning
+  once; the rule and preparation perform no logging, and the execution result
+  gains no warning transport state.
 - `InlineDirectiveRun` prepares authored Inline state and asks its two
   post-execution questions through `InlineDirectivePolicyInterface` and
   `ThresholdDirectiveAuditInterface`. It retains the same policy and audit
@@ -246,6 +253,18 @@ entry; incomplete graphs are not authoritative. It collects dependencies without
 the Finding-backed audit. Debug layer assignment passes captured configuration
 and symbol to the sole resolver entry point, without a synthesized configuration,
 second universe or separate `resolveIncludingGenerated()` branch.
+
+The graph analyzer returns construction-time `MixedSpelling` evidence beside
+the graph and coverage. The graph-export adapter reports that evidence on
+stderr. The full analysis pipeline combines it with Measurement's logical-class
+and namespace evidence, deduplicates identities by their folded name, and emits
+one warning per identity. Logging stays at these two run boundaries; the graph
+builder and metric repository only return typed facts.
+
+The declaration warning boundary and its withheld-scope semantics are recorded
+in [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
+Full directive reproducibility executes the producer set before and after its
+sweep; narrow reference and counterfactual runs add no declaration execution.
 
 ## The two entry points
 
@@ -318,7 +337,9 @@ The mandatory `ProjectScopeMeasurement`, captured universe, authored paths
 and whole-project verdict remain the authority. Selection does not manufacture
 complete coverage or turn a partial run into a project-wide absence statement.
 DoD preserves reset/prepare ordering, independent either-producer participants
-and zero inspection for an inactive producer.
+and zero inspection for an inactive producer. Architecture preparation consults
+all three `ArchitectureChannels::PRODUCERS`: forbidden edges, declaration
+diagnostics and unassigned classes; each producer retains its own gate.
 
 ## Locality
 

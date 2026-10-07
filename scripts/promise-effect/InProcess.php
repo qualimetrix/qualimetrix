@@ -25,7 +25,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumentForms;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -154,7 +153,14 @@ final class InProcess
         }
 
         $this->nativeProfile = $typed ? 'typed' : 'old';
-        $container = (new ContainerFactory())->create();
+        $factory = new ContainerFactory();
+        if ($typed) {
+            $container = $factory->configure();
+            $container->getDefinition(RuleInputValidator::class)->setPublic(true);
+            $container->compile();
+        } else {
+            $container = $factory->create();
+        }
         $pipeline = $container->get(ConfigurationPipelineInterface::class);
         $execution = $container->get(RuleExecutionInterface::class);
         $registry = $container->get(RuleRegistryInterface::class);
@@ -179,24 +185,19 @@ final class InProcess
             $universe = $container->get(ChannelUniverse::class);
             $optionsBuild = $container->get(RuleOptionsBuild::class);
             $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
+            $inputValidator = $container->get(RuleInputValidator::class);
 
             if (!$universe instanceof ChannelUniverse
                 || !$optionsBuild instanceof RuleOptionsBuild
-                || !$computedMetrics instanceof ComputedMetricConfiguratorInterface) {
+                || !$computedMetrics instanceof ComputedMetricConfiguratorInterface
+                || !$inputValidator instanceof RuleInputValidator) {
                 throw new LedgerError('the typed product did not yield its declared collaborators');
             }
 
             $this->legacyResolver = null;
             $this->legacyRuleOptionsParser = null;
             $this->inputAdapter = new ConfigurationInputAdapter(new RuleOptionDocumentForms(), $pipeline, new ErrorStream(), $execution);
-            $this->ruleInputValidator = new RuleInputValidator(
-                new RuleOptionDocumentForms(),
-                $registry,
-                $universe,
-                $optionsBuild,
-                $computedMetrics,
-                new RuleEnablementResolver(),
-            );
+            $this->ruleInputValidator = $inputValidator;
         } else {
             $this->inputAdapter = null;
             $this->ruleInputValidator = null;

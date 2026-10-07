@@ -8,7 +8,7 @@ Git reporting сохраняет выбранные пути анализа и �
 ускорение collection и не определяет, что нарушение было внесено именно этим
 коммитом. Находки по изменённым файлам сохраняются вместе с нужными namespace/
 project результатами и объявленными project-scoped диагностическими находками,
-включая проектные циклы и нарушения слоёв архитектуры.
+включая проектные циклы архитектуры. Нарушения слоёв относятся к source-файлу.
 
 ---
 
@@ -102,9 +102,9 @@ bin/qmx check src/ --report=git:abc1234..HEAD
 PHP и его предках и project-находки без location при непустом наборе changed PHP.
 Объявленные project-scoped каналы сохраняются независимо от changed files в
 обоих режимах. Сейчас к ним относятся находки `architecture.circular-dependency`
-о циклах и `architecture.layer-violation` о нарушениях слоёв, в том числе в
-strict-режиме. Отчёт с Git-фильтром поэтому не ограничивает находки архитектуры
-только изменёнными файлами.
+о циклах и project-scoped diagnostics, в том числе в strict-режиме.
+`architecture.layer-violation` сохраняется только при изменении source-файла
+в обоих режимах. Изменение только цели не сохраняет исходящее нарушение.
 Список каналов и два вопроса описаны в
 [охвате проекта](output-formats.ru.md#project-scope-in-every-format).
 Namespace query не читает source через file links.
@@ -113,7 +113,7 @@ Namespace query не читает source через file links.
 
 Strict ограничивает file-scoped находки изменёнными файлами и убирает
 namespace/project расширение. Объявленные project-scoped находки, включая
-циклы и нарушения слоёв архитектуры, сохраняются:
+циклы архитектуры, сохраняются. Нарушения слоёв фильтруются по source-файлу:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict

@@ -28,9 +28,10 @@ use Symfony\Component\Console\Tester\CommandTester;
  * and the list below drift apart in either direction — a new channel not
  * listed, or a listed channel gone.
  *
- * **What the subject half does not cover.** Three of the seven place no subject of
+ * **What the subject half does not cover.** Four of the eight place no subject of
  * their own — `coupling.unmatched-framework-namespace` names code outside the
- * project, `cohesion.unmatched-exclude-method` names a configured method
+ * project, `architecture.unmatched-type` names a configured type,
+ * `cohesion.unmatched-exclude-method` names a configured method
  * rather than a located subject, and a rule cannot see the run's paths — so they answer the
  * project-wide question alone. They are gated here, and
  * {@see itJudgesOnlyTheValuesWhoseSubjectTheRunAnalysed} deliberately covers
@@ -39,11 +40,11 @@ use Symfony\Component\Console\Tester\CommandTester;
  * **The pair is the proof.** One fixture, several `composer.json` files. On a
  * run whose paths cover everything the manifest declares production — through
  * `psr-4`, `classmap` or `files` alike — the product can judge and every one
- * of the seven channels speaks, and so does every one but the namespace-valued
+ * of the eight channels speaks, and so does every one but the namespace-valued
  * suppression channel under a manifest declaring no production autoload at
  * all, when the caller selects the whole root (ADR 0089);
  * on the same tree and the same configuration under a manifest declaring a
- * production target the run never looked at, the five project-wide or
+ * production target the run never looked at, the six project-wide or
  * unlocated channels must be silent while the two path-valued channels can
  * judge their values under the selected `src/` tree. Without the speaking half,
  * silence would not distinguish a working gate from a fixture that cannot
@@ -63,6 +64,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
      */
     private const array SCOPE_CONDITIONED = [
         'architecture.unmatched-exclude',
+        'architecture.unmatched-type',
         'cohesion.unmatched-exclude-method',
         'coupling.unmatched-framework-namespace',
         'discovery.unmatched-exclude',
@@ -156,6 +158,7 @@ final class ScopeConditionedChannelGuardTest extends TestCase
               layers:
                 - name: domain
                   patterns: ['Sample\**']
+                  implements: ['Vendor\NoSuchInterface']
                   exclude:
                     suffix: ['NothingLikeThis']
             rules:
@@ -298,8 +301,13 @@ final class ScopeConditionedChannelGuardTest extends TestCase
     {
         $tester = $this->checkWithRawManifest($manifest, ['.']);
 
+        $unavailable = $namespaceMapUsable ? [] : [self::UNLOCATED_WITHOUT_AUTOLOAD];
+        if ($manifest === null) {
+            $unavailable[] = 'architecture.unmatched-type';
+        }
+
         self::assertSame(
-            $namespaceMapUsable ? self::SCOPE_CONDITIONED : array_values(array_diff(self::SCOPE_CONDITIONED, [self::UNLOCATED_WITHOUT_AUTOLOAD])),
+            array_values(array_diff(self::SCOPE_CONDITIONED, $unavailable)),
             $this->channelsOf($tester),
             'A run whose paths are the project judges every configured value a location can be found for.',
         );

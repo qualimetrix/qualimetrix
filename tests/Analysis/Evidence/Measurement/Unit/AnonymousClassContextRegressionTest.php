@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Design\TypeCoverage\TypeCoverageVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
@@ -298,6 +299,7 @@ PHP;
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        NameResolution::resolve($ast);
 
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $traverser = new NodeTraverser();

@@ -86,6 +86,8 @@ final class CompositeCollectorTest extends TestCase
         self::assertTrue($tracker->visited);
         self::assertTrue($tracker->resolvedBeforeParent);
         self::assertCount(1, $result->dependencies);
+        self::assertCount(1, $result->classLikeDeclarations);
+        self::assertSame('App\\Subject', $result->classLikeDeclarations[0]->declaration->logical->toString());
     }
 
     #[Test]

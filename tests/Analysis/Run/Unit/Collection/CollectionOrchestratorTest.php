@@ -102,12 +102,14 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/file1.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 50]),
+                    classLikeDeclarations: [],
                 ),
             ),
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/file2.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 100]),
+                    classLikeDeclarations: [],
                 ),
             ),
         ];
@@ -150,6 +152,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/valid.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 50]),
+                    classLikeDeclarations: [],
                 ),
             ),
             FileProcessingResult::failure(
@@ -184,6 +187,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                     callableMetrics: [$this->callable($symbolPath, $methodBag, 15, 'tmp/test.php')],
                 ),
             ),
@@ -212,6 +216,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                     classMetrics: [
                         'declaration:class:App\\Service@tmp/test.php' => [
                             'subject' => \Qualimetrix\Core\Symbol\MetricSubject::declaration(
@@ -265,6 +270,7 @@ final class CollectionOrchestratorTest extends TestCase
                         'design.type-coverage.all:' . $firstSubject->toCanonical() => 100.0,
                         'design.type-coverage.all:' . $secondSubject->toCanonical() => 50.0,
                     ]),
+                    classLikeDeclarations: [],
                     classMetrics: [
                         $firstSubject->toCanonical() => [
                             'subject' => $firstSubject,
@@ -312,6 +318,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                     callableMetrics: [],
                     classMetrics: [],
                     dependencies: [$dependency1, $dependency2],
@@ -348,6 +355,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/file1.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                     dependencies: [$dep1],
                 ),
             ),
@@ -355,6 +363,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/file2.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                     dependencies: [$dep2],
                 ),
             ),
@@ -414,6 +423,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/good.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 50]),
+                    classLikeDeclarations: [],
                 ),
             ),
             FileProcessingResult::failure(RelativePath::fromString('tmp/bad1.php'), 'Syntax error'),
@@ -422,6 +432,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/good2.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 75]),
+                    classLikeDeclarations: [],
                 ),
             ),
         ];
@@ -485,6 +496,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: $path,
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 12]),
+                    classLikeDeclarations: [],
                     dependencies: $dependencies,
                     suppressions: [$suppression],
                     thresholdOverrides: [$override],
@@ -495,6 +507,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: $emptyControlsPath,
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 3]),
+                    classLikeDeclarations: [],
                 ),
             ),
             FileProcessingResult::failure(
@@ -506,6 +519,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: $secondPath,
                 payload: new SuccessfulFileProcessing(
                     fileBag: MetricBag::fromArray(['size.loc' => 8]),
+                    classLikeDeclarations: [],
                     dependencies: [$secondDependency],
                     suppressions: [$secondSuppression],
                     thresholdOverrides: [$secondOverride],
@@ -636,12 +650,14 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/file1.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                 ),
             ),
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/file2.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
+                    classLikeDeclarations: [],
                 ),
             ),
         ];
@@ -686,6 +702,7 @@ final class CollectionOrchestratorTest extends TestCase
                     filePath: RelativePath::fromString('tmp/test.php'),
                     payload: new SuccessfulFileProcessing(
                         fileBag: new MetricBag(),
+                        classLikeDeclarations: [],
                     ),
                 ),
             ]);
@@ -725,6 +742,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                     callableMetrics: [$callable],
                 ),
             ),
@@ -772,6 +790,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                     callableMetrics: [], // No methods registered
                 ),
             ),
@@ -821,6 +840,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                 ),
             ),
         ];
@@ -871,6 +891,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                     callableMetrics: [$callable],
                 ),
             ),
@@ -925,6 +946,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                     callableMetrics: [$callable],
                 ),
             ),
@@ -976,6 +998,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                 ),
             ),
         ];
@@ -1023,6 +1046,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                     callableMetrics: [$this->callable($methodSymbol, MetricBag::fromArray(['complexity.ccn' => 5]), 10, 'tmp/test.php')],
                 ),
             ),
@@ -1076,6 +1100,7 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 payload: new SuccessfulFileProcessing(
                     fileBag: $fileBag,
+                    classLikeDeclarations: [],
                     callableMetrics: [$callable],
                 ),
             ),
@@ -1111,6 +1136,7 @@ final class CollectionOrchestratorTest extends TestCase
             filePath: RelativePath::fromString('tmp/test.php'),
             payload: new SuccessfulFileProcessing(
                 fileBag: new MetricBag(),
+                classLikeDeclarations: [],
             ),
         );
 
@@ -1180,7 +1206,7 @@ final class CollectionOrchestratorTest extends TestCase
     {
         $path = RelativePath::fromString($file);
 
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), $path, DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,

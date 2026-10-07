@@ -131,31 +131,21 @@ suppress_paths:
 
 Also available as a CLI option: `--suppress-path` (merged with YAML config).
 
-!!! warning "Does not apply to project-scoped architecture findings"
-    `suppress_paths` (and `--suppress-path`) never suppress `architecture.layer-violation` or
-    `architecture.circular-dependency` violations, for the same reason as `suppress_namespaces`
-    below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
-    metrics must not double as an undocumented way to disable architecture enforcement.
-    Git reporting likewise retains these project-scoped findings in both strict
-    and non-strict mode; see [Git Integration](../usage/git-integration.md).
+!!! warning "Declared project scope remains exempt"
+    `suppress_paths` does not suppress `architecture.circular-dependency` cycles or
+    declared project-scoped diagnostics. Exemption is declared per channel;
+    the `architecture.` prefix alone grants none.
 
-    Which findings are exempt is a **declared property of the channel**, not something read off
-    the spelling of the rule name — a rule is not exempt because it happens to be called
-    `architecture.something`.
+    `architecture.layer-violation` belongs to the source declaration: global
+    `suppress_paths` matches the physical dependency site's file, while
+    `suppress_namespaces` matches the source namespace. Excluding only the target
+    does not suppress an outgoing violation. Git reports retain it only when
+    the source file changed, in both modes; see [Git Integration](../usage/git-integration.md).
 
-    What is left for suppressing such a finding depends on the channel.
-    `architecture.layer-violation` is real code debt, so `@qmx-ignore
-    architecture.layer-violation` and a baseline entry both still apply. The five layer-policy
-    diagnostics beside it — `architecture.coverage-gap`, `architecture.unreachable-layer`,
-    `architecture.potential-shadow`, `architecture.empty-template` and
-    `architecture.pending-layer-matched` — report a mistake in the
-    *configuration*, so neither applies to them; see
-    [Rules > Architecture](../rules/architecture.md). Their remaining answers are the `exclude:`
-    block inside the architecture layer configuration itself and, for coverage specifically,
-    `coverage-gap: ignore`.
-
-    As with `suppress_namespaces`, this exemption is **global-only** — the per-rule
-    `suppress_paths` described below still works for architecture rules.
+    Inline directives and baselines still apply to layer violations, but not
+    to the five configuration validators. Their separate controls are described
+    under [Architecture rules](../rules/architecture.md#layer-declaration).
+    Per-rule exclusions remain available independently of global channel scope.
 
 ### Suppress Namespaces
 
@@ -172,28 +162,21 @@ This is useful when entire namespace subtrees should never produce violations. F
 
 Also available as a CLI option: `--suppress-namespace` (merged with YAML config).
 
-!!! warning "Does not apply to project-scoped architecture findings"
-    `suppress_namespaces` (and `--suppress-namespace`) never suppress `architecture.layer-violation`
-    or `architecture.circular-dependency` violations. A layer-policy violation is not a metric —
-    silently dropping it would let a noisy-metric exclusion double as an undocumented way to
-    disable architecture enforcement. Which findings are exempt is a declared property of the
-    channel, not a consequence of how the rule name is spelled.
+!!! warning "Declared project scope remains exempt"
+    `suppress_namespaces` does not suppress `architecture.circular-dependency` cycles or
+    declared project-scoped diagnostics. Exemption is declared per channel;
+    the `architecture.` prefix alone grants none.
 
-    `@qmx-ignore architecture.layer-violation` and a baseline entry still apply to
-    `architecture.layer-violation`. They do **not** apply to the five layer-policy diagnostics —
-    `architecture.coverage-gap`, `architecture.unreachable-layer`,
-    `architecture.pending-layer-matched`, `architecture.potential-shadow`
-    and `architecture.empty-template` — which report a configuration mistake rather than code
-    debt; for those, use the `exclude:` block inside the architecture layer configuration
-    itself, or `coverage-gap: ignore` for the coverage diagnostic.
+    `architecture.layer-violation` belongs to the source declaration: global
+    `suppress_paths` matches the physical dependency site's file, while
+    `suppress_namespaces` matches the source namespace. Excluding only the target
+    does not suppress an outgoing violation. Git reports retain it only when
+    the source file changed, in both modes; see [Git Integration](../usage/git-integration.md).
 
-    This exemption is **global-only**. The per-rule `suppress_namespaces` / `suppress_paths`
-    described below (`rules: {architecture.layer-violation: {suppress_namespaces: [...]}}`) still
-    works for architecture rules, same as for any other rule — see
-    [Exclude namespaces from a rule](#rules) below and the architecture rule's
-    [Suppression section](../rules/architecture.md#suppression) for why that asymmetry is
-    intentional: naming the rule explicitly is an unambiguous, auditable choice, while a
-    project-wide `suppress_namespaces` entry is not.
+    Inline directives and baselines still apply to layer violations, but not
+    to the five configuration validators. Their separate controls are described
+    under [Architecture rules](../rules/architecture.md#layer-declaration).
+    Per-rule exclusions remain available independently of global channel scope.
 
 ### Rules
 
@@ -377,7 +360,7 @@ writing when the key should say out loud which half of a two-level channel it is
     The option filters findings whose subject is a **namespace**. A rule that reports per
     occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
     (`cohesion.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
-    and then does nothing. The layer-policy diagnostics — `architecture.coverage-gap`,
+    and then does nothing. The five layer-policy diagnostics — `architecture.coverage-gap`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — report against the project as a whole and are likewise
     outside its reach; use the `exclude:` block inside the architecture layer configuration
@@ -390,10 +373,9 @@ unchanged and stays producer-wide across class and namespace findings.
     `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths` are extracted and applied at the framework level for
     **any** rule name, regardless of whether that rule's Options class declares such a field —
     this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
-    `architecture.circular-dependency`, which are exempt from the *global* `suppress_namespaces`
-    and `suppress_paths` above but not from this per-rule form: naming the rule explicitly makes
-    the suppression an unambiguous, auditable choice rather than an incidental side effect of a
-    project-wide exclusion. See the architecture rule's
+    `architecture.circular-dependency`. Global exclusions apply to source-owned layer
+    violations; cycles remain project-scoped. The per-rule form explicitly names the producer
+    whose findings should be suppressed. See the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for the reasoning.
 
 **Suppress paths for a rule:**
@@ -669,6 +651,26 @@ architecture:
 
 **Capture variables** in layer names and patterns use the syntax `{name}` (single namespace segment) or `{name:**}` (cross-segment). The same variable name within one layer entry binds to one value (co-binding); variables in different entries are independent. See the [layer-templates section](../rules/architecture.md#layer-templates) for the full grammar.
 
+A layer and its `exclude:` accept six criterion lists: `patterns`, `attributes`,
+`member_attributes`, `implements`, `extends`, and `suffix`. `attributes` observes
+attributes on the class-like declaration; `member_attributes` observes its own
+members. `match: any` is the default; `all` requires each populated criterion
+kind. Layer capture patterns and public `exact | subtree | regex` selectors are
+distinct grammars; each refuses the other's form with an accepted equivalent.
+A template with `match: any` refuses a captureless pattern, while `match: all`
+can use one beside a capturing pattern.
+
+`architecture.layer-declaration` independently owns declaration diagnostics and
+has only `enabled`. Its five configuration-error channels remain live under an
+unrelated `--only-rule`; its four ordinary channels follow channel publication.
+Disabling `architecture.layer-violation` does not disable declaration diagnostics.
+See the [selection table](../rules/architecture.md#layer-declaration).
+
+An enabled `architecture.unassigned-class` with `mode: warn` or `error` requires
+a non-empty final `architecture.layers`, even when the file explicitly writes
+`layers: []`. Ignored, disabled or unselected unassigned-class does not impose
+that requirement. The refusal names the configuration that wrote the mode.
+
 **`max_expanded_layers`** caps the total number of concrete layers produced by template expansion across all templates (default `500`). The cap protects against pathological broad templates whose binding tuples would blow up the layer count. Raise the ceiling explicitly when a monorepo legitimately has more bounded contexts than the default allows; overflow rejects at expansion with an actionable error.
 
 ### Computed Metrics
@@ -941,6 +943,7 @@ formula referencing an unknown computed metric, or a layer that allows a layer
 | `architecture.layers[].patterns`                                                  | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].suffix`                                                    | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].attributes`                                                | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
+| `architecture.layers[].member_attributes`                                         | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].implements`                                                | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].extends`                                                   | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].match`                                                     | string                                                                              | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Refused: a scalar is expected.                                                                  |
@@ -949,6 +952,7 @@ formula referencing an unknown computed metric, or a layer that allows a layer
 | `architecture.layers[].exclude.patterns`                                          | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].exclude.suffix`                                            | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].exclude.attributes`                                        | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
+| `architecture.layers[].exclude.member_attributes`                                 | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].exclude.implements`                                        | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].exclude.extends`                                           | read by its owner                                                                   | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Its owner decides.                                                                              |
 | `architecture.layers[].exclude.match`                                             | string                                                                              | Read from the layer that wrote the list; never merged across layers.                                                                                                                                               | Not written: as if the key were absent.                                                  | Refused: a scalar is expected.                                                                  |
@@ -1009,6 +1013,12 @@ formula referencing an unknown computed metric, or a layer that allows a layer
 | `rules.architecture.circular-dependency.suppress-namespace-channels.<name>`       | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | The name is judged; the body stays with the layer below. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
 | `rules.architecture.circular-dependency.suppress-namespaces`                      | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | Not written: the layer below stands. An item written `~` is refused.                     | Replaces the list below with an empty one.                                                      |
 | `rules.architecture.circular-dependency.suppress-paths`                           | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | Not written: the layer below stands. An item written `~` is refused.                     | Replaces the list below with an empty one.                                                      |
+| `rules.architecture.layer-declaration`                                            | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                                            | The name is judged; the body stays with the layer below.                                 | Changes nothing.                                                                                |
+| `rules.architecture.layer-declaration.enabled`                                    | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
+| `rules.architecture.layer-declaration.suppress-namespace-channels`                | map by name: a name judged by the section's grammar in the layer that wrote it      | Merged entry by entry, keyed by name; each entry merges by its own policy.                                                                                                                                         | Not written: the layer below stands.                                                     | Changes nothing.                                                                                |
+| `rules.architecture.layer-declaration.suppress-namespace-channels.<name>`         | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | The name is judged; the body stays with the layer below. An item written `~` is refused. | Replaces the list below with an empty one.                                                      |
+| `rules.architecture.layer-declaration.suppress-namespaces`                        | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | Not written: the layer below stands. An item written `~` is refused.                     | Replaces the list below with an empty one.                                                      |
+| `rules.architecture.layer-declaration.suppress-paths`                             | list (item: map)                                                                    | The last layer that writes the list replaces it whole; an empty list replaces too.                                                                                                                                 | Not written: the layer below stands. An item written `~` is refused.                     | Replaces the list below with an empty one.                                                      |
 | `rules.architecture.layer-violation`                                              | map                                                                                 | Merged key by key; a written empty map changes nothing.                                                                                                                                                            | The name is judged; the body stays with the layer below.                                 | Changes nothing.                                                                                |
 | `rules.architecture.layer-violation.severity`                                     | string                                                                              | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |
 | `rules.architecture.layer-violation.enabled`                                      | boolean                                                                             | The last layer that writes the value wins.                                                                                                                                                                         | Not written: the layer below stands.                                                     | Refused: a scalar is expected.                                                                  |

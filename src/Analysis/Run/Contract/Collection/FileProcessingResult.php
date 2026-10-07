@@ -77,6 +77,12 @@ final readonly class FileProcessingResult
         return $this->successfulPayload()->dependencies;
     }
 
+    /** @return list<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration> */
+    public function classLikeDeclarations(): array
+    {
+        return $this->successfulPayload()->classLikeDeclarations;
+    }
+
     /** @return list<Suppression> */
     public function suppressions(): array
     {

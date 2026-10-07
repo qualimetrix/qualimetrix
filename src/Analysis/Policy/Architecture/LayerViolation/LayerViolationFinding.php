@@ -20,8 +20,9 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  *
  * Policy evaluation remains in {@see LayerViolationRule}. Once the rule has
  * established that an edge is forbidden, this value materializes one finding
- * for each ready owned target declaration. With no owned targets, it emits
- * exactly one finding for the exact source declaration instead.
+ * for each ready owned target declaration, preserving its occurrence identity.
+ * Every finding belongs to the exact source declaration. With no owned targets,
+ * it emits one source finding without target projection evidence.
  */
 final readonly class LayerViolationFinding
 {
@@ -50,14 +51,14 @@ final readonly class LayerViolationFinding
      */
     public function toFindings(): array
     {
-        $subjects = $this->ownedTargets === []
+        $occurrenceTargets = $this->ownedTargets === []
             ? [MetricSubject::declaration($this->dependency->source)]
             : $this->ownedTargets;
 
-        return array_map($this->toFinding(...), $subjects);
+        return array_map($this->toFinding(...), $occurrenceTargets);
     }
 
-    private function toFinding(MetricSubject $subject): Finding
+    private function toFinding(MetricSubject $occurrenceTarget): Finding
     {
         $location = $this->dependency->location;
         if (!$location instanceof Location) {
@@ -75,13 +76,13 @@ final readonly class LayerViolationFinding
             'target' => $this->dependency->targetLogical()->toCanonical(),
             'type' => $this->dependency->type->value,
         ];
-        if ($subject->declarationPath()?->toCanonical() !== $this->dependency->source->toCanonical()) {
-            $evidence['projectedTarget'] = $subject->toCanonical();
+        if ($occurrenceTarget->declarationPath()?->toCanonical() !== $this->dependency->source->toCanonical()) {
+            $evidence['projectedTarget'] = $occurrenceTarget->toCanonical();
         }
 
         return new Finding(
             location: $location,
-            subject: $subject,
+            subject: MetricSubject::declaration($this->dependency->source),
             symbolPath: $this->dependency->sourceLogical(),
             ruleName: $this->ruleName,
             code: $this->ruleName,

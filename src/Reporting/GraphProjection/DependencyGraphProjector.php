@@ -39,4 +39,10 @@ final class DependencyGraphProjector implements DependencyGraphProjectionInterfa
     {
         return NamespaceFilter::fromRequest($request)->unboundIncludeNamespaces($graph->getAllClasses());
     }
+
+    /** @return list<array{selector: string, suggestion: ?string}> */
+    public function unboundExcludeNamespaces(DependencyGraphInterface $graph, GraphProjectionRequest $request): array
+    {
+        return NamespaceFilter::fromRequest($request)->unboundExcludeNamespaces($graph->getAllClasses());
+    }
 }

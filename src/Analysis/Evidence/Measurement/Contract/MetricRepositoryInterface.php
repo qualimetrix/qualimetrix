@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
 
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -118,4 +119,7 @@ interface MetricRepositoryInterface
      * @return list<SymbolInfo>
      */
     public function forNamespace(string $namespace): array;
+
+    /** @return list<MixedSpelling> case-insensitive identities seen with distinct spellings */
+    public function mixedSpellings(): array;
 }

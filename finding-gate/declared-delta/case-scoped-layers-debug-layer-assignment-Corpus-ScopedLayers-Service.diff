@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -30,3 +30,1 @@
+-    "hasLayers": true,
+-    "policyDisabled": false,
+-    "edgeEndOnly": false
++    "hasLayers": true

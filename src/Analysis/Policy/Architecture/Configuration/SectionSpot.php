@@ -111,6 +111,19 @@ final readonly class SectionSpot
         return Provenance::display($this->path);
     }
 
+    /** The winning writer of this exact authored value. */
+    public function provenance(): Provenance
+    {
+        $anchor = $this->anchor
+            ?? throw new LogicException(\sprintf('Nothing is written at "%s".', $this->display()));
+        $writers = $anchor->contributors();
+        $writer = $writers[\count($writers) - 1];
+
+        return $writer->path === null || $this->below === []
+            ? $writer
+            : new Provenance($writer->origin, [...$writer->path, ...$this->below], $writer->layerIndex, $writer->line);
+    }
+
     /**
      * A refusal of what is written here, naming its writer — every layer that
      * wrote into a merged node, the one that won a leaf or wrote a list.

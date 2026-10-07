@@ -132,9 +132,9 @@ bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:s
 
 Merged with `suppress_paths` from `qmx.yaml` — both sources are combined.
 
-!!! warning "Does not apply to `architecture.*` rules"
-    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
+!!! warning "Declared project-scoped channels remain visible"
+    `architecture.circular-dependency` cycles and project-scoped diagnostics remain exempt.
+    The option applies to the source of `architecture.layer-violation` — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
     for why and for the alternatives.
 
 ### `--suppress-namespace`
@@ -147,9 +147,9 @@ bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespac
 
 Merged with `suppress_namespaces` from `qmx.yaml` — both sources are combined.
 
-!!! warning "Does not apply to `architecture.*` rules"
-    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
+!!! warning "Declared project-scoped channels remain visible"
+    `architecture.circular-dependency` cycles and project-scoped diagnostics remain exempt.
+    The option applies to the source of `architecture.layer-violation` — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
     for why and for the alternatives.
 
 ---
@@ -639,7 +639,7 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Git scope options
 
-Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle and layer-violation findings. See [Git Integration](git-integration.md) for the full guide.
+Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle findings. Layer violations follow the source file in both modes. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
@@ -652,7 +652,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles and layer violations, remain visible even in strict mode:
+Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles, remain visible even in strict mode. Layer violations follow the source file:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -1083,58 +1083,32 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 
 ### debug:layer-assignment
 
-`--preset=PRESET` applies a named or file preset and can be repeated.
-Configured paths receive the same existence and PHP-file checks as the other
-measuring commands.
-
-
-Report which architecture layer a class is assigned to, and every other layer whose criteria would also have matched it (a potential shadow source). See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full walkthrough.
-
 ```bash
-bin/qmx debug:layer-assignment 'App\Service\Foo'
-bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
-
-# Machine-readable output — for agents and scripts, not for parsing the text report
 bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
+bin/qmx debug:layer-assignment 'app\service\foo' --config qmx.yaml
 ```
 
-| Option                | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `-c`, `--config=FILE` | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
-| `--format=FORMAT`     | `text` (default) or `json`                                        |
+| Option                | Meaning                                 |
+| --------------------- | --------------------------------------- |
+| `-c`, `--config=FILE` | Configuration file; default `qmx.yaml`. |
+| `--preset=PRESET`     | Named or file preset; repeatable.       |
+| `--format=FORMAT`     | `text` (default) or `json`.             |
 
-`--format=json` serializes the same resolution the text report renders. The command answers only for classes the run analysed: an FQN naming no analysed declaration — a typo, or a class kept out of the run by `paths`, `exclude` or the generated-file filter — exits with code 3 and the error envelope instead of being classified. Schema:
+The command runs normal Discovery/Collection and looks up observed declarations
+and graph ends; install-only classes do not enlarge that population. ASCII
+case variants resolve to observed spelling, and parser-observed high-byte names
+work. Only an empty normalized name is refused before analysis; other unknown
+input exits 3 after lookup even with disabled policy. Informational answers exit 0.
+Configure the three layer-policy producers in YAML; this command does not add
+the check command's `--disable-rule` option.
 
-```json
-{
-  "meta": {
-    "version": "0.26.0",
-    "package": "qmx",
-    "timestamp": "2026-01-15T10:30:00+00:00",
-    "docs": "https://qualimetrix.dev",
-    "llmsTxt": "https://qualimetrix.dev/llms.txt"
-  },
-  "fqn": "App\\Service\\Foo",
-  "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
-  "contendingMatches": [],
-  "shadowed": [
-    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""], "reported": true }
-  ],
-  "shadowedBy": "any-foo",
-  "undecided": [],
-  "contenders": [],
-  "chainStopsAt": [],
-  "hasLayers": true
-}
-```
-
-- `meta` is the same block `check --format=json` opens with: the tool's `version`, `package`, the run's `timestamp`, and the documentation addresses `docs` and `llmsTxt` (see [Documentation addresses in JSON reports](output-formats.md#documentation-addresses)).
-- `assigned` is `null` when no layer matched; then `contendingMatches` and `shadowed` are empty too.
-- `shadowed` lists the matches after `shadowedBy`, the first match the run established, in declaration order. Each loses the class whichever way the layers the run could not answer answer, and `reported` says whether `architecture.potential-shadow` reports it. `shadowedBy` is `null` when `shadowed` is empty, and is not `assigned` when a match whose `exclude:` went unanswered stands in front of it.
-- `contendingMatches` lists, in the same form, every other match after `assigned`: the matches whose `exclude:` went unanswered and, when one stands in front of it, `shadowedBy`. Which of them owns the class depends on those clauses, so `reported` is always `false`. Together with `shadowed` it is every match the text report lists after the assignment.
-- `undecided` names the layers the run could not answer that bear on the assignment, `contenders` the layers that could own the class once they are answered, and `chainStopsAt` where the class's inheritance chain left the analysed paths; all three are empty when the run answered every layer. `assigned: null` beside a non-empty `undecided` means "could not tell", not "no layer claims this class". See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full rules.
-- `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
-- On error, `--format=json` prints `{"error": "...", "exit_code": N, "position": ..., "source": ...}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 3 regardless of format.
+JSON carries `meta`, canonical `fqn`, `assigned`, `contendingMatches`, `shadowed`,
+`shadowedBy`, `undecided`, `contenders`, `chainStopsAt`, `hasLayers`,
+`policyDisabled`, and `edgeEndOnly`. Shadow verdicts expose their exact
+`exemption` when present; disabled policy omits `reported`/`exemption` and the
+diagnostic/docs hint. See [Architecture](../rules/architecture.md#debug-layer-assignment)
+for the full semantics and native example. JSON errors replace the response
+with the standard `error`/`exit_code` envelope.
 
 ### directives
 
@@ -1263,9 +1237,10 @@ bin/qmx graph:export src/ --no-clusters
 | `--namespace=SELECTOR`         | Include only namespaces selected by `exact:`, `subtree:`, or `regex:` (repeatable) |
 | `--exclude-namespace=SELECTOR` | Exclude namespaces using the same explicit forms (repeatable)                      |
 
-A `--namespace` value matching no vertex is refused with exit 3 rather than
-exporting an empty graph. `--exclude-namespace` keeps its silence on purpose: a
-missed exclusion leaves the picture whole, so the viewer loses nothing.
+Every `--namespace` or `--exclude-namespace` selector must bind to an original
+graph vertex before filtering; an unbound value is refused with exit 3. Both
+doors use the same binding check. A case-only near match suggests the graph's
+exact spelling without accepting the wrong case.
 
 An `--output` target is judged and written the way `check` treats its own
 [`--output`](#--output--o): a directory or a name ending in `/`, an unwritable

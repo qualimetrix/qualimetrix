@@ -51,7 +51,7 @@ final class Controls
             'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.CompilerPass.RuleCompilerPassTest::itInjectsIntoEveryConsumerItDeclaresAndIntoNothingElse',
             'Qualimetrix.Tests.Infrastructure.Parallel.Unit.Strategy.AmphpParallelStrategyTest::itUsesLoggerForDebugMessages',
             'Qualimetrix.Tests.Infrastructure.Rule.Unit.RuleRegistryTest::itReadsMetadataOffARuleClassItCouldNotHaveBuilt',
-            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
+            'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
             'Qualimetrix.Tests.Unit.Core.Symbol.CallableKindTest::itUsesValuesNoCompositeKeyCanSplitInTheWrongPlace',
             'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itKeepsTheExactSubjectItWasConstructedFrom',
             'Qualimetrix.Tests.Unit.Core.Symbol.SymbolInfoTest::itRefusesAWriteToAConstructedSymbolInfo',
@@ -163,7 +163,7 @@ final class Controls
                     // declaring capabilities off the tree, and the unit case
                     // writes out a channel of each capability by hand.
                     'Qualimetrix.Governance.Channel.ProjectScopedChannelRollCallTest::itAsksEveryCapabilityThatDeclaresProjectScopedChannels',
-                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itMarksAChannelBothCapabilitiesDeclareAsProjectScoped',
+                    'Qualimetrix.Tests.Infrastructure.DependencyInjection.Unit.Configurator.DeclaredChannelFileScopeTest::itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped',
                 ],
             ),
 

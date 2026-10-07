@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 
-use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\DataProvider;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -14,29 +15,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInte
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
+use Symfony\Component\Console\Tester\CommandTester;
 
-/**
- * Verifies that `@qmx-ignore architecture.layer-violation` on a source
- * declaration does not drop a finding attributed to an owned target through
- * the same {@see SuppressionFilter} that handles complexity / coupling rules.
- * Architecture findings retain the source use-site location and display,
- * but declaration controls follow their projected target subject.
- *
- * Suppression filtering happens AFTER the analysis pipeline:
- * {@see AnalysisPipelineInterface::analyze()} emits the raw finding
- * set together with per-file suppression tags; the filter layer is
- * responsible for applying them. This test runs the analysis pipeline,
- * loads its emitted suppressions into a fresh {@see SuppressionFilter},
- * and verifies the policy works end-to-end on architecture findings
- * specifically.
- *
- * The fixture pairs two controllers: one carries the source suppression tag,
- * the other doesn't. After analysis + filtering, both must remain because
- * their forbidden dependencies target the owned repository declaration.
- */
 #[Group('integration')]
 final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
 {
@@ -44,7 +28,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
     private const string FIXTURE_NAMESPACE = 'Fixtures\\IgnoreSample';
 
     #[Test]
-    public function itDoesNotDropATargetAttributedLayerViolationWhenTheSourceCarriesQmxIgnore(): void
+    public function itDropsOnlyTheSourceViolationWhoseDeclarationCarriesQmxIgnore(): void
     {
         $analysisResult = $this->analyse([
             'layers' => [
@@ -88,25 +72,87 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
             $this->filterByRule($filtered, LayerViolationRule::NAME),
         );
 
-        // The source symbol control is intentionally independent from the
-        // owned repository target subject, so both source displays remain.
         self::assertNotEmpty(
             array_filter($filteredSources, static fn(string $s): bool => str_contains($s, 'PolicedController')),
             'After suppression: PolicedController without @qmx-ignore must remain.',
         );
-        self::assertNotEmpty(
+        self::assertEmpty(
             array_filter($filteredSources, static fn(string $s): bool => str_contains($s, 'SilencedController')),
-            'A source declaration control must not suppress a finding attributed to an owned target. Got sources: '
-            . implode(', ', $filteredSources),
         );
 
         foreach ($this->filterByRule($filtered, LayerViolationRule::NAME) as $finding) {
-            self::assertStringContainsString(
-                'CustomerRepository',
-                $finding->subject->toSymbolPath()->toString(),
-                'The owned target declaration must own the finding identity.',
-            );
+            self::assertSame($finding->symbolPath->toCanonical(), $finding->subject->toSymbolPath()->toCanonical());
         }
+    }
+
+    #[Test]
+    #[DataProvider('declarationControls')]
+    public function itAppliesOnlySourceDeclarationControlsInTheRealCommand(string $sourceTag, string $targetTag, int $violations, int $unused): void
+    {
+        $root = sys_get_temp_dir() . '/qmx-layer-controls-' . bin2hex(random_bytes(6));
+        mkdir($root . '/src', 0o700, true);
+        $cwd = getcwd();
+        self::assertIsString($cwd);
+        try {
+            file_put_contents($root . '/composer.json', '{"autoload":{"psr-4":{"App\\\\":"src/"}}}');
+            file_put_contents($root . '/qmx.yaml', <<<'YAML'
+                architecture:
+                  layers:
+                    - name: source
+                      patterns: ['App\Source']
+                    - name: target
+                      patterns: ['App\Target']
+                  allow:
+                    source: []
+                    target: []
+                  coverage-gap: ignore
+                YAML);
+            file_put_contents($root . '/src/Controlled.php', "<?php\nnamespace App\\Source;\n" . $sourceTag . "\nfinal class Controlled { public function make() { return new \\App\\Target\\Repository(); } }\n");
+            file_put_contents($root . '/src/Plain.php', '<?php namespace App\\Source; final class Plain { public function make() { return new \\App\\Target\\Repository(); } }');
+            file_put_contents($root . '/src/Repository.php', "<?php\nnamespace App\\Target;\n" . $targetTag . "\nfinal class Repository {}\n");
+            chdir($root);
+            $command = (new ContainerFactory())->create()->get(CheckCommand::class);
+            self::assertInstanceOf(CheckCommand::class, $command);
+            $tester = new CommandTester($command);
+            $tester->execute(['paths' => ['src'], '--format' => 'json', '--no-cache' => true, '--workers' => '0', '--only-rule' => [LayerViolationRule::NAME, 'annotation.unused-directive']]);
+            self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+            $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+            $findings = $report['violations'];
+            $layer = array_values(array_filter($findings, static fn(array $finding): bool => $finding['code'] === LayerViolationRule::NAME));
+            self::assertCount($violations, $layer);
+            $unusedFindings = array_values(array_filter($findings, static fn(array $finding): bool => $finding['code'] === 'annotation.unused-directive'));
+            self::assertCount($unused, $unusedFindings);
+            if ($unused === 1) {
+                self::assertSame('src/Repository.php', $unusedFindings[0]['file']);
+                self::assertStringContainsString('matched nothing', $unusedFindings[0]['message']);
+            }
+            foreach ($layer as $finding) {
+                self::assertStringContainsString('App\\Source', $finding['subject']);
+            }
+        } finally {
+            chdir($cwd);
+            $sourceFiles = glob($root . '/src/*');
+            self::assertIsArray($sourceFiles);
+            foreach ($sourceFiles as $file) {
+                unlink($file);
+            }
+            rmdir($root . '/src');
+            $rootFiles = glob($root . '/*');
+            self::assertIsArray($rootFiles);
+            foreach ($rootFiles as $file) {
+                unlink($file);
+            }
+            rmdir($root);
+        }
+    }
+
+    /** @return iterable<string, array{string, string, int, int}> */
+    public static function declarationControls(): iterable
+    {
+        $tag = "/**\n * @qmx-ignore architecture.layer-violation Accepted dependency.\n */";
+        yield 'plain declarations' => ['', '', 2, 0];
+        yield 'source declaration' => [$tag, '', 1, 0];
+        yield 'target declaration' => ['', $tag, 2, 1];
     }
 
     /** @param array<string, mixed> $architecture */

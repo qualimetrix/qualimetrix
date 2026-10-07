@@ -20,38 +20,6 @@ final class RepositoryMerge
         return $left->merge($right);
     }
 
-    /**
-     * @param array<string, MetricBag> $leftMetrics
-     * @param array<string, SymbolInfo> $leftInfos
-     * @param array<string, MetricBag> $rightMetrics
-     * @param array<string, SymbolInfo> $rightInfos
-     *
-     * @return array{metrics: array<string, MetricBag>, infos: array<string, SymbolInfo>}
-     */
-    public static function plain(
-        array $leftMetrics,
-        array $leftInfos,
-        array $rightMetrics,
-        array $rightInfos,
-    ): array {
-        $metrics = $leftMetrics;
-        $infos = $leftInfos;
-
-        foreach ($rightInfos as $canonical => $info) {
-            if (isset($metrics[$canonical])) {
-                $metrics[$canonical] = self::metrics($metrics[$canonical], $rightMetrics[$canonical]);
-                $infos[$canonical] = self::plainInfo($infos[$canonical], $info);
-
-                continue;
-            }
-
-            $metrics[$canonical] = $rightMetrics[$canonical];
-            $infos[$canonical] = $info;
-        }
-
-        return ['metrics' => $metrics, 'infos' => $infos];
-    }
-
     public static function plainInfo(SymbolInfo $left, SymbolInfo $right): SymbolInfo
     {
         $line = $left->line;

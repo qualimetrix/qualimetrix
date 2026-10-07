@@ -7,20 +7,40 @@ namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\CanonicalGraphInput;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyIdentityCanonicalizer;
+use Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplingBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(DependencyGraphBuilder::class)]
+#[CoversClass(CanonicalGraphInput::class)]
+#[CoversClass(DependencyIdentityCanonicalizer::class)]
+#[CoversClass(NamespaceCouplingBuilder::class)]
 final class DependencyGraphBuilderTest extends TestCase
 {
+    #[Test]
+    public function itKeepsTypedFactsForDegreeZeroDeclarations(): void
+    {
+        $declaration = self::declaration('App\\Standalone', ClassType::Trait_, false, true);
+        $graph = self::builder()->build([], [$declaration])->graph;
+
+        self::assertSame([$declaration], $graph->getClassLikeDeclarations());
+        self::assertSame(['class:App\\Standalone'], self::canonicalPaths($graph->getAllClasses()));
+    }
+
     #[Test]
     public function itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets(): void
     {
@@ -28,10 +48,10 @@ final class DependencyGraphBuilderTest extends TestCase
         $service = self::logical('App\Service\Worker');
         $outgoing = self::dependency('App\Service\Worker', 'Vendor\Contracts\Api', DependencyType::Implements);
         $incoming = self::dependency('Vendor\Producer', 'App\Service\Worker', DependencyType::TypeHint);
-        $graph = (new DependencyGraphBuilder())->build(
+        $graph = self::builder()->build(
             [$outgoing, $incoming],
-            [$standalone, $service],
-        );
+            [self::declaration('App\Feature\Standalone'), self::declaration('App\Service\Worker')],
+        )->graph;
 
         self::assertSame(
             [
@@ -71,6 +91,93 @@ final class DependencyGraphBuilderTest extends TestCase
         self::assertSame(1, $graph->getNamespaceCa(SymbolPath::forNamespace('App')));
     }
 
+    #[Test]
+    public function itCanonicalizesPhpClassIdentityWithoutChangingExactDeclarations(): void
+    {
+        $lowerDeclaration = self::declaration('app\\service', ClassType::Trait_, true, true);
+        $upperDeclaration = self::declaration('App\\Service');
+        $lowerEdge = self::dependency('app\\service', 'vendor\\foo', DependencyType::TypeHint);
+        $upperEdge = self::dependency('App\\Service', 'Vendor\\FOO', DependencyType::New_);
+        $caseOnlySelfEdge = self::dependency('app\\service', 'APP\\SERVICE', DependencyType::StaticCall);
+
+        $build = self::builder()->build(
+            [$lowerEdge, $upperEdge, $caseOnlySelfEdge],
+            [$lowerDeclaration, $upperDeclaration],
+        );
+        $graph = $build->graph;
+
+        self::assertSame(
+            [
+                ['class:App\\Service', 'class:Vendor\\FOO', DependencyType::TypeHint, 'src/Fixture.php:1'],
+                ['class:App\\Service', 'class:Vendor\\FOO', DependencyType::New_, 'src/Fixture.php:1'],
+            ],
+            self::dependencyFields($graph->getAllDependencies()),
+        );
+        self::assertSame('app\\service', $graph->getAllDependencies()[0]->source->logical->toString());
+
+        $facts = $graph->getClassLikeDeclarations();
+        self::assertCount(2, $facts);
+        self::assertSame(['app\\service', 'App\\Service'], array_map(
+            static fn(ClassLikeDeclaration $fact): string => $fact->declaration->logical->toString(),
+            $facts,
+        ));
+        self::assertSame(['App\\Service', 'App\\Service'], array_map(
+            static fn(ClassLikeDeclaration $fact): string => $fact->logical->symbolPath->toString(),
+            $facts,
+        ));
+        self::assertSame(ClassType::Trait_, $facts[0]->type);
+        self::assertTrue($facts[0]->declaresToString);
+        self::assertTrue($facts[0]->aliasesTraitMethodAsToString);
+        self::assertSame(['class', 'external'], array_column($build->mixedSpellings, 'kind'));
+        self::assertSame(['App\\Service', 'app\\service'], $build->mixedSpellings[0]->spellings);
+        self::assertSame(['Vendor\\FOO', 'vendor\\foo'], $build->mixedSpellings[1]->spellings);
+    }
+
+    #[Test]
+    public function itUsesTheInstalledDeclarationSpellingForAnExternalIdentity(): void
+    {
+        $spelling = new class implements ExternalClassSpellingInterface {
+            public function declaredSpelling(string $className): ?string
+            {
+                return strcasecmp($className, 'Vendor\\Foo') === 0 ? 'vendor\\Foo' : null;
+            }
+        };
+
+        $build = self::builder($spelling)->build(
+            [
+                self::dependency('App\\First', 'Vendor\\FOO', DependencyType::TypeHint),
+                self::dependency('App\\Second', 'vendor\\foo', DependencyType::New_),
+            ],
+            [self::declaration('App\\First'), self::declaration('App\\Second')],
+        );
+
+        self::assertSame(
+            ['class:vendor\\Foo', 'class:vendor\\Foo'],
+            array_map(
+                static fn(Dependency $dependency): string => $dependency->targetLogical()->toCanonical(),
+                $build->graph->getAllDependencies(),
+            ),
+        );
+        self::assertSame('external', $build->mixedSpellings[0]->kind);
+        self::assertSame('vendor\\Foo', $build->mixedSpellings[0]->canonical);
+    }
+
+    #[Test]
+    public function itDropsSelfReferencesAfterCanonicalization(): void
+    {
+        $build = self::builder()->build(
+            [
+                self::dependency('App\\SelfRef', 'app\\selfref', DependencyType::TypeHint),
+                self::dependency('App\\SelfRef', 'App\\SelfRef', DependencyType::StaticCall),
+            ],
+            [self::declaration('App\\SelfRef')],
+        );
+
+        self::assertSame([], $build->graph->getAllDependencies());
+        self::assertSame(0, $build->graph->getClassCe(SymbolPath::fromClassFqn('App\\SelfRef')));
+        self::assertSame(0, $build->graph->getClassCa(SymbolPath::fromClassFqn('App\\SelfRef')));
+    }
+
     /**
      * An `extends` edge to a PHP class stays in the edge list, where DIT and
      * NOC read inheritance from, but counts toward no coupling: the same class
@@ -82,10 +189,10 @@ final class DependencyGraphBuilderTest extends TestCase
     {
         $filtered = self::dependency('App\Service', 'Exception', DependencyType::New_);
         $inheritance = self::dependency('App\Failure', 'Exception', DependencyType::Extends);
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = self::builder()->build([
             $filtered,
             $inheritance,
-        ], [self::logical('App\Service'), self::logical('App\Failure')]);
+        ], [self::declaration('App\Service'), self::declaration('App\Failure')])->graph;
 
         self::assertSame([$inheritance], $graph->getAllDependencies());
         self::assertSame(
@@ -114,7 +221,7 @@ final class DependencyGraphBuilderTest extends TestCase
     {
         $project = self::dependency('App\Domain\Child', 'App\Model\Base', DependencyType::Extends);
         $vendor = self::dependency('App\Domain\Child', 'Vendor\Base', DependencyType::Extends);
-        $graph = (new DependencyGraphBuilder())->build([$project, $vendor], [self::logical('App\Domain\Child')]);
+        $graph = self::builder()->build([$project, $vendor], [self::declaration('App\Domain\Child')])->graph;
 
         self::assertSame([$project, $vendor], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\Domain\Child')));
         self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\Domain\Child')));
@@ -133,16 +240,16 @@ final class DependencyGraphBuilderTest extends TestCase
         $typeHint = self::dependency('App\Domain\Snapshot', 'App\Infra\Db', DependencyType::TypeHint);
         $newPhp = self::dependency('App\Domain\Tagged', 'ArrayObject', DependencyType::New_);
         $universe = [
-            self::logical('App\Domain\Snapshot'),
-            self::logical('App\Domain\Tagged'),
-            self::logical('App\Domain\Failure'),
-            self::logical('App\Infra\Db'),
+            self::declaration('App\Domain\Snapshot'),
+            self::declaration('App\Domain\Tagged'),
+            self::declaration('App\Domain\Failure'),
+            self::declaration('App\Infra\Db'),
         ];
 
-        $graph = (new DependencyGraphBuilder())->build(
+        $graph = self::builder()->build(
             [$implementsPhp, $typeHint, $attributePhp, $newPhp, $extendsPhp, $implementsUser],
             $universe,
-        );
+        )->graph;
 
         self::assertSame([$implementsPhp, $attributePhp, $extendsPhp, $implementsUser], $graph->getDeclarationDependencies());
         self::assertSame([$typeHint, $extendsPhp, $implementsUser], $graph->getAllDependencies());
@@ -165,14 +272,14 @@ final class DependencyGraphBuilderTest extends TestCase
             self::dependency('App\Infra\Db', 'App\Domain\Tagged', DependencyType::StaticCall),
         ];
         $universe = [
-            self::logical('App\Domain\Snapshot'),
-            self::logical('App\Domain\Tagged'),
-            self::logical('App\Domain\Failure'),
-            self::logical('App\Infra\Db'),
+            self::declaration('App\Domain\Snapshot'),
+            self::declaration('App\Domain\Tagged'),
+            self::declaration('App\Domain\Failure'),
+            self::declaration('App\Infra\Db'),
         ];
 
-        $with = (new DependencyGraphBuilder())->build([$implementsPhp, ...$rest, $attributePhp], $universe);
-        $without = (new DependencyGraphBuilder())->build($rest, $universe);
+        $with = self::builder()->build([$implementsPhp, ...$rest, $attributePhp], $universe)->graph;
+        $without = self::builder()->build($rest, $universe)->graph;
 
         self::assertSame(self::couplingViews($without), self::couplingViews($with));
         self::assertSame(1, $with->getClassCe(SymbolPath::fromClassFqn('App\Domain\Snapshot')));
@@ -185,7 +292,7 @@ final class DependencyGraphBuilderTest extends TestCase
     public function itDeduplicatesClassAndNamespaceCouplingEndpoints(): void
     {
         $dependency = self::dependency('App\Service', 'Vendor\Contract', DependencyType::TypeHint);
-        $graph = (new DependencyGraphBuilder())->build([$dependency, $dependency], []);
+        $graph = self::builder()->build([$dependency, $dependency], [])->graph;
 
         self::assertSame([$dependency, $dependency], $graph->getAllDependencies());
         self::assertSame([$dependency, $dependency], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\Service')));
@@ -210,7 +317,7 @@ final class DependencyGraphBuilderTest extends TestCase
         $sibling = self::dependency('App\One\Source', 'App\Two\Target', DependencyType::New_);
         $outgoing = self::dependency('App\One\Source', 'Vendor\Outside', DependencyType::StaticCall);
         $incoming = self::dependency('Vendor\Incoming', 'App\Two\Target', DependencyType::TypeHint);
-        $graph = (new DependencyGraphBuilder())->build([$sibling, $outgoing, $incoming], []);
+        $graph = self::builder()->build([$sibling, $outgoing, $incoming], [])->graph;
 
         self::assertSame([$sibling, $outgoing], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\One\Source')));
         self::assertSame([$sibling, $incoming], $graph->getClassDependents(SymbolPath::fromClassFqn('App\Two\Target')));
@@ -277,11 +384,32 @@ final class DependencyGraphBuilderTest extends TestCase
         return new LogicalClassPath(SymbolPath::fromClassFqn($class));
     }
 
+    private static function builder(?ExternalClassSpellingInterface $spelling = null): DependencyGraphBuilder
+    {
+        return new DependencyGraphBuilder($spelling ?? new UnplacedExternalClassSpelling());
+    }
+
+    private static function declaration(
+        string $class,
+        ClassType $type = ClassType::Class_,
+        bool $declaresToString = false,
+        bool $aliasesTraitMethodAsToString = false,
+    ): ClassLikeDeclaration {
+        $file = RelativePath::fromString('src/Fixture.php');
+
+        return ClassLikeDeclaration::of(
+            DeclarationPath::of(SymbolPath::fromClassFqn($class), $file, DeclarationOrdinal::fromRank(0)),
+            $type,
+            $declaresToString,
+            $aliasesTraitMethodAsToString,
+        );
+    }
+
     private static function dependency(string $source, string $target, DependencyType $type): Dependency
     {
         $file = RelativePath::fromString('src/Fixture.php');
 
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), $file, DeclarationOrdinal::fromRank(0)),
             self::logical($target),
             $type,

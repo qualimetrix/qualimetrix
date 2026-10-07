@@ -10,7 +10,6 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -41,7 +40,8 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -234,11 +234,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'dependencies' => \count($collectionResult->dependencies),
         ]);
         $profiler->start('dependency', 'pipeline');
-        $graph = $this->buildDependencyGraph(
+        $graphBuild = $this->graphBuilder->build(
             $collectionResult->dependencies,
-            $repository,
+            $collectionResult->classLikeDeclarations,
         );
+        $graph = $graphBuild->graph;
         $profiler->stop('dependency');
+        $this->reportMixedSpellings([...$repository->mixedSpellings(), ...$graphBuild->mixedSpellings]);
 
         // Phase 2.6: prepare Architecture-owned layer policy from this run's
         // graph and class universe. Run selects the producer rule through its
@@ -290,6 +292,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             projectScope: $measuredScope->judgement(),
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
+        $unmatchedTypeWarning = $this->ruleProducerPreparation->unmatchedTypeWarning(
+            $measuredScope->judgement(),
+            $this->ruleExecutor->publication(),
+        );
+        if ($unmatchedTypeWarning !== null) {
+            $this->logger->warning($unmatchedTypeWarning);
+        }
         $profiler->stop('rules');
 
         $analysisTime = (hrtime(true) - $phaseStartTime) / 1e9;
@@ -323,14 +332,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             subjectCoverage: $subjectCoverage,
             unmatchedExcludeFindings: $this->unmatchedExcludeAudit->findings($measuredScope->judgement(), $configuration->projectRoot),
         ), $measuredScope];
-    }
-
-    /** @param list<Dependency> $dependencies */
-    private function buildDependencyGraph(
-        array $dependencies,
-        MetricRepositoryInterface $repository,
-    ): DependencyGraphInterface {
-        return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
     }
 
     /**
@@ -387,20 +388,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             ...$prepared->unmatchedExcludeFindings,
         ]);
 
-    }
-
-    /** @return list<LogicalClassPath> */
-    private static function collectLogicalClassPaths(MetricRepositoryInterface $repository): array
-    {
-        $classes = [];
-        foreach ($repository->allLogicalClasses() as $info) {
-            $logicalClass = $info->subject?->logicalClassPath();
-            if ($logicalClass !== null) {
-                $classes[$logicalClass->toCanonical()] = $logicalClass;
-            }
-        }
-
-        return array_values($classes);
     }
 
     /**
@@ -491,6 +478,24 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
 
         if ($actual !== $expected) {
             throw new LogicException('Collection terminal states do not match the discovered analysis paths');
+        }
+    }
+
+    /** @param list<MixedSpelling> $mixedSpellings */
+    private function reportMixedSpellings(array $mixedSpellings): void
+    {
+        $reported = [];
+        foreach ($mixedSpellings as $mixed) {
+            $key = ClassNameSpelling::fold($mixed->canonical);
+            if (isset($reported[$key])) {
+                continue;
+            }
+            $reported[$key] = true;
+            $this->logger->warning(\sprintf(
+                'mixed spelling: %s → %s',
+                implode(', ', $mixed->spellings),
+                $mixed->canonical,
+            ));
         }
     }
 

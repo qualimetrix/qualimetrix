@@ -42,13 +42,6 @@
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyType::description@src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php": [
       {"channel":"complexity.ccn","magnitudes":[15]}
     ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraph::__construct@src/Analysis/Evidence/DependencyModel/DependencyGraph.php": [
-      {"channel":"code-smell.constructor-overinjection","magnitudes":[9]}
-    ],
-    "declaration:callable:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder::withParentNamespaceCouplings@src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php": [
-      {"channel":"complexity.ccn","magnitudes":[11]},
-      {"channel":"complexity.cognitive","magnitudes":[18]}
-    ],
     "declaration:callable:Qualimetrix\\Analysis\\Evidence\\Design\\GodClass\\GodClassOptions::__construct@src/Analysis/Evidence/Design/GodClass/GodClassOptions.php": [
       {"channel":"code-smell.constructor-overinjection","magnitudes":[8]},
       {"channel":"code-smell.long-parameter-list","magnitudes":[8]}
@@ -289,10 +282,10 @@
       {"channel":"coupling.cbo","magnitudes":[20]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
-      {"channel":"coupling.instability","magnitudes":[0.954545]}
+      {"channel":"coupling.instability","magnitudes":[0.969231]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design\\Inheritance": [
-      {"channel":"coupling.instability","magnitudes":[0.942308]}
+      {"channel":"coupling.instability","magnitudes":[0.960784]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Maintainability": [
       {"channel":"coupling.cbo","magnitudes":[16]}
@@ -316,10 +309,16 @@
       {"channel":"size.class-count","magnitudes":[15]}
     ],
     "ns:Qualimetrix\\Analysis\\Policy\\Architecture\\Layer": [
-      {"channel":"size.class-count","magnitudes":[22]}
+      {"channel":"size.class-count","magnitudes":[23]}
+    ],
+    "ns:Qualimetrix\\Core\\Ast": [
+      {"channel":"coupling.cbo","magnitudes":[17]}
     ],
     "ns:Qualimetrix\\Core\\FileTarget": [
       {"channel":"size.class-count","magnitudes":[23]}
+    ],
+    "ns:Qualimetrix\\Infrastructure\\Composer": [
+      {"channel":"coupling.cbo","magnitudes":[18]}
     ],
     "ns:Qualimetrix\\Infrastructure\\Console\\Command": [
       {"channel":"size.class-count","magnitudes":[23]}

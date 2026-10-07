@@ -554,6 +554,7 @@ final class ConfigurationRefusalRoutingTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             $this->inert('Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface'),
             new \Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
     }
 

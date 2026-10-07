@@ -74,7 +74,7 @@ final class AllowAliasExpanderTest extends TestCase
     }
 
     #[Test]
-    public function itExpandsTheTypeReferenceAliasToFourTypeKinds(): void
+    public function itExpandsTheTypeReferenceAliasToEveryTypePosition(): void
     {
         $result = LongFormAllowEntryNormalizer::parseRelationList(ArchitectureDocument::relations(['type_reference']), 'architecture.allow.app[0]');
 
@@ -82,8 +82,7 @@ final class AllowAliasExpanderTest extends TestCase
             [
                 DependencyType::TypeHint,
                 DependencyType::PropertyType,
-                DependencyType::IntersectionType,
-                DependencyType::UnionType,
+                DependencyType::ConstantType,
             ],
             $result,
         );
@@ -204,6 +203,30 @@ final class AllowAliasExpanderTest extends TestCase
             self::assertStringContainsString("'runtime_check'", $message);
             // Path prefix is preserved.
             self::assertStringContainsString('architecture.allow.app[0]', $message);
+        }
+    }
+
+    #[Test]
+    public function itRejectsTheRemovedShapeTokensAndNamesThePositionReplacement(): void
+    {
+        foreach (['union_type', 'intersection_type'] as $removed) {
+            try {
+                LongFormAllowEntryNormalizer::parseRelationList(
+                    ArchitectureDocument::relations([$removed]),
+                    'architecture.allow.app[0]',
+                );
+                self::fail('Expected ConfigurationRefusal');
+            } catch (ConfigurationRefusal $e) {
+                self::assertStringContainsString("unknown relation kind '$removed'", $e->getMessage());
+                self::assertStringContainsString(
+                    "'$removed' names a type shape, not a relation kind",
+                    $e->getMessage(),
+                );
+                self::assertStringContainsString(
+                    "use 'type_reference' or a concrete type position; shape is graph metadata",
+                    $e->getMessage(),
+                );
+            }
         }
     }
 

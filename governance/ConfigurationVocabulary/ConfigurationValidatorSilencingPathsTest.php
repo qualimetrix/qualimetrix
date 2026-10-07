@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -18,38 +18,21 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * The four ways a run can stop a configuration diagnostic from being
- * reported, held fixed while the diagnostics moved out of their rule classes
- * and into configuration validators.
- *
- * Moving them changed who declares and who emits them; it must change nothing
- * about who can silence them. Each of the eight is addressable by its own
- * name and by its producer's, in both directions of selection — `--disable-rule`
- * and `only_rules`, which resolve a selector through two different mechanisms —
- * `suppress_paths` keyed by the producer reaches
- * the three that carry a file and none of the five that do not,
- * `suppress_namespaces` reaches none of them, and the producer's `enabled`
- * option switches the whole family off. All four are behaviour of the
- * producer name, which is exactly the binding
- * {@see \Qualimetrix\Analysis\Finding\Contract\ConfigurationValidatorInterface::producerRuleName()}
- * carries — remove it and this test goes red.
- *
- * The eight are enumerated, not sampled, and the enumeration is checked
- * against the registry's own answer so a ninth diagnostic cannot appear
- * without a row here.
- *
- * The gate cannot see any of this: no corpus case uses `--disable-rule`,
- * `only_rules` or a non-empty `suppress_paths`.
+ * Selection and suppression doors for all eight configuration diagnostics.
+ * The five layer-declaration channels are filter-exempt; explicit disabled
+ * selectors and their producer's enabled gate still switch them off. Inline
+ * diagnostics retain their selectable role and file suppression semantics.
+ * The registry census prevents a diagnostic from escaping this enumeration.
  */
 final class ConfigurationValidatorSilencingPathsTest extends TestCase
 {
     /** The five that report on the layer declaration; none carries a file. */
     private const array LAYER_DIAGNOSTICS = [
-        LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME,
-        LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-        LayerPolicyPreparationInterface::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
-        LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-        LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+        ArchitectureChannels::COVERAGE_DIAGNOSTIC_NAME,
+        ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+        ArchitectureChannels::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
+        ArchitectureChannels::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+        ArchitectureChannels::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
     ];
 
     /** The three that report on an inline directive; each carries its file. */
@@ -59,7 +42,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
         InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME,
     ];
 
-    private const string LAYER_PRODUCER = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
+    private const string LAYER_PRODUCER = ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME;
 
     private const string DIRECTIVE_PRODUCER = InlineDirectivePolicyInterface::PRODUCER_RULE_NAME;
 
@@ -266,12 +249,12 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideDiagnostics')]
-    public function itLeavesExactlyOneDiagnosticWhenSelectingItOn(string $diagnostic): void
+    public function itKeepsFilterExemptLayersWhenSelectingOneDiagnostic(string $diagnostic): void
     {
         self::assertSame(
-            [$diagnostic],
+            \in_array($diagnostic, self::LAYER_DIAGNOSTICS, true) ? self::LAYER_DIAGNOSTICS : [...self::LAYER_DIAGNOSTICS, $diagnostic],
             $this->diagnosticsFrom(['--only-rule' => [$diagnostic]]),
-            'Positive selection by a diagnostic\'s own name must reach it and nothing else.',
+            'A diagnostic filter cannot narrow the five filter-exempt layer channels.',
         );
     }
 
@@ -287,7 +270,7 @@ final class ConfigurationValidatorSilencingPathsTest extends TestCase
     public function itLeavesExactlyTheDiagnosticsAProducerOwnsWhenSelectingTheProducerOn(string $producer, array $owned): void
     {
         self::assertSame(
-            $owned,
+            $producer === self::LAYER_PRODUCER ? $owned : self::allDiagnostics(),
             $this->diagnosticsFrom(['--only-rule' => [$producer]]),
             'Positive selection by producer name must reach every diagnostic that producer owns, and no'
             . ' diagnostic of the other producer.',

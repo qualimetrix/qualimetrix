@@ -23,12 +23,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -305,7 +305,7 @@ final class UnassignedClassDiagnosticsTest extends TestCase
         string $targetNamespace,
         string $targetClass,
     ): Dependency {
-        return new Dependency(
+        return Dependency::ofKind(
             source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: DependencyType::New_,

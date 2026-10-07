@@ -4,6 +4,13 @@ Symbol values provide stable neutral identities for declarations and aggregates.
 Their direct public surface is intentional: these values are the subject, not
 adapters hidden behind a role-specific contract directory.
 
+`ClassNameSpelling::fold()` folds only ASCII uppercase bytes, leaving high-byte
+identifier bytes untouched. `canonical()` chooses the byte-smallest observed
+spelling. `MixedSpelling` carries at least two spellings of one folded identity
+and its canonical projection: class and namespace groups use that observed
+minimum; an external group may use the exact installed declaration's spelling
+within the same identity. These values carry evidence and perform no logging.
+
 `PhpBuiltinClassRegistry` and `PhpBuiltinClassHierarchy` state what PHP itself
 declares — which names are PHP's, and what is above each of them — as static
 tables, so no answer depends on the PHP that runs the analysis. Governance

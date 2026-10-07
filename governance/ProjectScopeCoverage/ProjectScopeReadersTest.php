@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeChannels;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionOptions;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeOptions;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -35,16 +35,22 @@ final class ProjectScopeReadersTest extends TestCase
     private static function readers(): array
     {
         return [
-            'src/Analysis/Policy/Architecture/LayerViolation/LayerDeclarationValidator.php' => [
-                LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            'src/Analysis/Policy/Architecture/LayerDeclaration/LayerDeclarationValidator.php' => [
+                ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                ArchitectureChannels::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
             ],
-            'src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php' => [
-                LayerPolicyPreparationInterface::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
+            'src/Analysis/Policy/Architecture/LayerDeclaration/LayerDeclarationRule.php' => [
+                ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
+                ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME,
             ],
+            'src/Analysis/Policy/Architecture/ArchitecturePolicy.php' => [],
+            'src/Analysis/Policy/Architecture/Contract/UnmatchedTypeWarningInterface.php' => [],
+            'src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php' => [],
+            'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedTypeDiagnostic.php' => [],
             'src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' => ['cohesion.unmatched-exclude-method'],
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' => [UnmatchedExcludeOptions::CHANNEL],
+            'src/Analysis/Run/RuleProducerPreparation.php' => [],
             'src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php' => [
                 UnboundSuppressionOptions::UNMATCHED_PATH,
                 UnboundSuppressionOptions::UNMATCHED_NAMESPACE,

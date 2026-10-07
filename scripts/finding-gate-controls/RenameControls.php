@@ -123,7 +123,7 @@ final class RenameControls
             'reference-input',
             'a case input that needs translating, with no inputs.tsv row to translate it',
             Mutation::edit(
-                'src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php',
+                'src/Analysis/Policy/Architecture/Contract/ArchitectureChannels.php',
                 [
                     "POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shadow';"
                         => "POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shado2';",

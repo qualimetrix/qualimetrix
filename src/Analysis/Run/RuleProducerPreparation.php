@@ -5,14 +5,21 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run;
 
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
+use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -31,7 +38,7 @@ final readonly class RuleProducerPreparation
      *                                               that one subject has one construction.
      */
     public function __construct(
-        private LayerPolicyPreparationInterface $layerPolicyPreparation,
+        private LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface $layerPolicyPreparation,
         private CircularDependencyPreparationInterface $circularDependencyPreparation,
         private FileSetInspectionComposite $fileSetInspection,
         private RuleSelectorProducerGate $producerGate,
@@ -53,7 +60,7 @@ final readonly class RuleProducerPreparation
         // alone. As a producer of its own it is not, and asking about one of
         // two left `--only-rule=architecture.unassigned-class` reaching an
         // unprepared policy. The list is the capability's, not the run's.
-        foreach (LayerPolicyPreparationInterface::PRODUCER_RULE_NAMES as $producerRuleName) {
+        foreach (ArchitectureChannels::PRODUCERS as $producerRuleName) {
             if ($this->producerGate->isEnabled($producerRuleName)) {
                 $enabled = true;
 
@@ -85,6 +92,19 @@ final readonly class RuleProducerPreparation
         $profiler->start('cycles', 'pipeline');
         $this->circularDependencyPreparation->prepare($graph);
         $profiler->stop('cycles');
+    }
+
+    public function unmatchedTypeWarning(ProjectScopeJudgement $scope, ChannelPublication $publication): ?string
+    {
+        if (!$publication->publishes(
+            ArchitectureChannels::LAYER_DECLARATION_PRODUCER_NAME,
+            new FindingChannel(ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME),
+            SymbolLevel::Project,
+        )) {
+            return null;
+        }
+
+        return $this->layerPolicyPreparation->notJudgedWarning($scope);
     }
 
     /**

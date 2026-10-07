@@ -111,10 +111,11 @@ final class FindingFilterOrchestratorTest extends TestCase
             $measured = $measurement->withDiscoveredFiles(new \Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles([], [], [], [], [], new \Qualimetrix\Analysis\Run\Discovery\ScopeFacts([RelativePath::fromString('src/A.php')], [], [], false), 0));
             $report = $this->createOrchestrator($reader, $anchor)->projectScope(new ResolvedCheckScope($scope, [], $measurement), $this->createAnalysisResult(projectScope: $measured), new FindingProjectionOptions());
             self::assertSame('narrowed', $report->state);
-            self::assertCount(9, $report->unjudgedChannels);
+            self::assertCount(10, $report->unjudgedChannels);
             self::assertSame([
                 'architecture.empty-template',
                 'architecture.unmatched-exclude',
+                'architecture.unmatched-type',
                 'architecture.unreachable-layer',
                 'cohesion.unmatched-exclude-method',
                 'coupling.unmatched-framework-namespace',

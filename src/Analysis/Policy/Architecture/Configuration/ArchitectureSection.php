@@ -46,6 +46,7 @@ final readonly class ArchitectureSection implements DocumentSectionSchemaInterfa
             'patterns' => NodeSchema::opaque(),
             'suffix' => NodeSchema::opaque(),
             'attributes' => NodeSchema::opaque(),
+            'member_attributes' => NodeSchema::opaque(),
             'implements' => NodeSchema::opaque(),
             'extends' => NodeSchema::opaque(),
             'match' => NodeSchema::scalar(ScalarForm::String),

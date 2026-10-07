@@ -14,8 +14,8 @@ use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionAudit;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedExcludeDiagnostic;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding;
 use Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeFinding;
 use RecursiveDirectoryIterator;
@@ -53,7 +53,7 @@ use RuntimeException;
  */
 final class OccurrenceKindFreezeGuardTest extends TestCase
 {
-    private const int EXPECTED_FROZEN_COUNT = 11;
+    private const int EXPECTED_FROZEN_COUNT = 13;
 
     /**
      * The frozen spelling itself, pinned by literal rather than derived from
@@ -90,6 +90,8 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         UnboundSuppressionAudit::class => 'unbound-suppression-value',
         UnmatchedFrameworkNamespaceRule::class => 'unmatched-framework-prefix',
         UnmatchedExcludeDiagnostic::class => 'inert-layer-exclude-clause',
+        \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerOverlapDiagnostic::class => 'declared-layer-overlap',
+        \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedTypeDiagnostic::class => 'unmatched-layer-type',
     ];
 
     #[Test]

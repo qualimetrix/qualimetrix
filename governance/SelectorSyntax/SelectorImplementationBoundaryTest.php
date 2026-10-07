@@ -24,6 +24,7 @@ final class SelectorImplementationBoundaryTest extends TestCase
         'src/Analysis/Policy/Baseline/Contract/RecordedExclusions.php' => 1,
         'src/Analysis/Run/Configuration/RunConfigurationResolver.php' => 1,
         'src/Infrastructure/Console/CliSelectorDecoder.php' => 2,
+        'src/Reporting/GraphProjection/NamespaceSelection.php' => 1,
     ];
 
     #[Test]

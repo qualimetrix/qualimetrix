@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelFileScope;
 
 /**
@@ -25,11 +25,11 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelF
 final class DeclaredChannelFileScopeTest extends TestCase
 {
     #[Test]
-    public function itMarksAChannelBothCapabilitiesDeclareAsProjectScoped(): void
+    public function itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped(): void
     {
         $scope = DeclaredChannelFileScope::create();
 
-        self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.layer-violation')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('architecture.layer-violation')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.coverage-gap')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.circular-dependency')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('discovery.unmatched-exclude')));
@@ -47,7 +47,7 @@ final class DeclaredChannelFileScopeTest extends TestCase
         // A dotted descendant of a declared channel is a different channel and
         // inherits nothing.
         self::assertTrue($scope->isFileScoped(new FindingChannel(
-            LayerPolicyPreparationInterface::PRODUCER_RULE_NAME . '.invented',
+            ArchitectureChannels::PRODUCER_RULE_NAME . '.invented',
         )));
     }
 }

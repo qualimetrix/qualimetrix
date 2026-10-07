@@ -13,6 +13,45 @@ bin/qmx check src/ --baseline=baseline.json
 Commit the reviewed file with your project. A comparable breach is promoted to
 Error; an inapplicable or incomparable group retains its normal severity.
 
+## Migrating layer findings after the declaration-evidence change
+
+`architecture.layer-violation` now belongs to the exact **source declaration**,
+including its file and declaration ordinal. Owned targets still distinguish
+occurrences: target order, duplicate declarations and counts are preserved.
+Parameter/return dependencies keep `type_hint`; promoted-property dependencies
+use `property_type`, and constant declarations use `constant_type`. Former
+`union_type` and `intersection_type` relation entries are inert; these syntax
+forms now live in the graph's `shape` object.
+
+Review the findings before changing acceptance. Keep the existing baseline;
+add new source identities and remove only explicitly selected old identities:
+
+```bash
+vendor/bin/qmx check src/ --baseline=baseline.json
+vendor/bin/qmx baseline:cleanup baseline.json src/
+vendor/bin/qmx baseline:cleanup baseline.json src/ --disable-rule=architecture.layer-violation
+vendor/bin/qmx baseline:update baseline.json src/ --only-rule=architecture.layer-violation --accept-new=architecture.layer-violation
+vendor/bin/qmx baseline:cleanup baseline.json src/ --remove=SELECTOR_FROM_REPORT
+```
+
+The first two cleanup commands are **read-only reports**. The ordinary report
+can name retired relation entries as inert; an old valid target-subject entry
+can remain outside coverage when exclusions prevent proving its absence.
+The second report deliberately leaves layer violations unmeasured and publishes
+the old layer selectors as not measured or malformed. Copy those selectors from
+that report, then run the final command once for each old layer entry you choose
+to remove. Do not reuse hashes from another project or infer a selector from an
+occurrence id. `--accept-new` only adds previously unseen groups; it neither
+loosens nor tightens existing ceilings. Unrelated tightened and suppress entries,
+recorded scope and exclusions remain intact. Neither `--force` nor a regenerated
+baseline is needed.
+
+The migration fixture has four old layer entries and five current source
+findings: its target annotation no longer hides an incoming violation. Move an
+intended outgoing-edge exception to its source declaration. A target annotation
+is reported unused only when directive coverage can judge it; a baseline with
+exclusions does not guarantee that answer. See [layer suppression](../rules/architecture.md#suppression).
+
 ## What is measured
 
 Capture and comparison use the same post-rule findings after inline suppression
@@ -341,7 +380,7 @@ A bare prefix without the star (`@qmx-ignore complexity`) is an error, not a gue
 Suppression "complexity" addresses no channel. Addressable names closest to it: complexity.wmc.
 ```
 
-Every rule now reports through exactly one channel, but the channel itself can report at more than one level of the symbol tree — a class-level and a namespace-level view of coupling, or a method-level and a class-level view of complexity. The bare channel name addresses **every** level at once; the rules below are the ones where that matters, because their two levels disagree often enough that suppressing only one is the common case:
+A producer can publish several channels. Each channel can also report at more than one level of the symbol tree — a class-level and a namespace-level view of coupling, or a method-level and a class-level view of complexity. The bare channel name addresses **every** level at once; the rules below are the ones where that matters, because their two levels disagree often enough that suppressing only one is the common case:
 
 | Channel                | Levels               |
 | ---------------------- | -------------------- |

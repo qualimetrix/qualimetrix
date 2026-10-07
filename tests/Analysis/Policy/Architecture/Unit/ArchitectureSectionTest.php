@@ -323,7 +323,7 @@ final class ArchitectureSectionTest extends TestCase
             ['layers' => self::LAYERS],
             ['architecture', 'layers', '0', 'suffix', '0'],
         ];
-        foreach (['attributes', 'implements', 'extends'] as $kind) {
+        foreach (['attributes', 'member_attributes', 'implements', 'extends'] as $kind) {
             yield $kind . ' name syntax' => [
                 ['layers' => [['name' => 'old', $kind => ['ShortName']]]],
                 ['layers' => self::LAYERS],
@@ -512,6 +512,22 @@ final class ArchitectureSectionTest extends TestCase
         ]));
 
         self::assertSame(['domain'], $result->configuration->registry()->layerNames());
+    }
+
+    #[Test]
+    public function itAcceptsMemberAttributesInALayerAndItsExcludeBlock(): void
+    {
+        $result = self::configure(ArchitectureDocument::file([
+            'layers' => [[
+                'name' => 'http',
+                'member_attributes' => ['App\\Route'],
+                'exclude' => ['member_attributes' => ['App\\InternalRoute']],
+            ]],
+        ]));
+
+        $membership = $result->configuration->registry()->definitions()[0]->membership();
+        self::assertSame(['App\\Route'], $membership->memberAttributes);
+        self::assertSame(['App\\InternalRoute'], $membership->exclude?->memberAttributes);
     }
 
     #[Test]

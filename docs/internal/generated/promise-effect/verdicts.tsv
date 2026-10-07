@@ -37,7 +37,7 @@ A	form|cli-alias|rules.architecture.unassigned-class.mode|int	int	optionsObject	
 A	form|cli-alias|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|cli-alias|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|cli-alias|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
 A	form|cli-alias|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|cli-alias|rules.code-smell.constructor-overinjection.error|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|cli-alias|rules.code-smell.constructor-overinjection.error|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -733,7 +733,7 @@ A	form|rule-opt|rules.architecture.unassigned-class.mode|int	int	optionsObject	R
 A	form|rule-opt|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|map	map	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door has no map syntax: the braces arrive as characters; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|null	null	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|rule-opt|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|rule-opt|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
 A	form|rule-opt|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	NOT OBSERVABLE	no	DECIDED	a CLI door carries text: `7331` is the only spelling, and quoting it writes six characters; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|rule-opt|rules.code-smell.boolean-argument.allowed-prefixes|float	float	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2452,7 +2452,7 @@ A	form|yaml|rules.architecture.unassigned-class.enabled|float	float	optionsObjec
 A	form|yaml|rules.architecture.unassigned-class.enabled|int	int	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
-A	form|yaml|rules.architecture.unassigned-class.enabled|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at mergedDocument
+A	form|yaml|rules.architecture.unassigned-class.enabled|null	null	optionsObject	NOT OBSERVABLE	no	DECIDED	the envelope is refused with or without this key; lost at mergedDocument
 A	form|yaml|rules.architecture.unassigned-class.enabled|string-nonnumber	string-nonnumber	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.enabled|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|bool	bool	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
@@ -2461,7 +2461,7 @@ A	form|yaml|rules.architecture.unassigned-class.mode|int	int	optionsObject	REFUS
 A	form|yaml|rules.architecture.unassigned-class.mode|list	list	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|map	map	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|null	null	optionsObject	OK	no	DECIDED	`~` behaved as an omitted key; lost at optionsObject
-A	form|yaml|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	OK	no	DECIDED	effect distinguishable and the producer reachable; lost at nowhere
+A	form|yaml|rules.architecture.unassigned-class.mode|string-nonnumber	string-nonnumber	optionsObject	REFUSES	yes	DECIDED	refused a form it promised; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.mode|string-number	string-number	optionsObject	REFUSES	no	DECIDED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.suppress-namespace-channels|bool	bool	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
 A	form|yaml|rules.architecture.unassigned-class.suppress-namespace-channels|float	float	optionsObject	REFUSES	no	PROMISED	refused; lost at nowhere
@@ -5255,7 +5255,7 @@ B	pair|architecture.layer-violation|empty-template-severity|severity|same-source
 B	pair|architecture.layer-violation|enabled|severity|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
 B	pair|architecture.layer-violation|potential-shadow-severity|severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, which no declared value here can improve on, B the canonical magnitude
 B	pair|architecture.layer-violation|severity|unreachable-layer-severity|same-source|6-superseded-refused	both	optionsObject	COEXISTENCE_OK	no	DECIDED	refused, as promised; A wrote the canonical magnitude, B the canonical magnitude, which no declared value here can improve on
-B	pair|architecture.unassigned-class|enabled|mode|same-source|6-contradiction-refused	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted; A wrote the alternate magnitude, B the canonical magnitude
+B	pair|architecture.unassigned-class|enabled|mode|same-source|6-contradiction-refused	both	optionsObject	MISCOMPOSED	yes	DECIDED	composed where the ledger promised a refusal: accepted; A wrote the alternate magnitude, B the canonical magnitude, which no declared value here can improve on
 B	pair|code-smell.boolean-argument|allowed-prefixes|enabled|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the canonical magnitude, B the alternate magnitude
 B	pair|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|same-source|6-subject-vs-filter	both	optionsObject	COEXISTENCE_OK	no	DECIDED	both effects present; A wrote the canonical magnitude, B the canonical magnitude
 B	pair|code-smell.boolean-argument|enabled|flag-promoted-properties|same-source|6-gate	both	optionsObject	COEXISTENCE_OK	no	PROMISED	both effects present; A wrote the alternate magnitude, B the canonical magnitude
@@ -6281,7 +6281,7 @@ E	neighbourhood|architecture.layer-violation|severity|empty-template-severity|6-
 E	neighbourhood|architecture.layer-violation|severity|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|architecture.layer-violation|severity|potential-shadow-severity|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|architecture.layer-violation|severity|unreachable-layer-severity|6-superseded-refused	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-superseded-refused; the neighbour wrote the canonical magnitude, which no declared value here can improve on
-E	neighbourhood|architecture.unassigned-class|enabled|mode|6-contradiction-refused	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-contradiction-refused; the neighbour wrote the canonical magnitude
+E	neighbourhood|architecture.unassigned-class|enabled|mode|6-contradiction-refused	both	optionsObject	NOT OBSERVABLE	no	(none)	the neighbour alone is refused: refused-framed; pair kind 6-contradiction-refused; the neighbour wrote the canonical magnitude, which no declared value here can improve on
 E	neighbourhood|architecture.unassigned-class|mode|enabled|6-contradiction-refused	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-contradiction-refused; the neighbour wrote the alternate magnitude
 E	neighbourhood|code-smell.boolean-argument|allowed-prefixes|enabled|6-gate	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-gate; the neighbour wrote the alternate magnitude
 E	neighbourhood|code-smell.boolean-argument|allowed-prefixes|flag-promoted-properties|6-subject-vs-filter	both	optionsObject	PRESENCE_NEUTRAL	no	(none)	`~` beside the neighbour changed nothing; pair kind 6-subject-vs-filter; the neighbour wrote the canonical magnitude

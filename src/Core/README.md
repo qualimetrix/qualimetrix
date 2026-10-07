@@ -17,6 +17,14 @@ external import in Core is a review decision, and this paragraph is its record.
 > declared-layer policy now belong to
 > [`Analysis\\Policy\\Architecture`](../Analysis/Policy/Architecture/README.md).
 
+`Ast/NameResolution` is the neutral wrapper around PHP-Parser's name resolver.
+It preserves original nodes (`replaceNodes=false`) and uses a collecting error
+handler by default, so collection keeps its established best-effort behaviour.
+Readers that publish declaration metadata may pass PHP-Parser's throwing error
+handler and turn an ambiguous or duplicate import into an explicit unreadable
+answer. Both modes use the same resolver; no consumer implements PHP name
+grammar itself.
+
 ## Structure
 
 ```
@@ -723,13 +731,13 @@ Foundation for baseline and suppression.
 
 ### PathExclusionFilter
 
-Suppresses findings whose file path matches configured exclusion patterns (the global `suppress_paths` / `--suppress-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
+Suppresses findings whose file path matches configured exclusion patterns (the global `suppress_paths` / `--suppress-path` mechanism). Findings without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Findings on a channel its owner declared **project-scoped**, such as `architecture.circular-dependency` and declaration diagnostics, remain exempt. `architecture.layer-violation` follows the physical source dependency site's file. Scope is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
 
 ### NamespaceExclusionFilter
 
-Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `suppress_namespaces` / `--suppress-namespace` mechanism). `architecture.*` rule findings (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
+Suppresses findings whose symbol namespace matches configured exclusion patterns (the global `suppress_namespaces` / `--suppress-namespace` mechanism). Declared project-scoped channels, including `architecture.circular-dependency` and declaration diagnostics, remain exempt. `architecture.layer-violation` follows its source declaration's namespace; excluding only its target does not suppress it. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`ArchitectureChannels::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style findings (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Finding::$subject` so those findings are still suppressible per namespace.
 
 **Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
 

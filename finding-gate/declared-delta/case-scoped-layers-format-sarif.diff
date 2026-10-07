@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -52,1 +52,1 @@
+-                                "text": "Project scope narrowed: the analysed paths do not cover src/Other.php; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unmatched-type, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {\"kind\":\"explicit-files\",\"namedFiles\":1,\"missingFiles\":1}."
++                                "text": "Project scope narrowed: the analysed paths do not cover src/Other.php; channels with no judged value: architecture.empty-template, architecture.unmatched-exclude, architecture.unreachable-layer, cohesion.unmatched-exclude-method, coupling.unmatched-framework-namespace, discovery.unmatched-exclude, suppression.unmatched-namespace, suppression.unmatched-path, suppression.unmatched-rule-ledger. Source reasons: {\"kind\":\"explicit-files\",\"namedFiles\":1,\"missingFiles\":1}."

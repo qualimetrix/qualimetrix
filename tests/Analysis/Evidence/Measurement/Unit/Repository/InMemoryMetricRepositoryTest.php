@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\LogicalClassMetricIndex;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -22,6 +27,9 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(InMemoryMetricRepository::class)]
+#[CoversClass(AggregateMetricIndex::class)]
+#[CoversClass(LogicalClassMetricIndex::class)]
+#[CoversClass(NamespaceMetricIndex::class)]
 final class InMemoryMetricRepositoryTest extends TestCase
 {
     #[Test]
@@ -294,7 +302,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             200,
         );
 
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         // Both symbols should exist in merged repository
         self::assertTrue($merged->has(SymbolPath::forMethod('App', 'ServiceA', 'method1')));
@@ -329,7 +337,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             ->with('size.loc', 150); // Override
         $repo2->add($symbol, $metrics2, RelativePath::fromString('Service.php'), 1);
 
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         $result = $merged->get($symbol);
 
@@ -355,7 +363,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         );
 
         // Merge with empty
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         self::assertTrue($merged->has(SymbolPath::forMethod('App', 'Service', 'method')));
         self::assertSame(5, $merged->get(SymbolPath::forMethod('App', 'Service', 'method'))->get('complexity.ccn'));
@@ -411,7 +419,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // repo2 has line=42
         $repo2->add($symbol, (new MetricBag())->with('size.loc', 100), RelativePath::fromString('Service.php'), 42);
 
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         $infos = iterator_to_array($merged->all(SymbolLevel::Class_), false);
         $info = $infos[0];
@@ -547,7 +555,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             17,
         ));
 
-        foreach ([$plain->mergeWith($typed), $typed->mergeWith($plain)] as $repository) {
+        foreach ([($plain->mergedWith($typed) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($typed->mergedWith($plain) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $callables = iterator_to_array($repository->allCallables(), false);
             self::assertCount(1, $callables);
             self::assertSame(CallableKind::Method, $callables[0]->callableKind);
@@ -608,7 +616,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $second = new InMemoryMetricRepository();
         $second->addSubject($secondSubject, MetricBag::fromArray(['second' => 2]), $secondPath->file, 22);
 
-        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+        foreach ([($first->mergedWith($second) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $declarations = iterator_to_array($repository->allDeclarations(), false);
             self::assertCount(2, $declarations);
             $locations = [];
@@ -621,6 +629,260 @@ final class InMemoryMetricRepositoryTest extends TestCase
             self::assertSame(2, $repository->getSubject($secondSubject)->get('second'));
             $this->assertLocationFreeLogicalClassProjection($repository);
         }
+    }
+
+    #[Test]
+    public function itPublishesFoldedClassAndNamespaceEvidenceWithoutCollapsingDeclarations(): void
+    {
+        $first = new InMemoryMetricRepository();
+        $firstPath = DeclarationPath::of(
+            SymbolPath::forClass('App', 'Service'),
+            RelativePath::fromString('src/First.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $first->addSubject(MetricSubject::declaration($firstPath), MetricBag::fromArray(['first' => 1]), $firstPath->file, 1);
+
+        $second = new InMemoryMetricRepository();
+        $secondPath = DeclarationPath::of(
+            SymbolPath::forClass('app', 'service'),
+            RelativePath::fromString('src/Second.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $second->addSubject(MetricSubject::declaration($secondPath), MetricBag::fromArray(['second' => 2]), $secondPath->file, 2);
+
+        $repository = $second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible');
+
+        self::assertCount(2, iterator_to_array($repository->allDeclarations(), false));
+        self::assertCount(1, iterator_to_array($repository->allLogicalClasses(), false));
+        self::assertSame(['App'], $repository->getNamespaces());
+        self::assertSame(['class', 'namespace'], array_column($repository->mixedSpellings(), 'kind'));
+        self::assertSame('App\\Service', $repository->mixedSpellings()[0]->canonical);
+        self::assertSame('App', $repository->mixedSpellings()[1]->canonical);
+    }
+
+    #[Test]
+    public function itPreservesLogicalOnlySpellingEvidenceAcrossRepeatedMerges(): void
+    {
+        $mixed = new InMemoryMetricRepository();
+        $mixed->add(SymbolPath::forNamespace('app'), MetricBag::fromArray(['namespace' => 4]), null, null);
+        $mixed->add(SymbolPath::fromClassFqn('app\\service'), MetricBag::fromArray(['second' => 2]), null, null);
+        $mixed->add(SymbolPath::fromClassFqn('App\\Service'), MetricBag::fromArray(['first' => 1]), null, null);
+        self::assertCount(1, array_filter(
+            $mixed->forNamespace('APP'),
+            static fn(SymbolInfo $info): bool => $info->subject?->logicalClassPath() !== null,
+        ));
+        self::assertSame(4, $mixed->get(SymbolPath::forNamespace('APP'))->get('namespace'));
+        $other = new InMemoryMetricRepository();
+        $other->add(SymbolPath::fromClassFqn('Other\\Thing'), MetricBag::fromArray(['other' => 3]), null, null);
+
+        $repository = $mixed->mergedWith($other)
+            ?? throw new LogicException('In-memory repositories must be merge-compatible');
+        $repository = $repository->mergedWith(new InMemoryMetricRepository())
+            ?? throw new LogicException('In-memory repositories must be merge-compatible');
+
+        self::assertSame(['class', 'namespace'], array_column($repository->mixedSpellings(), 'kind'));
+        self::assertSame(['App', 'Other'], $repository->getNamespaces());
+        self::assertCount(1, array_filter(
+            $repository->forNamespace('APP'),
+            static fn(SymbolInfo $info): bool => $info->subject?->logicalClassPath() !== null,
+        ));
+        self::assertSame(4, $repository->get(SymbolPath::forNamespace('APP'))->get('namespace'));
+        self::assertSame(1, $repository->get(SymbolPath::fromClassFqn('APP\\SERVICE'))->get('first'));
+        self::assertSame(2, $repository->get(SymbolPath::fromClassFqn('APP\\SERVICE'))->get('second'));
+        self::assertSame(3, $repository->get(SymbolPath::fromClassFqn('OTHER\\THING'))->get('other'));
+    }
+
+    #[Test]
+    public function itRekeysANamespaceAggregateWhenAnExactClassChangesItsCanonicalSpelling(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 17]), null, null);
+        $class = SymbolPath::fromClassFqn('App\\Foo\\Example');
+        $declaration = DeclarationPath::of(
+            $class,
+            RelativePath::fromString('src/Example.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+
+        $repository->addSubject(
+            MetricSubject::declaration($declaration),
+            MetricBag::fromArray(['size.class-loc' => 5]),
+            $declaration->file,
+            3,
+        );
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(17, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(17, $repository->get(SymbolPath::forNamespace('App\\Foo'))->get('size.loc.sum'));
+    }
+
+    #[Test]
+    public function itRekeysANamespaceAggregateWhenALogicalClassChangesItsCanonicalSpelling(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 17]), null, null);
+
+        $repository->addSubject(
+            MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App\\Foo', 'Example'))),
+            MetricBag::fromArray(['size.class-loc' => 5]),
+            null,
+            0,
+        );
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(17, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(17, $repository->get(SymbolPath::forNamespace('App\\Foo'))->get('size.loc.sum'));
+    }
+
+    #[Test]
+    public function itRekeysANamespaceAggregateWhenACallableOwnerChangesItsCanonicalSpelling(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 19]), null, null);
+        $method = SymbolPath::forMethod('App\\Foo', 'Example', 'run');
+
+        $repository->addCallable(new CallableWithMetrics(
+            DeclarationPath::of($method, RelativePath::fromString('src/Example.php'), DeclarationOrdinal::fromRank(0)),
+            12,
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App\\Foo', 'Example')),
+            MetricBag::fromArray(['complexity.ccn' => 2]),
+            4,
+        ));
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(19, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(19, $repository->get(SymbolPath::forNamespace('App\\Foo'))->get('size.loc.sum'));
+    }
+
+    #[Test]
+    public function itObservesAuthoredNamespaceSpellingsBeforeTypedAggregateCanonicalization(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $upper = SymbolPath::forNamespace('App\\Foo');
+        $repository->addSubject(
+            MetricSubject::aggregate($lower),
+            MetricBag::fromArray(['size.loc.sum' => 17]),
+            null,
+            null,
+        );
+
+        $repository->addSubject(
+            MetricSubject::aggregate($upper),
+            MetricBag::fromArray(['size.class-count.sum' => 2]),
+            null,
+            null,
+        );
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(17, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(2, $repository->get($upper)->get('size.class-count.sum'));
+    }
+
+    #[Test]
+    #[DataProvider('provideGlobalFunctionWriteForms')]
+    public function itRekeysNamespaceBagsWhenAGlobalFunctionChangesCanonicalSpelling(bool $typed): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('app');
+        $upper = SymbolPath::forNamespace('App');
+        $repository->add($lower, (new MetricBag())->with('first', 7)->withEntry('source', ['name' => 'first']), null, null);
+        $declarations = [];
+        foreach (['app' => 'first', 'App' => 'second'] as $namespace => $name) {
+            $declaration = DeclarationPath::of(
+                SymbolPath::forGlobalFunction($namespace, $name),
+                RelativePath::fromString('src/' . $name . '.php'),
+                DeclarationOrdinal::fromRank(0),
+            );
+            $declarations[] = $declaration;
+            $metrics = MetricBag::fromArray(['complexity.ccn' => 2]);
+            if ($typed) {
+                $repository->addCallable(new CallableWithMetrics($declaration, 10, CallableKind::Function, null, null, null, $metrics, 3));
+            } else {
+                $repository->addSubject(MetricSubject::declaration($declaration), $metrics, $declaration->file, 3);
+            }
+        }
+        self::assertSame('App', $repository->forNamespace('APP')[0]->symbolPath->namespace);
+        self::assertSame(7, $repository->get($upper)->get('first'));
+        $repository->add($upper, (new MetricBag())->with('second', 9)->withEntry('source', ['name' => 'second']), null, null);
+        $repository->addScalar($lower, 'computed', 11);
+
+        self::assertCount(1, iterator_to_array($repository->all(SymbolLevel::Namespace_), false));
+        foreach ([$lower, $upper, SymbolPath::forNamespace('APP')] as $namespace) {
+            $bag = $repository->get($namespace);
+            self::assertSame(['first' => 7, 'second' => 9, 'computed' => 11], $bag->all());
+            self::assertSame([['name' => 'first'], ['name' => 'second']], $bag->entries('source'));
+        }
+        self::assertSame(['App'], $repository->getNamespaces());
+        self::assertCount(3, $repository->forNamespace('APP'));
+        self::assertSame(['app', 'App'], array_map(
+            static fn(SymbolInfo $info): ?string => $info->symbolPath->namespace,
+            iterator_to_array($repository->allDeclarations(), false),
+        ));
+        foreach ($declarations as $declaration) {
+            self::assertSame(2, $repository->getSubject(MetricSubject::declaration($declaration))->get('complexity.ccn'));
+        }
+        self::assertCount(1, $repository->mixedSpellings());
+        self::assertSame(['App', 'app'], $repository->mixedSpellings()[0]->spellings);
+    }
+
+    /** @return iterable<string, array{bool}> */
+    public static function provideGlobalFunctionWriteForms(): iterable
+    {
+        yield 'typed callable' => [true];
+        yield 'exact subject' => [false];
+    }
+
+    #[Test]
+    public function itMergesCaseVariantNamespaceBagsWithoutLosingValuesInEitherOrder(): void
+    {
+        $lower = new InMemoryMetricRepository();
+        $lowerPath = SymbolPath::forNamespace('app');
+        $lowerFile = RelativePath::fromString('src/Lower.php');
+        $lower->add($lowerPath, (new MetricBag())->with('first', 7)->with('shared', 10)->withEntry('source', ['name' => 'lower']), $lowerFile, 3);
+        $upper = new InMemoryMetricRepository();
+        $upperPath = SymbolPath::forNamespace('App');
+        $upperFile = RelativePath::fromString('src/Upper.php');
+        $upper->addSubject(MetricSubject::aggregate($upperPath), (new MetricBag())->with('second', 9)->with('shared', 20)->withEntry('source', ['name' => 'upper']), $upperFile, 5);
+
+        $filePath = SymbolPath::forFile($lowerFile);
+        $lower->add($filePath, MetricBag::fromArray(['size.loc' => 2]), $lowerFile, 1);
+        $upper->add(SymbolPath::forProject(), MetricBag::fromArray(['size.loc.sum' => 4]), null, null);
+
+        foreach ([
+            [$lower, $upper, 20, [['name' => 'lower'], ['name' => 'upper']], $lowerFile, 3],
+            [$upper, $lower, 10, [['name' => 'upper'], ['name' => 'lower']], $upperFile, 5],
+        ] as [$left, $right, $shared, $entries, $file, $line]) {
+            $repository = $left->mergedWith($right) ?? throw new LogicException('In-memory repositories must be merge-compatible');
+            $repository = $repository->mergedWith(new InMemoryMetricRepository()) ?? throw new LogicException('In-memory repositories must be merge-compatible');
+
+            $infos = iterator_to_array($repository->all(SymbolLevel::Namespace_), false);
+            self::assertCount(1, $infos);
+            self::assertSame('App', $infos[0]->symbolPath->namespace);
+            self::assertSame($file, $infos[0]->file);
+            self::assertSame($line, $infos[0]->line);
+            foreach ([$lowerPath, $upperPath, SymbolPath::forNamespace('APP')] as $path) {
+                $bag = $repository->get($path);
+                self::assertSame(7, $bag->get('first'));
+                self::assertSame(9, $bag->get('second'));
+                self::assertSame($shared, $bag->get('shared'));
+                self::assertSame($entries, $bag->entries('source'));
+                self::assertSame($bag->all(), $repository->getSubject(MetricSubject::aggregate($path))->all());
+            }
+            self::assertSame(['App'], $repository->getNamespaces());
+            self::assertCount(1, $repository->forNamespace('APP'));
+            self::assertSame(['App', 'app'], $repository->mixedSpellings()[0]->spellings);
+            self::assertSame(2, $repository->get($filePath)->get('size.loc'));
+            self::assertSame(4, $repository->get(SymbolPath::forProject())->get('size.loc.sum'));
+        }
+        self::assertSame(10, $lower->get($lowerPath)->get('shared'));
+        self::assertSame(20, $upper->get($upperPath)->get('shared'));
     }
 
     #[Test]
@@ -656,7 +918,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $second = new InMemoryMetricRepository();
         $second->addCallable($secondCallable);
 
-        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+        foreach ([($first->mergedWith($second) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $callables = iterator_to_array($repository->allCallables(), false);
             self::assertCount(2, $callables);
             $locations = [];
@@ -777,8 +1039,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $typed->addSubject($subject, (new MetricBag())->with('size.loc.sum', 20)->withEntry('source', ['name' => 'typed']), $typedFile, null);
 
         foreach ([
-            [$plain->mergeWith($typed), 20, [['name' => 'plain'], ['name' => 'typed']], $plainFile],
-            [$typed->mergeWith($plain), 10, [['name' => 'typed'], ['name' => 'plain']], $typedFile],
+            [($plain->mergedWith($typed) ?? throw new LogicException('In-memory repositories must be merge-compatible')), 20, [['name' => 'plain'], ['name' => 'typed']], $plainFile],
+            [($typed->mergedWith($plain) ?? throw new LogicException('In-memory repositories must be merge-compatible')), 10, [['name' => 'typed'], ['name' => 'plain']], $typedFile],
         ] as [$repository, $loc, $entries, $expectedFile]) {
             $public = $repository->get($path);
             $typedMetrics = $repository->getSubject($subject);

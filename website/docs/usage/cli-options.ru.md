@@ -132,9 +132,9 @@ bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:s
 
 Объединяется с `suppress_paths` из `qmx.yaml` — оба источника суммируются.
 
-!!! warning "Не действует на правила `architecture.*`"
-    Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
-    никогда не подавляет — почему и какие есть альтернативы, см.
+!!! warning "Объявленные project-scoped каналы остаются видимыми"
+    Циклы `architecture.circular-dependency` и project-scoped diagnostics не подавляются.
+    Для `architecture.layer-violation` опция применяется к источнику нарушения; см.
     [Подавление путей в отчёте](../getting-started/configuration.ru.md#подавление-путей-в-отчёте-suppress_paths).
 
 ### `--suppress-namespace`
@@ -147,9 +147,9 @@ bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespac
 
 Объединяется с `suppress_namespaces` из `qmx.yaml` — оба источника суммируются.
 
-!!! warning "Не действует на правила `architecture.*`"
-    Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
-    никогда не подавляет — почему и какие есть альтернативы, см.
+!!! warning "Объявленные project-scoped каналы остаются видимыми"
+    Циклы `architecture.circular-dependency` и project-scoped diagnostics не подавляются.
+    Для `architecture.layer-violation` опция применяется к источнику нарушения; см.
     [Подавление неймспейсов](../getting-started/configuration.ru.md#подавление-неймспейсов-suppress_namespaces).
 
 ---
@@ -652,7 +652,7 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Опции области Git
 
-Публикация находок относительно изменённых файлов с сохранением объявленной project-scoped диагностики, в том числе циклов и нарушений слоёв архитектуры. Полное руководство смотрите в разделе [Интеграция с Git](git-integration.ru.md).
+Публикация находок относительно изменённых файлов с сохранением объявленной project-scoped диагностики, в том числе циклов архитектуры. Нарушение слоя сохраняется только при изменении source-файла в обоих режимах. Полное руководство смотрите в разделе [Интеграция с Git](git-integration.ru.md).
 
 ### `--report`
 
@@ -665,7 +665,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Ограничивает file-scoped находки изменёнными файлами без namespace/project расширения. Объявленные project-scoped находки, включая циклы и нарушения слоёв архитектуры, сохраняются и в strict-режиме:
+Ограничивает file-scoped находки изменёнными файлами без namespace/project расширения. Объявленные project-scoped находки, включая циклы архитектуры, сохраняются и в strict-режиме. Нарушения слоёв фильтруются по source-файлу:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
@@ -1098,58 +1098,31 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 
 ### debug:layer-assignment
 
-`--preset=PRESET` применяет именованный или файловый пресет; опцию можно
-повторять. Настроенные пути проходят ту же проверку существования и PHP,
-что и остальные измеряющие команды.
-
-
-Показать, к какому слою архитектуры отнесён класс, и перечислить все остальные слои, чьи критерии тоже совпали бы (потенциальный источник затенения). Полное описание — в разделе [Инспекция назначения слоя для одного класса](../rules/architecture.ru.md#debug-layer-assignment).
-
 ```bash
-bin/qmx debug:layer-assignment 'App\Service\Foo'
-bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
-
-# Машиночитаемый вывод — для агентов и скриптов, не для парсинга текстового отчёта
 bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
+bin/qmx debug:layer-assignment 'app\service\foo' --config qmx.yaml
 ```
 
-| Опция                 | Описание                                                          |
-| --------------------- | ----------------------------------------------------------------- |
-| `-c`, `--config=FILE` | Путь к `qmx.yaml` (по умолчанию: `qmx.yaml` в текущей директории) |
-| `--format=FORMAT`     | `text` (по умолчанию) или `json`                                  |
+| Опция                 | Значение                                          |
+| --------------------- | ------------------------------------------------- |
+| `-c`, `--config=FILE` | Файл конфигурации; по умолчанию `qmx.yaml`.       |
+| `--preset=PRESET`     | Именованный или файловый preset; можно повторять. |
+| `--format=FORMAT`     | `text` (по умолчанию) или `json`.                 |
 
-`--format=json` сериализует тот же результат разрешения, что рендерит текстовый отчёт. Команда отвечает только про классы, которые вошли в прогон: FQN, не соответствующий ни одной разобранной декларации — опечатка или класс, не попавший в прогон из-за `paths`, `exclude` либо фильтра сгенерированных файлов, — завершается кодом 3 с конвертом ошибки, а не классифицируется. Схема:
+Команда выполняет обычные Discovery/Collection и ищет имя среди наблюдённых
+объявлений и graph ends; install-only классы не добавляются. ASCII-регистр
+разрешается в наблюдённое написание, high-byte имена parser принимаются.
+Только пустое нормализованное имя отвергается до анализа; прочий неизвестный
+ввод даёт exit 3 после lookup, даже при выключенной политике. Информационный
+ответ даёт exit 0. Настройте выключение трёх layer-policy producers в YAML;
+`--disable-rule` команды check здесь не добавлен.
 
-```json
-{
-  "meta": {
-    "version": "0.26.0",
-    "package": "qmx",
-    "timestamp": "2026-01-15T10:30:00+00:00",
-    "docs": "https://qualimetrix.dev",
-    "llmsTxt": "https://qualimetrix.dev/llms.txt"
-  },
-  "fqn": "App\\Service\\Foo",
-  "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
-  "contendingMatches": [],
-  "shadowed": [
-    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""], "reported": true }
-  ],
-  "shadowedBy": "any-foo",
-  "undecided": [],
-  "contenders": [],
-  "chainStopsAt": [],
-  "hasLayers": true
-}
-```
-
-- `meta` — тот же блок, с которого начинается `check --format=json`: `version` и `package` инструмента, `timestamp` прогона и адреса документации `docs` и `llmsTxt` (см. [Адреса документации в JSON-отчётах](output-formats.md#documentation-addresses)).
-- `assigned` — `null`, если ни один слой не совпал; тогда пусты и `contendingMatches`, и `shadowed`.
-- `shadowed` перечисляет совпадения после `shadowedBy` — первого совпадения, которое прогон установил, — в порядке объявления. Каждое проигрывает класс, как бы ни ответили слои, на которые прогон не смог ответить, а `reported` говорит, сообщает ли о нём `architecture.potential-shadow`. `shadowedBy` равен `null`, когда `shadowed` пуст, и не совпадает с `assigned`, когда перед ним стоит совпадение с неразрешённым `exclude:`.
-- `contendingMatches` в той же форме перечисляет все остальные совпадения после `assigned`: совпадения, чей `exclude:` остался без ответа, и — если такое стоит перед ним — `shadowedBy`. Кому из них достанется класс, зависит от этих клауз, поэтому `reported` всегда `false`. Вместе с `shadowed` это все совпадения, которые текстовый отчёт перечисляет после назначения.
-- `undecided` называет слои, на которые прогон не смог ответить и от которых зависит назначение, `contenders` — слои, которые могли бы владеть классом, когда на них будет получен ответ, а `chainStopsAt` — где цепочка наследования класса вышла за анализируемые пути; все три пусты, когда прогон ответил на все слои. `assigned: null` при непустом `undecided` означает «не смог сказать», а не «класс не заявлен ни одним слоем». Полные правила — в разделе [Инспекция назначения слоя для одного класса](../rules/architecture.md#debug-layer-assignment).
-- `hasLayers` различает «слои не объявлены» (`false`) и «слои объявлены, но ни один не совпал с этим классом» (`true` при `assigned: null`).
-- При ошибке `--format=json` печатает в stdout `{"error": "...", "exit_code": N, "position": ..., "source": ...}` вместо человекочитаемой строки `<error>`; неизвестное значение `--format` завершается кодом 3 независимо от формата.
+JSON содержит `meta`, канонический `fqn`, `assigned`, `contendingMatches`,
+`shadowed`, `shadowedBy`, `undecided`, `contenders`, `chainStopsAt`, `hasLayers`,
+`policyDisabled`, `edgeEndOnly`. Shadow verdict публикует точное `exemption`
+при наличии; при disabled policy нет `reported`/`exemption` или diagnostic/docs
+hint. Полная семантика и нативный пример — в [Architecture](../rules/architecture.ru.md#debug-layer-assignment).
+Ошибки JSON заменяют ответ стандартным `error`/`exit_code` envelope.
 
 ### directives
 
@@ -1278,6 +1251,8 @@ bin/qmx graph:export src/ --no-clusters
 | `--namespace=SELECTOR`         | Включить неймспейсы через `exact:`, `subtree:` или `regex:` (можно повторять) |
 | `--exclude-namespace=SELECTOR` | Исключить неймспейсы теми же явными формами (можно повторять)                 |
 
+Любой `--namespace` или `--exclude-namespace` должен связаться с исходным graph vertex до фильтрации. Непривязанное значение даёт exit 3; case-only near match советует точное написание графа, но не принимает ошибочный регистр.
+
 Цель `--output` судится и пишется так же, как `check` обходится со своим
 [`--output`](#--output--o): каталог или имя, оканчивающееся на `/`, недоступный
 для записи существующий файл и новое имя в каталоге, которого нет или в котором
@@ -1287,10 +1262,7 @@ bin/qmx graph:export src/ --no-clusters
 `/dev/stdout` и именованные каналы сохраняют потоковую запись. Действует та же
 граница доступности обработки SIGINT/SIGTERM.
 
-Значение `--namespace`, не совпавшее ни с одной вершиной, отвергается с кодом 3,
-а не экспортирует пустой граф. `--exclude-namespace` намеренно сохраняет
-молчание: промахнувшееся исключение оставляет картину целой, и смотрящий ничего
-не теряет.
+Любой `--namespace` или `--exclude-namespace`, не связанный ни с одним исходным graph vertex, отвергается с exit 3 до фильтрации. Обе двери используют одинаковую проверку; case-only near match советует точное написание графа, но не принимает ошибочный регистр.
 
 Если хотя бы один обнаруженный файл не удалось разобрать или обработать,
 `graph:export` завершается с кодом 4 и не выводит частичный граф. Команда не создаёт

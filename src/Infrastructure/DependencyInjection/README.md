@@ -36,6 +36,20 @@ export with discovery, generated-file filtering and the lazy exclude audit.
 Exact private composition bindings and named public consumers remain manifest
 entries rather than wildcard visibility.
 
+`AnalysisConfigurator` binds DependencyModel's
+`ExternalClassSpellingInterface` to Composer's `InstalledExternalClassSpelling`.
+It uses the same stateless `DeclaredSupertypeReader` as Architecture's external
+facts binding. Placement and directory listings share the captured install
+anchor; `pointAt()` refreshes that snapshot. Parsed external facts are not a
+shared memo: the reader can parse again, while Architecture's factory memo
+belongs to its own prepared run.
+
+`ArchitectureConfigurator` binds preparation, assignment inspection and the pure
+`UnmatchedTypeWarningInterface` query to the same policy instance. Run requires
+the preparation/query intersection and checks exact channel publication before
+requesting a warning. Console requires final Finding enablement before projecting
+`policyDisabled`; neither consumer infers enablement from private rule options.
+
 ## Compiler passes that write into named services
 
 A pass that writes into a service it names by id implements

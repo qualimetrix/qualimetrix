@@ -1134,13 +1134,14 @@ Two measured questions have separate answers:
   are checked separately. Authored/generated removal are not inputs to this
   question. A bound selector remains `Removed` when the answer is withheld.
 
-Six channels ask the first question:
+Seven channels ask the first question:
 `architecture.empty-template`, `architecture.unmatched-exclude`,
-`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
-`coupling.unmatched-framework-namespace`, `suppression.unmatched-namespace`.
+`architecture.unmatched-type`, `architecture.unreachable-layer`,
+`cohesion.unmatched-exclude-method`, `coupling.unmatched-framework-namespace`,
+`suppression.unmatched-namespace`.
 `discovery.unmatched-exclude`, `suppression.unmatched-path` and
 `suppression.unmatched-rule-ledger` use the second; namespace values under the
-last also ask the first. There are nine channels in total.
+last also ask the first. There are ten channels in total.
 
 A complete named PHP roster can cover a known universe. An observed regular
 `.php` outside selection is missing PHP, even when an exclude matches it. An

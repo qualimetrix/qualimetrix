@@ -16,6 +16,95 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[\PHPUnit\Framework\Attributes\CoversClass(\Qualimetrix\Infrastructure\Console\AnalysisPreflight::class)]
 final class RuleOptionsPreflightWiringTest extends TestCase
 {
+    /** @return iterable<string, array{string, array<string, mixed>}> */
+    public static function unassignedWithoutLayers(): iterable
+    {
+        yield 'error missing' => ["rules:\n  architecture.unassigned-class:\n    mode: error\n", []];
+        yield 'warn missing' => ["rules:\n  architecture.unassigned-class:\n    mode: warn\n", []];
+        yield 'error empty' => ["architecture:\n  layers: []\nrules:\n  architecture.unassigned-class:\n    mode: error\n", []];
+        yield 'warn empty' => ["architecture:\n  layers: []\nrules:\n  architecture.unassigned-class:\n    mode: warn\n", []];
+        yield 'foreign only does not disable' => ["rules:\n  architecture.unassigned-class:\n    mode: error\n", ['--only-rule' => ['complexity.ccn']]];
+        yield 'alias mode' => ["{}\n", ['--unassigned-class-mode' => 'warn']];
+        yield 'rule option mode' => ["{}\n", ['--rule-opt' => ['architecture.unassigned-class:mode=error']]];
+    }
+
+    /** @param array<string, mixed> $options */
+    #[Test]
+    #[DataProvider('unassignedWithoutLayers')]
+    public function itRequiresLayersForAnEnabledUnassignedModeBeforeDiscovery(string $yaml, array $options): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx-unassigned-preflight-' . bin2hex(random_bytes(6));
+        mkdir($directory);
+        file_put_contents($directory . '/qmx.yaml', $yaml);
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($directory);
+            $discovery = self::createMock(ProjectFilesInterface::class);
+            $discovery->expects(self::never())->method('discover');
+            $container = (new ContainerFactory())->configure();
+            $container->removeAlias(ProjectFilesInterface::class);
+            $container->register(ProjectFilesInterface::class)->setSynthetic(true)->setPublic(true);
+            $container->compile();
+            $container->set(ProjectFilesInterface::class, $discovery);
+            $command = $container->get(CheckCommand::class);
+            self::assertInstanceOf(CheckCommand::class, $command);
+            $tester = new CommandTester($command);
+            self::assertSame(3, $tester->execute([
+                'paths' => [$directory], '--config' => $directory . '/qmx.yaml',
+                '--no-cache' => true, '--workers' => 0, '--no-progress' => true, ...$options,
+            ], ['capture_stderr_separately' => true]), $tester->getDisplay() . $tester->getErrorOutput());
+            self::assertStringContainsString('architecture.layers', $tester->getErrorOutput());
+            self::assertStringContainsString('architecture.unassigned-class', $tester->getErrorOutput());
+            if (isset($options['--unassigned-class-mode'])) {
+                self::assertStringContainsString('--unassigned-class-mode', $tester->getErrorOutput());
+            }
+            if (isset($options['--rule-opt'])) {
+                self::assertStringContainsString('--rule-opt', $tester->getErrorOutput());
+            }
+        } finally {
+            chdir($before);
+            unlink($directory . '/qmx.yaml');
+            rmdir($directory);
+        }
+    }
+
+    #[Test]
+    public function itNamesThePresetThatEnabledTheUnassignedModeBeforeDiscovery(): void
+    {
+        $directory = sys_get_temp_dir() . '/qmx-unassigned-preset-' . bin2hex(random_bytes(6));
+        mkdir($directory);
+        file_put_contents($directory . '/qmx.yaml', "{}\n");
+        file_put_contents($directory . '/team.yaml', "rules:\n  architecture.unassigned-class:\n    mode: error\n");
+        $before = getcwd();
+        self::assertNotFalse($before);
+        try {
+            chdir($directory);
+            $discovery = self::createMock(ProjectFilesInterface::class);
+            $discovery->expects(self::never())->method('discover');
+            $container = (new ContainerFactory())->configure();
+            $container->removeAlias(ProjectFilesInterface::class);
+            $container->register(ProjectFilesInterface::class)->setSynthetic(true)->setPublic(true);
+            $container->compile();
+            $container->set(ProjectFilesInterface::class, $discovery);
+            $command = $container->get(CheckCommand::class);
+            self::assertInstanceOf(CheckCommand::class, $command);
+            $tester = new CommandTester($command);
+            self::assertSame(3, $tester->execute([
+                'paths' => [$directory], '--config' => 'qmx.yaml', '--preset' => ['./team.yaml'],
+                '--no-cache' => true, '--workers' => 0, '--no-progress' => true,
+            ], ['capture_stderr_separately' => true]));
+            self::assertStringContainsString('preset', $tester->getErrorOutput());
+            self::assertStringContainsString('team.yaml', $tester->getErrorOutput());
+            self::assertStringContainsString('architecture.layers', $tester->getErrorOutput());
+        } finally {
+            chdir($before);
+            unlink($directory . '/qmx.yaml');
+            unlink($directory . '/team.yaml');
+            rmdir($directory);
+        }
+    }
+
     /** @return iterable<string, array{list<string>, string, string}> */
     public static function duplicateCliWrites(): iterable
     {

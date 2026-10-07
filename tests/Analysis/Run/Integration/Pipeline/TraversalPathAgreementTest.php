@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
@@ -100,11 +101,11 @@ final class TraversalPathAgreementTest extends TestCase
 
             public function __construct(private readonly DependencyGraphInterface $graph) {}
 
-            public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface
+            public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphBuild
             {
                 $this->dependencies = $dependencies;
 
-                return $this->graph;
+                return new DependencyGraphBuild($this->graph, []);
             }
         };
 

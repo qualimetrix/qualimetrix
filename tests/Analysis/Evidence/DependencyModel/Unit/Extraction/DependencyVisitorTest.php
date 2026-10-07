@@ -10,14 +10,20 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyRecorder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 
 #[CoversClass(DependencyVisitor::class)]
+#[CoversClass(DependencyRecorder::class)]
 final class DependencyVisitorTest extends TestCase
 {
     private DependencyVisitor $visitor;
@@ -319,8 +325,10 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(2, $deps);
-        self::assertSame(DependencyType::UnionType, $deps[0]->type);
-        self::assertSame(DependencyType::UnionType, $deps[1]->type);
+        self::assertSame(DependencyType::TypeHint, $deps[0]->type);
+        self::assertSame(DependencyType::TypeHint, $deps[1]->type);
+        self::assertSame(TypeShape::Union, $deps[0]->shape);
+        self::assertSame(TypeShape::Union, $deps[1]->shape);
     }
 
     #[Test]
@@ -340,8 +348,221 @@ PHP;
         $deps = $this->analyze($code);
 
         self::assertCount(2, $deps);
-        self::assertSame(DependencyType::IntersectionType, $deps[0]->type);
-        self::assertSame(DependencyType::IntersectionType, $deps[1]->type);
+        self::assertSame(DependencyType::TypeHint, $deps[0]->type);
+        self::assertSame(DependencyType::TypeHint, $deps[1]->type);
+        self::assertSame(TypeShape::Intersection, $deps[0]->shape);
+        self::assertSame(TypeShape::Intersection, $deps[1]->shape);
+    }
+
+    #[Test]
+    public function itKeepsTypePositionSeparateFromUnionAndPromotedPropertyShape(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\{First, Second, Promoted};
+final class Subject {
+    public function __construct(public Promoted $value) {}
+    public function accept(First|Second $value): void {}
+}
+PHP);
+
+        self::assertSame(
+            [DependencyType::PropertyType, DependencyType::TypeHint, DependencyType::TypeHint],
+            array_map(static fn($dependency): DependencyType => $dependency->type, $deps),
+        );
+        self::assertSame(
+            [TypeShape::Single, TypeShape::Union, TypeShape::Union],
+            array_map(static fn($dependency): ?TypeShape => $dependency->shape, $deps),
+        );
+    }
+
+    #[Test]
+    public function itDistinguishesNullableIntersectionAndDnfShapesWithoutFilteringLegalClassNames(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\{First, Second, Third};
+final class Subject {
+    public function one(?First $value): void {}
+    public function two(Second|null $value): void {}
+    public function three(First&Second $value): void {}
+    public function four((First&Second)|Third $value): void {}
+    public function five(\Integer $value): void {}
+}
+PHP);
+
+        self::assertSame(
+            [
+                TypeShape::Nullable,
+                TypeShape::Nullable,
+                TypeShape::Intersection,
+                TypeShape::Intersection,
+                TypeShape::Dnf,
+                TypeShape::Dnf,
+                TypeShape::Dnf,
+                TypeShape::Single,
+            ],
+            array_map(static fn($dependency): ?TypeShape => $dependency->shape, $deps),
+        );
+        self::assertSame('Integer', $deps[7]->targetLogical()->toString());
+    }
+
+    #[Test]
+    public function itRecordsConstantAndEnumCaseTypesAndAttributeSites(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\{CaseAttribute, ConstantAttribute, ConstantValue, EnumValue};
+final class Subject {
+    #[ConstantAttribute]
+    public const ConstantValue ITEM = new ConstantValue();
+}
+enum State {
+    #[CaseAttribute]
+    case Open;
+    public const EnumValue VALUE = EnumValue::class;
+}
+PHP);
+
+        $constantTypes = array_values(array_filter(
+            $deps,
+            static fn($dependency): bool => $dependency->type === DependencyType::ConstantType,
+        ));
+        self::assertSame(['Vendor\\ConstantValue', 'Vendor\\EnumValue'], array_map(
+            static fn($dependency): string => $dependency->targetLogical()->toString(),
+            $constantTypes,
+        ));
+
+        $attributes = array_values(array_filter(
+            $deps,
+            static fn($dependency): bool => $dependency->type === DependencyType::Attribute,
+        ));
+        self::assertSame(
+            [AttributeSite::ClassConstant, AttributeSite::EnumCase],
+            array_map(static fn($dependency): ?AttributeSite => $dependency->attributeSite, $attributes),
+        );
+    }
+
+    #[Test]
+    public function itRecordsNestedFunctionSignatureAndItsAttributeSites(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\{FunctionAttribute, ParameterAttribute, ParamType, ReturnType};
+final class Subject {
+    public function outer(): void {
+        #[FunctionAttribute]
+        function inner(#[ParameterAttribute] ParamType $value): ReturnType {}
+    }
+}
+PHP);
+
+        self::assertSame(
+            ['Vendor\\FunctionAttribute', 'Vendor\\ParamType', 'Vendor\\ParameterAttribute', 'Vendor\\ReturnType'],
+            array_map(static fn($dependency): string => $dependency->targetLogical()->toString(), $deps),
+        );
+        self::assertSame(AttributeSite::NestedFunction, $deps[0]->attributeSite);
+        self::assertSame(AttributeSite::NestedFunction, $deps[2]->attributeSite);
+        self::assertFalse($deps[2]->attributeSite->isDeclaredMember());
+    }
+
+    #[Test]
+    public function itRecordsPropertyHookAndHookParameterFacts(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\{HookAttribute, HookParameterAttribute, HookValue};
+final class Subject {
+    public string $value {
+        #[HookAttribute]
+        set(#[HookParameterAttribute] HookValue $value) {}
+    }
+}
+PHP);
+
+        self::assertSame(
+            ['Vendor\\HookAttribute', 'Vendor\\HookValue', 'Vendor\\HookParameterAttribute'],
+            array_map(static fn($dependency): string => $dependency->targetLogical()->toString(), $deps),
+        );
+        self::assertSame(AttributeSite::PropertyHook, $deps[0]->attributeSite);
+        self::assertSame(DependencyType::TypeHint, $deps[1]->type);
+        self::assertSame(TypeShape::Single, $deps[1]->shape);
+        self::assertSame(AttributeSite::HookParameter, $deps[2]->attributeSite);
+    }
+
+    #[Test]
+    public function itPublishesNamedClassLikeFactsWithoutSyntheticStringableEdges(): void
+    {
+        $this->analyze(<<<'PHP'
+<?php
+namespace App;
+trait Formatting { use Helper { format as __TOSTRING; } }
+final class Label { public function __toString(): string { return ''; } }
+interface Named { public function __toString(): string; }
+enum State { case Open; }
+PHP);
+
+        $facts = $this->visitor->classLikeDeclarations();
+        self::assertSame(
+            [ClassType::Trait_, ClassType::Class_, ClassType::Interface_, ClassType::Enum_],
+            array_map(static fn($fact): ClassType => $fact->type, $facts),
+        );
+        self::assertTrue($facts[0]->aliasesTraitMethodAsToString);
+        self::assertFalse($facts[0]->declaresToString);
+        self::assertTrue($facts[1]->declaresToString);
+        self::assertTrue($facts[2]->declaresToString);
+        self::assertFalse($facts[3]->declaresToString);
+        self::assertSame([], array_values(array_filter(
+            $this->visitor->dependencies(),
+            static fn($dependency): bool => $dependency->targetLogical()->toString() === 'Stringable',
+        )));
+    }
+
+    #[Test]
+    public function itDoesNotAttributeAnAnonymousClassToStringMethodToItsNamedOwner(): void
+    {
+        $this->analyze(<<<'PHP'
+<?php
+namespace App;
+final class Host {
+    public function make(): object {
+        return new class {
+            public function __toString(): string { return ''; }
+        };
+    }
+}
+PHP);
+
+        $facts = $this->visitor->classLikeDeclarations();
+        self::assertCount(1, $facts);
+        self::assertSame('App\\Host', $facts[0]->declaration->logical->toString());
+        self::assertFalse($facts[0]->declaresToString);
+        self::assertFalse($facts[0]->aliasesTraitMethodAsToString);
+    }
+
+    #[Test]
+    public function itMarksAnAttributeOnANestedNamedClassAsNested(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\NestedAttribute;
+final class Host {
+    public function define(): void {
+        #[NestedAttribute]
+        class Nested {}
+    }
+}
+PHP);
+
+        self::assertCount(1, $deps);
+        self::assertSame(AttributeSite::NestedClass, $deps[0]->attributeSite);
+        self::assertSame('App\\Nested', $deps[0]->sourceLogical()->toString());
     }
 
     #[Test]
@@ -442,10 +663,9 @@ PHP;
     {
         yield 'enum' => ['enum Phase { case Open; }', ['UnitEnum']];
         yield 'backed enum' => ["enum Phase: string { case Open = 'open'; }", ['UnitEnum', 'BackedEnum']];
-        yield 'class declaring __toString' => ["class Label { public function __toString(): string { return ''; } }", ['Stringable']];
-        yield 'method name in another case' => ["class Label { public function __TOSTRING(): string { return ''; } }", ['Stringable']];
-        yield 'interface declaring __toString' => ['interface Named { public function __toString(): string; }', ['Stringable']];
-        // PHP makes the class using the trait Stringable, not the trait itself.
+        yield 'class declaring __toString' => ["class Label { public function __toString(): string { return ''; } }", []];
+        yield 'method name in another case' => ["class Label { public function __TOSTRING(): string { return ''; } }", []];
+        yield 'interface declaring __toString' => ['interface Named { public function __toString(): string; }', []];
         yield 'trait declaring __toString' => ["trait Printable { public function __toString(): string { return ''; } }", []];
         yield 'class without __toString' => ['class Silent {}', []];
     }
@@ -469,7 +689,7 @@ PHP;
     }
 
     #[Test]
-    public function itFlagsTheStringableAnAnonymousClassGetsAsItsOwnDeclarationFact(): void
+    public function itDoesNotInventAStringableEdgeForAnAnonymousClass(): void
     {
         $deps = $this->analyze(<<<'PHP'
 <?php
@@ -489,8 +709,7 @@ PHP);
             $deps,
             static fn($dependency): bool => $dependency->targetLogical()->toString() === 'Stringable',
         ));
-        self::assertCount(1, $stringable);
-        self::assertTrue($stringable[0]->describesNestedAnonymousClass);
+        self::assertSame([], $stringable);
     }
 
     #[Test]
@@ -641,6 +860,62 @@ PHP;
         self::assertSame('Vendor\\Mark', $deps[0]->targetLogical()->toString());
         self::assertSame(DependencyType::Attribute, $deps[0]->type);
         self::assertTrue($deps[0]->describesNestedAnonymousClass);
+    }
+
+    #[Test]
+    #[DataProvider('provideAnonymousAttributeSites')]
+    public function itPreservesAnonymousProvenanceForEveryAttributeSite(string $member, AttributeSite $site): void
+    {
+        $deps = $this->analyze(<<<PHP
+<?php
+namespace App;
+class Host {
+    #[OwnBefore]
+    public const BEFORE = 1;
+    public function factory(): object {
+        return new class {
+            $member
+            public function nested(): object {
+                return new class { $member };
+            }
+        };
+    }
+    #[OwnAfter]
+    public const AFTER = 2;
+}
+PHP);
+
+        self::assertCount(4, $deps);
+        self::assertSame(
+            ['App\\OwnBefore', 'App\\NestedMark', 'App\\NestedMark', 'App\\OwnAfter'],
+            array_map(static fn($dependency): string => $dependency->targetLogical()->toString(), $deps),
+        );
+        self::assertSame(
+            [AttributeSite::ClassConstant, $site, $site, AttributeSite::ClassConstant],
+            array_map(static fn($dependency): ?AttributeSite => $dependency->attributeSite, $deps),
+        );
+        self::assertSame(
+            [false, true, true, false],
+            array_map(static fn($dependency): bool => $dependency->describesNestedAnonymousClass, $deps),
+        );
+        foreach ($deps as $dependency) {
+            self::assertSame('App\\Host', $dependency->sourceLogical()->toString());
+            self::assertSame(DependencyType::Attribute, $dependency->type);
+        }
+    }
+
+    /** @return iterable<string, array{string, AttributeSite}> */
+    public static function provideAnonymousAttributeSites(): iterable
+    {
+        yield 'method' => ['#[NestedMark] public function marked(): void {}', AttributeSite::Method];
+        yield 'property' => ['#[NestedMark] public string $marked;', AttributeSite::Property];
+        yield 'parameter' => ['public function marked(#[NestedMark] string $value): void {}', AttributeSite::Parameter];
+        yield 'promoted parameter' => ['public function __construct(#[NestedMark] public string $value) {}', AttributeSite::PromotedParameter];
+        yield 'constant' => ['#[NestedMark] public const VALUE = 1;', AttributeSite::ClassConstant];
+        yield 'property hook' => ['public string $marked { #[NestedMark] set(string $value) {} }', AttributeSite::PropertyHook];
+        yield 'hook parameter' => ['public string $marked { set(#[NestedMark] string $value) {} }', AttributeSite::HookParameter];
+        yield 'nested callable' => ['public function marked(): void { $callable = #[NestedMark] function (): void {}; }', AttributeSite::NestedCallable];
+        yield 'nested function' => ['public function marked(): void { #[NestedMark] function inner(): void {} }', AttributeSite::NestedFunction];
     }
 
     #[Test]
@@ -873,19 +1148,31 @@ PHP;
 <?php
 namespace App;
 
-use Vendor\TargetAttr;
+use Vendor\{ClosureParamAttribute, ArrowParamAttribute};
 
 class MyClass {
     public function test() {
-        $fn = function (#[TargetAttr] $a) {};
+        $closure = function (#[ClosureParamAttribute] $a) {};
+        $arrow = fn(#[ArrowParamAttribute] $a) => $a;
     }
 }
 PHP;
         $deps = $this->analyze($code);
 
-        self::assertCount(1, $deps);
-        self::assertSame('Vendor\\TargetAttr', $deps[0]->targetLogical()->toString());
-        self::assertSame(DependencyType::Attribute, $deps[0]->type);
+        self::assertSame(
+            ['Vendor\\ClosureParamAttribute', 'Vendor\\ArrowParamAttribute'],
+            array_map(static fn($dependency): string => $dependency->targetLogical()->toString(), $deps),
+        );
+        self::assertSame(
+            [DependencyType::Attribute, DependencyType::Attribute],
+            array_map(static fn($dependency): DependencyType => $dependency->type, $deps),
+        );
+        self::assertSame(
+            [AttributeSite::NestedCallable, AttributeSite::NestedCallable],
+            array_map(static fn($dependency): ?AttributeSite => $dependency->attributeSite, $deps),
+        );
+        self::assertFalse($deps[0]->attributeSite?->isDeclaredMember());
+        self::assertFalse($deps[1]->attributeSite?->isDeclaredMember());
     }
 
     #[Test]
@@ -960,6 +1247,8 @@ PHP, 'src/Subject.php');
         if ($ast === null) {
             return [];
         }
+
+        NameResolution::resolve($ast);
 
         $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $this->traverser = new NodeTraverser();

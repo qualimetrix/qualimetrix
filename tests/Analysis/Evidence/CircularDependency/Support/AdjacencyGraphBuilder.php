@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -14,6 +16,7 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Traversable;
 
 /**
  * Builds a class-level dependency graph from a plain adjacency list.
@@ -49,7 +52,7 @@ final readonly class AdjacencyGraphBuilder
                 $targetKey = $targetPath->toCanonical();
                 $classMap[$targetKey] = $targetPath;
 
-                $dependency = new Dependency(
+                $dependency = Dependency::ofKind(
                     source: DeclarationPath::of($sourcePath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                     target: new LogicalClassPath($targetPath),
                     type: DependencyType::TypeHint,
@@ -62,12 +65,12 @@ final readonly class AdjacencyGraphBuilder
             }
         }
 
-        return self::fromState($dependencies, $bySource, $byTarget, array_values($classMap));
+        return self::fromState($dependencies, $bySource, $byTarget, array_values($classMap), []);
     }
 
     public static function empty(): DependencyGraphInterface
     {
-        return self::fromState([], [], [], []);
+        return self::fromState([], [], [], [], []);
     }
 
     public static function builder(): DependencyGraphBuilderInterface
@@ -80,12 +83,14 @@ final readonly class AdjacencyGraphBuilder
      * @param array<string, list<Dependency>> $bySource
      * @param array<string, list<Dependency>> $byTarget
      * @param list<SymbolPath> $classes
+     * @param list<ClassLikeDeclaration> $classLikeDeclarations
      */
     public static function fromState(
         array $dependencies,
         array $bySource,
         array $byTarget,
         array $classes,
+        array $classLikeDeclarations,
     ): DependencyGraphInterface {
         $namespaces = [];
         foreach ($classes as $class) {
@@ -116,44 +121,48 @@ final readonly class AdjacencyGraphBuilder
             $namespaceCa[$targetKey][$dependency->sourceLogical()->toCanonical()] = true;
         }
 
-        return new class ($dependencies, $bySource, $byTarget, $classes, array_values($namespaces), $classCe, $classCa, $namespaceCe, $namespaceCa) implements DependencyGraphInterface {
-            /** @phpstan-var list<Dependency> */
+        return new class ($dependencies, $bySource, $byTarget, $classes, array_values($namespaces), $classCe, $classCa, $namespaceCe, $namespaceCa, $classLikeDeclarations) implements DependencyGraphInterface {
+            /** @var list<Dependency> */
             private readonly array $dependencies;
 
-            /** @phpstan-var array<string, list<Dependency>> */
+            /** @var array<string, list<Dependency>> */
             private readonly array $bySource;
 
-            /** @phpstan-var array<string, list<Dependency>> */
+            /** @var array<string, list<Dependency>> */
             private readonly array $byTarget;
 
-            /** @phpstan-var list<SymbolPath> */
+            /** @var list<SymbolPath> */
             private readonly array $classes;
 
-            /** @phpstan-var list<SymbolPath> */
+            /** @var list<SymbolPath> */
             private readonly array $namespaces;
 
-            /** @phpstan-var array<string, int> */
+            /** @var array<string, int> */
             private readonly array $classCe;
 
-            /** @phpstan-var array<string, int> */
+            /** @var array<string, int> */
             private readonly array $classCa;
 
-            /** @phpstan-var array<string, array<string, true>> */
+            /** @var array<string, array<string, true>> */
             private readonly array $namespaceCe;
 
-            /** @phpstan-var array<string, array<string, true>> */
+            /** @var array<string, array<string, true>> */
             private readonly array $namespaceCa;
 
+            /** @var list<ClassLikeDeclaration> */
+            private readonly array $classLikeDeclarations;
+
             /**
-             * @phpstan-param list<Dependency> $dependencies
-             * @phpstan-param array<string, list<Dependency>> $bySource
-             * @phpstan-param array<string, list<Dependency>> $byTarget
-             * @phpstan-param list<SymbolPath> $classes
-             * @phpstan-param list<SymbolPath> $namespaces
-             * @phpstan-param array<string, int> $classCe
-             * @phpstan-param array<string, int> $classCa
-             * @phpstan-param array<string, array<string, true>> $namespaceCe
-             * @phpstan-param array<string, array<string, true>> $namespaceCa
+             * @param list<Dependency> $dependencies
+             * @param array<string, list<Dependency>> $bySource
+             * @param array<string, list<Dependency>> $byTarget
+             * @param list<SymbolPath> $classes
+             * @param list<SymbolPath> $namespaces
+             * @param array<string, int> $classCe
+             * @param array<string, int> $classCa
+             * @param array<string, array<string, true>> $namespaceCe
+             * @param array<string, array<string, true>> $namespaceCa
+             * @param list<ClassLikeDeclaration> $classLikeDeclarations
              */
             public function __construct(
                 array $dependencies,
@@ -165,6 +174,7 @@ final readonly class AdjacencyGraphBuilder
                 array $classCa,
                 array $namespaceCe,
                 array $namespaceCa,
+                array $classLikeDeclarations,
             ) {
                 $this->dependencies = $dependencies;
                 $this->bySource = $bySource;
@@ -175,6 +185,7 @@ final readonly class AdjacencyGraphBuilder
                 $this->classCa = $classCa;
                 $this->namespaceCe = $namespaceCe;
                 $this->namespaceCa = $namespaceCa;
+                $this->classLikeDeclarations = $classLikeDeclarations;
             }
 
             public function getClassDependencies(SymbolPath $class): array
@@ -235,17 +246,25 @@ final readonly class AdjacencyGraphBuilder
                     ),
                 ));
             }
+
+            public function getClassLikeDeclarations(): array
+            {
+                return $this->classLikeDeclarations;
+            }
         };
     }
 }
 
 final readonly class TestDependencyGraphBuilder implements DependencyGraphBuilderInterface
 {
-    public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface
+    public function build(array $dependencies, iterable $classLikeDeclarations): DependencyGraphBuild
     {
+        $classLikeDeclarations = $classLikeDeclarations instanceof Traversable
+            ? iterator_to_array($classLikeDeclarations, false)
+            : array_values($classLikeDeclarations);
         $classes = [];
-        foreach ($logicalClassUniverse as $logicalClass) {
-            $classes[$logicalClass->symbolPath->toCanonical()] = $logicalClass->symbolPath;
+        foreach ($classLikeDeclarations as $declaration) {
+            $classes[$declaration->logical->toCanonical()] = $declaration->logical->symbolPath;
         }
         $bySource = [];
         $byTarget = [];
@@ -258,6 +277,12 @@ final readonly class TestDependencyGraphBuilder implements DependencyGraphBuilde
             $byTarget[$target->toCanonical()][] = $dependency;
         }
 
-        return AdjacencyGraphBuilder::fromState($dependencies, $bySource, $byTarget, array_values($classes));
+        return new DependencyGraphBuild(AdjacencyGraphBuilder::fromState(
+            $dependencies,
+            $bySource,
+            $byTarget,
+            array_values($classes),
+            $classLikeDeclarations,
+        ), []);
     }
 }

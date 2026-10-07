@@ -73,7 +73,7 @@ Suppression: Tags start a physical comment line after decoration: `@qmx-ignore` 
 - [Design Rules](https://qualimetrix.dev/rules/design/): DIT, NOC, type coverage
 - [Maintainability Rules](https://qualimetrix.dev/rules/maintainability/): Maintainability Index
 - [Cohesion](https://qualimetrix.dev/rules/cohesion/): LCOM rule, TCC/LCC metrics
-- [Architecture Rules](https://qualimetrix.dev/rules/architecture/): Circular dependency detection
+- [Architecture Rules](https://qualimetrix.dev/rules/architecture/): Declared-layer policy, declaration diagnostics and circular dependency detection
 - [Code Smell Rules](https://qualimetrix.dev/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
 - [Security Rules](https://qualimetrix.dev/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
 - [Duplication Rules](https://qualimetrix.dev/rules/duplication/): Code duplication detection

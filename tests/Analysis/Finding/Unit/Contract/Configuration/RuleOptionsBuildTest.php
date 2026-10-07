@@ -42,7 +42,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\OptionForms\RuleOptionDocumen
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RulesSection;
 use Qualimetrix\Analysis\Finding\RuleExecution;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions;
+use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolLevel;

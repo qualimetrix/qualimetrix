@@ -7,11 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\Pipeline;
 use PhpParser\Node;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
@@ -79,6 +82,43 @@ final class DependencyGraphAnalyzerTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('aliasResolutionCases')]
+    public function itResolvesAnImportedClassNameUsingPhpCaseInsensitiveIdentity(string $source, string $target): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Controller.php',
+            $source,
+        );
+
+        $result = $this->createAnalyzer($this->parser())->analyze($this->configuration());
+
+        self::assertTrue($result->coverage->isComplete());
+        self::assertCount(1, $result->graph->getAllDependencies());
+        self::assertSame($target, $result->graph->getAllDependencies()[0]->targetLogical()->toString());
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function aliasResolutionCases(): iterable
+    {
+        yield 'unaliased import in another case' => [
+            '<?php namespace App\\Web; use App\\Domain\\Order; final class Controller { public function show(ORDER $order): void {} }',
+            'App\\Domain\\Order',
+        ];
+        yield 'explicit alias in another case' => [
+            '<?php namespace App\\Web; use App\\Domain\\Order as O; final class Controller { public function show(o $order): void {} }',
+            'App\\Domain\\Order',
+        ];
+        yield 'group import alias in another case' => [
+            '<?php namespace App\\Web; use App\\Domain\\{Order as O}; final class Controller { public function show(o $order): void {} }',
+            'App\\Domain\\Order',
+        ];
+        yield 'first conflicting alias' => [
+            '<?php namespace App\\Web; use A\\Order as O; use B\\Order as O; final class Controller { public function show(o $order): void {} }',
+            'A\\Order',
+        ];
+    }
+
+    #[Test]
     public function itBuildsTheCanonicalUniverseForEveryNamedClassLikeAndExternalTarget(): void
     {
         file_put_contents($this->tempDir . '/Kinds.php', <<<'PHP'
@@ -112,6 +152,41 @@ PHP);
             'class:UnitEnum',
             'class:Vendor\External',
         ], $classes);
+        self::assertSame(
+            ['GlobalType', 'App\\Service', 'App\\Port', 'App\\Shared', 'App\\State'],
+            array_map(
+                static fn($declaration): string => $declaration->declaration->logical->toString(),
+                $result->graph->getClassLikeDeclarations(),
+            ),
+        );
+    }
+
+    #[Test]
+    public function itCarriesMixedSpellingEvidenceFromTheGraphBuild(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php namespace App; final class Service {}');
+        file_put_contents($this->tempDir . '/Second.php', '<?php namespace app; final class service {}');
+        $analyzer = new DependencyGraphAnalyzer(
+            new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()),
+            $this->parser(),
+            new DependencyVisitor(new DependencyResolver()),
+            new DependencyGraphBuilder(new UnplacedExternalClassSpelling()),
+            new DeclarationRegistrarFactory(),
+        );
+
+        $result = $analyzer->analyze($this->configuration());
+
+        self::assertCount(1, $result->mixedSpellings);
+        self::assertSame('class', $result->mixedSpellings[0]->kind);
+        self::assertSame(['App\\Service', 'app\\service'], $result->mixedSpellings[0]->spellings);
+        self::assertSame(['App\\Service', 'App\\Service'], array_map(
+            static fn($fact): string => $fact->logical->symbolPath->toString(),
+            $result->graph->getClassLikeDeclarations(),
+        ));
+        self::assertSame(['App\\Service', 'app\\service'], array_map(
+            static fn($fact): string => $fact->declaration->logical->toString(),
+            $result->graph->getClassLikeDeclarations(),
+        ));
     }
 
     #[Test]

@@ -7,7 +7,9 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence;
 
 /**
  * Typed holder for the resolved {@code architecture:} section of the user's
@@ -162,6 +164,27 @@ final readonly class ArchitectureConfiguration
     }
 
     /**
+     * Every authored named-type criterion, with expanded template copies
+     * collapsed back to the configuration value the author can edit.
+     *
+     * @return list<NamedType>
+     */
+    public function namedTypes(): array
+    {
+        $types = [];
+        foreach ($this->entries as $entry) {
+            $membership = $entry instanceof TemplateLayerDefinition ? $entry->membership : $entry->membership();
+            foreach ([$membership->namedTypes, $membership->exclude->namedTypes ?? []] as $declared) {
+                foreach ($declared as $type) {
+                    $types[UnmatchedTypeOccurrence::identityOf($type)] = $type;
+                }
+            }
+        }
+
+        return array_values($types);
+    }
+
+    /**
      * Returns true if at least one entry is a {@see TemplateLayerDefinition}.
      * The answer decides whether a run pays for expansion at all — a
      * template-free configuration never walks the class universe.
@@ -198,7 +221,7 @@ final readonly class ArchitectureConfiguration
      * sub-namespace — an inversion the {@code architecture-domain} layer in
      * qmx.yaml now rejects outright (ADR 0016).
      *
-     * The new registry borrows the original registry's {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory},
+     * The new registry borrows the original registry's {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory},
      * which by this point is already bound to the run's graph: the expanded
      * layers match against the very contexts observation derived them from.
      *

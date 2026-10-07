@@ -92,11 +92,12 @@
 
 ## Архитектурные правила
 
-| Правило               | ID                                 | Минуты |
-| --------------------- | ---------------------------------- | ------ |
-| Circular Dependencies | `architecture.circular-dependency` | 120    |
-| Layer Violations      | `architecture.layer-violation`     | 15     |
-| Unassigned Classes    | `architecture.unassigned-class`    | 15     |
+| Правило                      | ID                                 | Минуты |
+| ---------------------------- | ---------------------------------- | ------ |
+| Circular Dependencies        | `architecture.circular-dependency` | 120    |
+| Layer Violations             | `architecture.layer-violation`     | 15     |
+| Диагностики объявления слоёв | `architecture.layer-declaration`   | 15     |
+| Unassigned Classes           | `architecture.unassigned-class`    | 15     |
 
 ## Правила обнаружения файлов (Discovery)
 

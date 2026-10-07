@@ -10,6 +10,7 @@ final class ProjectScopeChannels
     public const array NAMESPACE_CLAIM_CHANNELS = [
         'architecture.empty-template',
         'architecture.unmatched-exclude',
+        'architecture.unmatched-type',
         'architecture.unreachable-layer',
         'cohesion.unmatched-exclude-method',
         'coupling.unmatched-framework-namespace',

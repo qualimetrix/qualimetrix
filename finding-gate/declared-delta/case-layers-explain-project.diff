@@ -1,0 +1,17 @@
+--- candidate
++++ reference (mapped)
+@@ -3,14 +3,0 @@
+-  Channel: architecture.layer-overlap
+-    Occurrence: 1871231a3b59e796
+-    baseline:      (none)
+-    now:           1 occurrence
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
+-
+-  Channel: architecture.unmatched-type
+-    Occurrence: d479f199c42740ae
+-    baseline:      (none)
+-    now:           1 occurrence
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
+-

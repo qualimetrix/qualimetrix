@@ -155,6 +155,20 @@ final class CapturePatternTest extends TestCase
     }
 
     #[Test]
+    public function itProjectsOnlyPlainAndTrailingSubtreePatternsForSpellingSuggestions(): void
+    {
+        self::assertSame('App\\Service', CapturePattern::compile('App\\Service')->literalSubtreePrefix());
+        self::assertSame('App\\Service', CapturePattern::compile('App\\Service\\**')->literalSubtreePrefix());
+        self::assertNull(CapturePattern::compile('App\\*\\Service')->literalSubtreePrefix());
+        self::assertNull(CapturePattern::compile('App\\{module}\\Service')->literalSubtreePrefix());
+        self::assertNull(CapturePattern::compile('**')->literalSubtreePrefix());
+        self::assertNull(CapturePattern::compile('App\\S?rvice')->literalSubtreePrefix());
+        self::assertNull(CapturePattern::compile('App\\**\\Service')->literalSubtreePrefix());
+        self::assertSame('Other\\Service\\**', CapturePattern::compile('App\\Service\\**')->withLiteralSubtreePrefix('Other\\Service'));
+        self::assertNull(CapturePattern::compile('App\\*')->withLiteralSubtreePrefix('Other'));
+    }
+
+    #[Test]
     public function itExtractsAllBindingsFromAMultiVariableCapture(): void
     {
         $pattern = CapturePattern::compile('App\\{tenant}\\Module\\{module}\\Domain\\**');

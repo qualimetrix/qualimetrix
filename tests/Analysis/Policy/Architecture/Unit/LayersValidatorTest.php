@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 
@@ -30,6 +31,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ArchitectureDocument;
 #[CoversClass(ExcludeSpec::class)]
 #[CoversClass(MatchMode::class)]
 #[CoversClass(CriterionListValidator::class)]
+#[CoversClass(NamedType::class)]
 final class LayersValidatorTest extends TestCase
 {
     private LayersValidator $validator;
@@ -358,7 +360,7 @@ final class LayersValidatorTest extends TestCase
     public function itRejectsALayerEntryDeclaringNoMembershipCriterion(): void
     {
         $this->expectException(ConfigurationRefusal::class);
-        $this->expectExceptionMessageMatches('/must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends"/');
+        $this->expectExceptionMessageMatches('/must declare at least one of "patterns", "suffix", "attributes", "member_attributes", "implements" or "extends"/');
 
         $this->validator->validate(ArchitectureDocument::layers([
             ['name' => 'controller'],
@@ -512,6 +514,7 @@ final class LayersValidatorTest extends TestCase
     public static function fqnCriterionProvider(): iterable
     {
         yield 'attributes' => ['attributes'];
+        yield 'member attributes' => ['member_attributes'];
         yield 'implements' => ['implements'];
         yield 'extends' => ['extends'];
     }
@@ -558,6 +561,7 @@ final class LayersValidatorTest extends TestCase
         self::assertNotNull($exclude);
         self::assertSame(['Exception'], match ($kind) {
             'attributes' => $exclude->attributes,
+            'member_attributes' => $exclude->memberAttributes,
             'implements' => $exclude->implements,
             default => $exclude->extends,
         });
@@ -583,6 +587,7 @@ final class LayersValidatorTest extends TestCase
             'patterns' => $spec->patterns,
             'suffix' => $spec->suffix,
             'attributes' => $spec->attributes,
+            'member_attributes' => $spec->memberAttributes,
             'implements' => $spec->implements,
             'extends' => $spec->extends,
             default => throw new InvalidArgumentException('Unknown criterion kind: ' . $kind),
@@ -621,6 +626,7 @@ final class LayersValidatorTest extends TestCase
         yield 'patterns' => ['patterns'];
         yield 'suffix' => ['suffix'];
         yield 'attributes' => ['attributes'];
+        yield 'member attributes' => ['member_attributes'];
         yield 'implements' => ['implements'];
         yield 'extends' => ['extends'];
     }
@@ -685,6 +691,7 @@ final class LayersValidatorTest extends TestCase
                 'patterns' => ['App\\Foo'],
                 'suffix' => ['Bar'],
                 'attributes' => ['App\\Attr\\X'],
+                'member_attributes' => ['App\\Attr\\Member'],
                 'implements' => ['App\\Iface\\Y'],
                 'extends' => ['App\\Base\\Z'],
                 'match' => 'all',
@@ -695,9 +702,95 @@ final class LayersValidatorTest extends TestCase
         self::assertSame(['App\\Foo'], $spec->patterns);
         self::assertSame(['Bar'], $spec->suffix);
         self::assertSame(['App\\Attr\\X'], $spec->attributes);
+        self::assertSame(['App\\Attr\\Member'], $spec->memberAttributes);
         self::assertSame(['App\\Iface\\Y'], $spec->implements);
         self::assertSame(['App\\Base\\Z'], $spec->extends);
         self::assertSame(MatchMode::All, $spec->mode);
+    }
+
+    #[Test]
+    public function itCarriesNamedTypeAuthorshipFromTheConfigurationDocument(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::spot(
+            [
+                'layers' => [[
+                    'name' => 'domain',
+                    'attributes' => ['App\\ClassMarker'],
+                    'member_attributes' => ['App\\Route'],
+                    'implements' => ['App\\Port'],
+                    'extends' => ['App\\Base'],
+                    'exclude' => ['member_attributes' => ['App\\Internal']],
+                ]],
+            ],
+            'layers',
+        ));
+
+        $membership = $entries[0]->membership();
+        self::assertSame(
+            ['App\\ClassMarker', 'App\\Route', 'App\\Port', 'App\\Base'],
+            array_map(static fn(NamedType $type): string => $type->fqn, $membership->namedTypes),
+        );
+        self::assertSame(
+            [
+                ['architecture', 'layers', '0', 'attributes', '0'],
+                ['architecture', 'layers', '0', 'member_attributes', '0'],
+                ['architecture', 'layers', '0', 'implements', '0'],
+                ['architecture', 'layers', '0', 'extends', '0'],
+            ],
+            array_map(static fn(NamedType $type): ?array => $type->provenance->path, $membership->namedTypes),
+        );
+        self::assertSame(ArchitectureDocument::FILE, $membership->namedTypes[0]->provenance->origin->locator());
+
+        $exclude = $membership->exclude;
+        self::assertNotNull($exclude);
+        self::assertSame(['App\\Internal'], array_map(static fn(NamedType $type): string => $type->fqn, $exclude->namedTypes));
+        self::assertSame(
+            ['architecture', 'layers', '0', 'exclude', 'member_attributes', '0'],
+            $exclude->namedTypes[0]->provenance->path,
+        );
+    }
+
+    #[Test]
+    public function itRefusesSelectorDslStringsInArchitecturePatternsWithTheEquivalent(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('write "App\\Domain\\**"');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'domain', 'patterns' => ['subtree:App\\Domain']],
+        ]));
+    }
+
+    #[Test]
+    public function itRefusesSelectorDslMappingsInArchitecturePatternsWithTheEquivalent(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('write "App\\Domain\\**"');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'domain', 'patterns' => ['subtree' => 'App\\Domain']],
+        ]));
+    }
+
+    #[Test]
+    public function itRefusesACapturelessPatternInAnAnyTemplate(): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('captureless pattern "Shared\\**" cannot be combined with "match: any"');
+
+        $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'app-{module}', 'patterns' => ['App\\{module}\\**', 'Shared\\**'], 'match' => 'any'],
+        ]));
+    }
+
+    #[Test]
+    public function itAcceptsACapturelessPatternInAnAllTemplate(): void
+    {
+        $entries = $this->validator->validate(ArchitectureDocument::layers([
+            ['name' => 'app-{module}', 'patterns' => ['App\\{module}\\**', 'Shared\\**'], 'match' => 'all'],
+        ]));
+
+        self::assertCount(1, $entries);
     }
 
     // -------------------------------------------------------------------------

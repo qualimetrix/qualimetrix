@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Contract\Collection;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
@@ -20,6 +21,7 @@ final readonly class CollectionPhaseOutput
     /**
      * @param list<RelativePath> $analyzedFiles
      * @param list<FileProcessingResult> $failures
+     * @param list<ClassLikeDeclaration> $classLikeDeclarations
      * @param array<string, list<Suppression>> $suppressions
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides
      * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics
@@ -28,6 +30,7 @@ final readonly class CollectionPhaseOutput
     public function __construct(
         public array $analyzedFiles,
         public array $failures,
+        public array $classLikeDeclarations,
         public array $suppressions = [],
         public array $thresholdOverrides = [],
         public array $thresholdDiagnostics = [],

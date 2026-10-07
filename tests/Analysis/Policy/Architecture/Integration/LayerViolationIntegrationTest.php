@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -68,6 +68,11 @@ final class LayerViolationIntegrationTest extends TestCase
                 'Unexpected violation message: ' . $finding->message,
             );
             self::assertSame(Severity::Warning, $finding->severity);
+            $declaration = $finding->subject->declarationPath();
+            self::assertNotNull($declaration);
+            self::assertSame($finding->symbolPath->toCanonical(), $declaration->logical->toCanonical());
+            self::assertNotNull($finding->location->file);
+            self::assertSame($finding->location->file->value(), $declaration->file->value());
             self::assertNotNull($finding->dependencyTarget);
             self::assertNotNull($finding->dependencyType);
             self::assertStringContainsString(

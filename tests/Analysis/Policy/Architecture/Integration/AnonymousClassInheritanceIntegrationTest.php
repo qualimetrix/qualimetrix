@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -23,7 +23,7 @@ use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
  * an anonymous class nested inside a named class has no declaration identity
  * of its own, so its `extends`/`implements`/`attributes` header used to be
  * recorded with the ENCLOSING named class as source. Layer membership walked
- * that data directly ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory}),
+ * that data directly ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory}),
  * so the enclosing class was silently assigned to layers written for the
  * nested anonymous class instead — including transitively, since
  * {@code extendsMap} is walked as a BFS closure.

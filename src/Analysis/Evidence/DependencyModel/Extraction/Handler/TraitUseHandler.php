@@ -23,7 +23,7 @@ final readonly class TraitUseHandler implements NodeDependencyHandlerInterface
         \assert($node instanceof TraitUse);
 
         foreach ($node->traits as $trait) {
-            $context->addDependency(
+            $context->addClassLikeDependency(
                 $context->getResolver()->resolve($trait),
                 DependencyType::TraitUse,
                 $trait->getStartLine(),

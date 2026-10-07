@@ -751,6 +751,10 @@ Each limit needs its own product or delivery check:
   repeatability invariants are checked.
 - Capturability of a new baseline channel: the gate checks published source
   groups, not whether the product chose every eligible group; use baseline tests.
+- JSON graph fields, including dependency `shape`, and layer-assignment text:
+  graph capture uses the default DOT publication; named layer assignments are
+  captured as JSON only. Use graph exporter and layer-assignment command tests
+  for those other publications. Neither capture is a schema-declaration view.
 - Configuration consumption by `rules` or `graph:export`: their catalogue
   and path/cwd semantics do not prove configured rule execution.
 - Selector reach or metric-expression grammar after a split: unsupported touched
