@@ -89,13 +89,19 @@ composer install --working-dir=benchmarks --no-scripts
 php scripts/collect-benchmark-data.php [output-file.json]
 
 # Regression check — verify health scores are within expected ranges
-composer benchmark:check
+COMPOSER_PROCESS_TIMEOUT=0 composer benchmark:check
 
 # Update baselines after intentional formula changes
-composer benchmark:update
+COMPOSER_PROCESS_TIMEOUT=0 composer benchmark:update
 ```
 
 Output is written to `docs/internal/benchmark-data.json` by default.
+
+The benchmark commands disable Composer's default per-process timeout because
+one complete corpus pass is expected to take longer than five minutes. This is
+scoped to the benchmark entry point: the CI job's 30-minute timeout remains the
+outer guard, and neither `composer check` nor the repository-wide Composer
+configuration receives a larger deadline.
 
 ## Regression Testing
 
