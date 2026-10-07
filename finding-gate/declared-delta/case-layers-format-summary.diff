@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -9,1 +9,1 @@
+-12 violations (6 errors, 4 warnings, 2 info) | Tech debt: 3h (1000.0 min/kLOC to fix)
++12 violations (8 errors, 3 warnings, 1 info) | Tech debt: 3h (1000.0 min/kLOC to fix)

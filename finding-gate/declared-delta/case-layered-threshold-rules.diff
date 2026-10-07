@@ -1,0 +1,7 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,1 @@
+-56 rules available
++55 rules available
+@@ -11,1 +11,0 @@
+-  architecture.layer-declaration           Reports declared layer criteria whose observed effects differ from the declaration.

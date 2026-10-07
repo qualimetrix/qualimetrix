@@ -1,0 +1,21 @@
+--- candidate
++++ reference (mapped)
+@@ -3,1 +3,17 @@
+-  Nothing currently reports on this measured subject.
++  Channel: architecture.layer-violation
++    Edge: class:Corpus\Layers\Repository\UserRepository
++    Occurrence: a9d65607f0609fe2
++    Reported at: src/AnonMember/ExtendsHost.php:16
++    baseline:      (none)
++    now:           1 occurrence
++    qmx.yaml:      (not resolvable from configuration)
++    annotation:    (none)
++
++  Channel: architecture.layer-violation
++    Edge: class:Corpus\Layers\Repository\UserRepository
++    Occurrence: ce4d6cebf13eb03c
++    Reported at: src/Controller/UserController.php:9
++    baseline:      (none)
++    now:           1 occurrence
++    qmx.yaml:      (not resolvable from configuration)
++    annotation:    (none)

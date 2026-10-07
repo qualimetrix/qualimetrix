@@ -1,0 +1,9 @@
+--- candidate
++++ reference (mapped)
+@@ -3928,3 +3928,3 @@
+-        "errors": 6,
+-        "warnings": 4,
+-        "info": 2
++        "errors": 8,
++        "warnings": 3,
++        "info": 1

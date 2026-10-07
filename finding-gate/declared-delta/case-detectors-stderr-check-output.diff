@@ -1,0 +1,4 @@
+--- candidate
++++ reference (mapped)
+@@ -1,1 +1,0 @@
+-[<normalized>] [WARNING] mixed spelling: SensitiveParameter, sensitiveparameter → SensitiveParameter

@@ -1,0 +1,4 @@
+--- candidate
++++ reference (mapped)
+@@ -810,1 +810,0 @@
+-            "architecture.unmatched-type",
