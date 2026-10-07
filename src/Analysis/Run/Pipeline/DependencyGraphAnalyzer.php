@@ -99,9 +99,12 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             );
         }
 
+        $build = $this->graphBuilder->build($dependencies, $classLikeDeclarations);
+
         return new DependencyGraphAnalysisResult(
-            $this->graphBuilder->build($dependencies, $classLikeDeclarations),
+            $build->graph,
             $coverage,
+            $build->mixedSpellings,
         );
     }
 

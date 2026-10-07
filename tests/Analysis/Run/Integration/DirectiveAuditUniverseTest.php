@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependency
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
@@ -162,7 +163,7 @@ final class DirectiveAuditUniverseTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([]);
         $graphBuilder = self::createStub(DependencyGraphBuilderInterface::class);
-        $graphBuilder->method('build')->willReturn(AdjacencyGraphBuilder::empty());
+        $graphBuilder->method('build')->willReturn(new DependencyGraphBuild(AdjacencyGraphBuilder::empty(), []));
         $repositoryFactory = self::createStub(MetricRepositoryFactoryInterface::class);
         $repositoryFactory->method('create')->willReturn(new InMemoryMetricRepository());
 

@@ -20,11 +20,13 @@ DependencyModel/
 │   ├── Dependency.php
 │   ├── AttributeSite.php
 │   ├── ClassLikeDeclaration.php
+│   ├── DependencyGraphBuild.php
 │   ├── DependencyGraphBuilderInterface.php
 │   ├── DependencyGraphInterface.php
 │   ├── DependencyLocationInterface.php
 │   ├── DependencyTraversalParticipantInterface.php
 │   ├── DependencyType.php
+│   ├── ExternalClassSpellingInterface.php
 │   └── TypeShape.php
 ├── Extraction/
 │   ├── DependencyResolver.php
@@ -33,7 +35,8 @@ DependencyModel/
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
 ├── NamespaceCouplings.php        # both coupling scopes of every namespace
-└── StringSet.php                 # unique-dependency counting for coupling
+├── StringSet.php                 # unique-dependency counting for coupling
+└── UnplacedExternalClassSpelling.php
 ```
 
 ## Public surface
@@ -56,6 +59,18 @@ trait-alias state. Each fact also has an independent logical projection for
 graph canonicalization. Rewriting that projection never rewrites the exact
 declaration identity. The builder derives all ancestor namespaces locally and
 preserves dependency encounter order and coupling semantics.
+
+PHP class identities are folded case-insensitively before the graph is built.
+For analysed declarations, the byte-smallest observed spelling is canonical.
+For external classes, `ExternalClassSpellingInterface` may supply the spelling
+declared by the installation; when it cannot, the same byte-smallest rule is
+used. Both edge endpoints and the logical projection of declaration facts are
+rewritten, while every exact `DeclarationPath`, declaration kind and body fact
+is preserved. An edge whose endpoints become the same identity is discarded.
+`DependencyGraphBuild` returns the graph together with deterministic
+`MixedSpelling` evidence; the evidence is kept outside
+`DependencyGraphInterface` because it describes construction input rather than
+a graph query.
 
 An edge keeps its source and target logical projections independently from its
 exact source declaration for the same reason. Type edges name a declaration

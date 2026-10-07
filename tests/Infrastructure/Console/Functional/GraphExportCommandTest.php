@@ -21,6 +21,7 @@ use Qualimetrix\Infrastructure\Console\RunTarget\RunTargetSession;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\Console\Application;
@@ -94,6 +95,33 @@ final class GraphExportCommandTest extends TestCase
         self::assertStringContainsString('digraph', $output);
         self::assertStringContainsString('ClassA', $output);
         self::assertStringContainsString('ClassB', $output);
+    }
+
+    #[Test]
+    public function itReportsMixedSpellingEvidenceFromTheGraphAnalysis(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php namespace App; final class Service {}');
+        file_put_contents($this->tempDir . '/Second.php', '<?php namespace app; final class service {}');
+        $logger = new RecordingLogger();
+        $command = new GraphExportCommand(
+            $this->createAnalyzer(),
+            new DependencyGraphProjector(),
+            $this->preflight(),
+            new ErrorStream(),
+            new RunTargetSession(new RunTargets(new LoggerFactory()), new RefusalPresenter(new ErrorStream())),
+            $logger,
+        );
+        (new Application())->addCommand($command);
+
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['paths' => [$this->tempDir]]);
+
+        self::assertSame(0, $exit);
+        $warnings = array_values(array_filter($logger->records, static fn(array $record): bool => $record['level'] === 'warning'));
+        self::assertSame(
+            ['mixed spelling: App\\Service, app\\service → App\\Service'],
+            array_column($warnings, 'message'),
+        );
     }
 
     #[Test]

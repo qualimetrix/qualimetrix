@@ -6,9 +6,13 @@ namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Traversable;
@@ -32,17 +36,23 @@ use Traversable;
  */
 final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
 {
+    public function __construct(private readonly ExternalClassSpellingInterface $externalClassSpelling) {}
+
     /**
      * Builds a dependency graph from a collection of dependencies.
      *
      * @param list<Dependency> $dependencies
      * @param iterable<ClassLikeDeclaration> $classLikeDeclarations
      */
-    public function build(array $dependencies, iterable $classLikeDeclarations): DependencyGraphInterface
+    public function build(array $dependencies, iterable $classLikeDeclarations): DependencyGraphBuild
     {
         $classLikeDeclarations = $classLikeDeclarations instanceof Traversable
             ? iterator_to_array($classLikeDeclarations, false)
             : array_values($classLikeDeclarations);
+        [$dependencies, $classLikeDeclarations, $mixedSpellings] = $this->canonicalize(
+            $dependencies,
+            $classLikeDeclarations,
+        );
         $declarationDependencies = DependencyGraph::declarationsAmong($dependencies);
         $dependencies = $this->retainGraphDependencies($dependencies);
         $couplingDependencies = $this->couplingDependencies($dependencies);
@@ -53,7 +63,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             ? $ownCouplings
             : $this->withParentNamespaceCouplings($couplingDependencies, $parentNamespaces, $ownCouplings);
 
-        return new DependencyGraph(
+        $graph = new DependencyGraph(
             $dependencies,
             $indexes['bySource'],
             $indexes['byTarget'],
@@ -70,6 +80,97 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             $declarationDependencies,
             $classLikeDeclarations,
         );
+
+        return new DependencyGraphBuild($graph, $mixedSpellings);
+    }
+
+    /**
+     * @param list<Dependency> $dependencies
+     * @param list<ClassLikeDeclaration> $declarations
+     *
+     * @return array{list<Dependency>, list<ClassLikeDeclaration>, list<MixedSpelling>}
+     */
+    private function canonicalize(array $dependencies, array $declarations): array
+    {
+        /** @var array<string, array<string, true>> $declaredSpellings */
+        $declaredSpellings = [];
+        foreach ($declarations as $declaration) {
+            $spelling = $declaration->logical->symbolPath->toString();
+            $declaredSpellings[ClassNameSpelling::fold($spelling)][$spelling] = true;
+        }
+
+        /** @var array<string, string> $canonicalByFold */
+        $canonicalByFold = [];
+        $mixed = [];
+        foreach ($declaredSpellings as $folded => $spellings) {
+            $names = array_keys($spellings);
+            sort($names, \SORT_STRING);
+            $canonicalByFold[$folded] = $names[0];
+            if (\count($names) > 1) {
+                $mixed[] = new MixedSpelling('class', $names, $names[0]);
+            }
+        }
+
+        /** @var array<string, array<string, true>> $externalSpellings */
+        $externalSpellings = [];
+        foreach ($dependencies as $dependency) {
+            foreach ([$dependency->sourceLogical(), $dependency->targetLogical()] as $endpoint) {
+                $spelling = $endpoint->toString();
+                $folded = ClassNameSpelling::fold($spelling);
+                if (!isset($declaredSpellings[$folded])) {
+                    $externalSpellings[$folded][$spelling] = true;
+                }
+            }
+        }
+        foreach ($externalSpellings as $folded => $spellings) {
+            $names = array_keys($spellings);
+            sort($names, \SORT_STRING);
+            $canonical = null;
+            foreach ($names as $name) {
+                $canonical = $this->externalClassSpelling->declaredSpelling($name);
+                if ($canonical !== null) {
+                    break;
+                }
+            }
+            $canonical ??= $names[0];
+            $canonicalByFold[$folded] = $canonical;
+            if (\count($names) > 1) {
+                $mixed[] = new MixedSpelling('external', $names, $canonical);
+            }
+        }
+
+        $canonicalDeclarations = array_map(
+            static function (ClassLikeDeclaration $declaration) use ($canonicalByFold): ClassLikeDeclaration {
+                $spelling = $declaration->logical->symbolPath->toString();
+                $canonical = $canonicalByFold[ClassNameSpelling::fold($spelling)];
+
+                return $spelling === $canonical
+                    ? $declaration
+                    : $declaration->withLogicalClass(new LogicalClassPath(SymbolPath::fromClassFqn($canonical)));
+            },
+            $declarations,
+        );
+
+        $canonicalDependencies = [];
+        foreach ($dependencies as $dependency) {
+            $sourceSpelling = $dependency->sourceLogical()->toString();
+            $targetSpelling = $dependency->targetLogical()->toString();
+            $source = $canonicalByFold[ClassNameSpelling::fold($sourceSpelling)];
+            $target = $canonicalByFold[ClassNameSpelling::fold($targetSpelling)];
+            if ($source === $target) {
+                continue;
+            }
+            $canonicalDependencies[] = $sourceSpelling === $source && $targetSpelling === $target
+                ? $dependency
+                : $dependency->withLogicalEndpoints(
+                    new LogicalClassPath(SymbolPath::fromClassFqn($source)),
+                    new LogicalClassPath(SymbolPath::fromClassFqn($target)),
+                );
+        }
+
+        usort($mixed, static fn(MixedSpelling $left, MixedSpelling $right): int => [$left->kind, $left->canonical] <=> [$right->kind, $right->canonical]);
+
+        return [$canonicalDependencies, $canonicalDeclarations, $mixed];
     }
 
     /**

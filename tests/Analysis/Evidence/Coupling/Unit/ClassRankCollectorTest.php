@@ -391,7 +391,7 @@ final class ClassRankCollectorTest extends TestCase
                 false,
             ),
             $universe,
-        ));
+        ))->graph;
     }
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void

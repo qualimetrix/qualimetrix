@@ -450,7 +450,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 false,
                 false,
             ), $dependencies),
-        );
+        )->graph;
         $detector = new CircularDependencyDetector();
         $cycles = $detector->detect($graph);
         self::assertNotEmpty($cycles, 'Sanity check: CircularDependencyDetector should find cycles');
@@ -785,8 +785,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $container = (new ContainerFactory())->create();
         $builder = $container->get(DependencyGraphBuilderInterface::class);
         self::assertInstanceOf(DependencyGraphBuilderInterface::class, $builder);
-        $sequentialGraph = $builder->build($sequential['dependencies'], $universe);
-        $parallelGraph = $builder->build($parallel['dependencies'], $universe);
+        $sequentialGraph = $builder->build($sequential['dependencies'], $universe)->graph;
+        $parallelGraph = $builder->build($parallel['dependencies'], $universe)->graph;
 
         $isolatedClass = SymbolPath::fromClassFqn('Fixtures\\CouplingProject\\Isolated\\StandaloneClass');
         self::assertSame([], $sequentialGraph->getClassDependencies($isolatedClass));

@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilde
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -1136,7 +1137,7 @@ final class CouplingCollectorTest extends TestCase
      */
     private function realGraph(array $dependencies): DependencyGraphInterface
     {
-        return (new DependencyGraphBuilder())->build($dependencies, array_map(
+        return (new DependencyGraphBuilder(new UnplacedExternalClassSpelling()))->build($dependencies, array_map(
             static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
                 $dependency->source,
                 ClassType::Class_,
@@ -1144,7 +1145,7 @@ final class CouplingCollectorTest extends TestCase
                 false,
             ),
             $dependencies,
-        ));
+        ))->graph;
     }
 
     /**
@@ -1168,7 +1169,7 @@ final class CouplingCollectorTest extends TestCase
                 false,
             ),
             $universe,
-        ));
+        ))->graph;
     }
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void

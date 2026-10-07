@@ -67,4 +67,54 @@ final class MetricSubjectIndexTest extends TestCase
         self::assertSame([], iterator_to_array($index->allDeclarations(), false));
         self::assertSame([], iterator_to_array($index->allLogicalClasses(), false));
     }
+
+    #[Test]
+    public function itPreservesExactDeclarationsWhileFoldingLogicalClassSpellings(): void
+    {
+        $index = new MetricSubjectIndex();
+        $first = DeclarationPath::of(
+            SymbolPath::forClass('App', 'Service'),
+            RelativePath::fromString('src/First.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $second = DeclarationPath::of(
+            SymbolPath::forClass('app', 'service'),
+            RelativePath::fromString('src/Second.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+
+        $index->add(MetricSubject::declaration($first), MetricBag::fromArray(['first' => 1]), $first->file, 1);
+        $index->add(MetricSubject::declaration($second), MetricBag::fromArray(['second' => 2]), $second->file, 2);
+        $index->addLogicalClass($first->logical, MetricBag::fromArray(['first' => 1]), null, null);
+        $index->addLogicalClass($second->logical, MetricBag::fromArray(['second' => 2]), null, null);
+
+        self::assertCount(2, iterator_to_array($index->allDeclarations(), false));
+        $logical = iterator_to_array($index->allLogicalClasses(), false);
+        self::assertCount(1, $logical);
+        self::assertSame('App\\Service', $logical[0]->symbolPath->toString());
+        self::assertSame(1, $index->logicalClassMetrics($first->logical)?->get('first'));
+        self::assertSame(2, $index->logicalClassMetrics($second->logical)?->get('second'));
+        self::assertCount(1, $index->mixedSpellings());
+        self::assertSame(['App\\Service', 'app\\service'], $index->mixedSpellings()[0]->spellings);
+    }
+
+    #[Test]
+    public function itPreservesObservedLogicalSpellingsAcrossMerges(): void
+    {
+        $mixed = new MetricSubjectIndex();
+        $mixed->addLogicalClass(SymbolPath::fromClassFqn('App\\Service'), MetricBag::fromArray(['first' => 1]), null, null);
+        $mixed->addLogicalClass(SymbolPath::fromClassFqn('app\\service'), MetricBag::fromArray(['second' => 2]), null, null);
+        $other = new MetricSubjectIndex();
+        $other->addLogicalClass(SymbolPath::fromClassFqn('Other\\Thing'), MetricBag::fromArray(['other' => 3]), null, null);
+
+        $merged = $mixed->mergeWith($other);
+
+        self::assertCount(1, $merged->mixedSpellings());
+        self::assertSame(['App\\Service', 'app\\service'], $merged->mixedSpellings()[0]->spellings);
+        self::assertCount(2, iterator_to_array($merged->allLogicalClasses(), false));
+        $metrics = $merged->logicalClassMetrics(SymbolPath::fromClassFqn('APP\\SERVICE'));
+        self::assertNotNull($metrics);
+        self::assertSame(1, $metrics->get('first'));
+        self::assertSame(2, $metrics->get('second'));
+    }
 }

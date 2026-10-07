@@ -34,7 +34,7 @@ final class AdjacencyGraphBuilderTest extends TestCase
             yield $declaration;
         })();
 
-        $graph = AdjacencyGraphBuilder::builder()->build([], $declarations);
+        $graph = AdjacencyGraphBuilder::builder()->build([], $declarations)->graph;
 
         self::assertSame(['Fixture\\Only'], array_map(
             static fn(SymbolPath $class): string => $class->toString(),

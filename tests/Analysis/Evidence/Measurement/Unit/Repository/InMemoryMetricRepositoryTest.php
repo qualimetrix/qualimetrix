@@ -624,6 +624,64 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
+    public function itPublishesFoldedClassAndNamespaceEvidenceWithoutCollapsingDeclarations(): void
+    {
+        $first = new InMemoryMetricRepository();
+        $firstPath = DeclarationPath::of(
+            SymbolPath::forClass('App', 'Service'),
+            RelativePath::fromString('src/First.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $first->addSubject(MetricSubject::declaration($firstPath), MetricBag::fromArray(['first' => 1]), $firstPath->file, 1);
+
+        $second = new InMemoryMetricRepository();
+        $secondPath = DeclarationPath::of(
+            SymbolPath::forClass('app', 'service'),
+            RelativePath::fromString('src/Second.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+        $second->addSubject(MetricSubject::declaration($secondPath), MetricBag::fromArray(['second' => 2]), $secondPath->file, 2);
+
+        $repository = $second->mergeWith($first);
+
+        self::assertCount(2, iterator_to_array($repository->allDeclarations(), false));
+        self::assertCount(1, iterator_to_array($repository->allLogicalClasses(), false));
+        self::assertSame(['App'], $repository->getNamespaces());
+        self::assertSame(['class', 'namespace'], array_column($repository->mixedSpellings(), 'kind'));
+        self::assertSame('App\\Service', $repository->mixedSpellings()[0]->canonical);
+        self::assertSame('App', $repository->mixedSpellings()[1]->canonical);
+    }
+
+    #[Test]
+    public function itPreservesLogicalOnlySpellingEvidenceAcrossRepeatedMerges(): void
+    {
+        $mixed = new InMemoryMetricRepository();
+        $mixed->add(SymbolPath::forNamespace('app'), MetricBag::fromArray(['namespace' => 4]), null, null);
+        $mixed->add(SymbolPath::fromClassFqn('app\\service'), MetricBag::fromArray(['second' => 2]), null, null);
+        $mixed->add(SymbolPath::fromClassFqn('App\\Service'), MetricBag::fromArray(['first' => 1]), null, null);
+        self::assertCount(1, array_filter(
+            $mixed->forNamespace('APP'),
+            static fn(SymbolInfo $info): bool => $info->subject?->logicalClassPath() !== null,
+        ));
+        self::assertSame(4, $mixed->get(SymbolPath::forNamespace('APP'))->get('namespace'));
+        $other = new InMemoryMetricRepository();
+        $other->add(SymbolPath::fromClassFqn('Other\\Thing'), MetricBag::fromArray(['other' => 3]), null, null);
+
+        $repository = $mixed->mergeWith($other)->mergeWith(new InMemoryMetricRepository());
+
+        self::assertSame(['class', 'namespace'], array_column($repository->mixedSpellings(), 'kind'));
+        self::assertSame(['App', 'Other'], $repository->getNamespaces());
+        self::assertCount(1, array_filter(
+            $repository->forNamespace('APP'),
+            static fn(SymbolInfo $info): bool => $info->subject?->logicalClassPath() !== null,
+        ));
+        self::assertSame(4, $repository->get(SymbolPath::forNamespace('APP'))->get('namespace'));
+        self::assertSame(1, $repository->get(SymbolPath::fromClassFqn('APP\\SERVICE'))->get('first'));
+        self::assertSame(2, $repository->get(SymbolPath::fromClassFqn('APP\\SERVICE'))->get('second'));
+        self::assertSame(3, $repository->get(SymbolPath::fromClassFqn('OTHER\\THING'))->get('other'));
+    }
+
+    #[Test]
     public function itKeepsCallableOnlyOwnerProjectionsLocationFreeWithoutDuplicateIndexesInEitherMergeOrder(): void
     {
         $method = SymbolPath::forMethod('App', 'Service', 'run');

@@ -247,6 +247,13 @@ the Finding-backed audit. Debug layer assignment passes captured configuration
 and symbol to the sole resolver entry point, without a synthesized configuration,
 second universe or separate `resolveIncludingGenerated()` branch.
 
+The graph analyzer returns construction-time `MixedSpelling` evidence beside
+the graph and coverage. The graph-export adapter reports that evidence on
+stderr. The full analysis pipeline combines it with Measurement's logical-class
+and namespace evidence, deduplicates identities by their folded name, and emits
+one warning per identity. Logging stays at these two run boundaries; the graph
+builder and metric repository only return typed facts.
+
 ## The two entry points
 
 `analyze()` answers what the code is like. `auditDirectives()` answers what the

@@ -59,7 +59,7 @@ final readonly class LayerAssignmentResolver
         $collection = $this->collectFiles($files, $repository, $projectRoot);
         $classPaths = $this->classPaths($repository);
         $this->refuseUnknownClass($symbol, $classPaths);
-        $graph = $this->graphBuilder->build($collection->dependencies, $collection->classLikeDeclarations);
+        $graph = $this->graphBuilder->build($collection->dependencies, $collection->classLikeDeclarations)->graph;
 
         $assignment = $this->layerAssignmentInspector->inspect($graph, $classPaths, $symbol);
 

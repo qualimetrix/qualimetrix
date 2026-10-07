@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolLevelProjection;
@@ -45,6 +46,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function get(SymbolPath $symbol): MetricBag
     {
+        $symbol = $this->canonicalNamespaceSymbol($symbol);
         $canonical = $symbol->toCanonical();
 
         if (isset($this->metrics[$canonical])) {
@@ -90,6 +92,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function has(SymbolPath $symbol): bool
     {
+        $symbol = $this->canonicalNamespaceSymbol($symbol);
         $canonical = $symbol->toCanonical();
 
         if (isset($this->metrics[$canonical])) {
@@ -113,10 +116,15 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         }
 
         if ($symbol->getType() === SymbolType::Class_) {
+            $this->observeNamespace($symbol->namespace ?? '');
             $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, $file, $line === 0 ? null : $line);
             $this->namespaceIndex->add($info);
 
             return;
+        }
+
+        if ($symbol->getType() === SymbolType::Namespace_) {
+            $symbol = SymbolPath::forNamespace($this->observeNamespace($symbol->namespace ?? ''));
         }
 
         $canonical = $symbol->toCanonical();
@@ -215,6 +223,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void
     {
+        $symbol = $this->canonicalNamespaceSymbol($symbol);
         $canonical = $symbol->toCanonical();
 
         if ($symbol->getType() === SymbolType::Class_) {
@@ -250,6 +259,12 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         return $this->namespaceIndex->forNamespace($namespace);
     }
 
+    /** @return list<MixedSpelling> */
+    public function mixedSpellings(): array
+    {
+        return [...$this->subjectIndex->mixedSpellings(), ...$this->namespaceIndex->mixedSpellings()];
+    }
+
     /**
      * Creates a new repository with metrics merged from both repositories.
      *
@@ -259,11 +274,14 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     {
         $merged = new self();
         $plain = RepositoryMerge::plain($this->metrics, $this->symbolInfos, $other->metrics, $other->symbolInfos);
-        $merged->metrics = $plain['metrics'];
-        $merged->symbolInfos = $plain['infos'];
+        foreach ($plain['infos'] as $canonical => $info) {
+            $merged->add($info->symbolPath, $plain['metrics'][$canonical], $info->file, $info->line);
+        }
         $merged->subjectIndex = $this->subjectIndex->mergeWith($other->subjectIndex);
         $merged->subjectIndex->synchronizeAggregateInfos($merged->symbolInfos);
         $merged->namespaceIndex->rebuild($merged->symbolInfos, $merged->subjectIndex->infos());
+        $merged->namespaceIndex->importSpellings($this->namespaceIndex);
+        $merged->namespaceIndex->importSpellings($other->namespaceIndex);
 
         return $merged;
     }
@@ -294,8 +312,42 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     private function addLogicalClassProjection(SymbolPath $symbol, MetricBag $metrics): void
     {
+        $this->observeNamespace($symbol->namespace ?? '');
         $info = $this->subjectIndex->addLogicalClass($symbol, $metrics, null, null);
         $this->namespaceIndex->add($info);
+    }
+
+    private function observeNamespace(string $namespace): string
+    {
+        $previous = $this->namespaceIndex->canonical($namespace);
+        $this->namespaceIndex->observe($namespace);
+        $canonical = $this->namespaceIndex->canonical($namespace);
+        if ($previous === $canonical) {
+            return $canonical;
+        }
+
+        $previousKey = SymbolPath::forNamespace($previous)->toCanonical();
+        if (!isset($this->metrics[$previousKey])) {
+            return $canonical;
+        }
+
+        $canonicalSymbol = SymbolPath::forNamespace($canonical);
+        $canonicalKey = $canonicalSymbol->toCanonical();
+        $previousInfo = $this->symbolInfos[$previousKey];
+        $this->metrics[$canonicalKey] = $this->metrics[$previousKey];
+        $this->symbolInfos[$canonicalKey] = new SymbolInfo($canonicalSymbol, $previousInfo->file, $previousInfo->line);
+        unset($this->metrics[$previousKey], $this->symbolInfos[$previousKey]);
+
+        return $canonical;
+    }
+
+    private function canonicalNamespaceSymbol(SymbolPath $symbol): SymbolPath
+    {
+        if ($symbol->getType() !== SymbolType::Namespace_) {
+            return $symbol;
+        }
+
+        return SymbolPath::forNamespace($this->namespaceIndex->canonical($symbol->namespace ?? ''));
     }
 
 }

@@ -158,6 +158,13 @@ final class GraphExportCommand extends Command
         ]);
 
         $result = $this->analyzeDependencyGraph($prepared->runConfiguration);
+        foreach ($result->mixedSpellings as $mixed) {
+            $this->logger->warning(\sprintf(
+                'mixed spelling: %s → %s',
+                implode(', ', $mixed->spellings),
+                $mixed->canonical,
+            ));
+        }
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);

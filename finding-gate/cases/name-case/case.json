@@ -1,0 +1,31 @@
+{
+    "id": "name-case",
+    "description": "Auxiliary: PHP class and namespace identities appear in more than one spelling while exact declarations, coupling, inheritance and cycles remain measurable.",
+    "coverage": "auxiliary",
+    "paths": [
+        "src"
+    ],
+    "config": "qmx.yaml",
+    "args": [
+        "--rule-opt=coupling.cbo:warning=1",
+        "--rule-opt=coupling.cbo:error=9",
+        "--rule-opt=coupling.class-rank:warning=2",
+        "--rule-opt=coupling.class-rank:error=2",
+        "--rule-opt=coupling.distance:max_distance_warning=2",
+        "--rule-opt=coupling.distance:max_distance_error=2",
+        "--rule-opt=design.dit:warning=1",
+        "--rule-opt=design.dit:error=9",
+        "--rule-opt=size.class-count:warning=1",
+        "--rule-opt=size.class-count:error=99"
+    ],
+    "channels": [
+        "architecture.circular-dependency@project",
+        "coupling.cbo@class",
+        "design.dit@class",
+        "size.class-count@namespace"
+    ],
+    "explainSubjects": [
+        "declaration:class:Corpus\\NameCase\\Foo@src/FooFirst.php",
+        "declaration:class:Corpus\\NameCase\\FOO@src/FooSecond.php"
+    ]
+}

@@ -459,6 +459,6 @@ final class NocCollectorTest extends TestCase
             $dependencies,
         );
 
-        return AdjacencyGraphBuilder::builder()->build($dependencies, $universe);
+        return AdjacencyGraphBuilder::builder()->build($dependencies, $universe)->graph;
     }
 }

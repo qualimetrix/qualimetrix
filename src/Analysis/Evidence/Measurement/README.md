@@ -109,6 +109,16 @@ projects logical classes and namespaces. A duplicate FQN declaration is an
 exact fact; a logical-class projection is deliberately deduplicated before
 namespace aggregation.
 
+Logical class and namespace projections use PHP's case-insensitive class-name
+identity. Each index retains every observed spelling, chooses the byte-smallest
+spelling as its canonical projection, and publishes groups with more than one
+spelling through `MetricRepositoryInterface::mixedSpellings()`. Exact
+`DeclarationPath` subjects are never rewritten or merged by that projection.
+Repository merges carry the complete spelling observations from both inputs;
+rebuilding the canonical indexes does not count their metric bags a second
+time. Namespace aggregation therefore sees one namespace for case variants and
+counts every distinct exact declaration once.
+
 Enriching one of those subjects with a single computed value is
 `addSubjectScalar()`, the declaration-addressed counterpart of `addScalar()`.
 It exists so that a global collector writing one number per declaration does

@@ -11,8 +11,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Contract\Configuration\{AutoloadDevPolicy, GeneratedFilePolicy, ProjectScopeMeasurement, ProjectScopeState, RunConfiguration};
 use Qualimetrix\Analysis\Run\Contract\Discovery\DiscoveredProjectFiles;
@@ -157,6 +159,34 @@ PHP);
                 $result->graph->getClassLikeDeclarations(),
             ),
         );
+    }
+
+    #[Test]
+    public function itCarriesMixedSpellingEvidenceFromTheGraphBuild(): void
+    {
+        file_put_contents($this->tempDir . '/First.php', '<?php namespace App; final class Service {}');
+        file_put_contents($this->tempDir . '/Second.php', '<?php namespace app; final class service {}');
+        $analyzer = new DependencyGraphAnalyzer(
+            new ProjectFiles(new ProjectWalk(new EntryInspector()), new GeneratedFileFilter()),
+            $this->parser(),
+            new DependencyVisitor(new DependencyResolver()),
+            new DependencyGraphBuilder(new UnplacedExternalClassSpelling()),
+            new DeclarationRegistrarFactory(),
+        );
+
+        $result = $analyzer->analyze($this->configuration());
+
+        self::assertCount(1, $result->mixedSpellings);
+        self::assertSame('class', $result->mixedSpellings[0]->kind);
+        self::assertSame(['App\\Service', 'app\\service'], $result->mixedSpellings[0]->spellings);
+        self::assertSame(['App\\Service', 'App\\Service'], array_map(
+            static fn($fact): string => $fact->logical->symbolPath->toString(),
+            $result->graph->getClassLikeDeclarations(),
+        ));
+        self::assertSame(['App\\Service', 'app\\service'], array_map(
+            static fn($fact): string => $fact->declaration->logical->toString(),
+            $result->graph->getClassLikeDeclarations(),
+        ));
     }
 
     #[Test]

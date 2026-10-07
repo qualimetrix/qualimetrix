@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\ClassType;
@@ -29,7 +30,7 @@ final class DependencyGraphTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->builder = new DependencyGraphBuilder();
+        $this->builder = new DependencyGraphBuilder(new UnplacedExternalClassSpelling());
     }
 
     #[Test]
@@ -210,7 +211,7 @@ final class DependencyGraphTest extends TestCase
             ClassType::Class_,
             false,
             false,
-        )]);
+        )])->graph;
 
         self::assertSame([$standalone->symbolPath], $graph->getAllClasses());
         self::assertSame(0, $graph->getClassCe($standalone->symbolPath));
@@ -608,6 +609,6 @@ final class DependencyGraphTest extends TestCase
             $universe[$source->logical->toCanonical()] = $source;
         }
 
-        return $this->builder->build($dependencies, array_values($universe));
+        return $this->builder->build($dependencies, array_values($universe))->graph;
     }
 }

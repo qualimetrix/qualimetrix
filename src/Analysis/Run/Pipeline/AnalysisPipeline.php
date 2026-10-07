@@ -40,6 +40,8 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
+use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -232,11 +234,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'dependencies' => \count($collectionResult->dependencies),
         ]);
         $profiler->start('dependency', 'pipeline');
-        $graph = $this->graphBuilder->build(
+        $graphBuild = $this->graphBuilder->build(
             $collectionResult->dependencies,
             $collectionResult->classLikeDeclarations,
         );
+        $graph = $graphBuild->graph;
         $profiler->stop('dependency');
+        $this->reportMixedSpellings([...$repository->mixedSpellings(), ...$graphBuild->mixedSpellings]);
 
         // Phase 2.6: prepare Architecture-owned layer policy from this run's
         // graph and class universe. Run selects the producer rule through its
@@ -467,6 +471,24 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
 
         if ($actual !== $expected) {
             throw new LogicException('Collection terminal states do not match the discovered analysis paths');
+        }
+    }
+
+    /** @param list<MixedSpelling> $mixedSpellings */
+    private function reportMixedSpellings(array $mixedSpellings): void
+    {
+        $reported = [];
+        foreach ($mixedSpellings as $mixed) {
+            $key = ClassNameSpelling::fold($mixed->canonical);
+            if (isset($reported[$key])) {
+                continue;
+            }
+            $reported[$key] = true;
+            $this->logger->warning(\sprintf(
+                'mixed spelling: %s → %s',
+                implode(', ', $mixed->spellings),
+                $mixed->canonical,
+            ));
         }
     }
 

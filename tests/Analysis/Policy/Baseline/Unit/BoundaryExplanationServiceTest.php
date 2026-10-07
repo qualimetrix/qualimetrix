@@ -1087,6 +1087,11 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
         return [];
     }
 
+    public function mixedSpellings(): array
+    {
+        return [];
+    }
+
     /**
      * @param list<SymbolInfo> $rows
      *

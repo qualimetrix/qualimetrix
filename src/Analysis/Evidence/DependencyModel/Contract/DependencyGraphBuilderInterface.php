@@ -13,5 +13,5 @@ interface DependencyGraphBuilderInterface
      * @param list<Dependency> $dependencies
      * @param iterable<ClassLikeDeclaration> $classLikeDeclarations
      */
-    public function build(array $dependencies, iterable $classLikeDeclarations): DependencyGraphInterface;
+    public function build(array $dependencies, iterable $classLikeDeclarations): DependencyGraphBuild;
 }
