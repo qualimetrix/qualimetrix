@@ -13,7 +13,7 @@ final class ProseText
     public static function publish(string $body, GlyphMode $mode): FormattedReport
     {
         $escaped = SourceBytes::isUtf8($body) ? 0 : 1;
-        $body = SourceBytes::escapeInvalid($body);
+        $body = SourceBytes::escapeInvalidBytes($body);
 
         return new FormattedReport($mode === GlyphMode::Ascii ? AsciiGlyphs::replace($body) : $body, $escaped);
     }
