@@ -180,6 +180,6 @@ does not rewrite that historical population.
 The `benchmark` workflow independently installs the root and benchmark lock
 files, then checks the complete corpus on every pull request, push to `main`,
 and merge queue candidate. It retains the benchmark log as an artifact. CI is
-the ongoing authority for subsequent revisions. This update records the local
-measurement and the mechanism; it does not claim that a CI run has completed
-successfully yet.
+the ongoing authority for subsequent revisions. This update records the dated
+local measurement and the workflow mechanism; the benchmark verdict for each
+subsequent revision comes from that revision's own CI run.
