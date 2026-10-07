@@ -14,14 +14,12 @@ use ReflectionClass;
 use SplFileInfo;
 
 /**
- * No production visitor may cut the traversal short.
+ * Keep literal traversal-control names out of shared production AST visitors.
  *
- * php-parser stops calling the remaining visitors for a subtree when one of
- * them returns a traversal-control constant. Declaration numbering now rests on
- * the registrar and every producer seeing the same nodes, so a visitor that
- * skipped a subtree for the visitors after it would silently give them a
- * different lexical context and a different closure counter than the registrar.
- * The invariant used to be a convention; this is what makes it checkable.
+ * php-parser stops calling remaining visitors when one cuts a shared traversal
+ * short. The registrar and every producer must see the same nodes for stable
+ * declaration numbering. This source scan guards literal names, not dynamic or
+ * indirect runtime returns.
  */
 final class TraversalCompletenessTest extends TestCase
 {
@@ -32,11 +30,17 @@ final class TraversalCompletenessTest extends TestCase
         'REMOVE_NODE',
     ];
 
+    /** AttemptWork searches one expression with its own traverser, outside the shared collector pass. */
+    private const array PRIVATE_EXPRESSION_QUERY_CONTROL = [
+        'src/Analysis/Evidence/CodeSmell/ControlFlow/AttemptWork.php' => [
+            'DONT_TRAVERSE_CHILDREN',
+            'STOP_TRAVERSAL',
+        ],
+    ];
+
     /**
-     * The names above are php-parser's, and a guard that searches for a name
-     * nobody uses any more searches for nothing while still reporting green.
-     * Both halves of that are checked here: the constants exist on the visitor
-     * contract, and the scan has files to read at all.
+     * The literal names must still exist on the php-parser visitor contract,
+     * and the scan must have production files to read.
      */
     #[Test]
     public function itUsesForbiddenNamesTakenFromTheVisitorContractAndFindsSourceFilesToScan(): void
@@ -55,19 +59,31 @@ final class TraversalCompletenessTest extends TestCase
     }
 
     #[Test]
-    public function itFindsNoTraversalControlReturnInProductionVisitors(): void
+    public function itRejectsUnexpectedLiteralTraversalControlNamesInProduction(): void
     {
         $offenders = [];
+        $allowedSeen = [];
         foreach (self::sourceFiles() as $file) {
             $source = (string) file_get_contents($file);
+            $relativePath = substr($file, \strlen(\dirname(__DIR__, 2)) + 1);
             foreach (self::FORBIDDEN as $constant) {
-                if (str_contains($source, $constant)) {
-                    $offenders[] = substr($file, \strlen(\dirname(__DIR__, 2)) + 1) . ': ' . $constant;
+                if (!str_contains($source, $constant)) {
+                    continue;
                 }
+                if (\in_array($constant, self::PRIVATE_EXPRESSION_QUERY_CONTROL[$relativePath] ?? [], true)) {
+                    $allowedSeen[$relativePath][] = $constant;
+                    continue;
+                }
+                $offenders[] = $relativePath . ': ' . $constant;
             }
         }
 
         self::assertSame([], $offenders, implode("\n", $offenders));
+        self::assertSame(
+            self::PRIVATE_EXPRESSION_QUERY_CONTROL,
+            $allowedSeen,
+            'A private expression-query allowance no longer matches a literal control name in its exact file.',
+        );
     }
 
     /** @return list<string> */
