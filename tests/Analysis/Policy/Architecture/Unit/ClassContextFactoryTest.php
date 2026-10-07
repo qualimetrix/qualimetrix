@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -597,6 +598,48 @@ final class ClassContextFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itCutsEachExternalInheritanceBranchAtTheDepthLimit(): void
+    {
+        $parentCalls = 0;
+        $parentFactory = new ClassContextFactory();
+        $parentFactory->bindExternalSupertypeSource(self::deepExternalSource(
+            'Parent',
+            ClassType::Class_,
+            static function () use (&$parentCalls): void {
+                ++$parentCalls;
+            },
+        ));
+        $parentFactory->bindGraph(self::graphWith([]), []);
+
+        $parentContext = $parentFactory->build(SymbolPath::fromClassFqn('Vendor\\Parent000'));
+
+        self::assertCount(256, $parentContext->parentClasses);
+        self::assertSame('Vendor\\Parent256', $parentContext->parentClasses[255]);
+        self::assertSame(['Vendor\\Parent257'], $parentContext->ancestryCuts['parentChain']);
+        self::assertFalse($parentContext->parentChainKnown());
+        self::assertSame(257, $parentCalls);
+
+        $interfaceCalls = 0;
+        $interfaceFactory = new ClassContextFactory();
+        $interfaceFactory->bindExternalSupertypeSource(self::deepExternalSource(
+            'Interface',
+            ClassType::Interface_,
+            static function () use (&$interfaceCalls): void {
+                ++$interfaceCalls;
+            },
+        ));
+        $interfaceFactory->bindGraph(self::graphWith([]), []);
+
+        $interfaceContext = $interfaceFactory->build(SymbolPath::fromClassFqn('Vendor\\Interface000'));
+
+        self::assertCount(256, $interfaceContext->parentClasses);
+        self::assertSame('Vendor\\Interface256', $interfaceContext->parentClasses[255]);
+        self::assertSame(['Vendor\\Interface257'], $interfaceContext->ancestryCuts['parentChain']);
+        self::assertFalse($interfaceContext->interfacesKnown());
+        self::assertSame(257, $interfaceCalls);
+    }
+
+    #[Test]
     public function itDropsExternalFactsWhenANewRunIsBound(): void
     {
         $source = new class implements ExternalSupertypeSourceInterface {
@@ -795,5 +838,47 @@ final class ClassContextFactoryTest extends TestCase
             false,
             null,
         );
+    }
+
+    private static function deepExternalSource(
+        string $prefix,
+        ClassType $type,
+        Closure $recordRead,
+    ): ExternalSupertypeSourceInterface {
+        return new readonly class ($prefix, $type, $recordRead) implements ExternalSupertypeSourceInterface {
+            public function __construct(
+                private string $prefix,
+                private ClassType $type,
+                private Closure $recordRead,
+            ) {}
+
+            public function isConfigured(): bool
+            {
+                return true;
+            }
+
+            public function supertypesOf(string $fqcn): ExternalSupertypes
+            {
+                ($this->recordRead)();
+                if (preg_match('/^Vendor\\\\' . $this->prefix . '(\\d{3})$/D', $fqcn, $match) !== 1) {
+                    return ExternalSupertypes::notPlaced();
+                }
+
+                $index = (int) $match[1];
+                $next = $index < 300 ? \sprintf('Vendor\\%s%03d', $this->prefix, $index + 1) : null;
+
+                return new ExternalSupertypes(
+                    true,
+                    $fqcn,
+                    $this->type,
+                    $this->type === ClassType::Class_ ? $next : null,
+                    $this->type === ClassType::Interface_ && $next !== null ? [$next] : [],
+                    [],
+                    false,
+                    false,
+                    null,
+                );
+            }
+        };
     }
 }

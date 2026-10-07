@@ -285,6 +285,7 @@ final class ClassContextFactory
         $fqn = $this->spellingOf($fqn);
         $shortName = self::deriveShortName($fqn);
         $this->ensureMapsBuilt();
+        $this->applyImplicitStringable($fqn);
 
         // The subject itself is the first step of the walk. When the run never
         // analysed it and PHP does not declare it, its attribute lists are
@@ -429,17 +430,21 @@ final class ClassContextFactory
 
         $seedQueue = $this->implementsMap[$fqn] ?? PhpBuiltinClassHierarchy::interfacesOf($fqn) ?? [];
         // What an interface extends it has; a class's parents it does not, so
-        // `implements: [SomeClass]` stays off the subclasses. A PHP interface
-        // needs no seeding: its table entry already lists what it extends.
-        if (isset($this->interfaceSources[$fqn])) {
-            foreach ($parentClasses as $parent) {
+        // `implements: [SomeClass]` stays off the subclasses. Seed only the
+        // direct interface parents: treating the whole already-expanded parent
+        // closure as direct would reset each one's branch depth.
+        $sourceIsInterface = isset($this->interfaceSources[$fqn]);
+        if ($sourceIsInterface) {
+            foreach ($this->extendsMap[$fqn] ?? [] as $parent) {
                 $seedQueue[] = $parent;
             }
         }
-        foreach ($parentClasses as $parent) {
-            $declared = $this->implementsMap[$parent] ?? PhpBuiltinClassHierarchy::interfacesOf($parent) ?? [];
-            foreach ($declared as $iface) {
-                $seedQueue[] = $iface;
+        if (!$sourceIsInterface) {
+            foreach ($parentClasses as $parent) {
+                $declared = $this->implementsMap[$parent] ?? PhpBuiltinClassHierarchy::interfacesOf($parent) ?? [];
+                foreach ($declared as $iface) {
+                    $seedQueue[] = $iface;
+                }
             }
         }
 
@@ -461,6 +466,11 @@ final class ClassContextFactory
      * {@code $unresolved} rather than passed off as the first. A node PHP
      * declares is neither: its supertypes come from {@code $phpAbove}.
      *
+     * Each branch includes at most {@see MAX_INHERITANCE_DEPTH} links. When a
+     * declaration at that depth names another relation, the next FQN becomes
+     * an unresolved cut rather than a silently complete non-match. The limit
+     * is per branch: separate branches may read more declarations in total.
+     *
      * @param list<string> $seedQueue
      * @param array<string, true> $unresolved
      * @param callable(string): (list<string>|null) $phpAbove
@@ -476,27 +486,42 @@ final class ClassContextFactory
     private function bfsClosure(array $seedQueue, array &$unresolved, callable $phpAbove, array $alsoAbove = []): array
     {
         $result = [];
-        $seen = [];
+        $discovered = [];
         // Index cursor instead of array_shift — array_shift re-indexes the
         // entire backing array on every pop (O(n) per call). For deep parent /
         // interface chains this turned into hot O(n²) behaviour.
-        $queue = $seedQueue;
+        $queue = [];
+        foreach ($seedQueue as $seed) {
+            if (!isset($discovered[$seed])) {
+                $discovered[$seed] = true;
+                $queue[] = [$seed, 1];
+            }
+        }
         $cursor = 0;
         $tail = \count($queue);
 
         while ($cursor < $tail) {
-            $next = $queue[$cursor++];
-            if (isset($seen[$next])) {
-                continue;
-            }
-            $seen[$next] = true;
+            [$next, $depth] = $queue[$cursor++];
             $result[] = $next;
 
-            foreach ($this->supertypesOf($next, $unresolved, $phpAbove, $alsoAbove) as $neighbour) {
-                if (!isset($seen[$neighbour])) {
-                    $queue[] = $neighbour;
-                    $tail++;
+            $neighbours = $this->supertypesOf($next, $unresolved, $phpAbove, $alsoAbove);
+            if ($depth >= self::MAX_INHERITANCE_DEPTH) {
+                foreach ($neighbours as $neighbour) {
+                    if (!isset($discovered[$neighbour])) {
+                        $unresolved[$neighbour] = true;
+                    }
                 }
+
+                continue;
+            }
+
+            foreach ($neighbours as $neighbour) {
+                if (isset($discovered[$neighbour])) {
+                    continue;
+                }
+                $discovered[$neighbour] = true;
+                $queue[] = [$neighbour, $depth + 1];
+                $tail++;
             }
         }
 
@@ -523,7 +548,6 @@ final class ClassContextFactory
             && !isset($this->externalRelationsLoaded[$fqn])
         ) {
             $this->loadExternalDeclaration($fqn);
-            $this->applyImplicitStringable($fqn);
         }
 
         $also = $alsoAbove[$fqn] ?? [];

@@ -167,6 +167,14 @@ are memoised by the factory and cleared at every binding; Composer placement
 and directory-listing snapshots are cleared when the analysed project is
 reanchored.
 
+Each parent or interface branch follows at most 256 links. If the declaration
+at that depth names another relation, the next FQN is recorded as an ancestry
+cut, so a missing criterion remains undecidable instead of becoming a false
+negative. This is a per-branch recursion boundary, not a global source-read
+budget: independent branches may visit more than 256 declarations in total.
+Implicit `Stringable` follows the same per-branch boundary and does not preload
+external declarations past it.
+
 A class or interface PHP declares is not a cut. Its parent, interfaces and
 class-level attributes come from `Core\Symbol\PhpBuiltinClassHierarchy`, a
 static table over `PhpBuiltinClassRegistry`'s names, so membership is the same
