@@ -14,11 +14,13 @@ final class Copy
             if ($index >= $limit) {
                 break;
             }
-            if (!\is_array($row)) {
+            if ($row === []) {
                 continue;
             }
             $total = 0;
+            $size = 0;
             foreach ($row as $cell) {
+                ++$size;
                 if (is_numeric($cell)) {
                     $total += (int) $cell;
                 }
@@ -26,7 +28,7 @@ final class Copy
             $result[$key] = [
                 'total' => $total,
                 'mode' => $mode,
-                'size' => \count($row),
+                'size' => $size,
                 'label' => strtoupper((string) $key),
             ];
             ++$index;
