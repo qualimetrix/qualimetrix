@@ -169,8 +169,9 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         }
 
         if ($this->currentContext !== null) {
-            array_push($this->dependencies, ...$this->currentContext->getDependencies());
-            $declaration = $this->currentContext->classLikeDeclaration();
+            $recorder = $this->currentContext->recorder();
+            array_push($this->dependencies, ...$recorder->dependencies());
+            $declaration = $recorder->classLikeDeclaration();
             if ($declaration !== null) {
                 $this->classLikeDeclarations[] = $declaration;
             }
@@ -211,11 +212,13 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         $logical = SymbolPath::fromClassFqn($this->currentClass);
         $this->currentContext = new DependencyContext(
             $this->resolver,
-            $this->file,
-            DeclarationPath::of(
-                $logical,
+            new DependencyRecorder(
                 $this->file,
-                $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
+                DeclarationPath::of(
+                    $logical,
+                    $this->file,
+                    $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
+                ),
             ),
             $nestedNamedClass,
         );

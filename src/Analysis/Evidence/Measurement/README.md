@@ -22,7 +22,12 @@ Measurement/
 ├── Contract/           # named cross-owner metric and repository promises
 ├── FileMeasurement/    # file collectors and derived metrics
 ├── Namespace_/         # project namespace attribution
-├── Repository/         # in-memory repository and indexes
+├── Repository/
+│   ├── InMemoryMetricRepository.php # routes the public repository contract
+│   ├── AggregateMetricIndex.php     # project/file/namespace metrics and source info
+│   ├── LogicalClassMetricIndex.php  # folded class metrics and spelling evidence
+│   ├── MetricSubjectIndex.php       # exact declarations and callable lookup
+│   └── NamespaceMetricIndex.php     # namespace attribution and spelling evidence
 └── Visitor/             # AST visitor state and metadata
 ```
 
@@ -123,6 +128,12 @@ Repository merges carry the complete spelling observations from both inputs;
 rebuilding the canonical indexes does not count their metric bags a second
 time. Namespace aggregation therefore sees one namespace for case variants and
 counts every distinct exact declaration once.
+
+The repository delegates each identity domain to one internal index. Exact
+declarations and callable ambiguity stay in `MetricSubjectIndex`; folded class
+identity and its spelling observations stay in `LogicalClassMetricIndex`;
+project, file, and namespace aggregate bags stay in `AggregateMetricIndex`.
+`NamespaceMetricIndex` remains the attribution view over those stored facts.
 
 Enriching one of those subjects with a single computed value is
 `addSubjectScalar()`, the declaration-addressed counterpart of `addScalar()`.

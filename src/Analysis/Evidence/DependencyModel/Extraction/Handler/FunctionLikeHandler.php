@@ -8,6 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\FunctionLike;
+use PhpParser\Node\Param;
 use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
@@ -38,35 +39,56 @@ final readonly class FunctionLikeHandler implements NodeDependencyHandlerInterfa
     {
         \assert($node instanceof FunctionLike);
 
-        $site = match (true) {
+        TypeDependencyHelper::processAttributes(
+            $node->getAttrGroups(),
+            $node->getStartLine(),
+            self::attributeSite($node),
+            $context,
+        );
+        foreach ($node->getParams() as $parameter) {
+            self::processParameter($node, $parameter, $context);
+        }
+        $returnType = $node->getReturnType();
+        if ($returnType !== null) {
+            TypeDependencyHelper::processType($returnType, DependencyType::TypeHint, $context);
+        }
+    }
+
+    private static function attributeSite(FunctionLike $node): AttributeSite
+    {
+        return match (true) {
             $node instanceof ClassMethod => AttributeSite::Method,
             $node instanceof Function_ => AttributeSite::NestedFunction,
             $node instanceof PropertyHook => AttributeSite::PropertyHook,
             default => AttributeSite::NestedCallable,
         };
-        TypeDependencyHelper::processAttributes($node->getAttrGroups(), $node->getStartLine(), $site, $context);
+    }
 
-        foreach ($node->getParams() as $param) {
-            if ($param->type !== null) {
-                TypeDependencyHelper::processType(
-                    $param->type,
-                    $param->isPromoted() ? DependencyType::PropertyType : DependencyType::TypeHint,
-                    $context,
-                );
-            }
-            $parameterSite = match (true) {
-                $node instanceof PropertyHook => AttributeSite::HookParameter,
-                $node instanceof ClassMethod && $param->isPromoted() => AttributeSite::PromotedParameter,
-                $node instanceof ClassMethod => AttributeSite::Parameter,
-                $node instanceof Function_ => AttributeSite::NestedFunction,
-                default => AttributeSite::NestedCallable,
-            };
-            TypeDependencyHelper::processAttributes($param->attrGroups, $param->getStartLine(), $parameterSite, $context);
+    private static function processParameter(FunctionLike $owner, Param $parameter, DependencyContext $context): void
+    {
+        if ($parameter->type !== null) {
+            TypeDependencyHelper::processType(
+                $parameter->type,
+                $parameter->isPromoted() ? DependencyType::PropertyType : DependencyType::TypeHint,
+                $context,
+            );
         }
+        TypeDependencyHelper::processAttributes(
+            $parameter->attrGroups,
+            $parameter->getStartLine(),
+            self::parameterSite($owner, $parameter),
+            $context,
+        );
+    }
 
-        $returnType = $node->getReturnType();
-        if ($returnType !== null) {
-            TypeDependencyHelper::processType($returnType, DependencyType::TypeHint, $context);
-        }
+    private static function parameterSite(FunctionLike $owner, Param $parameter): AttributeSite
+    {
+        return match (true) {
+            $owner instanceof PropertyHook => AttributeSite::HookParameter,
+            $owner instanceof ClassMethod && $parameter->isPromoted() => AttributeSite::PromotedParameter,
+            $owner instanceof ClassMethod => AttributeSite::Parameter,
+            $owner instanceof Function_ => AttributeSite::NestedFunction,
+            default => AttributeSite::NestedCallable,
+        };
     }
 }

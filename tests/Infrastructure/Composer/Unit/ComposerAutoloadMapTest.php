@@ -9,9 +9,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
+use Qualimetrix\Infrastructure\Composer\ComposerClassPathLookup;
 use RuntimeException;
 
 #[CoversClass(ComposerAutoloadMap::class)]
+#[CoversClass(ComposerClassPathLookup::class)]
 final class ComposerAutoloadMapTest extends TestCase
 {
     private string $root;

@@ -106,21 +106,7 @@ final class TypeDependencyHelper
         }
 
         if ($type instanceof Node\UnionType) {
-            foreach ($type->types as $subType) {
-                if ($subType instanceof Node\IntersectionType) {
-                    return TypeShape::Dnf;
-                }
-            }
-
-            if (\count($type->types) === 2) {
-                foreach ($type->types as $subType) {
-                    if ($subType instanceof Node\Identifier && strtolower($subType->toString()) === 'null') {
-                        return TypeShape::Nullable;
-                    }
-                }
-            }
-
-            return TypeShape::Union;
+            return self::unionShape($type);
         }
 
         if ($type instanceof Node\IntersectionType) {
@@ -128,5 +114,31 @@ final class TypeDependencyHelper
         }
 
         return TypeShape::Single;
+    }
+
+    private static function unionShape(Node\UnionType $type): TypeShape
+    {
+        foreach ($type->types as $member) {
+            if ($member instanceof Node\IntersectionType) {
+                return TypeShape::Dnf;
+            }
+        }
+
+        return self::isNullableUnion($type) ? TypeShape::Nullable : TypeShape::Union;
+    }
+
+    private static function isNullableUnion(Node\UnionType $type): bool
+    {
+        if (\count($type->types) !== 2) {
+            return false;
+        }
+
+        foreach ($type->types as $member) {
+            if ($member instanceof Node\Identifier && strtolower($member->toString()) === 'null') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -33,11 +33,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
     /** @var list<ComposerRootOmission> */
     private array $omissions = [];
 
-    /** @var list<string> */
-    private array $roots = [];
-
-    /** @var array<string, list<string>> */
-    private array $directoryEntries = [];
+    private readonly ComposerClassPathLookup $classPathLookup;
 
     private readonly GeneratedClassmap $generatedClassmap;
 
@@ -51,6 +47,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         // reader reports through the same channel as this one: a default in
         // the signature cannot see another parameter.
         $this->generatedClassmap = $generatedClassmap ?? new GeneratedClassmap(logger: $this->logger);
+        $this->classPathLookup = new ComposerClassPathLookup();
     }
 
     /**
@@ -59,11 +56,10 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
     public function pointAt(string $projectRoot, array $analysedPaths): void
     {
         $located = $this->locator->rootsFor($projectRoot, $analysedPaths);
-        $this->roots = $located->roots;
         $this->omissions = $located->omissions;
         $this->psr4 = [];
         $this->classmap = [];
-        $this->directoryEntries = [];
+        $this->classPathLookup->pointAt($located->roots);
         $this->loaded = false;
     }
 
@@ -74,7 +70,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
     public function isConfigured(): bool
     {
-        return $this->roots !== [];
+        return $this->classPathLookup->isConfigured();
     }
 
     public function fileFor(string $fqcn): ?string
@@ -84,7 +80,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         $normalized = ltrim($fqcn, '\\');
 
         if (isset($this->classmap[$normalized])) {
-            return $this->within($this->classmap[$normalized]);
+            return $this->classPathLookup->within($this->classmap[$normalized]);
         }
 
         foreach ($this->psr4 as $prefix => $directories) {
@@ -95,7 +91,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
             $relative = str_replace('\\', '/', substr($normalized, \strlen($prefix))) . '.php';
 
             foreach ($directories as $directory) {
-                $candidate = $this->within($directory . '/' . $relative);
+                $candidate = $this->classPathLookup->within($directory . '/' . $relative);
 
                 if ($candidate !== null && is_file($candidate)) {
                     return $candidate;
@@ -106,87 +102,6 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         return null;
     }
 
-    /**
-     * The same path, or null when it lies outside every project this run may
-     * read.
-     *
-     * The values behind these paths come from files the analysed tree controls:
-     * an `install-path` or a psr-4 target may contain `..`, and a classmap
-     * entry is whatever was generated into it. Without this the map would hand
-     * back a path anywhere on the machine and the reader would open it. The old
-     * mechanism had the same exposure and worse -- it executed what it found --
-     * but that is a reason to state the boundary, not to inherit the silence.
-     */
-    private function within(string $path): ?string
-    {
-        $resolved = $this->exactExistingPath($path);
-        if ($resolved === null) {
-            return null;
-        }
-
-        foreach ($this->roots as $root) {
-            if ($resolved === $root || str_starts_with($resolved, $root . '/')) {
-                return $resolved;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Resolves an existing path only when every authored segment has the same
-     * bytes as its directory entry. realpath() alone follows a differently
-     * cased path on a case-insensitive filesystem, which made Composer
-     * placement depend on the host OS.
-     */
-    private function exactExistingPath(string $path): ?string
-    {
-        if ($path === '' || !str_starts_with($path, '/')) {
-            return null;
-        }
-
-        $current = '/';
-        foreach (explode('/', substr($path, 1)) as $segment) {
-            if ($segment === '' || $segment === '.') {
-                continue;
-            }
-            if ($segment === '..') {
-                $current = \dirname(rtrim($current, '/')) . '/';
-
-                continue;
-            }
-
-            $trimmed = rtrim($current, '/');
-            $parent = $trimmed === '' ? '/' : $trimmed;
-            if (!\in_array($segment, $this->entriesOf($parent), true)) {
-                return null;
-            }
-            $current = ($parent === '/' ? '' : $parent) . '/' . $segment;
-        }
-
-        $resolved = realpath($current);
-
-        return $resolved === false ? null : $resolved;
-    }
-
-    /** @return list<string> */
-    private function entriesOf(string $directory): array
-    {
-        $key = realpath($directory);
-        if ($key === false) {
-            return [];
-        }
-
-        if (!isset($this->directoryEntries[$key])) {
-            $entries = @scandir($key);
-            $this->directoryEntries[$key] = $entries === false
-                ? []
-                : array_values(array_diff($entries, ['.', '..']));
-        }
-
-        return $this->directoryEntries[$key];
-    }
-
     private function load(): void
     {
         if ($this->loaded) {
@@ -195,7 +110,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
 
         $this->loaded = true;
 
-        foreach ($this->roots as $root) {
+        foreach ($this->classPathLookup->roots() as $root) {
             $this->readProject($root);
         }
 
@@ -215,7 +130,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         $vendorPath = str_starts_with($manifest->vendorDirectory, '/')
             ? $manifest->vendorDirectory
             : $root . '/' . $manifest->vendorDirectory;
-        $vendor = $this->exactExistingPath($vendorPath);
+        $vendor = $this->classPathLookup->existingPath($vendorPath);
 
         $this->addPsr4($manifest->psr4Roots(), $root);
         if ($vendor === null) {
@@ -259,7 +174,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         foreach ($section as $prefix => $paths) {
             foreach ((array) $paths as $path) {
                 $directory = \is_string($prefix) && \is_string($path)
-                    ? $this->exactExistingPath(rtrim($base . '/' . $path, '/'))
+                    ? $this->classPathLookup->existingPath(rtrim($base . '/' . $path, '/'))
                     : null;
 
                 if ($directory !== null) {

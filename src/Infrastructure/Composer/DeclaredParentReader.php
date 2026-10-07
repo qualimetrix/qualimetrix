@@ -106,36 +106,64 @@ final class DeclaredParentReader implements AnalysedInstallAnchorInterface, Exte
     private function declaredParent(array $ast, string $fqcn): ParentLookup
     {
         $finder = new NodeFinder();
-
         /** @var list<Node\Stmt\Class_> $classes */
         $classes = $finder->findInstanceOf($ast, Node\Stmt\Class_::class);
-
-        foreach ($classes as $class) {
-            if (self::sameIdentity($class->namespacedName?->toString(), $fqcn)) {
-                return $class->extends === null
-                    ? ParentLookup::root()
-                    : ParentLookup::extending(ResolvedName::className($class->extends)
-                        ?? throw new LogicException('A parent class name did not resolve'));
-            }
+        $class = self::matchingClass($classes, $fqcn);
+        if ($class !== null) {
+            return self::classParent($class);
         }
 
         /** @var list<Node\Stmt\Interface_> $interfaces */
         $interfaces = $finder->findInstanceOf($ast, Node\Stmt\Interface_::class);
+        $interface = self::matchingInterface($interfaces, $fqcn);
 
-        foreach ($interfaces as $interface) {
-            if (self::sameIdentity($interface->namespacedName?->toString(), $fqcn)) {
-                // An interface may extend several; DIT is a single chain, so
-                // the first is the one this metric follows.
-                return $interface->extends === []
-                    ? ParentLookup::root()
-                    : ParentLookup::extending(ResolvedName::className($interface->extends[0])
-                        ?? throw new LogicException('A parent interface name did not resolve'));
+        return $interface !== null ? self::interfaceParent($interface) : ParentLookup::notPlaced();
+    }
+
+    /**
+     * @param list<Node\Stmt\Class_> $classes
+     */
+    private static function matchingClass(array $classes, string $fqcn): ?Node\Stmt\Class_
+    {
+        foreach ($classes as $class) {
+            if (self::sameIdentity($class->namespacedName?->toString(), $fqcn)) {
+                return $class;
             }
         }
 
-        // The file was placed but does not declare this name: the map and the
-        // sources disagree, which is not a root.
-        return ParentLookup::notPlaced();
+        return null;
+    }
+
+    /**
+     * @param list<Node\Stmt\Interface_> $interfaces
+     */
+    private static function matchingInterface(array $interfaces, string $fqcn): ?Node\Stmt\Interface_
+    {
+        foreach ($interfaces as $interface) {
+            if (self::sameIdentity($interface->namespacedName?->toString(), $fqcn)) {
+                return $interface;
+            }
+        }
+
+        return null;
+    }
+
+    private static function classParent(Node\Stmt\Class_ $class): ParentLookup
+    {
+        return $class->extends === null
+            ? ParentLookup::root()
+            : ParentLookup::extending(ResolvedName::className($class->extends)
+                ?? throw new LogicException('A parent class name did not resolve'));
+    }
+
+    private static function interfaceParent(Node\Stmt\Interface_ $interface): ParentLookup
+    {
+        // An interface may extend several; DIT is a single chain, so the first
+        // is the one this metric follows.
+        return $interface->extends === []
+            ? ParentLookup::root()
+            : ParentLookup::extending(ResolvedName::className($interface->extends[0])
+                ?? throw new LogicException('A parent interface name did not resolve'));
     }
 
     private static function sameIdentity(?string $declared, string $requested): bool

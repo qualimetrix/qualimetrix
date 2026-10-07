@@ -10,10 +10,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Infrastructure\Composer\ComposerAutoloadMap;
 use Qualimetrix\Infrastructure\Composer\ComposerManifestReader;
+use Qualimetrix\Infrastructure\Composer\DeclaredClassLikeFactExtractor;
 use Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader;
 use RuntimeException;
 
 #[CoversClass(DeclaredSupertypeReader::class)]
+#[CoversClass(DeclaredClassLikeFactExtractor::class)]
 final class DeclaredSupertypeReaderTest extends TestCase
 {
     private string $root;

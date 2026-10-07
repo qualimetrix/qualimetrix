@@ -7,12 +7,15 @@ namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\CanonicalGraphInput;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyIdentityCanonicalizer;
+use Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplingBuilder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
@@ -23,6 +26,9 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(DependencyGraphBuilder::class)]
+#[CoversClass(CanonicalGraphInput::class)]
+#[CoversClass(DependencyIdentityCanonicalizer::class)]
+#[CoversClass(NamespaceCouplingBuilder::class)]
 final class DependencyGraphBuilderTest extends TestCase
 {
     #[Test]

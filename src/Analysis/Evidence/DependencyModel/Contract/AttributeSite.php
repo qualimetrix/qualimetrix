@@ -21,7 +21,7 @@ enum AttributeSite: string
 
     public function isDeclaredMember(): bool
     {
-        return match ($this) {
+        return \in_array($this, [
             self::Method,
             self::Property,
             self::Parameter,
@@ -29,11 +29,7 @@ enum AttributeSite: string
             self::ClassConstant,
             self::EnumCase,
             self::PropertyHook,
-            self::HookParameter => true,
-            self::ClassHeader,
-            self::NestedCallable,
-            self::NestedFunction,
-            self::NestedClass => false,
-        };
+            self::HookParameter,
+        ], true);
     }
 }

@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyRecorder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
@@ -22,6 +23,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\ClassType;
 
 #[CoversClass(DependencyVisitor::class)]
+#[CoversClass(DependencyRecorder::class)]
 final class DependencyVisitorTest extends TestCase
 {
     private DependencyVisitor $visitor;

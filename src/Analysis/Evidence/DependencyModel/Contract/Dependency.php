@@ -65,6 +65,7 @@ final readonly class Dependency
         return new self($source, new LogicalClassPath($source->logical), $target, $position, $location, $shape, null, false, false);
     }
 
+    /** @qmx-ignore code-smell.boolean-argument -- The boolean records observed nested-declaration provenance on an immutable edge. */
     public static function ofAttribute(
         DeclarationPath $source,
         LogicalClassPath $target,
@@ -85,6 +86,7 @@ final readonly class Dependency
         );
     }
 
+    /** @qmx-ignore code-smell.boolean-argument -- Both booleans preserve independent observed declaration facts on an immutable edge. */
     public static function ofClassLike(
         DeclarationPath $source,
         LogicalClassPath $target,

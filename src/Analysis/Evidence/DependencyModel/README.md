@@ -29,11 +29,15 @@ DependencyModel/
 │   ├── ExternalClassSpellingInterface.php
 │   └── TypeShape.php
 ├── Extraction/
+│   ├── DependencyRecorder.php
 │   ├── DependencyResolver.php
 │   ├── DependencyVisitor.php
 │   └── Handler/                  # position/site-aware extraction family
+├── CanonicalGraphInput.php       # canonical logical projections plus spelling evidence
+├── DependencyIdentityCanonicalizer.php # PHP class identity folding for graph inputs
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
+├── NamespaceCouplingBuilder.php  # own and subtree namespace coupling construction
 ├── NamespaceCouplings.php        # both coupling scopes of every namespace
 ├── StringSet.php                 # unique-dependency counting for coupling
 └── UnplacedExternalClassSpelling.php
@@ -97,7 +101,7 @@ class is.
 `getDeclarationDependencies()` answers a different question — what a
 declaration states about itself — and keeps every `extends`, `implements`,
 `trait_use` and attribute edge, PHP target or not, in encounter order. Layer
-membership reads it (`Policy\Architecture\Layer\ClassContextFactory`): read from
+membership reads it (`Policy\Architecture\Layer\ClassContext\ClassContextFactory`): read from
 the coupling view, a class declaring `implements \JsonSerializable` is
 indistinguishable from one that does not. Adding an edge to this view moves no
 coupling metric; adding one to the coupling view does.
@@ -147,7 +151,7 @@ anonymous class has no declaration identity of its own, so
 nothing about the edge's `DependencyType`, coupling, ClassRank, or `graph:export`
 representation: dependency readers keep reading it as-is. Declaration readers
 outside this module (`Design\Inheritance\DitGlobalCollector`, `NocCollector`,
-`Policy\Architecture\Layer\ClassContextFactory`) skip a flagged edge instead.
+`Policy\Architecture\Layer\ClassContext\ClassContextFactory`) skip a flagged edge instead.
 See ADR 0071.
 
 `Dependency::$interfaceExtends` marks an `extends` edge an interface declares
@@ -155,7 +159,8 @@ See ADR 0071.
 class when a class declares it, and the graph carries no declaration kind
 otherwise, so a reader asking which interfaces a declaration has needs the
 flag to count `J` for `I` without counting a parent class for its subclass.
-Only `ClassContextFactory` (layer `implements:` membership) reads it; DIT, NOC,
+Only `Policy\Architecture\Layer\ClassContext\ClassContextFactory` (layer
+`implements:` membership) reads it; DIT, NOC,
 coupling and `graph:export` treat both edges alike.
 
 `DependencyGraphInterface` exposes the named declaration stream beside edge and
@@ -194,8 +199,8 @@ from edge endpoints. The index is handed over per file
 because the same participant instance serves both traversal paths, and the
 number it puts in an edge's source declaration must belong to the path it is
 currently taking part in. `DependencyResolver`,
-`DependencyVisitor`, and their handlers remain private to the extraction
-family. Parallel worker bootstrapping reconstructs the participant from the
+`DependencyVisitor`, `DependencyRecorder`, and the handlers remain private to
+the extraction family. Parallel worker bootstrapping reconstructs the participant from the
 same internal configuration used sequentially; it does not serialize a visitor
 or allow other modules to import extraction internals.
 

@@ -19,6 +19,7 @@ final readonly class ClassLikeDeclaration
         public bool $aliasesTraitMethodAsToString,
     ) {}
 
+    /** @qmx-ignore code-smell.boolean-argument -- Both booleans are direct-body facts in one immutable declaration snapshot. */
     public static function of(
         DeclarationPath $declaration,
         ClassType $type,

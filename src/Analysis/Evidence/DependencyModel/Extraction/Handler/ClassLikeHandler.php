@@ -14,6 +14,7 @@ use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation\Alias;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\ClassType;
 
@@ -40,11 +41,12 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
     {
         \assert($node instanceof ClassLike);
         if ($node->name !== null) {
-            $context->recordClassLike(
+            $context->recorder()->recordClassLike(ClassLikeDeclaration::of(
+                $context->recorder()->declaration(),
                 self::classType($node),
                 $node->getMethod('__tostring') !== null,
                 self::aliasesTraitMethodAsToString($node),
-            );
+            ));
         }
 
         if ($node instanceof Class_) {
