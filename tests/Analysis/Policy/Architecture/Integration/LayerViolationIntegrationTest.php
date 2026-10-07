@@ -68,6 +68,11 @@ final class LayerViolationIntegrationTest extends TestCase
                 'Unexpected violation message: ' . $finding->message,
             );
             self::assertSame(Severity::Warning, $finding->severity);
+            $declaration = $finding->subject->declarationPath();
+            self::assertNotNull($declaration);
+            self::assertSame($finding->symbolPath->toCanonical(), $declaration->logical->toCanonical());
+            self::assertNotNull($finding->location->file);
+            self::assertSame($finding->location->file->value(), $declaration->file->value());
             self::assertNotNull($finding->dependencyTarget);
             self::assertNotNull($finding->dependencyType);
             self::assertStringContainsString(
