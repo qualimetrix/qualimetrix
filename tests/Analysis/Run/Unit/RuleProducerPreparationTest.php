@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
@@ -109,7 +110,7 @@ final class RuleProducerPreparationTest extends TestCase
     #[Test]
     public function itResetsArchitecturePreparationWithoutDoingWorkWhenEveryLayerPolicyProducerIsDisabled(): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::never())->method('prepare');
         $architecture->expects(self::once())->method('reset');
         $profiler = $this->createMock(ProfilerInterface::class);
@@ -135,7 +136,7 @@ final class RuleProducerPreparationTest extends TestCase
     public function itPreparesArchitecturePolicyForEitherOfItsProducersAlone(array $only): void
     {
         $graph = self::createStub(DependencyGraphInterface::class);
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare')->with($graph, []);
         $architecture->expects(self::never())->method('reset');
 
@@ -150,7 +151,7 @@ final class RuleProducerPreparationTest extends TestCase
     public function itPreparesArchitecturePolicyWhenLayerViolationRuleIsEnabled(): void
     {
         $graph = self::createStub(DependencyGraphInterface::class);
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare')->with($graph, []);
         $architecture->expects(self::never())->method('reset');
         $profiler = $this->createMock(ProfilerInterface::class);
@@ -218,7 +219,7 @@ final class RuleProducerPreparationTest extends TestCase
     ]])]
     public function itSkipsArchitecturePreparationWhenAllThreeProducersAreSwitchedOffByTheirOptions(array $ruleOptions): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::never())->method('prepare');
         $architecture->expects(self::once())->method('reset');
         $profiler = $this->createMock(ProfilerInterface::class);
@@ -234,7 +235,7 @@ final class RuleProducerPreparationTest extends TestCase
     #[Test]
     public function itPreparesArchitecturePolicyForDeclarationWhenTheOldProducersAreInactive(): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare');
         $architecture->expects(self::never())->method('reset');
 
@@ -288,7 +289,7 @@ final class RuleProducerPreparationTest extends TestCase
     #[Test]
     public function itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected(): void
     {
-        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
+        $architecture = $this->architectureMock();
         $architecture->expects(self::once())->method('prepare');
         $this->preparation(
             architecture: $architecture,
@@ -338,7 +339,7 @@ final class RuleProducerPreparationTest extends TestCase
     }
 
     /**
-     * @param (LayerPolicyPreparationInterface&MockObject)|null $architecture
+     * @param (LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface&MockObject)|null $architecture
      * @param (CircularDependencyPreparationInterface&MockObject)|null $circular
      * @param list<string> $only
      * @param list<string> $disabled
@@ -346,7 +347,7 @@ final class RuleProducerPreparationTest extends TestCase
      * @param array<string, mixed> $ruleOptions
      */
     private function preparation(
-        ?LayerPolicyPreparationInterface $architecture = null,
+        (LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface)|null $architecture = null,
         ?CircularDependencyPreparationInterface $circular = null,
         array $only = [],
         array $disabled = [],
@@ -390,7 +391,7 @@ final class RuleProducerPreparationTest extends TestCase
         $producerGate = new RuleSelectorProducerGate($registry);
 
         return new RuleProducerPreparation(
-            $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
+            $architecture ?? self::architectureStub(),
             $circular ?? self::createStub(CircularDependencyPreparationInterface::class),
             new FileSetInspectionComposite(
                 $participants,
@@ -399,6 +400,14 @@ final class RuleProducerPreparationTest extends TestCase
             ),
             $producerGate,
         );
+    }
+
+    private function architectureMock(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface&MockObject
+    {
+        return $this->createMockForIntersectionOfInterfaces([
+            LayerPolicyPreparationInterface::class,
+            UnmatchedTypeWarningInterface::class,
+        ]);
     }
 
     /** @return array{\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface, \Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface} */
@@ -421,5 +430,19 @@ final class RuleProducerPreparationTest extends TestCase
                 }
             },
         ];
+    }
+
+    private static function architectureStub(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface
+    {
+        return new class implements LayerPolicyPreparationInterface, UnmatchedTypeWarningInterface {
+            public function prepare(DependencyGraphInterface $graph, iterable $classUniverse): void {}
+
+            public function reset(): void {}
+
+            public function notJudgedWarning(\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement $scope): ?string
+            {
+                return null;
+            }
+        };
     }
 }

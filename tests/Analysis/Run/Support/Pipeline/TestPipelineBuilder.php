@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInput;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
@@ -83,7 +84,7 @@ final class TestPipelineBuilder
 
     private ?RuleSelectorProducerGate $producerGate = null;
 
-    private ?LayerPolicyPreparationInterface $layerPolicyPreparation = null;
+    private (LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface)|null $layerPolicyPreparation = null;
 
     private ?ArchitectureConfiguration $architectureConfiguration = null;
 
@@ -183,7 +184,7 @@ final class TestPipelineBuilder
      * Inject a policy preparation contract. Use this for tests that need to
      * verify the Run-to-Architecture lifecycle interaction.
      */
-    public function withLayerPolicyPreparation(LayerPolicyPreparationInterface $preparation): self
+    public function withLayerPolicyPreparation(LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface $preparation): self
     {
         $this->layerPolicyPreparation = $preparation;
 
@@ -320,7 +321,7 @@ final class TestPipelineBuilder
         };
     }
 
-    private function resolveLayerPolicyPreparation(): LayerPolicyPreparationInterface
+    private function resolveLayerPolicyPreparation(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface
     {
         if ($this->layerPolicyPreparation !== null) {
             if ($this->architectureConfiguration !== null) {

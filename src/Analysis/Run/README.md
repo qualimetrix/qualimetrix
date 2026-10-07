@@ -129,9 +129,10 @@ has unseen descendants: a named `IncompleteUniverse` cause withholds both
 questions without listing it. An asset or non-regular entry is not inferred
 missing PHP. Removed-entry and generated-PHP counts keep their different units.
 
-Six declaration-absence channels ask the first question:
+Seven declaration-absence channels ask the first question:
 `architecture.empty-template`, `architecture.unmatched-exclude`,
-`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
+`architecture.unreachable-layer`, `architecture.unmatched-type`,
+`cohesion.unmatched-exclude-method`,
 `coupling.unmatched-framework-namespace` and `suppression.unmatched-namespace`.
 `discovery.unmatched-exclude`, `suppression.unmatched-path` and
 `suppression.unmatched-rule-ledger` use selector/path completeness; rule-ledger
@@ -192,7 +193,13 @@ duration negative.
   contracts, not a generic lifecycle or graph-participant registry.
 - `RuleProducerPreparation` coordinates their final producer enablement, reset and
   profiling with file-set inspection while `AnalysisPipeline` retains the
-  complete phase order. It stores no capability result.
+  complete phase order. It stores no capability result. Its Architecture input
+  implements the preparation and `UnmatchedTypeWarningInterface` promises on
+  the same object. After execution, it asks the pure warning query only when
+  `ChannelPublication` publishes `architecture.layer-declaration` /
+  `architecture.unmatched-type` / `project`. The pipeline logs a returned warning
+  once; the rule and preparation perform no logging, and the execution result
+  gains no warning transport state.
 - `InlineDirectiveRun` prepares authored Inline state and asks its two
   post-execution questions through `InlineDirectivePolicyInterface` and
   `ThresholdDirectiveAuditInterface`. It retains the same policy and audit

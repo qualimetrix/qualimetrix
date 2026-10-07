@@ -14,6 +14,9 @@ final readonly class NameSpellingIndex
     /** @var array<string, string> folded identity => spelling */
     private array $spellings;
 
+    /** @var array<string, string> folded namespace/class prefix => spelling */
+    private array $prefixSpellings;
+
     /** @param iterable<SymbolPath> $analysedClasses */
     public function __construct(DependencyGraphInterface $graph, iterable $analysedClasses)
     {
@@ -39,11 +42,29 @@ final readonly class NameSpellingIndex
             $spellings[$identity] = ClassNameSpelling::canonical(array_keys($forms));
         }
         $this->spellings = $spellings;
+
+        $prefixes = [];
+        foreach ($spellings as $spelling) {
+            $segments = explode('\\', $spelling);
+            for ($length = 1; $length <= \count($segments); ++$length) {
+                self::add($prefixes, implode('\\', \array_slice($segments, 0, $length)));
+            }
+        }
+        $prefixSpellings = [];
+        foreach ($prefixes as $identity => $forms) {
+            $prefixSpellings[$identity] = ClassNameSpelling::canonical(array_keys($forms));
+        }
+        $this->prefixSpellings = $prefixSpellings;
     }
 
     public function spellingOf(string $name): ?string
     {
         return $this->spellings[ClassNameSpelling::fold(ltrim($name, '\\'))] ?? null;
+    }
+
+    public function prefixSpellingOf(string $prefix): ?string
+    {
+        return $this->prefixSpellings[ClassNameSpelling::fold(ltrim($prefix, '\\'))] ?? null;
     }
 
     /** @param array<string, array<string, true>> $index */

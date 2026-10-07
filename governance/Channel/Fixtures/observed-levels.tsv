@@ -13,6 +13,7 @@ architecture.pending-layer-matched#architecture.pending-layer-matched	project
 architecture.potential-shadow#architecture.potential-shadow	project
 architecture.unassigned-class#architecture.unassigned-class	project
 architecture.unmatched-exclude#architecture.unmatched-exclude	project
+architecture.layer-declaration#architecture.unmatched-type	project
 architecture.unreachable-layer#architecture.unreachable-layer	project
 code-smell.boolean-argument#code-smell.boolean-argument	callable file
 code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable

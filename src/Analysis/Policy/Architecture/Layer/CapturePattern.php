@@ -69,6 +69,7 @@ final readonly class CapturePattern
         public string $regex,
         public array $variableNames,
         public array $multiSegmentVariableNames,
+        private ?string $literalSubtreePrefix,
     ) {}
 
     /**
@@ -94,12 +95,25 @@ final readonly class CapturePattern
                 '~\\A(?:' . preg_quote($rawPattern, '~') . ')(?:\\\\.+)?\\z~',
                 [],
                 [],
+                $rawPattern,
             );
         }
 
-        [$regex, $variables, $multiSegmentVariables] = (new CapturePatternCompiler($rawPattern))->compile();
+        [$regex, $variables, $multiSegmentVariables, $literalSubtreePrefix] = (new CapturePatternCompiler($rawPattern))->compile();
 
-        return new self($rawPattern, $regex, $variables, $multiSegmentVariables);
+        return new self($rawPattern, $regex, $variables, $multiSegmentVariables, $literalSubtreePrefix);
+    }
+
+    public function literalSubtreePrefix(): ?string
+    {
+        return $this->literalSubtreePrefix;
+    }
+
+    public function withLiteralSubtreePrefix(string $prefix): ?string
+    {
+        return $this->literalSubtreePrefix === null
+            ? null
+            : $prefix . substr($this->rawPattern, \strlen($this->literalSubtreePrefix));
     }
 
     /**

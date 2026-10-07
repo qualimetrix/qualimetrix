@@ -6,7 +6,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Closure;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -44,11 +45,15 @@ final readonly class KnownTypes
      *                                                      install declares a class or interface by
      *                                                      this exact name; null when the run found
      *                                                      no install to read.
+     * @param (Closure(string): ?string)|null $installSpelling Declared install spelling for the
+     *                                                         same PHP identity, when placed.
      */
     public function __construct(
         private ?DependencyGraphInterface $graph,
         private AnalysedDeclarations $analysed,
         private ?Closure $installDeclares = null,
+        private ?NameSpellingIndex $spellings = null,
+        private ?Closure $installSpelling = null,
     ) {}
 
     public function installConsulted(): bool
@@ -66,7 +71,7 @@ final readonly class KnownTypes
         $known = [];
         $pending = [];
         foreach ($fqns as $fqn) {
-            if ($this->analysed->contains($fqn) || PhpBuiltinClassHierarchy::extendsOf($fqn) !== null) {
+            if ($this->analysed->contains($fqn) || PhpBuiltinClassRegistry::canonicalName($fqn) !== null) {
                 $known[$fqn] = true;
             } else {
                 $pending[$fqn] = true;
@@ -81,6 +86,49 @@ final readonly class KnownTypes
     public function met(string $fqn): bool
     {
         return isset($this->among([$fqn])[$fqn]);
+    }
+
+    /** @param list<NamedType> $types */
+    public function unmatched(array $types, ProjectScopeJudgement $scope): UnmatchedTypeJudgement
+    {
+        $fqns = array_values(array_unique(array_map(static fn(NamedType $type): string => $type->fqn, $types)));
+        $met = $this->among($fqns);
+        $occurrences = [];
+        foreach ($types as $type) {
+            if (isset($met[$type->fqn])) {
+                continue;
+            }
+            $suggestion = $this->suggestedSpelling($type->fqn);
+            $occurrences[] = new UnmatchedTypeOccurrence(
+                $type,
+                $suggestion === $type->fqn ? null : $suggestion,
+            );
+        }
+
+        return new UnmatchedTypeJudgement($occurrences, $scope->withheldBy(), $this->installConsulted());
+    }
+
+    public function suggestedSpelling(string $fqn): ?string
+    {
+        $spelling = $this->spellings?->spellingOf($fqn)
+            ?? ($this->installSpelling === null ? null : ($this->installSpelling)($fqn));
+
+        return $spelling === $fqn ? null : $spelling;
+    }
+
+    public function suggestedPattern(string $pattern): ?string
+    {
+        $compiled = CapturePattern::compile($pattern);
+        $prefix = $compiled->literalSubtreePrefix();
+        if ($prefix === null) {
+            return null;
+        }
+        $spelling = $this->spellings?->prefixSpellingOf($prefix);
+        if ($spelling === null || $spelling === $prefix) {
+            return null;
+        }
+
+        return $compiled->withLiteralSubtreePrefix($spelling);
     }
 
     /**

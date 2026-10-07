@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypes;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
@@ -327,7 +328,13 @@ final class ClassContextFactory
             ? $this->externalTypeExists(...)
             : $this->installDeclares;
 
-        return new KnownTypes($this->graph, $this->analysed, $installDeclares);
+        return new KnownTypes(
+            $this->graph,
+            $this->analysed,
+            $installDeclares,
+            $this->nameSpellings,
+            $this->externalSupertypes?->isConfigured() === true ? $this->externalDeclaredSpelling(...) : null,
+        );
     }
 
     private function ensureMapsBuilt(): void
@@ -733,6 +740,19 @@ final class ClassContextFactory
         $facts = $this->externalFactsOf($fqn);
 
         return $facts->placed && $facts->declaredSpelling === ltrim($fqn, '\\');
+    }
+
+    private function externalDeclaredSpelling(string $fqn): ?string
+    {
+        $identity = ClassNameSpelling::fold($fqn);
+        foreach ($this->externalFacts as $facts) {
+            if ($facts->declaredSpelling !== null && ClassNameSpelling::fold($facts->declaredSpelling) === $identity) {
+                return $facts->declaredSpelling;
+            }
+        }
+        $facts = $this->externalFactsOf($fqn);
+
+        return $facts->placed ? $facts->declaredSpelling : null;
     }
 
     private function externalFactsOf(string $fqn): ExternalSupertypes

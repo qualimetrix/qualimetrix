@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
 
 /**
@@ -216,15 +217,14 @@ final readonly class LayerEvidence
      * answers what it could not, split by what {@see reachedCounts()} does
      * with them: whether the layer's own criteria matched the symbol or could
      * not answer about it, and whether the run analysed the symbol.
-     * `unmetTypes` lists the types the layer's `attributes:`, `implements:`
-     * and `extends:` criteria name when the run met none of them, and is
-     * empty when it met any — see
+     * `unmetTypes` lists each type the layer's `attributes:`, `member_attributes:`, `implements:`
+     * and `extends:` criteria name that the run did not meet — see
      * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes}.
      * `installConsulted` says whether the analysed project's composer install
      * was among the places asked, which the finding naming unmet types needs
      * to say what their absence rests on.
      *
-     * @return array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool}>
+     * @return array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, patternSuggestions: array<string, string>, typeSuggestions: array<string, string>, installConsulted: bool}>
      */
     public function contests(): array
     {
@@ -232,7 +232,7 @@ final readonly class LayerEvidence
         $namedByLayer = [];
         foreach ($this->architecture->registry()->definitions() as $definition) {
             $membership = $definition->membership();
-            $namedByLayer[$definition->name()] = array_values(array_unique([...$membership->attributes, ...$membership->implements, ...$membership->extends]));
+            $namedByLayer[$definition->name()] = array_values(array_unique([...$membership->attributes, ...$membership->memberAttributes, ...$membership->implements, ...$membership->extends]));
         }
         $knownTypes = $this->architecture->registry()->contextFactory()->knownTypes();
         $known = $knownTypes->among(array_values(array_unique(array_merge([], ...array_values($namedByLayer)))));
@@ -243,17 +243,48 @@ final readonly class LayerEvidence
             $matched = array_intersect_key($symbols, $this->symbolSets['matched'][$layerName] ?? []);
             $unanswered = array_diff_key($symbols, $matched);
 
+            $unmetTypes = array_keys(array_diff_key(array_flip($named), $known));
+            $typeSuggestions = [];
+            foreach ($unmetTypes as $type) {
+                $suggestion = $knownTypes->suggestedSpelling($type);
+                if ($suggestion !== null) {
+                    $typeSuggestions[$type] = $suggestion;
+                }
+            }
             $contests[$layerName] = [
                 'matchedAnalysed' => \count(array_diff_key($matched, $outside)),
                 'matchedOutside' => \count(array_intersect_key($matched, $outside)),
                 'unansweredAnalysed' => \count(array_diff_key($unanswered, $outside)),
                 'unansweredOutside' => \count(array_intersect_key($unanswered, $outside)),
-                'unmetTypes' => array_intersect_key(array_flip($named), $known) === [] ? $named : [],
+                'unmetTypes' => $unmetTypes,
+                'typeSuggestions' => $typeSuggestions,
+                'patternSuggestions' => self::patternSuggestions($knownTypes, $this->architecture, $layerName),
                 'installConsulted' => $knownTypes->installConsulted(),
             ];
         }
 
         return $contests;
+    }
+
+    /** @return array<string, string> authored pattern => suggested spelling */
+    private static function patternSuggestions(KnownTypes $knownTypes, ArchitectureConfiguration $configuration, string $layerName): array
+    {
+        foreach ($configuration->registry()->definitions() as $definition) {
+            if ($definition->name() !== $layerName) {
+                continue;
+            }
+            $suggestions = [];
+            foreach ($definition->membership()->patterns as $pattern) {
+                $suggestion = $knownTypes->suggestedPattern($pattern);
+                if ($suggestion !== null) {
+                    $suggestions[$pattern] = $suggestion;
+                }
+            }
+
+            return $suggestions;
+        }
+
+        return [];
     }
 
     /**

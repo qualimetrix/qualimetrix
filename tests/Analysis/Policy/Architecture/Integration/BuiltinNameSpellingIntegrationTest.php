@@ -98,6 +98,7 @@ final class BuiltinNameSpellingIntegrationTest extends TestCase
             $tester->getDisplay(),
         );
         self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->findingsOn($tester, 'architecture.unmatched-type'));
     }
 
     /**

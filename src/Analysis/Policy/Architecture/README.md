@@ -21,6 +21,9 @@ External owners use only the contracts in `Contract/`:
 - `UnassignedClassLayerRequirementInterface` judges completed Finding options and
   enablement before Console discovers files. Its implementation and mode semantics
   stay in `UnassignedClass/`.
+- `UnmatchedTypeWarningInterface` answers Run's post-execution query with one
+  nullable explanation when authored layer types could not be judged. Run asks
+  only after final publication selects the exact unmatched-type project channel.
 - `ShadowExemption` names established first-match exemptions for inspection.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
@@ -51,16 +54,20 @@ Architecture/
 │   ├── ExternalSupertypeSourceInterface.php
 │   ├── ExternalSupertypes.php
 │   ├── ShadowExemption.php
-│   └── UnassignedClassLayerRequirementInterface.php
+│   ├── UnassignedClassLayerRequirementInterface.php
+│   └── UnmatchedTypeWarningInterface.php
 ├── Configuration/              # the `architecture:` section: its schema and validators
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
 │   ├── LayerShadowVerdict.php
+│   ├── UnmatchedTypeOccurrence.php
+│   ├── UnmatchedTypeJudgement.php
 │   └── Expansion/              # observed-template expansion
 ├── Observation/                # the shared walk, evidence and bounded diagnostic samples
 ├── LayerViolation/             # forbidden dependency edges and routing guidance
 ├── LayerDeclaration/           # declaration diagnostics and configuration validator
-│   └── LayerOverlapDiagnostic.php
+│   ├── LayerOverlapDiagnostic.php
+│   └── UnmatchedTypeDiagnostic.php
 ├── UnassignedClass/            # analysed-class assignment summary and mode
 │   └── UnassignedClassLayerRequirement.php
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
@@ -368,7 +375,14 @@ option still govern that producer alone.
 nothing despite positive matches, and `architecture.doubted-assignment` at
 fixed info from the contested population. `LayerOverlapDiagnostic` emits the
 third ordinary channel, `architecture.layer-overlap`, at fixed info for partial
-non-pattern precedence losses. An undecidable exclusion cannot be
+non-pattern precedence losses. `UnmatchedTypeDiagnostic` emits `architecture.unmatched-type` at fixed warning
+for each authored positive or exclude type this complete run did not meet,
+provided the analysed project's Composer install was read. A known neighbour
+never conceals a missing type. Occurrences retain source kind, locator and
+importer chain, authored key path, document layer index, line and exact FQN;
+expanded template copies share the original occurrence, and an empty template
+still has its authored types judged. Messages name the configuration writer and
+position. An undecidable exclusion cannot be
 called inert. These are ordinary occurrence findings a baseline may accept.
 The validator belongs to `architecture.layer-declaration` and emits five
 configuration-error occurrences: `architecture.coverage-gap`,
@@ -402,12 +416,28 @@ list, or the merged missing key when no layer wrote it. Console invokes the
 public requirement after options and enablement are complete and before
 discovery; it never reads the private options itself.
 
-`unreachable-layer`, `empty-template` and `unmatched-exclude` infer absence and
+`unreachable-layer`, `empty-template`, `unmatched-exclude` and `unmatched-type` infer absence and
 require measured `ProjectScopeJudgement::judgesNamespaceClaims()`. Missing
 observed PHP, authored/generated removal and an unknown denominator can withhold
 that judgement. A whole-root fallback can establish filesystem completeness;
 a subset cannot assume it. Coverage, matched pending layers and observed shadows
 remain valid on the measured slice. Selection does not manufacture scope.
+
+`unmatched-type` also asks the declaration-absence question and requires the
+project Composer install to have been read. Withheld scope or an unread install
+produces no finding; after execution Run prints one warning naming the reasons,
+only if the exact channel is published and unresolved authored types remain.
+Rules and preparation do not log, queue messages or alter the execution result.
+The policy's query reads already prepared state and fails before preparation.
+
+Spelling suggestions leave matching case-sensitive. Named types use observed
+full-name spelling, with exactly placed installed declarations as an additional
+source. `unreachable-layer` and `unmatched-exclude` retain their findings and add
+these hints as well as pattern hints. The existing capture-pattern compiler
+projects only wildcard-free inclusive subtrees and strict trailing `\**`
+subtrees. The observed prefix index replaces only that literal prefix; universal,
+mid-segment wildcard, `?` and capture patterns receive no suggestion. No second
+pattern parser or PHP grammar is involved.
 
 A layer declared `pending: true` — reserved for code not
 written yet — is exempt from `architecture.unreachable-layer` and is reported

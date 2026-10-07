@@ -292,6 +292,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             projectScope: $measuredScope->judgement(),
         );
         $ruleExecution = $this->ruleExecutor->execute($context);
+        $unmatchedTypeWarning = $this->ruleProducerPreparation->unmatchedTypeWarning(
+            $measuredScope->judgement(),
+            $this->ruleExecutor->publication(),
+        );
+        if ($unmatchedTypeWarning !== null) {
+            $this->logger->warning($unmatchedTypeWarning);
+        }
         $profiler->stop('rules');
 
         $analysisTime = (hrtime(true) - $phaseStartTime) / 1e9;

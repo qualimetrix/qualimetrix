@@ -294,6 +294,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
         $names[] = ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
         $names[] = ArchitectureChannels::LAYER_OVERLAP_DIAGNOSTIC_NAME;
+        $names[] = ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME;
 
         $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;

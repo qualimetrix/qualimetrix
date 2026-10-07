@@ -88,6 +88,11 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
         self::assertCount(1, $unreachable);
         self::assertStringContainsString('Vend\Orm\ObjectRepositry', (string) ($unreachable[0]['message'] ?? ''));
         self::assertStringContainsString('placed by the analysed project\'s composer install', (string) ($unreachable[0]['message'] ?? ''));
+
+        $unmatched = $this->findingsOn($tester, 'architecture.unmatched-type');
+        self::assertCount(1, $unmatched);
+        self::assertStringContainsString('Vend\Orm\ObjectRepositry', (string) ($unmatched[0]['message'] ?? ''));
+        self::assertStringContainsString('qmx.yaml', (string) ($unmatched[0]['message'] ?? ''));
     }
 
     /** A name that differs only in case is not the declared type. */
@@ -96,11 +101,29 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
     {
         $tester = $this->check('Vend\Orm\Objectrepository');
 
-        self::assertCount(1, $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $unreachable = $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('did you mean Vend\Orm\ObjectRepository', (string) ($unreachable[0]['message'] ?? ''));
+        $unmatched = $this->findingsOn($tester, 'architecture.unmatched-type');
+        self::assertCount(1, $unmatched);
+        self::assertStringContainsString('did you mean Vend\Orm\ObjectRepository', (string) ($unmatched[0]['message'] ?? ''));
     }
 
-    private function check(string $implements): CommandTester
+    #[Test]
+    public function itReportsOnlyTheUnmatchedTypeWhenAnotherCriterionTypeWasMet(): void
     {
+        $tester = $this->check(['Vend\Orm\ObjectRepository', 'Vend\Orm\ObjectRepositry']);
+
+        self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        $unmatched = $this->findingsOn($tester, 'architecture.unmatched-type');
+        self::assertCount(1, $unmatched);
+        self::assertStringContainsString('Vend\Orm\ObjectRepositry', (string) ($unmatched[0]['message'] ?? ''));
+    }
+
+    /** @param string|list<string> $implements */
+    private function check(string|array $implements): CommandTester
+    {
+        $implements = \is_array($implements) ? implode("', '", $implements) : $implements;
         $this->write('qmx.yaml', <<<YAML
             architecture:
               layers:

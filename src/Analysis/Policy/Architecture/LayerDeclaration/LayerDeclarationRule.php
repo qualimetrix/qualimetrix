@@ -53,6 +53,8 @@ final class LayerDeclarationRule extends AbstractRule
                 ->describedAs('Counts the symbols whose layer assignment is in doubt because a layer criterion could not be answered about them.'),
             ArchitectureChannels::LAYER_OVERLAP_DIAGNOSTIC_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
                 ->describedAs('Reports classes taken from a reachable non-pattern layer by an earlier layer.'),
+            ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports an authored layer type that the complete run did not meet.'),
         ];
     }
 
@@ -66,6 +68,7 @@ final class LayerDeclarationRule extends AbstractRule
 
         return [
             ...LayerOverlapDiagnostic::forPrecedence($evidence),
+            ...UnmatchedTypeDiagnostic::forEvidence($evidence, $context->projectScope),
             ...($context->projectScope->judgesNamespaceClaims()
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME)
                 : []),

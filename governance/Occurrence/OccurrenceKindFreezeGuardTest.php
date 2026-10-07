@@ -53,7 +53,7 @@ use RuntimeException;
  */
 final class OccurrenceKindFreezeGuardTest extends TestCase
 {
-    private const int EXPECTED_FROZEN_COUNT = 12;
+    private const int EXPECTED_FROZEN_COUNT = 13;
 
     /**
      * The frozen spelling itself, pinned by literal rather than derived from
@@ -91,6 +91,7 @@ final class OccurrenceKindFreezeGuardTest extends TestCase
         UnmatchedFrameworkNamespaceRule::class => 'unmatched-framework-prefix',
         UnmatchedExcludeDiagnostic::class => 'inert-layer-exclude-clause',
         \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerOverlapDiagnostic::class => 'declared-layer-overlap',
+        \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedTypeDiagnostic::class => 'unmatched-layer-type',
     ];
 
     #[Test]

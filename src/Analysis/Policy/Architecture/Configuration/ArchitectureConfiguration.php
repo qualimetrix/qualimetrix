@@ -7,7 +7,9 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence;
 
 /**
  * Typed holder for the resolved {@code architecture:} section of the user's
@@ -159,6 +161,27 @@ final readonly class ArchitectureConfiguration
     public function emptyTemplateNames(): array
     {
         return $this->emptyTemplateNames;
+    }
+
+    /**
+     * Every authored named-type criterion, with expanded template copies
+     * collapsed back to the configuration value the author can edit.
+     *
+     * @return list<NamedType>
+     */
+    public function namedTypes(): array
+    {
+        $types = [];
+        foreach ($this->entries as $entry) {
+            $membership = $entry instanceof TemplateLayerDefinition ? $entry->membership : $entry->membership();
+            foreach ([$membership->namedTypes, $membership->exclude->namedTypes ?? []] as $declared) {
+                foreach ($declared as $type) {
+                    $types[UnmatchedTypeOccurrence::identityOf($type)] = $type;
+                }
+            }
+        }
+
+        return array_values($types);
     }
 
     /**

@@ -16,18 +16,22 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\ThresholdDirectiveAuditInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -264,7 +268,7 @@ final class AnalysisPipelineTest extends TestCase
             $producerGate,
             $profiler,
         );
-        $layerPolicy = self::createStub(LayerPolicyPreparationInterface::class);
+        $layerPolicy = self::architectureStub();
         $circular = self::createStub(CircularDependencyPreparationInterface::class);
         $preparation = new RuleProducerPreparation(
             $layerPolicy,
@@ -293,6 +297,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $rules = self::createStub(RuleExecutionInterface::class);
         $rules->method('execute')->willReturn(new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()));
+        $rules->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $rules->method('allRules')->willReturn([]);
 
         return new AnalysisPipeline(
@@ -309,5 +314,19 @@ final class AnalysisPipelineTest extends TestCase
             $profiler,
             $logger ?? new NullLogger(),
         );
+    }
+
+    private static function architectureStub(): LayerPolicyPreparationInterface&UnmatchedTypeWarningInterface
+    {
+        return new class implements LayerPolicyPreparationInterface, UnmatchedTypeWarningInterface {
+            public function prepare(DependencyGraphInterface $graph, iterable $classUniverse): void {}
+
+            public function reset(): void {}
+
+            public function notJudgedWarning(\Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement $scope): ?string
+            {
+                return null;
+            }
+        };
     }
 }

@@ -180,6 +180,7 @@ final class RuleIdentifierLiteralGuardTest extends TestCase
         'src/Analysis/Finding/Contract/ProjectScope/ProjectScopeChannels.php' => [
             'architecture.empty-template' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'architecture.unmatched-exclude' => self::PROJECT_SCOPE_CHANNELS_REASON,
+            'architecture.unmatched-type' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'architecture.unreachable-layer' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'cohesion.unmatched-exclude-method' => self::PROJECT_SCOPE_CHANNELS_REASON,
             'coupling.unmatched-framework-namespace' => self::PROJECT_SCOPE_CHANNELS_REASON,

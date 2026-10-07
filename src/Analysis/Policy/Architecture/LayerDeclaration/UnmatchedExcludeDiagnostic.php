@@ -112,7 +112,7 @@ final class UnmatchedExcludeDiagnostic
                 continue;
             }
 
-            $findings[] = self::finding($declaration, $clause, $channelName);
+            $findings[] = self::finding($declaration, $clause, $channelName, $evidence);
         }
 
         return $findings;
@@ -166,7 +166,7 @@ final class UnmatchedExcludeDiagnostic
     /**
      * @param array{definition: LayerDefinition, matched: int, excluded: int, unanswered: int, instances: int} $clause
      */
-    private static function finding(string $declaration, array $clause, string $channelName): Finding
+    private static function finding(string $declaration, array $clause, string $channelName, LayerEvidence $evidence): Finding
     {
         $definition = $clause['definition'];
         $exclude = $definition->membership()->exclude;
@@ -181,7 +181,7 @@ final class UnmatchedExcludeDiagnostic
             message: \sprintf(
                 'The "exclude" clause of layer "%s" (%s) removed no class from %s, while the layer\'s own criteria (%s) matched %d symbol(s). The layer is therefore wider than the declaration asks for, and every verdict about it is drawn from that wider set.',
                 $declaration,
-                self::describe($exclude),
+                self::describe($exclude, $evidence),
                 $clause['instances'] > 1
                     ? \sprintf('any of the %d layers the template expanded to', $clause['instances'])
                     : 'it',
@@ -204,7 +204,7 @@ final class UnmatchedExcludeDiagnostic
      * side. Written here rather than on {@see ExcludeSpec} because this is its
      * only caller.
      */
-    private static function describe(ExcludeSpec $exclude): string
+    private static function describe(ExcludeSpec $exclude, LayerEvidence $evidence): string
     {
         $segments = [];
 
@@ -212,6 +212,7 @@ final class UnmatchedExcludeDiagnostic
             'patterns' => $exclude->patterns,
             'suffix' => $exclude->suffix,
             'attributes' => $exclude->attributes,
+            'member_attributes' => $exclude->memberAttributes,
             'implements' => $exclude->implements,
             'extends' => $exclude->extends,
         ] as $kind => $values) {
@@ -220,7 +221,17 @@ final class UnmatchedExcludeDiagnostic
             }
 
             $segments[] = $kind . ': ' . implode(', ', array_map(
-                static fn(string $value): string => '"' . $value . '"',
+                static function (string $value) use ($kind, $evidence): string {
+                    $rendered = '"' . $value . '"';
+                    $known = $evidence->architecture->registry()->contextFactory()->knownTypes();
+                    $suggestion = match ($kind) {
+                        'patterns' => $known->suggestedPattern($value),
+                        'suffix' => null,
+                        default => $known->suggestedSpelling($value),
+                    };
+
+                    return $suggestion === null ? $rendered : $rendered . ' (did you mean ' . $suggestion . '?)';
+                },
                 $values,
             ));
         }

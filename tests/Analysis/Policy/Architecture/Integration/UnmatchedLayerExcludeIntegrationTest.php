@@ -90,6 +90,26 @@ final class UnmatchedLayerExcludeIntegrationTest extends TestCase
         self::assertStringContainsString('NoSuchSubtree', (string) ($findings[0]['message'] ?? ''));
     }
 
+    #[Test]
+    public function itSuggestsTheObservedSpellingForAnUnmatchedExcludePattern(): void
+    {
+        $tester = $this->check($this->config("        patterns: ['sample\\controller\\legacy\\**']"));
+
+        $findings = $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('did you mean Sample\\Controller\\Legacy\\**', (string) ($findings[0]['message'] ?? ''));
+    }
+
+    #[Test]
+    public function itSuggestsTheObservedSpellingForAnUnmatchedExcludeType(): void
+    {
+        $tester = $this->check($this->config("        extends: ['sample\\controller\\UserController']"));
+
+        $findings = $this->findingsOn($tester, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME);
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('did you mean Sample\\Controller\\UserController', (string) ($findings[0]['message'] ?? ''));
+    }
+
     /**
      * Half two: the same clause shape, one class actually removed, silence.
      *

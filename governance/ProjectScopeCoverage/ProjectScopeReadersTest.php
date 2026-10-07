@@ -39,12 +39,18 @@ final class ProjectScopeReadersTest extends TestCase
                 ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 ArchitectureChannels::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
             ],
-            'src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php' => [
+            'src/Analysis/Policy/Architecture/LayerDeclaration/LayerDeclarationRule.php' => [
                 ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
+                ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME,
             ],
+            'src/Analysis/Policy/Architecture/ArchitecturePolicy.php' => [],
+            'src/Analysis/Policy/Architecture/Contract/UnmatchedTypeWarningInterface.php' => [],
+            'src/Analysis/Policy/Architecture/Layer/KnownTypes.php' => [],
+            'src/Analysis/Policy/Architecture/LayerDeclaration/UnmatchedTypeDiagnostic.php' => [],
             'src/Analysis/Evidence/Coupling/UnmatchedFrameworkNamespaceRule.php' => [UnmatchedFrameworkNamespaceRule::NAME],
             'src/Analysis/Evidence/Cohesion/LcomExcludedMethods.php' => ['cohesion.unmatched-exclude-method'],
             'src/Analysis/Run/ExcludeBinding/UnmatchedExcludeAudit.php' => [UnmatchedExcludeOptions::CHANNEL],
+            'src/Analysis/Run/RuleProducerPreparation.php' => [],
             'src/Analysis/Finding/SuppressionBinding/ValueScopeJudgement.php' => [
                 UnboundSuppressionOptions::UNMATCHED_PATH,
                 UnboundSuppressionOptions::UNMATCHED_NAMESPACE,

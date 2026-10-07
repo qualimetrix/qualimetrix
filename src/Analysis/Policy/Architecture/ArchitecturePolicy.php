@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Architecture;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
@@ -16,6 +17,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorIn
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
@@ -23,7 +25,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Instance-owned declared-layer policy configuration and prepared state. */
-final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterface, LayerPolicyPreparationInterface, LayerAssignmentInspectorInterface
+final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterface, LayerPolicyPreparationInterface, LayerAssignmentInspectorInterface, UnmatchedTypeWarningInterface
 {
     private ?ArchitectureConfiguration $configured = null;
 
@@ -167,6 +169,32 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
     public function getPreparedConfiguration(): ?ArchitectureConfiguration
     {
         return $this->prepared;
+    }
+
+    public function notJudgedWarning(ProjectScopeJudgement $scope): ?string
+    {
+        $configuration = $this->prepared
+            ?? throw new LogicException('ArchitecturePolicy::notJudgedWarning() requires prepare() to have been called.');
+        $judgement = $configuration->registry()->contextFactory()->knownTypes()->unmatched($configuration->namedTypes(), $scope);
+        if ($judgement->occurrences === [] || $judgement->isJudged()) {
+            return null;
+        }
+
+        $reasons = [];
+        if ($judgement->withheldBy !== []) {
+            $reasons[] = 'project scope is narrowed by ' . implode(', ', array_map(
+                static fn($door): string => $door->value,
+                $judgement->withheldBy,
+            ));
+        }
+        if (!$judgement->installConsulted) {
+            $reasons[] = 'the project Composer install was not read';
+        }
+
+        return \sprintf(
+            'Architecture unmatched type names were not judged: %s.',
+            implode('; ', $reasons),
+        );
     }
 
     public function reset(): void

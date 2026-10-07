@@ -313,7 +313,7 @@ final class DeclaredLayerReachability
      * What an unreachable layer could still own, which did not keep it out of
      * the channel, said in the words that hold for each share.
      *
-     * @param array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool} $contest
+     * @param array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, patternSuggestions: array<string, string>, typeSuggestions: array<string, string>, installConsulted: bool} $contest
      */
     private static function uncountedContest(array $contest): string
     {
@@ -339,6 +339,12 @@ final class DeclaredLayerReachability
                     . ' installing the project\'s dependencies or widening paths to include that code decides it.',
             $contest['unmetTypes'],
         );
+        foreach ($contest['typeSuggestions'] as $type => $suggestion) {
+            $text .= \sprintf(' Type "%s" differs only in spelling; did you mean %s?', $type, $suggestion);
+        }
+        foreach ($contest['patternSuggestions'] as $pattern => $suggestion) {
+            $text .= \sprintf(' Pattern "%s" differs only in spelling from observed code; did you mean "%s"?', $pattern, $suggestion);
+        }
         if ($contest['matchedOutside'] > 0) {
             $text .= \sprintf(
                 ' Its criteria match %d symbol(s) outside the analysed paths, which an earlier layer holds through an'
