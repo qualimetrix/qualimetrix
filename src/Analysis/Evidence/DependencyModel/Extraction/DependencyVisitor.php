@@ -8,10 +8,8 @@ use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
-use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\TraitUse;
-use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
@@ -46,6 +44,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 {
     private ?RelativePath $file = null;
     private ?FileDeclarationIndex $declarationIndex = null;
+    private ?string $currentNamespace = null;
     private ?string $currentClass = null;
     private ?DependencyContext $currentContext = null;
 
@@ -100,10 +99,10 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     public function reset(): void
     {
         $this->dependencies = [];
+        $this->currentNamespace = null;
         $this->currentClass = null;
         $this->currentContext = null;
         $this->anonymousClassDepth = 0;
-        $this->resolver->reset();
     }
 
     /**
@@ -120,7 +119,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
     public function enterNode(Node $node): ?int
     {
-        if ($this->consumeNamespaceOrImport($node)) {
+        if ($this->consumeNamespace($node)) {
             return null;
         }
 
@@ -163,23 +162,10 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         return null;
     }
 
-    private function consumeNamespaceOrImport(Node $node): bool
+    private function consumeNamespace(Node $node): bool
     {
         if ($node instanceof Namespace_) {
-            $this->resolver->reset();
-            $this->resolver->setNamespace($node->name?->toString());
-
-            return true;
-        }
-
-        if ($node instanceof Use_) {
-            $this->resolver->addUseStatement($node);
-
-            return true;
-        }
-
-        if ($node instanceof GroupUse) {
-            $this->resolver->addGroupUseStatement($node);
+            $this->currentNamespace = $node->name?->toString();
 
             return true;
         }
@@ -194,8 +180,8 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
         }
 
         $className = $node->name->toString();
-        $this->currentClass = $this->resolver->getNamespace() !== null
-            ? $this->resolver->getNamespace() . '\\' . $className
+        $this->currentClass = $this->currentNamespace !== null
+            ? $this->currentNamespace . '\\' . $className
             : $className;
 
         if ($this->file === null || $this->declarationIndex === null) {

@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -73,6 +74,7 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
 
             try {
                 $ast = $this->fileParser->parseContent($file, $source);
+                NameResolution::resolve($ast);
                 $traverser = new NodeTraverser();
                 $registrar = $this->beginNumbering($traverser);
                 $traverser->addVisitor($this->dependencyVisitor);

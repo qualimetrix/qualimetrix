@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\Pipeline;
 use PhpParser\Node;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
@@ -76,6 +77,43 @@ final class DependencyGraphAnalyzerTest extends TestCase
         self::assertCount(1, $result->graph->getAllDependencies());
         self::assertSame('declaration:class:App\\Service@Service.php', $result->graph->getAllDependencies()[0]->source->toCanonical());
         self::assertSame('class:Domain\\Model', $result->graph->getAllDependencies()[0]->targetLogical()->toCanonical());
+    }
+
+    #[Test]
+    #[DataProvider('aliasResolutionCases')]
+    public function itResolvesAnImportedClassNameUsingPhpCaseInsensitiveIdentity(string $source, string $target): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Controller.php',
+            $source,
+        );
+
+        $result = $this->createAnalyzer($this->parser())->analyze($this->configuration());
+
+        self::assertTrue($result->coverage->isComplete());
+        self::assertCount(1, $result->graph->getAllDependencies());
+        self::assertSame($target, $result->graph->getAllDependencies()[0]->targetLogical()->toString());
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function aliasResolutionCases(): iterable
+    {
+        yield 'unaliased import in another case' => [
+            '<?php namespace App\\Web; use App\\Domain\\Order; final class Controller { public function show(ORDER $order): void {} }',
+            'App\\Domain\\Order',
+        ];
+        yield 'explicit alias in another case' => [
+            '<?php namespace App\\Web; use App\\Domain\\Order as O; final class Controller { public function show(o $order): void {} }',
+            'App\\Domain\\Order',
+        ];
+        yield 'group import alias in another case' => [
+            '<?php namespace App\\Web; use App\\Domain\\{Order as O}; final class Controller { public function show(o $order): void {} }',
+            'App\\Domain\\Order',
+        ];
+        yield 'first conflicting alias' => [
+            '<?php namespace App\\Web; use A\\Order as O; use B\\Order as O; final class Controller { public function show(o $order): void {} }',
+            'A\\Order',
+        ];
     }
 
     #[Test]
