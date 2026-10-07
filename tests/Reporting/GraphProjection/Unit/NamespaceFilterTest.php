@@ -137,24 +137,28 @@ final class NamespaceFilterTest extends TestCase
         self::assertSame(array_map(static fn(string $value): string => 'subtree:' . $value, $expected), $unbound);
     }
 
-    /**
-     * A miss on the excluding door is deliberately not a refusal, so it must
-     * not be a binding report either: it leaves the graph as it would have
-     * been.
-     */
     #[Test]
-    public function itIgnoresExcludeNamespacesThatMatchNothing(): void
+    public function itReportsUnboundExcludeValuesAndTheirExactCaseSuggestion(): void
     {
-        $graph = self::graph();
-        $projector = new DependencyGraphProjector();
-
-        self::assertSame([], $projector->unboundIncludeNamespaces(
-            $graph,
-            new GraphProjectionRequest(excludeNamespaces: self::patterns(['Zzz\\Nope']) ?? []),
-        ));
         self::assertSame(
-            $projector->project($graph, new GraphProjectionRequest()),
-            $projector->project($graph, new GraphProjectionRequest(excludeNamespaces: self::patterns(['Zzz\\Nope']) ?? [])),
+            [
+                ['selector' => 'subtree:Zzz\\Nope', 'suggestion' => null],
+                ['selector' => 'subtree:app\\service', 'suggestion' => 'App\\Service'],
+            ],
+            (new NamespaceFilter(
+                excludeNamespaces: self::patterns(['Zzz\\Nope', 'app\\service']) ?? [],
+            ))->unboundExcludeNamespaces(self::graph()->getAllClasses()),
+        );
+    }
+
+    #[Test]
+    public function itTreatsACorrectlyCasedExcludeAsBoundEvenWhenItRemovesEveryMatch(): void
+    {
+        self::assertSame(
+            [],
+            (new NamespaceFilter(
+                excludeNamespaces: self::patterns(['App\\Service']) ?? [],
+            ))->unboundExcludeNamespaces(self::graph()->getAllClasses()),
         );
     }
 

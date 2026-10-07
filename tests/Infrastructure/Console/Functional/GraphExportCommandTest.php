@@ -828,44 +828,49 @@ final class GraphExportCommandTest extends TestCase
         self::assertFileDoesNotExist($destination);
     }
 
-    /**
-     * The neighbouring door stays silent on purpose: a missed exclusion leaves
-     * the graph exactly what it would have been, so the caller loses nothing.
-     * This is the regression guard against the refusal spreading.
-     */
     #[Test]
     #[DataProvider('provideExportFormats')]
-    public function itKeepsAMissedExcludeNamespaceSilentAndUnchanged(string $format): void
+    public function itRefusesAMissedExcludeNamespaceAndSuggestsTheExactCase(string $format): void
     {
         $this->writeTwoNamespaceFixture();
 
-        $plain = $this->createCommandTester();
-        self::assertSame(0, $plain->execute([
-            'paths' => [$this->tempDir],
-            '--format' => $format,
-        ]));
-
-        $missedExclude = $this->createCommandTester();
-        self::assertSame(0, $missedExclude->execute([
+        $missed = $this->createCommandTester();
+        self::assertSame(3, $missed->execute([
             'paths' => [$this->tempDir],
             '--format' => $format,
             '--exclude-namespace' => ['subtree:Zzz\\Nope'],
-        ]));
+        ], ['capture_stderr_separately' => true]));
+        self::assertStringContainsString('Zzz\\Nope', self::refusalText($missed, $format));
 
-        self::assertSame(
-            self::withoutTimestamp($plain->getDisplay()),
-            self::withoutTimestamp($missedExclude->getDisplay()),
-        );
+        $wrongCase = $this->createCommandTester();
+        self::assertSame(3, $wrongCase->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--exclude-namespace' => ['subtree:acme\\deep'],
+        ], ['capture_stderr_separately' => true]));
+        $refusal = self::refusalText($wrongCase, $format);
+        self::assertStringContainsString('did you mean "Acme\\Deep"', $refusal);
+
+        $correctCase = $this->createCommandTester();
+        self::assertSame(0, $correctCase->execute([
+            'paths' => [$this->tempDir],
+            '--format' => $format,
+            '--exclude-namespace' => ['subtree:Acme\\Deep'],
+        ]));
+        self::assertStringNotContainsString('Deep', $correctCase->getDisplay());
     }
 
-    /**
-     * The JSON envelope carries `meta.timestamp` from `date('c')`, which
-     * differs across a second boundary — comparing it would make the
-     * byte-for-byte guard flaky about the wrong thing.
-     */
-    private static function withoutTimestamp(string $rendered): string
+    private static function refusalText(CommandTester $tester, string $format): string
     {
-        return (string) preg_replace('/"timestamp": "[^"]+"/', '"timestamp": "-"', $rendered);
+        if ($format !== 'json') {
+            return $tester->getErrorOutput();
+        }
+
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($decoded);
+        self::assertIsString($decoded['error'] ?? null);
+
+        return $decoded['error'];
     }
 
     private function writeTwoNamespaceFixture(): void

@@ -6,6 +6,9 @@ namespace Qualimetrix\Reporting\GraphProjection;
 
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
+use Qualimetrix\Core\Pattern\SelectorDefinition;
+use Qualimetrix\Core\Pattern\SelectorKind;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 
@@ -33,7 +36,7 @@ final readonly class NamespaceFilter
      */
     public function __construct(
         private ?array $includeNamespaces = null,
-        array $excludeNamespaces = [],
+        private array $excludeNamespaces = [],
     ) {
         $this->includeMatcher = $includeNamespaces === null ? null : new NamespaceMatcher($includeNamespaces);
         $this->excludeMatcher = new NamespaceMatcher($excludeNamespaces);
@@ -110,6 +113,68 @@ final readonly class NamespaceFilter
         }
 
         return $unbound;
+    }
+
+    /**
+     * The exclude values that bound to no class of the graph, together with
+     * the graph's exact namespace spelling when only ASCII case differs.
+     *
+     * @param iterable<SymbolPath> $classes
+     *
+     * @return list<array{selector: string, suggestion: ?string}>
+     */
+    public function unboundExcludeNamespaces(iterable $classes): array
+    {
+        if ($this->excludeNamespaces === []) {
+            return [];
+        }
+
+        $namespaces = [];
+        foreach ($classes as $classPath) {
+            $namespaces[$classPath->namespace ?? ''] = true;
+        }
+
+        $unbound = [];
+        foreach ($this->excludeNamespaces as $excludeNs) {
+            foreach (array_keys($namespaces) as $namespace) {
+                if ($excludeNs->matches($namespace)) {
+                    continue 2;
+                }
+            }
+
+            $unbound[] = [
+                'selector' => $excludeNs->definition->display(),
+                'suggestion' => self::caseSuggestion($excludeNs, array_keys($namespaces)),
+            ];
+        }
+
+        return $unbound;
+    }
+
+    /** @param list<string> $namespaces */
+    private static function caseSuggestion(NamespacePattern $pattern, array $namespaces): ?string
+    {
+        $definition = $pattern->definition;
+        if ($definition->kind === SelectorKind::Regex) {
+            return null;
+        }
+
+        $folded = new NamespacePattern(new SelectorDefinition(
+            $definition->kind,
+            ClassNameSpelling::fold($definition->value),
+        ));
+
+        foreach ($namespaces as $namespace) {
+            if (!$folded->matches(ClassNameSpelling::fold($namespace))) {
+                continue;
+            }
+
+            return $definition->kind === SelectorKind::Exact
+                ? $namespace
+                : substr($namespace, 0, \strlen($definition->value));
+        }
+
+        return null;
     }
 
 }
