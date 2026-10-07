@@ -86,6 +86,7 @@ Core/
 ├── Profiler/
 │   └── Contract/
 │       └── ProfilerInterface.php          # Neutral instrumentation vocabulary
+├── SourceText/                             # SourceBytes: UTF-8 publication and reversible byte representation
 ├── Symbol/
 │   ├── CallableKind.php                   # PHP callable declaration kind enum
 │   ├── ClassType.php
