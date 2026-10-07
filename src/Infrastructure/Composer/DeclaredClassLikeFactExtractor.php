@@ -24,7 +24,11 @@ final class DeclaredClassLikeFactExtractor
         $interfaces = match (true) {
             $declaration instanceof Stmt\Class_ => self::resolvedNames($declaration->implements),
             $declaration instanceof Stmt\Interface_ => self::resolvedNames($declaration->extends),
-            $declaration instanceof Stmt\Enum_ => self::resolvedNames($declaration->implements),
+            $declaration instanceof Stmt\Enum_ => [
+                ...self::resolvedNames($declaration->implements),
+                'UnitEnum',
+                ...($declaration->scalarType !== null ? ['BackedEnum'] : []),
+            ],
             default => [],
         };
         [$traits, $aliasesToString] = self::traitFacts($declaration);

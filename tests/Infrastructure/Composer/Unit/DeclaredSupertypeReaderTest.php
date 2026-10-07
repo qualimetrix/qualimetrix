@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Infrastructure\Composer\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Symbol\ClassType;
@@ -91,6 +92,44 @@ final class DeclaredSupertypeReaderTest extends TestCase
 
         self::assertSame(ClassType::Interface_, $facts->classType);
         self::assertTrue($facts->declaresToString);
+    }
+
+    /** @param list<string> $interfaces */
+    #[Test]
+    #[DataProvider('provideEnumDeclarations')]
+    public function itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces(string $declaration, array $interfaces): void
+    {
+        $this->write('src/State.php', "<?php\n\nnamespace Fixture;\n\nuse Vendor\\FirstContract as ContractAlias;\n\n" . $declaration);
+
+        $facts = $this->reader()->supertypesOf('Fixture\State');
+
+        self::assertTrue($facts->placed);
+        self::assertSame('Fixture\State', $facts->declaredSpelling);
+        self::assertSame(ClassType::Enum_, $facts->classType);
+        self::assertNull($facts->parent);
+        self::assertSame($interfaces, $facts->interfaces);
+        self::assertNull($facts->unreadable);
+        self::assertFalse(enum_exists('Fixture\State', false));
+    }
+
+    /** @return iterable<string, array{string, list<string>}> */
+    public static function provideEnumDeclarations(): iterable
+    {
+        yield 'unit' => ['enum State { case Ready; }', ['UnitEnum']];
+        yield 'int backed' => ['enum State: int { case Ready = 1; }', ['UnitEnum', 'BackedEnum']];
+        yield 'string backed' => ["enum State: string { case Ready = 'ready'; }", ['UnitEnum', 'BackedEnum']];
+        yield 'unit with authored interfaces' => [
+            'enum State implements ContractAlias, \Vendor\SecondContract { case Ready; }',
+            ['Vendor\FirstContract', 'Vendor\SecondContract', 'UnitEnum'],
+        ];
+        yield 'int backed with authored interfaces' => [
+            'enum State: int implements ContractAlias, \Vendor\SecondContract { case Ready = 1; }',
+            ['Vendor\FirstContract', 'Vendor\SecondContract', 'UnitEnum', 'BackedEnum'],
+        ];
+        yield 'string backed with authored interfaces' => [
+            "enum State: string implements ContractAlias, \\Vendor\\SecondContract { case Ready = 'ready'; }",
+            ['Vendor\FirstContract', 'Vendor\SecondContract', 'UnitEnum', 'BackedEnum'],
+        ];
     }
 
     #[Test]
