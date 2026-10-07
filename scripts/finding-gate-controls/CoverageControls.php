@@ -17,9 +17,11 @@ final class CoverageControls
      * be caught by the coverage and case-claim checks, which is the whole point
      * of their existing.
      *
-     * `smells/src/Dead.php` is the removal target because it is the only fixture
-     * in the corpus that fires `code-smell.unreachable-code`, so its loss
-     * genuinely narrows what the gate proves. Nothing is tolerated: both sides
+     * `detectors-smells/src/Dead.php` is the removal target because the case is
+     * the authoritative owner of `code-smell.unreachable-code`. The auxiliary
+     * `smells` and `detectors` cases may also fire it, but cannot satisfy
+     * coverage after the authoritative evidence is removed.
+     * Nothing is tolerated: both sides
      * run the candidate's corpus, so a fixture missing from it is missing from
      * both, and no surface or count can differ.
      *
@@ -44,12 +46,12 @@ final class CoverageControls
             'removed-fixture',
             'a fixture removed from the corpus, i.e. the gate\'s own input narrowed',
             Mutation::delete(
-                'finding-gate/cases/smells/src/Dead.php',
-                'the only fixture firing code-smell.unreachable-code is gone',
+                'finding-gate/cases/detectors-smells/src/Dead.php',
+                'the authoritative fixture for code-smell.unreachable-code is gone',
             ),
             [
                 new Expectation(FailureClass::COVERAGE_SHORTFALL, 'corpus'),
-                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors-smells'),
             ],
         );
     }

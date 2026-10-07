@@ -179,9 +179,22 @@ final class ChannelRenamePlants
         ));
     }
 
+    /** @return list<Expectation> */
+    public static function unusedPrivateClaimFailures(): array
+    {
+        $failures = [];
+        foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if (\in_array('code-smell.unused-private@class', $case->channels, true)) {
+                $failures[] = new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:' . $case->id, exactScope: true);
+            }
+        }
+
+        return $failures;
+    }
+
     /**
      * What has to be re-declared when {@see unusedPrivateChannelMutation()}
-     * renames the channel: the case's claim and the tracked declaration fixture.
+     * renames the channel: every claiming case and the tracked declaration fixture.
      *
      * Neither is evidence about the channel — both are declarations of it — so a
      * control that left them stale would fail on the claim check and the witness
@@ -200,15 +213,25 @@ final class ChannelRenamePlants
      */
     public static function unusedPrivateRenameDeclarations(): Mutation
     {
-        return Mutation::edit(
+        $mutation = Mutation::edit(
             'governance/Channel/Fixtures/declared.txt',
             ['code-smell.unused-private higher class' => 'code-smell.unused-privat2 higher class'],
             'the tracked declaration fixture names the new channel',
-        )->and(Mutation::edit(
-            'finding-gate/cases/smells/case.json',
-            ['"code-smell.unused-private@class"' => '"code-smell.unused-privat2@class"'],
-            'the case claims the new channel',
-        ))->and(Mutation::renameInDerivedDeclarations(
+        );
+
+        foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
+            if (!\in_array('code-smell.unused-private@class', $case->channels, true)) {
+                continue;
+            }
+
+            $mutation = $mutation->and(Mutation::edit(
+                'finding-gate/cases/' . $case->id . '/case.json',
+                ['"code-smell.unused-private@class"' => '"code-smell.unused-privat2@class"'],
+                'the case claims the renamed channel',
+            ));
+        }
+
+        return $mutation->and(Mutation::renameInDerivedDeclarations(
             ['code-smell.unused-private' => 'code-smell.unused-privat2'],
             'any derived declaration that names the channel names the new one',
         ));

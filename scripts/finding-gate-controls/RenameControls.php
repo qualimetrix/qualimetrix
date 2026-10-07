@@ -6,6 +6,7 @@ namespace QmxFindingGateControls;
 
 use QmxFindingGate\CaseOutcome;
 use QmxFindingGate\Corpus;
+use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\FailureClass;
 
 /**
@@ -28,10 +29,12 @@ final class RenameControls
      *
      * The blast radius, enumerated rather than gestured at — and trimmed to what
      * a run actually produces, because a toleration nothing matches is now a
-     * failed control (see Outcome::idleTolerations()). `cohesion.lcom` is claimed
-     * by exactly one case, `complexity`, so the surface diff and the broken
-     * `channels` claim both land there, and the container stops agreeing with the
-     * tracked declaration fixture.
+     * failed control (see Outcome::idleTolerations()).
+     * `cohesion.lcom` is claimed by the `complexity` and `detectors` cases.
+     * The former publishes a finding; both claims become stale under the rename.
+     * Value declarations for old record identities cannot apply to this
+     * rename and are removed only from the scratch control input.
+     * The container also stops agreeing with its tracked declaration fixture.
      *
      * Two tolerations were declared here and never fired, measured over a full
      * PASS run on 2026-08-24: `coverage-shortfall` and `coverage-surplus`. Both
@@ -63,12 +66,13 @@ final class RenameControls
         return Control::red(
             'rename-no-map',
             'a channel renamed in product code with no finding-gate/maps/channels.tsv row naming it',
-            ChannelRenamePlants::lcomChannelMutation(),
+            ChannelRenamePlants::lcomChannelMutation()->and(self::oldLcomValueDeclarations()),
             [new Expectation(FailureClass::SURFACE_MISMATCH, 'case:complexity'),
                 new Expectation(FailureClass::RECORD_UNDECLARED, 'case:complexity|format:json', exactScope: true),
                 ...ChannelRenamePlants::caseListingFailures('complexity')],
             [
                 new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:complexity'),
+                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:detectors'),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'governance/Channel/Fixtures/declared.txt',
@@ -76,6 +80,36 @@ final class RenameControls
                 ...ChannelRenamePlants::producerListingToleration(),
             ],
         );
+    }
+
+    /** Value declarations for the old record identity cannot apply after this rename. */
+    private static function oldLcomValueDeclarations(): Mutation
+    {
+        $values = DeclaredValues::load(\dirname(__DIR__, 2) . '/finding-gate');
+        $replacements = [];
+
+        foreach ($values->derived() as $row) {
+            if ($row['kind'] !== DeclaredValues::FIELD || !str_contains($row['subject'], '|record:')) {
+                continue;
+            }
+
+            [, $recordKey] = explode('|record:', $row['subject'], 2);
+            $record = json_decode($recordKey, true, 512, \JSON_THROW_ON_ERROR);
+            if (!\is_array($record) || ($record['channel'] ?? null) !== 'cohesion.lcom') {
+                continue;
+            }
+
+            $line = implode("\t", array_values($row));
+            $replacements[$line . "\n"] = '';
+        }
+
+        return $replacements === []
+            ? Mutation::none()
+            : Mutation::edit(
+                'finding-gate/' . DeclaredValues::DERIVED,
+                $replacements,
+                'old-identity value declarations do not apply after this channel rename',
+            );
     }
 
     /**
@@ -243,12 +277,18 @@ final class RenameControls
         );
     }
 
-    /** @return list<Expectation> */
+    /**
+     * A value comparison requires records on both sides; outcome transitions
+     * with a reference refusal provide no metric records to compare.
+     *
+     * @return list<Expectation>
+     */
     private static function aggregateValueFailures(): array
     {
         $required = [];
         foreach (\QmxFindingGate\Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if ($case->outcome !== \QmxFindingGate\CaseOutcome::REFUSAL) {
+            if (CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'reference'))
+                && CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'candidate'))) {
                 $required[] = new Expectation(FailureClass::VALUE_MISMATCH, 'case:' . $case->id . '|format:metrics|record:');
             }
         }
@@ -357,11 +397,9 @@ final class RenameControls
     }
 
     /**
-     * Every case's `format:suppressed` surface, derived from the corpus rather
-     * than listed — for the reason {@see DeclaredDeltaControls::surfaceMismatchOnEveryCaseButHealth()}
-     * states: a hand-written list goes stale the day the corpus grows. Unlike
-     * that method, health is included. Early refusals publish their error
-     * instead of the mechanism vocabulary.
+     * Every `format:suppressed` surface comparable on both sides, derived from
+     * the corpus rather than listed. A refusal publishes no mechanism vocabulary,
+     * including when that case becomes analysable only in the candidate.
      *
      * @return list<Expectation>
      */
@@ -370,7 +408,8 @@ final class RenameControls
         $required = [];
 
         foreach (Corpus::load(\dirname(__DIR__, 2))->cases as $case) {
-            if (CaseOutcome::of($case, 'candidate') === CaseOutcome::REFUSAL) {
+            if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'reference'))
+                || !CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, CaseOutcome::of($case, 'candidate'))) {
                 continue;
             }
 

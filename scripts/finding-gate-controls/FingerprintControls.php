@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
+use QmxFindingGate\Corpus;
+use QmxFindingGate\DeclaredRecords;
+use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\FailureClass;
 
 /**
@@ -35,9 +38,10 @@ final class FingerprintControls
      * could not fire at all. Two repairs were possible and only one keeps the
      * subject: repinning the sarif expectation onto `delta-mismatch` would assert
      * something about the declaration, so the mutation moves to a channel whose
-     * case declares nothing. `code-smell.unused-private` in the `smells` case is
-     * that channel — claimed by that one case and named nowhere else in the
-     * corpus, and reported there often enough that both publications carry it.
+     * fingerprint surfaces declare no delta. `code-smell.unused-private` in
+     * the `smells` case remains published on both fingerprint surfaces.
+     * Other cases claim the same channel, but their declaration effects are
+     * accounted for separately.
      *
      * The mutation is {@see ChannelRenamePlants::unusedPrivateChannelMutation()}, the very one {@see
      * fingerprintDeclaredRename()} declares a row for. The pair differs in its
@@ -80,7 +84,7 @@ final class FingerprintControls
             ],
             [
                 new Expectation(FailureClass::SURFACE_MISMATCH, 'case:smells'),
-                new Expectation(FailureClass::CASE_CLAIM_MISMATCH, 'case:smells'),
+                ...ChannelRenamePlants::unusedPrivateClaimFailures(),
                 new Expectation(
                     FailureClass::WITNESS_DISAGREEMENT,
                     'governance/Channel/Fixtures/declared.txt',
@@ -122,11 +126,10 @@ final class FingerprintControls
      *   the same length as the old one, because two of the surfaces pad the
      *   channel column and a row cannot declare padding.
      *
-     * `code-smell.unused-private` is claimed by one case and named nowhere else
-     * in the corpus, and reports twelve findings in it. Both facts are checked by
-     * the gate itself rather than recalled: claims and observations are compared
-     * per case in both directions, so a GREEN run is what says no other case
-     * fires this channel. {@see FindingControls::ceilingMutation()} perturbs the same rule's
+     * `code-smell.unused-private` reports twelve findings in the `smells` case.
+     * Every case claim that names it moves with the declaration, so a green run
+     * checks the rename across the current corpus. {@see FindingControls::ceilingMutation()}
+     * perturbs the same rule's
      * reported value from another fragment of the same file, and each control
      * runs in its own clone.
      *
@@ -185,9 +188,9 @@ final class FingerprintControls
      *   reached the product;
      * - the hash did not move — a moved `occurrence` is untranslatable (no row
      *   can declare `9477b3c7… -> 1228709c…`, {@see \QmxFindingGate\Fingerprints}),
-     *   so it can only arrive as `surface-mismatch` on `case:security`;
-     * - the case still reports something — the claim moves with the rename, so
-     *   zero findings on the renamed channel is `case-claim-mismatch`;
+     *   so it arrives as `surface-mismatch` on a publishing case;
+     * - each claiming case still reports something — its claim moves with the
+     *   rename, so zero findings on the channel is `case-claim-mismatch`;
      * - the run happened — the harness holds a green control to exit 0, which a
      *   rename that failed to survive the container build cannot reach.
      *
@@ -198,9 +201,8 @@ final class FingerprintControls
      * directive addressing it. The rule reads its collector entries through
      * `MetricName::SECURITY_SENSITIVE_PARAMETER`, a literal of its own, so
      * renaming `NAME` moves the published channel without emptying the run.
-     * It is also the only one of the six that reports more than one finding in
-     * the corpus — two, from different `paramName` evidence, so the hashes
-     * being compared are two distinct values rather than one constant.
+     * The `security` case reports two findings from distinct `paramName`
+     * evidence, so the compared hashes are not one constant.
      *
      * The claim and the tracked declaration fixture move with the rename for
      * the same reason they do in the fingerprint pair: they are declarations of
@@ -253,16 +255,61 @@ final class FingerprintControls
 
     private static function sensitiveParameterRenameDeclarations(): Mutation
     {
-        return Mutation::edit(
+        $old = 'security.sensitive-parameter';
+        $new = 'security.sensitive-paramete2';
+        $root = \dirname(__DIR__, 2);
+        $mutation = Mutation::edit(
             'governance/Channel/Fixtures/declared.txt',
-            ['security.sensitive-parameter - callable' => 'security.sensitive-paramete2 - callable'],
+            [$old . ' - callable' => $new . ' - callable'],
             'the tracked declaration fixture names the new channel',
-        )->and(Mutation::edit(
-            'finding-gate/cases/security/case.json',
-            ['"security.sensitive-parameter@callable"' => '"security.sensitive-paramete2@callable"'],
-            'the case claims the new channel',
-        ))->and(Mutation::renameInDerivedDeclarations(
-            ['security.sensitive-parameter' => 'security.sensitive-paramete2'],
+        );
+
+        foreach (Corpus::load($root)->cases as $case) {
+            $claims = [];
+            foreach ($case->channels as $channel) {
+                if (!str_starts_with($channel, $old . '@')) {
+                    continue;
+                }
+
+                $renamed = $new . substr($channel, \strlen($old));
+                $claims[json_encode($channel, \JSON_THROW_ON_ERROR)] = json_encode($renamed, \JSON_THROW_ON_ERROR);
+            }
+            if ($claims !== []) {
+                $mutation = $mutation->and(Mutation::edit(
+                    'finding-gate/cases/' . $case->id . '/case.json',
+                    $claims,
+                    'the case claims the renamed channel',
+                ));
+            }
+        }
+
+        $values = [];
+        foreach (DeclaredValues::load($root . '/finding-gate')->derived() as $row) {
+            if ($row['kind'] !== DeclaredValues::FIELD || !str_contains($row['subject'], '|record:')) {
+                continue;
+            }
+
+            [$surface, $identity] = explode('|record:', $row['subject'], 2);
+            $record = json_decode($identity, true, 512, \JSON_THROW_ON_ERROR);
+            if (!\is_array($record) || ($record['channel'] ?? null) !== $old) {
+                continue;
+            }
+
+            $before = implode("\t", array_values($row)) . "\n";
+            $record['channel'] = $new;
+            $row['subject'] = $surface . '|record:' . DeclaredRecords::canonical($record);
+            $values[$before] = implode("\t", array_values($row)) . "\n";
+        }
+        if ($values !== []) {
+            $mutation = $mutation->and(Mutation::edit(
+                'finding-gate/' . DeclaredValues::DERIVED,
+                $values,
+                'value declarations follow the renamed record identity',
+            ));
+        }
+
+        return $mutation->and(Mutation::renameInDerivedDeclarations(
+            [$old => $new],
             'any derived declaration that names the channel names the new one',
         ));
     }

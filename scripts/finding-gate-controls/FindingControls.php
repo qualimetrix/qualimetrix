@@ -104,8 +104,10 @@ final class FindingControls
      * misbehaved.
      *
      * The magnitude is published, not only recorded, so the `smells` case's
-     * finding surfaces carry it as well as its baseline file. That is one
-     * toleration pinned to that one case; a surface diff in any other case
+     * finding surfaces carry it as well as its baseline file. The step also
+     * declares exact baseline surfaces for other cases carrying this finding.
+     * Those declaration comparisons are accounted for separately. The one
+     * ordinary toleration stays pinned to the `smells` case; any other case
      * would mean this mutation reached further than it claims.
      *
      * Rejected alternative, measured 2026-08-23: perturbing the Maintainability

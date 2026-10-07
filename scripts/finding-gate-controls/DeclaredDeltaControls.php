@@ -57,7 +57,7 @@ final class DeclaredDeltaControls
         $captureFailure = TupleControls::publisherDrift();
         return Control::writing(
             'derive-refuses-broken-run',
-            'a --derive-declarations run with an invalid captured publication, which must write nothing',
+            'a --derive-declarations run with an invalid captured publication must leave ordinary delta declarations unchanged',
             $captureFailure->mutation,
             '--derive-declarations',
             $captureFailure->required,
@@ -70,11 +70,11 @@ final class DeclaredDeltaControls
      * A derivation whose comparison passed must put the declaration back.
      *
      * The mirror of {@see deriveRefusesBrokenRun()}, and the half nothing held.
-     * That control proves an invalid capture writes nothing; a derivation
-     * emptied to `return []` after the comparison satisfies it exactly — the
-     * comparison still fails, the tree is still untouched — and satisfies the
-     * self-test too, which never enters the write path. A check green before and
-     * after the change it exists to catch is not a check.
+     * That control proves an invalid capture leaves ordinary delta
+     * declarations unchanged. A derivation emptied to `return []` after
+     * comparison satisfies it: comparison still fails, the held declarations
+     * remain untouched, and the self-test never enters the write path.
+     * A check green before and after the change it exists to catch is not a check.
      *
      * The perturbation is a comment line in the index, and it is the only shape
      * that works. A correct derivation over an unmutated tree reproduces the
