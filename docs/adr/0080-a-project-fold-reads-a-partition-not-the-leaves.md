@@ -168,3 +168,18 @@ findings go from 16 to 30. The 14 added are all parents with classes of their
 own that the leaf rule never judged; every leaf is judged on the value it was
 judged on before, because for a namespace without sub-namespaces the two scopes
 are one (every historical leaf was compared).
+
+## Update (2026-10-07): the complete locked corpus is checked in CI
+
+A local measurement on this revision installed the complete locked
+seventeen-project corpus and finished with exit code 0 in 391.998 seconds.
+Every project remained within its previously versioned band. This result is
+later evidence than the decision-time fifteen-project measurement above; it
+does not rewrite that historical population.
+
+The `benchmark` workflow independently installs the root and benchmark lock
+files, then checks the complete corpus on every pull request, push to `main`,
+and merge queue candidate. It retains the benchmark log as an artifact. CI is
+the ongoing authority for subsequent revisions. This update records the local
+measurement and the mechanism; it does not claim that a CI run has completed
+successfully yet.
