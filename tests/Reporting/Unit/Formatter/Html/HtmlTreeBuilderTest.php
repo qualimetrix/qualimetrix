@@ -45,6 +45,7 @@ final class HtmlTreeBuilderTest extends TestCase
             new DebtCalculator(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues())),
             $this->catalog(),
             new \Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader()),
+            new \Qualimetrix\Reporting\Formatter\FindingRecord(new RemediationTimeRegistry(StubChannelDeclarationRegistry::alwaysHigherMagnitude(), StubRemediationMinutes::withRealValues()), new \Qualimetrix\Reporting\Formatter\Json\JsonSanitizer()),
         );
     }
 
@@ -377,12 +378,12 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertCount(1, $classNode['violations']);
 
         $v = $classNode['violations'][0];
-        self::assertSame('complexity.ccn', $v['ruleName']);
-        self::assertSame('complexity.ccn', $v['violationCode']);
+        self::assertSame('complexity.ccn', $v['rule']);
+        self::assertSame('complexity.ccn', $v['code']);
         self::assertSame('Cyclomatic complexity is 15', $v['message']);
         self::assertSame('warning', $v['severity']);
         self::assertSame(15, $v['metricValue']);
-        self::assertSame('App\\Service\\UserService::calculate', $v['symbolPath']);
+        self::assertSame('App\\Service\\UserService::calculate', $v['symbol']);
         self::assertSame('src/Service/UserService.php', $v['file']);
         self::assertSame(25, $v['line']);
     }

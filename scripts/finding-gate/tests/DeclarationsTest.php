@@ -13,6 +13,7 @@ use QmxFindingGate\DeclaredStructuralMaps;
 use QmxFindingGate\DeclaredSurfaces;
 use QmxFindingGate\DeclaredValues;
 use QmxFindingGate\DerivedTable;
+use QmxFindingGate\EquivalenceTuple;
 use QmxFindingGate\Fs;
 use QmxFindingGate\GateError;
 use QmxFindingGate\Tsv;
@@ -49,6 +50,20 @@ final class DeclarationsTest extends TestCase
         self::assertSame(0, DeclaredOutcomes::load($this->root)->count());
         self::assertSame(0, DeclaredSurfaces::load($this->root)->count());
         self::assertSame(0, DeclaredStructuralMaps::load($this->root)->count());
+    }
+
+    #[Test]
+    public function itDoesNotAcceptACommentAsThePublishedMethod(): void
+    {
+        Fs::write($this->root . '/src/Publisher.php', '<?php class Publisher { /* function missing() */ }');
+        Fs::write($this->root . '/' . EquivalenceTuple::TRACKED_PATH, Tsv::render(
+            EquivalenceTuple::COLUMNS,
+            [['message', 'src/Publisher.php::missing']],
+        ));
+
+        $this->expectException(GateError::class);
+        $this->expectExceptionMessage('declares no such method');
+        EquivalenceTuple::load($this->root);
     }
 
     #[Test]

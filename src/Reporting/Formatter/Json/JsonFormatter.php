@@ -46,7 +46,7 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
         $limit = $this->getViolationLimit($context);
         $outputFindings = $limit === null
             ? $filteredFindings
-            : \array_slice($filteredFindings, 0, $limit);
+            : $this->findingSection->sort(\Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::worstFirst($report->findings, $report->topIssues, $limit));
 
         $topN = $this->getTopN($context);
 
@@ -137,18 +137,10 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
             $finding = $issue->finding;
             $result[] = [
                 'rank' => $rank + 1,
-                'file' => $finding->location->file === null
-                    ? null
-                    : $context->relativizePath($finding->location->file),
-                'line' => $finding->location->line,
-                'symbol' => $finding->symbolPath->toString(),
-                'rule' => $finding->ruleName,
-                'severity' => $finding->severity->value,
-                'message' => $finding->message,
-                'recommendation' => $finding->recommendation,
                 'impactScore' => round($issue->impactScore, 2),
                 'coupling.class-rank' => $issue->classRank !== null ? round($issue->classRank, 4) : null,
                 'debtMinutes' => $issue->debtMinutes,
+                ...$this->findingSection->formatFinding($finding, $context),
             ];
         }
 
@@ -217,16 +209,11 @@ final class JsonFormatter implements FormatterInterface, FormatOptionKeysInterfa
      * the selection left nothing out — present either way, so the document's
      * shape does not move with the command line.
      *
-     * @return array{violationCount: int, errorCount: int, warningCount: int, infoCount: int}|null
+     * @return array<string, mixed>|null
      */
     private function buildOutOfScope(?OutOfScopeFindings $outOfScope): ?array
     {
-        return $outOfScope === null ? null : [
-            'violationCount' => $outOfScope->total(),
-            'errorCount' => $outOfScope->errorCount,
-            'warningCount' => $outOfScope->warningCount,
-            'infoCount' => $outOfScope->infoCount,
-        ];
+        return $outOfScope?->published();
     }
 
     /**

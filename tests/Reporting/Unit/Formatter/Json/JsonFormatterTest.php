@@ -65,6 +65,43 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itCapsBySeverityThenImpactBeforePublishingInIdentityOrder(): void
+    {
+        $info = self::finding(Location::none(), SymbolPath::forNamespace('A'), 'code-smell.goto', 'code-smell.goto', 'Info', Severity::Info);
+        $low = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Low error', Severity::Error);
+        $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'High error', Severity::Error);
+        $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
+        $report = new Report([$info, $low, $high], 2, 0, 0, 2, 0, topIssues: $ranked);
+        $data = json_decode($this->formatter->format($report, new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['High error'], array_column($data['violations'], 'message'));
+        self::assertSame(3, $data['violationsMeta']['total']);
+    }
+
+    #[Test]
+    public function itCapsUnrankedFindingsBySeverityAndPlace(): void
+    {
+        $info = self::finding(Location::none(), SymbolPath::forNamespace('A'), 'code-smell.goto', 'code-smell.goto', 'Info', Severity::Info);
+        $error = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Error', Severity::Error);
+        $data = json_decode($this->formatter->format(new Report([$info, $error], 1, 0, 0, 1, 0), new FormatterContext(options: ['violations' => '1']))->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['Error'], array_column($data['violations'], 'message'));
+    }
+
+    #[Test]
+    public function itCarriesTheFindingRecordAndAcceptedLevelIntoTopIssues(): void
+    {
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Low cohesion', Severity::Warning, 20, recommendation: 'Split the namespace.', threshold: 30)->reportedAsBreach(new \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel([25], 1));
+        $issue = new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($finding, 10, null, 5, 3);
+        $data = json_decode($this->formatter->format(new Report([$finding], 1, 0, 0, 1, 0, topIssues: [$issue]), new FormatterContext())->body, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertArrayHasKey('acceptedLevel', $data['topIssues'][0]);
+        foreach ($data['violations'][0] as $key => $value) {
+            self::assertSame($value, $data['topIssues'][0][$key]);
+        }
+    }
+
+    #[Test]
     public function itReturnsJsonName(): void
     {
         self::assertSame('json', $this->formatter->getName());
@@ -684,7 +721,7 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itCutsTheViolationListAfterItsIdentityOrder(): void
+    public function itSelectsSeverityBeforeTheIdentityPrintOrder(): void
     {
         $report = ReportBuilder::create()
             ->addFinding(self::finding(
@@ -716,7 +753,7 @@ final class JsonFormatterTest extends TestCase
         );
 
         self::assertCount(1, $data['violations']);
-        self::assertSame('produced last, ordered first', $data['violations'][0]['message']);
+        self::assertSame('produced first, ordered last', $data['violations'][0]['message']);
         self::assertTrue($data['violationsMeta']['truncated']);
     }
 

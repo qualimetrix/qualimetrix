@@ -35,8 +35,9 @@ final class HtmlTreeBuilder
         private readonly DebtCalculator $debtCalculator,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
         private readonly HtmlProjectMetadata $projectMetadata,
+        \Qualimetrix\Reporting\Formatter\FindingRecord $findingRecord,
     ) {
-        $this->findingPartitioner = new HtmlFindingPartitioner();
+        $this->findingPartitioner = new HtmlFindingPartitioner($findingRecord);
         $this->htmlDebtCalculator = new HtmlDebtCalculator($this->debtCalculator);
     }
 

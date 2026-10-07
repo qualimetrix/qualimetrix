@@ -197,7 +197,20 @@ final class FindingSorterTest extends TestCase
 
         $groups = FindingSorter::group([$v1], GroupBy::NamespaceName);
 
-        self::assertArrayHasKey('<global>', $groups);
+        self::assertArrayHasKey('(global)', $groups);
+    }
+
+    #[Test]
+    public function itUsesPublishedImpactRankBeforePlaceEvenForEqualImpactScores(): void
+    {
+        $first = $this->finding('z.php', 10, Severity::Error, 'first');
+        $second = $this->finding('a.php', 1, Severity::Error, 'second');
+        $ranking = [
+            new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($first, 20, null, 15, 3),
+            new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($second, 20, null, 15, 3),
+        ];
+        self::assertSame([$first], FindingSorter::worstFirst([$second, $first], $ranking, 1));
+        self::assertSame([$second], FindingSorter::worstFirst([$first, $second], [], 1));
     }
 
     private function finding(string $file, int $line, Severity $severity, string $ruleName): Finding

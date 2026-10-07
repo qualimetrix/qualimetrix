@@ -35,10 +35,12 @@ final readonly class OutOfScopeFindings
      */
     public const array FORMATS_WITHOUT_A_PLACE = ['gitlab', 'checkstyle'];
 
+    /** @param list<OutOfScopeIdentity> $identities */
     public function __construct(
         public int $errorCount,
         public int $warningCount,
         public int $infoCount,
+        public array $identities = [],
     ) {}
 
     /**
@@ -47,16 +49,32 @@ final readonly class OutOfScopeFindings
      */
     public static function between(array $run, array $selected): self
     {
-        $counts = self::countBySeverity($run);
-        foreach (self::countBySeverity($selected) as $severity => $count) {
-            $counts[$severity] -= $count;
+        $kept = [];
+        foreach ($selected as $finding) {
+            $key = json_encode(OutOfScopeIdentity::of($finding)->published(), \JSON_THROW_ON_ERROR);
+            $kept[$key] = ($kept[$key] ?? 0) + 1;
         }
+        $outside = [];
+        foreach ($run as $finding) {
+            $identity = OutOfScopeIdentity::of($finding);
+            $key = json_encode($identity->published(), \JSON_THROW_ON_ERROR);
+            if (($kept[$key] ?? 0) > 0) {
+                --$kept[$key];
+            } else {
+                $outside[] = $finding;
+            }
+        }
+        $counts = self::countBySeverity($outside);
+        $identities = array_map(OutOfScopeIdentity::of(...), $outside);
+        usort($identities, static fn(OutOfScopeIdentity $a, OutOfScopeIdentity $b): int => [$a->channel, $a->subject, $a->occurrence, $a->edge, $a->severity] <=> [$b->channel, $b->subject, $b->occurrence, $b->edge, $b->severity]);
 
-        return new self(
-            $counts[Severity::Error->value],
-            $counts[Severity::Warning->value],
-            $counts[Severity::Info->value],
-        );
+        return new self($counts[Severity::Error->value], $counts[Severity::Warning->value], $counts[Severity::Info->value], $identities);
+    }
+
+    /** @return array<string, mixed> */
+    public function published(): array
+    {
+        return ['violationCount' => $this->total(), 'errorCount' => $this->errorCount, 'warningCount' => $this->warningCount, 'infoCount' => $this->infoCount, 'identities' => array_map(static fn(OutOfScopeIdentity $identity): array => $identity->published(), $this->identities)];
     }
 
     public function total(): int

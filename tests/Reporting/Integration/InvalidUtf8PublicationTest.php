@@ -38,6 +38,17 @@ use Qualimetrix\Reporting\ReportCoverage;
 final class InvalidUtf8PublicationTest extends TestCase
 {
     #[Test]
+    public function itKeepsByteRepairOutOfIssueListRecords(): void
+    {
+        $gitlab = self::decode($this->format('gitlab'));
+        self::assertCount(1, $gitlab);
+        self::assertNotContains(PublishedUtf8::REPAIR_CHECK, array_column($gitlab, 'check_name'));
+        $checkstyle = $this->format('checkstyle');
+        self::assertStringNotContainsString('qmx.' . PublishedUtf8::REPAIR_CHECK, $checkstyle);
+        self::assertSame(1, substr_count($checkstyle, '<error '));
+    }
+
+    #[Test]
     public function itKeepsDistinctSourceIdentifiersDistinctInPublishedDocuments(): void
     {
         $first = self::decode($this->format('json', "K\xFF"));
@@ -156,8 +167,8 @@ final class InvalidUtf8PublicationTest extends TestCase
                 'QMX-PUBLICATION-INVALID-UTF8',
                 array_column(array_column(self::decode($output)['runs'][0]['invocations'][0]['toolExecutionNotifications'], 'descriptor'), 'id'),
             ),
-            'gitlab' => self::assertContains('publication.invalid-utf8', array_column(self::decode($output), 'check_name')),
-            'checkstyle' => self::assertStringContainsString('source="qmx.publication.invalid-utf8"', $output),
+            'gitlab' => self::assertNotContains('publication.invalid-utf8', array_column(self::decode($output), 'check_name')),
+            'checkstyle' => self::assertStringNotContainsString('source="qmx.publication.invalid-utf8"', $output),
             'html' => self::assertStringContainsString('data-qmx-publication="invalid-utf8"', $output),
             default => self::fail('No repair mark is asserted for ' . $format),
         };
@@ -209,7 +220,12 @@ final class InvalidUtf8PublicationTest extends TestCase
         /** @var FormatterRegistryInterface $registry */
         $registry = (new ContainerFactory())->create()->get(FormatterRegistryInterface::class);
 
-        return $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath))->body;
+        $formatted = $registry->get($format)->format($report, new FormatterContext(useColor: false, basePath: $basePath));
+        if ($format === 'gitlab' || $format === 'checkstyle') {
+            self::assertGreaterThan(0, $formatted->escapedStrings);
+        }
+
+        return $formatted->body;
     }
 
     private function readable(string $format, string $output): string

@@ -462,7 +462,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itUsesDescriptiveSyntheticPathForProjectLevelFinding(): void
+    public function itUsesTheNamespacePathForAFilelessFinding(): void
     {
         $report = ReportBuilder::create()
             ->addFinding(self::finding(
@@ -482,9 +482,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         $issue = $data[0];
-        // Project-level findings must use a descriptive synthetic path, not '.' or ''
-        // '.' is not a valid file path per GitLab Code Quality spec
-        self::assertSame('_project', $issue['location']['path']);
+        self::assertSame('App', $issue['location']['path']);
         self::assertNotSame('.', $issue['location']['path']);
         self::assertNotSame('', $issue['location']['path']);
     }

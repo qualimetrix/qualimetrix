@@ -1240,7 +1240,10 @@ final class RankingCheckTest extends TestCase
             };
             $location = $issue['file'] === null ? '[project]' : $issue['file'] . ($issue['line'] === null ? '' : ':' . $issue['line']);
             $symbol = $issue['symbol'] === '' ? '' : ' (' . substr($issue['symbol'], (int) strrpos('\\' . $issue['symbol'], '\\')) . ')';
-            $text .= '  ' . $issue['rank'] . '. [' . $tag . '] ' . \sprintf('%.1f', $issue['impactScore']) . '  ' . $location . "  [15min]\n         " . $record['code'] . ': ' . ReportRecords::message($record, true) . $symbol . "\n";
+            $text .= '  ' . $issue['rank'] . '. [' . $tag . '] ' . \sprintf('%.1f', $issue['impactScore']) . '  ' . $location . "  [15min]\n         " . $record['code'] . ': ' . $record['message'] . $symbol . "\n";
+            $text .= $record['recommendation'] === null ? '' : '         Recommendation: ' . $record['recommendation'] . "\n";
+            $baseline = ReportRecords::baselineText($record);
+            $text .= $baseline === null ? '' : '         ' . $baseline . "\n";
         }
         $tree[$side]['case:alpha|format:summary'] = ['stdout' => $text];
     }
@@ -1283,22 +1286,28 @@ final class RankingCheckTest extends TestCase
         $gitlab = [];
         $checkstyle = '<checkstyle>';
         $prose = '';
+        $suppressedProse = '';
         $github = '';
         foreach ($records as $index => $record) {
-            $gitlab[] = ReportRecords::projection('format:gitlab', $record) + ['fingerprint' => md5($fingerprints[$index])];
-            $projection = ReportRecords::projection('format:checkstyle', $record);
+            $gitlab[] = ReportRecords::projection('format:gitlab', $record, 'current') + ['fingerprint' => md5($fingerprints[$index])];
+            $projection = ReportRecords::projection('format:checkstyle', $record, 'current');
             $checkstyle .= '<file name="' . htmlspecialchars($projection['file'], \ENT_XML1) . '"><error line="' . $projection['line'] . '" severity="' . $projection['severity'] . '" source="' . $projection['code'] . '" message="' . htmlspecialchars($projection['message'], \ENT_XML1) . '"/></file>';
             $file = $record['file'] ?? '[project]';
             $brief = $record['symbol'] === '' ? '' : substr($record['symbol'], (int) strrpos('\\' . $record['symbol'], '\\'));
-            $prose .= $file . " (1 violation)\n  ERROR" . ($record['line'] === null ? '' : ' at line ' . $record['line']) . ($brief === '' ? '' : '  ' . $brief) . "\n    " . ReportRecords::message($record, true) . '  [' . $record['code'] . "]\n\n";
+            $suppressedProse .= $file . " (1 violation)\n  ERROR" . ($record['line'] === null ? '' : ' at line ' . $record['line']) . ($brief === '' ? '' : '  ' . $brief) . "\n    " . ReportRecords::message($record, true) . '  [' . $record['code'] . "]\n\n";
+            $prose .= $file . " (1 violation)\n  ERROR" . ($record['line'] === null ? '' : ' at line ' . $record['line']) . ($brief === '' ? '' : '  ' . $brief) . "\n    " . $record['message'] . '  [' . $record['code'] . "]\n";
+            $prose .= $record['recommendation'] === null ? '' : '    Recommendation: ' . $record['recommendation'] . "\n";
+            $baseline = ReportRecords::baselineText($record);
+            $prose .= ($baseline === null ? '' : '    ' . $baseline . "\n") . "\n";
             $properties = $record['file'] === null ? '' : 'file=' . $record['file'] . ',line=' . $record['line'] . ',';
             $github .= '::error ' . $properties . 'title=' . $record['code'] . '::' . str_replace("\n", '%0A', ReportRecords::message($record)) . "\n";
         }
         $tree['answers']['case:alpha|format:gitlab'] = ['stdout' => ValueCheck::value($gitlab)];
         $tree['answers']['case:alpha|format:checkstyle'] = ['stdout' => $checkstyle . '</checkstyle>'];
-        foreach (['format:text', 'format:text-detail', 'show-suppressed'] as $surface) {
+        foreach (['format:text', 'format:text-detail'] as $surface) {
             $tree['answers']['case:alpha|' . $surface] = ['stdout' => $prose];
         }
+        $tree['answers']['case:alpha|show-suppressed'] = ['stdout' => $suppressedProse];
         $tree['answers']['case:alpha|format:github'] = ['stdout' => $github];
     }
 

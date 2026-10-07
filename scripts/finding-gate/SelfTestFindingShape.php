@@ -35,7 +35,7 @@ final class SelfTestFindingShape extends SelfTestGroup
                 Tsv::render(EquivalenceTuple::COLUMNS, [['channel', $source]]),
             );
         };
-        Fs::write($root . '/src/Publisher.php', "<?php\n\nprivate function formatFinding(): array\n{\n}\n");
+        Fs::write($root . '/src/Publisher.php', '<?php class Publisher { private function formatFinding(): array {} }');
 
         $write('src/Publisher.php::formatFinding');
         $this->assert(

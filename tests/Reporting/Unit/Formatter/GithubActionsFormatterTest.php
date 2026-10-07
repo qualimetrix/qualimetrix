@@ -359,7 +359,7 @@ final class GithubActionsFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, new FormatterContext())->body;
 
-        self::assertStringContainsString('::error title=architecture.circular::Circular dependency detected', $output);
+        self::assertStringContainsString('::error title=architecture.circular::App\\Service: Circular dependency detected', $output);
         self::assertStringNotContainsString('file=', $output);
     }
 

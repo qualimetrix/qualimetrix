@@ -142,7 +142,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     ReportRecords::projected($surface, $text);
                 }
                 $projected = ReportRecords::projected($surface, $this->mapped($side, $surface, $text));
-                $expected = array_map(static fn(array $record): array => ReportRecords::projection($surface, $record), $findings);
+                $expected = array_map(fn(array $record): array => ReportRecords::projection($surface, $record, $this->run->publicationCodec($side)), $findings);
                 $actual = array_column($projected, 'fields');
                 if ($surface === 'format:html') {
                     $buckets = [];
@@ -181,7 +181,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         if (isset($artifacts[$key])) {
             try {
                 $actual = ReportRecords::checkstyle($this->mapped($side, 'format:checkstyle', $artifacts[$key]));
-                $expected = array_map(static fn(array $record): array => ReportRecords::projection('format:checkstyle', $record), $findings);
+                $expected = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)), $findings);
                 if (!self::sameMultiset($actual, $expected)) {
                     throw new GateError('The complete checkstyle projection multiset differs from authoritative records.');
                 }
@@ -196,7 +196,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                 continue;
             }
             try {
-                $entries = ProseRecords::extract($surface, $this->mapped($side, $surface, $artifacts[$key]));
+                $entries = ProseRecords::extract($surface, $this->mapped($side, $surface, $artifacts[$key]), $this->run->publicationCodec($side));
                 $budget = $findings;
                 foreach ($entries as $entry) {
                     if ($surface === 'format:summary' && isset($entry['fields']['rank'])) {
@@ -204,7 +204,7 @@ final class RecordCheck implements CaseCheck, RunCheck
                     }
                     $found = false;
                     foreach ($budget as $index => $record) {
-                        if (ProseRecords::matches($surface, $entry['fields'], $record)) {
+                        if (ProseRecords::matches($surface, $entry['fields'], $record, $this->run->publicationCodec($side))) {
                             unset($budget[$index]);
                             $found = true;
                             break;

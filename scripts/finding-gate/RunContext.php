@@ -25,6 +25,7 @@ final class RunContext
 
     public readonly CapturePlan $capturePlan;
 
+    /** @param array<string,string> $publicationCodecs */
     public function __construct(
         public readonly Options $options,
         public readonly GateReport $report,
@@ -35,10 +36,27 @@ final class RunContext
         public readonly Normalization $normalization,
         public readonly Declarations $declarations,
         public readonly string $temporaryDirectory,
+        private array $publicationCodecs = [],
     ) {
         $this->rankings = new RankingCaptures();
         $this->baselineEligibility = new BaselineEligibility();
         $this->capturePlan = CapturePlan::forCorpus($corpus, $declarations->surfaces);
+    }
+
+    public function supplyPublicationTree(string $side, string $treeRoot): void
+    {
+        $this->publicationCodecs[$side] = ReportRecords::codecOf($treeRoot);
+    }
+
+    /** Unsupplied sides belong to the single-root fixture; real comparisons supply both trees. */
+    public function publicationCodec(string $side): string
+    {
+        return $this->publicationCodecs[$side] ??= ReportRecords::codecOf($this->options->candidateRoot);
+    }
+
+    public function copyPublicationsTo(self $target): void
+    {
+        $target->publicationCodecs = $this->publicationCodecs;
     }
 
     public function withCandidateCapture(CaptureResult $capture): self
@@ -54,6 +72,7 @@ final class RunContext
             $this->declarations,
             $this->temporaryDirectory,
         );
+        $this->copyPublicationsTo($pass);
         $pass->rankings->supply('candidate', $capture->rankings);
         $pass->baselineEligibility->supply('candidate', $capture->baselineEligibility);
         return $pass;

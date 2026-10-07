@@ -35,7 +35,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
                 'severity' => $this->mapSeverity($finding->severity),
                 'location' => [
                     'path' => $finding->location->file === null
-                        ? '_project'
+                        ? (PublishedFinding::place($finding)->level === \Qualimetrix\Core\Symbol\SymbolLevel::Project ? '_project' : PublishedFinding::place($finding)->name)
                         : $context->relativizePath($finding->location->file),
                     'lines' => [
                         'begin' => $finding->location->file === null ? 1 : ($finding->location->line ?? 1),
@@ -61,13 +61,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             static function (array $issues, int $count) use (&$repairs): array {
                 $repairs = $count;
 
-                return [...$issues, [
-                    'description' => PublishedUtf8::describe($repairs),
-                    'check_name' => PublishedUtf8::REPAIR_CHECK,
-                    'fingerprint' => md5(PublishedUtf8::REPAIR_CHECK),
-                    'severity' => 'info',
-                    'location' => ['path' => '_project', 'lines' => ['begin' => 1]],
-                ]];
+                return $issues;
             },
         );
 

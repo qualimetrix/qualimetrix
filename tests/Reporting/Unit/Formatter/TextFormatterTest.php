@@ -40,6 +40,22 @@ final class TextFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itSelectsTheWorstDetailFindingBeforeGroupingByFile(): void
+    {
+        $warning = self::finding(new Location(RelativePath::fromString('src/A.php'), 1), SymbolPath::forClass('Shop', 'A'), 'complexity.ccn', 'complexity.ccn', 'Hidden warning', Severity::Warning);
+        $low = self::finding(new Location(RelativePath::fromString('src/B.php'), 1), SymbolPath::forClass('Shop', 'B'), 'complexity.ccn', 'complexity.ccn', 'Hidden low impact', Severity::Error);
+        $high = self::finding(new Location(RelativePath::fromString('src/Z.php'), 1), SymbolPath::forClass('Shop', 'Z'), 'complexity.ccn', 'complexity.ccn', 'Shown high impact', Severity::Error);
+        $ranked = [new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($high, 50, null, 5, 3), new \Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue($low, 10, null, 5, 3)];
+        $report = new \Qualimetrix\Reporting\Report([$warning, $low, $high], 3, 0, 0, 2, 1, topIssues: $ranked);
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false, detailLimit: 1, topIssuesLimit: 0))->body;
+
+        self::assertStringContainsString('Shown high impact', $output);
+        self::assertStringNotContainsString('Hidden warning', $output);
+        self::assertStringNotContainsString('Hidden low impact', $output);
+        self::assertStringContainsString('... and 2 more.', $output);
+    }
+
+    #[Test]
     public function itNamesAnUncomparedEntryWithoutClaimingABreach(): void
     {
         $finding = self::finding(

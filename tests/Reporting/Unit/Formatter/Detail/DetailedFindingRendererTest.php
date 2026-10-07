@@ -41,6 +41,18 @@ final class DetailedFindingRendererTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsTheNamespaceMessageAndRecommendationAsSeparateLines(): void
+    {
+        $finding = self::finding(Location::none(), SymbolPath::forNamespace('Shop'), 'computed', 'health.cohesion', 'Measured cohesion is low.', Severity::Warning, recommendation: 'Split the namespace.');
+        $output = $this->renderer->render([$finding], new FormatterContext(useColor: false));
+
+        self::assertStringContainsString('Shop (1 violation)', $output);
+        self::assertStringContainsString('Measured cohesion is low.', $output);
+        self::assertStringContainsString('Split the namespace.', $output);
+        self::assertStringNotContainsString('[project]', $output);
+    }
+
+    #[Test]
     public function itShowsNoFindingsFoundForEmptyFindings(): void
     {
         $context = new FormatterContext(useColor: false);
@@ -151,7 +163,7 @@ final class DetailedFindingRendererTest extends TestCase
     }
 
     #[Test]
-    public function itUsesHumanMessageWhenAvailable(): void
+    public function itPublishesMessageAndRecommendationWhenAvailable(): void
     {
         $findings = [
             self::finding(
@@ -170,7 +182,7 @@ final class DetailedFindingRendererTest extends TestCase
         $output = $this->detailRenderer->render($findings, $context);
 
         self::assertStringContainsString('too many code paths', $output);
-        self::assertStringNotContainsString('exceeds threshold', $output);
+        self::assertStringContainsString('exceeds threshold', $output);
     }
 
     #[Test]
@@ -352,7 +364,8 @@ final class DetailedFindingRendererTest extends TestCase
         $context = new FormatterContext(useColor: false);
         $output = $this->detailRenderer->render($findings, $context);
 
-        self::assertStringContainsString('Complexity is 31 (accepted at 25, now 31)', $output);
+        self::assertStringContainsString('Complexity is 31  [complexity.ccn]', $output);
+        self::assertStringContainsString('    accepted at 25, now 31', $output);
     }
 
     #[Test]
@@ -377,7 +390,7 @@ final class DetailedFindingRendererTest extends TestCase
     }
 
     #[Test]
-    public function itShowsProjectLevelFindingGroupHeader(): void
+    public function itShowsNamespaceFindingGroupHeader(): void
     {
         $findings = [
             self::finding(
@@ -393,7 +406,7 @@ final class DetailedFindingRendererTest extends TestCase
         $context = new FormatterContext(useColor: false);
         $output = $this->detailRenderer->render($findings, $context);
 
-        self::assertStringContainsString('[project]', $output);
+        self::assertStringContainsString('App\\Service', $output);
     }
     /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
     private static function finding(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $code, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Finding

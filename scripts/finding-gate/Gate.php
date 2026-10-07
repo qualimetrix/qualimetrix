@@ -96,13 +96,6 @@ final class Gate
         $this->normalizationCheck = new NormalizationCheck($this->options, $this->report, $normalization);
         $this->fingerprintCheck = new FingerprintCheck($this->report);
         $this->renameMapCheck = new RenameMapCheck($this->report, $this->corpus, $this->maps, $this->split);
-        $this->declaredDeltaCheck = new DeclaredDeltaCheck(
-            $this->options,
-            $this->report,
-            $this->declaredDelta,
-            $this->declaredFieldMoves,
-            $this->split,
-        );
         $this->coverageCheck = new CoverageCheck($this->options, $this->report, $this->corpus, $witness);
         $this->staleDeclarationCheck = new StaleDeclarationCheck($this->report, $this->declarations);
 
@@ -116,6 +109,14 @@ final class Gate
             $normalization,
             $this->declarations,
             $this->temporaryDirectory,
+        );
+        $this->declaredDeltaCheck = new DeclaredDeltaCheck(
+            $this->options,
+            $this->report,
+            $this->declaredDelta,
+            $this->declaredFieldMoves,
+            $this->split,
+            $run,
         );
         $this->rankings = $run->rankings;
         $this->context = $run;
@@ -428,6 +429,7 @@ final class Gate
     private function runTree(string $treeRoot, string $label, bool $reverseInput): CaptureResult
     {
         try {
+            $this->context->supplyPublicationTree(str_starts_with($label, 'reference') ? 'reference' : 'candidate', $treeRoot);
             $run = new TreeRun(
                 $treeRoot,
                 $this->temporaryDirectory,

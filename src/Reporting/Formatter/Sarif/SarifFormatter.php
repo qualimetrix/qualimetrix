@@ -75,7 +75,7 @@ final class SarifFormatter implements FormatterInterface
         }
 
         if ($report->outOfScope !== null && $report->outOfScope->total() > 0) {
-            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE');
+            $run = self::withNotification($run, 'note', $report->outOfScope->describe(), 'QMX-DRILL-DOWN-OUT-OF-SCOPE', ['identities' => $report->outOfScope->published()['identities']]);
         }
 
         $projectScope = $report->projectScope?->describe();
@@ -138,16 +138,18 @@ final class SarifFormatter implements FormatterInterface
      * invocation when coverage did not.
      *
      * @param array<string, mixed> $run
+     * @param array<string, mixed> $properties
      *
      * @return array<string, mixed>
      */
-    private static function withNotification(array $run, string $level, string $text, string $descriptor): array
+    private static function withNotification(array $run, string $level, string $text, string $descriptor, array $properties = []): array
     {
         $run['invocations'] ??= [['executionSuccessful' => true, 'toolExecutionNotifications' => []]];
         $run['invocations'][0]['toolExecutionNotifications'][] = [
             'level' => $level,
             'message' => ['text' => $text],
             'descriptor' => ['id' => $descriptor],
+            ...($properties === [] ? [] : ['properties' => $properties]),
         ];
 
         return $run;
@@ -175,7 +177,7 @@ final class SarifFormatter implements FormatterInterface
                     'ruleId' => $v->code,
                     'ruleIndex' => $ruleIndexMap[$v->code] ?? 0,
                     'level' => $this->ruleCollector->mapLevel($v->severity),
-                    'message' => ['text' => PublishedFinding::annotatedMessage($v)],
+                    'message' => ['text' => PublishedFinding::locatedMessage($v)],
                     'partialFingerprints' => [
                         'primaryLocationLineHash' => $v->getFingerprint(),
                     ],

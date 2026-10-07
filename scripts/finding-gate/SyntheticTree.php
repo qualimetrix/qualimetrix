@@ -51,8 +51,6 @@ use RecursiveIteratorIterator;
  */
 final class SyntheticTree
 {
-    private const string TUPLE_SOURCE = 'src/Reporting/Formatter/Json/JsonFindingSection.php';
-
     private static ?string $gitTemplate = null;
 
     private const string ANSWERS = 'replay/answers.json';
@@ -247,6 +245,8 @@ final class SyntheticTree
             }
         }
 
+        $tupleSource = EquivalenceTuple::source();
+        [$publisherFile, $publisherMethod] = explode('::', $tupleSource);
         $files = [
             'bin/qmx' => self::replayingBinary(),
             'src/Infrastructure/Console/Refusal/RefusalPresenter.php' => '<?php final class RefusalPresenter { private function writeEnvelope() { return json_encode(["error" => "replayed", "exit_code" => 3, "position" => null]); } }',
@@ -257,11 +257,11 @@ final class SyntheticTree
             'qmx.yaml' => "# replayed\n",
             'src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php' => "<?php\n\nenum AggregationStrategy: string\n{\n    case Sum = 'sum';\n}\n",
             'src/Analysis/Evidence/Measurement/Contract/MetricName.php' => "<?php\n\nfinal class MetricName\n{\n    public const string CCN = 'ccn';\n}\n",
-            self::TUPLE_SOURCE => self::publishingSource($specification['published']),
+            $publisherFile => self::publishingSource($specification['published'], $publisherFile, $publisherMethod),
             'src/Reporting/Formatter/Json/JsonFormatter.php' => self::rankingSource(),
             EquivalenceTuple::TRACKED_PATH => Tsv::render(
                 EquivalenceTuple::COLUMNS,
-                array_map(static fn(string $field): array => [$field, EquivalenceTuple::source()], $specification['tuple']),
+                array_map(static fn(string $field): array => [$field, $tupleSource], $specification['tuple']),
             ),
             'finding-gate/normalization.tsv' => Tsv::render(
                 Normalization::COLUMNS,
@@ -285,7 +285,7 @@ final class SyntheticTree
             foreach ($specification['declaredDelta'] as $surface => $diff) {
                 $file = DeclaredDelta::DIRECTORY . '/' . md5($surface) . '.diff';
                 $files['finding-gate/' . $file] = $diff;
-                $rows[] = [$surface, $file, 'self-test'];
+                $rows[] = [$surface, $file, 'Publish the explicitly authored consumer contract change.'];
             }
 
             $files['finding-gate/' . DeclaredDelta::INDEX] = Tsv::render(DeclaredDelta::COLUMNS, $rows);
@@ -375,7 +375,7 @@ final class SyntheticTree
             $gitlab[] = ['description' => $annotatedMessage, 'check_name' => $code, 'severity' => match ($finding['severity']) {
                 'error' => 'critical', 'warning' => 'major', default => 'info',
             }, 'fingerprint' => md5($expected[$index]), 'location' => ['path' => $file ?? '_project', 'lines' => ['begin' => $line]]];
-            $html[] = ['subject' => $finding['subject'], 'ruleName' => $finding['rule'], 'violationCode' => $code, 'message' => $message, 'recommendation' => $finding['recommendation'], 'severity' => $finding['severity'], 'metricValue' => $finding['metricValue'], 'symbolPath' => $finding['symbol'], 'occurrence' => $finding['occurrence'], 'file' => $file, 'line' => $line];
+            $html[] = ReportRecords::projection('format:html', $finding, 'current');
             $checkstyle .= '<file name="' . htmlspecialchars((string) $file, \ENT_XML1) . '"><error line="' . $line . '" severity="' . $finding['severity'] . '" source="qmx.' . $code . '" message="' . htmlspecialchars($annotatedMessage, \ENT_XML1) . '"/></file>';
             $brief = (string) $finding['symbol'];
             $separator = strrpos($brief, '\\');
@@ -385,11 +385,14 @@ final class SyntheticTree
             if (\in_array(SubjectLevel::of((string) $finding['subject']), ['file', 'project', 'namespace'], true) || $finding['symbol'] === $file) {
                 $brief = '';
             }
-            $advice = ($finding['recommendation'] ?? $message) . $suffix;
+            $advice = $message;
             $severity = match ($finding['severity']) {
                 'error' => 'ERROR', 'warning' => 'WARN', default => 'INFO',
             };
             $prose .= '  ' . $severity . ' ' . $file . ':' . $line . ($brief === '' ? '' : '  ' . $brief) . "\n    " . $advice . '  [' . $code . "]\n";
+            $prose .= $finding['recommendation'] === null ? '' : '    Recommendation: ' . $finding['recommendation'] . "\n";
+            $baseline = ReportRecords::baselineText($finding);
+            $prose .= $baseline === null ? '' : '    ' . $baseline . "\n";
             $escape = static fn(string $value): string => strtr($value, ['%' => '%25', "\r" => '%0D', "\n" => '%0A', ':' => '%3A', ',' => '%2C']);
             $github .= '::' . ($finding['severity'] === 'info' ? 'notice' : $finding['severity']) . ' file=' . $escape((string) $file) . ',line=' . $line . ',title=' . $escape((string) $code) . '::' . strtr($annotatedMessage, ['%' => '%25', "\r" => '%0D', "\n" => '%0A']) . "\n";
         }
@@ -537,7 +540,12 @@ final class SyntheticTree
                 $symbol = substr($symbol, (int) strrpos('\\' . $symbol, '\\'));
             }
             $lines[] = '  ' . $issue['rank'] . '. [' . $tag . '] ' . \sprintf($score >= 100 ? '%.0f' : ($score >= 10 ? '%.1f' : '%.2f'), $score) . '  ' . $location . '  [' . ($debt === [] ? '0min' : implode(' ', $debt)) . "]\n"
-                . str_repeat(' ', \strlen((string) $issue['rank']) + 8) . $finding['code'] . ': ' . ReportRecords::message($finding, true) . ($symbol === '' ? '' : ' (' . $symbol . ')') . "\n";
+                . str_repeat(' ', \strlen((string) $issue['rank']) + 8) . $finding['code'] . ': ' . $finding['message'] . ($symbol === '' ? '' : ' (' . $symbol . ')') . "\n";
+            $last = \count($lines) - 1;
+            $indent = str_repeat(' ', \strlen((string) $issue['rank']) + 8);
+            $lines[$last] .= $finding['recommendation'] === null ? '' : $indent . 'Recommendation: ' . $finding['recommendation'] . "\n";
+            $baseline = ReportRecords::baselineText($finding);
+            $lines[$last] .= $baseline === null ? '' : $indent . $baseline . "\n";
         }
         return $lines;
     }
@@ -555,11 +563,13 @@ final class SyntheticTree
     }
 
     /** @param list<string> $fields */
-    private static function publishingSource(array $fields): string
+    private static function publishingSource(array $fields, string $file, string $method): string
     {
         $lines = array_map(static fn(string $field): string => \sprintf("            '%s' => null,\n", $field), $fields);
 
-        return "<?php\n\nfinal class JsonFindingSection\n{\n    private function formatFinding(): array\n    {\n"
+        $class = pathinfo($file, \PATHINFO_FILENAME);
+        $visibility = $method === 'of' ? 'public' : 'private';
+        return "<?php\n\nfinal class $class\n{\n    $visibility function $method(): array\n    {\n"
             . "        return [\n" . implode('', $lines) . "        ];\n    }\n}\n";
     }
 

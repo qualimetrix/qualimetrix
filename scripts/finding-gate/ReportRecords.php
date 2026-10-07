@@ -195,24 +195,41 @@ final class ReportRecords
         return $identity;
     }
 
+    public static function codecOf(string $treeRoot): string
+    {
+        $sources = array_values(array_unique(EquivalenceTuple::load($treeRoot)->sources));
+        return match ($sources) {
+            [EquivalenceTuple::source()] => 'current',
+            ['src/Reporting/Formatter/Json/JsonFindingSection.php::formatFinding'] => 'legacy',
+            default => throw new GateError('The tree has an unsupported finding publisher: ' . implode(', ', $sources)),
+        };
+    }
+
     /**
      * @param array<string,mixed> $record
      *
      * @return array<string,mixed>
      */
-    public static function projection(string $surface, array $record): array
+    public static function projection(string $surface, array $record, string $codec = 'legacy'): array
     {
-        $message = self::message($record);
+        $message = self::message($record, codec: $codec);
         $severity = $record['severity'];
+        if ($codec === 'current' && $surface === 'format:html') {
+            return array_intersect_key($record, array_flip([...self::SCHEMAS['json'], 'baselineVerdict', 'baselineReason']));
+        }
+        $place = $codec === 'current' ? self::place($record) : '[project]';
+        if ($codec === 'current' && $surface === 'format:sarif' && $record['file'] === null && $place !== '[project]') {
+            $message = $place . ': ' . $message;
+        }
         return match ($surface) {
             'format:html' => ['subject' => $record['subject'], 'ruleName' => $record['rule'], 'violationCode' => $record['code'], 'message' => $record['message'], 'recommendation' => $record['recommendation'], 'severity' => $severity, 'metricValue' => $record['metricValue'], 'symbolPath' => $record['symbol'], 'occurrence' => $record['occurrence'], 'file' => $record['file'], 'line' => $record['line']]
                 + (\array_key_exists('baselineVerdict', $record) && \array_key_exists('baselineReason', $record)
                     ? ['acceptedLevel' => $record['acceptedLevel'], 'baselineVerdict' => $record['baselineVerdict'], 'baselineReason' => $record['baselineReason']]
                     : []),
-            'format:checkstyle' => ['file' => $record['file'] ?? '[project]', 'line' => $record['line'] ?? 1, 'severity' => $severity, 'code' => 'qmx.' . $record['code'], 'message' => $message],
+            'format:checkstyle' => ['file' => $record['file'] ?? $place, 'line' => $record['line'] ?? 1, 'severity' => $severity, 'code' => 'qmx.' . $record['code'], 'message' => $message],
             'format:gitlab' => ['description' => $message, 'check_name' => $record['code'], 'severity' => match ($severity) {
                 'error' => 'critical', 'warning' => 'major', default => 'info',
-            }, 'location' => ['path' => $record['file'] ?? '_project', 'lines' => ['begin' => $record['line'] ?? 1]]],
+            }, 'location' => ['path' => $record['file'] ?? ($place === '[project]' ? '_project' : $place), 'lines' => ['begin' => $record['line'] ?? 1]]],
             'format:sarif' => ['ruleId' => $record['code'], 'level' => match ($severity) {
                 'warning' => 'warning', 'error' => 'error', default => 'note',
             }, 'message' => ['text' => $message], 'file' => $record['file'], 'line' => $record['file'] === null ? null : ($record['line'] ?? 1)],
@@ -221,7 +238,30 @@ final class ReportRecords
     }
 
     /** @param array<string,mixed> $record */
-    public static function message(array $record, bool $advice = false): string
+    public static function place(array $record): string
+    {
+        if (SubjectLevel::of((string) $record['subject']) === 'project') {
+            return '[project]';
+        }
+        return $record['namespace'] ?? '(global)';
+    }
+
+    /** @param array<string,mixed> $record */
+    public static function baselineText(array $record): ?string
+    {
+        if ($record['acceptedLevel'] === null) {
+            return null;
+        }
+        $annotated = self::message($record);
+        $suffix = substr($annotated, \strlen((string) $record['message']) + 2, -1);
+        if (($record['baselineVerdict'] ?? null) === 'not-compared') {
+            return 'accepted at ' . $record['acceptedLevel']['describe'] . '; not compared: ' . $record['baselineReason'];
+        }
+        return $suffix;
+    }
+
+    /** @param array<string,mixed> $record */
+    public static function message(array $record, bool $advice = false, string $codec = 'legacy'): string
     {
         $text = $advice && $record['recommendation'] !== null ? $record['recommendation'] : $record['message'];
         if (!\is_string($text)) {
@@ -238,6 +278,9 @@ final class ReportRecords
             throw new GateError('An accepted level requires the exact shape, description, and positive count object.');
         }
         $suffix = 'accepted at ' . $accepted['describe'];
+        if (($record['baselineVerdict'] ?? null) === 'not-compared') {
+            return $text . ' (' . $suffix . '; not compared: ' . $record['baselineReason'] . ')';
+        }
         if ($accepted['shape'] === 'magnitude') {
             $current = $record['metricValue'];
             if ($current !== null && !\is_int($current) && !\is_float($current)) {

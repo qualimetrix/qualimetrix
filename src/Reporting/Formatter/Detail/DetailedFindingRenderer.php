@@ -21,24 +21,16 @@ final class DetailedFindingRenderer
         $this->debtBreakdownRenderer = new DebtBreakdownRenderer($debtCalculator);
     }
 
-    /**
-     * The `--detail` listing under the context's cap: the whole list is put in
-     * its printed order first and cut second, so the findings shown are the
-     * first ones `--detail=all` would print, never the first ones the rules
-     * happened to produce.
-     *
-     * @param list<Finding> $findings every finding the listing is about
-     *
-     * @return string Formatted detail block (without trailing newline)
-     */
-    public function renderCapped(array $findings, FormatterContext $context): string
+    /** Selects the worst findings before applying the requested print grouping. */
+    public function renderCapped(\Qualimetrix\Reporting\Report $report, FormatterContext $context): string
     {
-        $ordered = FindingDetailRenderer::order($findings, $context);
+        $findings = $report->findings;
         $cap = $context->detailLimit;
-        $shown = $cap === null || $cap === 0 ? $ordered : \array_slice($ordered, 0, $cap);
+        $shown = $cap === null || $cap === 0 ? $findings
+            : \Qualimetrix\Reporting\Formatter\Ordering\FindingSorter::worstFirst($findings, $report->topIssues, $cap);
         $block = $this->render($shown, $context, $findings);
 
-        $remaining = \count($ordered) - \count($shown);
+        $remaining = \count($findings) - \count($shown);
         if ($remaining === 0) {
             return $block;
         }

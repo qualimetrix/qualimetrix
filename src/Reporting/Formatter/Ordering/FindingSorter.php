@@ -49,7 +49,7 @@ final class FindingSorter
         foreach ($findings as $finding) {
             $key = match ($groupBy) {
                 GroupBy::None => '',
-                GroupBy::File => $finding->location->pathString(),
+                GroupBy::File => self::placeKey($finding),
                 GroupBy::Rule => $finding->ruleName,
                 GroupBy::Severity => $finding->severity->value,
                 GroupBy::ClassName => self::extractClassName($finding),
@@ -60,6 +60,46 @@ final class FindingSorter
         }
 
         return $groups;
+    }
+
+    /**
+     * Selects severity first, then the run's impact ranking, before grouping.
+     *
+     * @param list<Finding> $findings
+     * @param list<\Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue> $ranked
+     *
+     * @return list<Finding>
+     */
+    public static function worstFirst(array $findings, array $ranked, int $limit): array
+    {
+        $ranks = [];
+        foreach ($ranked as $rank => $issue) {
+            $ranks[$issue->finding->getFingerprint()] = $rank;
+        }
+        usort($findings, static function (Finding $a, Finding $b) use ($ranks): int {
+            $comparisons = [
+                self::severityOrder($a->severity) <=> self::severityOrder($b->severity),
+                ($ranks[$a->getFingerprint()] ?? \PHP_INT_MAX) <=> ($ranks[$b->getFingerprint()] ?? \PHP_INT_MAX),
+                self::placeKey($a) <=> self::placeKey($b),
+                ($a->location->line ?? 0) <=> ($b->location->line ?? 0),
+                $a->getFingerprint() <=> $b->getFingerprint(),
+            ];
+            foreach ($comparisons as $comparison) {
+                if ($comparison !== 0) {
+                    return $comparison;
+                }
+            }
+            return 0;
+        });
+
+        return \array_slice($findings, 0, $limit);
+    }
+
+    private static function placeKey(Finding $finding): string
+    {
+        return $finding->location->file === null
+            ? \Qualimetrix\Reporting\Formatter\PublishedFinding::place($finding)->name
+            : $finding->location->pathString();
     }
 
     private static function bySeverityFileLine(Finding $a, Finding $b): int
@@ -118,13 +158,13 @@ final class FindingSorter
     }
 
     /**
-     * Extracts the namespace for grouping. Falls back to '<global>' if no namespace.
+     * Extracts the namespace for grouping. Uses the canonical global namespace label when no namespace is named.
      */
     private static function extractNamespaceName(Finding $finding): string
     {
         $ns = $finding->symbolPath->namespace ?? '';
 
-        return $ns !== '' ? $ns : '<global>';
+        return \Qualimetrix\Core\Symbol\SymbolPath::forNamespace($ns)->toString();
     }
 
     private static function severityOrder(Severity $severity): int

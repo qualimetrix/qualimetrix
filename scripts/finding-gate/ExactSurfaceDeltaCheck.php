@@ -43,6 +43,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
             $declarations,
             $this->run->temporaryDirectory,
         );
+        $this->run->copyPublicationsTo($trial);
         $records = $verifiedRecords->trialCopy($trial);
         $fingerprints = $verifiedFingerprints->forkFor($report);
         RankingCheck::create($this->run)->trialCopy($trial);
@@ -63,7 +64,7 @@ final class ExactSurfaceDeltaCheck implements Derivation
             $trial->maps,
             $trial->normalization,
             $fingerprints,
-            new DeclaredDeltaCheck($trial->options, $report, $declarations->delta, $declarations->fieldMoves, $trial->split),
+            new DeclaredDeltaCheck($trial->options, $report, $declarations->delta, $declarations->fieldMoves, $trial->split, $trial),
             $trial->temporaryDirectory,
             $stages,
             $records,

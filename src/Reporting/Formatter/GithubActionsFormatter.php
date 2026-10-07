@@ -104,7 +104,7 @@ final class GithubActionsFormatter implements FormatterInterface
             '::%s %s::%s',
             $command,
             implode(',', $params),
-            $this->escapeData(PublishedFinding::annotatedMessage($finding)),
+            $this->escapeData(PublishedFinding::locatedMessage($finding)),
         );
     }
 

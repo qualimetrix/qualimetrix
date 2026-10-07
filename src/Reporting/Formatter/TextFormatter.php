@@ -92,7 +92,7 @@ final class TextFormatter implements FormatterInterface
         $color = new AnsiColor($context->useColor);
         $lines = [];
 
-        $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
+        $lines[] = $this->detailedRenderer->renderCapped($report, $context);
         $lines[] = '';
 
         // Summary line
@@ -105,7 +105,7 @@ final class TextFormatter implements FormatterInterface
     private function formatFinding(Finding $finding, AnsiColor $color, FormatterContext $context): string
     {
         $file = $finding->location->file === null
-            ? '[project]'
+            ? PublishedFinding::place($finding)->name
             : $context->relativizePath($finding->location->file);
         $line = $finding->location->line;
         $severity = $this->formatSeverity($finding->severity, $color);

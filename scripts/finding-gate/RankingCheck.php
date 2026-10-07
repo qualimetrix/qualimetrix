@@ -337,7 +337,7 @@ final class RankingCheck implements CaseCheck
             }
         }
         if ($view === 'format:json') {
-            $this->summary($artifacts['case:' . $case->id . '|format:summary'] ?? throw new GateError('The ranked summary projection is missing.'), $issues, $authority, $order, \count($slice));
+            $this->summary($artifacts['case:' . $case->id . '|format:summary'] ?? throw new GateError('The ranked summary projection is missing.'), $issues, $authority, $order, \count($slice), $side);
         }
         $mapped = array_map(fn(array $record): array => $this->mapped($side, $view, $record), $comparative);
         $this->observed[$case->id][$view][$side] = ['comparative' => $mapped, 'order' => $order, 'slice' => \count($slice), 'total' => \count($issues), 'publications' => $publications];
@@ -378,16 +378,16 @@ final class RankingCheck implements CaseCheck
      * @param list<array<string,mixed>> $authority
      * @param list<int> $order
      */
-    private function summary(string $text, array $issues, array $authority, array $order, int $size): void
+    private function summary(string $text, array $issues, array $authority, array $order, int $size, string $side): void
     {
-        $entries = array_values(array_filter(ProseRecords::extract('format:summary', $text), static fn(array $entry): bool => isset($entry['fields']['rank'])));
+        $entries = array_values(array_filter(ProseRecords::extract('format:summary', $text, $this->run->publicationCodec($side)), static fn(array $entry): bool => isset($entry['fields']['rank'])));
         if (\count($entries) !== $size) {
             throw new GateError('The ranked summary row count differs from its original JSON slice.');
         }
         foreach ($entries as $index => $entry) {
             $row = $entry['fields'];
             $issue = $issues[$index];
-            if (!ProseRecords::matches('format:summary', $row, $authority[$order[$index]]) || $row['rank'] !== $index + 1
+            if (!ProseRecords::matches('format:summary', $row, $authority[$order[$index]], $this->run->publicationCodec($side)) || $row['rank'] !== $index + 1
                 || (isset($issue['debtMinutes']) && $row['debt'] !== self::debt((int) $issue['debtMinutes']))) {
                 throw new GateError('A ranked summary row changed its physical projection, ordinal, tag or debt.');
             }

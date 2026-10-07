@@ -70,7 +70,7 @@ final class TopIssuesRenderer
 
         $locationStr = $this->formatLocation($finding, $context);
 
-        $detail = \sprintf('%s: %s%s', $finding->code, PublishedFinding::advice($finding), $this->formatSymbol($finding));
+        $detail = \sprintf('%s: %s%s', $finding->code, $finding->message, $this->formatSymbol($finding));
 
         $indent = str_repeat(' ', \strlen((string) $rank) + 8);
 
@@ -87,12 +87,19 @@ final class TopIssuesRenderer
             $indent,
             $color->dim($detail),
         );
+        if ($finding->recommendation !== null) {
+            $lines[] = $indent . $color->dim('Recommendation: ' . $finding->recommendation);
+        }
+        $baseline = \Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator::describe($finding);
+        if ($baseline !== null) {
+            $lines[] = $indent . $color->dim($baseline);
+        }
     }
 
     private function formatLocation(Finding $finding, FormatterContext $context): string
     {
         if ($finding->location->file === null) {
-            return '[project]';
+            return PublishedFinding::place($finding)->name;
         }
 
         $file = $context->relativizePath($finding->location->file);

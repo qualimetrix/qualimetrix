@@ -61,7 +61,7 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
         if ($context->isDetailEnabled() && !$report->isEmpty()) {
             $lines[] = '';
             $lines[] = $color->bold('Violations');
-            $lines[] = $this->detailedRenderer->renderCapped($report->findings, $context);
+            $lines[] = $this->detailedRenderer->renderCapped($report, $context);
         }
 
         return new FormattedReport(implode("\n", $lines) . "\n");

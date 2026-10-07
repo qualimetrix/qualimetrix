@@ -132,18 +132,13 @@ final class MetricsJsonFormatter implements FormatterInterface
      * What a `--namespace`/`--class` selection left out of `summary`, which
      * counts only the selection; the key stays, as null, without one.
      *
-     * @return array{violations: int, errors: int, warnings: int, info: int}|null
+     * @return array<string, mixed>|null
      */
     private static function outOfScope(Report $report): ?array
     {
         $outOfScope = $report->outOfScope;
 
-        return $outOfScope === null ? null : [
-            'violations' => $outOfScope->total(),
-            'errors' => $outOfScope->errorCount,
-            'warnings' => $outOfScope->warningCount,
-            'info' => $outOfScope->infoCount,
-        ];
+        return $outOfScope?->published();
     }
 
     public function publicationKind(): PublicationKind

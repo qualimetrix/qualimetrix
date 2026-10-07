@@ -19,7 +19,7 @@ final class ProseRecords
     ];
 
     /** @return list<array{lines:list<int>,fields:array<string,mixed>}> */
-    public static function extract(string $surface, string $text): array
+    public static function extract(string $surface, string $text, string $codec = 'legacy'): array
     {
         if (!\in_array($surface, self::SURFACES, true)) {
             throw new GateError('Unknown prose finding surface.');
@@ -66,7 +66,8 @@ final class ProseRecords
                 if ($locationFile === null) {
                     throw new GateError('A detailed finding line has no observed file or project group.');
                 }
-                $records[] = ['lines' => range($index, $end), 'fields' => ['code' => $detail[2], 'file' => $locationFile, 'line' => $atLine, 'message' => $detail[1], 'severity' => match ($head[1]) {
+                $extra = $codec === 'current' && $surface !== 'show-suppressed' && $surface !== 'format:text-verbose' ? self::extraLines($lines, $end) : [];
+                $records[] = ['lines' => range($index, $end), 'fields' => $extra + ['code' => $detail[2], 'file' => $locationFile, 'line' => $atLine, 'message' => $detail[1], 'severity' => match ($head[1]) {
                     'ERROR' => 'error', 'WARN' => 'warning', default => 'info',
                 }, 'symbol' => $head[3] ?? '']];
                 $index = $end;
@@ -79,14 +80,45 @@ final class ProseRecords
                 while (isset($lines[$end + 1]) && self::continuation($lines[$end + 1])) {
                     $message .= "\n" . $lines[++$end];
                 }
+                $extra = $codec === 'current' ? self::extraLines($lines, $end) : [];
                 [$locationFile, $atLine] = self::location($head[4]);
-                $records[] = ['lines' => range($index, $end), 'fields' => ['code' => $detail[1], 'file' => $locationFile, 'line' => $atLine, 'message' => $message, 'severity' => match ($head[2]) {
+                $records[] = ['lines' => range($index, $end), 'fields' => $extra + ['code' => $detail[1], 'file' => $locationFile, 'line' => $atLine, 'message' => $message, 'severity' => match ($head[2]) {
                     'ERR' => 'error', 'WRN' => 'warning', default => 'info',
                 }, 'rank' => (int) $head[1], 'debt' => $head[5], 'score' => $head[3]]];
                 $index = $end;
             }
         }
         return $records;
+    }
+
+    /** @return list<string> */
+    public static function fieldsOf(string $surface, string $codec): array
+    {
+        $fields = self::FIELDS[$surface] ?? [];
+        return $codec === 'current' && \in_array($surface, ['format:summary', 'format:text-detail'], true)
+            ? [...$fields, 'recommendation', 'acceptedLevel'] : $fields;
+    }
+
+    /**
+     * @param list<string> $lines
+     *
+     * @return array{recommendation: ?string, acceptedLevel: ?string}
+     */
+    private static function extraLines(array $lines, int &$end): array
+    {
+        $fields = ['recommendation' => null, 'acceptedLevel' => null];
+        if (isset($lines[$end + 1]) && preg_match('~^ +Recommendation: (.*)$~D', $lines[$end + 1], $match) === 1) {
+            ++$end;
+            $fields['recommendation'] = $match[1];
+            while (isset($lines[$end + 1]) && self::continuation($lines[$end + 1])) {
+                $fields['recommendation'] .= "\n" . $lines[++$end];
+            }
+        }
+        if (isset($lines[$end + 1]) && preg_match('~^ +(accepted at .+)$~D', $lines[$end + 1], $match) === 1) {
+            ++$end;
+            $fields['acceptedLevel'] = $match[1];
+        }
+        return $fields;
     }
 
     /**
@@ -139,14 +171,22 @@ final class ProseRecords
      * @param array<string,mixed> $prose
      * @param array<string,mixed> $finding
      */
-    public static function matches(string $surface, array $prose, array $finding): bool
+    public static function matches(string $surface, array $prose, array $finding, string $codec = 'legacy'): bool
     {
-        if ($prose['code'] !== $finding['code'] || $prose['file'] !== ($finding['file'] ?? '[project]')
+        if ($prose['code'] !== $finding['code'] || $prose['file'] !== ($finding['file'] ?? ($codec === 'current' && $surface !== 'format:github' ? ReportRecords::place($finding) : '[project]'))
             || ($prose['line'] !== null && $prose['line'] !== $finding['line']) || $prose['severity'] !== $finding['severity']) {
             return false;
         }
         $detailed = isset($prose['symbol']);
-        $message = ReportRecords::message($finding, $detailed || $surface === 'format:summary');
+        $separate = $codec === 'current' && \in_array($surface, ['format:text', 'format:text-detail', 'format:summary'], true) && ($detailed || $surface === 'format:summary');
+        $message = $separate ? $finding['message'] : ReportRecords::message($finding, $detailed || $surface === 'format:summary', $codec);
+        if ($separate && (($prose['recommendation'] ?? null) !== $finding['recommendation']
+            || ($prose['acceptedLevel'] ?? null) !== ReportRecords::baselineText($finding))) {
+            return false;
+        }
+        if ($codec === 'current' && $surface === 'format:github' && $finding['file'] === null && ReportRecords::place($finding) !== '[project]') {
+            $message = ReportRecords::place($finding) . ': ' . $message;
+        }
         $symbol = self::symbol($finding, $detailed);
         if ($detailed) {
             return $prose['message'] === $message && $prose['symbol'] === $symbol;
@@ -185,7 +225,7 @@ final class ProseRecords
      * @param array<string,mixed> $before
      * @param array<string,mixed> $after
      */
-    public static function rewriteProjection(string $surface, string $text, array $entry, array $before, array $after): string
+    public static function rewriteProjection(string $surface, string $text, array $entry, array $before, array $after, string $codec = 'legacy'): string
     {
         $lines = explode("\n", $text);
         $index = $entry['lines'][0];
@@ -203,9 +243,9 @@ final class ProseRecords
             if ($at === false) {
                 throw new GateError('Cannot locate an annotation payload.');
             }
-            $lines[$index] = substr($line, 0, $at + 2) . $escape(ReportRecords::message($after), false);
+            $lines[$index] = substr($line, 0, $at + 2) . $escape(($codec === 'current' && $after['file'] === null && ReportRecords::place($after) !== '[project]' ? ReportRecords::place($after) . ': ' : '') . ReportRecords::message($after, codec: $codec), false);
         } elseif (isset($entry['fields']['symbol'])) {
-            $location = ($after['file'] ?? '[project]') . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']);
+            $location = ($after['file'] ?? ($codec === 'current' ? ReportRecords::place($after) : '[project]')) . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']);
             if ($before['file'] === $after['file']) {
                 if (str_contains($lines[$index], 'at line ')) {
                     $location = $after['line'] === null ? '' : 'at line ' . $after['line'];
@@ -218,9 +258,9 @@ final class ProseRecords
             };
             $symbol = self::symbol($after, true);
             $lines[$index] = '  ' . $tag . ($location === '' ? '' : ' ' . $location) . ($symbol === '' ? '' : '  ' . $symbol);
-            self::replaceAdvice($lines, $entry, '    ' . ReportRecords::message($after, true) . '  [' . $after['code'] . ']');
+            self::replaceAdvice($lines, $entry, '    ' . ($codec === 'current' ? $after['message'] : ReportRecords::message($after, true)) . '  [' . $after['code'] . ']' . self::extraText($after, $codec, '    '));
         } elseif ($surface === 'format:summary') {
-            $location = ($after['file'] ?? '[project]') . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']);
+            $location = ($after['file'] ?? ($codec === 'current' ? ReportRecords::place($after) : '[project]')) . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']);
             $tag = match ($after['severity']) {
                 'error' => 'ERR', 'warning' => 'WRN', default => 'INF',
             };
@@ -229,12 +269,23 @@ final class ProseRecords
             if (preg_match('~^\s*~', $lines[$entry['lines'][1]], $indent) !== 1) {
                 throw new GateError('Cannot locate summary detail indentation.');
             }
-            self::replaceAdvice($lines, $entry, $indent[0] . $after['code'] . ': ' . ReportRecords::message($after, true) . $suffix);
+            self::replaceAdvice($lines, $entry, $indent[0] . $after['code'] . ': ' . ($codec === 'current' ? $after['message'] : ReportRecords::message($after, true)) . $suffix . self::extraText($after, $codec, $indent[0]));
         } else {
             $suffix = self::symbol($after) === '' ? '' : ' (' . self::symbol($after) . ')';
-            $lines[$index] = ($after['file'] ?? '[project]') . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']) . ': ' . $after['severity'] . '[' . $after['code'] . ']: ' . ReportRecords::message($after) . $suffix;
+            $lines[$index] = ($after['file'] ?? ($codec === 'current' ? ReportRecords::place($after) : '[project]')) . ($entry['fields']['line'] === null || $after['line'] === null ? '' : ':' . $after['line']) . ': ' . $after['severity'] . '[' . $after['code'] . ']: ' . ReportRecords::message($after, codec: $codec) . $suffix;
         }
         return implode("\n", $lines);
+    }
+
+    /** @param array<string,mixed> $finding */
+    private static function extraText(array $finding, string $codec, string $indent): string
+    {
+        if ($codec !== 'current') {
+            return '';
+        }
+        $text = $finding['recommendation'] === null ? '' : "\n" . $indent . 'Recommendation: ' . $finding['recommendation'];
+        $baseline = ReportRecords::baselineText($finding);
+        return $text . ($baseline === null ? '' : "\n" . $indent . $baseline);
     }
 
     /**
