@@ -3,7 +3,7 @@ name: Benchmark
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, stage/bench-ci-witness]
   merge_group:
 
 permissions:
@@ -44,6 +44,7 @@ jobs:
           COMPOSER_PROCESS_TIMEOUT: '0'
         run: |
           set -o pipefail
+          python3 -c 'from pathlib import Path; p = Path("src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php"); text = p.read_text(); assert text.count("* 50") == 4; p.write_text(text.replace("* 50", "* 40")); print("Planted four cohesion coefficients: * 50 -> * 40")'
           composer benchmark:check 2>&1 | tee benchmark.log
 
       - name: Upload benchmark log
