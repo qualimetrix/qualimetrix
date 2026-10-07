@@ -173,7 +173,7 @@ Available tests:
  - QmxFindingGate\Tests\CaseInputTranslationTest::itPreservesContainedDirectoryLinksAndNeverLoadsCaseCode
  - QmxFindingGate\Tests\CaseInputTranslationTest::itRefusesUnsupportedDocumentTargetsAndSymbolPathGeometry
  - QmxFindingGate\Tests\CaseInputTranslationTest::itTranslatesConfigAndPresetStructuralInputsOnlyOnReference
- - QmxFindingGate\Tests\CaseOutcomeCheckTest::itCreditsOnlyTheDeclaredAbsentBaselineRefusal
+ - QmxFindingGate\Tests\CaseOutcomeCheckTest::itCreditsOnlyTheDeclaredEmptyCapturedBaselineRefusal
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itDoesNotHoldAnIncompleteAnalysisToABaselineFileItCannotWrite
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itHoldsAnAnalysisToItsBaselineFile
  - QmxFindingGate\Tests\CaseOutcomeCheckTest::itJudgesNormalizationMeasurementsByTheirCanonicalOutcomeSide
@@ -586,7 +586,7 @@ Available tests:
  - QmxFindingGate\Tests\SurfaceComparisonTest::itComparesTheWholeHtmlRefusalWithoutRequiringAnAnalysisPayload
  - QmxFindingGate\Tests\SurfaceComparisonTest::itDeclaresA244LineNonRecordDeltaAndRefusesANeighbouringByte
  - QmxFindingGate\Tests\SurfaceComparisonTest::itDerivesFreshRecordIntentionsBeforeConsideringAnExactMetricSurface
- - QmxFindingGate\Tests\SurfaceComparisonTest::itFramesOnlyAnAbsentDeclaredBaselineRefusalAndKeepsAnalysisAuthority
+ - QmxFindingGate\Tests\SurfaceComparisonTest::itFramesOnlyAnEmptyCapturedDeclaredBaselineRefusalAndKeepsAnalysisAuthority
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsAnInvalidExactSupplierUnmeasuredWhileDerivingAValidNeighbour
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsDistinctRawRankingNumbersBeyondFloatPrecision
  - QmxFindingGate\Tests\SurfaceComparisonTest::itKeepsRejectedBaselineSourceLocalWithoutSilencingUnknownAuthority
@@ -2302,14 +2302,24 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue in a branch with nothing to skip"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue skips a fallback"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"continue with nothing to skip"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"deferred arrow before guard is not work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"deferred closure before guard is not work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"eager receiver creation remains work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"early guard return does not excuse catch"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class function callable before guard is not work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class method callable before guard is not work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"first class static callable before guard is not work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"guard before work is not an attempt"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"invoking a callback is work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before continue"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"last condition computes work before return"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"no exit at all"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"outer call with arrow argument is work"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"outer call with closure argument is work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"preceded guard remains a known indistinguishable shape"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return ends the try"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"return in a branch, more work after it"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"returned arrow creates a callback without work"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\ChainOfAttemptsTest::itRecognizesOnlyTheChainAttemptShape"try nested below the loop body"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellCollectorTest::itClearsStateOnReset
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellCollectorTest::itCollectsMultipleDistinctSmells
