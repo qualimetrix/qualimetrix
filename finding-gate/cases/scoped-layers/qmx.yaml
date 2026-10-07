@@ -12,9 +12,9 @@ architecture:
   coverage-gap: ignore
   layers:
     - name: service-broad
-      patterns: ['Corpus\ScopedLayers\Service']
+      patterns: ['Corpus\ScopedLayers\Service*']
     - name: service-shadow
-      suffix: [Service]
+      patterns: ['Corpus\ScopedLayers\Service']
     - name: outside-slice
       patterns: ['Corpus\ScopedLayers\Other']
   allow:
