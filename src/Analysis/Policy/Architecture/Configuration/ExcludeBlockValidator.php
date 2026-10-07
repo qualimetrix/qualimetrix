@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
 /**
@@ -82,7 +83,7 @@ final class ExcludeBlockValidator
     }
 
     /**
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>} $criteria
      */
     private static function buildExcludeSpec(int $index, string $layerName, array $criteria, MatchMode $mode, SectionSpot $spot): ExcludeSpec
     {
@@ -91,9 +92,11 @@ final class ExcludeBlockValidator
                 patterns: $criteria['patterns'],
                 suffix: $criteria['suffix'],
                 attributes: $criteria['attributes'],
+                memberAttributes: $criteria['member_attributes'],
                 implements: $criteria['implements'],
                 extends: $criteria['extends'],
                 mode: $mode,
+                namedTypes: $criteria['named_types'],
             );
         } catch (InvalidArgumentException $e) {
             throw $spot->refusal(\sprintf('architecture.layers[%d] ("%s"): exclude — %s', $index, $layerName, $e->getMessage()));
@@ -101,23 +104,30 @@ final class ExcludeBlockValidator
     }
 
     /**
-     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
+     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>}
      */
     private static function normalizeCriteria(int $index, string $layerName, SectionSpot $value, LayerCriterionNormalizer $normalizer): array
     {
         $excludePath = $layerName . '.exclude';
 
+        $attributes = $normalizer->normalizeNamedTypeList($index, $excludePath, 'attributes', $value->child('attributes'));
+        $memberAttributes = $normalizer->normalizeNamedTypeList($index, $excludePath, 'member_attributes', $value->child('member_attributes'));
+        $implements = $normalizer->normalizeNamedTypeList($index, $excludePath, 'implements', $value->child('implements'));
+        $extends = $normalizer->normalizeNamedTypeList($index, $excludePath, 'extends', $value->child('extends'));
+
         return [
             'patterns' => $normalizer->normalizePatternList($index, $excludePath, $value->child('patterns')),
             'suffix' => $normalizer->normalizeSuffixList($index, $excludePath, $value->child('suffix')),
-            'attributes' => $normalizer->normalizeFqnList($index, $excludePath, 'attributes', $value->child('attributes')),
-            'implements' => $normalizer->normalizeFqnList($index, $excludePath, 'implements', $value->child('implements')),
-            'extends' => $normalizer->normalizeFqnList($index, $excludePath, 'extends', $value->child('extends')),
+            'attributes' => self::typeNames($attributes),
+            'member_attributes' => self::typeNames($memberAttributes),
+            'implements' => self::typeNames($implements),
+            'extends' => self::typeNames($extends),
+            'named_types' => [...$attributes, ...$memberAttributes, ...$implements, ...$extends],
         ];
     }
 
     /**
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>} $criteria
      */
     private static function rejectAllEmptyCriteria(int $index, string $layerName, array $criteria, SectionSpot $spot): void
     {
@@ -127,11 +137,19 @@ final class ExcludeBlockValidator
 
         throw $spot->refusal(
             \sprintf(
-                'architecture.layers[%d] ("%s"): "exclude" must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends" (omit the "exclude" key to leave it undeclared).',
+                'architecture.layers[%d] ("%s"): "exclude" must declare at least one of "patterns", "suffix", "attributes", "member_attributes", "implements" or "extends" (omit the "exclude" key to leave it undeclared).',
                 $index,
                 $layerName,
             ),
         );
+    }
+
+    /** @param list<NamedType> $types
+     * @return list<string>
+     */
+    private static function typeNames(array $types): array
+    {
+        return array_map(static fn(NamedType $type): string => $type->fqn, $types);
     }
 
 }

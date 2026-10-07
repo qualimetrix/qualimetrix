@@ -24,7 +24,7 @@ final class LayersValidatorEmptyMembershipRefusalTest extends TestCase
             self::fail('Expected ConfigurationRefusal for a layer entry declaring no criterion.');
         } catch (ConfigurationRefusal $e) {
             self::assertStringContainsString(
-                'must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends"',
+                'must declare at least one of "patterns", "suffix", "attributes", "member_attributes", "implements" or "extends"',
                 $e->getMessage(),
             );
         }

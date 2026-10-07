@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 
@@ -60,7 +61,7 @@ final class LayerCriterionNormalizer
     }
 
     /**
-     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
+     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>}
      */
     private static function judgeCriteria(int $index, string $name, SectionSpot $entry): array
     {
@@ -69,6 +70,7 @@ final class LayerCriterionNormalizer
             'patterns' => $normalizer->normalizePatternList($index, $name, $entry->child('patterns')),
             'suffix' => $normalizer->normalizeSuffixList($index, $name, $entry->child('suffix')),
             'attributes' => $normalizer->normalizeFqnList($index, $name, 'attributes', $entry->child('attributes')),
+            'member_attributes' => $normalizer->normalizeFqnList($index, $name, 'member_attributes', $entry->child('member_attributes')),
             'implements' => $normalizer->normalizeFqnList($index, $name, 'implements', $entry->child('implements')),
             'extends' => $normalizer->normalizeFqnList($index, $name, 'extends', $entry->child('extends')),
         ];
@@ -82,12 +84,18 @@ final class LayerCriterionNormalizer
      */
     public function normalizePatternList(int $index, string $layerName, SectionSpot $value): array
     {
+        self::rejectSelectorSubtree($index, $layerName, $value);
+
         return self::normalizeStringList(
             $index,
             $layerName,
             'patterns',
             $value,
             static function (string $entry): ?string {
+                if (str_starts_with($entry, 'subtree:') && \strlen($entry) > \strlen('subtree:')) {
+                    return self::selectorSubtreeError(substr($entry, \strlen('subtree:')), $entry);
+                }
+
                 try {
                     CapturePattern::compile($entry);
                 } catch (InvalidArgumentException $e) {
@@ -134,32 +142,88 @@ final class LayerCriterionNormalizer
      */
     public function normalizeFqnList(int $index, string $layerName, string $kind, SectionSpot $value): array
     {
-        $entries = self::normalizeStringList(
-            $index,
-            $layerName,
-            $kind,
-            $value,
-            static function (string $entry) use ($kind): ?string {
-                if (!str_contains($entry, '\\')) {
-                    return \sprintf(
-                        'must be a fully-qualified class name (containing at least one namespace separator); got "%s". '
-                        . 'Short names are not accepted in "%s"; a class in the global namespace is written with a '
-                        . 'leading backslash, e.g. "\\%s".',
-                        $entry,
-                        $kind,
-                        $entry,
-                    );
-                }
-
-                if (ltrim($entry, '\\') === '') {
-                    return \sprintf('must name a class; got "%s".', $entry);
-                }
-
-                return null;
-            },
+        return array_map(
+            static fn(NamedType $type): string => $type->fqn,
+            $this->normalizeNamedTypeList($index, $layerName, $kind, $value),
         );
+    }
 
-        return array_map(static fn(string $entry): string => PhpBuiltinClassRegistry::spelling(ltrim($entry, '\\')), $entries);
+    /** @return list<NamedType> */
+    public function normalizeNamedTypeList(int $index, string $layerName, string $kind, SectionSpot $value): array
+    {
+        $types = [];
+        foreach (CarriedValueForm::criterionEntries($index, $layerName, $kind, $value) as $entryIndex => [$entry, $spot]) {
+            $fqn = self::validateListEntry(
+                $index,
+                $layerName,
+                $kind,
+                $entryIndex,
+                $entry,
+                $spot,
+                static function (string $entry) use ($kind): ?string {
+                    if (!str_contains($entry, '\\')) {
+                        return \sprintf(
+                            'must be a fully-qualified class name (containing at least one namespace separator); got "%s". '
+                            . 'Short names are not accepted in "%s"; a class in the global namespace is written with a '
+                            . 'leading backslash, e.g. "\\%s".',
+                            $entry,
+                            $kind,
+                            $entry,
+                        );
+                    }
+
+                    if (ltrim($entry, '\\') === '') {
+                        return \sprintf('must name a class; got "%s".', $entry);
+                    }
+
+                    return null;
+                },
+            );
+            $types[] = new NamedType(PhpBuiltinClassRegistry::spelling(ltrim($fqn, '\\')), $spot->provenance());
+        }
+
+        return $types;
+    }
+
+    private static function rejectSelectorSubtree(int $index, string $layerName, SectionSpot $value): void
+    {
+        $written = $value->value();
+        if (\is_array($written) && \count($written) === 1 && \is_string($written['subtree'] ?? null)) {
+            throw $value->child('subtree')->refusal(
+                \sprintf(
+                    'architecture.layers[%d] ("%s"): "patterns" uses the selector grammar; %s',
+                    $index,
+                    $layerName,
+                    self::selectorSubtreeError($written['subtree'], '{subtree: ' . $written['subtree'] . '}'),
+                ),
+                written: 'subtree',
+            );
+        }
+
+        if (!\is_array($written)) {
+            return;
+        }
+
+        foreach (array_values($written) as $entryIndex => $entry) {
+            if (!\is_array($entry) || \count($entry) !== 1 || !\is_string($entry['subtree'] ?? null)) {
+                continue;
+            }
+
+            throw $value->child($entryIndex)->child('subtree')->refusal(
+                \sprintf(
+                    'architecture.layers[%d] ("%s"): "patterns" uses the selector grammar; %s',
+                    $index,
+                    $layerName,
+                    self::selectorSubtreeError($entry['subtree'], '{subtree: ' . $entry['subtree'] . '}'),
+                ),
+                written: 'subtree',
+            );
+        }
+    }
+
+    private static function selectorSubtreeError(string $root, string $written): string
+    {
+        return \sprintf('write "%s\\**" instead of "%s".', rtrim($root, '\\'), $written);
     }
 
     /**

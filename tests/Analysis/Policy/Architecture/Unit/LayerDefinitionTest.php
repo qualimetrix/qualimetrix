@@ -655,6 +655,14 @@ final class LayerDefinitionTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsAMemberAttributesOnlySpec(): void
+    {
+        $spec = new MembershipSpec(memberAttributes: ['App\\Attr\\Route']);
+
+        self::assertSame(['App\\Attr\\Route'], $spec->memberAttributes);
+    }
+
+    #[Test]
     public function itAcceptsAnImplementsOnlySpec(): void
     {
         $spec = new MembershipSpec(implements: ['App\\Contracts\\Repository']);

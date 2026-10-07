@@ -13,7 +13,7 @@ use InvalidArgumentException;
  * {@see LayerDefinition::matches()} as a hard filter AFTER the positive
  * criteria succeed.
  *
- * The criterion shape mirrors {@see MembershipSpec} exactly (five criterion
+ * The criterion shape mirrors {@see MembershipSpec} exactly (six criterion
  * lists + {@see MatchMode}) but {@see ExcludeSpec} cannot nest another
  * exclude — the filter is single-level. Within a single criterion kind, list
  * entries are always OR'd. Cross-kind combination is controlled by
@@ -41,6 +41,8 @@ final readonly class ExcludeSpec
      * @param MatchMode $mode Cross-kind combination strategy. Defaults to
      *                        {@see MatchMode::Any} — exclude as soon as
      *                        any criterion fires.
+     * @param list<string> $memberAttributes Attribute FQNs applied to declared members.
+     * @param list<NamedType> $namedTypes Authored named-type criteria with document provenance.
      *
      * @throws InvalidArgumentException If every criterion list is empty or
      *                                  any entry is a non-string /
@@ -53,17 +55,21 @@ final readonly class ExcludeSpec
         public array $implements = [],
         public array $extends = [],
         public MatchMode $mode = MatchMode::Any,
+        public array $memberAttributes = [],
+        public array $namedTypes = [],
     ) {
         CriterionListValidator::validate('ExcludeSpec', 'patterns', $patterns);
         CriterionListValidator::validate('ExcludeSpec', 'suffix', $suffix);
         CriterionListValidator::validate('ExcludeSpec', 'attributes', $attributes);
         CriterionListValidator::validate('ExcludeSpec', 'implements', $implements);
         CriterionListValidator::validate('ExcludeSpec', 'extends', $extends);
+        CriterionListValidator::validate('ExcludeSpec', 'memberAttributes', $memberAttributes);
+        CriterionListValidator::validateNamedTypes('ExcludeSpec', $namedTypes);
 
-        if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === []) {
+        if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === [] && $memberAttributes === []) {
             throw new InvalidArgumentException(
                 'ExcludeSpec must declare at least one non-empty criterion list '
-                . '(patterns, suffix, attributes, implements, or extends).',
+                . '(patterns, suffix, attributes, memberAttributes, implements, or extends).',
             );
         }
     }

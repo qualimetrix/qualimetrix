@@ -55,6 +55,21 @@ final class SelectorYamlDecoder
     {
         $entryPosition = self::position($position);
 
+        if (\is_string($value) && str_ends_with($value, '\\**')) {
+            $subtree = substr($value, 0, -3);
+            if ($subtree !== '') {
+                throw ConfigurationRefusal::at(
+                    $origin,
+                    $entryPosition,
+                    \sprintf(
+                        'Selector entries use explicit selector mappings; "%s" is an Architecture pattern; write {subtree: %s}.',
+                        $value,
+                        rtrim($subtree, '\\'),
+                    ),
+                );
+            }
+        }
+
         if (!\is_array($value) || \count($value) !== 1) {
             throw ConfigurationRefusal::at(
                 $origin,

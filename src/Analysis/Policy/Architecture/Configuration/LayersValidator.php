@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
 /**
@@ -105,6 +106,7 @@ final class LayersValidator
         $mode = $this->normalizer->normalizeMatchMode($index, $name, $entry->child('match'));
         $isTemplate = TemplateLayerDefinition::containsCaptureVariable($name);
         self::rejectCapturesInStaticPatterns($index, $name, $criteria['patterns'], $isTemplate, $entry->child('patterns'));
+        self::rejectCapturelessPatternsInAnyTemplate($index, $name, $criteria['patterns'], $isTemplate, $mode, $entry->child('patterns'));
         $exclude = ExcludeBlockValidator::parse($index, $name, $entry->child('exclude'), $isTemplate, $this->normalizer);
         $lifecycle = $this->normalizer->normalizeLifecycle($index, $name, $entry->child('pending'), $isTemplate);
 
@@ -123,7 +125,7 @@ final class LayersValidator
      * exclude variables) and rewraps them as {@see ConfigurationRefusal} so
      * the user sees a config-layer error.
      *
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>} $criteria
      */
     private static function buildTemplateDefinition(int $index, string $nameTemplate, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude, SectionSpot $entry): TemplateLayerDefinition
     {
@@ -137,10 +139,12 @@ final class LayersValidator
                     patterns: $criteria['patterns'],
                     suffix: $criteria['suffix'],
                     attributes: $criteria['attributes'],
+                    memberAttributes: $criteria['member_attributes'],
                     implements: $criteria['implements'],
                     extends: $criteria['extends'],
                     mode: $mode,
                     exclude: $exclude,
+                    namedTypes: $criteria['named_types'],
                 ),
             );
         } catch (InvalidArgumentException $e) {
@@ -149,23 +153,30 @@ final class LayersValidator
     }
 
     /**
-     * Collects the five criterion lists from a single layer entry.
+     * Collects the six criterion lists from a single layer entry.
      *
-     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>}
+     * @return array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>}
      */
     private function normalizeCriteria(int $index, string $name, SectionSpot $entry): array
     {
+        $attributes = $this->normalizer->normalizeNamedTypeList($index, $name, 'attributes', $entry->child('attributes'));
+        $memberAttributes = $this->normalizer->normalizeNamedTypeList($index, $name, 'member_attributes', $entry->child('member_attributes'));
+        $implements = $this->normalizer->normalizeNamedTypeList($index, $name, 'implements', $entry->child('implements'));
+        $extends = $this->normalizer->normalizeNamedTypeList($index, $name, 'extends', $entry->child('extends'));
+
         return [
             'patterns' => $this->normalizer->normalizePatternList($index, $name, $entry->child('patterns')),
             'suffix' => $this->normalizer->normalizeSuffixList($index, $name, $entry->child('suffix')),
-            'attributes' => $this->normalizer->normalizeFqnList($index, $name, 'attributes', $entry->child('attributes')),
-            'implements' => $this->normalizer->normalizeFqnList($index, $name, 'implements', $entry->child('implements')),
-            'extends' => $this->normalizer->normalizeFqnList($index, $name, 'extends', $entry->child('extends')),
+            'attributes' => self::typeNames($attributes),
+            'member_attributes' => self::typeNames($memberAttributes),
+            'implements' => self::typeNames($implements),
+            'extends' => self::typeNames($extends),
+            'named_types' => [...$attributes, ...$memberAttributes, ...$implements, ...$extends],
         ];
     }
 
     /**
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>} $criteria
      */
     private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude, LayerLifecycle $lifecycle, SectionSpot $entry): LayerDefinition
     {
@@ -178,10 +189,12 @@ final class LayersValidator
                     patterns: $criteria['patterns'],
                     suffix: $criteria['suffix'],
                     attributes: $criteria['attributes'],
+                    memberAttributes: $criteria['member_attributes'],
                     implements: $criteria['implements'],
                     extends: $criteria['extends'],
                     mode: $mode,
                     exclude: $exclude,
+                    namedTypes: $criteria['named_types'],
                 ),
                 lifecycle: $lifecycle,
             );
@@ -191,7 +204,7 @@ final class LayersValidator
     }
 
     /**
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>} $criteria
      */
     private static function rejectAllEmptyCriteria(int $index, string $name, array $criteria, SectionSpot $entry): void
     {
@@ -201,7 +214,7 @@ final class LayersValidator
 
         throw $entry->refusal(
             \sprintf(
-                'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "implements" or "extends".',
+                'architecture.layers[%d] ("%s"): must declare at least one of "patterns", "suffix", "attributes", "member_attributes", "implements" or "extends".',
                 $index,
                 $name,
             ),
@@ -232,7 +245,7 @@ final class LayersValidator
      * author almost certainly meant, and a static layer expresses the global
      * net if that is really what was wanted.
      *
-     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
+     * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, member_attributes: list<string>, implements: list<string>, extends: list<string>, named_types: list<NamedType>} $criteria
      */
     private static function rejectUnboundNonPatternCriteria(int $index, string $nameTemplate, array $criteria, MatchMode $mode, SectionSpot $entry): void
     {
@@ -241,7 +254,7 @@ final class LayersValidator
         }
 
         $declared = [];
-        foreach (['suffix', 'attributes', 'implements', 'extends'] as $kind) {
+        foreach (['suffix', 'attributes', 'member_attributes', 'implements', 'extends'] as $kind) {
             if ($criteria[$kind] !== []) {
                 $declared[] = $kind;
             }
@@ -289,6 +302,44 @@ final class LayersValidator
                 written: $pattern,
             );
         }
+    }
+
+    /** @param list<string> $patterns */
+    private static function rejectCapturelessPatternsInAnyTemplate(
+        int $index,
+        string $name,
+        array $patterns,
+        bool $isTemplate,
+        MatchMode $mode,
+        SectionSpot $spot,
+    ): void {
+        if (!$isTemplate || $mode === MatchMode::All) {
+            return;
+        }
+
+        foreach ($patterns as $patternIndex => $pattern) {
+            if (TemplateLayerDefinition::containsCaptureVariable($pattern)) {
+                continue;
+            }
+
+            throw (\is_array($spot->value()) ? $spot->child($patternIndex) : $spot)->refusal(
+                \sprintf(
+                    'architecture.layers[%d] ("%s"): captureless pattern "%s" cannot be combined with "match: any" on a template layer. Add "match: all" so the pattern narrows each instance.',
+                    $index,
+                    $name,
+                    $pattern,
+                ),
+                written: $pattern,
+            );
+        }
+    }
+
+    /** @param list<NamedType> $types
+     * @return list<string>
+     */
+    private static function typeNames(array $types): array
+    {
+        return array_map(static fn(NamedType $type): string => $type->fqn, $types);
     }
 
     /**

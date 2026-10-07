@@ -7,10 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Document\Provenance;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 
 /**
@@ -71,6 +75,8 @@ final class LayerInstantiatorTest extends TestCase
     {
         // Suffix / implements / extends do not currently support captures —
         // they must pass through unchanged.
+        $memberAttribute = self::namedType('App\\MemberMarker', ['architecture', 'layers', '0', 'member_attributes', '0']);
+        $excludedType = self::namedType('App\\ExcludedMarker', ['architecture', 'layers', '0', 'exclude', 'member_attributes', '0']);
         $template = new TemplateLayerDefinition(
             'domain-{module}',
             new MembershipSpec(
@@ -79,6 +85,12 @@ final class LayerInstantiatorTest extends TestCase
                 attributes: ['App\\Marker'],
                 implements: ['App\\Contract\\Iface'],
                 extends: ['App\\Base'],
+                exclude: new ExcludeSpec(
+                    memberAttributes: [$excludedType->fqn],
+                    namedTypes: [$excludedType],
+                ),
+                memberAttributes: [$memberAttribute->fqn],
+                namedTypes: [$memberAttribute],
             ),
         );
 
@@ -88,6 +100,11 @@ final class LayerInstantiatorTest extends TestCase
         self::assertSame(['App\\Marker'], $layer->membership()->attributes);
         self::assertSame(['App\\Contract\\Iface'], $layer->membership()->implements);
         self::assertSame(['App\\Base'], $layer->membership()->extends);
+        self::assertSame(['App\\MemberMarker'], $layer->membership()->memberAttributes);
+        self::assertSame([$memberAttribute], $layer->membership()->namedTypes);
+        self::assertNotNull($layer->membership()->exclude);
+        self::assertSame(['App\\ExcludedMarker'], $layer->membership()->exclude->memberAttributes);
+        self::assertSame([$excludedType], $layer->membership()->exclude->namedTypes);
     }
 
     #[Test]
@@ -118,5 +135,18 @@ final class LayerInstantiatorTest extends TestCase
         $this->expectExceptionMessageMatches('/invalid concrete layer name/');
 
         $this->instantiator->instantiate($template, ['module' => 'Order\\Foo']);
+    }
+
+    /** @param non-empty-list<string> $path */
+    private static function namedType(string $fqn, array $path): NamedType
+    {
+        return new NamedType(
+            $fqn,
+            new Provenance(
+                ConfigurationOrigin::of(ConfigurationSource::ConfigFile, '/project/qmx.yaml'),
+                $path,
+                0,
+            ),
+        );
     }
 }

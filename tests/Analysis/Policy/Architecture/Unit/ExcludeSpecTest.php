@@ -41,6 +41,7 @@ final class ExcludeSpecTest extends TestCase
             patterns: ['App\\Legacy\\**'],
             suffix: ['Bridge'],
             attributes: ['App\\Deprecated'],
+            memberAttributes: ['App\\Route'],
             implements: ['App\\Adapter'],
             extends: ['App\\BaseLegacy'],
             mode: MatchMode::All,
@@ -49,6 +50,7 @@ final class ExcludeSpecTest extends TestCase
         self::assertSame(['App\\Legacy\\**'], $spec->patterns);
         self::assertSame(['Bridge'], $spec->suffix);
         self::assertSame(['App\\Deprecated'], $spec->attributes);
+        self::assertSame(['App\\Route'], $spec->memberAttributes);
         self::assertSame(['App\\Adapter'], $spec->implements);
         self::assertSame(['App\\BaseLegacy'], $spec->extends);
     }
@@ -61,6 +63,7 @@ final class ExcludeSpecTest extends TestCase
         yield 'patterns' => [['patterns' => ['App\\Foo']]];
         yield 'suffix' => [['suffix' => ['Bridge']]];
         yield 'attributes' => [['attributes' => ['App\\Deprecated']]];
+        yield 'member attributes' => [['memberAttributes' => ['App\\Route']]];
         yield 'implements' => [['implements' => ['App\\Adapter']]];
         yield 'extends' => [['extends' => ['App\\BaseClass']]];
     }
@@ -76,6 +79,7 @@ final class ExcludeSpecTest extends TestCase
             patterns: $criteria['patterns'] ?? [],
             suffix: $criteria['suffix'] ?? [],
             attributes: $criteria['attributes'] ?? [],
+            memberAttributes: $criteria['memberAttributes'] ?? [],
             implements: $criteria['implements'] ?? [],
             extends: $criteria['extends'] ?? [],
         );
@@ -102,6 +106,7 @@ final class ExcludeSpecTest extends TestCase
         yield 'patterns int' => ['patterns', [42]];
         yield 'suffix object' => ['suffix', [new stdClass()]];
         yield 'attributes bool' => ['attributes', [true]];
+        yield 'member attributes int' => ['memberAttributes', [42]];
         yield 'implements array' => ['implements', [['nested']]];
         yield 'extends float' => ['extends', [3.14]];
     }
@@ -127,6 +132,7 @@ final class ExcludeSpecTest extends TestCase
         yield 'patterns' => ['patterns'];
         yield 'suffix' => ['suffix'];
         yield 'attributes' => ['attributes'];
+        yield 'member attributes' => ['memberAttributes'];
         yield 'implements' => ['implements'];
         yield 'extends' => ['extends'];
     }

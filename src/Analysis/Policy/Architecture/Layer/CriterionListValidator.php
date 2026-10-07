@@ -54,4 +54,21 @@ final class CriterionListValidator
             }
         }
     }
+
+    /** @param list<mixed> $values */
+    public static function validateNamedTypes(string $specLabel, array $values): void
+    {
+        foreach ($values as $index => $value) {
+            if ($value instanceof NamedType) {
+                continue;
+            }
+
+            throw new InvalidArgumentException(\sprintf(
+                '%s namedTypes[%d] must be a NamedType, %s given.',
+                $specLabel,
+                $index,
+                get_debug_type($value),
+            ));
+        }
+    }
 }

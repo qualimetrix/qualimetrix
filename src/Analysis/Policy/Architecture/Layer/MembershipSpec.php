@@ -10,13 +10,14 @@ use InvalidArgumentException;
  * Immutable specification of the criteria a class must satisfy to belong to
  * a layer.
  *
- * Five criterion kinds (see ADR 0059):
+ * Six criterion kinds (see ADR 0059):
  *
  * | Field        | Semantics                                                                                |
  * | ------------ | ---------------------------------------------------------------------------------------- |
  * | `patterns`   | Architecture FQN patterns; matched via {@see CapturePattern} |
  * | `suffix`     | Short-name suffixes ({@code 'Repository'}); matched via {@code str_ends_with()}          |
  * | `attributes` | Attribute FQNs; class has {@code #[Attr]}                                                 |
+ * | `memberAttributes` | Attribute FQNs; a declared member has {@code #[Attr]}                               |
  * | `implements` | Interface FQNs; class implements the interface directly or transitively                 |
  * | `extends`    | Parent-class FQNs; class extends the parent directly or transitively                    |
  *
@@ -28,7 +29,7 @@ use InvalidArgumentException;
  * trivially satisfied under {@see MatchMode::All}.
  *
  * Validation at construction enforces the documented invariant: at least one of
- * the five criterion lists must be non-empty. An exclude-only layer would have
+ * the six criterion lists must be non-empty. An exclude-only layer would have
  * no classes (exclude filters from a non-empty positive set), so the invariant
  * remains tight regardless of whether {@see $exclude} is declared.
  */
@@ -57,6 +58,8 @@ final readonly class MembershipSpec
      *                                  the positive match. The exclude
      *                                  clause's own {@see MatchMode} governs
      *                                  how its criteria combine.
+     * @param list<string> $memberAttributes Attribute FQNs applied to declared members.
+     * @param list<NamedType> $namedTypes Authored named-type criteria with document provenance.
      *
      * @throws InvalidArgumentException If every criterion list is empty or any
      *                                  entry is a non-string / empty-string.
@@ -69,17 +72,21 @@ final readonly class MembershipSpec
         public array $extends = [],
         public MatchMode $mode = MatchMode::Any,
         public ?ExcludeSpec $exclude = null,
+        public array $memberAttributes = [],
+        public array $namedTypes = [],
     ) {
         CriterionListValidator::validate('MembershipSpec', 'patterns', $patterns);
         CriterionListValidator::validate('MembershipSpec', 'suffix', $suffix);
         CriterionListValidator::validate('MembershipSpec', 'attributes', $attributes);
         CriterionListValidator::validate('MembershipSpec', 'implements', $implements);
         CriterionListValidator::validate('MembershipSpec', 'extends', $extends);
+        CriterionListValidator::validate('MembershipSpec', 'memberAttributes', $memberAttributes);
+        CriterionListValidator::validateNamedTypes('MembershipSpec', $namedTypes);
 
-        if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === []) {
+        if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === [] && $memberAttributes === []) {
             throw new InvalidArgumentException(
                 'MembershipSpec must declare at least one non-empty criterion list '
-                . '(patterns, suffix, attributes, implements, or extends).',
+                . '(patterns, suffix, attributes, memberAttributes, implements, or extends).',
             );
         }
     }
@@ -96,6 +103,7 @@ final readonly class MembershipSpec
             'patterns' => $this->patterns,
             'suffix' => $this->suffix,
             'attributes' => $this->attributes,
+            'member_attributes' => $this->memberAttributes,
             'implements' => $this->implements,
             'extends' => $this->extends,
         ] as $kind => $values) {
@@ -131,7 +139,7 @@ final readonly class MembershipSpec
     public function narrowsItsPatterns(): bool
     {
         return $this->mode === MatchMode::All
-            && ($this->suffix !== [] || $this->attributes !== [] || $this->implements !== [] || $this->extends !== []);
+            && ($this->suffix !== [] || $this->attributes !== [] || $this->memberAttributes !== [] || $this->implements !== [] || $this->extends !== []);
     }
 
     /**
