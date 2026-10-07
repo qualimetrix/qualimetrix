@@ -85,6 +85,7 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\Ancestry',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelationIndex',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelations',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes',

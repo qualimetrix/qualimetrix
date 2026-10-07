@@ -18,6 +18,14 @@ use Qualimetrix\Core\Symbol\SymbolLevelProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
+/**
+ * Coordinates exact, logical and aggregate metric identities with namespace attribution.
+ *
+ * @qmx-threshold complexity.wmc warning=63 -- The 17-operation repository port and its shared identity routes have WMC 62 after removing duplicate reads, writes and merge entrypoints.
+ *                Moving cross-index routing into an identity index makes that index own the others; one-point headroom keeps further branching visible.
+ * @qmx-threshold size.method-count warning=21 error=21 -- The required port and shared rekey routes contribute 20 counted methods after removing three redundant entrypoints.
+ *                Inlining shared routes duplicates identity coordination; the next counted method reaches this inclusive boundary.
+ */
 final class InMemoryMetricRepository implements MetricRepositoryInterface
 {
     private AggregateMetricIndex $aggregateIndex;

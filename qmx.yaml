@@ -760,6 +760,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\Ancestry'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelationIndex'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelations'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes'
@@ -1850,6 +1851,10 @@ rules:
       - subtree: Qualimetrix\Core\Path
     suppress_namespace_channels:
       coupling.cbo:namespace:
+        # These exact contract namespaces grow with their intended named readers.
+        # Own namespace unions are 32 and 19; declaration-level quality remains measured.
+        - exact: 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract'
+        - exact: 'Qualimetrix\Analysis\Policy\Architecture\Contract'
         # Worker composition must carry the registered Finding forms service: own CBO 15→16 (Ca=3, Ce=23).
         # Removing that edge would replace the public contract with private Finding construction.
         - exact: 'Qualimetrix\Infrastructure\Parallel'
@@ -1976,6 +1981,10 @@ rules:
         # their own point threshold.
         - exact: 'Qualimetrix\Analysis\Evidence\Measurement\Contract'
     suppress_paths:
+      # The dependency-kind vocabulary has 21 incoming readers and no outgoing types.
+      - exact: src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php
+      # The metric-value contract has 67 incoming readers and one outgoing type.
+      - exact: src/Analysis/Evidence/Measurement/Contract/MetricBag.php
       # Run evidence and memoized scope queries form a shared contract (Ca=16, Ce=10, CBO=26).
       - exact: src/Analysis/Policy/Baseline/Contract/RunCoverage.php
       # These internal baseline vocabulary hubs have four outgoing types each.
@@ -2053,6 +2062,8 @@ rules:
   # Core contracts and value objects are coupling hubs by design.
   coupling.class-rank:
     suppress_paths:
+      # The shared configuration-source value has rank 0.005870 from its named readers.
+      - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationSource.php
       # The shared refusal carrier has intentional ClassRank 0.005666 from its consumers.
       - exact: src/Analysis/Configuration/Contract/Refusal/ConfigurationRefusal.php
       # The shared read port has 29 inbound readers; ClassRank 0.00624447
@@ -2232,6 +2243,13 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # These exact run-bound operations have two readers each; splitting moved that same small-population signal.
+      - exact: src/Analysis/Evidence/DependencyModel/Extraction/DependencyRecorder.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/Ancestry.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContextFactory.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/KnownTypes.php
+      - exact: src/Infrastructure/Composer/ComposerAutoloadMap.php
+      - exact: src/Infrastructure/Composer/DeclaredSupertypeReader.php
       # Two internal credential classifiers read this native type policy: Ca=2, Ce=9, I=0.818182.
       # Moving a reader only transfers the small-population signal.
       - exact: src/Analysis/Evidence/Security/Credential/CredentialValue.php
@@ -2444,6 +2462,15 @@ rules:
     warning: 8
     error: 12
     suppress_paths:
+      # Mandatory independent declaration, policy and evidence facts are not injected services.
+      - exact: src/Analysis/Evidence/DependencyModel/Contract/Dependency.php
+      - exact: src/Analysis/Policy/Architecture/Contract/ExternalSupertypes.php
+      - exact: src/Analysis/Policy/Architecture/Contract/LayerAssignment.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ExcludeSpec.php
+      - exact: src/Analysis/Policy/Architecture/Layer/MembershipSpec.php
+      - exact: src/Analysis/Policy/Architecture/Observation/ClassWalkEvidence.php
+      - exact: src/Analysis/Policy/Architecture/Observation/LayerEvidence.php
       # These immutable snapshots carry independent public facts, not injected service groups.
       - exact: src/Analysis/Finding/Contract/ChannelDeclaration.php
       - exact: src/Analysis/Policy/Baseline/Contract/BaselineDocument.php
@@ -2463,6 +2490,16 @@ rules:
 
   code-smell.constructor-overinjection:
     suppress_paths:
+      # Mandatory independent declaration, policy and evidence facts are not injected services.
+      - exact: src/Analysis/Evidence/DependencyModel/Contract/Dependency.php
+      - exact: src/Analysis/Evidence/DependencyModel/DependencyGraph.php
+      - exact: src/Analysis/Policy/Architecture/Contract/ExternalSupertypes.php
+      - exact: src/Analysis/Policy/Architecture/Contract/LayerAssignment.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/ClassContext.php
+      - exact: src/Analysis/Policy/Architecture/Layer/ExcludeSpec.php
+      - exact: src/Analysis/Policy/Architecture/Layer/MembershipSpec.php
+      - exact: src/Analysis/Policy/Architecture/Observation/ClassWalkEvidence.php
+      - exact: src/Analysis/Policy/Architecture/Observation/LayerEvidence.php
       # These immutable snapshots carry independent public facts, not injected service groups.
       - exact: src/Analysis/Finding/Contract/ChannelDeclaration.php
       - exact: src/Analysis/Policy/Baseline/Contract/BaselineDocument.php
@@ -2521,6 +2558,8 @@ rules:
   # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   health.cohesion:
     suppress_paths:
+      # Immutable spelling and namespace-prefix projections share one binding, while field cohesion measures their separate lookup maps (40).
+      - exact: src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php
       # Early input refusal and post-run projection are separate phases of one Console adapter (40).
       - exact: src/Infrastructure/Console/FindingFilterOrchestrator.php
       # Membership provenance and identity comparisons read independent snapshot facts (40).

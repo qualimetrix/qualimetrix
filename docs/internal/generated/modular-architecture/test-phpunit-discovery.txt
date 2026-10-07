@@ -5332,6 +5332,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesPlainAndTypedCallableSubjectsIndependentlyOfRepositoryOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesWithAnotherRepository
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesWithEmptyRepository
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itObservesAuthoredNamespaceSpellingsBeforeTypedAggregateCanonicalization
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itPreservesExistingFileWhenMergingWithNullFile
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itPreservesLogicalOnlySpellingEvidenceAcrossRepeatedMerges
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itProjectsPlainAggregateWritesThroughTypedSubjectReads
@@ -5340,6 +5341,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itPublishesFoldedClassAndNamespaceEvidenceWithoutCollapsingDeclarations
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRejectsConflictingTypedCallableMetadata
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRejectsDeclarationSymbolsFromAggregateAdd
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysANamespaceAggregateWhenACallableOwnerChangesItsCanonicalSpelling
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysANamespaceAggregateWhenALogicalClassChangesItsCanonicalSpelling
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysANamespaceAggregateWhenAnExactClassChangesItsCanonicalSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsAllNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsEmptyMetricBagForUnknownSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsSymbolsForNamespace
