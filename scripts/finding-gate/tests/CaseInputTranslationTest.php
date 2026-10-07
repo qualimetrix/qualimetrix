@@ -257,18 +257,20 @@ final class CaseInputTranslationTest extends TestCase
             }
         }
 
+        $caseDirectories = array_map(static fn($case): string => $case->directory, Corpus::load($repository)->cases);
+        self::assertNotEmpty($caseDirectories);
         $expectations = ChannelRenamePlants::caseListingFailures(declarationReplaced: true);
         $scopes = array_map(static fn($expectation): ?string => $expectation->scopeContains, $expectations);
         $selector = CaseDefinition::load(\dirname(__DIR__, 3) . '/finding-gate/cases/selector-after-split');
         self::assertSame(\QmxFindingGate\CaseOutcome::REFUSAL, $selector->outcome);
         self::assertNotContains('case:selector-after-split|rules', $scopes);
         self::assertNotContains('case:computed-cross-level|rules', $scopes);
-        self::assertCount(35, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
+        self::assertSame($caseDirectories, array_keys((new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue()));
         self::assertNotContains(
             'case:complexity|rules',
             array_map(static fn($expectation): ?string => $expectation->scopeContains, ChannelRenamePlants::caseListingFailures('complexity', true)),
         );
-        self::assertCount(35, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
+        self::assertSame($caseDirectories, array_keys((new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue()));
         foreach ($expectations as $expectation) {
             self::assertTrue($expectation->exactScope);
         }
