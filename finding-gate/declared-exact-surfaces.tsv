@@ -1,4 +1,1 @@
 case	surface	file	reason
-detectors-security	baseline-file	declared-exact-surfaces/7b9c5490e5f10f1935eab75e60301dfe.diff	Measure the complete baseline written after the missing selection cells are repaired, against the exact prior refusal and empty captured baseline content.
-detectors-smells	baseline-file	declared-exact-surfaces/6db6298c28c6fa14418d235a4672c039.diff	Measure the complete baseline written after the missing selection cells are repaired, against the exact prior refusal and empty captured baseline content.
-detectors	baseline-file	declared-exact-surfaces/b4a104f4a0c8fe5725b4fb36254d88cd.diff	Measure the complete baseline written after the missing selection cells are repaired, against the exact prior refusal and empty captured baseline content.

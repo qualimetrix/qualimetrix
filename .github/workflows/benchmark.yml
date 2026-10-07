@@ -1,0 +1,56 @@
+name: Benchmark
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Qualimetrix dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --no-scripts
+
+      - name: Cache benchmark dependencies
+        uses: actions/cache@v5
+        with:
+          path: benchmarks/vendor
+          key: ${{ runner.os }}-benchmark-vendor-php-8.4-${{ hashFiles('benchmarks/composer.lock') }}
+
+      - name: Install benchmark dependencies
+        run: composer install --working-dir=benchmarks --no-interaction --no-progress --prefer-dist --no-scripts
+
+      - name: Run benchmark regression check
+        shell: bash
+        env:
+          COMPOSER_PROCESS_TIMEOUT: '0'
+        run: |
+          set -o pipefail
+          composer benchmark:check 2>&1 | tee benchmark.log
+
+      - name: Upload benchmark log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmark-log
+          path: benchmark.log
+          retention-days: 7
+          if-no-files-found: error
