@@ -47,16 +47,18 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
             return null;
         }
 
+        $namespaceSpellings = new NamespaceMetricIndex();
+        $namespaceSpellings->importSpellings($this->namespaceIndex);
+        $namespaceSpellings->importSpellings($other->namespaceIndex);
         $merged = new self();
-        $merged->aggregateIndex = $this->aggregateIndex->mergeWith($other->aggregateIndex);
+        $merged->aggregateIndex = $this->aggregateIndex->mergeWith($other->aggregateIndex, $namespaceSpellings);
         $merged->subjectIndex = $this->subjectIndex->mergeWith($other->subjectIndex);
         $merged->logicalClassIndex = $this->logicalClassIndex->mergeWith($other->logicalClassIndex);
         $merged->namespaceIndex->rebuild(
             $merged->aggregateIndex->infos(),
             [...$merged->subjectIndex->infos(), ...$merged->logicalClassIndex->infos()],
         );
-        $merged->namespaceIndex->importSpellings($this->namespaceIndex);
-        $merged->namespaceIndex->importSpellings($other->namespaceIndex);
+        $merged->namespaceIndex->importSpellings($namespaceSpellings);
 
         return $merged;
     }
@@ -250,8 +252,8 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     private function indexExactSubject(SymbolInfo $info, MetricBag $metrics): void
     {
         $projection = $this->logicalClassIndex->project($info, $metrics);
-        if ($projection !== null) {
-            $this->observeNamespace($projection->symbolPath->namespace ?? '');
+        if ($info->symbolPath->namespace !== null) {
+            $this->observeNamespace($info->symbolPath->namespace);
         }
 
         $declaration = $info->subject?->declarationPath();

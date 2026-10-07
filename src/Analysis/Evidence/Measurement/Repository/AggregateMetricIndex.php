@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /** Project, file, and namespace aggregate metrics and their source information. */
 final class AggregateMetricIndex
@@ -57,12 +58,18 @@ final class AggregateMetricIndex
         return $this->infos;
     }
 
-    public function mergeWith(self $other): self
+    public function mergeWith(self $other, NamespaceMetricIndex $namespaceSpellings): self
     {
         $merged = new self();
-        $plain = RepositoryMerge::plain($this->metrics, $this->infos, $other->metrics, $other->infos);
-        $merged->metrics = $plain['metrics'];
-        $merged->infos = $plain['infos'];
+        foreach ([$this, $other] as $source) {
+            foreach ($source->infos as $key => $info) {
+                $symbol = $info->symbolPath;
+                if ($symbol->getType() === SymbolType::Namespace_) {
+                    $symbol = SymbolPath::forNamespace($namespaceSpellings->canonical($symbol->namespace ?? ''));
+                }
+                $merged->add($symbol, $source->metrics[$key], $info->file, $info->line);
+            }
+        }
 
         return $merged;
     }

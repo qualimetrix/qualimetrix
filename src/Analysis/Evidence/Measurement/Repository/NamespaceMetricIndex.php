@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Measurement\Repository;
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -35,15 +36,30 @@ final class NamespaceMetricIndex
         $this->observe($namespace);
         $folded = ClassNameSpelling::fold($namespace);
         $logicalClass = $info->subject?->logicalClassPath();
-        $canonical = $logicalClass !== null
-            ? 'logical-class-folded:' . ClassNameSpelling::fold($logicalClass->symbolPath->toString())
-            : ($info->subject?->toCanonical() ?? $symbol->toCanonical());
+        $canonical = match (true) {
+            $symbol->getType() === SymbolType::Namespace_ => SymbolPath::forNamespace($folded)->toCanonical(),
+            $logicalClass !== null => 'logical-class-folded:' . ClassNameSpelling::fold($logicalClass->symbolPath->toString()),
+            default => $info->subject?->toCanonical() ?? $symbol->toCanonical(),
+        };
+        if ($symbol->getType() === SymbolType::Namespace_) {
+            $info = new SymbolInfo(SymbolPath::forNamespace($this->canonical($namespace)), $info->file, $info->line);
+        }
         $this->infosByNamespace[$folded][$canonical] = $info;
     }
 
     public function observe(string $namespace): void
     {
-        $this->spellingsByNamespace[ClassNameSpelling::fold($namespace)][$namespace] = true;
+        $folded = ClassNameSpelling::fold($namespace);
+        $this->spellingsByNamespace[$folded][$namespace] = true;
+        $key = SymbolPath::forNamespace($folded)->toCanonical();
+        $info = $this->infosByNamespace[$folded][$key] ?? null;
+        if ($info !== null) {
+            $this->infosByNamespace[$folded][$key] = new SymbolInfo(
+                SymbolPath::forNamespace($this->canonical($namespace)),
+                $info->file,
+                $info->line,
+            );
+        }
     }
 
     /**
