@@ -134,6 +134,9 @@ declarations and callable ambiguity stay in `MetricSubjectIndex`; folded class
 identity and its spelling observations stay in `LogicalClassMetricIndex`;
 project, file, and namespace aggregate bags stay in `AggregateMetricIndex`.
 `NamespaceMetricIndex` remains the attribution view over those stored facts.
+Exact class declarations and callable owners enter the logical class view
+through `LogicalClassMetricIndex::project()`, so every exact write path applies
+the same location-free projection before namespace attribution.
 
 Enriching one of those subjects with a single computed value is
 `addSubjectScalar()`, the declaration-addressed counterpart of `addScalar()`.

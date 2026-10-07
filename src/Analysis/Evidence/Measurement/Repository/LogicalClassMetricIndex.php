@@ -13,6 +13,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MixedSpelling;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 
 /** Folded logical-class metrics, canonical spellings, and spelling evidence. */
 final class LogicalClassMetricIndex
@@ -64,12 +65,19 @@ final class LogicalClassMetricIndex
         return $this->store(new SymbolInfo($subject, $file, $line), $metrics);
     }
 
-    public function addLogicalClassScalar(SymbolPath $symbol, string $key, int|float $value): void
+    /** Projects an exact class or its callable owner onto the logical class view. */
+    public function project(SymbolInfo $exact, MetricBag $metrics): ?SymbolInfo
     {
-        $subject = self::subject($symbol);
-        if ($this->has($subject)) {
-            $this->addSubject($subject, (new MetricBag())->with($key, $value), null, null);
+        $declaration = $exact->subject?->declarationPath();
+        if ($declaration?->logical->getType() === SymbolType::Class_) {
+            return $this->addLogicalClass($declaration->logical, $metrics, null, null);
         }
+
+        $owner = $exact->classAggregationOwner;
+
+        return $owner !== null
+            ? $this->addLogicalClass($owner->symbolPath, new MetricBag(), null, null)
+            : null;
     }
 
     /** @return iterable<SymbolInfo> */

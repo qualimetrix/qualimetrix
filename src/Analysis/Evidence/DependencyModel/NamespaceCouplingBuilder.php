@@ -107,10 +107,8 @@ final class NamespaceCouplingBuilder
     {
         $ce = $own['coupling.ce'];
         $ca = $own['coupling.ca'];
-        $prefixes = [];
         $canonical = [];
         foreach ($parentNamespaces as $name => $path) {
-            $prefixes[$name] = $name . '\\';
             $canonical[$name] = $path->toCanonical();
             $ce[$canonical[$name]] = new StringSet();
             $ca[$canonical[$name]] = new StringSet();
@@ -122,21 +120,36 @@ final class NamespaceCouplingBuilder
             if ($source->namespace === null || $target->namespace === null || $source->namespace === $target->namespace) {
                 continue;
             }
-            foreach ($prefixes as $parent => $prefix) {
-                $sourceInside = $source->namespace === $parent || str_starts_with($source->namespace, $prefix);
-                $targetInside = $target->namespace === $parent || str_starts_with($target->namespace, $prefix);
-                if ($sourceInside === $targetInside) {
-                    continue;
-                }
-                $key = $canonical[$parent];
-                if ($sourceInside) {
-                    $ce[$key] = $ce[$key]->add($target->toCanonical());
-                } else {
-                    $ca[$key] = $ca[$key]->add($source->toCanonical());
-                }
+            $sourceScopes = self::parentScopesOf($source->namespace, $canonical);
+            $targetScopes = self::parentScopesOf($target->namespace, $canonical);
+            foreach (array_diff_key($sourceScopes, $targetScopes) as $key) {
+                $ce[$key] = $ce[$key]->add($target->toCanonical());
+            }
+            foreach (array_diff_key($targetScopes, $sourceScopes) as $key) {
+                $ca[$key] = $ca[$key]->add($source->toCanonical());
             }
         }
 
         return ['coupling.ce' => $ce, 'coupling.ca' => $ca];
+    }
+
+    /**
+     * @param array<string, string> $canonicalByName
+     *
+     * @return array<string, string>
+     */
+    private static function parentScopesOf(string $namespace, array $canonicalByName): array
+    {
+        $scopes = [];
+        while (true) {
+            if (isset($canonicalByName[$namespace])) {
+                $scopes[$namespace] = $canonicalByName[$namespace];
+            }
+            $separator = strrpos($namespace, '\\');
+            if ($separator === false) {
+                return $scopes;
+            }
+            $namespace = substr($namespace, 0, $separator);
+        }
     }
 }

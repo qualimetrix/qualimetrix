@@ -60,28 +60,33 @@ final class ComposerClassPathLookup
 
         $current = '/';
         foreach (explode('/', substr($path, 1)) as $segment) {
-            if ($segment === '' || $segment === '.') {
-                continue;
-            }
-            if ($segment === '..') {
-                $current = \dirname(rtrim($current, '/')) . '/';
-
-                continue;
-            }
-
-            $parent = rtrim($current, '/');
-            if ($parent === '') {
-                $parent = '/';
-            }
-            if (!\in_array($segment, $this->entriesOf($parent), true)) {
+            $current = $this->nextExactSegment($current, $segment);
+            if ($current === null) {
                 return null;
             }
-            $current = ($parent === '/' ? '' : $parent) . '/' . $segment;
         }
 
         $resolved = realpath($current);
 
         return $resolved === false ? null : $resolved;
+    }
+
+    private function nextExactSegment(string $current, string $segment): ?string
+    {
+        if ($segment === '' || $segment === '.') {
+            return $current;
+        }
+        if ($segment === '..') {
+            return \dirname(rtrim($current, '/')) . '/';
+        }
+
+        $parent = rtrim($current, '/');
+        $parent = $parent === '' ? '/' : $parent;
+        if (!\in_array($segment, $this->entriesOf($parent), true)) {
+            return null;
+        }
+
+        return ($parent === '/' ? '' : $parent) . '/' . $segment;
     }
 
     /** @return list<string> */

@@ -686,6 +686,80 @@ final class InMemoryMetricRepositoryTest extends TestCase
     }
 
     #[Test]
+    public function itRekeysANamespaceAggregateWhenAnExactClassChangesItsCanonicalSpelling(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 17]), null, null);
+        $class = SymbolPath::fromClassFqn('App\\Foo\\Example');
+        $declaration = DeclarationPath::of(
+            $class,
+            RelativePath::fromString('src/Example.php'),
+            DeclarationOrdinal::fromRank(0),
+        );
+
+        $repository->addSubject(
+            MetricSubject::declaration($declaration),
+            MetricBag::fromArray(['size.class-loc' => 5]),
+            $declaration->file,
+            3,
+        );
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(17, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(17, $repository->get(SymbolPath::forNamespace('App\\Foo'))->get('size.loc.sum'));
+    }
+
+    #[Test]
+    public function itRekeysANamespaceAggregateWhenACallableOwnerChangesItsCanonicalSpelling(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 19]), null, null);
+        $method = SymbolPath::forMethod('App\\Foo', 'Example', 'run');
+
+        $repository->addCallable(new CallableWithMetrics(
+            DeclarationPath::of($method, RelativePath::fromString('src/Example.php'), DeclarationOrdinal::fromRank(0)),
+            12,
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App\\Foo', 'Example')),
+            MetricBag::fromArray(['complexity.ccn' => 2]),
+            4,
+        ));
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(19, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(19, $repository->get(SymbolPath::forNamespace('App\\Foo'))->get('size.loc.sum'));
+    }
+
+    #[Test]
+    public function itObservesAuthoredNamespaceSpellingsBeforeTypedAggregateCanonicalization(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $upper = SymbolPath::forNamespace('App\\Foo');
+        $repository->addSubject(
+            MetricSubject::aggregate($lower),
+            MetricBag::fromArray(['size.loc.sum' => 17]),
+            null,
+            null,
+        );
+
+        $repository->addSubject(
+            MetricSubject::aggregate($upper),
+            MetricBag::fromArray(['size.class-count.sum' => 2]),
+            null,
+            null,
+        );
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(17, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(2, $repository->get($upper)->get('size.class-count.sum'));
+    }
+
+    #[Test]
     public function itKeepsCallableOnlyOwnerProjectionsLocationFreeWithoutDuplicateIndexesInEitherMergeOrder(): void
     {
         $method = SymbolPath::forMethod('App', 'Service', 'run');
