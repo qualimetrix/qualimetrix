@@ -85,6 +85,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface
 Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface	Analysis.Evidence.Measurement	3	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface	Analysis.Evidence.Measurement	4	3
+Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	7	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface	Analysis.Evidence.Measurement	3	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	44	10
@@ -130,6 +131,7 @@ Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterInterface	Analysis.Fin
 Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStage	Analysis.Finding	7	3
 Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageInterface	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult	Analysis.Finding	2	1
+Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	2	1
@@ -338,7 +340,7 @@ Qualimetrix\Core\FileTarget\TargetPath	Core.FileTarget	8	3
 Qualimetrix\Core\Observation\WorseDirection	Core.Neutral	28	13
 Qualimetrix\Core\Path\AbsolutePath	Core.Path	84	14
 Qualimetrix\Core\Path\PathFactory	Core.Path	18	7
-Qualimetrix\Core\Path\RelativePath	Core.Path	105	22
+Qualimetrix\Core\Path\RelativePath	Core.Path	106	22
 Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	9	4
 Qualimetrix\Core\Pattern\NamespacePattern	Core.Neutral	19	7
 Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	4	2

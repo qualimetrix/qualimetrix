@@ -5176,6 +5176,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itHandlesNamespaceWithoutMethods
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\MetricAggregatorTest::itSkipsAggregationForClassesWithoutMethods
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\NamespaceMetricContributionsTest::itCollectsEachTypedSymbolLevelAndExpandsNamespaceOwnedAverages
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\NamespaceMetricContributionsTest::itDoesNotAttributeAnUndeclaredFileToANamespaceAggregate
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\NamespaceMetricContributionsTest::itMapsOnePhysicalFileToEveryOwnedNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\NamespaceMetricContributionsTest::itSelectsNamespaceContributionsButKeepsProjectValuesFileDerived
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\NamespaceToProjectAggregatorTest::itAggregatesNamespaceCollectedMetricsToProjectLevel
@@ -10920,6 +10921,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itDoesNotPrintExcludedFindingDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itDoesNotPrintRuleExclusionCountsWithoutVerboseFlag
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itNamesAMovedDeclarationAmongTheCausesOfStaleness
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itNamesTheWholeRunWhenSuppressedDetailsAreShownBesideAReportingSelector
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itPrintsExcludedFindingDetailsWithShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itPrintsNamespaceExclusionCountWhenVerbose
  - Qualimetrix\Tests\Infrastructure\Console\Integration\FindingFilterOrchestratorTest::itPrintsNothingAboutRuleExclusionsWhenStatsAreEmptyAndNotVerbose
@@ -11164,6 +11166,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesADetailCapBesideTheAllFlagBeforeTheAnalysisStarts"the flag alone"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAFormatOptKeyNoFormatterReads
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAMistypedGroupByBeforeTheAnalysisStarts
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAReportingSelectorForTheWholeRunSuppressedDocument"class"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAReportingSelectorForTheWholeRunSuppressedDocument"namespace"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnEmbedderValueOfTheWrongShapeAsInput"fractional top"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnEmbedderValueOfTheWrongShapeAsInput"list as detail"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\FormatterContextFactoryTest::itRefusesAnEmbedderValueOfTheWrongShapeAsInput"negative detail"
@@ -12276,6 +12280,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllFindingsWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsAllWorstOffendersWhenNoFilter
  - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsFileFindingsByEveryNamespaceDeclaredInTheirSource
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itSelectsUndeclaredFileFindingsAsGlobalWithoutChangingTheirIdentity
+ - Qualimetrix\Tests\Reporting\Unit\DrillDown\FindingFilterTest::itUsesADeclaredSubjectBeforeTheOtherNamespacesOfItsFile
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"a path entry that cannot be a name at all"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_namespaces as a map"
  - Qualimetrix\Tests\Reporting\Unit\FindingExclusionShapeRefusalTest::itRefusesInsteadOfCrashingOrDroppingTheValue"suppress_paths as a scalar"
@@ -12295,6 +12302,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheRuleNamespaceExclusionLedgerHalfToTheProducer
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheRulePathExclusionLedgerHalfToTheProducer
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itAttributesTheSuppressionMechanismToTheDirectiveFileAndLine
+ - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itCreditsTheFirstMatchingNamespaceWhileKeepingAnOverlappingPatternActive
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itDoesNotReportAnOverlappingGlobalExcludePathPatternAsInertWhenItIndependentlyMatches
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itReportsAGlobalExcludePathPatternThatMatchedNothingAsInert
  - Qualimetrix\Tests\Reporting\Unit\FindingProjection\SuppressionCompositionBuilderTest::itReportsAPerRuleExcludePathPatternThatMatchedNothingAsInert
@@ -12637,6 +12645,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsNoneGroupBySeverityThenFileThenLine
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itSortsRuleGroupByRuleThenFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Ordering\FindingSorterTest::itUsesPublishedImpactRankBeforePlaceEvenForEqualImpactScores
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\ProseTextTest::itPreservesLiteralPercentSignsWhenTheBodyContainsAnInvalidByte
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterPosixSeparatorTest::itEmitsPosixSeparatorsForArtifactLocations
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterPosixSeparatorTest::itEmitsPosixSeparatorsForRelatedLocations
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Sarif\SarifFormatterTest::itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects

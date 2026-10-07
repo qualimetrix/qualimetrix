@@ -16980,6 +16980,10 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\LogicalClassMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\FileNamespaceIndex"
         }
       ]
     },
@@ -19397,10 +19401,6 @@
         },
         {
           "owner": "Analysis.Finding",
-          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\NamespaceExclusionFilter"
-        },
-        {
-          "owner": "Analysis.Finding",
           "source_fqcn": "Qualimetrix\\Analysis\\Finding\\FindingExclusionLedger"
         },
         {
@@ -19438,6 +19438,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedFinding"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingNamespace"
         }
       ]
     },
@@ -25398,6 +25402,34 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\FileNamespaceIndex": {
+      "path": "src/Analysis/Evidence/Measurement/Contract/FileNamespaceIndex.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Measurement",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\FindingNamespace": {
+      "path": "src/Analysis/Finding/Contract/Filter/FindingNamespace.php",
+      "kind": "class",
+      "owner": "Analysis.Finding",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\DrillDown\\FindingFilter"
         }
       ]
     }

@@ -1154,6 +1154,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory	A
 Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
+Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface	Analysis.Evidence.Measurement	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface	Analysis.Evidence.Measurement	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
@@ -1449,8 +1450,8 @@ Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysi
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedDocument	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\EnablementDecision	Analysis.Finding	Qualimetrix\Analysis\Configuration\Contract\Document\Provenance	Analysis.Configuration	contract
 Qualimetrix\Analysis\Finding\Contract\EnablementDecision	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	Qualimetrix\Core\Pattern\NamespaceMatcher	Core.Neutral	contract
-Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	Qualimetrix\Core\Pattern\PathMatcher	Core.Neutral	contract
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.Evidence.DependencyModel	contract
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -2704,6 +2705,7 @@ Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration	Infrastructure.Conso
 Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration	Infrastructure.Console	Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration	Infrastructure.Cache	contract
 Qualimetrix\Infrastructure\Console\ResolvedRunConfiguration	Infrastructure.Console	Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration	Infrastructure.Parallel	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
+Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex	Analysis.Evidence.Measurement	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
@@ -3170,6 +3172,8 @@ Qualimetrix\Reporting\DrillDown\DrillDownBinding	Reporting	Qualimetrix\Core\Patt
 Qualimetrix\Reporting\DrillDown\DrillDownBinding	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Reporting\DrillDown\DrillDownBinding	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender	Analysis.Evidence.ComputedMetrics.Health	contract
+Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex	Analysis.Evidence.Measurement	contract
+Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Analysis\Finding\Contract\Filter\FindingNamespace	Analysis.Finding	contract
 Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Reporting\DrillDown\OutOfScopeFindings	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
