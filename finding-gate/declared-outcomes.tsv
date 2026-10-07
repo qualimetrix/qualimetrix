@@ -1,4 +1,1 @@
 case	transition	file	reason
-detectors	refusal->analysis	declared-outcomes/detectors.txt	Publish file and callable credential occurrences through their declared selection cells.
-detectors-security	refusal->analysis	declared-outcomes/detectors-security.txt	Publish file and callable credential occurrences through their declared selection cells.
-detectors-smells	refusal->analysis	declared-outcomes/detectors-smells.txt	Publish anonymous BooleanArgument file occurrences through their declared selection cell.

@@ -1,7 +1,1 @@
 kind	key	level	reason
-field	message	*	Name an exact threshold equality as reaching the selected boundary; keep strictly greater values as exceeding it.
-field	symbol	*	Publish the exact declaration symbol of named detector findings rather than their file symbol.
-field	namespace	*	Publish the namespace of a named detector declaration alongside its exact symbol.
-exit	baseline:generate	*	The new detector fixtures can generate their complete baseline after declared selection cells are repaired.
-exit	baseline:explain	*	The new detector fixtures can explain their measured subjects after declared selection cells are repaired.
-exit	directives	*	The new detector fixtures can publish directive evidence after declared selection cells are repaired.
