@@ -317,13 +317,13 @@ health values and support formatting are not claimed as cross-side publications.
 
 ## Value, schema, outcome and surface declarations
 
-| Table                          | Authored columns                      | What the run measures                                                          |
-| ------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------ |
-| `declared-values.tsv`          | `kind, key, level, reason`            | Exact values, exits or moved occurrences in `declared-values.derived.tsv`      |
-| `declared-fields.tsv`          | `change, report, view, field, reason` | Added values per case and record in `declared-fields.derived.tsv`              |
-| `declared-outcomes.tsv`        | `case, transition, file, reason`      | Exact normalized refusal snapshot under `declared-outcomes/`                   |
-| `declared-surfaces.tsv`        | `change, surface, file, reason`       | Exact withdrawal refusal under `declared-surfaces/`, or introduced publication |
-| `declared-structural-maps.tsv` | `document, from, to, shape, reason`   | Exact translated document paths, retaining the declared value shape            |
+| Table                          | Authored columns                       | What the run measures                                                          |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------ |
+| `declared-values.tsv`          | `kind, key, level, reason`             | Exact values, exits or moved occurrences in `declared-values.derived.tsv`      |
+| `declared-fields.tsv`          | `change, report, view, field, reason`  | Added values per case and record in `declared-fields.derived.tsv`              |
+| `declared-outcomes.tsv`        | `case, transition, file, reason`       | Exact normalized refusal snapshot under `declared-outcomes/`                   |
+| `declared-surfaces.tsv`        | `change, surface, file, cases, reason` | Exact withdrawal refusal under `declared-surfaces/`, or introduced publication |
+| `declared-structural-maps.tsv` | `document, from, to, shape, reason`    | Exact translated document paths, retaining the declared value shape            |
 
 Value kinds are `field`, `metric`, `exit` and `order`. Field and metric
 intentions use an exact subject level or `*`. Exit intentions name a command
@@ -350,6 +350,11 @@ refusal outputs are still compared. A withdrawn surface is still invoked on
 the reference and must meet its exact declared candidate refusal. Declaring a
 withdrawal does not suppress a broken reference. Introduced and withdrawn
 surface rows never disable neighbouring publications.
+
+Surface declarations use `cases=*` for every case, or a nonempty JSON list of
+exact case names. A withdrawn format is captured only in those cases. Each
+selected reference must analyze: a refusal cannot witness a report's removal.
+Other formats and the excluded cases retain their ordinary comparisons.
 
 Structural maps translate named paths in configuration documents. Their
 closed document and shape vocabularies live in `DeclaredStructuralMaps`;

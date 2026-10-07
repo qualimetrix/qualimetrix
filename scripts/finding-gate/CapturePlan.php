@@ -71,7 +71,7 @@ final class CapturePlan
         };
         $append('tree', 'rules', 'rules');
         $append('tree', 'graph:export', 'graph:export');
-        $formats = Surfaces::FORMATS;
+        $withdrawnFormats = [];
         foreach ($surfaces->changes() as $surface => $change) {
             if ($change !== DeclaredSurfaces::WITHDRAWN) {
                 continue;
@@ -83,12 +83,22 @@ final class CapturePlan
             if ($format === '') {
                 throw new GateError('A withdrawn format must have a name.');
             }
-            if (!\in_array($format, $formats, true)) {
-                $formats[] = $format;
-            }
+            $withdrawnFormats[$format] = $surface;
         }
         foreach ($corpus->cases as $case) {
             $scope = 'case:' . $case->id;
+            $formats = Surfaces::FORMATS;
+            foreach ($withdrawnFormats as $format => $surface) {
+                if ($surfaces->changeFor($surface, $case->id) === null) {
+                    continue;
+                }
+                if (CaseOutcome::of($case, 'reference') !== CaseOutcome::ANALYSIS) {
+                    throw new GateError('Case ' . $case->id . ' cannot establish a withdrawal without a reference analysis.');
+                }
+                if (!\in_array($format, $formats, true)) {
+                    $formats[] = $format;
+                }
+            }
             foreach ($formats as $format) {
                 $append(
                     $scope,
@@ -141,7 +151,16 @@ final class CapturePlan
                 throw new GateError('A finding JSON invocation has no exact own ranking source: ' . $key);
             }
         }
-        return new self($descriptors, $artifacts, $surfaces->changes());
+        $changes = [];
+        foreach ($descriptors as $key => $descriptor) {
+            $case = str_starts_with($descriptor['scope'], 'case:') ? substr($descriptor['scope'], 5) : null;
+            $change = $surfaces->changeFor($descriptor['surface'], $case);
+            if ($change !== null) {
+                $changes[$key] = $change;
+            }
+        }
+
+        return new self($descriptors, $artifacts, $changes);
     }
 
     /** @return list<Descriptor> */
@@ -173,12 +192,19 @@ final class CapturePlan
 
     public function requiredOn(string $fullInvocationKey, string $side): bool
     {
-        $descriptor = $this->descriptorOf($fullInvocationKey);
+        $this->descriptorOf($fullInvocationKey);
         if (!\in_array($side, ['candidate', 'reference'], true)) {
             throw new GateError('Unknown capture side: ' . $side);
         }
         return $side === 'candidate'
-            || ($this->surfaceChanges[$descriptor['surface']] ?? null) !== DeclaredSurfaces::INTRODUCED;
+            || ($this->surfaceChanges[$fullInvocationKey] ?? null) !== DeclaredSurfaces::INTRODUCED;
+    }
+
+    public function changeOf(string $fullInvocationKey): ?string
+    {
+        $this->descriptorOf($fullInvocationKey);
+
+        return $this->surfaceChanges[$fullInvocationKey] ?? null;
     }
 
     /** @return Descriptor */

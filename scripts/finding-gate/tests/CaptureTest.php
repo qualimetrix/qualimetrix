@@ -891,7 +891,7 @@ final class CaptureTest extends TestCase
     public function itSkipsIntroducedInvocationsOnTheReferenceSide(): void
     {
         $tree = SyntheticTree::clean();
-        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = "change\tsurface\tfile\treason\nintroduced\tformat:health\t-\tnew publication\n";
+        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = "change\tsurface\tfile\tcases\treason\nintroduced\tformat:health\t-\t*\tnew publication\n";
         $root = SyntheticTree::create($tree);
         $temporary = Fs::temporaryDirectory('capture-sides-');
         try {

@@ -49,8 +49,7 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
         } catch (GateError) {
             return;
         }
-        $surface = $this->plan->descriptorOf($key)['surface'];
-        if (isset($this->run->declarations->surfaces->changes()[$surface])) {
+        if ($this->plan->changeOf($key) !== null) {
             // A declared surface is judged as one complete invocation, not as unrelated byte diffs.
             $pair->settle();
         }
@@ -60,7 +59,7 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
     {
         foreach ($this->plan->invocations() as $descriptor) {
             $key = Surfaces::key($descriptor['scope'], $descriptor['surface']);
-            $change = $this->run->declarations->surfaces->changes()[$descriptor['surface']] ?? null;
+            $change = $this->plan->changeOf($key);
             $case = $this->caseOf($descriptor['scope']);
             foreach (['candidate' => $candidate, 'reference' => $reference] as $side => $artifacts) {
                 if ($side === 'reference' && $change === DeclaredSurfaces::INTRODUCED) {

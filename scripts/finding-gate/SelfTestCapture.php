@@ -138,7 +138,7 @@ final class SelfTestCapture extends SelfTestGroup
         $tree = SyntheticTree::clean();
         $tree['answers']['case:alpha|format:retired'] = ['stdout' => 'old publication'];
         $tree['candidateAnswers']['case:alpha|format:retired'] = ['stdout' => '', 'stderr' => 'unsupported format', 'exit' => 3];
-        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = Tsv::render(DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::WITHDRAWN, 'format:retired', 'declared-surfaces/retired.json', 'removed format']]);
+        $tree['candidateDeclarations'][DeclaredSurfaces::INDEX] = Tsv::render(DeclaredSurfaces::COLUMNS, [[DeclaredSurfaces::WITHDRAWN, 'format:retired', 'declared-surfaces/retired.json', '*', 'removed format']]);
         $tree['candidateDeclarations']['declared-surfaces/retired.json'] = json_encode(['stdout' => '', 'stderr' => 'unsupported format', 'exit' => '3'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES) . "\n";
 
         return $tree;

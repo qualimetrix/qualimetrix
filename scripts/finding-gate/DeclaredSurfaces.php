@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace QmxFindingGate;
 
+use JsonException;
+
 /**
  * Surfaces a step introduced or withdrew, which makes the list of compared
  * surfaces a property of each side.
  *
  * The candidate's list is the gate's own; the reference's is that list minus
  * the introduced surfaces plus the withdrawn ones. A withdrawn surface is still
- * requested from both sides with the command that used to produce it: the
+ * requested from both sides in its named cases with the command that used to produce it: the
  * reference produces it, and the candidate has to refuse — the removal becomes
  * something the run observes rather than a line deleted from a list. The row
  * of a withdrawn surface names a file under `declared-surfaces/` holding that
  * refusal's normalized JSON envelope (`stdout`, `stderr`, string `exit`) as a
  * derive run measured it, compared byte for
- * byte in every case, so a refusal for another reason is not the declared one;
+ * byte in every named case, so a refusal for another reason is not the declared one;
  * an introduced surface names none (`-`). A row whose surface was not
  * introduced or withdrawn as declared is stale.
  */
 final class DeclaredSurfaces
 {
-    public const array COLUMNS = ['change', 'surface', 'file', 'reason'];
+    public const array COLUMNS = ['change', 'surface', 'file', 'cases', 'reason'];
 
     public const string INDEX = 'declared-surfaces.tsv';
 
@@ -40,16 +42,19 @@ final class DeclaredSurfaces
     /**
      * @param array<string, string> $changes surface => introduced|withdrawn
      * @param array<string, string> $refusals withdrawn surface => the declared refusal output
+     * @param array<string, list<string>|null> $cases surface => exact case names, or all cases
      */
     private function __construct(
         private readonly array $changes,
         private readonly array $refusals,
+        private readonly array $cases,
     ) {}
 
     public static function load(string $root): self
     {
         $changes = [];
         $refusals = [];
+        $cases = [];
 
         foreach (DeclarationTable::rows($root, self::INDEX, self::COLUMNS) as $index => $row) {
             DeclarationTable::oneOf(self::INDEX, $index + 1, 'change', $row['change'], [self::INTRODUCED, self::WITHDRAWN]);
@@ -69,6 +74,7 @@ final class DeclaredSurfaces
             }
 
             $changes[$row['surface']] = $row['change'];
+            $cases[$row['surface']] = self::caseNames($root, $row['cases']);
 
             if ($row['change'] === self::INTRODUCED) {
                 if ($row['file'] !== self::NO_FILE) {
@@ -105,7 +111,47 @@ final class DeclaredSurfaces
             $refusals[$row['surface']] = $refusal;
         }
 
-        return new self($changes, $refusals);
+        return new self($changes, $refusals, $cases);
+    }
+
+    /** A declaration applies only to its named cases; null is a tree invocation. */
+    public function changeFor(string $surface, ?string $case): ?string
+    {
+        if (!isset($this->changes[$surface])) {
+            return null;
+        }
+        $cases = $this->cases[$surface];
+
+        return $cases === null || ($case !== null && \in_array($case, $cases, true))
+            ? $this->changes[$surface]
+            : null;
+    }
+
+    /** @return list<string>|null */
+    private static function caseNames(string $root, string $text): ?array
+    {
+        if ($text === '*') {
+            return null;
+        }
+        try {
+            $cases = json_decode($text, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException $error) {
+            throw new GateError(self::INDEX . ': cases must be * or a nonempty JSON list of case names.', 0, $error);
+        }
+        if (!\is_array($cases) || !array_is_list($cases) || $cases === []) {
+            throw new GateError(self::INDEX . ': cases must be * or a nonempty JSON list of case names.');
+        }
+        $seen = [];
+        foreach ($cases as $case) {
+            if (!\is_string($case) || $case === '' || $case === '.' || $case === '..'
+                || str_contains($case, '/') || str_contains($case, '\\')
+                || isset($seen[$case]) || !is_file($root . '/cases/' . $case . '/case.json')) {
+                throw new GateError(self::INDEX . ': cases contains an unknown, invalid or duplicate case name.');
+            }
+            $seen[$case] = true;
+        }
+
+        return $cases;
     }
 
     public function count(): int
