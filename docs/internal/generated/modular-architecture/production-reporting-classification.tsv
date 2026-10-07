@@ -60,6 +60,9 @@ src/Reporting/Formatter/Json/JsonOffenderSection.php	Qualimetrix\Reporting\Forma
 src/Reporting/Formatter/Json/JsonSanitizer.php	Qualimetrix\Reporting\Formatter\Json\JsonSanitizer	"output projection"	Reporting
 src/Reporting/Formatter/MetricsJsonFormatter.php	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	"output projection"	Reporting
 src/Reporting/Formatter/Ordering/FindingSorter.php	Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	"output projection"	Reporting
+src/Reporting/Formatter/Prose/AsciiGlyphs.php	Qualimetrix\Reporting\Formatter\Prose\AsciiGlyphs	"output projection"	Reporting
+src/Reporting/Formatter/Prose/GlyphMode.php	Qualimetrix\Reporting\Formatter\Prose\GlyphMode	"output projection"	Reporting
+src/Reporting/Formatter/Prose/ProseText.php	Qualimetrix\Reporting\Formatter\Prose\ProseText	"output projection"	Reporting
 src/Reporting/Formatter/PublicationKind.php	Qualimetrix\Reporting\Formatter\PublicationKind	"output projection"	Reporting
 src/Reporting/Formatter/PublishedFinding.php	Qualimetrix\Reporting\Formatter\PublishedFinding	"output projection"	Reporting
 src/Reporting/Formatter/PublishedUtf8.php	Qualimetrix\Reporting\Formatter\PublishedUtf8	"output projection"	Reporting

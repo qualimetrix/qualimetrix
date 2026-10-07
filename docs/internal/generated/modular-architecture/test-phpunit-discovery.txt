@@ -1055,6 +1055,7 @@ Available tests:
  - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itDescribesTheKeysInsideAListItem
  - Qualimetrix\Governance\GeneratedArtifactFreshness\ConfigurationMergeTableFreshnessTest::itMatchesWhatTheSectionDeclarationsGenerate
  - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlBundleFreshnessTest::itMatchesAFreshBuildOfHtmlReportSrc
+ - Qualimetrix\Governance\GeneratedArtifactFreshness\HtmlPayloadFixtureFreshnessTest::itMatchesTheNativeCliPayload
  - Qualimetrix\Governance\GeneratedArtifactFreshness\SuppressionSnapshotFreshnessTest::itMatchesAFreshSelfAnalysisOfSrc
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itDefinesEveryDefaultAtClassNamespaceAndProjectLevel
  - Qualimetrix\Governance\HealthVocabulary\ComputedMetricDefaultsTest::itExpectedKeys
@@ -1134,6 +1135,7 @@ Available tests:
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itAccountsForEveryProductionFileThatNamesThePredicate
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itListsExactlyTheChannelsTheReadersWithhold
  - Qualimetrix\Governance\PublishedText\JsonEncodingPopulationTest::everyDirectJsonEncoderHasAnExaminedOwner
+ - Qualimetrix\Governance\PublishedText\ProductGlyphVocabularyTest::everyNonAsciiSourceLiteralHasAnExaminedGlyph
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itPublishesTheDerivedBaselineCountTupleExactlyOnce
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itRejectsBaselineOnlyBaselineCountDrift
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itRejectsDocumentationOnlyBaselineCountDrift
@@ -10237,6 +10239,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"unknown command"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"unknown option"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itEnvelopesAnOuterLadderRefusalWhenJsonWasRequested"unknown option, separate value"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itFramesAnUnknownGlyphModeBeforeEveryCommand"JSON"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itFramesAnUnknownGlyphModeBeforeEveryCommand"baseline"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itFramesAnUnknownGlyphModeBeforeEveryCommand"check"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itFramesAnUnknownGlyphModeBeforeEveryCommand"graph"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itFramesAnUnknownGlyphModeBeforeEveryCommand"rules"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat"dot format"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat"short -f"
  - Qualimetrix\Tests\Infrastructure\Console\Functional\ApplicationRefusalTest::itKeepsTheOuterLadderRefusalOnStderrWithoutAJsonFormat"text format"
@@ -10936,6 +10943,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesAnUnwritableOutputTargetBeforeAnalysis
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRefusesInsteadOfSwallowingAWriteFailureAndBeatsTheFindingsExitCode
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
+ - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itRepairsProseAtPublicationAndReportsStructuredRepairOnStderr
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"Checkstyle XML"
  - Qualimetrix\Tests\Infrastructure\Console\Integration\ResultPresenterTest::itWritesSerializedPayloadsByteForByte"DOT"
@@ -10990,6 +10998,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesGetLongVersionFreeOfTheDocumentationPointer
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesTheRefusalSentenceReadableAboveALiveProgressFrame
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itLeavesTheWorkingDirectoryUnchangedWhenWorkingDirIsOmitted
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itRefusesAnUnknownGlyphModeBeforeRunningTheCommand
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsInternalErrorExitCodeForAConsoleLogicException
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsInternalErrorExitCodeForAnUnrelatedThrowable
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ApplicationTest::itReturnsRefusalExitCodeForABareInvalidArgumentExceptionWithNoCarrier
@@ -11224,6 +11233,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ObservedProjectScopeReasonsTest::itDoesNotPublishAnAbsoluteCandidateOutsideTheProject
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ObservedProjectScopeReasonsTest::itOmitsRootSearchReasonsWhenTheManifestIsAbsent
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ObservedProjectScopeReasonsTest::itPublishesOnlyProjectRelativeOmissionLocations
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputEncodingTest::itDistinguishesFalseValuesFromAnEnabledMode
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputEncodingTest::itKeepsDirectWritersAndTheProgressSectionOnTheSameMode
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputEncodingTest::itPublishesBufferedDiagnosticsWithoutAProgressSection
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputEncodingTest::itRefusesADifferentModeAfterBindingOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"quiet"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itDoesNotWriteToASuppressedStream"silent"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\OutputHelperTest::itRefusesAReadOnlyBorrowedStreamWithoutChangingOrClosingIt
@@ -12142,6 +12155,10 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"github"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"health"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"summary"
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8ProsePublicationTest::itPublishesTheRealFormatterBodyWithoutTransliteratingOtherLetters"text"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itAddsNoRepairMarkWhenNothingNeededRepair
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itCountsARepairedSarifRelatedPath
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itKeepsByteRepairOutOfIssueListRecords
@@ -12411,6 +12428,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itFormatsWithNullScore
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itHidesContributorsWhenContributorsOptionIsZero
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itLimitsContributorsByFormatOption
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itNamesFindingsAndTheWholeRunOutsideACleanScopeEvenWithoutScores
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itNamesSeveralEntryFailureKindsWithoutCallingThemPhpFiles
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itPrintsCoverageBesideEveryScore"narrow"
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Health\HealthTextFormatterTest::itPrintsCoverageBesideEveryScore"wide"

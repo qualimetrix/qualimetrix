@@ -26,7 +26,7 @@ Qualimetrix\Analysis\Configuration\Contract\Pipeline\CommandLinePathWrite	Analys
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin	Analysis.Configuration	7	5
-Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	52	7
+Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	53	7
 Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource	Analysis.Configuration	6	4
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface	Analysis.Configuration	8	1
 Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusedPosition	Analysis.Configuration	13	4
@@ -347,7 +347,7 @@ Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	11	7
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	8	5
 Qualimetrix\Core\ProductIdentity	Core.Neutral	24	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	21	8
-Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	8	6
+Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	9	6
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	9	6
 Qualimetrix\Core\Symbol\ClassType	Core.Symbol	7	3
@@ -422,7 +422,10 @@ Qualimetrix\Reporting\Formatter\FormatOptionValue	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormattedReport	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	2	2
 Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	4	2
-Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	5	2
+Qualimetrix\Reporting\Formatter\Prose\GlyphMode	Reporting	2	1
+Qualimetrix\Reporting\Formatter\Prose\ProseText	Reporting	3	1
+Qualimetrix\Reporting\Formatter\PublicationKind	Reporting	1	1
+Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	6	2
 Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	Reporting.GraphProjection	1	1

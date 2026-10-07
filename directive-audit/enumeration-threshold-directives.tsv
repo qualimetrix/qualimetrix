@@ -47,7 +47,7 @@ src/Analysis/Evidence/Measurement/Contract/VisitorCallableScope.php	14	code-smel
 src/Analysis/Finding/Contract/Finding.php	14	code-smell.constructor-overinjection	warning=18 error=18 — Finding is a flat immutable transport VO; its 17 independent published fields do not form a service dependency group. The exclusive boundary allows those 17 fields while keeping the next field visible.
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	21	code-smell.constructor-overinjection	warning=9 error=12 -- One immutable selector
 src/Analysis/Finding/Contract/Rule/RuleOptionShape.php	24	code-smell.constructor-overinjection	warning=9 error=9 -- Eight immutable
-src/Infrastructure/Console/ResultPresenter.php	35	code-smell.constructor-overinjection	warning=10 error=10 -- Raw 9 gets one-edge
+src/Infrastructure/Console/ResultPresenter.php	38	code-smell.constructor-overinjection	warning=10 error=10 -- Raw 9 gets one-edge
 src/Infrastructure/Console/RuntimeConfigurator.php	26	code-smell.constructor-overinjection	warning=9 error=10 -- This class composes a run's unrelated per-run concerns (logging, progress, profiling, cache, parallelism, limits) and the eighth is the autoload anchor DIT's ancestor walk needs before the pipeline starts. Splitting the composition is its own subject, not this metric's campaign; the ceiling is one slot: a ninth parameter reports again.
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/HealthScore.php	12	code-smell.long-parameter-list	warning=9 error=9 — Same reason: the eighth field is what a score covers, which belongs to the score and to nothing else.
 src/Analysis/Evidence/Measurement/Contract/CallableWithMetrics.php	27	code-smell.long-parameter-list	warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
@@ -57,7 +57,7 @@ src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	23	code-sm
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	43	code-smell.long-parameter-list	warning=9 error=12 -- Independent measured facts
 src/Analysis/Finding/Contract/Rule/RuleOptionShape.php	26	code-smell.long-parameter-list	warning=9 error=9 -- Named factories compose
 src/Infrastructure/Console/RuntimeConfigurator.php	27	code-smell.long-parameter-list	warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
-src/Infrastructure/Console/Application.php	41	cohesion.lcom	6 -- this is the composition root: wiring
+src/Infrastructure/Console/Application.php	42	cohesion.lcom	6 -- this is the composition root: wiring
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.ccn	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
 src/Core/Symbol/MetricSubjectCodec.php	68	complexity.ccn	warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.

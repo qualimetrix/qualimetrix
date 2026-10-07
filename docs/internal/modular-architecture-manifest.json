@@ -1396,6 +1396,10 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassLayerRequirement"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\OutputEncoding"
         }
       ]
     },
@@ -17558,6 +17562,10 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Prose\\ProseText"
         }
       ]
     },
@@ -22320,6 +22328,10 @@
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory",
           "carrier_fqcn": "Qualimetrix\\Reporting\\Formatter\\FormatterInterface"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
         }
       ]
     },
@@ -22618,6 +22630,10 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
         }
       ]
     },
@@ -25320,6 +25336,70 @@
       "owner": "Reporting",
       "visibility": "internal",
       "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\GlyphConsoleSection": {
+      "path": "src/Infrastructure/Console/GlyphConsoleSection.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\GlyphOutput": {
+      "path": "src/Infrastructure/Console/GlyphOutput.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Infrastructure\\Console\\OutputEncoding": {
+      "path": "src/Infrastructure/Console/OutputEncoding.php",
+      "kind": "class",
+      "owner": "Infrastructure.Console",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\Prose\\AsciiGlyphs": {
+      "path": "src/Reporting/Formatter/Prose/AsciiGlyphs.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "internal",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\Formatter\\Prose\\GlyphMode": {
+      "path": "src/Reporting/Formatter/Prose/GlyphMode.php",
+      "kind": "enum",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ErrorStream"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\OutputEncoding"
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\Formatter\\Prose\\ProseText": {
+      "path": "src/Reporting/Formatter/Prose/ProseText.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\GlyphConsoleSection"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\GlyphOutput"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
+        }
+      ]
     }
   },
   "enforcement_seams": {}

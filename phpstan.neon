@@ -22,6 +22,7 @@ parameters:
         - tests/Analysis/Policy/Architecture/Fixtures
         - tests/Analysis/Policy/Baseline/Fixtures
         - tests/Analysis/Policy/Inline/Fixtures
+        - tests/Reporting/Fixtures/HtmlPayload
         - governance/FormatOptionKeys/Fixtures
         - governance/SelectorSyntax/Fixtures
         - tools/phpstan/tests/Fixtures

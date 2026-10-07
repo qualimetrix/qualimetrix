@@ -2569,6 +2569,7 @@ Qualimetrix\Infrastructure\Console\DirectiveAuditTextPresenter	Infrastructure.Co
 Qualimetrix\Infrastructure\Console\DirectiveAuditTextPresenter	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\DirectiveVerdictTally	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveEffect	Analysis.Policy.Inline	contract
 Qualimetrix\Infrastructure\Console\DirectiveVerdictTally	Infrastructure.Console	Qualimetrix\Analysis\Policy\Inline\Contract\Directive\DirectiveVerdict	Analysis.Policy.Inline	contract
+Qualimetrix\Infrastructure\Console\ErrorStream	Infrastructure.Console	Qualimetrix\Reporting\Formatter\Prose\GlyphMode	Reporting	contract
 Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Reporting\ReportCoverage	Reporting	contract
@@ -2609,6 +2610,8 @@ Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Consol
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	contract
 Qualimetrix\Infrastructure\Console\FormatterContextFactory	Infrastructure.Console	Qualimetrix\Reporting\GroupBy	Reporting	contract
+Qualimetrix\Infrastructure\Console\GlyphConsoleSection	Infrastructure.Console	Qualimetrix\Reporting\Formatter\Prose\ProseText	Reporting	contract
+Qualimetrix\Infrastructure\Console\GlyphOutput	Infrastructure.Console	Qualimetrix\Reporting\Formatter\Prose\ProseText	Reporting	contract
 Qualimetrix\Infrastructure\Console\Hook\HookBackupTransaction	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileReplacement	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Hook\HookBackupTransaction	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileTargetFailure	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\Hook\HookBackupTransaction	Infrastructure.Console	Qualimetrix\Core\FileTarget\FileTargetFailureKind	Core.FileTarget	contract
@@ -2655,6 +2658,8 @@ Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons	Infrastructure.Co
 Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\ProjectScopeReasonKind	Analysis.Run	contract
 Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract
 Qualimetrix\Infrastructure\Console\ObservedProjectScopeReasons	Infrastructure.Console	Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface	Infrastructure.Composer	contract
+Qualimetrix\Infrastructure\Console\OutputEncoding	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal	Analysis.Configuration	contract
+Qualimetrix\Infrastructure\Console\OutputEncoding	Infrastructure.Console	Qualimetrix\Reporting\Formatter\Prose\GlyphMode	Reporting	contract
 Qualimetrix\Infrastructure\Console\OutputHelper	Infrastructure.Console	Qualimetrix\Core\FileTarget\HeldTarget	Core.FileTarget	contract
 Qualimetrix\Infrastructure\Console\PreparedAnalysisInput	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	contract
 Qualimetrix\Infrastructure\Console\PreparedAnalysisInput	Infrastructure.Console	Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration	Analysis.Run	contract
@@ -2715,6 +2720,9 @@ Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualim
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\FormatterContext	Reporting	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormattedReport	Reporting	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	contract
+Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\Formatter\Prose\ProseText	Reporting	contract
+Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\Formatter\PublicationKind	Reporting	contract
+Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\ReportBuilder	Reporting	contract
 Qualimetrix\Infrastructure\Console\ResultPresenter	Infrastructure.Console	Qualimetrix\Reporting\ReportProjectScope	Reporting	contract
@@ -3276,6 +3284,7 @@ Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\
 Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Reporting\Formatter\Prose\ProseText	Reporting	Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract

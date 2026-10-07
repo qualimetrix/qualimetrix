@@ -54,7 +54,7 @@ rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolPath.
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Core/Symbol/SymbolType.php	Qualimetrix\Core\Symbol\SymbolType	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Infrastructure/Parallel/FileProcessingTask.php	Qualimetrix\Infrastructure\Parallel	warning	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/CoverageFailure.php	Qualimetrix\Reporting	warning	1
-rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/Formatter/AcceptedLevelNarrator.php	Qualimetrix\Reporting\Formatter	warning	1
+rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/Formatter/AcceptedLevelNarrator.php	Qualimetrix\Reporting\Formatter	error	1
 rule-namespace-suppression	coupling.cbo	coupling.cbo	src/Reporting/Formatter/Summary/FindingSummaryRenderer.php	Qualimetrix\Reporting\Formatter\Summary	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/Finding.php	Qualimetrix\Analysis\Finding\Contract\Finding	warning	1
 rule-namespace-suppression	coupling.class-rank	coupling.class-rank	src/Analysis/Finding/Contract/FindingChannel.php	Qualimetrix\Analysis\Finding\Contract\FindingChannel	warning	1
@@ -370,7 +370,6 @@ rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Finding/RuleC
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Policy/Architecture/Layer/ClassContext/NameSpellingIndex.php	Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\NameSpellingIndex	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Analysis/Policy/Baseline/Contract/CeilingOutcome.php	Qualimetrix\Analysis\Policy\Baseline\Contract\CeilingOutcome	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Core/FileTarget/ResolvedTarget.php	Qualimetrix\Core\FileTarget\ResolvedTarget	warning	1
-rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Application.php	Qualimetrix\Infrastructure\Console\Application	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineCleanupCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineExplainCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand	warning	1
 rule-path-suppression	health.cohesion	health.cohesion	src/Infrastructure/Console/Command/BaselineGenerateCommand.php	Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand	warning	1
