@@ -79,6 +79,7 @@ Architecture/
 │   │   ├── Ancestry.php
 │   │   ├── ClassContext.php
 │   │   ├── ClassContextFactory.php
+│   │   ├── DeclarationRelationIndex.php
 │   │   ├── DeclarationRelations.php
 │   │   ├── ImplicitStringability.php
 │   │   ├── KnownTypes.php
@@ -199,7 +200,9 @@ names where the parent-class chain was cut and, separately, every interface
 the walk reached without readable facts. Per-run external facts and contexts
 are memoised by the factory and cleared at every binding; Composer placement
 and directory-listing snapshots are cleared when the analysed project is
-reanchored. `DeclarationRelations` projects direct declaration facts,
+reanchored. `DeclarationRelations` owns declaration identity, kind and observed
+spelling; `DeclarationRelationIndex` ingests and indexes direct relation and
+attribute facts from graph, external and implicit sources.
 `Ancestry` owns the bounded parent/interface/trait closure, and
 `ImplicitStringability` derives PHP's implicit interface without making the
 factory a second graph model. `NameSpellingIndex` and `KnownTypes` stay in the

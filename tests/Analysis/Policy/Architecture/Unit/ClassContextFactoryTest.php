@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInt
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\Ancestry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelationIndex;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelations;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
@@ -32,6 +33,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(ClassContextFactory::class)]
 #[CoversClass(ClassContext::class)]
+#[CoversClass(DeclarationRelationIndex::class)]
 #[CoversClass(DeclarationRelations::class)]
 #[CoversClass(Ancestry::class)]
 #[CoversClass(ImplicitStringability::class)]

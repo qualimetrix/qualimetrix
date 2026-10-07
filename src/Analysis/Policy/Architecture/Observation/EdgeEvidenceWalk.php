@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 
 /** Collects dependency-edge layer evidence from one prepared run. */
 final readonly class EdgeEvidenceWalk
@@ -98,26 +100,26 @@ final readonly class EdgeEvidenceWalk
                         $end->toCanonical(),
                         $end->toString(),
                     );
-                } else {
-                    $doubted = LayerEvidenceTally::unanswered(
-                        $doubted,
-                        $undecidedLayers,
-                        $end->toCanonical(),
-                        $end->toString(),
-                    );
-                    $ownsIfExcludedSymbols = LayerEvidenceTally::ownerIfExcluded(
-                        $ownsIfExcludedSymbols,
-                        $match,
-                        $registry->establishedMatches($end),
-                        $end->toCanonical(),
-                    );
+
+                    continue;
                 }
+                $doubted = LayerEvidenceTally::unanswered(
+                    $doubted,
+                    $undecidedLayers,
+                    $end->toCanonical(),
+                    $end->toString(),
+                );
+                $ownsIfExcludedSymbols = LayerEvidenceTally::ownerIfExcluded(
+                    $ownsIfExcludedSymbols,
+                    $match,
+                    $registry->establishedMatches($end),
+                    $end->toCanonical(),
+                );
             }
 
-            if ($fromMatch !== null
-                && $toMatch !== null
-                && !$this->architecture->policy()->isAllowed($fromMatch->layerName, $toMatch->layerName, $dependency->type)) {
-                $forbidden[] = new ForbiddenEdge($dependency, $fromMatch, $toMatch);
+            $forbiddenEdge = $this->forbiddenEdge($dependency, $fromMatch, $toMatch);
+            if ($forbiddenEdge !== null) {
+                $forbidden[] = $forbiddenEdge;
             }
         }
 
@@ -141,5 +143,19 @@ final readonly class EdgeEvidenceWalk
             ],
             excludedNames: $excludedNames,
         );
+    }
+
+    private function forbiddenEdge(
+        Dependency $dependency,
+        ?LayerMatch $from,
+        ?LayerMatch $to,
+    ): ?ForbiddenEdge {
+        if ($from === null
+            || $to === null
+            || $this->architecture->policy()->isAllowed($from->layerName, $to->layerName, $dependency->type)) {
+            return null;
+        }
+
+        return new ForbiddenEdge($dependency, $from, $to);
     }
 }

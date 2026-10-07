@@ -25,65 +25,46 @@ final readonly class ExternalSupertypes
         public bool $aliasesTraitMethodAsToString,
         public ?string $unreadable,
     ) {
-        self::assertDeclarationPair($declaredSpelling, $classType);
-        self::assertAbsentWhenNotPlaced(
-            $placed,
-            $declaredSpelling,
-            $parent,
-            $interfaces,
-            $traits,
-            $declaresToString,
-            $aliasesTraitMethodAsToString,
-            $unreadable,
-        );
-        self::assertPlacedResult($placed, $declaredSpelling, $unreadable);
-        self::assertReadableResult($declaredSpelling, $unreadable);
+        $this->assertDeclarationPair();
+        $this->assertAbsentWhenNotPlaced();
+        $this->assertPlacedResult();
+        $this->assertReadableResult();
     }
 
-    private static function assertDeclarationPair(?string $spelling, ?ClassType $type): void
+    private function assertDeclarationPair(): void
     {
-        if (($spelling === null) !== ($type === null)) {
+        if (($this->declaredSpelling === null) !== ($this->classType === null)) {
             throw new InvalidArgumentException('An external declaration spelling and class type must be present together.');
         }
     }
 
-    /**
-     * @param list<string> $interfaces
-     * @param list<string> $traits
-     */
-    private static function assertAbsentWhenNotPlaced(
-        bool $placed,
-        ?string $spelling,
-        ?string $parent,
-        array $interfaces,
-        array $traits,
-        bool $declaresToString,
-        bool $aliasesTraitMethodAsToString,
-        ?string $unreadable,
-    ): void {
-        if (!$placed && (
-            $spelling !== null
-            || $parent !== null
-            || $interfaces !== []
-            || $traits !== []
-            || $declaresToString
-            || $aliasesTraitMethodAsToString
-            || $unreadable !== null
+    private function assertAbsentWhenNotPlaced(): void
+    {
+        if (!$this->placed && (
+            $this->declaredSpelling !== null
+            || $this->parent !== null
+            || $this->interfaces !== []
+            || $this->traits !== []
+            || $this->declaresToString
+            || $this->aliasesTraitMethodAsToString
+            || $this->unreadable !== null
         )) {
             throw new InvalidArgumentException('A type outside the Composer map cannot carry declaration facts.');
         }
     }
 
-    private static function assertPlacedResult(bool $placed, ?string $spelling, ?string $unreadable): void
+    private function assertPlacedResult(): void
     {
-        if ($placed && $spelling === null && ($unreadable === null || $unreadable === '')) {
+        if ($this->placed
+            && $this->declaredSpelling === null
+            && ($this->unreadable === null || $this->unreadable === '')) {
             throw new InvalidArgumentException('A placed type without declaration facts requires an unreadable reason.');
         }
     }
 
-    private static function assertReadableResult(?string $spelling, ?string $unreadable): void
+    private function assertReadableResult(): void
     {
-        if ($spelling !== null && $unreadable !== null) {
+        if ($this->declaredSpelling !== null && $this->unreadable !== null) {
             throw new InvalidArgumentException('A readable declaration cannot also carry an unreadable reason.');
         }
     }

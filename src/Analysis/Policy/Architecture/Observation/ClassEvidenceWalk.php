@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 
@@ -99,21 +100,7 @@ final readonly class ClassEvidenceWalk
                 $established,
                 $canonical,
             );
-            if (($established[0] ?? null) === null) {
-                continue;
-            }
-            foreach (LayerShadowing::verdicts($established) as $verdict) {
-                $entry = new ShadowedClass(
-                    $display,
-                    $verdict->earlier->primaryCriterion(),
-                    $verdict->later->primaryCriterion(),
-                );
-                if ($verdict->exemption === null) {
-                    $shadowEvidence[$verdict->earlier->layerName][$verdict->later->layerName][] = $entry;
-                } elseif ($verdict->exemption === ShadowExemption::NonPatternPrecedence) {
-                    $precedenceEvidence[$verdict->later->layerName][$verdict->earlier->layerName][$canonical] = $entry;
-                }
-            }
+            self::recordShadows($established, $display, $canonical, $shadowEvidence, $precedenceEvidence);
         }
 
         return new ClassWalkEvidence(
@@ -134,5 +121,31 @@ final readonly class ClassEvidenceWalk
             excludedNames: $excludedNames,
             precedenceEvidence: $precedenceEvidence,
         );
+    }
+
+    /**
+     * @param list<LayerMatch> $established
+     * @param array<string, array<string, list<ShadowedClass>>> $shadowEvidence
+     * @param array<string, array<string, array<string, ShadowedClass>>> $precedenceEvidence
+     */
+    private static function recordShadows(
+        array $established,
+        string $display,
+        string $canonical,
+        array &$shadowEvidence,
+        array &$precedenceEvidence,
+    ): void {
+        foreach (LayerShadowing::verdicts($established) as $verdict) {
+            $entry = new ShadowedClass(
+                $display,
+                $verdict->earlier->primaryCriterion(),
+                $verdict->later->primaryCriterion(),
+            );
+            if ($verdict->exemption === null) {
+                $shadowEvidence[$verdict->earlier->layerName][$verdict->later->layerName][] = $entry;
+            } elseif ($verdict->exemption === ShadowExemption::NonPatternPrecedence) {
+                $precedenceEvidence[$verdict->later->layerName][$verdict->earlier->layerName][$canonical] = $entry;
+            }
+        }
     }
 }

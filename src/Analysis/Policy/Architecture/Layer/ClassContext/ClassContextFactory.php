@@ -86,15 +86,21 @@ final class ClassContextFactory
         if (isset($this->contextCache[$cacheKey])) {
             return $this->contextCache[$cacheKey];
         }
+
+        return $this->contextCache[$cacheKey] = $this->buildUncached($class, $fqn);
+    }
+
+    private function buildUncached(SymbolPath $class, string $fqn): ClassContext
+    {
         if ($this->graph === null) {
-            return $this->contextCache[$cacheKey] = new ClassContext(
+            return new ClassContext(
                 $fqn,
                 self::deriveShortName($fqn),
                 graphBacked: false,
             );
         }
         if ($class->type === null || $class->type === '') {
-            return $this->contextCache[$cacheKey] = new ClassContext($fqn, self::deriveShortName($fqn));
+            return new ClassContext($fqn, self::deriveShortName($fqn));
         }
 
         $relations = $this->relations;
@@ -112,7 +118,7 @@ final class ClassContextFactory
             ?? PhpBuiltinClassHierarchy::attributesOf($fqn)
             ?? [];
 
-        return $this->contextCache[$cacheKey] = new ClassContext(
+        return new ClassContext(
             $fqn,
             self::deriveShortName($fqn),
             $attributes,

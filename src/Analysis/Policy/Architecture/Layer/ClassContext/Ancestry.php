@@ -21,9 +21,6 @@ final class Ancestry
     /** @var array<string, ExternalSupertypes> */
     private array $externalFacts = [];
 
-    /** @var array<string, true> */
-    private array $externalRelationsLoaded = [];
-
     public function __construct(
         private readonly DeclarationRelations $relations,
         private readonly AnalysedDeclarations $analysed,
@@ -50,28 +47,13 @@ final class Ancestry
      */
     public function interfacesOf(string $fqn, array $parents, array &$unresolved): array
     {
-        $declaredInterfaces = $this->relations->implementsOf($fqn);
-        $seeds = $declaredInterfaces !== []
-            ? $declaredInterfaces
-            : PhpBuiltinClassHierarchy::interfacesOf($fqn) ?? [];
-        if ($this->relations->isInterface($fqn)) {
-            foreach ($this->relations->extendsOf($fqn) ?? [] as $parent) {
-                $seeds[] = $parent;
-            }
-        } else {
-            foreach ($parents as $parent) {
-                $declaredInterfaces = $this->relations->implementsOf($parent);
-                $parentInterfaces = $declaredInterfaces !== []
-                    ? $declaredInterfaces
-                    : PhpBuiltinClassHierarchy::interfacesOf($parent) ?? [];
-                foreach ($parentInterfaces as $interface) {
-                    $seeds[] = $interface;
-                }
-            }
-        }
+        $seeds = $this->directInterfacesOf($fqn);
+        $inherited = $this->relations->isInterface($fqn)
+            ? $this->relations->extendsOf($fqn) ?? []
+            : array_merge([], ...array_map($this->directInterfacesOf(...), $parents));
 
         return $this->closure(
-            $seeds,
+            [...$seeds, ...$inherited],
             $unresolved,
             PhpBuiltinClassHierarchy::interfacesOf(...),
             $this->relations->implementsMap(),
@@ -84,10 +66,9 @@ final class Ancestry
         if ($declaration !== null) {
             return $declaration;
         }
-        $this->loadExternalDeclaration($fqn);
-        $facts = $this->externalFacts[$fqn] ?? null;
+        $facts = $this->externalFactsOf($fqn);
 
-        return $facts?->declaredSpelling === null ? null : $facts;
+        return $facts->declaredSpelling === null ? null : $facts;
     }
 
     public function classTypeOf(string $fqn): ?ClassType
@@ -140,33 +121,26 @@ final class Ancestry
     private function closure(array $seeds, array &$unresolved, callable $phpAbove, array $alsoAbove = []): array
     {
         $result = [];
-        $discovered = [];
-        $queue = [];
-        foreach ($seeds as $seed) {
-            if (!isset($discovered[$seed])) {
-                $discovered[$seed] = true;
-                $queue[] = [$seed, 1];
-            }
-        }
+        $seeds = array_values(array_unique($seeds));
+        $discovered = array_fill_keys($seeds, true);
+        $queue = array_map(static fn(string $seed): array => [$seed, 1], $seeds);
 
         for ($cursor = 0; isset($queue[$cursor]); ++$cursor) {
             [$next, $depth] = $queue[$cursor];
             $result[] = $next;
             $neighbours = $this->supertypesOf($next, $unresolved, $phpAbove, $alsoAbove);
+            $fresh = array_values(array_unique(array_filter(
+                $neighbours,
+                static fn(string $neighbour): bool => !isset($discovered[$neighbour]),
+            )));
             if ($depth >= self::MAX_DEPTH) {
-                foreach ($neighbours as $neighbour) {
-                    if (!isset($discovered[$neighbour])) {
-                        $unresolved[$neighbour] = true;
-                    }
-                }
+                $unresolved += array_fill_keys($fresh, true);
 
                 continue;
             }
-            foreach ($neighbours as $neighbour) {
-                if (!isset($discovered[$neighbour])) {
-                    $discovered[$neighbour] = true;
-                    $queue[] = [$neighbour, $depth + 1];
-                }
+            $discovered += array_fill_keys($fresh, true);
+            foreach ($fresh as $neighbour) {
+                $queue[] = [$neighbour, $depth + 1];
             }
         }
 
@@ -184,7 +158,7 @@ final class Ancestry
     {
         $phpRelations = $phpAbove($fqn);
         if (!$this->analysed->contains($fqn) && $phpRelations === null) {
-            $this->loadExternalDeclaration($fqn);
+            $this->externalFactsOf($fqn);
         }
 
         $also = $alsoAbove[$fqn] ?? [];
@@ -202,20 +176,12 @@ final class Ancestry
         return [];
     }
 
-    private function loadExternalDeclaration(string $fqn): void
+    /** @return list<string> */
+    private function directInterfacesOf(string $fqn): array
     {
-        if (isset($this->externalRelationsLoaded[$fqn])) {
-            return;
-        }
-        $source = $this->externalSource;
-        if ($source === null || !$source->isConfigured()) {
-            return;
-        }
-        $facts = $this->externalFactsOf($fqn);
-        $this->externalRelationsLoaded[$fqn] = true;
-        if ($facts->declaredSpelling !== null && $facts->classType !== null) {
-            $this->relations->addExternal($fqn, $facts);
-        }
+        $declared = $this->relations->implementsOf($fqn);
+
+        return $declared !== [] ? $declared : PhpBuiltinClassHierarchy::interfacesOf($fqn) ?? [];
     }
 
     private function hasReadableDeclaration(string $fqn): bool
@@ -231,8 +197,14 @@ final class Ancestry
         }
         $source = $this->externalSource;
 
-        return $this->externalFacts[$fqn] = $source === null || !$source->isConfigured()
+        $facts = $source === null || !$source->isConfigured()
             ? ExternalSupertypes::notPlaced()
             : $source->supertypesOf($fqn);
+        $this->externalFacts[$fqn] = $facts;
+        if ($facts->declaredSpelling !== null && $facts->classType !== null) {
+            $this->relations->addExternal($fqn, $facts);
+        }
+
+        return $facts;
     }
 }
