@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
@@ -27,6 +28,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -99,7 +101,8 @@ final class FileProcessingResultWireFormatTest extends TestCase
     public function itRoundTripsFileProcessingResultSuccessViaPhpSerialize(): void
     {
         $path = RelativePath::fromString('src/X.php');
-        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)));
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0));
+        $subject = MetricSubject::declaration($classDeclaration);
         $callable = new CallableWithMetrics(
             DeclarationPath::of(SymbolPath::forMethod('One', 'Thing', 'run'), $path, DeclarationOrdinal::fromRank(0)),
             17,
@@ -110,19 +113,21 @@ final class FileProcessingResultWireFormatTest extends TestCase
             MetricBag::fromArray(['complexity.ccn' => 2]),
             17,
         );
-        $dependency = new Dependency(
+        $dependency = Dependency::ofClassLike(
             DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
             DependencyType::Implements,
             new Location($path, 11),
             true,
+            false,
         );
-        $interfaceParent = new Dependency(
+        $interfaceParent = Dependency::ofClassLike(
             DeclarationPath::of(SymbolPath::forClass('One', 'Contract'), $path, DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
             DependencyType::Extends,
             new Location($path, 13),
-            interfaceExtends: true,
+            false,
+            true,
         );
         $suppression = new Suppression(
             'complexity',
@@ -134,6 +139,8 @@ final class FileProcessingResultWireFormatTest extends TestCase
         );
         $override = new ThresholdOverride('complexity.ccn', 10, 20, 13, $subject, ControlScope::Class_);
         $diagnostic = new ThresholdDiagnostic(14, $subject, 'complexity.ccn', 'invalid threshold', 31);
+        $classLike = ClassLikeDeclaration::of($classDeclaration, ClassType::Class_, true, true)
+            ->withLogicalClass(new LogicalClassPath(SymbolPath::forClass('Canonical', 'Thing')));
 
         $result = FileProcessingResult::success(
             filePath: $path,
@@ -141,6 +148,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
                 fileBag: (new MetricBag())
                     ->with('size.loc', 7)
                     ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 7]),
+                classLikeDeclarations: [$classLike],
                 callableMetrics: [$callable],
                 classMetrics: ['class' => ['subject' => $subject, 'metrics' => MetricBag::fromArray(['complexity.wmc' => 4]), 'line' => 11, 'start' => 24]],
                 namespaceMetrics: [
@@ -168,6 +176,9 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertSame(4, $restored->classMetrics()['class']['metrics']->get('complexity.wmc'));
         self::assertSame(3, $restored->namespaceMetrics()['namespace:One']['metrics']->get('size.loc'));
         self::assertEquals($dependency, $restored->dependencies()[0]);
+        self::assertEquals($classLike, $restored->classLikeDeclarations()[0]);
+        self::assertSame('One\\Thing', $restored->classLikeDeclarations()[0]->declaration->logical->toString());
+        self::assertSame('Canonical\\Thing', $restored->classLikeDeclarations()[0]->logical->symbolPath->toString());
         // Pins Dependency::$describesNestedAnonymousClass surviving the
         // worker-IPC round trip specifically (not just via assertEquals'
         // reflection compare above) — a flag that defaults back to false on
@@ -209,12 +220,13 @@ final class FileProcessingResultWireFormatTest extends TestCase
     public function itRoundTripsFileProcessingResultViaIgbinary(): void
     {
         $path = RelativePath::fromString('src/X.php');
-        $dependency = new Dependency(
+        $dependency = Dependency::ofClassLike(
             DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
             DependencyType::TraitUse,
             new Location($path, 11),
             true,
+            false,
         );
         $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)));
         $suppression = new Suppression(
@@ -230,11 +242,18 @@ final class FileProcessingResultWireFormatTest extends TestCase
             ),
         );
         $diagnostic = new ThresholdDiagnostic(14, $subject, 'complexity.ccn', 'invalid threshold', 37);
+        $classLike = ClassLikeDeclaration::of(
+            DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
+            ClassType::Class_,
+            true,
+            false,
+        )->withLogicalClass(new LogicalClassPath(SymbolPath::forClass('Canonical', 'Thing')));
 
         $result = FileProcessingResult::success(
             filePath: $path,
             payload: new SuccessfulFileProcessing(
                 fileBag: MetricBag::fromArray(['size.loc' => 42]),
+                classLikeDeclarations: [$classLike],
                 dependencies: [$dependency],
                 suppressions: [$suppression],
                 thresholdDiagnostics: [$diagnostic],
@@ -248,6 +267,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
 
         self::assertInstanceOf(FileProcessingResult::class, $restored);
         self::assertSame('src/X.php', $restored->filePath->value());
+        self::assertEquals($classLike, $restored->classLikeDeclarations()[0]);
         self::assertSame(42, $restored->fileBag()->get('size.loc'));
         self::assertEquals($dependency, $restored->dependencies()[0]);
         $restoredSuppression = $restored->suppressions()[0];

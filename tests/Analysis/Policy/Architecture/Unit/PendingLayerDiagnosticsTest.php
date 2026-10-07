@@ -292,7 +292,7 @@ final class PendingLayerDiagnosticsTest extends TestCase
         string $targetNamespace,
         string $targetClass,
     ): Dependency {
-        return new Dependency(
+        return Dependency::ofKind(
             source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: DependencyType::New_,

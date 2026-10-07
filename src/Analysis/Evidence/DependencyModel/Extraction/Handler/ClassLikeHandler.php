@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Trait_;
+use PhpParser\Node\Stmt\TraitUse;
+use PhpParser\Node\Stmt\TraitUseAdaptation\Alias;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Core\Symbol\ClassType;
 
 /**
- * Records what a class-like declares above itself: `extends`, `implements`,
- * attributes, and the interfaces PHP adds without their being written.
+ * Records class-like header edges and the facts declared by its direct body.
  *
- * Every enum implements `UnitEnum`, a backed one `BackedEnum` as well, and a
- * class or interface declaring `__toString()` is `Stringable`. They are
- * recorded as `implements` edges to PHP's own interfaces, which the coupling
- * views drop, so they reach declaration readers without moving a coupling
- * metric. A `__toString()` a class gets from a trait is not seen here: the
- * trait's body is another declaration.
+ * Every enum still has implicit `UnitEnum` and, when backed, `BackedEnum`
+ * declaration edges. Direct `__toString()` declarations and trait adaptations
+ * that alias a method to that name are class-like declaration facts instead of
+ * synthetic `Stringable` edges. This preserves a named declaration even when
+ * it has no dependency edge and leaves inherited/trait closure to its reader.
  */
 final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
 {
@@ -35,6 +38,15 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
 
     public function handle(Node $node, DependencyContext $context): void
     {
+        \assert($node instanceof ClassLike);
+        if ($node->name !== null) {
+            $context->recordClassLike(
+                self::classType($node),
+                $node->getMethod('__tostring') !== null,
+                self::aliasesTraitMethodAsToString($node),
+            );
+        }
+
         if ($node instanceof Class_) {
             $this->handleClass($node, $context);
 
@@ -48,7 +60,12 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
         }
 
         if ($node instanceof Trait_) {
-            TypeDependencyHelper::processAttributes($node->attrGroups, $node->getStartLine(), $context);
+            TypeDependencyHelper::processAttributes(
+                $node->attrGroups,
+                $node->getStartLine(),
+                $context->classHeaderAttributeSite(),
+                $context,
+            );
 
             return;
         }
@@ -64,10 +81,10 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
         // header edges (extends/implements/attributes) are recorded with the
         // enclosing class as their source. DependencyVisitor::consumeAnonymousClass()
         // marks $context accordingly for the duration of this call, and
-        // DependencyContext::addDependency() reads that ambient state — see
-        // Dependency::$describesNestedAnonymousClass.
+        // DependencyContext's class-like and attribute operations read that
+        // ambient state — see Dependency::$describesNestedAnonymousClass.
         if ($node->extends !== null) {
-            $context->addDependency(
+            $context->addClassLikeDependency(
                 $context->getResolver()->resolve($node->extends),
                 DependencyType::Extends,
                 $node->extends->getStartLine(),
@@ -75,15 +92,19 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
         }
 
         foreach ($node->implements as $interface) {
-            $context->addDependency(
+            $context->addClassLikeDependency(
                 $context->getResolver()->resolve($interface),
                 DependencyType::Implements,
                 $interface->getStartLine(),
             );
         }
 
-        self::recordImplicitStringable($node, $context);
-        TypeDependencyHelper::processAttributes($node->attrGroups, $node->getStartLine(), $context);
+        TypeDependencyHelper::processAttributes(
+            $node->attrGroups,
+            $node->getStartLine(),
+            $node->name === null ? AttributeSite::NestedClass : $context->classHeaderAttributeSite(),
+            $context,
+        );
     }
 
     private function handleInterface(Interface_ $node, DependencyContext $context): void
@@ -92,33 +113,64 @@ final readonly class ClassLikeHandler implements NodeDependencyHandlerInterface
             $context->addInterfaceParent($context->getResolver()->resolve($parent), $parent->getStartLine());
         }
 
-        self::recordImplicitStringable($node, $context);
-        TypeDependencyHelper::processAttributes($node->attrGroups, $node->getStartLine(), $context);
+        TypeDependencyHelper::processAttributes(
+            $node->attrGroups,
+            $node->getStartLine(),
+            $context->classHeaderAttributeSite(),
+            $context,
+        );
     }
 
     private function handleEnum(Enum_ $node, DependencyContext $context): void
     {
         foreach ($node->implements as $interface) {
-            $context->addDependency(
+            $context->addClassLikeDependency(
                 $context->getResolver()->resolve($interface),
                 DependencyType::Implements,
                 $interface->getStartLine(),
             );
         }
 
-        $context->addDependency('UnitEnum', DependencyType::Implements, $node->getStartLine());
+        $context->addClassLikeDependency('UnitEnum', DependencyType::Implements, $node->getStartLine());
         if ($node->scalarType !== null) {
-            $context->addDependency('BackedEnum', DependencyType::Implements, $node->getStartLine());
+            $context->addClassLikeDependency('BackedEnum', DependencyType::Implements, $node->getStartLine());
         }
 
-        TypeDependencyHelper::processAttributes($node->attrGroups, $node->getStartLine(), $context);
+        TypeDependencyHelper::processAttributes(
+            $node->attrGroups,
+            $node->getStartLine(),
+            $context->classHeaderAttributeSite(),
+            $context,
+        );
     }
 
-    private static function recordImplicitStringable(ClassLike $node, DependencyContext $context): void
+    private static function classType(ClassLike $node): ClassType
     {
-        $toString = $node->getMethod('__tostring');
-        if ($toString !== null) {
-            $context->addDependency('Stringable', DependencyType::Implements, $toString->getStartLine());
+        return match (true) {
+            $node instanceof Class_ => ClassType::Class_,
+            $node instanceof Interface_ => ClassType::Interface_,
+            $node instanceof Trait_ => ClassType::Trait_,
+            $node instanceof Enum_ => ClassType::Enum_,
+            default => throw new LogicException('Unsupported class-like declaration'),
+        };
+    }
+
+    private static function aliasesTraitMethodAsToString(ClassLike $node): bool
+    {
+        foreach ($node->stmts as $statement) {
+            if (!$statement instanceof TraitUse) {
+                continue;
+            }
+            foreach ($statement->adaptations as $adaptation) {
+                if ($adaptation instanceof Alias
+                    && $adaptation->newName !== null
+                    && strcasecmp($adaptation->newName->toString(), '__toString') === 0
+                ) {
+                    return true;
+                }
+            }
         }
+
+        return false;
     }
 }

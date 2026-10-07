@@ -47,7 +47,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         AbsolutePath $projectRoot,
     ): CollectionPhaseOutput {
         if ($files === []) {
-            return new CollectionPhaseOutput([], []);
+            return new CollectionPhaseOutput([], [], classLikeDeclarations: []);
         }
 
         // Lifts projectRoot into the sequential FileProcessor instance. The

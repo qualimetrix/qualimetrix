@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -85,6 +86,7 @@ use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -166,7 +168,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             null,
             $paths,
             [],
-            new CollectionPhaseOutput([], $failures),
+            new CollectionPhaseOutput([], $failures, classLikeDeclarations: []),
             [],
             [],
             [],
@@ -199,6 +201,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new CollectionPhaseOutput(
                 [$lateFailure, $survivor],
                 [FileProcessingResult::failure($collectedFailure, 'collection parse', FileProcessingFailureKind::Parse)],
+                [],
             ),
             [],
             [],
@@ -260,7 +263,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                 return new CollectionPhaseOutput([
                     RelativePath::fromString('lost/Bad.php'),
                     RelativePath::fromString('Keep.php'),
-                ], []);
+                ], [], classLikeDeclarations: []);
             },
         );
         $participant = new class implements FileSetInspectionParticipantInterface {
@@ -366,7 +369,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: create dependencies between two classes
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
@@ -423,13 +426,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceA.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA')),
                 DependencyType::New_,
@@ -441,7 +444,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $graphBuilder = AdjacencyGraphBuilder::builder();
         $graph = $graphBuilder->build(
             $dependencies,
-            array_map(static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()), $dependencies),
+            array_map(static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ), $dependencies),
         );
         $detector = new CircularDependencyDetector();
         $cycles = $detector->detect($graph);
@@ -630,13 +638,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     {
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\PaymentRepository')),
                 DependencyType::New_,
@@ -738,7 +746,16 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $fixtureFiles,
         );
         $universe = array_map(
-            static fn(string $fqn): LogicalClassPath => new LogicalClassPath(SymbolPath::fromClassFqn($fqn)),
+            static fn(string $fqn): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                DeclarationPath::of(
+                    SymbolPath::fromClassFqn($fqn),
+                    RelativePath::fromString('fixture.php'),
+                    DeclarationOrdinal::fromRank(0),
+                ),
+                ClassType::Class_,
+                false,
+                false,
+            ),
             [
                 'Fixtures\\CouplingProject\\Core\\AbstractEntity',
                 'Fixtures\\CouplingProject\\Core\\EntityInterface',
@@ -1055,7 +1072,7 @@ PHP);
 
                 return new CollectionPhaseOutput([
                     RelativePath::fromString('dummy.php'),
-                ], [], dependencies: $dependencies);
+                ], [], [], dependencies: $dependencies);
             },
         );
 
@@ -1116,7 +1133,7 @@ PHP);
 
                 return new CollectionPhaseOutput([
                     RelativePath::fromString('dummy.php'),
-                ], [], dependencies: $dependencies);
+                ], [], [], dependencies: $dependencies);
             },
         );
 

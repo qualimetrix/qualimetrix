@@ -59,14 +59,7 @@ final readonly class LayerAssignmentResolver
         $collection = $this->collectFiles($files, $repository, $projectRoot);
         $classPaths = $this->classPaths($repository);
         $this->refuseUnknownClass($symbol, $classPaths);
-        $logicalClassUniverse = [];
-        foreach ($repository->allLogicalClasses() as $info) {
-            $logicalClass = $info->subject?->logicalClassPath();
-            if ($logicalClass !== null) {
-                $logicalClassUniverse[$logicalClass->toCanonical()] = $logicalClass;
-            }
-        }
-        $graph = $this->graphBuilder->build($collection->dependencies, array_values($logicalClassUniverse));
+        $graph = $this->graphBuilder->build($collection->dependencies, $collection->classLikeDeclarations);
 
         $assignment = $this->layerAssignmentInspector->inspect($graph, $classPaths, $symbol);
 

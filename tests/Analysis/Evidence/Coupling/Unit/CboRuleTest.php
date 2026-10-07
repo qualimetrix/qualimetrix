@@ -1282,7 +1282,7 @@ final class CboRuleTest extends TestCase
 
     private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of($source, $location->file ?? RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             $type,

@@ -870,7 +870,7 @@ final class UndecidableMembershipTest extends TestCase
     {
         $deps = [];
         foreach ($edges as [$source, $target, $type]) {
-            $deps[] = new Dependency(
+            $deps[] = Dependency::ofKind(
                 DeclarationPath::of(
                     SymbolPath::fromClassFqn($source),
                     RelativePath::fromString('test.php'),
@@ -946,6 +946,11 @@ final class UndecidableMembershipTest extends TestCase
             public function getDeclarationDependencies(): array
             {
                 return $this->deps;
+            }
+
+            public function getClassLikeDeclarations(): array
+            {
+                return [];
             }
         };
     }

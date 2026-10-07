@@ -27,7 +27,7 @@ final class DependencyTest extends TestCase
         $location = new Location(RelativePath::fromString('src/Service/UserService.php'), 42);
         $source = DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\UserService'), RelativePath::fromString('src/Service/UserService.php'), DeclarationOrdinal::fromRank(0));
         $target = new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\UserRepository'));
-        $dependency = new Dependency(
+        $dependency = Dependency::ofKind(
             source: $source,
             target: $target,
             type: DependencyType::New_,
@@ -181,9 +181,25 @@ final class DependencyTest extends TestCase
         $dependency->type = DependencyType::Extends;
     }
 
+    #[Test]
+    public function itRewritesLogicalEndpointsWithoutChangingTheExactSource(): void
+    {
+        $dependency = $this->dependency('App\\HTTP\\Source', 'Vendor\\HTTP\\Target', DependencyType::New_, new Location(RelativePath::fromString('test.php')));
+        $rewritten = $dependency->withLogicalEndpoints(
+            new LogicalClassPath(SymbolPath::fromClassFqn('App\\Http\\Source')),
+            new LogicalClassPath(SymbolPath::fromClassFqn('Vendor\\Http\\Target')),
+        );
+
+        self::assertSame($dependency->source, $rewritten->source);
+        self::assertSame('App\\Http\\Source', $rewritten->sourceLogical()->toString());
+        self::assertSame('Vendor\\Http\\Target', $rewritten->targetLogical()->toString());
+        self::assertSame($dependency->type, $rewritten->type);
+        self::assertSame($dependency->location, $rewritten->location);
+    }
+
     private function dependency(string $source, string $target, DependencyType $type, Location $location): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), $location->file ?? RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,

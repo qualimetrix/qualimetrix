@@ -135,4 +135,7 @@ interface DependencyGraphInterface
      * @return list<Dependency>
      */
     public function getDeclarationDependencies(): array;
+
+    /** @return list<ClassLikeDeclaration> */
+    public function getClassLikeDeclarations(): array;
 }

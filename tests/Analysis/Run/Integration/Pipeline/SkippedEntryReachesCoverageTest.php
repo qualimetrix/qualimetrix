@@ -129,6 +129,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
             static fn(array $files): CollectionPhaseOutput => new CollectionPhaseOutput(
                 [PathFactory::published(AbsolutePath::fromString($files[0]->getPathname()), $root)],
                 [],
+                [],
             ),
         );
 

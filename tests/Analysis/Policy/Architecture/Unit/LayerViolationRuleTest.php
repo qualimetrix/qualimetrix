@@ -489,8 +489,8 @@ final class LayerViolationRuleTest extends TestCase
         $firstSubject = MetricSubject::declaration($firstSource);
         $secondSubject = MetricSubject::declaration($secondSource);
         $dependencies = [
-            new Dependency($firstSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerFirst.php'), 5)),
-            new Dependency($secondSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerSecond.php'), 5)),
+            Dependency::ofKind($firstSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerFirst.php'), 5)),
+            Dependency::ofKind($secondSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerSecond.php'), 5)),
         ];
 
         $findings = $this->filterByRule(
@@ -1464,7 +1464,7 @@ final class LayerViolationRuleTest extends TestCase
             }
         };
         $finding = new LayerViolationFinding(
-            dependency: new Dependency(
+            dependency: Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 DependencyType::New_,
@@ -1507,7 +1507,7 @@ final class LayerViolationRuleTest extends TestCase
             }
         };
         $finding = new LayerViolationFinding(
-            dependency: new Dependency(
+            dependency: Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 DependencyType::New_,
@@ -1544,7 +1544,7 @@ final class LayerViolationRuleTest extends TestCase
         string $targetClass,
         DependencyType $type = DependencyType::New_,
     ): Dependency {
-        return new Dependency(
+        return Dependency::ofKind(
             source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: $type,
@@ -1554,7 +1554,7 @@ final class LayerViolationRuleTest extends TestCase
 
     private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of($source, $location->file ?? RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             $type,

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Traversable;
 
 /**
  * Builds a DependencyGraph from a collection of dependencies.
@@ -35,14 +36,17 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      * Builds a dependency graph from a collection of dependencies.
      *
      * @param list<Dependency> $dependencies
-     * @param iterable<LogicalClassPath> $logicalClassUniverse
+     * @param iterable<ClassLikeDeclaration> $classLikeDeclarations
      */
-    public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface
+    public function build(array $dependencies, iterable $classLikeDeclarations): DependencyGraphInterface
     {
+        $classLikeDeclarations = $classLikeDeclarations instanceof Traversable
+            ? iterator_to_array($classLikeDeclarations, false)
+            : array_values($classLikeDeclarations);
         $declarationDependencies = DependencyGraph::declarationsAmong($dependencies);
         $dependencies = $this->retainGraphDependencies($dependencies);
         $couplingDependencies = $this->couplingDependencies($dependencies);
-        $indexes = $this->indexGraphInputs($dependencies, $couplingDependencies, $logicalClassUniverse);
+        $indexes = $this->indexGraphInputs($dependencies, $couplingDependencies, $classLikeDeclarations);
         [$canonicalNamespaceMap, $parentNamespaces] = $this->expandNamespaceUniverse($indexes['leafNamespaces']);
         $ownCouplings = $this->computeNamespaceCouplings($couplingDependencies, $canonicalNamespaceMap);
         $rollupCouplings = $parentNamespaces === []
@@ -64,6 +68,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
             self::distinctOtherEnds($indexes['bySource'], static fn(Dependency $dep): SymbolPath => $dep->targetLogical()),
             self::distinctOtherEnds($indexes['byTarget'], static fn(Dependency $dep): SymbolPath => $dep->sourceLogical()),
             $declarationDependencies,
+            $classLikeDeclarations,
         );
     }
 
@@ -103,7 +108,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      *
      * @param list<Dependency> $dependencies
      * @param list<Dependency> $couplingDependencies
-     * @param iterable<LogicalClassPath> $logicalClassUniverse
+     * @param list<ClassLikeDeclaration> $classLikeDeclarations
      *
      * @return array{
      *     bySource: array<string, list<Dependency>>,
@@ -112,7 +117,7 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
      *     leafNamespaces: array<string, SymbolPath>
      * }
      */
-    private function indexGraphInputs(array $dependencies, array $couplingDependencies, iterable $logicalClassUniverse): array
+    private function indexGraphInputs(array $dependencies, array $couplingDependencies, array $classLikeDeclarations): array
     {
         [$bySource, $byTarget] = $this->indexCouplingEdges($couplingDependencies);
         /** @var array<string, SymbolPath> $classMap */
@@ -120,8 +125,8 @@ final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
         /** @var array<string, SymbolPath> $namespaceMap */
         $namespaceMap = [];
 
-        foreach ($logicalClassUniverse as $logicalClass) {
-            $classPath = $logicalClass->symbolPath;
+        foreach ($classLikeDeclarations as $declaration) {
+            $classPath = $declaration->logical->symbolPath;
             $classMap[$classPath->toCanonical()] = $classPath;
             $namespace = $classPath->namespace;
             if ($namespace !== null && !isset($namespaceMap[$namespace])) {

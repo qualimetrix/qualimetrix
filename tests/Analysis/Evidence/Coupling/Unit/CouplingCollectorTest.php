@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\Coupling\Configuration\CouplingSection;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -22,6 +23,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -332,13 +334,13 @@ final class CouplingCollectorTest extends TestCase
         $source = SymbolPath::forClass('App', 'Consumer');
         $externalTarget = SymbolPath::forClass('Vendor', 'Gateway');
         $dependencies = [
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('src/ConsumerA.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($externalTarget),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('src/ConsumerA.php'), 12),
             ),
-            new Dependency(
+            Dependency::ofKind(
                 DeclarationPath::of($source, RelativePath::fromString('src/ConsumerB.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($externalTarget),
                 DependencyType::New_,
@@ -1116,7 +1118,7 @@ final class CouplingCollectorTest extends TestCase
 
     private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,
@@ -1135,7 +1137,12 @@ final class CouplingCollectorTest extends TestCase
     private function realGraph(array $dependencies): DependencyGraphInterface
     {
         return (new DependencyGraphBuilder())->build($dependencies, array_map(
-            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ),
             $dependencies,
         ));
     }
@@ -1153,7 +1160,15 @@ final class CouplingCollectorTest extends TestCase
             );
         }
 
-        return $this->graphBuilder->build($dependencies, $universe);
+        return $this->graphBuilder->build($dependencies, array_map(
+            static fn(LogicalClassPath $logical): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                DeclarationPath::of($logical->symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+                ClassType::Class_,
+                false,
+                false,
+            ),
+            $universe,
+        ));
     }
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void

@@ -132,6 +132,7 @@ final class DirectiveAuditUniverseTest extends TestCase
         $collection->method('collect')->willReturn(new CollectionPhaseOutput(
             [$relative],
             [],
+            [],
             [self::FILE => [new Suppression(self::CHANNEL, 'reason', 3, SuppressionType::File, position: 0)]],
         ));
 

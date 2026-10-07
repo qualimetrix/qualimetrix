@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -31,6 +32,7 @@ final class DependencyGraph implements DependencyGraphInterface
      * @param list<Dependency> $declarationDependencies The declaration edges, including those to PHP's own
      *                                                  classes. Not derived from `$dependencies`: those have
      *                                                  already lost every such edge but `extends`
+     * @param list<ClassLikeDeclaration> $classLikeDeclarations Named declaration facts in encounter order
      */
     public function __construct(
         private readonly array $dependencies,
@@ -42,6 +44,7 @@ final class DependencyGraph implements DependencyGraphInterface
         private readonly array $classCe,
         private readonly array $classCa,
         private readonly array $declarationDependencies,
+        private readonly array $classLikeDeclarations,
     ) {}
 
     /**
@@ -118,5 +121,10 @@ final class DependencyGraph implements DependencyGraphInterface
     public function getDeclarationDependencies(): array
     {
         return $this->declarationDependencies;
+    }
+
+    public function getClassLikeDeclarations(): array
+    {
+        return $this->classLikeDeclarations;
     }
 }

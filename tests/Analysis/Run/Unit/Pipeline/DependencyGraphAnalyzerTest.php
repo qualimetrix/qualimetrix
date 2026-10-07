@@ -150,6 +150,13 @@ PHP);
             'class:UnitEnum',
             'class:Vendor\External',
         ], $classes);
+        self::assertSame(
+            ['GlobalType', 'App\\Service', 'App\\Port', 'App\\Shared', 'App\\State'],
+            array_map(
+                static fn($declaration): string => $declaration->declaration->logical->toString(),
+                $result->graph->getClassLikeDeclarations(),
+            ),
+        );
     }
 
     #[Test]

@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -17,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -360,7 +362,7 @@ final class ClassRankCollectorTest extends TestCase
 
     private function dep(string $source, string $target): Dependency
     {
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             DependencyType::New_,
@@ -381,7 +383,15 @@ final class ClassRankCollectorTest extends TestCase
             );
         }
 
-        return $this->graphBuilder->build($dependencies, $universe);
+        return $this->graphBuilder->build($dependencies, array_map(
+            static fn(LogicalClassPath $logical): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                DeclarationPath::of($logical->symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+                ClassType::Class_,
+                false,
+                false,
+            ),
+            $universe,
+        ));
     }
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void

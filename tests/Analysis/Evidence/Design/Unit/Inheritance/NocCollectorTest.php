@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -15,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -38,7 +40,7 @@ final class NocCollectorTest extends TestCase
      */
     private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1, bool $describesNestedAnonymousClass = false, bool $interfaceExtends = false): Dependency
     {
-        return new Dependency(
+        return Dependency::ofClassLike(
             source: DeclarationPath::of(SymbolPath::fromClassFqn($childClass), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentClass)),
             type: DependencyType::Extends,
@@ -448,7 +450,12 @@ final class NocCollectorTest extends TestCase
     private function graph(array $dependencies): DependencyGraphInterface
     {
         $universe = array_map(
-            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ),
             $dependencies,
         );
 

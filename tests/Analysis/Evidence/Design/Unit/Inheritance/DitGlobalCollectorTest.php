@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit\Inheritance;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
@@ -18,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -88,12 +90,13 @@ final class DitGlobalCollectorTest extends TestCase
     ): Dependency {
         $declaration = $this->declarationFor($childFqn, $file, $ordinal);
 
-        return new Dependency(
+        return Dependency::ofClassLike(
             source: $declaration,
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
             type: DependencyType::Extends,
             location: new Location($declaration->file, 1),
             describesNestedAnonymousClass: $describesNestedAnonymousClass,
+            interfaceExtends: false,
         );
     }
 
@@ -843,7 +846,12 @@ final class DitGlobalCollectorTest extends TestCase
     private function graph(array $dependencies): DependencyGraphInterface
     {
         $universe = array_map(
-            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            static fn(Dependency $dependency): ClassLikeDeclaration => ClassLikeDeclaration::of(
+                $dependency->source,
+                ClassType::Class_,
+                false,
+                false,
+            ),
             $dependencies,
         );
 

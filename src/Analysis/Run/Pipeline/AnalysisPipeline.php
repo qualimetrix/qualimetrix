@@ -10,7 +10,6 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -41,7 +40,6 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
-use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -234,9 +232,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             'dependencies' => \count($collectionResult->dependencies),
         ]);
         $profiler->start('dependency', 'pipeline');
-        $graph = $this->buildDependencyGraph(
+        $graph = $this->graphBuilder->build(
             $collectionResult->dependencies,
-            $repository,
+            $collectionResult->classLikeDeclarations,
         );
         $profiler->stop('dependency');
 
@@ -325,14 +323,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
         ), $measuredScope];
     }
 
-    /** @param list<Dependency> $dependencies */
-    private function buildDependencyGraph(
-        array $dependencies,
-        MetricRepositoryInterface $repository,
-    ): DependencyGraphInterface {
-        return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
-    }
-
     /**
      * What {@see AnalysisResult::$findings} carries: `$ruleExecution`'s published
      * findings plus the directive-usage audit below, which is not part of rule
@@ -387,20 +377,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface, DirectiveAudi
             ...$prepared->unmatchedExcludeFindings,
         ]);
 
-    }
-
-    /** @return list<LogicalClassPath> */
-    private static function collectLogicalClassPaths(MetricRepositoryInterface $repository): array
-    {
-        $classes = [];
-        foreach ($repository->allLogicalClasses() as $info) {
-            $logicalClass = $info->subject?->logicalClassPath();
-            if ($logicalClass !== null) {
-                $classes[$logicalClass->toCanonical()] = $logicalClass;
-            }
-        }
-
-        return array_values($classes);
     }
 
     /**

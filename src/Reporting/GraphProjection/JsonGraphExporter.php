@@ -50,7 +50,7 @@ final class JsonGraphExporter
         usort($nodes, static fn(array $a, array $b): int => $a['fqn'] <=> $b['fqn']);
 
         // Build aggregated edges
-        /** @var array<string, array{from: string, to: string, types: array<string, true>, count: int}> $edgeMap */
+        /** @var array<string, array{from: string, to: string, types: array<string, true>, shape: array<string, array<string, true>>, count: int}> $edgeMap */
         $edgeMap = [];
 
         foreach ($graph->getAllDependencies() as $dependency) {
@@ -69,11 +69,15 @@ final class JsonGraphExporter
                     'from' => $dependency->sourceLogical()->toString(),
                     'to' => $dependency->targetLogical()->toString(),
                     'types' => [],
+                    'shape' => [],
                     'count' => 0,
                 ];
             }
 
             $edgeMap[$edgeKey]['types'][$dependency->type->value] = true;
+            if ($dependency->shape !== null) {
+                $edgeMap[$edgeKey]['shape'][$dependency->type->value][$dependency->shape->value] = true;
+            }
             $edgeMap[$edgeKey]['count']++;
         }
 
@@ -82,11 +86,19 @@ final class JsonGraphExporter
         foreach ($edgeMap as $edge) {
             $types = array_keys($edge['types']);
             sort($types);
+            ksort($edge['shape']);
+            $shape = [];
+            foreach ($edge['shape'] as $type => $shapes) {
+                $values = array_keys($shapes);
+                sort($values);
+                $shape[$type] = $values;
+            }
 
             $edges[] = [
                 'from' => $edge['from'],
                 'to' => $edge['to'],
                 'types' => $types,
+                'shape' => (object) $shape,
                 'count' => $edge['count'],
             ];
         }

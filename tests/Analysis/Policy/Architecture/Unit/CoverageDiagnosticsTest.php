@@ -392,7 +392,7 @@ final class CoverageDiagnosticsTest extends TestCase
         string $targetClass,
         DependencyType $type = DependencyType::New_,
     ): Dependency {
-        return new Dependency(
+        return Dependency::ofKind(
             source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: $type,

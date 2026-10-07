@@ -110,6 +110,7 @@ final class FileProcessor implements FileProcessorInterface
 
         return new SuccessfulFileProcessing(
             fileBag: $output->metrics,
+            classLikeDeclarations: $output->classLikeDeclarations,
             callableMetrics: $callableMetrics,
             classMetrics: $classMetrics,
             namespaceMetrics: $namespaceMetrics,

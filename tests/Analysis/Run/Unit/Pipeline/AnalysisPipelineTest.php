@@ -68,7 +68,7 @@ final class AnalysisPipelineTest extends TestCase
         $collection = $this->createMock(CollectionOrchestratorInterface::class);
         $collection->expects(self::once())->method('collect')
             ->with([$file], self::isInstanceOf(MetricRepositoryInterface::class), $root)
-            ->willReturn(new CollectionPhaseOutput([$relative], []));
+            ->willReturn(new CollectionPhaseOutput([$relative], [], classLikeDeclarations: []));
 
         $pipeline = $this->pipeline($discovery, $collection);
         $configuration = new RunConfiguration(
@@ -101,7 +101,7 @@ final class AnalysisPipelineTest extends TestCase
         $projectFiles = $this->createMock(ProjectFilesInterface::class);
         $projectFiles->expects(self::once())->method('discover')->with(self::identicalTo($configuration))->willReturn(self::discovered([]));
         $collection = self::createStub(CollectionOrchestratorInterface::class);
-        $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
+        $collection->method('collect')->willReturn(new CollectionPhaseOutput([], [], classLikeDeclarations: []));
 
         $result = $this->pipeline($projectFiles, $collection)->analyze($configuration);
 
@@ -122,7 +122,7 @@ final class AnalysisPipelineTest extends TestCase
             static function (array $files, MetricRepositoryInterface $repository, AbsolutePath $root) use (&$seenRoots): CollectionPhaseOutput {
                 $seenRoots[] = $root->value();
 
-                return new CollectionPhaseOutput([], []);
+                return new CollectionPhaseOutput([], [], classLikeDeclarations: []);
             },
         );
         $pipeline = $this->pipeline($discovery, $collection);
@@ -181,7 +181,7 @@ final class AnalysisPipelineTest extends TestCase
             $discovery = self::createStub(ProjectFilesInterface::class);
             $discovery->method('discover')->willReturn(self::discovered([]));
             $collection = self::createStub(CollectionOrchestratorInterface::class);
-            $collection->method('collect')->willReturn(new CollectionPhaseOutput([], []));
+            $collection->method('collect')->willReturn(new CollectionPhaseOutput([], [], classLikeDeclarations: []));
 
             $result = $this->pipeline($discovery, $collection)->analyze(
                 new RunConfiguration(

@@ -11,6 +11,7 @@ use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
@@ -25,15 +26,15 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /**
  * Visitor that collects all class dependencies from AST.
  *
- * Detects all 14 dependency types:
+ * Detects every dependency position and preserves syntax facts separately:
  * - Extends, Implements, TraitUse
  * - New, StaticCall, StaticPropertyFetch, ClassConstFetch
- * - TypeHint (params, returns, properties — including closure and arrow
- *   function signatures, not just class methods)
+ * - TypeHint, PropertyType and ConstantType, each with its type shape
  * - Catch, Instanceof
- * - Attribute (including attributes on closure/arrow function parameters)
- * - PropertyType
- * - IntersectionType, UnionType
+ * - Attribute, with the declaration site and nesting preserved
+ *
+ * Named class-like declarations travel beside edges so declarations without
+ * dependencies retain their kind and direct-body Stringable facts.
  *
  * Note: closures/arrow functions declared outside any enclosing class (e.g.
  * at file top level, backing a "global function") have no owning symbol —
@@ -60,6 +61,12 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
     /** @var list<Dependency> */
     private array $dependencies = [];
+
+    /** @var list<ClassLikeDeclaration> */
+    private array $classLikeDeclarations = [];
+
+    /** @var list<array{?string, ?DependencyContext}> */
+    private array $classStack = [];
 
     private readonly DependencyHandlerTable $handlers;
 
@@ -93,12 +100,14 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     /**
      * Resets the visitor state between files.
      *
-     * Called automatically by setFile(), but can also be called directly
+     * Called automatically by beginFile(), but can also be called directly
      * when reusing the visitor for multiple files in the same traverser.
      */
     public function reset(): void
     {
         $this->dependencies = [];
+        $this->classLikeDeclarations = [];
+        $this->classStack = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
         $this->currentContext = null;
@@ -113,6 +122,12 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     public function dependencies(): array
     {
         return $this->dependencies;
+    }
+
+    /** @return list<ClassLikeDeclaration> */
+    public function classLikeDeclarations(): array
+    {
+        return $this->classLikeDeclarations;
     }
 
     private readonly DependencyResolver $resolver;
@@ -155,9 +170,12 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
 
         if ($this->currentContext !== null) {
             array_push($this->dependencies, ...$this->currentContext->getDependencies());
+            $declaration = $this->currentContext->classLikeDeclaration();
+            if ($declaration !== null) {
+                $this->classLikeDeclarations[] = $declaration;
+            }
         }
-        $this->currentClass = null;
-        $this->currentContext = null;
+        [$this->currentClass, $this->currentContext] = array_pop($this->classStack) ?? [null, null];
 
         return null;
     }
@@ -179,6 +197,8 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return false;
         }
 
+        $nestedNamedClass = $this->currentContext !== null;
+        $this->classStack[] = [$this->currentClass, $this->currentContext];
         $className = $node->name->toString();
         $this->currentClass = $this->currentNamespace !== null
             ? $this->currentNamespace . '\\' . $className
@@ -197,6 +217,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
                 $this->file,
                 $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
             ),
+            $nestedNamedClass,
         );
         $this->classLikeHandler->handle($node, $this->currentContext);
 

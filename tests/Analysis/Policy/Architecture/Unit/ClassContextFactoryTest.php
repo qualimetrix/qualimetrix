@@ -346,12 +346,13 @@ final class ClassContextFactoryTest extends TestCase
         $deps = [];
         foreach ($edges as $edge) {
             [$source, $target, $type] = $edge;
-            $deps[] = new Dependency(
+            $deps[] = Dependency::ofClassLike(
                 DeclarationPath::of($source, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 $type,
                 Location::none(),
-                interfaceExtends: $edge[3] ?? false,
+                false,
+                $edge[3] ?? false,
             );
         }
 
@@ -419,6 +420,11 @@ final class ClassContextFactoryTest extends TestCase
             public function getDeclarationDependencies(): array
             {
                 return $this->deps;
+            }
+
+            public function getClassLikeDeclarations(): array
+            {
+                return [];
             }
         };
     }

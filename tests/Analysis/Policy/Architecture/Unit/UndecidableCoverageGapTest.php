@@ -767,7 +767,7 @@ final class UndecidableCoverageGapTest extends TestCase
             $mode,
         );
 
-        $edges = $parent === null ? [] : [new Dependency(
+        $edges = $parent === null ? [] : [Dependency::ofKind(
             source: DeclarationPath::of($child, RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parent)),
             type: $edgeType,

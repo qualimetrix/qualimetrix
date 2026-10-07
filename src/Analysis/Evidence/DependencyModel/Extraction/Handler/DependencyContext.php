@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 final class DependencyContext
 {
     /** @var list<Dependency> */
     private array $dependencies = [];
+
+    private ?ClassLikeDeclaration $classLikeDeclaration = null;
 
     /**
      * Ambient state set by {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor}
@@ -37,6 +44,7 @@ final class DependencyContext
         private readonly DependencyResolver $resolver,
         private readonly RelativePath $file,
         private readonly DeclarationPath $currentClass,
+        private readonly bool $nestedNamedClass,
     ) {}
 
     /**
@@ -49,12 +57,61 @@ final class DependencyContext
             return;
         }
 
-        $this->dependencies[] = new Dependency(
+        $this->dependencies[] = Dependency::ofKind(
             $this->currentClass,
-            new LogicalClassPath(\Qualimetrix\Core\Symbol\SymbolPath::fromClassFqn($resolvedTargetClass)),
+            new LogicalClassPath(SymbolPath::fromClassFqn($resolvedTargetClass)),
+            $type,
+            new DependencyLocation($this->file, $line),
+        );
+    }
+
+    public function addTypeDependency(
+        string $resolvedTargetClass,
+        DependencyType $position,
+        TypeShape $shape,
+        int $line,
+    ): void {
+        if ($resolvedTargetClass === $this->currentClass->logical->toString()) {
+            return;
+        }
+
+        $this->dependencies[] = Dependency::ofType(
+            $this->currentClass,
+            new LogicalClassPath(SymbolPath::fromClassFqn($resolvedTargetClass)),
+            $position,
+            new DependencyLocation($this->file, $line),
+            $shape,
+        );
+    }
+
+    public function addAttributeDependency(string $resolvedTargetClass, AttributeSite $site, int $line): void
+    {
+        if ($resolvedTargetClass === $this->currentClass->logical->toString()) {
+            return;
+        }
+
+        $this->dependencies[] = Dependency::ofAttribute(
+            $this->currentClass,
+            new LogicalClassPath(SymbolPath::fromClassFqn($resolvedTargetClass)),
+            new DependencyLocation($this->file, $line),
+            $site,
+            $this->describesNestedAnonymousClass,
+        );
+    }
+
+    public function addClassLikeDependency(string $resolvedTargetClass, DependencyType $type, int $line): void
+    {
+        if ($resolvedTargetClass === $this->currentClass->logical->toString()) {
+            return;
+        }
+
+        $this->dependencies[] = Dependency::ofClassLike(
+            $this->currentClass,
+            new LogicalClassPath(SymbolPath::fromClassFqn($resolvedTargetClass)),
             $type,
             new DependencyLocation($this->file, $line),
             $this->describesNestedAnonymousClass,
+            false,
         );
     }
 
@@ -69,13 +126,37 @@ final class DependencyContext
             return;
         }
 
-        $this->dependencies[] = new Dependency(
+        $this->dependencies[] = Dependency::ofClassLike(
             $this->currentClass,
-            new LogicalClassPath(\Qualimetrix\Core\Symbol\SymbolPath::fromClassFqn($resolvedParentInterface)),
+            new LogicalClassPath(SymbolPath::fromClassFqn($resolvedParentInterface)),
             DependencyType::Extends,
             new DependencyLocation($this->file, $line),
-            interfaceExtends: true,
+            false,
+            true,
         );
+    }
+
+    public function recordClassLike(
+        ClassType $type,
+        bool $declaresToString,
+        bool $aliasesTraitMethodAsToString,
+    ): void {
+        $this->classLikeDeclaration = ClassLikeDeclaration::of(
+            $this->currentClass,
+            $type,
+            $declaresToString,
+            $aliasesTraitMethodAsToString,
+        );
+    }
+
+    public function classLikeDeclaration(): ?ClassLikeDeclaration
+    {
+        return $this->classLikeDeclaration;
+    }
+
+    public function classHeaderAttributeSite(): AttributeSite
+    {
+        return $this->nestedNamedClass ? AttributeSite::NestedClass : AttributeSite::ClassHeader;
     }
 
     /**

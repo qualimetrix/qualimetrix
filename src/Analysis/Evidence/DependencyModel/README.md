@@ -18,15 +18,18 @@
 DependencyModel/
 ├── Contract/
 │   ├── Dependency.php
+│   ├── AttributeSite.php
+│   ├── ClassLikeDeclaration.php
 │   ├── DependencyGraphBuilderInterface.php
 │   ├── DependencyGraphInterface.php
 │   ├── DependencyLocationInterface.php
 │   ├── DependencyTraversalParticipantInterface.php
-│   └── DependencyType.php
+│   ├── DependencyType.php
+│   └── TypeShape.php
 ├── Extraction/
 │   ├── DependencyResolver.php
 │   ├── DependencyVisitor.php
-│   └── Handler/                  # one internal extraction family
+│   └── Handler/                  # position/site-aware extraction family
 ├── DependencyGraph.php
 ├── DependencyGraphBuilder.php
 ├── NamespaceCouplings.php        # both coupling scopes of every namespace
@@ -47,9 +50,19 @@ implements the contract; when dependency evidence already carries that type,
 findings preserve the same object identity.
 
 `DependencyGraphBuilderInterface` accepts dependency occurrences together with
-the logical class universe. The universe retains degree-zero declarations, while
-the builder derives all ancestor namespaces locally and preserves dependency
-encounter order and coupling semantics.
+named `ClassLikeDeclaration` facts. The facts retain degree-zero declarations,
+their exact `DeclarationPath`, declaration kind, direct `__toString()` state and
+trait-alias state. Each fact also has an independent logical projection for
+graph canonicalization. Rewriting that projection never rewrites the exact
+declaration identity. The builder derives all ancestor namespaces locally and
+preserves dependency encounter order and coupling semantics.
+
+An edge keeps its source and target logical projections independently from its
+exact source declaration for the same reason. Type edges name a declaration
+position (`type_hint`, `property_type`, or `constant_type`) and carry a separate
+`TypeShape` (`single`, `nullable`, `union`, `intersection`, or `dnf`). Attribute
+edges carry an `AttributeSite`; member, promoted-parameter, hook, nested-callable
+and nested-class sites remain distinguishable without inventing relation kinds.
 
 ### The coupling view and the declaration view
 
@@ -72,12 +85,14 @@ the coupling view, a class declaring `implements \JsonSerializable` is
 indistinguishable from one that does not. Adding an edge to this view moves no
 coupling metric; adding one to the coupling view does.
 
-`ClassLikeHandler` also records the interfaces PHP gives a declaration without
-their being written: `UnitEnum` on every enum, `BackedEnum` on a backed one,
-and `Stringable` on a class or interface declaring `__toString()` in its own
-body. They are `implements` edges to PHP's own interfaces, so they reach the
-declaration view and never the coupling view. A `__toString()` a class takes
-from a trait is not recorded: the trait's body is another declaration.
+`ClassLikeHandler` records the interfaces PHP gives an enum without their being
+written: `UnitEnum` on every enum and `BackedEnum` on a backed one. Direct
+`__toString()` declarations and direct trait adaptations that alias a method to
+`__toString` are stored on `ClassLikeDeclaration`; they are not synthetic
+`Stringable` edges. A declaration reader can therefore evaluate class, parent
+and trait closure without changing coupling or inventing an edge for a
+degree-zero trait. An anonymous class never publishes a declaration fact, so a
+nested `__toString()` cannot mark its named owner.
 
 ### The two namespace coupling scopes
 
@@ -126,13 +141,10 @@ flag to count `J` for `I` without counting a parent class for its subclass.
 Only `ClassContextFactory` (layer `implements:` membership) reads it; DIT, NOC,
 coupling and `graph:export` treat both edges alike.
 
-`DependencyGraphInterface` has raw CBO 27 and the inclusive point threshold 28,
-so one additional edge fails rather than being absorbed. Its five net consumers
-are `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`,
-`AnalysisPipeline`, `DependencyGraphProjector`, and
-`MeasurementAggregationInterface`. The threshold documents this stable query
-boundary; it is not a namespace exclusion or permission to import extraction
-internals.
+`DependencyGraphInterface` exposes the named declaration stream beside edge and
+coupling queries. Declaration facts are graph evidence, not a lifecycle port or
+metric. The graph query boundary remains the stable contract used by graph
+builders, analysis, projection and measurement consumers.
 
 ## StringSet
 
@@ -158,7 +170,10 @@ to go back to `contract` and gain that consumer, both halves in the same edit.
 to its named consumers and extends php-parser's `NodeVisitor`. The caller invokes
 `beginFile(RelativePath, FileDeclarationIndex)` before traversal, feeds AST
 events through the visitor lifecycle, and reads the exact `list<Dependency>`
-from `dependencies()` after traversal. The index is handed over per file
+from `dependencies()` plus the exact `list<ClassLikeDeclaration>` from
+`classLikeDeclarations()` after traversal. The collection fold and worker wire
+format carry both streams; graph building must not reconstruct declarations
+from edge endpoints. The index is handed over per file
 because the same participant instance serves both traversal paths, and the
 number it puts in an edge's source declaration must belong to the path it is
 currently taking part in. `DependencyResolver`,

@@ -7,12 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -22,6 +24,16 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class DependencyGraphBuilderTest extends TestCase
 {
     #[Test]
+    public function itKeepsTypedFactsForDegreeZeroDeclarations(): void
+    {
+        $declaration = self::declaration('App\\Standalone', ClassType::Trait_, false, true);
+        $graph = (new DependencyGraphBuilder())->build([], [$declaration]);
+
+        self::assertSame([$declaration], $graph->getClassLikeDeclarations());
+        self::assertSame(['class:App\\Standalone'], self::canonicalPaths($graph->getAllClasses()));
+    }
+
+    #[Test]
     public function itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets(): void
     {
         $standalone = self::logical('App\Feature\Standalone');
@@ -30,7 +42,7 @@ final class DependencyGraphBuilderTest extends TestCase
         $incoming = self::dependency('Vendor\Producer', 'App\Service\Worker', DependencyType::TypeHint);
         $graph = (new DependencyGraphBuilder())->build(
             [$outgoing, $incoming],
-            [$standalone, $service],
+            [self::declaration('App\Feature\Standalone'), self::declaration('App\Service\Worker')],
         );
 
         self::assertSame(
@@ -85,7 +97,7 @@ final class DependencyGraphBuilderTest extends TestCase
         $graph = (new DependencyGraphBuilder())->build([
             $filtered,
             $inheritance,
-        ], [self::logical('App\Service'), self::logical('App\Failure')]);
+        ], [self::declaration('App\Service'), self::declaration('App\Failure')]);
 
         self::assertSame([$inheritance], $graph->getAllDependencies());
         self::assertSame(
@@ -114,7 +126,7 @@ final class DependencyGraphBuilderTest extends TestCase
     {
         $project = self::dependency('App\Domain\Child', 'App\Model\Base', DependencyType::Extends);
         $vendor = self::dependency('App\Domain\Child', 'Vendor\Base', DependencyType::Extends);
-        $graph = (new DependencyGraphBuilder())->build([$project, $vendor], [self::logical('App\Domain\Child')]);
+        $graph = (new DependencyGraphBuilder())->build([$project, $vendor], [self::declaration('App\Domain\Child')]);
 
         self::assertSame([$project, $vendor], $graph->getClassDependencies(SymbolPath::fromClassFqn('App\Domain\Child')));
         self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\Domain\Child')));
@@ -133,10 +145,10 @@ final class DependencyGraphBuilderTest extends TestCase
         $typeHint = self::dependency('App\Domain\Snapshot', 'App\Infra\Db', DependencyType::TypeHint);
         $newPhp = self::dependency('App\Domain\Tagged', 'ArrayObject', DependencyType::New_);
         $universe = [
-            self::logical('App\Domain\Snapshot'),
-            self::logical('App\Domain\Tagged'),
-            self::logical('App\Domain\Failure'),
-            self::logical('App\Infra\Db'),
+            self::declaration('App\Domain\Snapshot'),
+            self::declaration('App\Domain\Tagged'),
+            self::declaration('App\Domain\Failure'),
+            self::declaration('App\Infra\Db'),
         ];
 
         $graph = (new DependencyGraphBuilder())->build(
@@ -165,10 +177,10 @@ final class DependencyGraphBuilderTest extends TestCase
             self::dependency('App\Infra\Db', 'App\Domain\Tagged', DependencyType::StaticCall),
         ];
         $universe = [
-            self::logical('App\Domain\Snapshot'),
-            self::logical('App\Domain\Tagged'),
-            self::logical('App\Domain\Failure'),
-            self::logical('App\Infra\Db'),
+            self::declaration('App\Domain\Snapshot'),
+            self::declaration('App\Domain\Tagged'),
+            self::declaration('App\Domain\Failure'),
+            self::declaration('App\Infra\Db'),
         ];
 
         $with = (new DependencyGraphBuilder())->build([$implementsPhp, ...$rest, $attributePhp], $universe);
@@ -277,11 +289,27 @@ final class DependencyGraphBuilderTest extends TestCase
         return new LogicalClassPath(SymbolPath::fromClassFqn($class));
     }
 
+    private static function declaration(
+        string $class,
+        ClassType $type = ClassType::Class_,
+        bool $declaresToString = false,
+        bool $aliasesTraitMethodAsToString = false,
+    ): ClassLikeDeclaration {
+        $file = RelativePath::fromString('src/Fixture.php');
+
+        return ClassLikeDeclaration::of(
+            DeclarationPath::of(SymbolPath::fromClassFqn($class), $file, DeclarationOrdinal::fromRank(0)),
+            $type,
+            $declaresToString,
+            $aliasesTraitMethodAsToString,
+        );
+    }
+
     private static function dependency(string $source, string $target, DependencyType $type): Dependency
     {
         $file = RelativePath::fromString('src/Fixture.php');
 
-        return new Dependency(
+        return Dependency::ofKind(
             DeclarationPath::of(SymbolPath::fromClassFqn($source), $file, DeclarationOrdinal::fromRank(0)),
             self::logical($target),
             $type,
