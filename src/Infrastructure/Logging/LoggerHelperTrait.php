@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Logging;
 
-use JsonSerializable;
 use Psr\Log\InvalidArgumentException;
 use Psr\Log\LogLevel;
 use Qualimetrix\Core\SourceText\SourceBytes;
+use stdClass;
 use Stringable;
 
 /**
@@ -93,9 +93,10 @@ trait LoggerHelperTrait
      * A Linux path may contain invalid UTF-8; percent-encoding preserves its
      * bytes. What byte encoding cannot save — `INF`, `NAN` — returns null,
      * and the caller says the context was lost instead of writing nothing.
-     * A context needing UTF-8 repair that contains JsonSerializable is
-     * refused: the native guard may execute its callback a second time,
-     * but repair never executes it again.
+     * Repair accepts arrays and stdClass containers with UTF-8 keys, and
+     * escapes string values only. Other objects or malformed keys lose the
+     * context with its native error. The native guard may execute a custom
+     * JSON callback a second time; repair never executes it again.
      */
     private static function encodeJson(mixed $value, ?string &$error = null): ?string
     {
@@ -130,15 +131,14 @@ trait LoggerHelperTrait
         if (\is_string($value)) {
             return SourceBytes::escapeInvalid($value);
         }
-        if ($value instanceof JsonSerializable) {
-            $unsupported = true;
-
-            return null;
-        }
         if (\is_object($value)) {
-            $properties = array_filter(get_mangled_object_vars($value), static fn(string $key): bool => !str_contains($key, "\0"), \ARRAY_FILTER_USE_KEY);
+            if ($value::class !== stdClass::class) {
+                $unsupported = true;
 
-            return (object) self::escapeStrings($properties, $unsupported);
+                return null;
+            }
+
+            return (object) self::escapeStrings((array) $value, $unsupported);
         }
         if (!\is_array($value)) {
             return $value;
@@ -146,7 +146,12 @@ trait LoggerHelperTrait
 
         $escaped = [];
         foreach ($value as $key => $item) {
-            $escaped[\is_string($key) ? SourceBytes::escapeInvalid($key) : $key] = self::escapeStrings($item, $unsupported);
+            if (\is_string($key) && !SourceBytes::isUtf8($key)) {
+                $unsupported = true;
+
+                break;
+            }
+            $escaped[$key] = self::escapeStrings($item, $unsupported);
             if ($unsupported) {
                 break;
             }
