@@ -455,9 +455,17 @@ final class HealthTextFormatterTest extends TestCase
         yield 'narrow' => [50];
     }
 
-    /**
-     * @param array<string, HealthScore> $healthScores
-     */
+    #[Test]
+    public function itNamesFindingsAndTheWholeRunOutsideACleanScopeEvenWithoutScores(): void
+    {
+        $report = ReportBuilder::create()->filesAnalyzed(1)
+            ->outOfScope(new \Qualimetrix\Reporting\DrillDown\OutOfScopeFindings(1, 2, 3))->build();
+        $output = $this->formatter->format($report, new FormatterContext(useColor: false))->body;
+        self::assertStringContainsString('Findings: 0 error(s), 0 warning(s), 0 info', $output);
+        self::assertStringContainsString('Outside this scope: 1 error(s), 2 warning(s), 3 info', $output);
+    }
+
+    /** @param array<string, HealthScore> $healthScores */
     private function createReportWithHealthScores(
         array $healthScores,
         int $filesAnalyzed = 10,

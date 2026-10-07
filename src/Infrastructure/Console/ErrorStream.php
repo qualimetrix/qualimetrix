@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use LogicException;
+use Qualimetrix\Reporting\Formatter\Prose\GlyphMode;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\NullOutput;
@@ -46,6 +48,8 @@ final class ErrorStream
      */
     private array $sections = [];
 
+    private ?GlyphMode $mode = null;
+
     private ?OutputInterface $boundTo = null;
 
     private OutputInterface $diagnostics;
@@ -58,6 +62,19 @@ final class ErrorStream
     public function __construct()
     {
         $this->diagnostics = new NullOutput();
+    }
+
+    public function useGlyphMode(GlyphMode $mode): void
+    {
+        if ($this->mode !== null && $this->mode !== $mode) {
+            throw new LogicException('The error stream already has a different glyph mode.');
+        }
+        $this->mode = $mode;
+    }
+
+    public function glyphMode(): GlyphMode
+    {
+        return $this->mode ?? GlyphMode::Unicode;
     }
 
     /** Drops the binding so the next run starts with an empty section list. */
@@ -75,7 +92,7 @@ final class ErrorStream
     {
         $this->bind($output);
 
-        return $this->diagnostics;
+        return $this->diagnostics instanceof NullOutput ? $this->diagnostics : new GlyphOutput($this->diagnostics, $this);
     }
 
     /**
@@ -96,7 +113,7 @@ final class ErrorStream
      */
     public function boundWriter(OutputInterface $fallback): OutputInterface
     {
-        return $this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics;
+        return new GlyphOutput($this->diagnostics instanceof NullOutput ? $fallback : $this->diagnostics, $this);
     }
 
     /** Writes one diagnostic line through this run's writer. */
@@ -172,12 +189,13 @@ final class ErrorStream
 
     private function sectionOn(StreamOutput $error): ConsoleSectionOutput
     {
-        return new ConsoleSectionOutput(
+        return new GlyphConsoleSection(
             $error->getStream(),
             $this->sections,
             $error->getVerbosity(),
             $error->isDecorated(),
             $error->getFormatter(),
+            $this,
         );
     }
 }

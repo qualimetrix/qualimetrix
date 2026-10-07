@@ -49,6 +49,13 @@ final class HealthTextFormatter implements FormatterInterface, FormatOptionKeysI
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
+        $lines[] = \sprintf('Findings: %d error(s), %d warning(s), %d info', $report->errorCount, $report->warningCount, $report->infoCount);
+        if ($report->outOfScope !== null) {
+            $outside = $report->outOfScope;
+            $lines[] = \sprintf('Outside this scope: %d error(s), %d warning(s), %d info', $outside->errorCount, $outside->warningCount, $outside->infoCount);
+        }
+        $lines[] = '';
+
         $coverageLines = CoverageNarrator::lines($report);
         if ($coverageLines !== []) {
             array_push($lines, ...$coverageLines);

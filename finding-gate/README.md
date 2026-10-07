@@ -783,3 +783,8 @@ Each limit needs its own product or delivery check:
 A GREEN run against identical product code proves the corpus, capture and
 normalization are consistent. To claim a product change, compare with the
 commit before that change and also supply the independent checks above.
+
+Child invocations receive an explicit reproducible environment from ProcessHandle,
+not the parent's complete environment. In particular, a parent's `QMX_ASCII`
+does not reach captured commands, so the normal Unicode publication is compared.
+This does not change the product's own environment judgement.

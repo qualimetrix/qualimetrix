@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\ProjectManifest\Contract\ManifestSnapshotControlInterface;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Version;
+use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Exception\ExceptionInterface as ConsoleExceptionInterface;
@@ -149,7 +150,7 @@ final class Application extends BaseApplication
      * `Command/LockableTrait`; `grep -rn "new LogicException(" vendor/symfony/console`
      * finds the current set), reachable only by a bug in this project's own
      * command wiring, never by anything a user typed. That makes it a
-     * product defect, not a refusal, so it gets exit code 1 like any other
+     * product defect, not a refusal, so it gets {@see ConsoleExitCode::InternalError} like any other
      * internal error.
      *
      * `ConsoleExceptionInterface` and the bare `InvalidArgumentException`
@@ -171,6 +172,7 @@ final class Application extends BaseApplication
         $format = self::requestedFormat($input);
 
         try {
+            $this->errorStream->useGlyphMode(OutputEncoding::fromEnvironment(getenv('QMX_ASCII')));
             self::applyWorkingDirOption($input);
             $this->manifestSnapshot->beginInvocation();
 

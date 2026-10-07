@@ -81,6 +81,10 @@ Reporting/
     ├── MetricsJsonFormatter.php            # Raw metrics JSON export
     ├── AcceptedLevelNarrator.php            # "accepted at 25, now 31" fragment for a breach or not-compared group
     ├── CoverageNarrator.php                 # Complete/empty/incomplete human coverage summary
+    ├── Prose/                              # UTF-8 repair and publication-time glyph selection
+    │   ├── ProseText.php                   # Publishes one prose body and its repaired-string count
+    │   ├── GlyphMode.php                   # Unicode or closed-table ASCII publication
+    │   └── AsciiGlyphs.php                 # Product glyph replacements; other Unicode stays intact
     ├── Ansi/                                # ANSI escape sequences
     │   └── AnsiColor.php                   # Lightweight ANSI color wrapper
     ├── Ordering/                            # The order and grouping findings appear in
@@ -1000,3 +1004,11 @@ format and configured suppressions. `configurationDiagnostics` already arrives
 from Console as a published value. Delivery adapters remain in Infrastructure.
 Keep formatter tests, templates, and documentation with their Reporting subject,
 and keep runtime values with their named owners.
+
+Prose formatters produce Unicode. At publication, `ProseText` escapes invalid
+UTF-8 bytes with Core's SourceBytes and counts the body as one repaired string.
+ASCII mode replaces only the closed product glyph table. It also replaces the
+same glyph sequence inside a source identifier or path: the completed body no
+longer retains that provenance. Unicode mode preserves such valid characters.
+Other Unicode letters, such as Café, remain intact in either mode. Structured
+formatters keep their own encoders and canonical identities.

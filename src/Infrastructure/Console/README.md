@@ -43,6 +43,9 @@ Console/
 ├── CheckScopeResolver.php           # Pure transfer of the initial measurement after Git resolution
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── ErrorStream.php                   # The run's single error-stream owner: the progress section and every diagnostic writer
+├── OutputEncoding.php               # Closed QMX_ASCII environment-value judgement inside the application exit ladder
+├── GlyphOutput.php                  # Diagnostic writer preserving Symfony's output settings
+├── GlyphConsoleSection.php          # Encodes before native progress/diagnostic section bookkeeping
 ├── Refusal/
 │   ├── ConsoleExitCode.php             # shared terminal exit vocabulary
 │   ├── MachineReadableFormats.php      # formats that publish a structured refusal
@@ -697,3 +700,17 @@ immediately beforehand, with a remaining inspection/use race.
 `BaselineGenerateCommand` requires the same stream as its fourth argument and
 reports destination exposure before measurement. It passes a prepared target to
 the Baseline writer; parent creation is the caller's responsibility.
+
+`Application::doRun()` judges `QMX_ASCII` before working-directory selection or
+command execution, inside the common refusal ladder. Case-insensitive
+`1/true/yes/on` enables ASCII; `0/false/no/off`, empty and an absent variable
+select Unicode. Other values produce a configuration refusal, including for
+commands that never analyse PHP. ErrorStream defaults to Unicode until the
+mode is bound; rebinding a different mode is an internal lifecycle error.
+
+Prose report publication and all error-stream diagnostics use the closed
+Reporting glyph table. Progress sections transform before Symfony accounts
+for their content. ASCII replaces identical table glyphs occurring in source
+names too; choose Unicode to preserve those. Other Unicode characters remain
+unchanged. Other commands' stdout, including rule listings, directive text,
+selected debug output and DOT, is outside this presentation choice.

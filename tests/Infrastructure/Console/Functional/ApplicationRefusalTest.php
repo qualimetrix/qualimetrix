@@ -328,6 +328,41 @@ final class ApplicationRefusalTest extends TestCase
         return ChildProcess::run($command, $this->fixture, $stdin);
     }
 
+    /** @return iterable<string, array{list<string>}> */
+    public static function glyphRefusalCommands(): iterable
+    {
+        yield 'check' => [['check', 'src']];
+        yield 'JSON' => [['check', 'src', '--format=json']];
+        yield 'rules' => [['rules']];
+        yield 'baseline' => [['baseline:generate', 'src']];
+        yield 'graph' => [['graph:export', 'src']];
+    }
+
+    /** @param list<string> $arguments */
+    #[Test]
+    #[DataProvider('glyphRefusalCommands')]
+    public function itFramesAnUnknownGlyphModeBeforeEveryCommand(array $arguments): void
+    {
+        $old = getenv('QMX_ASCII');
+        putenv('QMX_ASCII=maybe');
+        try {
+            $run = $this->runBin($arguments);
+            self::assertSame(3, $run['exitCode']);
+            $message = $run['stdout'] . $run['stderr'];
+            self::assertStringContainsString('QMX_ASCII', $message);
+            self::assertStringNotContainsString('PHP Fatal', $message);
+            self::assertStringNotContainsString('Uncaught', $message);
+            if (\in_array('--format=json', $arguments, true)) {
+                $envelope = json_decode($run['stdout'], true, flags: \JSON_THROW_ON_ERROR);
+                self::assertSame(3, $envelope['exit_code']);
+            } else {
+                self::assertSame('', $run['stdout']);
+            }
+        } finally {
+            putenv($old === false ? 'QMX_ASCII' : 'QMX_ASCII=' . $old);
+        }
+    }
+
     private static function binPath(): string
     {
         return \dirname(__DIR__, 4) . '/bin/qmx';

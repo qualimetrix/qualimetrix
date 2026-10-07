@@ -45,7 +45,7 @@ final class HealthBarRendererTest extends TestCase
         $report = $this->createReport();
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('Health: insufficient data', $output);
@@ -61,7 +61,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('Health', $output);
@@ -81,7 +81,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('0%', $output);
@@ -96,7 +96,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('100%', $output);
@@ -110,7 +110,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         // NaN formatted as dash
@@ -125,12 +125,10 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, true, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
-        // ASCII bar uses # and . characters enclosed in []
-        self::assertStringContainsString('[', $output);
-        self::assertStringContainsString(']', $output);
+        $output = \Qualimetrix\Reporting\Formatter\Prose\ProseText::publish($output, \Qualimetrix\Reporting\Formatter\Prose\GlyphMode::Ascii)->body;
         self::assertStringContainsString('#', $output);
         self::assertStringContainsString('.', $output);
     }
@@ -143,7 +141,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('█', $output);
@@ -159,7 +157,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('Typing', $output);
@@ -176,7 +174,7 @@ final class HealthBarRendererTest extends TestCase
         $lines = [];
 
         // Terminal width < 80 => no bars for dimensions
-        $this->renderer->render($report, new FormatterContext(), $this->color, 60, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 60, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('Complexity', $output);
@@ -198,7 +196,7 @@ final class HealthBarRendererTest extends TestCase
         $lines = [];
 
         $context = new FormatterContext(namespace: \Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub::subtree('App\\Service'));
-        $this->renderer->render($report, $context, $this->color, 80, false, $lines);
+        $this->renderer->render($report, $context, $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('[namespace: subtree:App\\Service]', $output);
@@ -213,7 +211,7 @@ final class HealthBarRendererTest extends TestCase
         $lines = [];
 
         $context = new FormatterContext(class: 'App\\Service\\UserService');
-        $this->renderer->render($report, $context, $this->color, 80, false, $lines);
+        $this->renderer->render($report, $context, $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('[class: App\\Service\\UserService]', $output);
@@ -239,7 +237,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('↳', $output);
@@ -259,7 +257,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('Labels reflect per-dimension scales', $output);
@@ -275,7 +273,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringNotContainsString('Labels reflect per-dimension scales', $output);
@@ -290,7 +288,7 @@ final class HealthBarRendererTest extends TestCase
         );
         $lines = [];
 
-        $this->renderer->render($report, $context, $this->color, 80, false, $lines);
+        $this->renderer->render($report, $context, $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringNotContainsString('direct classes:', $output);
@@ -306,7 +304,7 @@ final class HealthBarRendererTest extends TestCase
         );
         $lines = [];
 
-        $this->renderer->render($report, $context, $this->color, 80, false, $lines);
+        $this->renderer->render($report, $context, $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringNotContainsString('(direct:', $output);
@@ -322,7 +320,7 @@ final class HealthBarRendererTest extends TestCase
         );
         $lines = [];
 
-        $this->renderer->render($report, $context, $this->color, 80, false, $lines);
+        $this->renderer->render($report, $context, $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         // Delta is 2 (<=5), so no hint at all
@@ -337,7 +335,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         // Only overall, no dimensions => should still render and end with empty line
         $output = implode("\n", $lines);
@@ -359,17 +357,17 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, true, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $healthLine = $lines[0];
-        // Extract the bar between [ and ]
-        if (preg_match('/\[([#.]+)]/', $healthLine, $matches) !== 1) {
+        // Count the visible fill and empty characters.
+        if (preg_match('/([█░]{20,})/u', $healthLine, $matches) !== 1) {
             self::fail('Bar pattern not found in: ' . $healthLine);
         }
         $bar = $matches[1];
-        self::assertSame(30, \strlen($bar));
-        self::assertSame(15, substr_count($bar, '#'));
-        self::assertSame(15, substr_count($bar, '.'));
+        self::assertSame(30, mb_strlen($bar));
+        self::assertSame(15, substr_count($bar, '█'));
+        self::assertSame(15, substr_count($bar, '░'));
     }
 
     /**
@@ -397,7 +395,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $renderer->render($report, new FormatterContext(), $ansiColor, 80, false, $lines);
+        $renderer->render($report, new FormatterContext(), $ansiColor, 80, $lines);
 
         $output = implode("\n", $lines);
         $ansiCodes = ['green' => "\e[32m", 'yellow' => "\e[33m", 'red' => "\e[31m"];
@@ -412,14 +410,14 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, true, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $healthLine = $lines[0];
         // Negative score: filled = max(0, min(30, round(-10/100*30))) = 0
-        if (preg_match('/\[([#.]+)]/', $healthLine, $matches) !== 1) {
+        if (preg_match('/([█░]{20,})/u', $healthLine, $matches) !== 1) {
             self::fail('Bar pattern not found in: ' . $healthLine);
         }
-        self::assertSame(0, substr_count($matches[1], '#'));
+        self::assertSame(0, substr_count($matches[1], '█'));
     }
 
     #[Test]
@@ -430,7 +428,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('—%', $output);
@@ -444,7 +442,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         // Integer value should not show .0
@@ -538,7 +536,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         $output = implode("\n", $lines);
         self::assertStringContainsString('computed over 0 of 10 classes (0%)', $output);
@@ -561,7 +559,7 @@ final class HealthBarRendererTest extends TestCase
         ]);
         $lines = [];
 
-        $this->renderer->render($report, new FormatterContext(), $this->color, 80, false, $lines);
+        $this->renderer->render($report, new FormatterContext(), $this->color, 80, $lines);
 
         self::assertSame(1, substr_count(implode("\n", $lines), $reason));
     }

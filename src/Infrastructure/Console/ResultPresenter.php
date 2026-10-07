@@ -22,6 +22,9 @@ use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Formatter\Prose\ProseText;
+use Qualimetrix\Reporting\Formatter\PublicationKind;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
@@ -127,6 +130,13 @@ final class ResultPresenter
         $report = $reportBuilder->build();
         $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
+        if ($formatter->publicationKind() === PublicationKind::Prose) {
+            $published = ProseText::publish($formattedOutput->body, $this->errorStream->glyphMode());
+            $formattedOutput = new FormattedReport($published->body, $formattedOutput->escapedStrings + $published->escapedStrings);
+        }
+        if ($formattedOutput->escapedStrings > 0) {
+            $this->errorStream->write($output, PublishedUtf8::describe($formattedOutput->escapedStrings));
+        }
 
         $this->writeOutput($formattedOutput, $format, $input, $output, $runTargets);
 

@@ -403,7 +403,12 @@ final class SummaryFormatterTest extends TestCase
 
             $output = $this->formatter->format($report, $this->plainContext)->body;
 
-            self::assertStringContainsString('[', $output);
+            $unicodeLines = explode("\n", $output);
+            $output = \Qualimetrix\Reporting\Formatter\Prose\ProseText::publish($output, \Qualimetrix\Reporting\Formatter\Prose\GlyphMode::Ascii)->body;
+            $asciiLines = explode("\n", $output);
+            foreach ($unicodeLines as $line => $unicode) {
+                self::assertSame(mb_strpos($unicode, '%'), mb_strpos($asciiLines[$line], '%'));
+            }
             self::assertStringContainsString('#', $output);
             self::assertStringNotContainsString('█', $output);
             self::assertStringNotContainsString('░', $output);

@@ -39,7 +39,6 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
     {
         $color = new AnsiColor($context->useColor);
         $terminalWidth = $context->terminalWidth > 0 ? $context->terminalWidth : self::DEFAULT_TERMINAL_WIDTH;
-        $ascii = (bool) getenv('QMX_ASCII');
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
@@ -49,7 +48,7 @@ final class SummaryFormatter implements FormatterInterface, FormatOptionKeysInte
             $lines[] = '';
         }
 
-        $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $ascii, $lines);
+        $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $lines);
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);
         $this->offenderListRenderer->renderWorstClasses($report, $color, $context, $lines);
         $this->topIssuesRenderer->render($report, $context, $color, $lines);

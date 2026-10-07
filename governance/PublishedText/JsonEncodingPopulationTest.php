@@ -35,6 +35,7 @@ final class JsonEncodingPopulationTest extends TestCase
         \Qualimetrix\Infrastructure\Logging\LoggerHelperTrait::class => 'Invalid strings are escaped after the native UTF-8 refusal.',
         \Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter::class => 'Span names are product vocabulary.',
         \Qualimetrix\Infrastructure\Profiler\Export\JsonExporter::class => 'Span names are product vocabulary.',
+        \Qualimetrix\Reporting\DrillDown\OutOfScopeFindings::class => 'Occurrence-preserving multiset keys contain canonical published identities.',
         \Qualimetrix\Reporting\Formatter\PublishedUtf8::class => 'Shared publication repair boundary.',
         \Qualimetrix\Reporting\ReportProjectScope::class => 'Scope reasons are configuration facts; prose encoding has no throw flag.',
     ];
