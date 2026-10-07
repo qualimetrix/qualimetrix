@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -108,11 +109,11 @@ final class DirectiveAuditPipelineTest extends TestCase
         // smallest binding that lets every other rule run.
         $architecture = $container->get(LayerPolicyPreparationInterface::class);
         self::assertInstanceOf(ArchitecturePolicy::class, $architecture);
-        $architecture->bind(new ArchitectureConfiguration(
+        $architecture->replace(new ArchitectureFactoryResult(new ArchitectureConfiguration(
             new LayerRegistry([]),
             AllowListBuilder::policyFromExactMap([]),
             CoverageMode::Ignore,
-        ));
+        )));
 
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);

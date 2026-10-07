@@ -15,9 +15,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInt
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
@@ -61,18 +63,11 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $this->prepared = null;
     }
 
-    /** Internal test seam retained while the direct policy tests are migrated. */
-    public function bind(ArchitectureConfiguration $configuration): void
-    {
-        $this->configured = $configuration;
-        $this->prepared = null;
-    }
-
     public function prepare(DependencyGraphInterface $graph, iterable $classUniverse): void
     {
         $this->prepared = null;
         if ($this->configured === null) {
-            throw new LogicException('ArchitecturePolicy::prepare() requires bind() to have been called.');
+            throw new LogicException('ArchitecturePolicy::prepare() requires replace() to have been called.');
         }
 
         $configuration = $this->configured;
@@ -109,26 +104,41 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $this->prepared = $configuration;
     }
 
-    public function inspect(DependencyGraphInterface $graph, iterable $classUniverse, SymbolPath $subject): LayerAssignment
-    {
-        $this->prepare($graph, $classUniverse);
+    public function inspect(
+        DependencyGraphInterface $graph,
+        iterable $classUniverse,
+        SymbolPath $subject,
+        bool $policyDisabled,
+    ): LayerAssignment {
+        $analysedClasses = \is_array($classUniverse)
+            ? array_values($classUniverse)
+            : iterator_to_array($classUniverse, false);
+        $this->prepare($graph, $analysedClasses);
         $configuration = $this->prepared
             ?? throw new LogicException('ArchitecturePolicy::inspect() reached an unprepared policy after prepare() returned.');
 
         $registry = $configuration->registry();
-        $established = $registry->establishedMatches($subject);
+        $declaredSpelling = $registry->contextFactory()->knownTypes()->observedSpellingOf(self::fqnFor($subject));
+        $declaredSubject = $declaredSpelling === null ? $subject : SymbolPath::fromClassFqn($declaredSpelling);
+        $established = $registry->establishedMatches($declaredSubject);
 
         return new LayerAssignment(
-            array_map(self::assignmentMatch(...), $registry->resolveAll($subject)),
+            array_map(self::assignmentMatch(...), $registry->resolveAll($declaredSubject)),
             !$configuration->isEmpty(),
-            $registry->undecidedLayers($subject),
-            $registry->chainStopsAt($subject),
-            $registry->contenders($subject),
+            $registry->undecidedLayers($declaredSubject),
+            $registry->chainStopsAt($declaredSubject),
+            $registry->contenders($declaredSubject),
             ($established[0] ?? null)?->layerName,
             array_map(
-                static fn(LayerMatch $match): string => $match->layerName,
-                LayerShadowing::reportableShadows($established),
+                static fn($verdict): LayerAssignmentShadowVerdict => new LayerAssignmentShadowVerdict(
+                    self::assignmentMatch($verdict->later),
+                    $verdict->exemption,
+                ),
+                LayerShadowing::verdicts($established),
             ),
+            $declaredSpelling,
+            $policyDisabled,
+            $declaredSpelling !== null && !AnalysedDeclarations::of($analysedClasses)->contains($declaredSpelling),
         );
     }
 
@@ -143,27 +153,6 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         }
 
         return new LayerAssignmentMatch($match->layerName, $criteria);
-    }
-
-    /**
-     * @param iterable<SymbolPath> $classPaths
-     *
-     * @return iterable<\Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch>
-     */
-    public function classify(iterable $classPaths): iterable
-    {
-        if ($this->prepared === null) {
-            throw new LogicException($this->configured === null
-                ? 'ArchitecturePolicy::classify() requires bind() to have been called.'
-                : 'ArchitecturePolicy::classify() requires prepare() to have been called.');
-        }
-
-        foreach ($classPaths as $classPath) {
-            $matches = $this->prepared->registry()->resolveAll($classPath);
-            if ($matches !== []) {
-                yield $matches[0];
-            }
-        }
     }
 
     public function getPreparedConfiguration(): ?ArchitectureConfiguration
@@ -200,5 +189,12 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
     public function reset(): void
     {
         $this->prepared = null;
+    }
+
+    private static function fqnFor(SymbolPath $symbol): string
+    {
+        return $symbol->namespace === null || $symbol->namespace === ''
+            ? ($symbol->type ?? '')
+            : $symbol->namespace . '\\' . ($symbol->type ?? '');
     }
 }

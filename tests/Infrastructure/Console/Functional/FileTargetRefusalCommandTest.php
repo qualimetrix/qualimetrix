@@ -86,8 +86,12 @@ final class FileTargetRefusalCommandTest extends TestCase
         try {
             $container = (new ContainerFactory())->configure();
             $inspector = new class implements LayerAssignmentInspectorInterface {
-                public function inspect(DependencyGraphInterface $graph, iterable $classUniverse, SymbolPath $subject): LayerAssignment
-                {
+                public function inspect(
+                    DependencyGraphInterface $graph,
+                    iterable $classUniverse,
+                    SymbolPath $subject,
+                    bool $policyDisabled,
+                ): LayerAssignment {
                     throw FileTargetRefusalCommandTest::failure();
                 }
             };

@@ -116,6 +116,12 @@ final readonly class KnownTypes
         return $spelling === $fqn ? null : $spelling;
     }
 
+    /** The spelling observed in this run, without consulting the Composer install. */
+    public function observedSpellingOf(string $fqn): ?string
+    {
+        return $this->spellings?->spellingOf($fqn);
+    }
+
     public function suggestedPattern(string $pattern): ?string
     {
         $compiled = CapturePattern::compile($pattern);

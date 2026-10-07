@@ -190,16 +190,26 @@ query `LayerAssignmentInspectorInterface`; the command retains input validation,
 configuration, error mapping and rendering. This keeps both declarations below
 their constructor-dependency thresholds without introducing a public port.
 
-`LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath)` receives the captured
-configuration directly and delegates to `ProjectFilesInterface` with its universe,
-aliases and generated policy. It does not reconstruct config from paths/excludes/root
-or expose `resolveIncludingGenerated()`.
+`LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath, bool)` receives the
+captured configuration and final Architecture producer enablement directly and
+delegates to `ProjectFilesInterface` with its universe, aliases and generated
+policy. It does not reconstruct config from paths/excludes/root or expose
+`resolveIncludingGenerated()`.
 
-The resolver also owns the answer to "was this class analysed at all": an FQN
-that names no analysed declaration raises `ConfigurationRefusal` (exit 3)
-instead of reaching the inspector, so "never analysed" and "analysed, no layer
-matched" stop sharing the `(no layer)` report. Membership folds ASCII case the
-way PHP folds class names; layer matching itself stays case-sensitive.
+The inspector resolves the authored argument through Architecture's observed
+name index after collection. That population contains analysed declarations
+and dependency-graph declarations, classes and edge ends, without the
+Composer-install-only fallback. The canonical observed spelling drives both
+layer matching and output; a graph-end-only name is accepted and marked as
+such. A miss raises `ConfigurationRefusal` (exit 3), so "not observed" and
+"observed, no layer matched" do not share the `(no layer)` report.
+
+The command judges only an empty argument before collection. It does not parse
+PHP name grammar: high-byte declaration names and differently cased input are
+resolved from parser-derived identities, while any other non-empty spelling is
+an ordinary observed-name miss. Final Finding enablement is mandatory; when no
+Architecture producer runs, a known type still resolves but the text and JSON
+state that the policy is disabled instead of claiming an active diagnostic.
 
 **Arguments:**
 - `paths` (required, array) — paths for analysis

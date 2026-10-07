@@ -10,5 +10,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 interface LayerAssignmentInspectorInterface
 {
     /** @param iterable<SymbolPath> $classUniverse */
-    public function inspect(DependencyGraphInterface $graph, iterable $classUniverse, SymbolPath $subject): LayerAssignment;
+    public function inspect(
+        DependencyGraphInterface $graph,
+        iterable $classUniverse,
+        SymbolPath $subject,
+        bool $policyDisabled,
+    ): LayerAssignment;
 }

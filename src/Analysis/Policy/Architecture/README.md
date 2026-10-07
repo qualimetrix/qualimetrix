@@ -25,8 +25,11 @@ External owners use only the contracts in `Contract/`:
   nullable explanation when authored layer types could not be judged. Run asks
   only after final publication selects the exact unmatched-type project channel.
 - `ShadowExemption` names established first-match exemptions for inspection.
-- `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
-  `LayerAssignmentMatch` form the Console debug projection.
+- `LayerAssignmentInspectorInterface`, `LayerAssignment`,
+  `LayerAssignmentMatch`, and `LayerAssignmentShadowVerdict` form the Console
+  debug projection. The assignment carries the observed declaration spelling,
+  edge-end-only provenance, final policy enablement, and typed shadow
+  exemptions without a Console-owned array contract.
 - `ExternalSupertypeSourceInterface` and `ExternalSupertypes` expose source
   facts from the analysed Composer install: exact placement and declaration
   spelling, declaration kind, parent, interfaces, traits, direct
@@ -43,7 +46,10 @@ External owners use only the contracts in `Contract/`:
   Console-side callers.
 
 The concrete `ArchitecturePolicy` owns configured and prepared state for one
-run. It resets before a new configuration and before disabled preparation; no
+run. `replace()` installs the resolved policy. Every assignment inspection
+prepares the supplied graph and class universe afresh, including its observed
+name index, so a repeated call cannot retain names from an earlier project.
+It resets before a new configuration and before disabled preparation; no
 policy state enters the worker or cache payload.
 
 ## Layout
@@ -53,6 +59,10 @@ Architecture/
 ├── Contract/                  # exact external promises and debug values
 │   ├── ExternalSupertypeSourceInterface.php
 │   ├── ExternalSupertypes.php
+│   ├── LayerAssignment.php
+│   ├── LayerAssignmentInspectorInterface.php
+│   ├── LayerAssignmentMatch.php
+│   ├── LayerAssignmentShadowVerdict.php
 │   ├── ShadowExemption.php
 │   ├── UnassignedClassLayerRequirementInterface.php
 │   └── UnmatchedTypeWarningInterface.php
@@ -300,7 +310,10 @@ symbols and the named types the run never met — a typo, or, when no install
 was found to ask, a type only unanalysed code reaches — or the outside symbols the layer matched that an earlier
 unanswered `exclude:` holds. `LayerShadowing` draws a shadow only
 between `establishedMatches()`, the first of them shadowing the rest, and
-`debug:layer-assignment` reports its `shadowed` list and hint by the same rule.
+`debug:layer-assignment` reports typed shadow verdicts and their exact
+`ShadowExemption` by the same rule. A later match whose own `exclude:` remains
+unanswered is still shown as an additional, contending match; it is not
+labelled as an established shadow.
 A layer repeating the pattern of one that does not take every class it names
 (`MembershipSpec::ownsItsPatterns()` — an `exclude:`, or `match: all` beside
 another criterion) is the recipient of what that layer leaves over and is not

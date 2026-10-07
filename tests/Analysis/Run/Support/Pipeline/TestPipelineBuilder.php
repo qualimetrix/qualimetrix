@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
@@ -336,7 +337,9 @@ final class TestPipelineBuilder
         }
 
         $processor = new ArchitecturePolicy();
-        $processor->bind($this->architectureConfiguration ?? ArchitectureConfiguration::empty());
+        $processor->replace(new ArchitectureFactoryResult(
+            $this->architectureConfiguration ?? ArchitectureConfiguration::empty(),
+        ));
 
         return $processor;
     }

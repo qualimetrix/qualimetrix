@@ -12,11 +12,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
@@ -25,15 +26,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use ReflectionClass;
 
-/**
- * Pins the state-machine semantics of {@see ArchitecturePolicy} per
- * ADR 0008 §3.
- *
- * Lifecycle (one analysis run): reset → bind → prepare → classify? →
- * getPreparedConfiguration?, repeatable. Mismatched call ordering throws
- * {@see LogicException} fail-fast (not silent no-op) because it indicates
- * a wiring bug at the DI level.
- */
+/** Pins the replace, prepare, inspect and reset lifecycle of ArchitecturePolicy. */
 #[CoversClass(ArchitecturePolicy::class)]
 final class ArchitectureProcessorTest extends TestCase
 {
@@ -44,35 +37,20 @@ final class ArchitectureProcessorTest extends TestCase
         $this->processor = new ArchitecturePolicy();
     }
 
-    // -------------------------------------------------------------------------
-    // Mandatory state-machine invariants (per remediation plan Phase 4.2)
-    // -------------------------------------------------------------------------
-
     #[Test]
-    public function itThrowsWhenClassifyIsCalledBeforeBind(): void
+    public function itThrowsWhenInspectIsCalledBeforeReplace(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessageMatches('/classify.*bind/');
+        $this->expectExceptionMessageMatches('/prepare.*replace/');
 
-        iterator_to_array($this->processor->classify([SymbolPath::forClass('App', 'Foo')]));
+        $this->processor->inspect(self::emptyGraph(), [], SymbolPath::forClass('App', 'Foo'), false);
     }
 
     #[Test]
-    public function itThrowsWhenClassifyIsCalledAfterBindWithoutPrepare(): void
-    {
-        $this->processor->bind(self::emptyConfiguration());
-
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessageMatches('/classify.*prepare/');
-
-        iterator_to_array($this->processor->classify([SymbolPath::forClass('App', 'Foo')]));
-    }
-
-    #[Test]
-    public function itThrowsWhenPrepareIsCalledBeforeBind(): void
+    public function itThrowsWhenPrepareIsCalledBeforeReplace(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessageMatches('/prepare.*bind/');
+        $this->expectExceptionMessageMatches('/prepare.*replace/');
 
         $this->processor->prepare(self::emptyGraph(), []);
     }
@@ -87,92 +65,70 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsMatchesAfterResetBindPrepareClassify(): void
+    public function itReturnsMatchesAfterResetReplaceAndInspect(): void
     {
-        $config = self::configurationWithOneStaticLayer();
         $this->processor->reset();
-        $this->processor->bind($config);
-        $this->processor->prepare(self::emptyGraph(), []);
+        $this->replace(self::configurationWithOneStaticLayer());
 
-        $classPath = SymbolPath::forClass('App\\Controller', 'UserController');
-        $matches = iterator_to_array($this->processor->classify([$classPath]));
+        $assignment = $this->processor->inspect(
+            self::emptyGraph(),
+            [SymbolPath::forClass('App\\Controller', 'UserController')],
+            SymbolPath::forClass('App\\Controller', 'UserController'),
+            false,
+        );
 
-        self::assertCount(1, $matches);
-        self::assertInstanceOf(LayerMatch::class, $matches[0]);
-        self::assertSame('controller', $matches[0]->layerName);
+        self::assertCount(1, $assignment->matches);
+        self::assertSame('controller', $assignment->matches[0]->layerName);
     }
 
     #[Test]
-    public function itClearsStateOnResetAfterAFullRunSoAFurtherClassifyThrows(): void
+    public function itRebuildsPreparedStateWhenInspectFollowsReset(): void
     {
-        $this->processor->bind(self::configurationWithOneStaticLayer());
-        $this->processor->prepare(self::emptyGraph(), []);
-        iterator_to_array($this->processor->classify([SymbolPath::forClass('App\\Controller', 'X')]));
+        $this->replace(self::configurationWithOneStaticLayer());
+        $subject = SymbolPath::forClass('App\\Controller', 'X');
+        $this->processor->inspect(self::emptyGraph(), [$subject], $subject, false);
 
         $this->processor->reset();
-
         self::assertNull($this->processor->getPreparedConfiguration());
 
-        $this->expectException(LogicException::class);
-        iterator_to_array($this->processor->classify([SymbolPath::forClass('App\\Controller', 'Y')]));
+        $assignment = $this->processor->inspect(self::emptyGraph(), [$subject], $subject, false);
+        self::assertSame('controller', $assignment->matches[0]->layerName);
     }
 
-    // -------------------------------------------------------------------------
-    // Round-3/4 Codex MEDIUM enumeration
-    // -------------------------------------------------------------------------
-
     #[Test]
-    public function itClearsThePreparedStateOnRebindSoAFurtherClassifyThrows(): void
+    public function itClearsThePreparedStateOnReplace(): void
     {
-        // First analysis run reaches the prepared state.
-        $this->processor->bind(self::configurationWithOneStaticLayer());
+        $this->replace(self::configurationWithOneStaticLayer());
         $this->processor->prepare(self::emptyGraph(), []);
         self::assertNotNull($this->processor->getPreparedConfiguration());
 
-        // Re-binding (e.g. configurator pivots mid-flow) invalidates the
-        // prepared state until prepare() is called again.
-        $this->processor->bind(self::emptyConfiguration());
+        $this->replace(self::emptyConfiguration());
 
         self::assertNull($this->processor->getPreparedConfiguration());
-
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessageMatches('/classify.*prepare/');
-        iterator_to_array($this->processor->classify([SymbolPath::forClass('App\\Controller', 'X')]));
     }
 
     #[Test]
-    public function itRebindsCorrectlyWhenBindIsCalledTwice(): void
+    public function itUsesTheLastPolicyWhenReplaceIsCalledTwice(): void
     {
-        $first = self::configurationWithOneStaticLayer();
-        $second = self::emptyConfiguration();
+        $this->replace(self::configurationWithOneStaticLayer());
+        $this->replace(self::emptyConfiguration());
+        $subject = SymbolPath::forClass('App\\Controller', 'UserController');
 
-        $this->processor->bind($first);
-        $this->processor->bind($second);
-        $this->processor->prepare(self::emptyGraph(), []);
+        $assignment = $this->processor->inspect(self::emptyGraph(), [$subject], $subject, false);
 
-        // The second config has no layers, so classifying the controller now
-        // yields no matches — proves the rebinding stuck.
-        $matches = iterator_to_array(
-            $this->processor->classify([SymbolPath::forClass('App\\Controller', 'UserController')]),
-        );
-
-        self::assertSame([], $matches);
+        self::assertSame([], $assignment->matches);
     }
 
-    // -------------------------------------------------------------------------
-    // Additional behavior: prepared configuration accessor + idempotency cycles
-    // -------------------------------------------------------------------------
-
     #[Test]
-    public function itReturnsNoPreparedConfigurationBeforeBind(): void
+    public function itReturnsNoPreparedConfigurationBeforeReplace(): void
     {
         self::assertNull($this->processor->getPreparedConfiguration());
     }
 
     #[Test]
-    public function itReturnsNoPreparedConfigurationAfterBindBeforePrepare(): void
+    public function itReturnsNoPreparedConfigurationAfterReplaceBeforePrepare(): void
     {
-        $this->processor->bind(self::emptyConfiguration());
+        $this->replace(self::emptyConfiguration());
 
         self::assertNull($this->processor->getPreparedConfiguration());
     }
@@ -181,20 +137,19 @@ final class ArchitectureProcessorTest extends TestCase
     public function itReturnsThePreparedConfigurationAfterPrepare(): void
     {
         $config = self::configurationWithOneStaticLayer();
-        $this->processor->bind($config);
+        $this->replace($config);
         $this->processor->prepare(self::emptyGraph(), []);
 
         self::assertSame(
             $config,
             $this->processor->getPreparedConfiguration(),
-            'Same instance because no templates → no withExpansion() rebuild',
+            'Same instance because no templates means no withExpansion() rebuild.',
         );
     }
 
     #[Test]
     public function itRunsTemplateExpansionAndReturnsAnExpandedConfigurationInstance(): void
     {
-        // Template that observes one tuple in the class set.
         $template = new TemplateLayerDefinition(
             'domain-{module}',
             new MembershipSpec(patterns: ['App\\Module\\{module}\\Domain\\**']),
@@ -206,25 +161,21 @@ final class ArchitectureProcessorTest extends TestCase
             entries: [$template],
             maxExpandedLayers: 500,
         );
-
         $classes = [SymbolPath::forClass('App\\Module\\Order\\Domain', 'Customer')];
 
-        $this->processor->bind($config);
+        $this->replace($config);
         $this->processor->prepare(self::emptyGraph(), $classes);
 
         $prepared = $this->processor->getPreparedConfiguration();
         self::assertNotNull($prepared);
-        // Expansion produced a concrete layer name in the post-expansion registry.
         self::assertSame(['domain-Order'], $prepared->registry()->layerNames());
-        // The bound configuration was wrapped via withExpansion(); a fresh
-        // instance distinct from the original `$config` proves expansion ran.
         self::assertNotSame($config, $prepared);
     }
 
     #[Test]
     public function itPreservesConfiguredPolicyAcrossPreparationReset(): void
     {
-        $this->processor->bind(self::configurationWithOneStaticLayer());
+        $this->replace(self::configurationWithOneStaticLayer());
         $this->processor->prepare(self::emptyGraph(), []);
         $this->processor->reset();
 
@@ -236,7 +187,7 @@ final class ArchitectureProcessorTest extends TestCase
     #[Test]
     public function itResetsWithoutTraversingTheClassUniverse(): void
     {
-        $this->processor->bind(self::configurationWithOneStaticLayer());
+        $this->replace(self::configurationWithOneStaticLayer());
         $classUniverse = (static function (): Generator {
             yield throw new LogicException('Reset must not traverse the class universe.');
         })();
@@ -248,19 +199,62 @@ final class ArchitectureProcessorTest extends TestCase
     }
 
     #[Test]
-    public function itImplementsTheLayerPolicyPreparationContract(): void
+    public function itRebuildsObservedSpellingForEveryInspectCall(): void
     {
-        // Pin the interface contract: the concrete processor MUST implement
-        // LayerPolicyPreparationInterface for the DI alias to be sound.
-        $reflection = new ReflectionClass(ArchitecturePolicy::class);
-        self::assertTrue(
-            $reflection->implementsInterface(LayerPolicyPreparationInterface::class),
+        $this->replace(new ArchitectureConfiguration(
+            new LayerRegistry([new LayerDefinition('all', new MembershipSpec(patterns: ['**']))], new ClassContextFactory()),
+            new LayerPolicy([]),
+            CoverageMode::Ignore,
+        ));
+        $first = SymbolPath::forClass('App', 'First');
+        $second = SymbolPath::forClass('App', 'Second');
+
+        $firstAssignment = $this->processor->inspect(
+            self::emptyGraph(),
+            [$first],
+            SymbolPath::forClass('app', 'first'),
+            false,
         );
+        $secondAssignment = $this->processor->inspect(
+            self::emptyGraph(),
+            [$second],
+            SymbolPath::forClass('app', 'second'),
+            false,
+        );
+        $staleAssignment = $this->processor->inspect(
+            self::emptyGraph(),
+            [$second],
+            SymbolPath::forClass('app', 'first'),
+            false,
+        );
+
+        self::assertSame('App\\First', $firstAssignment->declaredSpelling);
+        self::assertSame('App\\Second', $secondAssignment->declaredSpelling);
+        self::assertNull($staleAssignment->declaredSpelling);
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
+    #[Test]
+    public function itRequiresEveryLayerAssignmentFactAtConstruction(): void
+    {
+        $constructor = (new ReflectionClass(LayerAssignment::class))->getConstructor();
+        self::assertNotNull($constructor);
+        self::assertCount(10, $constructor->getParameters());
+        foreach ($constructor->getParameters() as $parameter) {
+            self::assertFalse($parameter->isDefaultValueAvailable(), $parameter->getName());
+        }
+    }
+
+    #[Test]
+    public function itImplementsTheLayerPolicyPreparationContract(): void
+    {
+        $reflection = new ReflectionClass(ArchitecturePolicy::class);
+        self::assertTrue($reflection->implementsInterface(LayerPolicyPreparationInterface::class));
+    }
+
+    private function replace(ArchitectureConfiguration $configuration): void
+    {
+        $this->processor->replace(new ArchitectureFactoryResult($configuration));
+    }
 
     private static function configurationWithOneStaticLayer(): ArchitectureConfiguration
     {
