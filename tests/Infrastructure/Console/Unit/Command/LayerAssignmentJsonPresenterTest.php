@@ -73,6 +73,6 @@ final class LayerAssignmentJsonPresenterTest extends TestCase
     {
         yield 'ASCII' => ['App\\Subject', 'App\\Subject', 0];
         yield 'valid UTF-8' => ['App\\Café', 'App\\Café', 0];
-        yield 'invalid bytes' => ['App\\' . \chr(128) . \chr(128), "App\\\u{FFFD}\u{FFFD}", 3];
+        yield 'invalid bytes' => ['App\\' . \chr(128) . \chr(128), "App\\%80%80", 3];
     }
 }

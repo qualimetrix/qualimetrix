@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Symbol;
 
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 final readonly class SymbolPath
 {
@@ -162,12 +163,12 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::File => $type->canonicalPrefix() . ($this->filePath?->value() ?? ''),
+            SymbolType::File => $type->canonicalPrefix() . SourceBytes::escape($this->filePath?->value() ?? ''),
             SymbolType::Project => $type->canonicalPrefix(),
             SymbolType::Function_ => $this->buildFunctionCanonical(),
             SymbolType::Method => $this->buildMethodCanonical(),
             SymbolType::Class_ => $this->buildClassCanonical(),
-            SymbolType::Namespace_ => $type->canonicalPrefix() . ($this->namespace ?? ''),
+            SymbolType::Namespace_ => $type->canonicalPrefix() . SourceBytes::escape($this->namespace ?? ''),
         };
     }
 
@@ -232,10 +233,10 @@ final readonly class SymbolPath
     private function buildFunctionCanonical(): string
     {
         if ($this->hasNamespace()) {
-            return SymbolType::Function_->canonicalPrefix() . $this->namespace . '::' . $this->member;
+            return SymbolType::Function_->canonicalPrefix() . SourceBytes::escape($this->namespace ?? '') . '::' . SourceBytes::escape($this->member ?? '');
         }
 
-        return SymbolType::Function_->canonicalPrefix() . ':' . $this->member;
+        return SymbolType::Function_->canonicalPrefix() . ':' . SourceBytes::escape($this->member ?? '');
     }
 
     private function buildMethodCanonical(): string
@@ -243,13 +244,13 @@ final readonly class SymbolPath
         $parts = [SymbolType::Method->canonicalPrefix()];
 
         if ($this->hasNamespace()) {
-            $parts[] = $this->namespace;
+            $parts[] = SourceBytes::escape($this->namespace ?? '');
             $parts[] = '\\';
         }
 
-        $parts[] = $this->type;
+        $parts[] = SourceBytes::escape($this->type ?? '');
         $parts[] = '::';
-        $parts[] = $this->member;
+        $parts[] = SourceBytes::escape($this->member ?? '');
 
         return implode('', $parts);
     }
@@ -259,11 +260,11 @@ final readonly class SymbolPath
         $parts = [SymbolType::Class_->canonicalPrefix()];
 
         if ($this->hasNamespace()) {
-            $parts[] = $this->namespace;
+            $parts[] = SourceBytes::escape($this->namespace ?? '');
             $parts[] = '\\';
         }
 
-        $parts[] = $this->type;
+        $parts[] = SourceBytes::escape($this->type ?? '');
 
         return implode('', $parts);
     }

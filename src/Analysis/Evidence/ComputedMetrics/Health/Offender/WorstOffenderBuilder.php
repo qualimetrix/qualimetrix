@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensio
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Core\Pattern\NamespacePattern;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 final class WorstOffenderBuilder
 {
@@ -107,7 +108,7 @@ final class WorstOffenderBuilder
         foreach ($findings as $finding) {
             if ($finding->symbolPath->type !== null) {
                 $namespace = $finding->symbolPath->namespace ?? '';
-                $class = 'class:' . ($namespace === '' ? '' : $namespace . '\\') . $finding->symbolPath->type;
+                $class = SymbolPath::forClass($namespace, $finding->symbolPath->type)->toCanonical();
                 $counts[$class] = ($counts[$class] ?? 0) + 1;
             }
         }

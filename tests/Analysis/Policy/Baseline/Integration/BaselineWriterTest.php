@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
@@ -30,6 +31,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
 use stdClass;
+use Throwable;
 
 #[CoversClass(BaselineWriter::class)]
 #[CoversClass(BaselineConflictException::class)]
@@ -57,6 +59,50 @@ final class BaselineWriterTest extends TestCase
         if (is_dir($this->tempDir)) {
             $this->recursiveDelete($this->tempDir);
         }
+    }
+
+    #[Test]
+    public function itRelativizesEncodedFileKeysAgainstTheRawProjectRoot(): void
+    {
+        $root = AbsolutePath::fromString($this->tempDir . '/100%');
+        $canonical = 'file:' . \Qualimetrix\Core\SourceText\SourceBytes::escape($root->value() . '/src/100%.php');
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+            scope: ['src'],
+            entries: [new BaselineEntry(new BaselineIdentity($canonical, new FindingChannel('duplication.clone')), [10], 1)],
+            exclusions: self::fixtureExclusions(),
+        );
+        $path = $this->tempDir . '/encoded.json';
+        $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $root);
+        $loaded = $this->loader->load((new \Qualimetrix\Analysis\Policy\Baseline\BaselineDocumentReader())->preflight($path));
+
+        self::assertSame('file:src/100%25.php', $loaded->entries[0]->identity->subjectKey);
+    }
+
+    #[Test]
+    #[TestWith([true])]
+    #[TestWith([false])]
+    public function itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination(bool $scope): void
+    {
+        $path = $this->tempDir . '/raw-scope.json';
+        file_put_contents($path, 'Keep this destination.');
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+            scope: $scope ? ["src/raw\xFF.php"] : ['src'],
+            entries: [],
+            exclusions: $scope ? self::fixtureExclusions() : new \Qualimetrix\Analysis\Policy\Baseline\Contract\RecordedExclusions(
+                ["exact:src/raw\xFF.php"],
+                \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Exclude,
+            ),
+        );
+        try {
+            $this->writer->write($baseline, \Qualimetrix\Core\FileTarget\TargetPath::resolve($path), $this->projectRoot);
+            self::fail('A raw byte path cannot be recorded as a UTF-8 JSON scope.');
+        } catch (Throwable $failure) {
+            self::assertInstanceOf(InvalidArgumentException::class, $failure);
+            self::assertStringContainsString($scope ? 'scope contains a path that is not valid UTF-8' : 'exclusions contain a selector that is not valid UTF-8', $failure->getMessage());
+        }
+        self::assertSame('Keep this destination.', file_get_contents($path));
     }
 
     #[Test]

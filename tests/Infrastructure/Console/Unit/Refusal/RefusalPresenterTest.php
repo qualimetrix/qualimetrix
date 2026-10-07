@@ -38,6 +38,22 @@ use Symfony\Component\Console\Output\StreamOutput;
 final class RefusalPresenterTest extends TestCase
 {
     #[Test]
+    public function itKeepsDistinctInputBytesInTheJsonRefusalEnvelope(): void
+    {
+        $output = self::terminalOutput();
+        $refusal = ConfigurationRefusal::aboutInput(
+            ConfigurationOrigin::of(ConfigurationSource::CommandLine, "--name\xFF"),
+            "unknown value K\xFE and literal 50%",
+        );
+        self::assertSame(3, $this->presenter()->refusal($output, 'json', $refusal));
+        self::assertSame('', $output->errorOutputContent());
+        $envelope = json_decode($output->standardOutputContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame('Configuration error: unknown value K%FE and literal 50%25', $envelope['error']);
+        self::assertSame('--name%FF', $envelope['source'][0]['name']);
+        self::assertSame(2, $envelope['invalidUtf8Replaced']);
+    }
+
+    #[Test]
     public function itAnswersAConfigurationRefusalOnStderrWithCodeThree(): void
     {
         $output = self::terminalOutput();

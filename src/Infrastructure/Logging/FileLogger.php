@@ -60,10 +60,10 @@ final class FileLogger extends AbstractLogger
             'context' => $context,
         ];
 
-        $line = self::encodeJson($record);
+        $line = self::encodeJson($record, $encodingError);
         if ($line === null) {
             $record['context'] = null;
-            $record['context_error'] = json_last_error_msg();
+            $record['context_error'] = $encodingError;
             $line = self::encodeJson($record) ?? throw new RuntimeException('A log record without context must encode.');
         }
         $line .= "\n";

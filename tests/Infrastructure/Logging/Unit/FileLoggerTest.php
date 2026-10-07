@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Infrastructure\Logging\Unit;
 
+use JsonSerializable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +21,52 @@ require_once \dirname(__DIR__, 4) . '/scripts/subprocess/ChildProcess.php';
 #[CoversClass(FileLogger::class)]
 final class FileLoggerTest extends TestCase
 {
+    #[Test]
+    public function itRefusesMalformedCustomJsonWithoutAThirdCallback(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = new class implements JsonSerializable {
+            public int $calls = 0;
+
+            public function jsonSerialize(): mixed
+            {
+                ++$this->calls;
+
+                return ['path' => "src/K\xFF.php"];
+            }
+        };
+        $logger->warning('custom', ['object' => $object]);
+        self::assertSame(2, $object->calls);
+        $records = self::records($path);
+        self::assertCount(1, $records);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Malformed UTF-8 characters, possibly incorrectly encoded', $records[0]['context_error']);
+    }
+
+    #[Test]
+    public function itEncodesValidCustomJsonOnlyOnce(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = new class implements JsonSerializable {
+            public int $calls = 0;
+
+            public function jsonSerialize(): mixed
+            {
+                ++$this->calls;
+
+                return ['literal' => '50%'];
+            }
+        };
+        $logger->info('custom', ['object' => $object]);
+
+        self::assertSame(1, $object->calls);
+        self::assertSame(['object' => ['literal' => '50%']], self::records($path)[0]['context']);
+    }
+
     private string $tempDir;
 
     /** @var list<HeldTarget> */
@@ -302,7 +349,7 @@ final class FileLoggerTest extends TestCase
         $records = self::records($path);
         self::assertCount(3, $records);
         self::assertSame('Failed to parse file', $records[1]['message']);
-        self::assertSame(['file' => "src/\u{FFFD}1.php"], $records[1]['context']);
+        self::assertSame(['file' => "src/%B11.php"], $records[1]['context']);
     }
 
     /**
@@ -323,6 +370,43 @@ final class FileLoggerTest extends TestCase
         self::assertSame('Measured ratio', $records[0]['message']);
         self::assertNull($records[0]['context']);
         self::assertSame('Inf and NaN cannot be JSON encoded', $records[0]['context_error']);
+    }
+
+    #[Test]
+    public function itKeepsNativeObjectVisibilityWhenEscapingSourceBytes(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $object = new class {
+            public string $path = "src/K\xFF.php";
+            private string $secret = 'hidden';
+
+            public function secret(): string
+            {
+                return $this->secret;
+            }
+        };
+        $logger->warning('object', ['object' => $object]);
+
+        self::assertSame(['object' => ['path' => 'src/K%FF.php']], self::records($path)[0]['context']);
+    }
+
+    #[Test]
+    public function itRefusesRecursiveContextsEvenWhenInvalidUtf8MasksTheRecursion(): void
+    {
+        $path = $this->tempDir . '/test.log';
+        $logger = new FileLogger($path);
+        $this->attach($logger, $path);
+        $context = ['path' => "src/K\xFF.php"];
+        $context['cycle'] = &$context;
+        $logger->warning('recursive', $context);
+
+        $records = self::records($path);
+        self::assertCount(1, $records);
+        self::assertSame('recursive', $records[0]['message']);
+        self::assertNull($records[0]['context']);
+        self::assertSame('Recursion detected', $records[0]['context_error']);
     }
 
     /** A short native append is latched; later log calls count loss without throwing into collection. */

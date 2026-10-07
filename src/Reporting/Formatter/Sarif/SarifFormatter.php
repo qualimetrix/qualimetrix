@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Sarif;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\ProductIdentity;
+use Qualimetrix\Core\SourceText\SourceBytes;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormattedReport;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
@@ -269,13 +270,16 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * Percent-encodes each segment of a path. The repair comes first:
-     * `rawurlencode()` turns an invalid byte into a valid `%FF`, which the
-     * document encoder would then publish without the repair's mark.
+     * Percent-encodes raw path bytes while counting invalid input before the
+     * URI representation hides it from the document encoder.
      */
     private static function encodeSegments(string $path, int &$repairs): string
     {
-        return implode('/', array_map('rawurlencode', explode('/', PublishedUtf8::repair($path, $repairs))));
+        if (!SourceBytes::isUtf8($path)) {
+            ++$repairs;
+        }
+
+        return implode('/', array_map('rawurlencode', explode('/', $path)));
     }
 
     /**

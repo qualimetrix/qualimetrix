@@ -85,6 +85,23 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     #[Test]
+    public function itRequiresCanonicalPercentSpellingAndSuggestsTheKnownSubject(): void
+    {
+        $canonical = 'file:src/100%25.php';
+        $this->writeBaseline([
+            new BaselineEntry(new BaselineIdentity($canonical, new FindingChannel('duplication.clone')), [10], 1),
+        ]);
+        $found = $this->execute([], ['--baseline' => $this->baselinePath], subjectKey: $canonical);
+        self::assertSame(0, $found->getStatusCode(), $found->getErrorOutput());
+        self::assertStringContainsString($canonical, $found->getDisplay());
+
+        $unknown = $this->execute([], ['--baseline' => $this->baselinePath], subjectKey: 'file:src/100%.php');
+        self::assertSame(3, $unknown->getStatusCode());
+        self::assertStringContainsString('Unknown subject', $unknown->getErrorOutput());
+        self::assertStringContainsString('Canonical spelling: ' . $canonical, $unknown->getErrorOutput());
+    }
+
+    #[Test]
     public function itReportsAnIntentionallyEmptyRunWithoutClaimingSubjectRemediation(): void
     {
         mkdir($this->tempDir . '/src');

@@ -10,6 +10,7 @@ use Qualimetrix\Core\FileTarget\ResolvedTarget;
 use Qualimetrix\Core\FileTarget\TargetKind;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use RuntimeException;
 use stdClass;
 
@@ -114,6 +115,18 @@ final readonly class BaselineWriter
      */
     private function serializeBaseline(Baseline $baseline, AbsolutePath $projectRoot): array
     {
+        if (!mb_check_encoding($baseline->scope, 'UTF-8')) {
+            throw new InvalidArgumentException(
+                'Baseline scope contains a path that is not valid UTF-8; the JSON format cannot record raw byte paths. '
+                . 'Analyze a containing UTF-8 directory instead.',
+            );
+        }
+        if (!mb_check_encoding($baseline->exclusions->patterns, 'UTF-8')) {
+            throw new InvalidArgumentException(
+                'Baseline exclusions contain a selector that is not valid UTF-8; the JSON format cannot record raw byte selectors.',
+            );
+        }
+
         return [
             'version' => BaselineFormatVersion::CURRENT,
             'generated' => $baseline->generated->format('c'),
@@ -254,7 +267,7 @@ final readonly class BaselineWriter
             return $canonical;
         }
 
-        $filePath = substr($canonical, 5);
+        $filePath = rawurldecode(substr($canonical, 5));
 
         if ($filePath === '') {
             return $canonical;
@@ -262,6 +275,6 @@ final readonly class BaselineWriter
 
         $relative = PathFactory::tryProjectRelative($filePath, $projectRoot);
 
-        return $relative !== null ? 'file:' . $relative->value() : $canonical;
+        return $relative !== null ? SymbolPath::forFile($relative)->toCanonical() : $canonical;
     }
 }

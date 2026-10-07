@@ -121,7 +121,7 @@ final class LayerViolationRule extends AbstractRule
                 ownedTargets: $ownedTargets->forLogical($dependency->targetLogical()),
                 ruleName: self::NAME,
                 severity: $this->options->severity,
-                recommendation: LayerRoutingGuidance::forForbiddenEdge($dependency, $fromLayer, $toLayer, $evidence->architecture),
+                recommendation: LayerRoutingGuidance::forForbiddenEdge($fromLayer, $evidence->architecture),
             ))->toFindings();
 
             foreach ($edgeFindings as $finding) {

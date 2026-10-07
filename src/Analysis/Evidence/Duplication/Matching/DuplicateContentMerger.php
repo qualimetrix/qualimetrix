@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Duplication\Matching;
 use Closure;
 use Qualimetrix\Analysis\Evidence\Duplication\Index\PackedPosition;
 use Qualimetrix\Analysis\Evidence\Duplication\Normalization\TokenStream;
+use Qualimetrix\Core\SourceText\SourceBytes;
 
 /** Joins verified segments with identical complete token content. */
 final class DuplicateContentMerger
@@ -120,7 +121,7 @@ final class DuplicateContentMerger
         $values = \array_slice($tokens->values, $offset, $length);
 
         return hash('sha256', json_encode(
-            ['tokenCount' => $length, 'tokens' => $values],
+            ['tokenCount' => $length, 'tokens' => array_map(SourceBytes::framed(...), $values)],
             \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES,
         ));
     }

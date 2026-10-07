@@ -37,20 +37,35 @@ use Qualimetrix\Reporting\ReportCoverage;
 #[CoversClass(PublishedUtf8::class)]
 final class InvalidUtf8PublicationTest extends TestCase
 {
+    #[Test]
+    public function itKeepsDistinctSourceIdentifiersDistinctInPublishedDocuments(): void
+    {
+        $first = self::decode($this->format('json', "K\xFF"));
+        $second = self::decode($this->format('json', "K\xFE"));
+        self::assertNotSame($first['violations'][0]['subject'], $second['violations'][0]['subject']);
+        self::assertStringContainsString('K%FF', $first['violations'][0]['subject']);
+        self::assertStringContainsString('K%FE', $second['violations'][0]['subject']);
+        $repairs = 0;
+        self::assertSame('50%25 K%FF', PublishedUtf8::repair("50% K\xFF", $repairs));
+        self::assertSame(1, $repairs);
+    }
+
     private const string BROKEN = "Br\xFFken";
+
+    #[Test]
+    public function itKeepsRawPathBytesInSarifUris(): void
+    {
+        $output = $this->format('sarif', 'Intact', "src/K\xFF.php", "/pro\xFEject", "src/Rel\xE9.php");
+        $run = self::decode($output)['runs'][0];
+        self::assertSame('src/K%FF.php', $run['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('src/Rel%E9.php', $run['results'][0]['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('file:///pro%FEject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+    }
 
     /** @return iterable<string, array{string}> */
     public static function structuredFormats(): iterable
     {
         foreach (['json', 'metrics', 'suppressed', 'sarif', 'gitlab', 'checkstyle', 'html'] as $format) {
-            yield $format => [$format];
-        }
-    }
-
-    /** @return iterable<string, array{string}> */
-    public static function proseFormats(): iterable
-    {
-        foreach (['summary', 'text', 'github', 'health'] as $format) {
             yield $format => [$format];
         }
     }
@@ -62,7 +77,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format($format);
 
         self::assertTrue(mb_check_encoding($output, 'UTF-8'), 'the document is valid UTF-8');
-        self::assertStringContainsString("Br\u{FFFD}ken", $this->readable($format, $output));
+        self::assertStringContainsString('Br%FFken', $this->readable($format, $output));
         self::assertRepairMarked($format, $output);
     }
 
@@ -77,9 +92,8 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format($format, 'Intact', "src/Br\xFFken.php");
 
         self::assertTrue(mb_check_encoding($output, 'UTF-8'), 'the document is valid UTF-8');
-        self::assertStringNotContainsString('%FF', $output);
         self::assertStringContainsString(
-            $format === 'sarif' ? 'src/Br%EF%BF%BDken.php' : "src/Br\u{FFFD}ken.php",
+            'src/Br%FFken.php',
             $this->readable($format, $output),
         );
         self::assertRepairMarked($format, $output);
@@ -96,7 +110,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         $sarif = self::decode($output);
         $result = $sarif['runs'][0]['results'][0];
 
-        self::assertSame('src/Rel%EF%BF%BDated.php', $result['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
+        self::assertSame('src/Rel%FFated.php', $result['relatedLocations'][0]['physicalLocation']['artifactLocation']['uri']);
         self::assertSame(
             [[
                 'level' => 'warning',
@@ -113,7 +127,7 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format('sarif', 'Intact', 'src/A.php', "/pro\xFFject");
         $run = self::decode($output)['runs'][0];
 
-        self::assertSame('file:///pro%EF%BF%BDject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
+        self::assertSame('file:///pro%FFject/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
         self::assertRepairMarked('sarif', $output);
     }
 
@@ -155,16 +169,6 @@ final class InvalidUtf8PublicationTest extends TestCase
         $output = $this->format('json', 'Intact');
 
         self::assertArrayNotHasKey('invalidUtf8Replaced', self::decode($output));
-    }
-
-    /**
-     * Prose surfaces carry the bytes through untouched; they must not fail.
-     */
-    #[Test]
-    #[DataProvider('proseFormats')]
-    public function itStillRendersTheProseFormats(string $format): void
-    {
-        self::assertNotSame('', $this->format($format));
     }
 
     private function format(

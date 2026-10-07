@@ -327,7 +327,7 @@ final class DotExporterTest extends TestCase
         $dot = $exporter->export($graph);
 
         self::assertTrue(mb_check_encoding($dot, 'UTF-8'), 'the exported document is valid UTF-8');
-        self::assertStringContainsString("Bad\u{FFFD}Class", $dot);
+        self::assertStringContainsString("Bad%FFClass", $dot);
         self::assertStringContainsString(PublishedUtf8::REPAIR_CHECK, $dot);
     }
 
