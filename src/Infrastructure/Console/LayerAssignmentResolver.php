@@ -35,30 +35,18 @@ final readonly class LayerAssignmentResolver
         private ProjectFilesInterface $projectFiles,
     ) {}
 
+    /** @qmx-ignore code-smell.boolean-argument -- policyDisabled is the final rule-selection fact forwarded into the assignment snapshot. */
     public function resolve(
         RunConfiguration $configuration,
         SymbolPath $symbol,
         bool $policyDisabled,
     ): LayerAssignment {
-        return $this->resolveFiles(
-            $this->projectFiles->discover($configuration)->eligibleFiles,
-            $configuration->projectRoot,
-            $symbol,
-            $policyDisabled,
-        );
-    }
-
-    /**
-     * @param list<SplFileInfo> $files
-     */
-    private function resolveFiles(
-        array $files,
-        AbsolutePath $projectRoot,
-        SymbolPath $symbol,
-        bool $policyDisabled,
-    ): LayerAssignment {
         $repository = $this->repositoryFactory->create();
-        $collection = $this->collectFiles($files, $repository, $projectRoot);
+        $collection = $this->collectFiles(
+            $this->projectFiles->discover($configuration)->eligibleFiles,
+            $repository,
+            $configuration->projectRoot,
+        );
         $classPaths = $this->classPaths($repository);
         $graph = $this->graphBuilder->build($collection->dependencies, $collection->classLikeDeclarations)->graph;
 

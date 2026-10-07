@@ -6,9 +6,6 @@ namespace Qualimetrix\Reporting\GraphProjection;
 
 use Qualimetrix\Core\Pattern\NamespaceMatcher;
 use Qualimetrix\Core\Pattern\NamespacePattern;
-use Qualimetrix\Core\Pattern\SelectorDefinition;
-use Qualimetrix\Core\Pattern\SelectorKind;
-use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 
@@ -29,17 +26,19 @@ final readonly class NamespaceFilter
 {
     private ?NamespaceMatcher $includeMatcher;
     private NamespaceMatcher $excludeMatcher;
+    private NamespaceSelection $selection;
 
     /**
      * @param list<NamespacePattern>|null $includeNamespaces null means "every namespace"
      * @param list<NamespacePattern> $excludeNamespaces
      */
     public function __construct(
-        private ?array $includeNamespaces = null,
-        private array $excludeNamespaces = [],
+        ?array $includeNamespaces = null,
+        array $excludeNamespaces = [],
     ) {
         $this->includeMatcher = $includeNamespaces === null ? null : new NamespaceMatcher($includeNamespaces);
         $this->excludeMatcher = new NamespaceMatcher($excludeNamespaces);
+        $this->selection = new NamespaceSelection($includeNamespaces, $excludeNamespaces);
     }
 
     public static function fromRequest(GraphProjectionRequest $request): self
@@ -92,27 +91,7 @@ final readonly class NamespaceFilter
      */
     public function unboundIncludeNamespaces(iterable $classes): array
     {
-        if ($this->includeNamespaces === null || $this->includeNamespaces === []) {
-            return [];
-        }
-
-        $namespaces = [];
-        foreach ($classes as $classPath) {
-            $namespaces[$classPath->namespace ?? ''] = true;
-        }
-
-        $unbound = [];
-        foreach ($this->includeNamespaces as $includeNs) {
-            foreach (array_keys($namespaces) as $namespace) {
-                if ($includeNs->matches($namespace)) {
-                    continue 2;
-                }
-            }
-
-            $unbound[] = $includeNs->definition->display();
-        }
-
-        return $unbound;
+        return $this->selection->binding($classes)['include'];
     }
 
     /**
@@ -125,56 +104,7 @@ final readonly class NamespaceFilter
      */
     public function unboundExcludeNamespaces(iterable $classes): array
     {
-        if ($this->excludeNamespaces === []) {
-            return [];
-        }
-
-        $namespaces = [];
-        foreach ($classes as $classPath) {
-            $namespaces[$classPath->namespace ?? ''] = true;
-        }
-
-        $unbound = [];
-        foreach ($this->excludeNamespaces as $excludeNs) {
-            foreach (array_keys($namespaces) as $namespace) {
-                if ($excludeNs->matches($namespace)) {
-                    continue 2;
-                }
-            }
-
-            $unbound[] = [
-                'selector' => $excludeNs->definition->display(),
-                'suggestion' => self::caseSuggestion($excludeNs, array_keys($namespaces)),
-            ];
-        }
-
-        return $unbound;
-    }
-
-    /** @param list<string> $namespaces */
-    private static function caseSuggestion(NamespacePattern $pattern, array $namespaces): ?string
-    {
-        $definition = $pattern->definition;
-        if ($definition->kind === SelectorKind::Regex) {
-            return null;
-        }
-
-        $folded = new NamespacePattern(new SelectorDefinition(
-            $definition->kind,
-            ClassNameSpelling::fold($definition->value),
-        ));
-
-        foreach ($namespaces as $namespace) {
-            if (!$folded->matches(ClassNameSpelling::fold($namespace))) {
-                continue;
-            }
-
-            return $definition->kind === SelectorKind::Exact
-                ? $namespace
-                : substr($namespace, 0, \strlen($definition->value));
-        }
-
-        return null;
+        return $this->selection->binding($classes)['exclude'];
     }
 
 }

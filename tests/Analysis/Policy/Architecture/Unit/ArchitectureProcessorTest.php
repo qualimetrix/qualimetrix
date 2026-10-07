@@ -16,18 +16,20 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryRe
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\LayerAssignment\LayerAssignmentProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use ReflectionClass;
 
 /** Pins the replace, prepare, inspect and reset lifecycle of ArchitecturePolicy. */
 #[CoversClass(ArchitecturePolicy::class)]
+#[CoversClass(LayerAssignmentProjection::class)]
 final class ArchitectureProcessorTest extends TestCase
 {
     private ArchitecturePolicy $processor;

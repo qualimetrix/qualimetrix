@@ -7,6 +7,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 use Closure;
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion;
 
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;

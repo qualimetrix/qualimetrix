@@ -23,7 +23,7 @@ use Qualimetrix\Tests\Infrastructure\Console\Support\PreparedAnalysis;
  * matched at runtime.
  *
  * Observation reads the class relationships through the same
- * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory}
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory}
  * that runtime matching uses. That factory answers with empty attribute /
  * interface / parent lists until it is bound to the run's dependency graph, so
  * a factory bound after expansion makes every one of these criteria read as

@@ -16,6 +16,8 @@ use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter;
+use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentTextPresenter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\Refusal\ConsoleExitCode;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -45,6 +47,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * matching path inside the command.
  */
 #[CoversClass(LayerAssignmentCommand::class)]
+#[CoversClass(LayerAssignmentJsonPresenter::class)]
+#[CoversClass(LayerAssignmentTextPresenter::class)]
 #[CoversClass(LayerAssignmentResolver::class)]
 final class LayerAssignmentCommandTest extends TestCase
 {
@@ -1570,10 +1574,11 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * The text branch has several internal exits inside its own renderer
-     * (matched, no-layer, undecided and unique-match among them), but they all fall through to one
-     * call site in the command — this pins that the pointer reaches all of
-     * them by covering the matched case here and the no-layer case below.
+     * The text presenter has several internal assignment exits (matched,
+     * no-layer, undecided and unique-match among them), but its public render
+     * operation appends the pointer after that body. This pins that the
+     * pointer reaches all of them by covering the matched case here and the
+     * no-layer case below.
      */
     #[Test]
     public function itPrintsTheDocsPointerAfterATextReportForAMatchedClass(): void
@@ -1605,10 +1610,9 @@ final class LayerAssignmentCommandTest extends TestCase
     }
 
     /**
-     * The JSON branch shares the same call site as the text branch (see
-     * above), so this is the negative half of the same regression: an agent
-     * parsing `--format=json` must never see the pointer mixed into the
-     * document.
+     * JSON uses its own whole-assignment presenter, so this is the negative
+     * half of the same regression: an agent parsing `--format=json` output
+     * must never see the text presenter's pointer mixed into the document.
      */
     #[Test]
     public function itOmitsTheDocsPointerFromJsonOutput(): void

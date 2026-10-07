@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;

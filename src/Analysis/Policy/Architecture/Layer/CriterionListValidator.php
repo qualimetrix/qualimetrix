@@ -26,6 +26,18 @@ use InvalidArgumentException;
 final class CriterionListValidator
 {
     /**
+     * @param array<string, list<mixed>> $criteria
+     * @param list<mixed> $namedTypes
+     */
+    public static function validateCriteria(string $specLabel, array $criteria, array $namedTypes): void
+    {
+        foreach ($criteria as $kind => $values) {
+            self::validate($specLabel, $kind, $values);
+        }
+        self::validateNamedTypes($specLabel, $namedTypes);
+    }
+
+    /**
      * @param list<mixed> $values
      *
      * @throws InvalidArgumentException When any entry is a non-string or

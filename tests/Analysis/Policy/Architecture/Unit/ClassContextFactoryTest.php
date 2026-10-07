@@ -16,10 +16,13 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypes;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\NameSpellingIndex;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\Ancestry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelations;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\NameSpellingIndex;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -29,6 +32,9 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(ClassContextFactory::class)]
 #[CoversClass(ClassContext::class)]
+#[CoversClass(DeclarationRelations::class)]
+#[CoversClass(Ancestry::class)]
+#[CoversClass(ImplicitStringability::class)]
 #[CoversClass(KnownTypes::class)]
 #[CoversClass(NameSpellingIndex::class)]
 final class ClassContextFactoryTest extends TestCase

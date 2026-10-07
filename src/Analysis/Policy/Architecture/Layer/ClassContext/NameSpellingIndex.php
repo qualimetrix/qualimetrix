@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
+namespace Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\ClassNameSpelling;
@@ -19,6 +19,18 @@ final readonly class NameSpellingIndex
 
     /** @param iterable<SymbolPath> $analysedClasses */
     public function __construct(DependencyGraphInterface $graph, iterable $analysedClasses)
+    {
+        $spellings = self::canonicalSpellings(self::collectSpellings($graph, $analysedClasses));
+        $this->spellings = $spellings;
+        $this->prefixSpellings = self::canonicalSpellings(self::collectPrefixes($spellings));
+    }
+
+    /**
+     * @param iterable<SymbolPath> $analysedClasses
+     *
+     * @return array<string, array<string, true>>
+     */
+    private static function collectSpellings(DependencyGraphInterface $graph, iterable $analysedClasses): array
     {
         $byIdentity = [];
         foreach ($analysedClasses as $class) {
@@ -37,24 +49,41 @@ final readonly class NameSpellingIndex
             }
         }
 
-        $spellings = [];
-        foreach ($byIdentity as $identity => $forms) {
-            $spellings[$identity] = ClassNameSpelling::canonical(array_keys($forms));
-        }
-        $this->spellings = $spellings;
+        return $byIdentity;
+    }
 
+    /**
+     * @param array<string, string> $spellings
+     *
+     * @return array<string, array<string, true>>
+     */
+    private static function collectPrefixes(array $spellings): array
+    {
         $prefixes = [];
         foreach ($spellings as $spelling) {
             $segments = explode('\\', $spelling);
-            for ($length = 1; $length <= \count($segments); ++$length) {
+            $segmentCount = \count($segments);
+            for ($length = 1; $length <= $segmentCount; ++$length) {
                 self::add($prefixes, implode('\\', \array_slice($segments, 0, $length)));
             }
         }
-        $prefixSpellings = [];
-        foreach ($prefixes as $identity => $forms) {
-            $prefixSpellings[$identity] = ClassNameSpelling::canonical(array_keys($forms));
+
+        return $prefixes;
+    }
+
+    /**
+     * @param array<string, array<string, true>> $formsByIdentity
+     *
+     * @return array<string, string>
+     */
+    private static function canonicalSpellings(array $formsByIdentity): array
+    {
+        $spellings = [];
+        foreach ($formsByIdentity as $identity => $forms) {
+            $spellings[$identity] = ClassNameSpelling::canonical(array_keys($forms));
         }
-        $this->prefixSpellings = $prefixSpellings;
+
+        return $spellings;
     }
 
     public function spellingOf(string $name): ?string

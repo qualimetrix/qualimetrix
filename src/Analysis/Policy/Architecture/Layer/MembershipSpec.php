@@ -75,13 +75,14 @@ final readonly class MembershipSpec
         public array $memberAttributes = [],
         public array $namedTypes = [],
     ) {
-        CriterionListValidator::validate('MembershipSpec', 'patterns', $patterns);
-        CriterionListValidator::validate('MembershipSpec', 'suffix', $suffix);
-        CriterionListValidator::validate('MembershipSpec', 'attributes', $attributes);
-        CriterionListValidator::validate('MembershipSpec', 'implements', $implements);
-        CriterionListValidator::validate('MembershipSpec', 'extends', $extends);
-        CriterionListValidator::validate('MembershipSpec', 'memberAttributes', $memberAttributes);
-        CriterionListValidator::validateNamedTypes('MembershipSpec', $namedTypes);
+        CriterionListValidator::validateCriteria('MembershipSpec', [
+            'patterns' => $patterns,
+            'suffix' => $suffix,
+            'attributes' => $attributes,
+            'implements' => $implements,
+            'extends' => $extends,
+            'memberAttributes' => $memberAttributes,
+        ], $namedTypes);
 
         if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === [] && $memberAttributes === []) {
             throw new InvalidArgumentException(

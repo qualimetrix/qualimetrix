@@ -188,16 +188,9 @@ final class LayerCriterionNormalizer
     private static function rejectSelectorSubtree(int $index, string $layerName, SectionSpot $value): void
     {
         $written = $value->value();
-        if (\is_array($written) && \count($written) === 1 && \is_string($written['subtree'] ?? null)) {
-            throw $value->child('subtree')->refusal(
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "patterns" uses the selector grammar; %s',
-                    $index,
-                    $layerName,
-                    self::selectorSubtreeError($written['subtree'], '{subtree: ' . $written['subtree'] . '}'),
-                ),
-                written: 'subtree',
-            );
+        $root = self::selectorSubtreeRoot($written);
+        if ($root !== null) {
+            self::throwSelectorSubtreeRefusal($index, $layerName, $root, $value->child('subtree'));
         }
 
         if (!\is_array($written)) {
@@ -205,20 +198,35 @@ final class LayerCriterionNormalizer
         }
 
         foreach (array_values($written) as $entryIndex => $entry) {
-            if (!\is_array($entry) || \count($entry) !== 1 || !\is_string($entry['subtree'] ?? null)) {
-                continue;
+            $root = self::selectorSubtreeRoot($entry);
+            if ($root !== null) {
+                self::throwSelectorSubtreeRefusal($index, $layerName, $root, $value->child($entryIndex)->child('subtree'));
             }
-
-            throw $value->child($entryIndex)->child('subtree')->refusal(
-                \sprintf(
-                    'architecture.layers[%d] ("%s"): "patterns" uses the selector grammar; %s',
-                    $index,
-                    $layerName,
-                    self::selectorSubtreeError($entry['subtree'], '{subtree: ' . $entry['subtree'] . '}'),
-                ),
-                written: 'subtree',
-            );
         }
+    }
+
+    private static function selectorSubtreeRoot(mixed $entry): ?string
+    {
+        return \is_array($entry) && \count($entry) === 1 && \is_string($entry['subtree'] ?? null)
+            ? $entry['subtree']
+            : null;
+    }
+
+    private static function throwSelectorSubtreeRefusal(
+        int $index,
+        string $layerName,
+        string $root,
+        SectionSpot $spot,
+    ): never {
+        throw $spot->refusal(
+            \sprintf(
+                'architecture.layers[%d] ("%s"): "patterns" uses the selector grammar; %s',
+                $index,
+                $layerName,
+                self::selectorSubtreeError($root, '{subtree: ' . $root . '}'),
+            ),
+            written: 'subtree',
+        );
     }
 
     private static function selectorSubtreeError(string $root, string $written): string

@@ -2,11 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
+namespace Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 
 use Closure;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeJudgement;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 

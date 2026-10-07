@@ -221,7 +221,7 @@ final readonly class ArchitectureConfiguration
      * sub-namespace — an inversion the {@code architecture-domain} layer in
      * qmx.yaml now rejects outright (ADR 0016).
      *
-     * The new registry borrows the original registry's {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory},
+     * The new registry borrows the original registry's {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory},
      * which by this point is already bound to the run's graph: the expanded
      * layers match against the very contexts observation derived them from.
      *

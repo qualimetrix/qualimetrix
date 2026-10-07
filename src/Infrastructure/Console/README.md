@@ -74,7 +74,7 @@ Console/
 │   ├── HookBackupTransaction.php # judged, identity-fenced creation of a hook backup
 │   ├── HookEntryAccess.php         # shared guarded hook IO, identity checks and exposure warnings
 │   └── PreCommitHook.php            # The generated pre-commit hook: its text, its marker, and what counts as ours
-├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
+├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment inspection
 ├── Progress/
 │   ├── ConsoleProgressBar.php
 │   ├── ProgressConfigurator.php      # Whether this run shows a frame, and on what
@@ -89,7 +89,8 @@ Console/
     ├── HookStatusCommand.php        # Check hook status
     ├── HookUninstallCommand.php     # Remove pre-commit hook
     └── Debug/
-        ├── LayerAssignmentCommand.php # Validate input, configure runtime, and publish JSON
+        ├── LayerAssignmentCommand.php # Validate input, configure runtime, and route presentation
+        ├── LayerAssignmentJsonPresenter.php # Render the complete assignment as JSON
         └── LayerAssignmentTextPresenter.php # Render measured layer assignments as text
 ```
 
@@ -186,9 +187,14 @@ whether a name is wrong, the other what to say about it.
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file
 filtering, collection, dependency-graph and class-set preparation needed to
-query `LayerAssignmentInspectorInterface`; the command retains input validation, runtime
-configuration, error mapping and rendering. This keeps both declarations below
-their constructor-dependency thresholds without introducing a public port.
+query `LayerAssignmentInspectorInterface`; the command retains input validation,
+runtime configuration, error mapping and presentation routing. The text and
+JSON presenters each receive the complete `LayerAssignment`, so format-specific
+branching and shadow projection do not remain in the command. The text presenter
+also owns the documentation pointer after every enabled-policy report; disabled
+policy output and JSON omit it. This keeps the
+adapter declarations below their complexity thresholds without introducing a
+public port.
 
 Debug JSON publishes `meta`, canonical `fqn`, `policyDisabled`, `edgeEndOnly`,
 assignment and contender evidence. An enabled shadow carries `reported` and,

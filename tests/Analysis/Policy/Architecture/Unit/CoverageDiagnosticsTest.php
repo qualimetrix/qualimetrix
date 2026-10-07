@@ -23,12 +23,11 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
-use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\ClassEvidenceWalk;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\ClassWalkEvidence;
-use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector;
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -41,6 +40,7 @@ use Qualimetrix\Tests\Analysis\Policy\Architecture\Support\ProcessorBuilder;
 use ReflectionMethod;
 
 #[CoversClass(LayerViolationRule::class)]
+#[CoversClass(ClassEvidenceWalk::class)]
 final class CoverageDiagnosticsTest extends TestCase
 {
     private ArchitecturePolicy $processor;
@@ -322,8 +322,6 @@ final class CoverageDiagnosticsTest extends TestCase
     #[Test]
     public function itSkipsUncoveredClassMaterializationInIgnoreModeWithoutSkippingLayerEvidence(): void
     {
-        $options = new LayerViolationOptions();
-        $collector = new LayerEvidenceCollector($options, new UnassignedClassOptions(), new LayerDeclarationOptions(), $this->processor);
         $arch = $this->buildArchitecture(
             layers: [
                 'broad' => ['App\\**'],
@@ -338,10 +336,10 @@ final class CoverageDiagnosticsTest extends TestCase
             ['App\\Controller\\OwnedClass', 'Vendor\\Unowned\\LonelyClass'],
         );
 
-        $collectClassEvidence = new ReflectionMethod($collector, 'collectClassEvidence');
-        $classWalk = $collectClassEvidence->invoke($collector, $arch, $context);
+        $walk = new ClassEvidenceWalk($arch, $context, new UnassignedClassOptions());
+        $collect = new ReflectionMethod($walk, 'collect');
+        $classWalk = $collect->invoke($walk);
         self::assertInstanceOf(ClassWalkEvidence::class, $classWalk);
-
         self::assertSame(['broad' => 1, 'narrow' => 0], $classWalk->assignedHits);
         self::assertSame(
             [

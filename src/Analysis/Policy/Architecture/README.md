@@ -75,11 +75,21 @@ Architecture/
 ├── Configuration/              # the `architecture:` section: its schema and validators
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
+│   ├── ClassContext/           # one run's declaration relations, ancestry and observed names
+│   │   ├── Ancestry.php
+│   │   ├── ClassContext.php
+│   │   ├── ClassContextFactory.php
+│   │   ├── DeclarationRelations.php
+│   │   ├── ImplicitStringability.php
+│   │   ├── KnownTypes.php
+│   │   └── NameSpellingIndex.php
 │   ├── LayerShadowVerdict.php
 │   ├── UnmatchedTypeOccurrence.php
 │   ├── UnmatchedTypeJudgement.php
 │   └── Expansion/              # observed-template expansion
-├── Observation/                # the shared walk, evidence and bounded diagnostic samples
+├── LayerAssignment/
+│   └── LayerAssignmentProjection.php # prepared assignment facts for the public debug value
+├── Observation/                # class/edge walks, evidence tally and bounded samples
 ├── LayerViolation/             # forbidden dependency edges and routing guidance
 ├── LayerDeclaration/           # declaration diagnostics and configuration validator
 │   ├── LayerOverlapDiagnostic.php
@@ -89,7 +99,8 @@ Architecture/
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
-`Configuration/`, `Layer/`, `Layer/Expansion/`, `Observation/`,
+`Configuration/`, `Layer/`, `Layer/ClassContext/`, `Layer/Expansion/`,
+`LayerAssignment/`, `Observation/`,
 `LayerViolation/`, `LayerDeclaration/`, `UnassignedClass/`, and the policy coordinator are internal zones of one leaf. The
 manifest-backed Architecture topology test enforces their exact DAG; sibling
 internals are not a public API. The generated qmx projection enforces the leaf owner boundary.
@@ -176,7 +187,7 @@ or namespaces.
 
 `extends`, `implements`, class `attributes`, and `member_attributes` are
 answered first from the declaration edges this run recorded.
-`ClassContextFactory` is bound to the run's **class universe** alongside its
+`ClassContextFactory` coordinates the run's **class universe** alongside its
 graph and Architecture's external-supertype source
 (`ArchitecturePolicy::prepare()` is the single binding point). It follows a
 non-analysed link through an exactly placed Composer source file, without
@@ -188,7 +199,12 @@ names where the parent-class chain was cut and, separately, every interface
 the walk reached without readable facts. Per-run external facts and contexts
 are memoised by the factory and cleared at every binding; Composer placement
 and directory-listing snapshots are cleared when the analysed project is
-reanchored.
+reanchored. `DeclarationRelations` projects direct declaration facts,
+`Ancestry` owns the bounded parent/interface/trait closure, and
+`ImplicitStringability` derives PHP's implicit interface without making the
+factory a second graph model. `NameSpellingIndex` and `KnownTypes` stay in the
+same class-context subject because both answers are rebuilt from that run's
+observed identities.
 
 Each parent or interface branch follows at most 256 links. If the declaration
 at that depth names another relation, the next FQN is recorded as an ancestry
@@ -371,9 +387,10 @@ nested anonymous class instead (ADR 0071). The dependency the edge still
 represents is unaffected; only its reading as a declaration fact about its
 recorded source is narrowed.
 
-`Observation/` owns `LayerEvidenceCollector`: one class and dependency-edge
-walk per `AnalysisContext`, memoised weakly so nothing survives into the next
-run. Its `LayerEvidence` carries forbidden edges, assignment/match/exclusion
+`Observation/` owns `LayerEvidenceCollector`: one `ClassEvidenceWalk` and one
+`EdgeEvidenceWalk` per `AnalysisContext`, memoised weakly so nothing survives
+into the next run. `LayerEvidenceTally` performs the shared hit and symbol-set
+combination after the two walks. Its `LayerEvidence` carries forbidden edges, assignment/match/exclusion
 tallies, contested symbols, coverage, shadows, own-exclude samples and precedence
 losses. Analysed-class assignments remain separate from dependency-edge hits,
 because overlap requires at least one class owned by the late layer. `ClassWalkEvidence` and
@@ -383,6 +400,12 @@ and `ShadowedClass` retain their exact dependency and criterion facts.
 The collector reads three independent enabled gates through `RuleOptionsInterface`
 and returns no evidence when all three are off or no layers are declared.
 It has no dependency on any of the verdict folders.
+
+`LayerAssignmentProjection` turns the prepared configuration and the observed
+class context into the public debug value's assignment, contender and typed
+shadow facts. `ArchitecturePolicy` supplies only the final producer-enablement
+fact and owns the public inspection lifecycle; the projection does not publish
+findings or duplicate Console rendering.
 
 `LayerViolation/` owns only forbidden-edge findings. `LayerViolationRule` emits
 `architecture.layer-violation` per forbidden edge; its CLI aliases and severity

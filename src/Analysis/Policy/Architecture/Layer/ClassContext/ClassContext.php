@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
+namespace Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
+
+use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionOutcome;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 
 /**
  * Read-only view of a class consumed by {@see LayerDefinition::matches()} to
@@ -119,6 +123,8 @@ final readonly class ClassContext
      *                                                                                 missing entry proves nothing; a present one still does.
      * @param list<string> $memberAttributeFqns Attribute FQNs applied to declared members.
      * @param bool $declarationAnalysed Whether the subject's own declaration header was read.
+     *
+     * @qmx-ignore code-smell.boolean-argument -- declarationAnalysed is a measured completeness fact in this immutable context, not a behavior option.
      */
     public function __construct(
         public string $fqn,

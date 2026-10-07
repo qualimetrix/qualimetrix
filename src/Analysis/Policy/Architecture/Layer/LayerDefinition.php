@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
+
 /**
  * Immutable Value Object describing a single architectural layer: a
  * human-readable name plus the {@see MembershipSpec} that decides which

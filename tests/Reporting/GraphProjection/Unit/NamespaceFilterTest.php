@@ -22,9 +22,11 @@ use Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use Qualimetrix\Reporting\GraphProjection\NamespaceFilter;
+use Qualimetrix\Reporting\GraphProjection\NamespaceSelection;
 use Qualimetrix\Tests\Core\Unit\Pattern\NamespacePatternStub;
 
 #[CoversClass(NamespaceFilter::class)]
+#[CoversClass(NamespaceSelection::class)]
 final class NamespaceFilterTest extends TestCase
 {
     /** @return iterable<string, array{list<string>|null, list<string>, list<string>}> */

@@ -28,12 +28,15 @@ GraphProjection/
 ├── DotExporter.php
 ├── DotExporterOptions.php
 ├── JsonGraphExporter.php
-└── NamespaceFilter.php
+├── NamespaceFilter.php
+└── NamespaceSelection.php
 ```
 
 `NamespaceFilter` is the module's only namespace comparison. Both exporters
-used to carry a private copy of it, and the binding answer the projector now
-owes the Console adapter would have made a third: `unboundIncludeNamespaces()` and `unboundExcludeNamespaces()` report values on `--namespace` or
+used to carry a private copy of it. `NamespaceSelection` captures the original
+graph's namespace inventory and owns exact binding and case-only suggestions
+before any projection removes nodes. `unboundIncludeNamespaces()` and
+`unboundExcludeNamespaces()` report values on `--namespace` or
 `--exclude-namespace` that match no class of the original graph. Both doors
 refuse an unbound value (exit 3), before filtering. A case-only near match
 suggests the exact graph spelling without accepting the wrong case.
@@ -43,6 +46,11 @@ map from dependency positions to sorted syntax forms. For example,
 `{"property_type":["nullable"],"type_hint":["union"]}` preserves the association
 between each position and its shapes; no facts gives `{}`. Relation selection
 uses positions, not the shape names.
+
+`JsonGraphExporter` separates node, class-set and edge projection internally,
+while retaining the same deterministic JSON shape and ordering. These helpers
+are format mechanics; graph identity and dependency semantics remain owned by
+DependencyModel.
 
 ## Definition of Done
 

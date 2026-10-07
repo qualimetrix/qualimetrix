@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\ProjectScope\ProjectScopeJudgement;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -30,34 +31,41 @@ final class UnmatchedTypeDiagnostic
 
         $findings = [];
         foreach ($judgement->occurrences as $occurrence) {
-            $type = $occurrence->namedType;
-            $provenance = $type->provenance;
-            $position = $provenance->displayPath();
-            $where = $provenance->origin->describe()
-                . ($position === '' ? '' : ' at ' . $position)
-                . ($provenance->line === null ? '' : ':' . $provenance->line);
-            $suggestion = $occurrence->suggestedSpelling === null
-                ? ''
-                : \sprintf(' did you mean %s?', $occurrence->suggestedSpelling);
-
-            $findings[] = new Finding(
-                location: Location::none(),
-                subject: MetricSubject::aggregate(SymbolPath::forProject()),
-                symbolPath: SymbolPath::forProject(),
-                ruleName: ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME,
-                code: ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME,
-                message: \sprintf(
-                    'Layer criterion type "%s" declared by %s was not found in the analysed declarations, dependency graph, PHP built-ins, or the analysed project\'s Composer install.%s',
-                    $type->fqn,
-                    $where,
-                    $suggestion,
-                ),
-                severity: Severity::Warning,
-                recommendation: 'Correct the type spelling, install the dependency that declares it, or remove the stale criterion.',
-                occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, $occurrence->identityEvidence()),
-            );
+            $findings[] = self::finding($occurrence);
         }
 
         return $findings;
+    }
+
+    private static function finding(UnmatchedTypeOccurrence $occurrence): Finding
+    {
+        $type = $occurrence->namedType;
+
+        return new Finding(
+            location: Location::none(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME,
+            code: ArchitectureChannels::UNMATCHED_TYPE_DIAGNOSTIC_NAME,
+            message: \sprintf(
+                'Layer criterion type "%s" declared by %s was not found in the analysed declarations, dependency graph, PHP built-ins, or the analysed project\'s Composer install.%s',
+                $type->fqn,
+                self::where($occurrence),
+                $occurrence->suggestedSpelling === null ? '' : \sprintf(' did you mean %s?', $occurrence->suggestedSpelling),
+            ),
+            severity: Severity::Warning,
+            recommendation: 'Correct the type spelling, install the dependency that declares it, or remove the stale criterion.',
+            occurrenceKey: OccurrenceKey::semantic(self::OCCURRENCE_KIND, $occurrence->identityEvidence()),
+        );
+    }
+
+    private static function where(UnmatchedTypeOccurrence $occurrence): string
+    {
+        $provenance = $occurrence->namedType->provenance;
+        $position = $provenance->displayPath();
+
+        return $provenance->origin->describe()
+            . ($position === '' ? '' : ' at ' . $position)
+            . ($provenance->line === null ? '' : ':' . $provenance->line);
     }
 }

@@ -25,11 +25,44 @@ final readonly class ExternalSupertypes
         public bool $aliasesTraitMethodAsToString,
         public ?string $unreadable,
     ) {
-        if (($declaredSpelling === null) !== ($classType === null)) {
+        self::assertDeclarationPair($declaredSpelling, $classType);
+        self::assertAbsentWhenNotPlaced(
+            $placed,
+            $declaredSpelling,
+            $parent,
+            $interfaces,
+            $traits,
+            $declaresToString,
+            $aliasesTraitMethodAsToString,
+            $unreadable,
+        );
+        self::assertPlacedResult($placed, $declaredSpelling, $unreadable);
+        self::assertReadableResult($declaredSpelling, $unreadable);
+    }
+
+    private static function assertDeclarationPair(?string $spelling, ?ClassType $type): void
+    {
+        if (($spelling === null) !== ($type === null)) {
             throw new InvalidArgumentException('An external declaration spelling and class type must be present together.');
         }
+    }
+
+    /**
+     * @param list<string> $interfaces
+     * @param list<string> $traits
+     */
+    private static function assertAbsentWhenNotPlaced(
+        bool $placed,
+        ?string $spelling,
+        ?string $parent,
+        array $interfaces,
+        array $traits,
+        bool $declaresToString,
+        bool $aliasesTraitMethodAsToString,
+        ?string $unreadable,
+    ): void {
         if (!$placed && (
-            $declaredSpelling !== null
+            $spelling !== null
             || $parent !== null
             || $interfaces !== []
             || $traits !== []
@@ -39,10 +72,18 @@ final readonly class ExternalSupertypes
         )) {
             throw new InvalidArgumentException('A type outside the Composer map cannot carry declaration facts.');
         }
-        if ($placed && $declaredSpelling === null && ($unreadable === null || $unreadable === '')) {
+    }
+
+    private static function assertPlacedResult(bool $placed, ?string $spelling, ?string $unreadable): void
+    {
+        if ($placed && $spelling === null && ($unreadable === null || $unreadable === '')) {
             throw new InvalidArgumentException('A placed type without declaration facts requires an unreadable reason.');
         }
-        if ($declaredSpelling !== null && $unreadable !== null) {
+    }
+
+    private static function assertReadableResult(?string $spelling, ?string $unreadable): void
+    {
+        if ($spelling !== null && $unreadable !== null) {
             throw new InvalidArgumentException('A readable declaration cannot also carry an unreadable reason.');
         }
     }

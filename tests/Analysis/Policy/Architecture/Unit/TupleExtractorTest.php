@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Finding\Contract\Location;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor;

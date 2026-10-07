@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use LogicException;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ClassContext;
 
 /**
  * Stateless evaluator that walks the six criterion kinds (patterns,
@@ -233,17 +234,7 @@ final class LayerCriteriaMatcher
      */
     private static function matchAttributes(ClassContext $context, array $attributes): ?MatchedCriterion
     {
-        if ($attributes === [] || $context->attributeFqnSet === []) {
-            return null;
-        }
-
-        foreach ($attributes as $attributeFqn) {
-            if (isset($context->attributeFqnSet[$attributeFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::Attribute, $attributeFqn);
-            }
-        }
-
-        return null;
+        return self::matchFromSet($attributes, $context->attributeFqnSet, MatchedCriterionKind::Attribute);
     }
 
     /**
@@ -251,17 +242,7 @@ final class LayerCriteriaMatcher
      */
     private static function matchMemberAttributes(ClassContext $context, array $memberAttributes): ?MatchedCriterion
     {
-        if ($memberAttributes === [] || $context->memberAttributeFqnSet === []) {
-            return null;
-        }
-
-        foreach ($memberAttributes as $attributeFqn) {
-            if (isset($context->memberAttributeFqnSet[$attributeFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::MemberAttribute, $attributeFqn);
-            }
-        }
-
-        return null;
+        return self::matchFromSet($memberAttributes, $context->memberAttributeFqnSet, MatchedCriterionKind::MemberAttribute);
     }
 
     /**
@@ -269,17 +250,7 @@ final class LayerCriteriaMatcher
      */
     private static function matchImplements(ClassContext $context, array $implements): ?MatchedCriterion
     {
-        if ($implements === [] || $context->interfaceSet === []) {
-            return null;
-        }
-
-        foreach ($implements as $interfaceFqn) {
-            if (isset($context->interfaceSet[$interfaceFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::Implements, $interfaceFqn);
-            }
-        }
-
-        return null;
+        return self::matchFromSet($implements, $context->interfaceSet, MatchedCriterionKind::Implements);
     }
 
     /**
@@ -287,13 +258,21 @@ final class LayerCriteriaMatcher
      */
     private static function matchExtends(ClassContext $context, array $extends): ?MatchedCriterion
     {
-        if ($extends === [] || $context->parentClassSet === []) {
-            return null;
-        }
+        return self::matchFromSet($extends, $context->parentClassSet, MatchedCriterionKind::Extends);
+    }
 
-        foreach ($extends as $parentFqn) {
-            if (isset($context->parentClassSet[$parentFqn])) {
-                return new MatchedCriterion(MatchedCriterionKind::Extends, $parentFqn);
+    /**
+     * @param list<string> $declared
+     * @param array<string, true> $available
+     */
+    private static function matchFromSet(
+        array $declared,
+        array $available,
+        MatchedCriterionKind $kind,
+    ): ?MatchedCriterion {
+        foreach ($declared as $candidate) {
+            if (isset($available[$candidate])) {
+                return new MatchedCriterion($kind, $candidate);
             }
         }
 

@@ -12,8 +12,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Refusal\RefusalInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
@@ -21,7 +19,6 @@ use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\AnalysisReportCommandDefinition;
 use Qualimetrix\Infrastructure\Console\CommandLineSpelling;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
-use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -187,12 +184,9 @@ final class LayerAssignmentCommand extends Command
         $declaredSpelling = $assignment->declaredSpelling
             ?? throw new LogicException('A resolved layer assignment requires an observed declaration spelling.');
         if ($format === 'json') {
-            $this->renderJson($output, $assignment);
+            (new LayerAssignmentJsonPresenter($output))->render($assignment);
         } else {
             (new LayerAssignmentTextPresenter($output))->render($declaredSpelling, $assignment);
-            if (!$assignment->policyDisabled) {
-                $output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
-            }
         }
 
         return self::SUCCESS;
@@ -224,100 +218,6 @@ final class LayerAssignmentCommand extends Command
         return null;
     }
 
-    /**
-     * Serializes the same `resolve()` result {@see LayerAssignmentTextPresenter::render()} renders as
-     * text, so both projections read one resolution and cannot drift.
-     *
-     * `assigned` is `null` when `$matches` is empty (no layer matched) rather
-     * than an omitted key, so a consumer can branch on presence without also
-     * checking `shadowed === []`.
-     *
-     * `shadowed` lists every match after `shadowedBy`, the first match the
-     * run established: each loses the class whatever the unanswered layers
-     * answer, and is flagged `reported` when `architecture.potential-shadow`
-     * reports it — never for a match whose own `exclude:` went unanswered,
-     * since it may not match at all. `shadowedBy` is not `assigned` when an
-     * unanswered `exclude:` stands in front of it, and is `null` when
-     * `shadowed` is empty.
-     *
-     * `contendingMatches` lists, in the same form, every other match after
-     * `assigned` that is not an established shadow verdict. This includes
-     * matches whose own `exclude:` went unanswered: one declared before the
-     * first established match can still own the class, while one declared
-     * after it cannot be called an established shadow. `reported` is false.
-     * `contendingMatches` and `shadowed` together are every match the text
-     * report lists after the assignment.
-     *
-     * `undecided` is always present and names the layers this run could not
-     * answer for the class that bear on its assignment — every one when
-     * nothing assigned it, otherwise those declared before the first match
-     * the run established. A null `assigned` with a non-empty `undecided` is
-     * not "no layer claims this class" — it is "the run could not tell", so a
-     * consumer branching on `assigned` alone must read this key too.
-     * `contenders` names the layers that could own the class once those are
-     * answered, and is empty whenever `undecided` is.
-     *
-     * `chainStopsAt` is always present and names where the class's
-     * inheritance chain stopped at a declaration the run did not read; it is
-     * empty whenever `undecided` is.
-     */
-    private function renderJson(OutputInterface $output, LayerAssignment $assignment): void
-    {
-        $assigned = $assignment->matches[0] ?? null;
-        $shadowed = array_map(
-            fn(LayerAssignmentShadowVerdict $verdict): array => self::shadowVerdictToArray($verdict, $assignment->policyDisabled),
-            $assignment->shadowVerdicts,
-        );
-        $shadowedLayers = array_fill_keys(array_map(
-            static fn(LayerAssignmentShadowVerdict $verdict): string => $verdict->match->layerName,
-            $assignment->shadowVerdicts,
-        ), true);
-        $contending = array_values(array_filter(
-            \array_slice($assignment->matches, 1),
-            static fn(LayerAssignmentMatch $match): bool => !isset($shadowedLayers[$match->layerName]),
-        ));
-        $toContending = static fn(LayerAssignmentMatch $match): array => self::matchToArray($match)
-            + ($assignment->policyDisabled ? [] : ['reported' => false]);
-
-        OutputHelper::write($output, $this->encodeJson([
-            'meta' => ProductIdentity::meta(gmdate('c')),
-            'fqn' => $assignment->declaredSpelling,
-            'assigned' => $assigned === null ? null : self::matchToArray($assigned),
-            'contendingMatches' => array_map($toContending, $contending),
-            'shadowed' => $shadowed,
-            'shadowedBy' => $shadowed === [] ? null : $assignment->firstEstablished,
-            'undecided' => $assignment->undecidedLayers,
-            'contenders' => $assignment->contenders,
-            'chainStopsAt' => $assignment->chainStopsAt,
-            'hasLayers' => $assignment->hasLayers,
-            'policyDisabled' => $assignment->policyDisabled,
-            'edgeEndOnly' => $assignment->edgeEndOnly,
-        ]));
-    }
-
-    /** @return array{layer: string, criteria: non-empty-list<string>} */
-    private static function matchToArray(LayerAssignmentMatch $match): array
-    {
-        return [
-            'layer' => $match->layerName,
-            'criteria' => $match->criteria,
-        ];
-    }
-
-    /** @return array{layer: string, criteria: non-empty-list<string>, reported?: bool, exemption?: string|null} */
-    private static function shadowVerdictToArray(
-        LayerAssignmentShadowVerdict $verdict,
-        bool $policyDisabled,
-    ): array {
-        if ($policyDisabled) {
-            return self::matchToArray($verdict->match);
-        }
-
-        return self::matchToArray($verdict->match)
-            + ['reported' => $verdict->reported()]
-            + ($verdict->exemption === null ? [] : ['exemption' => $verdict->exemption->value]);
-    }
-
     private static function policyDisabled(?FindingConfiguration $configuration): bool
     {
         if ($configuration === null) {
@@ -334,9 +234,4 @@ final class LayerAssignmentCommand extends Command
         return true;
     }
 
-    /** @param array<string, mixed> $payload */
-    private function encodeJson(array $payload): string
-    {
-        return json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
-    }
 }

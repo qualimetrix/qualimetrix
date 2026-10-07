@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\UnassignedClass;
 
 use LogicException;
+use Qualimetrix\Analysis\Configuration\Contract\Document\ResolvedValueInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationOrigin;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationSource;
@@ -17,6 +18,24 @@ final readonly class UnassignedClassLayerRequirement implements UnassignedClassL
 {
     public function assertSatisfied(FindingConfiguration $configuration): void
     {
+        $mode = $this->requiredMode($configuration);
+        if ($mode === null) {
+            return;
+        }
+        $layers = $configuration->document->get('architecture', 'layers');
+        if ($layers !== null && $layers->plain() !== []) {
+            return;
+        }
+
+        throw ConfigurationRefusal::acrossLayers(
+            $this->origins($configuration, $layers),
+            RefusedPosition::open(['architecture', 'layers'], 'layers'),
+            \sprintf('Rule "architecture.unassigned-class" mode "%s" requires at least one declared architecture.layers entry. Declare layers or use mode "ignore" or disable the rule.', $mode->value),
+        );
+    }
+
+    private function requiredMode(FindingConfiguration $configuration): ?UnassignedClassMode
+    {
         $resolved = $configuration->resolvedOptions
             ?? throw new LogicException('The unassigned-class layer requirement needs resolved options.');
         $enablement = $configuration->enablement
@@ -27,12 +46,15 @@ final readonly class UnassignedClassLayerRequirement implements UnassignedClassL
         }
         if ($options->mode === UnassignedClassMode::Ignore
             || !$enablement->isEnabled(ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME)) {
-            return;
+            return null;
         }
-        $layers = $configuration->document->get('architecture', 'layers');
-        if ($layers !== null && $layers->plain() !== []) {
-            return;
-        }
+
+        return $options->mode;
+    }
+
+    /** @return non-empty-list<ConfigurationOrigin> */
+    private function origins(FindingConfiguration $configuration, ?ResolvedValueInterface $layers): array
+    {
         $mode = $configuration->document->get('rules', ArchitectureChannels::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, 'mode')
             ?? throw new LogicException('An active unassigned-class mode must have a written source.');
         $writers = [...$mode->contributors(), ...($layers?->contributors() ?? [])];
@@ -45,10 +67,6 @@ final readonly class UnassignedClassLayerRequirement implements UnassignedClassL
             $missing = ConfigurationOrigin::of(ConfigurationSource::Resolved, 'architecture.layers');
             $origins[serialize($missing)] = $missing;
         }
-        throw ConfigurationRefusal::acrossLayers(
-            array_values($origins),
-            RefusedPosition::open(['architecture', 'layers'], 'layers'),
-            \sprintf('Rule "architecture.unassigned-class" mode "%s" requires at least one declared architecture.layers entry. Declare layers or use mode "ignore" or disable the rule.', $options->mode->value),
-        );
+        return array_values($origins);
     }
 }

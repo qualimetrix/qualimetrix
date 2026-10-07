@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
+use Qualimetrix\Core\ProductIdentity;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -17,6 +18,14 @@ final readonly class LayerAssignmentTextPresenter
     public function __construct(private OutputInterface $output) {}
 
     public function render(string $fqn, LayerAssignment $assignment): void
+    {
+        $this->renderAssignment($fqn, $assignment);
+        if (!$assignment->policyDisabled) {
+            $this->output->writeln(\sprintf('<comment>%s</comment>', ProductIdentity::pointerText()));
+        }
+    }
+
+    private function renderAssignment(string $fqn, LayerAssignment $assignment): void
     {
         $matches = $assignment->matches;
         $undecided = $assignment->undecidedLayers;

@@ -14,16 +14,12 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigur
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
+use Qualimetrix\Analysis\Policy\Architecture\LayerAssignment\LayerAssignmentProjection;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /** Instance-owned declared-layer policy configuration and prepared state. */
@@ -104,6 +100,11 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $this->prepared = $configuration;
     }
 
+    /**
+     * @param iterable<SymbolPath> $classUniverse
+     *
+     * @qmx-ignore code-smell.boolean-argument -- policyDisabled is the resolved policy state reported in the immutable assignment, not a behavior switch.
+     */
     public function inspect(
         DependencyGraphInterface $graph,
         iterable $classUniverse,
@@ -117,42 +118,20 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $configuration = $this->prepared
             ?? throw new LogicException('ArchitecturePolicy::inspect() reached an unprepared policy after prepare() returned.');
 
-        $registry = $configuration->registry();
-        $declaredSpelling = $registry->contextFactory()->knownTypes()->observedSpellingOf(self::fqnFor($subject));
-        $declaredSubject = $declaredSpelling === null ? $subject : SymbolPath::fromClassFqn($declaredSpelling);
-        $established = $registry->establishedMatches($declaredSubject);
+        $projection = new LayerAssignmentProjection($configuration, $analysedClasses, $subject);
 
         return new LayerAssignment(
-            array_map(self::assignmentMatch(...), $registry->resolveAll($declaredSubject)),
-            !$configuration->isEmpty(),
-            $registry->undecidedLayers($declaredSubject),
-            $registry->chainStopsAt($declaredSubject),
-            $registry->contenders($declaredSubject),
-            ($established[0] ?? null)?->layerName,
-            array_map(
-                static fn($verdict): LayerAssignmentShadowVerdict => new LayerAssignmentShadowVerdict(
-                    self::assignmentMatch($verdict->later),
-                    $verdict->exemption,
-                ),
-                LayerShadowing::verdicts($established),
-            ),
-            $declaredSpelling,
+            $projection->matches,
+            $projection->layersDeclared,
+            $projection->undecidedLayers,
+            $projection->chainStopsAt,
+            $projection->contenders,
+            $projection->establishedLayer,
+            $projection->shadowVerdicts,
+            $projection->declaredSpelling,
             $policyDisabled,
-            $declaredSpelling !== null && !AnalysedDeclarations::of($analysedClasses)->contains($declaredSpelling),
+            $projection->edgeEndOnly,
         );
-    }
-
-    private static function assignmentMatch(LayerMatch $match): LayerAssignmentMatch
-    {
-        $criteria = array_map(
-            static fn($criterion): string => $criterion->describe(),
-            $match->matchedCriteria,
-        );
-        if ($criteria === []) {
-            throw new LogicException('A layer assignment match requires at least one criterion.');
-        }
-
-        return new LayerAssignmentMatch($match->layerName, $criteria);
     }
 
     public function getPreparedConfiguration(): ?ArchitectureConfiguration
@@ -191,10 +170,4 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $this->prepared = null;
     }
 
-    private static function fqnFor(SymbolPath $symbol): string
-    {
-        return $symbol->namespace === null || $symbol->namespace === ''
-            ? ($symbol->type ?? '')
-            : $symbol->namespace . '\\' . ($symbol->type ?? '');
-    }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
 
 /**
@@ -219,7 +219,7 @@ final readonly class LayerEvidence
      * not answer about it, and whether the run analysed the symbol.
      * `unmetTypes` lists each type the layer's `attributes:`, `member_attributes:`, `implements:`
      * and `extends:` criteria name that the run did not meet — see
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes}.
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes}.
      * `installConsulted` says whether the analysed project's composer install
      * was among the places asked, which the finding naming unmet types needs
      * to say what their absence rests on.

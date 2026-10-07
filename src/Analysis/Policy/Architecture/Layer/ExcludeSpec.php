@@ -58,13 +58,14 @@ final readonly class ExcludeSpec
         public array $memberAttributes = [],
         public array $namedTypes = [],
     ) {
-        CriterionListValidator::validate('ExcludeSpec', 'patterns', $patterns);
-        CriterionListValidator::validate('ExcludeSpec', 'suffix', $suffix);
-        CriterionListValidator::validate('ExcludeSpec', 'attributes', $attributes);
-        CriterionListValidator::validate('ExcludeSpec', 'implements', $implements);
-        CriterionListValidator::validate('ExcludeSpec', 'extends', $extends);
-        CriterionListValidator::validate('ExcludeSpec', 'memberAttributes', $memberAttributes);
-        CriterionListValidator::validateNamedTypes('ExcludeSpec', $namedTypes);
+        CriterionListValidator::validateCriteria('ExcludeSpec', [
+            'patterns' => $patterns,
+            'suffix' => $suffix,
+            'attributes' => $attributes,
+            'implements' => $implements,
+            'extends' => $extends,
+            'memberAttributes' => $memberAttributes,
+        ], $namedTypes);
 
         if ($patterns === [] && $suffix === [] && $attributes === [] && $implements === [] && $extends === [] && $memberAttributes === []) {
             throw new InvalidArgumentException(
