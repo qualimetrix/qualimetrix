@@ -152,8 +152,9 @@ undeclared candidate input refusals that reach comparison are named
 transition uses the outcome declaration and its exact measured snapshot.
 
 An incomplete case keeps its findings and its incompleteness diagnostics.
-`baseline:generate` must exit 4 and publish no baseline file. Both facts are
-checked; absence is not treated as an empty successful file.
+The product requires no baseline file for it; the gate verifies exit 4 and
+empty captured baseline bytes. Physical absence and an existing zero-byte file
+are indistinguishable in both incomplete and declared-refusal captures.
 
 Known run notices and exact analysis diagnostics are kept outside the finding
 projection in GitHub, GitLab and Checkstyle. Their original bytes remain under
