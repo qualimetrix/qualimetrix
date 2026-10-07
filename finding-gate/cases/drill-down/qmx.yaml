@@ -1,5 +1,5 @@
 suppress_paths: []
-only_rules: [code-smell.eval, duplication.clone]
+only_rules: [annotation.*, code-smell.eval, duplication.clone]
 computed_metrics:
   health.complexity: { enabled: false }
   health.cohesion: { enabled: false }

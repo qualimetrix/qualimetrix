@@ -8,7 +8,7 @@ foreach ($rows as $key => $row) {
     if ($index >= $limit) {
         break;
     }
-    if (!is_array($row)) {
+    if (!\is_array($row)) {
         continue;
     }
     $total = 0;
@@ -20,7 +20,7 @@ foreach ($rows as $key => $row) {
     $result[$key] = [
         'total' => $total,
         'mode' => $mode,
-        'size' => count($row),
+        'size' => \count($row),
         'label' => strtoupper((string) $key),
     ];
     ++$index;
