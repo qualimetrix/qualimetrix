@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -103,7 +104,7 @@ final class ResultPresenter
         $this->assertDrillDownBinds($context, $analysisResult);
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
-        $filteredFindings = $this->findingFilter->filterFindings($findings, $context);
+        $filteredFindings = $this->findingFilter->filterFindings($findings, $context, FileNamespaceIndex::fromRepository($analysisResult->measured->repository));
 
         // Build and output report with filtered findings
         $coverage = ReportCoverageProjection::of($analysisResult->measured->coverage, $projectRoot);

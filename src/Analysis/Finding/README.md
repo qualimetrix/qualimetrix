@@ -22,6 +22,7 @@ Finding/
 │   ├── ProjectScope/     # measured judgement, doors, channel lists and selector verdicts
 │   ├── Control/          # finding control scope vocabulary
 │   ├── Filter/           # Ordered finding-filter stages and results
+│   │   └── FindingNamespace.php # declared namespace of a finding, excluding project subjects
 │   ├── Rule/             # Rule authoring contracts
 │   │   ├── RuleOptionShape.php # immutable recursive option declaration
 │   │   ├── RuleOptionSurface.php # accepted addresses and declaration lookup
@@ -426,6 +427,10 @@ exists. LCOM's primary boundary remains 3; `cohesion.unmatched-exclude-method`
 uses project magnitude 1 and no configured boundary. Judged catalog membership
 is not boundary eligibility: GodClass legitimately has no catalog judge but has
 an options boundary.
+
+`FindingNamespace::declared()` reads the symbol namespace and then the exact
+declaration subject when needed. Namespace suppression retains this declared
+view and never imports file-to-namespace attribution from reporting selection.
 
 ## Locality
 

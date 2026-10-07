@@ -323,6 +323,11 @@ and again in `create()` — a `--namespace` or `--class` selection under a forma
 `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names. `--report`
 is read here, through `CommandLineSpelling`, and handed to
 `Git\GitScopeResolver` as a string.
+`--format=suppressed` with `--namespace` or `--class` is refused before analysis
+because suppression composition describes the whole run. With either reporting
+selector, `--show-suppressed` still lists the whole run and says that selectors
+are not applied in both the inline and per-rule suppression headings.
+
 Every valued option and argument is read through `CommandLineSpelling`: argv
 delivers strings, and an embedder's array input may deliver any PHP value, so an
 integer is read as its digits and any other shape is refused (exit 3) instead

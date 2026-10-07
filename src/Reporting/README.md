@@ -510,7 +510,14 @@ and three commands outside `check` (`directives`,
 
 **`message` / `recommendation`:** the finding's message and its optional recommendation, under the same two keys in `violations` and `topIssues` (see `Formatter\PublishedFinding`).
 
-**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` has none: a selection does not narrow it.
+**`outOfScope`:** always present. `null` without `--namespace`/`--class`; under a selection, `{violationCount, errorCount, warningCount, infoCount}` of the run's findings the selection left out, zeroes when it left none. The exit code is resolved over `summary` and `outOfScope` together. `metrics` publishes the same key in its own vocabulary; `sarif`, `github` and `html` add one diagnostic entry under `drill-down.out-of-scope` only when something lies outside (see `DrillDown\OutOfScopeFindings`). `gitlab` and `checkstyle` have no entry that is not a finding to their consumer, so `OutOfScopeFindings::FORMATS_WITHOUT_A_PLACE` names them and the command line refuses a selection under them. `suppressed` describes the whole run and refuses either selector before analysis.
+
+Namespace drill-down selects a file finding when any namespace declared in its
+physical file matches the selector. Files without declarations use the global
+namespace; a missing repository has the same reporting fallback. A declaration
+finding keeps its declared namespace even in a multi-namespace file. Class
+selection never selects a file aggregate. Binding counts retain their existing
+namespace and ranked-offender universe.
 
 **`projectScope`:** always has
 `{state, uncoveredAutoloadTargets, unjudgedChannels, unjudgedValues, reasons}`.

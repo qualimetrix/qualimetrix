@@ -266,6 +266,26 @@ final class FindingFilterOrchestratorTest extends TestCase
     }
 
     #[Test]
+    public function itNamesTheWholeRunWhenSuppressedDetailsAreShownBesideAReportingSelector(): void
+    {
+        $finding = self::finding('src/Service/UserService.php', 'Other', 'Outside');
+        $stats = new RuleExclusionStats(namespaceExclusionsByRule: ['complexity.ccn' => 1], excludedFindings: [$finding]);
+        $output = new BufferedOutput();
+        $this->filterAndReport(
+            $this->createOrchestrator(),
+            $this->createAnalysisResult(stats: $stats),
+            $this->createInput(['--show-suppressed' => true, '--namespace' => 'subtree:Shop']),
+            self::diagnosticConsole($output),
+            $this->createScopeResolution(),
+        );
+
+        $display = $output->fetch();
+        self::assertStringContainsString('across the whole run (reporting selectors are not applied)', $display);
+        self::assertStringContainsString('[complexity.ccn]', $display);
+        self::assertStringContainsString('src/Service/UserService.php', $display);
+    }
+
+    #[Test]
     public function itDoesNotPrintExcludedFindingDetailsWithoutShowSuppressed(): void
     {
         $path = RelativePath::fromString('src/Service/UserService.php');
@@ -547,6 +567,8 @@ final class FindingFilterOrchestratorTest extends TestCase
             new InputOption('no-suppression-annotations', mode: InputOption::VALUE_NONE),
             new InputOption('show-resolved', mode: InputOption::VALUE_NONE),
             new InputOption('show-suppressed', mode: InputOption::VALUE_NONE),
+            new InputOption('namespace', mode: InputOption::VALUE_REQUIRED),
+            new InputOption('class', mode: InputOption::VALUE_REQUIRED),
         ]);
 
         return new ArrayInput($options, $definition);

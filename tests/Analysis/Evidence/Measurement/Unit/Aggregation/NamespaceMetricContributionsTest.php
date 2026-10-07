@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceMetricContributions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
@@ -23,6 +24,7 @@ use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(NamespaceMetricContributions::class)]
+#[CoversClass(FileNamespaceIndex::class)]
 final class NamespaceMetricContributionsTest extends TestCase
 {
     #[Test]
@@ -151,13 +153,27 @@ final class NamespaceMetricContributionsTest extends TestCase
         );
         $repository->add(SymbolPath::forClass('Two', 'Second'), new MetricBag(), $file, 10);
 
-        $fileMap = NamespaceMetricContributions::mapFilesToNamespaces($repository);
+        $fileMap = FileNamespaceIndex::fromRepository($repository);
         $namespaceMap = NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $fileMap);
 
-        self::assertSame(['One', 'Two'], $fileMap['src/Multi.php']);
+        self::assertSame(['One', 'Two'], $fileMap->namespacesOf($file));
         self::assertCount(1, $namespaceMap['One']);
         self::assertCount(1, $namespaceMap['Two']);
         self::assertSame($file, $namespaceMap['One'][0]->file);
         self::assertSame($file, $namespaceMap['Two'][0]->file);
     }
+    #[Test]
+    public function itDoesNotAttributeAnUndeclaredFileToANamespaceAggregate(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Script.php');
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['size.loc' => 17]), $file, 1);
+        $index = FileNamespaceIndex::fromRepository($repository);
+
+        self::assertSame([], $index->namespacesOf($file));
+        self::assertSame([], $index->namespacesOf(RelativePath::fromString('src/Unknown.php')));
+        self::assertSame([], FileNamespaceIndex::fromRepository(null)->namespacesOf($file));
+        self::assertSame([], NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $index));
+    }
+
 }

@@ -513,6 +513,24 @@ final class FormatterContextFactoryTest extends TestCase
         self::assertSame('all', $withAll->getOption('violations'));
     }
 
+    /** @return iterable<string, array{array<string, string>}> */
+    public static function provideSuppressedSelectors(): iterable
+    {
+        yield 'namespace' => [['--namespace' => 'subtree:Shop']];
+        yield 'class' => [['--class' => 'Shop\\Cart']];
+    }
+
+    /** @param array<string, string> $parameters */
+    #[Test]
+    #[DataProvider('provideSuppressedSelectors')]
+    public function itRefusesAReportingSelectorForTheWholeRunSuppressedDocument(array $parameters): void
+    {
+        $this->expectException(ConfigurationRefusal::class);
+        $this->expectExceptionMessage('describes the whole run');
+
+        $this->factory->bindFormatBeforeAnalysis($this->createInput($parameters), 'suppressed');
+    }
+
     /**
      * @param array<string, mixed> $parameters
      */

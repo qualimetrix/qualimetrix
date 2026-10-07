@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Aggregation;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -55,41 +56,11 @@ final class NamespaceMetricContributions
     }
 
     /**
-     * @return array<string, list<string>> file path => namespaces
-     */
-    public static function mapFilesToNamespaces(MetricRepositoryInterface $repository): array
-    {
-        $map = [];
-
-        foreach ($repository->allDeclarations() as $info) {
-            $namespace = $info->subject?->toSymbolPath()->namespace;
-
-            if ($namespace !== null && $info->file !== null) {
-                $map[$info->file->value()][$namespace] = $namespace;
-            }
-        }
-
-        // Aggregate-only class records still own their physical file. They have
-        // no declaration subject, but must keep that file eligible for file LOC.
-        foreach ($repository->allLogicalClasses() as $info) {
-            $namespace = $info->subject?->toSymbolPath()->namespace;
-
-            if ($namespace !== null && $info->file !== null) {
-                $map[$info->file->value()][$namespace] = $namespace;
-            }
-        }
-
-        return array_map(static fn(array $namespaces): array => array_values($namespaces), $map);
-    }
-
-    /**
-     * @param array<string, list<string>> $fileToNamespaces
-     *
      * @return array<string, list<SymbolInfo>>
      */
     public static function mapNamespacesToFileSymbols(
         MetricRepositoryInterface $repository,
-        array $fileToNamespaces,
+        FileNamespaceIndex $fileNamespaces,
     ): array {
         $map = [];
 
@@ -98,7 +69,7 @@ final class NamespaceMetricContributions
                 continue;
             }
 
-            foreach ($fileToNamespaces[$fileInfo->file->value()] ?? [] as $namespace) {
+            foreach ($fileNamespaces->namespacesOf($fileInfo->file) as $namespace) {
                 $map[$namespace][] = $fileInfo;
             }
         }

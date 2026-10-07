@@ -20,6 +20,7 @@ for collection and repository interchange.
 Measurement/
 ├── Aggregation/        # aggregation phases and global collectors
 ├── Contract/           # named cross-owner metric and repository promises
+│   └── FileNamespaceIndex.php # declared namespaces of each measured physical file
 ├── FileMeasurement/    # file collectors and derived metrics
 ├── Namespace_/         # project namespace attribution
 ├── Repository/
@@ -32,6 +33,12 @@ Measurement/
 ```
 
 ## Public contracts
+
+`FileNamespaceIndex::fromRepository()` associates physical files with every
+namespace in their exact declarations and logical classes, deduplicated in
+repository order. Missing declarations or a missing repository produce an empty
+list. Namespace aggregation ignores that empty list; reporting may interpret it
+as the global namespace for file findings.
 
 The `Contract/` namespace is the complete external surface. Important promises
 include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,

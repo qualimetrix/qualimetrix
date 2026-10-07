@@ -25,8 +25,8 @@ use Qualimetrix\Core\Pattern\PathMatcher;
  * Their removed-finding lists do not record *which* configured pattern removed a given
  * finding, because nothing before this class ever needed to say. Recomputing
  * here (calling {@see PathMatcher::matches()}, {@see NamespaceMatcher::matches()}
- * against every configured pattern in turn — not stopping at the first hit,
- * so two overlapping patterns are both credited — and reading `Suppression`'s
+ * for the first matching configured pattern, while the independent inert-pattern
+ * census tests every pattern — and reading `Suppression`'s
  * and Baseline's identity-forming fields directly off `Finding` rather than
  * through their owning capabilities' internal types) is a deliberate, narrow
  * duplication of the decision each mechanism already made, accepted because

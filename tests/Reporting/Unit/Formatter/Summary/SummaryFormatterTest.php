@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileNamespaceIndex;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -1328,7 +1329,7 @@ final class SummaryFormatterTest extends TestCase
      */
     private function selected(Report $report, FormatterContext $context): Report
     {
-        $selected = (new FindingFilter())->filterFindings($report->findings, $context);
+        $selected = (new FindingFilter())->filterFindings($report->findings, $context, FileNamespaceIndex::fromRepository($report->metrics));
 
         return new Report(
             findings: $selected,

@@ -55,9 +55,9 @@ final readonly class DrillDownBinding
      *
      * `Project` is excluded deliberately: its symbol path holds a display
      * value, `(project)`, where a namespace would be, which a pattern value
-     * would otherwise bind to. `File` is absent because a File symbol path has no namespace at
-     * all, so the level contributes nothing to either half of the universe —
-     * listing it said the opposite of what the code did.
+     * would otherwise bind to. `File` adds no separate name: file findings use the namespaces declared
+     * in their physical file, already counted through the named levels. A
+     * file without declarations uses the global namespace only when filtering.
      */
     private const array NAMED_LEVELS = [
         SymbolLevel::Callable,
