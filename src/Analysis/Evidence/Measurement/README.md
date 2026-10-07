@@ -127,7 +127,10 @@ spelling through `MetricRepositoryInterface::mixedSpellings()`. Exact
 Repository merges carry the complete spelling observations from both inputs;
 rebuilding the canonical indexes does not count their metric bags a second
 time. Namespace aggregation therefore sees one namespace for case variants and
-counts every distinct exact declaration once.
+counts every distinct exact declaration once. Global function writes rekey
+existing namespace bags when the canonical spelling changes; repository merges
+choose the combined spelling before merging bags and preserve scalar precedence,
+structured entries and source metadata.
 
 The repository delegates each identity domain to one internal index. Exact
 declarations and callable ambiguity stay in `MetricSubjectIndex`; folded class

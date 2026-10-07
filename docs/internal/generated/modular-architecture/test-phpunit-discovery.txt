@@ -4391,6 +4391,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itKeepsTypePositionSeparateFromUnionAndPromotedPropertyShape
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itLeavesUsageDependenciesFromInsideAnAnonymousClassBodyUnflagged
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itMarksAnAttributeOnANestedNamedClassAsNested
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"constant"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"hook parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"method"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"nested callable"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"nested function"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"promoted parameter"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"property hook"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesAnonymousProvenanceForEveryAttributeSite"property"
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPreservesExactDeclarationSourcesForEveryNamedClassLike
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itPublishesNamedClassLikeFactsWithoutSyntheticStringableEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itRecordsACatchDependency
@@ -5326,6 +5335,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsLogicalClassProjectionsLocationFreeForExactClassDeclarationsInEitherMergeOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itKeepsPositiveLineWhenSubsequentAddHasZero
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itLeavesTheRepositoryAloneForASubjectItDoesNotHold
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesCaseVariantNamespaceBagsWithoutLosingValuesInEitherOrder
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesMetricsForSameSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesOverlappingSymbols
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itMergesPlainAndTypedCallableSubjectsIndependentlyOfRepositoryOrder
@@ -5343,6 +5353,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysANamespaceAggregateWhenACallableOwnerChangesItsCanonicalSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysANamespaceAggregateWhenALogicalClassChangesItsCanonicalSpelling
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysANamespaceAggregateWhenAnExactClassChangesItsCanonicalSpelling
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysNamespaceBagsWhenAGlobalFunctionChangesCanonicalSpelling"exact subject"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itRekeysNamespaceBagsWhenAGlobalFunctionChangesCanonicalSpelling"typed callable"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsAllNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsEmptyMetricBagForUnknownSymbol
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository\InMemoryMetricRepositoryTest::itReturnsSymbolsForNamespace
@@ -7744,6 +7756,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itDoesNotTreatACompleteBuiltinParentAsAnImplicitStringableDoubt
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itDoesNotTreatReadableExternalSupertypesAsAnAnalysedDeclarationHeader
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itDropsExternalFactsWhenANewRunIsBound
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itExcludesAnonymousMemberAttributesExtractedFromSource
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIgnoresDependencyTypesOtherThanExtendsImplementsAndAttribute
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itIncludesInterfacesInheritedFromAParentClass
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\ClassContextFactoryTest::itKeepsAClassAndTheNamespaceOfItsOwnNameApart
@@ -10155,6 +10168,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredParentReaderTest::itResolvesAParentWrittenWithoutItsNamespace
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itDistinguishesNotPlacedUnreadableAndConditionalDeclarations
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itKeepsInterfaceKindForImplicitStringableSemantics
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces"int backed with authored interfaces"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces"int backed"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces"string backed with authored interfaces"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces"string backed"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces"unit with authored interfaces"
+ - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsImplicitEnumInterfacesAlongsideAuthoredInterfaces"unit"
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsResolvedClassFactsWithoutLoadingTheDeclaration
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\DeclaredSupertypeReaderTest::itReadsTheCurrentTreeAfterTheMapIsReanchored
  - Qualimetrix\Tests\Infrastructure\Composer\Unit\InstalledExternalClassSpellingTest::itCanonicalizesMixedExternalNamesAndKeepsTheOnlyUnplacedSpelling
@@ -10979,6 +10998,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoArguments
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itDefinesNoCustomOptions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\HookStatusCommandTest::itIsAddressedAsHookStatus
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\LayerAssignmentJsonPresenterTest::itPublishesObservedNamesWithVisibleRepairsAndPreservesValidJson"ASCII"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\LayerAssignmentJsonPresenterTest::itPublishesObservedNamesWithVisibleRepairsAndPreservesValidJson"invalid bytes"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\LayerAssignmentJsonPresenterTest::itPublishesObservedNamesWithVisibleRepairsAndPreservesValidJson"valid UTF-8"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itAdvertisesTheDocsAddressInItsHelp
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itConfiguresTheGroupOption
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Command\RulesCommandTest::itDisplaysCliAliases

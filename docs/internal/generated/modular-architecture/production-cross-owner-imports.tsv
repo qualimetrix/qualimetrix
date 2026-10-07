@@ -1181,6 +1181,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver	An
 Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Measurement\Repository\AggregateMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract
@@ -1203,6 +1204,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Repository\MetricSubjectIndex	Analysis
 Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\MixedSpelling	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	contract
+Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\RepositoryMerge	Analysis.Evidence.Measurement	Qualimetrix\Core\Path\RelativePath	Core.Path	contract
 Qualimetrix\Analysis\Evidence\Measurement\Repository\RepositoryMerge	Analysis.Evidence.Measurement	Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	contract
@@ -2493,6 +2495,7 @@ Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter	In
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch	Analysis.Policy.Architecture	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict	Analysis.Policy.Architecture	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter	Infrastructure.Console	Qualimetrix\Core\ProductIdentity	Core.Neutral	contract
+Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentJsonPresenter	Infrastructure.Console	Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentTextPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment	Analysis.Policy.Architecture	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentTextPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch	Analysis.Policy.Architecture	contract
 Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentTextPresenter	Infrastructure.Console	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict	Analysis.Policy.Architecture	contract

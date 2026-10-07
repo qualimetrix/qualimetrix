@@ -1528,6 +1528,15 @@ What changes for a configuration you already have:
 
 ### Fixed
 
+- External enums retain their implicit `UnitEnum` and `BackedEnum` interfaces
+  when assigning architecture layers.
+- Layer member-attribute criteria no longer include attributes declared inside
+  nested anonymous classes.
+- Case variants of a namespace share one complete metric bag after global
+  function writes and repository merges.
+- Layer-assignment debug JSON repairs invalid UTF-8 bytes in observed names
+  and reports the number of repaired strings as `invalidUtf8Replaced`.
+
 - Class-name-sensitive detectors resolve imported class names before
   collection, including own-class references that previously escaped unused
   private member detection.

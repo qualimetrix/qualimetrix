@@ -1000,6 +1000,8 @@ the observed canonical spelling; high-byte names observed by the parser work
 as well. Before collection only an empty normalized spelling is refused.
 Any other unknown spelling is refused after lookup with exit 3, even when the
 policy is disabled. Informational answers about observed names exit 0.
+JSON replaces invalid UTF-8 bytes with U+FFFD and adds `invalidUtf8Replaced`,
+the number of repaired strings. Valid UTF-8 output omits that field.
 
 For a project declaring `service` (`App\Service\**`) before `rest` (`App\**`),
 the JSON response has this form:

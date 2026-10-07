@@ -363,8 +363,8 @@ Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	9	4
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	27	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	139	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	85	20
-Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	34	12
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	86	20
+Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	35	12
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Version	Core.Neutral	7	2
 Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	1	1
@@ -420,7 +420,7 @@ Qualimetrix\Reporting\Formatter\CoverageNarrator	Reporting	3	1
 Qualimetrix\Reporting\Formatter\FormatOptionValue	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	2	2
 Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	4	2
-Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	2	1
+Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	3	2
 Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	Reporting.GraphProjection	1	1

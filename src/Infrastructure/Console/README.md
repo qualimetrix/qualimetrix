@@ -203,6 +203,10 @@ the text omits diagnostic guidance. All arguments other than empty input are
 resolved through observed identities after collection, never an identifier regex.
 See [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
 
+The JSON presenter uses Reporting's `PublishedUtf8` contract: invalid UTF-8
+bytes in observed names become U+FFFD, and `invalidUtf8Replaced` counts repaired
+strings. Valid UTF-8 output omits that key.
+
 `LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath, bool)` receives the
 captured configuration and final Architecture producer enablement directly and
 delegates to `ProjectFilesInterface` with its universe, aliases and generated
