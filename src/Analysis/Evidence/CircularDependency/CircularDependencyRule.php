@@ -177,7 +177,7 @@ final class CircularDependencyRule extends AbstractRule
      * is not monotone in `$size` — a direct two-class cycle is `Error` while a
      * twelve-class cycle is only `Warning`, and any cycle whose size exceeds
      * `maxCycleSize` is dropped before a `Finding` is ever built (`$size >
-     * $this->maxCycleSize` — line 56). Declaring `higher` says a cycle that
+     * $this->maxCycleSize`). Declaring `higher` says a cycle that
      * gains a member is worse debt, independent of that severity ladder; it
      * does not change the rule's own cutoff, which stays exactly as
      * configured.

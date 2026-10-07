@@ -91,6 +91,64 @@ PHP;
     }
 
     #[Test]
+    public function itCountsQualifiedAndNewOwnClassReceiversAsUses(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+class U {
+    private static function work(): void {}
+    private function instanceWork(): void {}
+    public function run(): void { U::work(); (new U())->instanceWork(); }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\\U'));
+    }
+
+    /** @return iterable<string, array{string, string, string}> */
+    public static function ownClassUseForms(): iterable
+    {
+        yield 'self' => ['self::m()', '', 'm'];
+        yield 'static' => ['static::m()', '', 'm'];
+        yield 'short name' => ['V::m()', '', 'm'];
+        yield 'fully qualified' => ['\\App\\V::m()', '', 'm'];
+        yield 'namespace relative' => ['namespace\\V::m()', '', 'm'];
+        yield 'lowercase short' => ['v::m()', '', 'm'];
+        yield 'import alias' => ['Me::m()', 'use App\\V as Me;', 'm'];
+        yield 'new short receiver' => ['(new V())->im()', '', 'im'];
+        yield 'first class self' => ['self::m(...)', '', 'm'];
+        yield 'first class short' => ['V::m(...)', '', 'm'];
+        yield 'callable array self' => ["[self::class, 'm']", '', 'm'];
+        yield 'callable array short' => ["[V::class, 'm']", '', 'm'];
+        yield 'callable array fully qualified' => ["[\\App\\V::class, 'm']", '', 'm'];
+        yield 'callable array string class' => ["['App\\V', 'm']", '', 'm'];
+        yield 'callable string self' => ["array_map('self::m', [])", '', 'm'];
+        yield 'callable string fully qualified' => ["array_map('App\\V::m', [])", '', 'm'];
+        yield 'closure from callable' => ["\\Closure::fromCallable([self::class, 'm'])", '', 'm'];
+    }
+
+    #[Test]
+    #[DataProvider('ownClassUseForms')]
+    public function itCountsEveryOwnClassUseForm(string $expression, string $import, string $target): void
+    {
+        $metrics = $this->collectMetrics("<?php namespace App; {$import} class V { private static function m(): void {} private function im(): void {} public function run(): void { \$x = {$expression}; } }");
+        $unused = array_column($metrics->entries('code-smell.unused-private.method:App\\V'), 'name');
+
+        self::assertNotContains($target, $unused);
+    }
+
+    #[Test]
+    public function itDoesNotResolveAShortCallableStringThroughTheCurrentNamespace(): void
+    {
+        $metrics = $this->collectMetrics("<?php namespace App; class V { private static function m(): void {} public function run(): void { \$x = array_map('V::m', []); } }");
+
+        self::assertSame(['m'], array_column($metrics->entries('code-smell.unused-private.method:App\\V'), 'name'));
+    }
+
+    #[Test]
     public function itRecognizesPrivateMethodCalledOnNewSelfInstance(): void
     {
         $code = <<<'PHP'
@@ -1756,6 +1814,26 @@ PHP);
         self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\PingPong'));
     }
 
+    #[Test]
+    public function itUsesTheForwardDeclaredTraitFromTheImportedNamespace(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+namespace Wrong;
+trait Useful { public function run(): void {} }
+namespace App;
+use Right\Useful as Forwarded;
+class Subject {
+    use Forwarded;
+    private function helper(): void {}
+}
+namespace Right;
+trait Useful { public function run(): void { $this->helper(); } }
+PHP);
+
+        self::assertSame(0, $metrics->entryCount('code-smell.unused-private.method:App\\Subject'));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $this->parseAndTraverse($code);
@@ -1767,6 +1845,7 @@ PHP);
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+        \Qualimetrix\Core\Ast\NameResolution::resolve($ast);
 
         $traverser = new NodeTraverser();
         $registrar = (new DeclarationRegistrarFactory())->createForFile();

@@ -69,6 +69,21 @@ PHP;
     }
 
     #[Test]
+    public function itProjectsTheResolvedReadNameRatherThanParsingTheContextText(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+echo ${'_' . 'GET'}['name'];
+exec($GLOBALS['_POST']['cmd']);
+$q = "SELECT * FROM t WHERE id = " . $GLOBALS['_REQUEST']['id'];
+PHP);
+
+        self::assertSame('_GET', $metrics->entries('security.xss')[0]['superglobal']);
+        self::assertSame('_POST', $metrics->entries('security.command_injection')[0]['superglobal']);
+        self::assertSame('_REQUEST', $metrics->entries('security.sql_injection')[0]['superglobal']);
+    }
+
+    #[Test]
     public function itAssignsAPatternInsideAMethodToThatMethodWithoutSerializingContext(): void
     {
         $metrics = $this->collectMetrics('<?php namespace App; class Query { public function run(): void { echo $_GET["id"]; } }');

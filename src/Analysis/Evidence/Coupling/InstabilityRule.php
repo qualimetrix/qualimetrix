@@ -17,9 +17,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -119,11 +119,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
      * (`$instabilityValue` — see {@see analyzeClassLevel()} and
      * {@see analyzeNamespaceLevel()}) as `metricValue`, judged worse the
      * higher it goes: {@see ClassInstabilityOptions::getSeverity()}'s
-     * `$instability >= $this->maxError` (line 61) / `$instability >=
-     * $this->maxWarning` (line 65) at the class level, and
+     * `$instability >= $this->maxError` / `$instability >=
+     * $this->maxWarning` at the class level, and
      * {@see NamespaceInstabilityOptions::getSeverity()}'s `$instability >=
-     * $this->maxError` (line 62) / `$instability >= $this->maxWarning`
-     * (line 66) at the namespace level.
+     * $this->maxError` / `$instability >= $this->maxWarning`
+     * at the namespace level.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -152,7 +152,12 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $findings = [];
 
         foreach ($context->metrics->allDeclarations() as $classInfo) {
-            $finding = $this->classFinding($classInfo, $context, $classOptions);
+            $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+
+            $finding = $this->classFinding(new Location($classInfo->file, $classInfo->line), $subject, $context, $classOptions);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -162,15 +167,11 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     }
 
     private function classFinding(
-        SymbolInfo $classInfo,
+        Location $location,
+        MetricSubject $subject,
         AnalysisContext $context,
         ClassInstabilityOptions $options,
     ): ?Finding {
-        $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
-        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
-            return null;
-        }
-
         $metrics = $context->metrics->get($subject->toSymbolPath());
         $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
         if ($instability === null) {
@@ -194,13 +195,13 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $threshold = $severity === Severity::Error ? $effectiveOptions->maxError : $effectiveOptions->maxWarning;
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
                 $instabilityValue,
                 $ca,
                 $ce,
@@ -266,7 +267,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
                     ruleName: $this->getName(),
                     code: self::NAME,
                     message: \sprintf(
-                        'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                        'Instability is %.2f (Ca=%d, Ce=%d), ' . ThresholdCrossing::of($instabilityValue, $threshold)->value . ' threshold of %.2f. Reduce outgoing dependencies',
                         $instabilityValue,
                         $ca,
                         $ce,

@@ -369,9 +369,9 @@ final class InstabilityRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
-        // 0.88 is above warning (0.8), below error (0.95)
+        // 0.80 reaches warning, below error (0.95)
         $metricBag = (new MetricBag())
-            ->with('coupling.instability', 0.88)
+            ->with('coupling.instability', 0.8)
             ->with('coupling.ca', 3)
             ->with('coupling.ce', 22)
             ->with('size.class-count.sum', 5);
@@ -387,7 +387,7 @@ final class InstabilityRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('Instability is 0.88 (Ca=3, Ce=22), exceeds threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
+        self::assertStringContainsString('Instability is 0.80 (Ca=3, Ce=22), reaches threshold of 0.80. Reduce outgoing dependencies', $findings[0]->message);
         self::assertSame('coupling.instability', $findings[0]->code);
     }
 
@@ -418,6 +418,7 @@ final class InstabilityRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(0.98, $findings[0]->metricValue);
+        self::assertStringContainsString('exceeds threshold of 0.95', $findings[0]->message);
     }
 
     #[Test]
@@ -781,6 +782,10 @@ final class InstabilityRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($instability === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
+            self::assertSame($instability, $findings[0]->metricValue);
+            self::assertEquals($selectedThreshold, $findings[0]->threshold);
         }
     }
 
@@ -791,6 +796,7 @@ final class InstabilityRuleTest extends TestCase
     {
         yield 'below warning threshold' => [0.79, 0.8, 0.95, null];
         yield 'at warning threshold' => [0.8, 0.8, 0.95, Severity::Warning];
+        yield 'raw above warning, same two-digit display' => [0.8049, 0.8, 0.95, Severity::Warning];
         yield 'above warning, below error' => [0.9, 0.8, 0.95, Severity::Warning];
         yield 'at error threshold' => [0.95, 0.8, 0.95, Severity::Error];
         yield 'above error threshold' => [1.0, 0.8, 0.95, Severity::Error];

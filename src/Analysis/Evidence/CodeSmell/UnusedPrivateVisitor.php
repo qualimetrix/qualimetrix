@@ -49,7 +49,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterfac
  *
  * Limitations:
  * - Variable method/property access ($this->$name) not detected
- * - Callable strings ('self::method') and callable arrays whose method name is not a string literal not detected
+ * - Callable arrays whose method name is not a string literal are not detected
  * - Traits from other files are not resolved
  */
 final class UnusedPrivateVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
@@ -166,7 +166,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             return null;
         }
 
-        $this->trackSameClassReceiverAssignment($node);
+        $this->trackSameClassReceiverAssignment($node, $classData);
 
         if ($node instanceof Property) {
             $this->trackPropertyDeclaration($node, $classData);
@@ -266,7 +266,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
 
         // Resolve same-file trait usages
         if (($node instanceof Class_ || $node instanceof Enum_) && $this->traitDefinitions !== []) {
-            $resolver = new TraitUsageResolver($this->traitDefinitions, $this->currentNamespace);
+            $resolver = new TraitUsageResolver($this->traitDefinitions);
             $resolver->resolve($node->stmts, $this->classData[$fqn]);
         }
 
@@ -338,7 +338,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         return $className;
     }
 
-    private function trackSameClassReceiverAssignment(Node $node): void
+    private function trackSameClassReceiverAssignment(Node $node, UnusedPrivateClassData $data): void
     {
         if (!$node instanceof Assign
             || !$node->var instanceof Variable
@@ -353,7 +353,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         $name = $node->var->name;
         if ($node->expr instanceof New_
             && $node->expr->class instanceof Node\Name
-            && $this->isSelfOrStatic($node->expr->class)
+            && $this->isOwnClassNode($node->expr->class, $data)
         ) {
             $this->sameClassReceiverScopes[$scopeIndex][$name] = true;
 

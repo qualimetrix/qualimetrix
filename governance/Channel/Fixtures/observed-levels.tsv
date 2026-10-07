@@ -13,7 +13,7 @@ architecture.potential-shadow#architecture.potential-shadow	project
 architecture.unassigned-class#architecture.unassigned-class	project
 architecture.unmatched-exclude#architecture.unmatched-exclude	project
 architecture.unreachable-layer#architecture.unreachable-layer	project
-code-smell.boolean-argument#code-smell.boolean-argument	callable
+code-smell.boolean-argument#code-smell.boolean-argument	callable file
 code-smell.constructor-overinjection#code-smell.constructor-overinjection	callable
 code-smell.count-in-loop#code-smell.count-in-loop	callable file
 code-smell.debug-code#code-smell.debug-code	callable file
@@ -59,11 +59,11 @@ design.type-coverage.return#design.type-coverage.return	class
 discovery.unmatched-exclude#discovery.unmatched-exclude	project
 duplication.clone#duplication.clone	file
 maintainability.mi#maintainability.mi	callable
-security.command-injection#security.command-injection	callable
-security.hardcoded-credentials#security.hardcoded-credentials	class
-security.sensitive-parameter#security.sensitive-parameter	callable
-security.sql-injection#security.sql-injection	callable
-security.xss#security.xss	callable
+security.command-injection#security.command-injection	callable file
+security.hardcoded-credentials#security.hardcoded-credentials	callable class file
+security.sensitive-parameter#security.sensitive-parameter	callable file
+security.sql-injection#security.sql-injection	callable file
+security.xss#security.xss	callable file
 size.class-count#size.class-count	namespace
 size.method-count#size.method-count	class
 size.property-count#size.property-count	class

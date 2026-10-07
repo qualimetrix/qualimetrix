@@ -77,6 +77,21 @@ final class SensitiveParameterRuleTest extends TestCase
         self::assertStringContainsString('SensitiveParameter', $findings[0]->message);
     }
 
+    #[Test]
+    public function itProjectsANamedCallableToItsLogicalSymbol(): void
+    {
+        $findings = (new SensitiveParameterRule(new SensitiveParameterOptions()))->analyze($this->createContext(
+            (new MetricBag())->withEntry('security.sensitive-parameter', [
+                'subjectKind' => 'declaration', 'logicalKind' => 'method',
+                'namespace' => 'App', 'class' => 'AuthService', 'member' => 'login',
+                'line' => 12, 'paramName' => 'password',
+            ]),
+        ));
+
+        self::assertCount(1, $findings);
+        self::assertSame($findings[0]->subject->toSymbolPath()->toString(), $findings[0]->symbolPath->toString());
+    }
+
     /**
      * Pins `occurrence` to the channel's frozen spelling read off a finding
      * produced by {@see SensitiveParameterRule::analyze()} itself, so a

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Security collects file-level evidence for hardcoded credentials, direct use of
+Security collects evidence for hardcoded credentials, direct use of
 superglobals in dangerous contexts, and parameters that can expose secrets in
 stack traces. Its co-located rules turn that evidence into findings without
 performing AST traversal.
@@ -26,6 +26,7 @@ the enclosing query did not reach, such as a subquery built behind a call.
 ```
 Security/
 ├── Credential/
+│   ├── CredentialDeclarations.php
 │   ├── CredentialLiterals.php
 │   ├── CredentialLocation.php
 │   ├── CredentialValue.php
@@ -79,13 +80,23 @@ off from its qualifier (`apikey`, `dbpassword`). Its prefix/suffix blacklists
 keep names such as `passwordHash`, `tokenStorage`, `cacheKey`, and
 `OPTION_PASSWORD` out of the credential context.
 
-`CredentialLiterals` finds a string literal stored under a name and
-`CredentialValue` judges the literal itself. The name comes from a variable,
-property or static property assignment (also `??=`), a string-keyed array
-element assignment, an array item, a class constant, `define()`, a property or
-parameter default, and an enum case. Values that are dotted identifiers (each
-segment is a code identifier or lowercase letter-only words joined by hyphens;
-not a JWT) or messages of three or more whitespace-separated words are skipped.
+`CredentialLiterals` finds a string literal stored under a name in assignments
+and array items. `CredentialDeclarations` handles class, namespace and global
+constants, `define()`, property and parameter defaults, and enum cases.
+`CredentialValue` judges the literal itself. Lowercase dotted identifier values,
+whole angle-bracket placeholders, native built-in PHP type syntax, and messages
+of three or more whitespace-separated words are skipped. Type syntax is parsed
+and checked against a built-in whitelist; this does not validate PHP type semantics.
+Uppercase dotted values are judged as possible credentials. A lowercase dotted
+secret phrase may still be skipped, while an alias-map value can be flagged.
+Bare `token8` remains outside the default sensitive-name policy.
+
+Direct superglobal sinks share Core's finite read shapes, including literal
+variable-variable names and literal `$GLOBALS` keys. An unknown dynamic name
+such as `$$name` cannot be identified. Each read node contributes once to an
+expression's reported sink evidence. Named class, method, and function findings
+carry declaration symbols; file-scope and anonymous evidence retain a file
+symbol and null namespace.
 
 ## Lifecycle
 

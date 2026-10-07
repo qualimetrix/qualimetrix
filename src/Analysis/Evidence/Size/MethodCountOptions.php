@@ -22,9 +22,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * Checks the number of methods in a class.
  * Thresholds based on common industry standards:
- * - <= 10-15 methods: good class size
- * - 20-30 methods: warning, class may be doing too much
- * - > 30 methods: error, class should be split
+ * - fewer than 20 methods: below the warning boundary
+ * - 20-29 methods: warning, class may be doing too much
+ * - 30 or more methods: error, class should be split
  */
 final readonly class MethodCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {

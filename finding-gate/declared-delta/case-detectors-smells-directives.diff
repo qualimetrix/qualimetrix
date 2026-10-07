@@ -1,0 +1,55 @@
+--- candidate
++++ reference (mapped)
+@@ -2,48 +2,4 @@
+-    "meta": {
+-        "version": "dev-main",
+-        "package": "qmx",
+-        "timestamp": "<normalized>",
+-        "docs": "https://qualimetrix.dev",
+-        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+-    },
+-    "scope": {
+-        "analyzed_files": 6,
+-        "generated_excluded_files": 0,
+-        "failed_files": 0,
+-        "complete": true,
+-        "produced_findings": 35,
+-        "project_scope": {
+-            "state": "covered",
+-            "uncoveredAutoloadTargets": [],
+-            "unjudgedChannels": [],
+-            "unjudgedValues": [],
+-            "reasons": []
+-        }
+-    },
+-    "selection": {
+-        "only": [],
+-        "disabled": []
+-    },
+-    "sweep": "narrow",
+-    "directives": [
+-        {
+-            "file": "src/Suppression.php",
+-            "line": 13,
+-            "form": "symbol",
+-            "target": "code-smell.eval",
+-            "effect": "effective",
+-            "reason": null,
+-            "masked_by": null,
+-            "boundary_observable": true,
+-            "refusals": []
+-        }
+-    ],
+-    "summary": {
+-        "total": 1,
+-        "effective": 1,
+-        "overrun": 0,
+-        "inert": 0,
+-        "unmeasured": 0,
+-        "refused": 0
+-    },
+-    "exit_code": 0
++    "error": "Internal error: No declared selection cell for channel \"code-smell.boolean-argument\".",
++    "exit_code": 1,
++    "position": null,
++    "source": null

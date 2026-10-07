@@ -17,9 +17,9 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -123,10 +123,10 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      * judged worse the higher it goes: the method's own (`$ccnValue` — see
      * {@see analyzeMethodLevel()}), per
      * {@see MethodComplexityOptions::getSeverity()}'s `$value >= $this->error`
-     * (line 53) / `$value >= $this->warning` (line 57), and the maximum among
+     * / `$value >= $this->warning`, and the maximum among
      * a class's methods (`$maxCcnValue` — see {@see analyzeClassLevel()}), per
      * {@see ClassComplexityOptions::getSeverity()}'s `$value >=
-     * $this->maxError` (line 55) / `$value >= $this->maxWarning` (line 59).
+     * $this->maxError` / `$value >= $this->maxWarning`.
      * One direction for both, which is why one declaration carries both
      * levels.
      *
@@ -187,7 +187,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
                     code: self::NAME,
-                    message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
+                    message: \sprintf('Cyclomatic complexity is %d, ' . ThresholdCrossing::of($ccnValue, $threshold)->value . ' threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
                     severity: $severity,
                     metricValue: $ccnValue,
                     recommendation: $recommendation,
@@ -246,7 +246,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
             /** @var ClassComplexityOptions $effectiveClassOptions */
             $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
-            $finding = $this->classFinding($classInfo, $subject, $maxCcnValue, $effectiveClassOptions);
+            $finding = $this->classFinding(new Location($classInfo->file, $classInfo->line), $subject, $maxCcnValue, $effectiveClassOptions);
             if ($finding !== null) {
                 $findings[] = $finding;
             }
@@ -256,7 +256,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     private function classFinding(
-        SymbolInfo $classInfo,
+        Location $location,
         MetricSubject $subject,
         int $maximum,
         ClassComplexityOptions $options,
@@ -274,12 +274,12 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         [$severity, $threshold] = $projection;
 
         return new Finding(
-            location: new Location($classInfo->file, $classInfo->line),
+            location: $location,
             subject: $subject,
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
-            message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
+            message: \sprintf('Maximum method cyclomatic complexity is %d, ' . ThresholdCrossing::of($maximum, $threshold)->value . ' threshold of %d. Refactor the most complex methods', $maximum, $threshold),
             severity: $severity,
             metricValue: $maximum,
             recommendation: \sprintf('Max cyclomatic complexity: %d (threshold: %d) — too many code paths', $maximum, $threshold),

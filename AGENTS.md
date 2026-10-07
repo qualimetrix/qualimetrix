@@ -71,7 +71,7 @@ live in `docs/internal/generated/modular-architecture/`, never in prose.
 
 ```
 src/
-├── Core/              # Cross-cutting primitives (no project imports; PHP, PhpParser\Node, Composer\InstalledVersions)
+├── Core/              # Cross-cutting primitives (no project imports; php-parser types only in Core/Ast/, Composer\InstalledVersions in Version.php)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # ordered configuration document resolution
 │   ├── ProjectManifest/     # analysed Composer source facts and invocation snapshot contracts
@@ -311,9 +311,10 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 - **Leaf capabilities** depend only on declared public contracts; sibling
   internals and taxonomy parents are not approved targets for new imports.
 - **Core** contains neutral primitives only and imports nothing from the
-  project outside `Core`; its only external types are `PhpParser\Node` and
-  `Composer\InstalledVersions`. No control enforces that list — a new external
-  import in Core is a review decision (see `src/Core/README.md`).
+  project outside `Core`; PHP-parser types are confined to `Core/Ast/`, and
+  `Version.php` uses `Composer\InstalledVersions`. No control enforces that
+  external-type boundary — a new external import in Core is a review decision
+  (see `src/Core/README.md`).
 - **Analysis\Run phase ports** are limited to the FileSet inspection
   participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;

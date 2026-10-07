@@ -1,6 +1,6 @@
 # Default Thresholds Reference
 
-This page lists the default thresholds for every rule in Qualimetrix. When a metric exceeds the **warning** threshold, a warning is reported. When it exceeds the **error** threshold, an error is reported.
+This page lists the default thresholds for every rule in Qualimetrix. For higher-is-worse metrics, a value at or above the **warning** boundary reports a warning; at or above the **error** boundary it reports an error. Lower-is-worse rules use the opposite direction.
 
 ## Complexity Rules
 

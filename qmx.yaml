@@ -152,6 +152,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\AttemptWork'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ChainOfAttempts'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule'
@@ -166,8 +167,10 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\LiteralCallableUse'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule'
+        - 'Qualimetrix\Analysis\Evidence\CodeSmell\OwnClassReference'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountVisitor'
         - 'Qualimetrix\Analysis\Evidence\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector'
@@ -487,6 +490,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule'
         - 'Qualimetrix\Analysis\Evidence\Security\CommandInjectionDetector'
         - 'Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule'
+        - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialDeclarations'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLiterals'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLocation'
         - 'Qualimetrix\Analysis\Evidence\Security\Credential\CredentialValue'
@@ -638,6 +642,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\SelectionCellAddress'
         - 'Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
+        - 'Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
         - 'Qualimetrix\Analysis\Finding\Contract\ValueReach'
         - 'Qualimetrix\Analysis\Finding\Exclusion\ConfiguredSuppression'
@@ -1036,6 +1041,9 @@ architecture:
     - name: core-neutral
       patterns:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
+        - 'Qualimetrix\Core\Ast\NameResolution'
+        - 'Qualimetrix\Core\Ast\ResolvedName'
+        - 'Qualimetrix\Core\Ast\SuperglobalRead'
         - 'Qualimetrix\Core\Exception\ParseException'
         - 'Qualimetrix\Core\Observation\WorseDirection'
         - 'Qualimetrix\Core\Pattern\CompiledSelector'
@@ -1511,6 +1519,7 @@ architecture:
     analysis-evidence-measurement:
       - analysis-evidence-dependencymodel
       - analysis-projectmanifest
+      - core-neutral
       - core-path
       - core-profiler
       - core-symbol
@@ -1524,6 +1533,7 @@ architecture:
     analysis-evidence-security:
       - analysis-evidence-measurement
       - analysis-finding
+      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -2120,6 +2130,19 @@ rules:
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
+  size.class-count:
+    suppress_namespaces:
+      # Own class count 37; temporary until this exact subject is split.
+      - exact: 'Qualimetrix\Analysis\Evidence\CodeSmell'
+      # Own class count 25; temporary until this exact subject is split.
+      - exact: 'Qualimetrix\Analysis\Evidence\Coupling'
+      # Own class count 28; temporary until this exact subject is split.
+      - exact: 'Qualimetrix\Analysis\Finding\Contract\Rule'
+      # Own class count 53; temporary until this exact subject is split.
+      - exact: 'Qualimetrix\Analysis\Policy\Baseline'
+      # Own class count 55; temporary until this exact subject is split.
+      - exact: 'Qualimetrix\Infrastructure\Console'
+
   coupling.instability:
     suppress_namespace_channels:
       coupling.instability:namespace:
@@ -2160,6 +2183,9 @@ rules:
         # services; moving one incoming edge cannot reduce that responsibility.
         - exact: 'Qualimetrix\Infrastructure\DependencyInjection\Configurator'
     suppress_paths:
+      # Two internal credential classifiers read this native type policy: Ca=2, Ce=9, I=0.818182.
+      # Moving a reader only transfers the small-population signal.
+      - exact: src/Analysis/Evidence/Security/Credential/CredentialValue.php
       # Each exact operation has only two readers; moving one edge relocates instability.
       # Measured I: 0.857143, 0.8, 0.888889, 0.8 and 0.857143 respectively.
       - exact: src/Analysis/Policy/Baseline/BaselineEntryParser.php
@@ -2249,6 +2275,12 @@ rules:
   duplication.clone:
     min_tokens: 100
     suppress_paths:
+      # These exact rules share only normalized Finding/threshold framing, not a common judgement.
+      # DIT uses exact declarations; NOC uses logical aggregates; the other pair crosses owners.
+      - exact: src/Analysis/Evidence/CodeSmell/LongParameterListRule.php
+      - exact: src/Analysis/Evidence/Size/MethodCountRule.php
+      - exact: src/Analysis/Evidence/Design/Inheritance/InheritanceRule.php
+      - exact: src/Analysis/Evidence/Design/Inheritance/NocRule.php
       - regex: 'src/Analysis/Evidence/CodeSmell/.*Options\.php'
       - regex: 'src/Analysis/Evidence/Cohesion/.*Options\.php'
       - regex: 'src/Analysis/Evidence/Complexity/.*Options\.php'
@@ -2320,7 +2352,6 @@ rules:
       - regex: 'src/Analysis/Evidence/Design/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Maintainability/.*Visitor\.php'
       - regex: 'src/Analysis/Evidence/Security/.*Visitor\.php'
-      - regex: 'src/Analysis/Evidence/Size/.*Visitor\.php'
 
   # --- Code Smells ---
 

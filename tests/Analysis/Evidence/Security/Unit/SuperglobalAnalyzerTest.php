@@ -42,6 +42,9 @@ final class SuperglobalAnalyzerTest extends TestCase
         yield '$_POST element' => ['$_POST["a"]', '_POST'];
         yield '$_REQUEST nested element' => ['$_REQUEST["a"]["b"]', '_REQUEST'];
         yield '$_COOKIE element' => ['$_COOKIE["a"]', '_COOKIE'];
+        yield 'literal variable name' => ["\${'_GET'}['a']", '_GET'];
+        yield 'constant concatenated variable name' => ["\${'_' . 'GET'}['a']", '_GET'];
+        yield 'GLOBALS key' => ["\$GLOBALS['_GET']['a']", '_GET'];
         yield 'concat, superglobal on the right' => ['"a" . $_GET["x"]', '_GET'];
         yield 'nested concat' => ['"a" . ("b" . $_POST["x"])', '_POST'];
         yield 'interpolation' => ['"a {$_GET[\'x\']}"', '_GET'];

@@ -481,8 +481,8 @@ WMC (Weighted Methods per Class) -- это **сумма цикломатичес
 
 | Уровень | Порог | Серьёзность |
 | ------- | ----- | ----------- |
-| Warning | > 50  | Warning     |
-| Error   | > 80  | Error       |
+| Warning | >= 50 | Warning     |
+| Error   | >= 80 | Error       |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->

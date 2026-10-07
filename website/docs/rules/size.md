@@ -126,20 +126,20 @@ class OrderService
 
 **Rule ID:** `size.class-count`
 
-**Judged metric:** `size.class-count.sum`
+**Judged metric:** `size.class-count`
 
 <!-- llms:skip-begin -->
 ### What it measures
 
-Counts the number of classes in a namespace (package). This is measured at the namespace level, not the class level. A namespace with too many classes is hard to navigate and likely has too broad a scope.
+Counts classes declared directly in each namespace (package), including parent namespaces. Descendant classes remain in the published `size.class-count.sum` subtree metric but do not contribute to this rule's verdict for the parent. A namespace with too many own classes is hard to navigate and likely has too broad a scope.
 
 **How to read the value:**
 
 | Classes | Interpretation                              |
 | ------- | ------------------------------------------- |
 | 1--10   | Focused namespace                           |
-| 11--15  | Moderate namespace                          |
-| 16--25  | Large namespace -- consider sub-namespacing |
+| 11--14  | Moderate namespace                          |
+| 15--24  | Large namespace -- consider sub-namespacing |
 | 25+     | Bloated namespace                           |
 
 <!-- llms:skip-end -->
@@ -232,12 +232,12 @@ Counts the number of properties (fields) in a class. A class with many propertie
 | Properties | Interpretation                           |
 | ---------- | ---------------------------------------- |
 | 1--10      | Normal                                   |
-| 11--15     | Large -- review for data clumps          |
-| 16--20     | Heavy -- consider splitting or using VOs |
+| 11--14     | Large -- review for data clumps          |
+| 15--19     | Heavy -- consider splitting or using VOs |
 | 20+        | Excessive                                |
 
 !!! note
-    This rule uses a strict comparison (`>` instead of `>=`). A class with exactly 15 properties will **not** trigger a warning; it needs 16 or more.
+    This rule uses an inclusive comparison (`>=`). A class with exactly 15 properties reaches the default warning boundary.
 
 <!-- llms:skip-end -->
 
@@ -246,9 +246,9 @@ Counts the number of properties (fields) in a class. A class with many propertie
 
 | Value  | Severity | Meaning                                          |
 | ------ | -------- | ------------------------------------------------ |
-| 1--15  | OK       | Reasonable number of properties                  |
-| 16--20 | Warning  | Too many properties, consider extracting objects |
-| 21+    | Error    | Far too many properties, refactor needed         |
+| 1--14  | OK       | Reasonable number of properties                  |
+| 15--19 | Warning  | Too many properties, consider extracting objects |
+| 20+    | Error    | Far too many properties, refactor needed         |
 <!-- llms:skip-end -->
 
 ### Configuration
@@ -256,8 +256,8 @@ Counts the number of properties (fields) in a class. A class with many propertie
 | Option                | Default | Description                                                           |
 | --------------------- | ------- | --------------------------------------------------------------------- |
 | `enabled`             | `true`  | Enable or disable this rule                                           |
-| `warning`             | `15`    | Property count above this triggers warning                            |
-| `error`               | `20`    | Property count above this triggers error                              |
+| `warning`             | `15`    | Property count at or above this triggers warning                      |
+| `error`               | `20`    | Property count at or above this triggers error                        |
 | `excludeReadonly`     | `true`  | Skip `readonly` classes (DTOs, value objects)                         |
 | `excludePromotedOnly` | `true`  | Skip classes where all properties are promoted constructor parameters |
 

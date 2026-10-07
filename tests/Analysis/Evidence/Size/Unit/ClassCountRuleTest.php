@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Size\Unit;
 
 use InvalidArgumentException;
+use LogicException;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -108,7 +109,7 @@ final class ClassCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
-        $metricBag = (new MetricBag())->with('size.class-count.sum', 5);
+        $metricBag = (new MetricBag())->with('size.class-count', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -130,7 +131,7 @@ final class ClassCountRuleTest extends TestCase
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 18 classes is above warning (15) but below error (25)
-        $metricBag = (new MetricBag())->with('size.class-count.sum', 18);
+        $metricBag = (new MetricBag())->with('size.class-count', 18);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -158,7 +159,7 @@ final class ClassCountRuleTest extends TestCase
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 30 classes is above error threshold (25)
-        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -187,7 +188,7 @@ final class ClassCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Test');
         $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 0);
 
-        $metricBag = (new MetricBag())->with('size.class-count.sum', $classCount);
+        $metricBag = (new MetricBag())->with('size.class-count', $classCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -203,6 +204,8 @@ final class ClassCountRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($classCount === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 
@@ -218,23 +221,52 @@ final class ClassCountRuleTest extends TestCase
         yield 'above error' => [20, 10, 15, Severity::Error];
     }
 
-    /**
-     * ADR 0046 declares the channel judges the recursive `.sum`, not the
-     * namespace's own count: a corpus run
-     * cannot distinguish the two because the rule skips every non-leaf
-     * subject where they diverge. Here the divergence is injected directly
-     * into the `MetricBag`, so a rule that regressed to reading the base
-     * key would flip this assertion.
-     */
     #[Test]
-    public function itFollowsSumWhenSumCrossesThresholdButBaseDoesNot(): void
+    public function itJudgesEachNamespaceByItsOwnClassesIncludingParents(): void
+    {
+        $rule = new ClassCountRule(new ClassCountOptions());
+        $large = SymbolPath::forNamespace('App\\Large');
+        $largeChild = SymbolPath::forNamespace('App\\Large\\Child');
+        $small = SymbolPath::forNamespace('App\\Small');
+        $smallChild = SymbolPath::forNamespace('App\\Small\\Child');
+        $counts = [
+            'App\\Large' => (new MetricBag())->with('size.class-count', 30)->with('size.class-count.sum', 31),
+            'App\\Large\\Child' => (new MetricBag())->with('size.class-count', 1)->with('size.class-count.sum', 1),
+            'App\\Small' => (new MetricBag())->with('size.class-count', 3)->with('size.class-count.sum', 30),
+            'App\\Small\\Child' => (new MetricBag())->with('size.class-count', 27)->with('size.class-count.sum', 27),
+        ];
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([
+            self::subjectInfo($large, RelativePath::fromString('src/Large.php'), 0),
+            self::subjectInfo($largeChild, RelativePath::fromString('src/Large/Child.php'), 0),
+            self::subjectInfo($small, RelativePath::fromString('src/Small.php'), 0),
+            self::subjectInfo($smallChild, RelativePath::fromString('src/Small/Child.php'), 0),
+        ]);
+        $repository->method('get')->willReturnCallback(static function (SymbolPath $path) use ($counts): MetricBag {
+            if ($path->namespace === null || !\array_key_exists($path->namespace, $counts)) {
+                throw new LogicException('The fixture has no count for this namespace.');
+            }
+
+            return $counts[$path->namespace];
+        });
+
+        $findings = $rule->analyze(new AnalysisContext($repository, namespaceTree: new NamespaceTree([
+            'App\\Large', 'App\\Large\\Child', 'App\\Small', 'App\\Small\\Child',
+        ])));
+
+        self::assertCount(2, $findings);
+        self::assertSame([30, 27], array_map(static fn($finding): int|float|null => $finding->metricValue, $findings));
+        self::assertSame([$large, $smallChild], array_map(static fn($finding): SymbolPath => $finding->symbolPath, $findings));
+    }
+
+    #[Test]
+    public function itStaysSilentWhenOnlySubtreeCountCrossesThreshold(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
-        // Base (own namespace count) stays below warning; only .sum crosses it.
         $metricBag = (new MetricBag())
             ->with('size.class-count', 3)
             ->with('size.class-count.sum', 18);
@@ -248,27 +280,20 @@ final class ClassCountRuleTest extends TestCase
         $context = new AnalysisContext($repository);
         $findings = $rule->analyze($context);
 
-        self::assertCount(1, $findings);
-        self::assertSame(18, $findings[0]->metricValue);
+        self::assertSame([], $findings);
     }
 
-    /**
-     * Mirror of the case above: base crosses the error threshold while
-     * `.sum` stays below every threshold. A rule reading the base key would
-     * wrongly emit a finding here.
-     */
     #[Test]
-    public function itStaysSilentWhenBaseCrossesThresholdButSumDoesNot(): void
+    public function itJudgesOwnCountWhenParentSubtreeIsLarger(): void
     {
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
-        // Base (own namespace count) is above error; only .sum stays below warning.
         $metricBag = (new MetricBag())
             ->with('size.class-count', 30)
-            ->with('size.class-count.sum', 5);
+            ->with('size.class-count.sum', 35);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -278,7 +303,9 @@ final class ClassCountRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyze($context));
+        $findings = $rule->analyze($context);
+        self::assertCount(1, $findings);
+        self::assertSame(30, $findings[0]->metricValue);
     }
 
     #[Test]

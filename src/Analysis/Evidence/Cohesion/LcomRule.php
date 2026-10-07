@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -98,7 +99,7 @@ final class LcomRule extends AbstractRule
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
         $message = \sprintf(
-            'LCOM (Lack of Cohesion) is %d, exceeds threshold of %d. Class could be split into %d cohesive parts',
+            'LCOM (Lack of Cohesion) is %d, ' . ThresholdCrossing::of($lcomValue, $threshold)->value . ' threshold of %d. Class could be split into %d cohesive parts',
             $lcomValue,
             $threshold,
             $lcomValue,
@@ -146,8 +147,8 @@ final class LcomRule extends AbstractRule
     /**
      * `cohesion.lcom` reports LCOM4 (`$lcomValue` — see the emission above)
      * as `metricValue`, judged worse the higher it goes:
-     * {@see LcomOptions::getSeverity()}'s `$value >= $this->error` (line 94)
-     * / `$value >= $this->warning` (line 98).
+     * {@see LcomOptions::getSeverity()}'s `$value >= $this->error`
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */

@@ -209,7 +209,7 @@ rules:
 
 **Override thresholds:**
 
-Each rule defines severity levels. When a metric exceeds a threshold, a violation is reported at that severity. For example, the cyclomatic complexity rule has thresholds for methods:
+Each rule defines severity levels. When a metric reaches or crosses a threshold in the rule's adverse direction, a violation is reported at that severity. For example, the cyclomatic complexity rule has thresholds for methods:
 
 ```yaml
 rules:

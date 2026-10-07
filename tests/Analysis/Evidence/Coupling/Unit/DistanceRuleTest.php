@@ -343,6 +343,10 @@ final class DistanceRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($distance === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
+            self::assertSame($distance, $findings[0]->metricValue);
+            self::assertEquals($selectedThreshold, $findings[0]->threshold);
         }
     }
 
@@ -353,6 +357,7 @@ final class DistanceRuleTest extends TestCase
     {
         yield 'below warning threshold' => [0.29, 0.3, 0.5, null];
         yield 'at warning threshold' => [0.3, 0.3, 0.5, Severity::Warning];
+        yield 'raw above warning, same two-digit display' => [0.3049, 0.3, 0.5, Severity::Warning];
         yield 'above warning, below error' => [0.4, 0.3, 0.5, Severity::Warning];
         yield 'at error threshold' => [0.5, 0.3, 0.5, Severity::Error];
         yield 'above error threshold' => [0.8, 0.3, 0.5, Severity::Error];

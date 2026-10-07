@@ -1,0 +1,5 @@
+--- candidate
++++ reference (mapped)
+@@ -198,1 +198,1 @@
+-    size.class-count judges size.class-count
++    size.class-count judges size.class-count.sum

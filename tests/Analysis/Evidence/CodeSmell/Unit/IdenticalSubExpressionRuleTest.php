@@ -92,9 +92,24 @@ final class IdenticalSubExpressionRuleTest extends TestCase
             IdenticalSubExpressionRule::channelDeclarations()['code-smell.identical-subexpression']->levels,
         );
         self::assertSame(
-            [SymbolLevel::Callable],
+            [SymbolLevel::Callable, SymbolLevel::File],
             BooleanArgumentRule::channelDeclarations()['code-smell.boolean-argument']->levels,
         );
+    }
+
+    #[Test]
+    public function itProjectsADeclarationEntryToItsLogicalSymbol(): void
+    {
+        $entry = [
+            'subjectKind' => 'declaration', 'logicalKind' => 'method',
+            'namespace' => 'App', 'class' => 'Example', 'member' => 'run',
+            'line' => 10, 'detail' => '',
+        ];
+        $findings = (new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions()))
+            ->analyze($this->createContext((new MetricBag())->withEntry('identicalSubExpression.identical_operands', $entry)));
+
+        self::assertCount(1, $findings);
+        self::assertSame($findings[0]->subject->toSymbolPath()->toString(), $findings[0]->symbolPath->toString());
     }
 
     /**

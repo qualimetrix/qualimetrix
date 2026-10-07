@@ -263,12 +263,12 @@ final class CaseInputTranslationTest extends TestCase
         self::assertSame(\QmxFindingGate\CaseOutcome::REFUSAL, $selector->outcome);
         self::assertNotContains('case:selector-after-split|rules', $scopes);
         self::assertNotContains('case:computed-cross-level|rules', $scopes);
-        self::assertCount(32, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
+        self::assertCount(35, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
         self::assertNotContains(
             'case:complexity|rules',
             array_map(static fn($expectation): ?string => $expectation->scopeContains, ChannelRenamePlants::caseListingFailures('complexity', true)),
         );
-        self::assertCount(32, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
+        self::assertCount(35, (new ReflectionProperty(ChannelRenamePlants::class, 'caseRules'))->getValue());
         foreach ($expectations as $expectation) {
             self::assertTrue($expectation->exactScope);
         }

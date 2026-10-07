@@ -54,6 +54,85 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
+    public function itFramesOnlyAnEmptyCapturedDeclaredBaselineRefusalAndKeepsAnalysisAuthority(): void
+    {
+        $tree = \QmxFindingGate\SelfTestOutcomes::fixture();
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredOutcomes::INDEX] = Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, [
+            ['alpha', \QmxFindingGate\DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'The reference refuses the new input.'],
+        ]);
+        $tree['candidateDeclarations'][DeclaredExactSurfaces::INDEX] = Tsv::render(DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'baseline-file', 'declared-exact-surfaces/baseline.diff', 'The baseline refusal changes this complete document.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/baseline.diff'] = "pending\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
+            $run = new RunContext(
+                Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
+                new GateReport(),
+                Corpus::load($root),
+                $maps,
+                ChannelSplit::of($maps),
+                MetricVocabulary::ofTree($root),
+                Normalization::fromRules([]),
+                \QmxFindingGate\Declarations::load($root),
+                $root,
+            );
+            $key = 'case:alpha|baseline-file';
+            $required = ExactSurfaceAuthority::footprint($key, $run)['required'];
+            self::assertContains(['side' => 'candidate', 'key' => $key, 'role' => 'records'], $required);
+            self::assertContains(['side' => 'candidate', 'key' => 'case:alpha|format:json', 'role' => 'ranking'], $required);
+            self::assertContains(['side' => 'reference', 'key' => $key, 'role' => 'outcome'], $required);
+            self::assertNotContains(['side' => 'reference', 'key' => $key, 'role' => 'records'], $required);
+            self::assertNotContains(['side' => 'reference', 'key' => 'case:alpha|format:json', 'role' => 'ranking'], $required);
+            self::assertNotContains(['side' => 'reference', 'key' => 'case:alpha|format:json', 'role' => 'tuple'], $required);
+
+            $baseline = "{\n  \"version\": 14,\n  \"entries\": {}\n" . str_repeat("\n", 240) . "}\n";
+            $refusal = "{\"error\":\"Refused input\",\"exit_code\":3,\"position\":null}\n";
+            $candidate = new \QmxFindingGate\CaptureResult([$key => $baseline], []);
+            $reference = new \QmxFindingGate\CaptureResult([
+                $key => '', 'case:alpha|exit:baseline:generate' => '3',
+                'case:alpha|stderr:baseline-file' => "Refused input\n",
+                'case:alpha|format:json' => $refusal,
+            ], []);
+            $pair = new SurfacePair($key, 'baseline-file', $baseline, '');
+            [$candidateFrame, $referenceFrame] = ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $reference], $run);
+            self::assertStringContainsString('records ', $candidateFrame);
+            self::assertStringStartsWith("visible 0\n\n", $referenceFrame);
+            self::assertStringContainsString('baseline-exit 1' . "\n" . '3', $referenceFrame);
+            self::assertStringContainsString('baseline-stderr', $referenceFrame);
+            self::assertStringContainsString('refusal ', $referenceFrame);
+            try {
+                ExactSurfaceAuthority::pair(
+                    $pair,
+                    ['candidate' => $candidate, 'reference' => new \QmxFindingGate\CaptureResult(array_replace($reference->artifacts, [$key => '{}']), [])],
+                    $run,
+                );
+                self::fail('A nonempty captured baseline was accepted as a refusal.');
+            } catch (GateError $error) {
+                self::assertSame(
+                    'A declared baseline refusal requires empty captured baseline content, a non-analysis exit, stderr and a JSON refusal.',
+                    $error->getMessage(),
+                );
+            }
+            $changedReference = new \QmxFindingGate\CaptureResult([
+                $key => '', 'case:alpha|exit:baseline:generate' => '2',
+                'case:alpha|stderr:baseline-file' => "Different refusal\n",
+                'case:alpha|format:json' => $refusal,
+            ], []);
+            self::assertNotSame($referenceFrame, ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $changedReference], $run)[1]);
+            $changedBaseline = str_replace('"version": 14', '"version": 13', $baseline);
+            self::assertNotSame($candidateFrame, ExactSurfaceAuthority::pair(
+                new SurfacePair($key, 'baseline-file', $changedBaseline, ''),
+                ['candidate' => new \QmxFindingGate\CaptureResult([$key => $changedBaseline], []), 'reference' => $reference],
+                $run,
+            )[0]);
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itRunsARegisteredStageBeforeTheStepItNames(): void
     {
         $report = new GateReport();

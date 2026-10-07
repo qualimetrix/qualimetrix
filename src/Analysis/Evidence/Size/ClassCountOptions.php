@@ -22,9 +22,9 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
  *
  * Checks the number of classes in a namespace.
  * Thresholds based on package cohesion principles:
- * - <= 15 classes: good namespace size, focused responsibility
- * - 15-25 classes: warning, namespace may be doing too much
- * - > 25 classes: error, namespace should be split into subnamespaces
+ * - fewer than 15 classes: below the warning boundary
+ * - 15-24 classes: warning, namespace may be doing too much
+ * - 25 or more classes: error, namespace should be split into subnamespaces
  */
 final readonly class ClassCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
 {

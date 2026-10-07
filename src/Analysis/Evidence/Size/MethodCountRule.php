@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -60,7 +61,7 @@ final class MethodCountRule extends AbstractRule
      * (`$methodCountValue` — see the emission above) as `metricValue`,
      * judged worse the higher it goes:
      * {@see MethodCountOptions::getSeverity()}'s `$value >= $this->error`
-     * (line 67) / `$value >= $this->warning` (line 71).
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -129,7 +130,7 @@ final class MethodCountRule extends AbstractRule
             symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
-            message: \sprintf('Method count is %d, exceeds threshold of %d. Consider splitting into smaller focused classes', $methodCount, $threshold),
+            message: \sprintf('Method count is %d, ' . ThresholdCrossing::of($methodCount, $threshold)->value . ' threshold of %d. Consider splitting into smaller focused classes', $methodCount, $threshold),
             severity: $severity,
             metricValue: $methodCount,
             recommendation: \sprintf('Methods: %d (threshold: %d) — too many methods', $methodCount, $threshold),

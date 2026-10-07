@@ -1,6 +1,7 @@
 {
     "id": "smells",
     "description": "The code-smell family: statement smells, dead code, over-injection, error suppression, plus one deliberately suppressed eval.",
+    "coverage": "auxiliary",
     "paths": [
         "src"
     ],

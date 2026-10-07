@@ -267,7 +267,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 
     /**
      * The aggregate half of the same check: `size.class-count.sum` is not a
-     * `MetricName` constant, and it is exactly what `ClassCountRule` reads.
+     * `MetricName` constant, and the synthetic fixture declares it exactly.
      * A check that only compared against constant values would have forced
      * every aggregate-reading channel to declare a key its rule never asks
      * for.

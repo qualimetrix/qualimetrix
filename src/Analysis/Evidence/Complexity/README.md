@@ -272,6 +272,10 @@ with data-class and method-count evidence; it does not collect or aggregate
 WMC itself. Its `complexity.wmc` channel retains the existing warning/error
 thresholds and `excludeDataClasses` option.
 
+Threshold messages compare the raw metric with the selected effective boundary:
+equality "reaches" it, while a greater value "exceeds" it. A rounded display
+value can look equal to the boundary even when the raw value exceeds it.
+
 ## Test ownership and Definition of Done
 
 Owned tests live under `tests/Analysis/Evidence/Complexity/`: the unit test

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\CodeSmell\Debug;
 
 use PhpParser\Node\Expr\ConstFetch;
-
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Name;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation;
@@ -26,16 +25,14 @@ final class DebugCodeSmells
         'debug_print_backtrace' => false,
         'debug_zval_dump' => false,
     ];
-    private const API_METHODS = ['dump', 'dd', 'debug', 'dumprawsql', 'dumpsql', 'debuginfo', '__debuginfo'];
-
-    public function location(FuncCall $node, ?string $method, string $subjectId): ?CodeSmellLocation
+    public function location(FuncCall $node, string $subjectId): ?CodeSmellLocation
     {
         if (!$node->name instanceof Name || $node->isFirstClassCallable()) {
             return null;
         }
 
         $name = $node->name->toLowerString();
-        if (!isset(self::FUNCTIONS[$name]) || $this->isReturnMode($node, self::FUNCTIONS[$name]) || \in_array($method, self::API_METHODS, true)) {
+        if (!isset(self::FUNCTIONS[$name]) || $this->isReturnMode($node, self::FUNCTIONS[$name])) {
             return null;
         }
 
@@ -44,7 +41,7 @@ final class DebugCodeSmells
 
     private function isReturnMode(FuncCall $node, bool $hasPositionalReturn): bool
     {
-        foreach ($node->getArgs() as $argument) {
+        foreach ($hasPositionalReturn ? $node->getArgs() : [] as $argument) {
             if ($argument->name?->toString() === 'return') {
                 return $this->isTrue($argument->value);
             }

@@ -290,7 +290,7 @@ final class ComplexityRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
         $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
-        $metricBag = (new MetricBag())->with('complexity.ccn.max', 35); // Above warning (30), below error (50)
+        $metricBag = (new MetricBag())->with('complexity.ccn.max', 30); // At warning (30), below error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')
@@ -307,8 +307,8 @@ final class ComplexityRuleTest extends TestCase
 
         self::assertCount(1, $findings);
         self::assertSame(Severity::Warning, $findings[0]->severity);
-        self::assertStringContainsString('Maximum method cyclomatic complexity is 35, exceeds threshold of 30', $findings[0]->message);
-        self::assertSame(35, $findings[0]->metricValue);
+        self::assertStringContainsString('Maximum method cyclomatic complexity is 30, reaches threshold of 30', $findings[0]->message);
+        self::assertSame(30, $findings[0]->metricValue);
     }
 
     #[Test]
@@ -513,6 +513,8 @@ final class ComplexityRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($ccn === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 

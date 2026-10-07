@@ -103,7 +103,7 @@ final class SensitiveParameterRule extends AbstractRule
         return new Finding(
             location: new Location($file, $line, precise: true),
             subject: $subject,
-            symbolPath: $fileInfo->symbolPath,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             code: self::NAME,
             message: 'Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces',
@@ -127,7 +127,7 @@ final class SensitiveParameterRule extends AbstractRule
     public static function channelDeclarations(): array
     {
         return [
-            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable),
+            self::NAME => ChannelDeclaration::occurrence(SymbolLevel::Callable, SymbolLevel::File),
         ];
     }
 }

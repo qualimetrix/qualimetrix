@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -108,7 +109,7 @@ final class WmcRule extends AbstractRule
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
+                'WMC (Weighted Methods per Class) is %d, ' . ThresholdCrossing::of($wmcValue, $threshold)->value . ' threshold of %d. Simplify methods or split the class',
                 $wmcValue,
                 $threshold,
             ),
@@ -165,11 +166,10 @@ final class WmcRule extends AbstractRule
     }
 
     /**
-     * `complexity.wmc` (this rule's channel prefix, despite the class living
-     * under the Complexity leaf) reports WMC (`$wmcValue` — see the
+     * `complexity.wmc` reports WMC (`$wmcValue` — see the
      * emission above) as `metricValue`, judged worse the higher it goes:
-     * {@see WmcOptions::getSeverity()}'s `$value >= $this->error` (line 76)
-     * / `$value >= $this->warning` (line 80).
+     * {@see WmcOptions::getSeverity()}'s `$value >= $this->error`
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */

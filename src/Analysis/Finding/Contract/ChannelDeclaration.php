@@ -129,9 +129,8 @@ final readonly class ChannelDeclaration
      * key, so both keep declaring {@see magnitude()}.
      *
      * Keys are declared in their **exact published spelling**, aggregate
-     * strategy included: `size.class-count` is judged as
-     * `size.class-count.sum` because that is the key
-     * {@see \Qualimetrix\Analysis\Evidence\Size\ClassCountRule} reads. A
+     * strategy included: `size.class-count` is judged as its own count, while
+     * channels reading aggregate keys must name the aggregate spelling. A
      * channel whose body chooses between keys names all of them — see
      * {@see JudgedMetrics} for why order is preserved and what the type does
      * not promise.

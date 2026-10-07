@@ -11,11 +11,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Security\Credential\CredentialDeclarations;
 use Qualimetrix\Analysis\Evidence\Security\Credential\CredentialLiterals;
 use Qualimetrix\Analysis\Evidence\Security\Credential\CredentialValue;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
 
 #[CoversClass(CredentialLiterals::class)]
+#[CoversClass(CredentialDeclarations::class)]
 #[CoversClass(CredentialValue::class)]
 final class CredentialLiteralsTest extends TestCase
 {
@@ -56,6 +58,9 @@ final class CredentialLiteralsTest extends TestCase
         yield 'dotted password mixing case across a hyphen' => ['<?php $dbPassword = "my-Secret.Pass";', 'variable'];
         yield 'dotted key of hyphen-joined alphanumeric groups' => ['<?php $apiKey = "sk-live.abc123-def456.ghi789-jkl012";', 'variable'];
         yield 'jwt' => ['<?php $authToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";', 'variable'];
+        yield 'capitalized dotted value' => ['<?php $secret = "App.Models.User";', 'variable'];
+        yield 'camelCase dotted value' => ['<?php $password = "auth.passwordReset.subject";', 'variable'];
+        yield 'sensitive accessor name' => ['<?php $config = ["setPassword" => "sk_live_1234567890"];', 'array_key'];
     }
 
     #[Test]
@@ -67,6 +72,86 @@ final class CredentialLiteralsTest extends TestCase
         }
 
         self::assertSame([], $locations);
+    }
+
+    #[Test]
+    public function itReportsEveryNamespaceAndGlobalConstantDeclarator(): void
+    {
+        $locations = [];
+        foreach ($this->nodes('<?php namespace App; const PASSWORD = "secret123", API_KEY = "sk_live_123456";') as $node) {
+            array_push($locations, ...(new CredentialLiterals(new SensitiveNameMatcher(), 4))->locations($node, 'file'));
+        }
+
+        self::assertSame(['file_const', 'file_const'], array_column($locations, 'pattern'));
+    }
+
+    #[Test]
+    #[DataProvider('fixtureCredentialValues')]
+    public function itClassifiesFixtureAndVendorValues(string $name, string $value, bool $credential): void
+    {
+        $locations = [];
+        foreach ($this->nodes('<?php $' . $name . ' = ' . var_export($value, true) . ';') as $node) {
+            array_push($locations, ...(new CredentialLiterals(new SensitiveNameMatcher(), 4))->locations($node, 'file'));
+        }
+
+        self::assertCount($credential ? 1 : 0, $locations);
+    }
+
+    #[Test]
+    public function itJudgesTheSlackValueWhenTokenIsConfiguredAsSensitive(): void
+    {
+        $locations = [];
+        foreach ($this->nodes('<?php $token8 = "xoxb.T012AB.B34CD";') as $node) {
+            array_push($locations, ...(new CredentialLiterals(new SensitiveNameMatcher(['token']), 4))->locations($node, 'file'));
+        }
+
+        self::assertSame(['variable'], array_column($locations, 'pattern'));
+    }
+
+    /** @return iterable<string, array{string, string, bool}> */
+    public static function fixtureCredentialValues(): iterable
+    {
+        yield 'SendGrid dotted token' => ['apiSecret1', 'SG.abcdefghijklmnop.qrstuvwxyzABCDEFGH', true];
+        yield 'capitalized dotted password' => ['password2', 'Admin.Pass123', true];
+        yield 'lowercase dotted passphrase' => ['password3', 'correct-horse.battery-staple', false];
+        yield 'hyphen and digit password' => ['password4', 'Summer-2024.x', true];
+        yield 'lowercase translation key' => ['password5', 'auth.password.reset', false];
+        yield 'lowercase hyphenated key' => ['password6', 'auth.password-reset', false];
+        yield 'plain secret' => ['apiKey7', 'sk_live_abcdefghijklmnop', true];
+        yield 'unqualified Slack token name' => ['token8', 'xoxb.T012AB.B34CD', false];
+        yield 'PascalCase path' => ['secret9', 'App.Config.DatabasePassword', true];
+        yield 'redacted placeholder' => ['password', '<redacted>', false];
+        yield 'short vendor password' => ['password', 'pa$s', true];
+        yield 'vendor type string' => ['password', 'bool', false];
+        yield 'vendor accessor string' => ['openssl_get_privatekey', 'openssl_pkey_get_private', true];
+    }
+
+    #[Test]
+    #[DataProvider('nativeTypeValues')]
+    public function itAcceptsOnlyWholeNativeTypeSyntax(string $value, bool $credential): void
+    {
+        $locations = [];
+        foreach ($this->nodes('<?php $password = ' . var_export($value, true) . ';') as $node) {
+            array_push($locations, ...(new CredentialLiterals(new SensitiveNameMatcher(), 4))->locations($node, 'file'));
+        }
+
+        self::assertCount($credential ? 1 : 0, $locations);
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function nativeTypeValues(): iterable
+    {
+        yield 'nullable builtin' => ['?string', false];
+        yield 'union builtin' => ['int|false', false];
+        yield 'named intersection union' => ['(A&B)|C', true];
+        yield 'builtin intersection union' => ['(bool&int)|false', false];
+        yield 'self and parent' => ['self|parent', false];
+        yield 'fully qualified builtin' => ['\\int', true];
+        yield 'relative builtin' => ['namespace\\int', true];
+        yield 'union with qualified builtin' => ['int|\\bool', true];
+        yield 'extra statement' => ['int;function f():string{}', true];
+        yield 'comment' => ['int /* injected */', true];
+        yield 'whole placeholder' => ['<redacted>', false];
     }
 
     #[Test]
@@ -91,12 +176,10 @@ final class CredentialLiteralsTest extends TestCase
         yield 'dot identifier' => ['<?php $password = "config.database.password";'];
         yield 'human message' => ['<?php $password = "The provided password is incorrect and must be changed.";'];
         yield 'hyphenated human message' => ['<?php $password = "Invalid-token: please re-enter your password.";'];
-        yield 'dot identifier with a word per segment' => ['<?php $password = "auth.passwordReset.subject";'];
         yield 'dot identifier with a hyphenated segment' => ['<?php $password = "auth.password-reset";'];
         yield 'short dot identifier with a hyphen' => ['<?php $secret = "a.b-c";'];
-        yield 'dotted identifier with capitalised segments' => ['<?php $secret = "App.Models.User";'];
-        yield 'dotted identifier with a digit inside a segment' => ['<?php $secretKey = "services.s3.secret";'];
         yield 'dotted identifier with a snake-case segment' => ['<?php $password = "auth.password_reset.subject";'];
+        yield 'dotted identifier with a digit inside a lowercase segment' => ['<?php $secretKey = "services.s3.secret";'];
         yield 'dotted value of lowercase hyphen-joined words has the shape of a key' => ['<?php $apiKey = "sk-live-abc.def";'];
         yield 'channel name constant' => ['<?php class MetricName { const SECURITY_HARDCODED_CREDENTIALS = "security.hardcoded-credentials"; }'];
         yield 'property assignment of a non-sensitive name' => ['<?php $this->username = "sk0live0AAAABBBBCCCC";'];

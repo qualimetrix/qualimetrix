@@ -445,7 +445,7 @@ final class ReportRecords
         $document = new DOMDocument();
         $previous = libxml_use_internal_errors(true);
         try {
-            if (!$document->loadXML($text, \LIBXML_NONET) || $document->documentElement?->tagName !== 'checkstyle') {
+            if ($text === '' || !$document->loadXML($text, \LIBXML_NONET) || $document->documentElement?->tagName !== 'checkstyle') {
                 throw new GateError('The checkstyle projection is not a readable checkstyle XML document.');
             }
             $records = [];

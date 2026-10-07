@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QmxFindingGateControls;
 
-use QmxFindingGate\{FailureClass, Normalization};
+use QmxFindingGate\{Declarations, DeclaredValues, FailureClass, Normalization};
 
 final class CorpusCaseControls
 {
@@ -28,6 +28,7 @@ final class CorpusCaseControls
                 FailureClass::SURFACE_MISMATCH => [
                     'case:config-precedence|baseline-file',
                     'case:config-precedence|check:output:file',
+                    ...self::uncoveredDirectives('config-precedence'),
                     'case:config-precedence|format:checkstyle',
                     'case:config-precedence|format:github',
                     'case:config-precedence|format:gitlab',
@@ -61,6 +62,7 @@ final class CorpusCaseControls
                 FailureClass::SURFACE_MISMATCH => [
                     'case:threshold-raising|baseline-file',
                     'case:threshold-raising|check:output:file',
+                    ...self::uncoveredDirectives('threshold-raising'),
                     'case:threshold-raising|format:checkstyle',
                     'case:threshold-raising|format:github',
                     'case:threshold-raising|format:gitlab',
@@ -98,6 +100,7 @@ final class CorpusCaseControls
                 FailureClass::SURFACE_MISMATCH => [
                     'case:directive-placement|baseline-file',
                     'case:directive-placement|check:output:file',
+                    ...self::uncoveredDirectives('directive-placement'),
                     'case:directive-placement|format:checkstyle',
                     'case:directive-placement|format:github',
                     'case:directive-placement|format:gitlab',
@@ -116,6 +119,7 @@ final class CorpusCaseControls
                     'case:directive-placement|directives|record:{"file":"src/Placed.php","line":19,"form":"symbol","target":"complexity.ccn"}',
                 ],
             ],
+            scratchDeclarations: self::withdrawnDirectiveMessageDeclaration(),
         );
     }
 
@@ -180,6 +184,47 @@ final class CorpusCaseControls
         );
     }
 
+    /** @return list<string> */
+    private static function uncoveredDirectives(string $case): array
+    {
+        $scope = 'case:' . $case . '|directives';
+        $declarations = Declarations::load(\dirname(__DIR__, 2));
+
+        return $declarations->delta->hasSurfaceIntention($scope)
+            || \in_array($scope, $declarations->exactSurfaces->keys(), true)
+            ? []
+            : [$scope];
+    }
+
+    private static function withdrawnDirectiveMessageDeclaration(): Mutation
+    {
+        $rows = [];
+        foreach (DeclaredValues::load(\dirname(__DIR__, 2) . '/finding-gate')->derived() as $row) {
+            if ($row['kind'] !== DeclaredValues::FIELD || $row['key'] !== 'message'
+                || !str_starts_with($row['subject'], 'case:directive-placement|format:suppressed|record:')) {
+                continue;
+            }
+
+            [, $identity] = explode('|record:', $row['subject'], 2);
+            $record = json_decode($identity, true, 512, \JSON_THROW_ON_ERROR);
+            if (!\is_array($record)
+                || ($record['suppressor'] ?? null) !== 'src/Placed.php:19'
+                || ($record['subject'] ?? null) !== 'declaration:callable:Corpus\\DirectivePlacement\\Placed::afterAttribute@src/Placed.php') {
+                continue;
+            }
+
+            $rows[implode("\t", array_values($row)) . "\n"] = '';
+        }
+
+        return $rows === []
+            ? Mutation::none()
+            : Mutation::edit(
+                'finding-gate/' . DeclaredValues::DERIVED,
+                $rows,
+                'the withdrawn suppressed message has no measurement in this scratch run',
+            );
+    }
+
     /**
      * @param array<string,list<string>> $failures
      *
@@ -197,12 +242,14 @@ final class CorpusCaseControls
     }
 
     /** @param array<string,list<string>> $failures */
-    private static function product(string $case, string $path, string $old, string $replacement, array $failures, ?string $id = null): Control
+    private static function product(string $case, string $path, string $old, string $replacement, array $failures, ?string $id = null, ?Mutation $scratchDeclarations = null): Control
     {
+        $mutation = Mutation::edit($path, [$old => $replacement], 'perturb the product behaviour exercised by ' . $case);
+
         return Control::red(
             $id ?? 'corpus-' . $case,
             'the product changes only the ' . $case . ' case',
-            Mutation::edit($path, [$old => $replacement], 'perturb the product behaviour exercised by ' . $case),
+            $scratchDeclarations === null ? $mutation : $mutation->and($scratchDeclarations),
             self::expectations($failures),
         );
     }

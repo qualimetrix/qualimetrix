@@ -386,6 +386,51 @@ final class CaptureTest extends TestCase
     }
 
     #[Test]
+    public function itAcceptsNativeSuccessfulCandidatePopulationAfterDeclaredReferenceRefusal(): void
+    {
+        [$root, $temporary, $candidate] = self::stagePublicationFixture();
+        try {
+            Fs::write($root . '/finding-gate/declared-outcomes.tsv', Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, [
+                ['alpha', \QmxFindingGate\DeclaredOutcomes::REFUSAL_TO_ANALYSIS, 'declared-outcomes/alpha.json', 'The reference refuses this input.'],
+            ]));
+            Fs::write($root . '/finding-gate/declared-outcomes/alpha.json', "refusal\n");
+            $reference = $candidate;
+            $transitions = [
+                ['baseline:generate', 'case:alpha|baseline-file', 'case:alpha|exit:baseline:generate'],
+                ['directives', 'case:alpha|directives', 'case:alpha|exit:directives'],
+                ['baseline:explain', 'case:alpha|explain:file:src/Alpha.php', 'case:alpha|exit:explain:file:src/Alpha.php'],
+            ];
+            usort($transitions, static fn(array $a, array $b): int => $a <=> $b);
+            foreach ($transitions as [, $surface, $exitKey]) {
+                self::assertArrayHasKey($surface, $reference);
+                self::assertArrayHasKey($exitKey, $reference);
+                $reference[$surface] = '';
+                $reference[$exitKey] = '1';
+            }
+            self::declareCaptureExits($root, array_map(
+                static fn(array $transition): array => ['exit', $transition[0], $transition[1], '1', '0'],
+                $transitions,
+            ), array_column($transitions, 0));
+            $run = self::captureContext($root, $temporary);
+            $values = ValueCheck::create($run);
+            foreach ($transitions as [$command, $surface, $exitKey]) {
+                $pair = new SurfacePair($exitKey, \QmxFindingGate\Surfaces::surfaceClass($exitKey), '0', '1');
+                ValueStage::create($run)->applyStage($pair);
+                self::assertSame('1', $pair->candidate);
+            }
+            foreach ($transitions as [$command, $surface]) {
+                self::assertSame('1', $values->referenceExitFor($command, $surface, '0'));
+            }
+            CaptureCheck::create($run)->checkRun($candidate, $reference);
+            $values->checkRun($candidate, $reference);
+            self::assertSame([], $run->report->raised());
+        } finally {
+            SyntheticTree::remove($root);
+            Fs::removeRecursively($temporary);
+        }
+    }
+
+    #[Test]
     public function itRefusesIntentOnlyAndInexactCaptureExitMeasurements(): void
     {
         [$root, $temporary, $artifacts] = self::stagePublicationFixture();

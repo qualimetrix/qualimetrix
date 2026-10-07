@@ -152,8 +152,9 @@ undeclared candidate input refusals that reach comparison are named
 transition uses the outcome declaration and its exact measured snapshot.
 
 An incomplete case keeps its findings and its incompleteness diagnostics.
-`baseline:generate` must exit 4 and publish no baseline file. Both facts are
-checked; absence is not treated as an empty successful file.
+The product requires no baseline file for it; the gate verifies exit 4 and
+empty captured baseline bytes. Physical absence and an existing zero-byte file
+are indistinguishable in both incomplete and declared-refusal captures.
 
 Known run notices and exact analysis diagnostics are kept outside the finding
 projection in GitHub, GitLab and Checkstyle. Their original bytes remain under
@@ -540,6 +541,15 @@ prerequisites when those schema changes apply. These validity checks do not
 extend the document's frame or make a finding-source residual select its exact
 route.
 
+Only a selected exact `baseline-file` with a declared outcome transition may
+frame a refusing side with empty captured baseline content. Capture records
+bytes, so a missing file and an existing zero-byte file are indistinguishable
+here. A non-analysis `baseline:generate` exit, nonempty stderr and a validated
+JSON refusal are required; the exact frame retains the empty publication, exit,
+stderr and refusal. The analyzing side retains its complete document, finding
+authority and schema prerequisites. The G8 refusal snapshot still covers only
+`check` invocations.
+
 Declarations belong to a particular reference comparison. Retire consumed maps
 and declarations when the next reference already contains their change;
 carrying them forward creates stale exceptions.
@@ -626,9 +636,11 @@ Green controls are held to all declaration counts, not just exit 0.
 
 The config-precedence, threshold-raising and directive-placement controls
 require their finding counts, records and unchanged report surfaces. They do
-not require equality of the whole `directives` surface: its project-scope
-metadata has a declared transition. Directive record values still have exact
-semantic expectations; the ordinary gate judges the declared metadata diff.
+require a whole `directives` surface mismatch when no declaration owns that
+surface. If an ordinary or exact declaration does own it, the gate judges the
+declared transition instead. None of these three current cases has such a
+declaration, so each requires the mismatch. Directive record values retain
+their exact semantic expectations independently.
 
 The failed-derivation control requires an invalid captured publication and
 hashes the declaration index and directory before and after the run. Complete

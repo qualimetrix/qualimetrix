@@ -237,7 +237,7 @@ final class NocRuleTest extends TestCase
         self::assertCount(1, $findings);
         self::assertSame(Severity::Error, $findings[0]->severity);
         self::assertSame(6, $findings[0]->threshold);
-        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $findings[0]->message);
+        self::assertSame('NOC (Number of Children) is 6, reaches threshold of 6. Consider using interfaces instead of inheritance', $findings[0]->message);
         self::assertSame($subject->toCanonical(), $findings[0]->subject->toCanonical());
     }
 
@@ -308,6 +308,8 @@ final class NocRuleTest extends TestCase
         } else {
             self::assertCount(1, $findings);
             self::assertSame($expectedSeverity, $findings[0]->severity);
+            $selectedThreshold = $expectedSeverity === Severity::Error ? $error : $warning;
+            self::assertStringContainsString(($noc === $selectedThreshold ? 'reaches' : 'exceeds') . ' threshold of', $findings[0]->message);
         }
     }
 

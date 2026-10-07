@@ -35,6 +35,7 @@ final readonly class XssDetector
                     type: 'xss',
                     line: $node->getStartLine(),
                     context: "echo \${$varName} without sanitization",
+                    superglobal: $varName,
                 );
             }
         }
@@ -59,6 +60,7 @@ final readonly class XssDetector
                 type: 'xss',
                 line: $node->getStartLine(),
                 context: "print \${$varName} without sanitization",
+                superglobal: $varName,
             ),
         ];
     }

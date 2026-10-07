@@ -1,6 +1,7 @@
 {
     "id": "security",
     "description": "The security family: hardcoded credentials, SQL injection, XSS, command injection and unmarked sensitive parameters.",
+    "coverage": "auxiliary",
     "paths": [
         "src"
     ],

@@ -319,7 +319,7 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
-        $metricBag = (new MetricBag())->with('size.class-count.sum', 30);
+        $metricBag = (new MetricBag())->with('size.class-count', 30);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$namespaceInfo]);

@@ -60,7 +60,7 @@ final class UnreachableCodeRule extends AbstractRule
      * statements (`$unreachableCountValue` — see the emission above) as
      * `metricValue`, judged worse the higher it goes:
      * {@see UnreachableCodeOptions::getSeverity()}'s `$value >= $this->error`
-     * (line 65) and `$value >= $this->warning` (line 69).
+     * and `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */

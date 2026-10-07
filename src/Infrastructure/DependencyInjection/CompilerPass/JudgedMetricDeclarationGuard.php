@@ -31,9 +31,8 @@ final class JudgedMetricDeclarationGuard
      * declaration would buy a build-time check with a permanent dependency
      * edge between two capabilities. The composition root already holds both sides.
      *
-     * An aggregate spelling counts as existing: `size.class-count.sum` is what
-     * {@see \Qualimetrix\Analysis\Evidence\Size\ClassCountRule} actually
-     * reads, and {@see MetricName::base()} strips a suffix only when it is a
+     * An aggregate spelling counts as existing: {@see MetricName::base()}
+     * strips a suffix only when it is a
      * real {@see \Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy}
      * value — so `complexity.ccn.max` resolves and `complexity.ccn.mux` does
      * not. What this does **not** check is that the key is the one the rule

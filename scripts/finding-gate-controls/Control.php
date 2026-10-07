@@ -29,14 +29,13 @@ use RuntimeException;
  * Everything else the gate reports is unexpected, and an unexpected failure
  * means the control did not do what it claims, even though the gate went red.
  *
- * One more shape is refused, and it is refused before a single clone is made:
- * an expectation pinned to a surface the repository declares a delta for. A
- * declared surface is compared against that exact diff and never for equality,
- * so `surface-mismatch` cannot arise there and a control asking for one is
- * asserting about a comparison that no longer happens. This is the failure the
- * step that first declared a delta walked into on two controls at once, and it
- * cost a full controls run to find out — twenty minutes to learn something a
- * substring comparison knows. {@see assertNotPinnedToDeclaredDelta}.
+ * One more shape is refused before a single clone is made: an expectation
+ * pinned to an ordinary structural delta surface. That surface is compared
+ * against its declared diff rather than for equality, so `surface-mismatch`
+ * cannot arise there. An exact-surface intention is conditional: an invalid
+ * trial can still take the equality route and report `surface-mismatch` there.
+ * Exact intentions are judged against the run, not excluded by this preflight.
+ * {@see assertNotPinnedToDeclaredDelta}.
  *
  * And a toleration that lands nowhere is a failure of the control too. Pinning it
  * to a surface made the claim precise; it did not make it true. A toleration no
@@ -242,8 +241,8 @@ final class Control
     ];
 
     /**
-     * Refuses a control whose expectation is pinned to a surface the repository
-     * declares a delta for, unless the class is a statement about a declaration.
+     * Refuses a control whose expectation is pinned to an ordinary structural
+     * delta surface, unless the class is a statement about a declaration.
      *
      * Exact equality, not substring containment, and that is the whole
      * calibration. A pin naming one artifact of one case (`case:coupling|format:sarif`)
@@ -258,7 +257,7 @@ final class Control
      * declarations are not in its scratch tree at all, so its own pins are
      * judged against the declaration it plants.
      *
-     * @param list<string> $declaredSurfaces
+     * @param list<string> $declaredSurfaces ordinary structural delta surfaces only
      */
     public function assertNotPinnedToDeclaredDelta(array $declaredSurfaces, bool $declarationReplaced): void
     {

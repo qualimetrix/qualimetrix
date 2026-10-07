@@ -15,6 +15,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\NodeFinder;
+use Qualimetrix\Core\Ast\ResolvedName;
 
 /**
  * Resolves same-file trait usages for unused private member detection.
@@ -32,11 +33,9 @@ final readonly class TraitUsageResolver
     use UsageTrackingTrait;
     /**
      * @param array<string, Trait_> $traitDefinitions Same-file trait definitions keyed by FQN
-     * @param string|null $currentNamespace Current namespace context for name resolution
      */
     public function __construct(
         private array $traitDefinitions,
-        private ?string $currentNamespace,
     ) {}
 
     /**
@@ -86,31 +85,17 @@ final readonly class TraitUsageResolver
     }
 
     /**
-     * Find a trait definition from the same-file definitions map.
-     *
-     * Matches by exact FQN, namespace-prefixed name, or short name (last segment).
+     * Find a trait definition by the class-position name resolved before collection.
      */
     private function findTraitDefinition(Name $traitName): ?Trait_
     {
-        $requestedName = $traitName->toString();
-
-        // Try exact FQN match first
-        if (isset($this->traitDefinitions[$requestedName])) {
-            return $this->traitDefinitions[$requestedName];
+        $requestedName = ResolvedName::className($traitName);
+        if ($requestedName === null) {
+            return null;
         }
 
-        // Try with current namespace prefix
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $fqn = $this->currentNamespace . '\\' . $requestedName;
-            if (isset($this->traitDefinitions[$fqn])) {
-                return $this->traitDefinitions[$fqn];
-            }
-        }
-
-        // Try matching by short name (last segment)
-        $requestedShort = $this->getShortName($requestedName);
         foreach ($this->traitDefinitions as $fqn => $trait) {
-            if ($this->getShortName($fqn) === $requestedShort) {
+            if (ResolvedName::sameClass($fqn, $requestedName)) {
                 return $trait;
             }
         }
@@ -159,13 +144,6 @@ final readonly class TraitUsageResolver
         }
 
         return $shortName;
-    }
-
-    private function getShortName(string $fqn): string
-    {
-        $pos = strrpos($fqn, '\\');
-
-        return $pos !== false ? substr($fqn, $pos + 1) : $fqn;
     }
 
     /**

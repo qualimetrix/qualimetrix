@@ -1,33 +1,49 @@
 surface	file	reason
-case:annotations|directives	declared-delta/case-annotations-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:applied-threshold|directives	declared-delta/case-applied-threshold-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:baseline-cycle|baseline:update	declared-delta/case-baseline-cycle-baseline-update.diff	Include the removed-entry count in the baseline update summary; the unchanged document contains no removed entries.
-case:baseline-cycle|directives	declared-delta/case-baseline-cycle-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:complexity|directives	declared-delta/case-complexity-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:config-precedence|directives	declared-delta/case-config-precedence-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:coupling|directives	declared-delta/case-coupling-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:cycle|directives	declared-delta/case-cycle-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:design|directives	declared-delta/case-design-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:directive-placement|directives	declared-delta/case-directive-placement-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:disabled-rule-duplication|directives	declared-delta/case-disabled-rule-duplication-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:disabled-rule|directives	declared-delta/case-disabled-rule-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:discovery|directives	declared-delta/case-discovery-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:duplicate-declaration|directives	declared-delta/case-duplicate-declaration-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:duplication-size|directives	declared-delta/case-duplication-size-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:duplication|directives	declared-delta/case-duplication-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:excluded-path|directives	declared-delta/case-excluded-path-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:external-parent|directives	declared-delta/case-external-parent-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:health|directives	declared-delta/case-health-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:incomplete-directory-symlink|directives	declared-delta/case-incomplete-directory-symlink-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:layered-threshold|directives	declared-delta/case-layered-threshold-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:layers|directives	declared-delta/case-layers-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:only-rules|directives	declared-delta/case-only-rules-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:parallel-files|directives	declared-delta/case-parallel-files-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:rule-exclusion-ledger|directives	declared-delta/case-rule-exclusion-ledger-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:scoped-layers|baseline:update	declared-delta/case-scoped-layers-baseline-update.diff	Include the removed-entry count in the baseline update summary; the unchanged document contains no removed entries.
-case:scoped-layers|directives	declared-delta/case-scoped-layers-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:security|directives	declared-delta/case-security-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:smells|directives	declared-delta/case-smells-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:stderr-warning|directives	declared-delta/case-stderr-warning-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:suppression|directives	declared-delta/case-suppression-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
-case:threshold-raising|directives	declared-delta/case-threshold-raising-directives.diff	Publish measured project coverage alongside the directive audit; record fields and effects are unchanged.
+case:annotations|rules	declared-delta/case-annotations-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:applied-threshold|rules	declared-delta/case-applied-threshold-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:baseline-cycle|rules	declared-delta/case-baseline-cycle-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:complexity|rules	declared-delta/case-complexity-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:config-precedence|rules	declared-delta/case-config-precedence-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:coupling|rules	declared-delta/case-coupling-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:cycle|rules	declared-delta/case-cycle-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:design|rules	declared-delta/case-design-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:detectors-security|directives	declared-delta/case-detectors-security-directives.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-security|explain:declaration:callable:Corpus\Security\Login::authenticate@src/Login.php	declared-delta/case-detectors-security-explain-declaration-callable-Corpus-Security-Login-authenticate-src-Login-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-security|explain:declaration:callable:Corpus\Security\Output::greet@src/Output.php	declared-delta/case-detectors-security-explain-declaration-callable-Corpus-Security-Output-greet-src-Output-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-security|rules	declared-delta/case-detectors-security-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:detectors-security|stderr:baseline-file	declared-delta/case-detectors-security-stderr-baseline-file.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-security|stderr:explain:declaration:callable:Corpus\Security\Login::authenticate@src/Login.php	declared-delta/case-detectors-security-stderr-explain-declaration-callable-Corpus-Security-Login-authenticate-src-Login-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-security|stderr:explain:declaration:callable:Corpus\Security\Output::greet@src/Output.php	declared-delta/case-detectors-security-stderr-explain-declaration-callable-Corpus-Security-Output-greet-src-Output-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-smells|directives	declared-delta/case-detectors-smells-directives.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-smells|explain:declaration:callable:Corpus\Smells\Smells::report@src/Smells.php	declared-delta/case-detectors-smells-explain-declaration-callable-Corpus-Smells-Smells-report-src-Smells-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-smells|explain:declaration:class:Corpus\Smells\Injection@src/Injection.php	declared-delta/case-detectors-smells-explain-declaration-class-Corpus-Smells-Injection-src-Injection-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-smells|rules	declared-delta/case-detectors-smells-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:detectors-smells|stderr:baseline-file	declared-delta/case-detectors-smells-stderr-baseline-file.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-smells|stderr:explain:declaration:callable:Corpus\Smells\Smells::report@src/Smells.php	declared-delta/case-detectors-smells-stderr-explain-declaration-callable-Corpus-Smells-Smells-report-src-Smells-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors-smells|stderr:explain:declaration:class:Corpus\Smells\Injection@src/Injection.php	declared-delta/case-detectors-smells-stderr-explain-declaration-class-Corpus-Smells-Injection-src-Injection-php.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors|directives	declared-delta/case-detectors-directives.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:detectors|rules	declared-delta/case-detectors-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:detectors|stderr:baseline-file	declared-delta/case-detectors-stderr-baseline-file.diff	Publish the complete non-check detector result or diagnostic after the previously missing selection cell is repaired.
+case:directive-placement|rules	declared-delta/case-directive-placement-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:disabled-rule-duplication|rules	declared-delta/case-disabled-rule-duplication-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:disabled-rule|rules	declared-delta/case-disabled-rule-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:discovery|rules	declared-delta/case-discovery-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:duplicate-declaration|rules	declared-delta/case-duplicate-declaration-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:duplication-size|rules	declared-delta/case-duplication-size-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:duplication|rules	declared-delta/case-duplication-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:excluded-path|rules	declared-delta/case-excluded-path-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:external-parent|rules	declared-delta/case-external-parent-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:health|rules	declared-delta/case-health-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:incomplete-directory-symlink|rules	declared-delta/case-incomplete-directory-symlink-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:layered-threshold|rules	declared-delta/case-layered-threshold-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:layers|rules	declared-delta/case-layers-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:only-rules|rules	declared-delta/case-only-rules-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:parallel-files|rules	declared-delta/case-parallel-files-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:rule-exclusion-ledger|rules	declared-delta/case-rule-exclusion-ledger-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:scoped-layers|rules	declared-delta/case-scoped-layers-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:security|rules	declared-delta/case-security-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:smells|rules	declared-delta/case-smells-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:stderr-warning|rules	declared-delta/case-stderr-warning-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:suppression|rules	declared-delta/case-suppression-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+case:threshold-raising|rules	declared-delta/case-threshold-raising-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.
+tree|rules	declared-delta/tree-rules.diff	The class-count channel judges the own namespace count; subtree sum remains a separately published metric.

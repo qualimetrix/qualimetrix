@@ -1,0 +1,21 @@
+--- candidate
++++ reference (mapped)
+@@ -1,18 +1,0 @@
+-Subject: declaration:callable:Corpus\Security\Login::authenticate@src/Login.php
+-
+-  Channel: security.sensitive-parameter
+-    Occurrence: d8c7c1c77a1276d8
+-    Reported at: src/Login.php:7
+-    baseline:      (none)
+-    now:           1 occurrence
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
+-
+-  Channel: security.sensitive-parameter
+-    Occurrence: 9477b3c7e0459483
+-    Reported at: src/Login.php:7
+-    baseline:      (none)
+-    now:           1 occurrence
+-    qmx.yaml:      (not resolvable from configuration)
+-    annotation:    (none)
+-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt

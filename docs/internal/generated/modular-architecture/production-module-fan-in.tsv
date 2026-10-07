@@ -69,7 +69,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType	Analysis.E
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface	Analysis.Evidence.Design	3	3
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup	Analysis.Evidence.Design	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	21	8
-Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	31	9
+Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	30	9
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	8	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface	Analysis.Evidence.Measurement	9	6
@@ -199,6 +199,7 @@ Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver	Analysis.
 Qualimetrix\Analysis\Finding\Contract\Selection\RuleNameJudge	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Selection\StatedEnablement	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	114	18
+Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing	Analysis.Finding	14	6
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	8	3
 Qualimetrix\Analysis\Finding\Contract\ValueReach	Analysis.Finding	6	3
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	2	1
@@ -307,6 +308,9 @@ Qualimetrix\Analysis\Run\Contract\Pipeline\DirectiveAuditReport	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException	Analysis.Run	3	1
 Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface	Analysis.Run	4	2
 Qualimetrix\Core\Ast\FileParserInterface	Core.Neutral	9	3
+Qualimetrix\Core\Ast\NameResolution	Core.Neutral	1	1
+Qualimetrix\Core\Ast\ResolvedName	Core.Neutral	4	3
+Qualimetrix\Core\Ast\SuperglobalRead	Core.Neutral	2	2
 Qualimetrix\Core\Environment\EnvironmentFailureInterface	Core.Environment	4	2
 Qualimetrix\Core\Exception\ParseException	Core.Neutral	3	2
 Qualimetrix\Core\FileTarget\FileIdentity	Core.FileTarget	4	2
@@ -341,11 +345,11 @@ Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	61	17
 Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	2	1
-Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	6	3
-Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
+Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	7	4
+Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	25	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	137	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	79	21
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	77	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	34	12
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Version	Core.Neutral	7	2

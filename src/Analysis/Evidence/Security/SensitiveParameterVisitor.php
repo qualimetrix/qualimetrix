@@ -15,6 +15,7 @@ use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
+use Qualimetrix\Core\Ast\ResolvedName;
 
 /**
  * AST visitor that detects parameters with sensitive names missing #[\SensitiveParameter].
@@ -109,9 +110,9 @@ final class SensitiveParameterVisitor extends NodeVisitorAbstract implements Dec
     {
         foreach ($param->attrGroups as $attrGroup) {
             foreach ($attrGroup->attrs as $attr) {
-                $attrName = $attr->name->toString();
+                $attrName = ResolvedName::className($attr->name);
 
-                if ($attrName === 'SensitiveParameter' || $attrName === '\\SensitiveParameter') {
+                if ($attrName !== null && ResolvedName::sameClass($attrName, 'SensitiveParameter')) {
                     return true;
                 }
             }

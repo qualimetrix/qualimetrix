@@ -134,6 +134,9 @@ What follows from the decision: trade-offs, constraints, and implications.
 - [0096 — File Target Claims](0096-file-target-claims.md) — neutral filesystem judgement, held writes, publication and explicit descriptor/race limits.
 
 - [0097 — Duplication Copy Evidence](0097-duplication-copy-evidence.md) — connected token coverage, copy-owned values, File identity and explicit incomplete-run limits.
+- [0100 — Core AST Name Resolution and Superglobal Reads](0100-core-ast-name-resolution-and-superglobal-reads.md) — shared, bounded AST evidence for detector consumers.
+- [0101 — Class Count Judges the Own Namespace](0101-class-count-judges-own-namespace.md) — all namespace levels use own count while subtree totals stay published.
+- [0102 — Detector Verdicts and Finding Identity](0102-detector-verdicts-and-finding-identity.md) — credential and smell decisions, declaration identity, and raw threshold wording.
 
 ## Superseded history
 

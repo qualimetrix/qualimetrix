@@ -118,6 +118,11 @@ Each namespace block contributes its own structural counts, including zero
 counts for empty blocks. The physical file bag retains the whole-file totals used
 at project level.
 
+`ClassCountRule` judges the own `size.class-count` of every namespace, including
+parents. The published `size.class-count.sum` remains a subtree total for other
+consumers. Equality with the configured warning or error boundary is a finding;
+the defaults are 15 and 25 respectively.
+
 ### Example
 
 ```php

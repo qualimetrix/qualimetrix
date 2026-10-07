@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
-use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Exact subject and occurrence projection for one security-pattern collector entry.
@@ -44,7 +43,6 @@ final readonly class SecurityPatternFinding
     }
 
     public function toFinding(
-        SymbolPath $fileSymbol,
         string $ruleName,
         string $patternType,
         Severity $severity,
@@ -60,7 +58,7 @@ final readonly class SecurityPatternFinding
         return new Finding(
             location: $this->location,
             subject: $this->subject,
-            symbolPath: $fileSymbol,
+            symbolPath: $this->subject->toSymbolPath(),
             ruleName: $ruleName,
             code: $ruleName,
             message: $messageTemplate . $suffix,

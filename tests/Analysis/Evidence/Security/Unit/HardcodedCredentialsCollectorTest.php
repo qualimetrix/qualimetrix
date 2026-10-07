@@ -55,6 +55,21 @@ PHP;
     }
 
     #[Test]
+    public function itCollectsEachFileConstantUnderTheFileSubject(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+namespace App;
+const API_KEY = 'sk_live_abcdefghijklmnop', DB_PASSWORD = 'hunter2secret';
+PHP);
+        $entries = $metrics->entries('security.hardcoded-credentials');
+
+        self::assertCount(2, $entries);
+        self::assertSame(['file_const', 'file_const'], array_column($entries, 'pattern'));
+        self::assertSame(['file', 'file'], array_column($entries, 'subjectKind'));
+    }
+
+    #[Test]
     public function itAssignsClassInitializersToTheirExactClassAndTopLevelCodeToTheFile(): void
     {
         $metrics = $this->collectMetrics(<<<'PHP'

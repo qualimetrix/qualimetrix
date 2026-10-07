@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorI
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SourceMeasuringCollectorInterface;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
@@ -67,6 +68,8 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
      */
     public function collect(SplFileInfo $file, array $ast, RelativePath $filePath): CollectionOutput
     {
+        NameResolution::resolve($ast);
+
         if ($this->collectors === [] && $this->dependencyTraversalParticipant === null) {
             return new CollectionOutput(new MetricBag(), []);
         }

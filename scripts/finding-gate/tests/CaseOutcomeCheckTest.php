@@ -39,6 +39,78 @@ final class CaseOutcomeCheckTest extends TestCase
     }
 
     #[Test]
+    public function itCreditsOnlyTheDeclaredEmptyCapturedBaselineRefusal(): void
+    {
+        $tree = SelfTestOutcomes::fixture();
+        $tree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = \QmxFindingGate\Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
+            ['alpha', 'baseline-file', 'declared-exact-surfaces/baseline.diff', 'The baseline refusal changes this complete document.'],
+        ]);
+        $tree['candidateDeclarations']['declared-exact-surfaces/baseline.diff'] = "pending\n";
+        $root = SyntheticTree::fixture($tree);
+        try {
+            $maps = RenameMaps::load($root . '/finding-gate/maps', MetricVocabulary::ofTree($root));
+            $corpus = Corpus::load($root);
+            $case = $corpus->cases[0];
+            $refusal = json_encode(['error' => 'Refused input', 'exit_code' => 3, 'position' => null], \JSON_THROW_ON_ERROR) . "\n";
+            $base = [];
+            $plan = \QmxFindingGate\CapturePlan::forCorpus($corpus, Declarations::load($root)->surfaces);
+            foreach ($plan->invocations() as $descriptor) {
+                if ($descriptor['scope'] !== 'case:alpha' || $descriptor['commandClass'] !== 'check') {
+                    continue;
+                }
+                $surface = $descriptor['surface'];
+                $base['case:alpha|' . $surface] = $surface === 'format:json' ? $refusal : "Refused input\n";
+                $base['case:alpha|stderr:' . $surface] = "Refused input\n";
+                $base['case:alpha|exit:' . $surface] = '3';
+                if ($descriptor['outputFileKind'] !== null) {
+                    $base['case:alpha|' . $descriptor['outputFileKind']] = '';
+                }
+            }
+            $base['case:alpha|baseline-file'] = '';
+            $base['case:alpha|exit:baseline:generate'] = '3';
+            $base['case:alpha|stderr:baseline-file'] = "Refused input\n";
+            foreach ([
+                'valid' => [[], true],
+                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], false],
+                'successful baseline exit' => [['case:alpha|exit:baseline:generate' => '0'], false],
+                'silent baseline refusal' => [['case:alpha|stderr:baseline-file' => ''], false],
+            ] as $label => [$changes, $valid]) {
+                $report = new GateReport();
+                $run = new RunContext(
+                    Options::parse(['gate', '--candidate=' . $root, '--reference=HEAD'], $root),
+                    $report,
+                    $corpus,
+                    $maps,
+                    ChannelSplit::of($maps),
+                    MetricVocabulary::ofTree($root),
+                    Normalization::fromRules([]),
+                    Declarations::load($root),
+                    $root,
+                );
+                $check = CaseOutcomeCheck::create($run);
+                $check->startDeriving();
+                $candidate = array_replace($base, $changes);
+                $check->checkCase('candidate', $case, CaseOutcome::REFUSAL, $candidate);
+                $check->checkRun($candidate, [
+                    'case:alpha|format:json' => '{"violations":[]}',
+                    'case:alpha|exit:format:json' => '0',
+                ]);
+                self::assertSame($valid, $report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
+                self::assertSame(!$valid, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
+                if (!$valid) {
+                    self::assertContains(
+                        'The declared refusal must capture empty baseline content, a non-analysis exit and populated stderr.',
+                        array_column($report->raised(), 'detail'),
+                        $label,
+                    );
+                }
+            }
+        } finally {
+            SyntheticTree::remove($root);
+        }
+    }
+
+    #[Test]
     public function itHoldsAnAnalysisToItsBaselineFile(): void
     {
         self::assertSame([FailureClass::RUN_FAILED, FailureClass::RUN_FAILED], $this->failuresWithoutABaselineFile(null));

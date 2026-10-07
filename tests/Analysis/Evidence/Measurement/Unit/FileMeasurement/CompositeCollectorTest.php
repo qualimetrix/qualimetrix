@@ -57,6 +57,7 @@ final class CompositeCollectorTest extends TestCase
     {
         $tracker = new stdClass();
         $tracker->visited = false;
+        $tracker->resolvedBeforeParent = false;
         $collector = self::createStub(MetricCollectorInterface::class);
         $collector->method('getVisitor')->willReturn(new class ($tracker) extends NodeVisitorAbstract {
             public function __construct(private readonly stdClass $tracker) {}
@@ -64,6 +65,9 @@ final class CompositeCollectorTest extends TestCase
             public function enterNode(Node $node): null
             {
                 $this->tracker->visited = true;
+                if ($node instanceof Node\Stmt\Class_ && $node->extends !== null) {
+                    $this->tracker->resolvedBeforeParent = $node->extends->getAttribute('resolvedName')?->toString() === 'Vendor\\Base';
+                }
 
                 return null;
             }
@@ -80,6 +84,7 @@ final class CompositeCollectorTest extends TestCase
         );
 
         self::assertTrue($tracker->visited);
+        self::assertTrue($tracker->resolvedBeforeParent);
         self::assertCount(1, $result->dependencies);
     }
 

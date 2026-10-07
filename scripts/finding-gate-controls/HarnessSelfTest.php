@@ -57,6 +57,76 @@ final class HarnessSelfTest
             }
             $this->same(true, $refused, 'an exact expectation without a scope is refused');
         }
+
+        $directory = Shell::temporaryDirectory('harness-self-test-exact-surface-');
+        $report = $directory . '/report.json';
+        $run = ['stdout' => '', 'stderr' => '', 'exit' => 1];
+        $exact = 'case:alpha|baseline-file';
+        $required = ['class' => \QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'scope' => 'case:alpha|format:json'];
+        $control = Control::red(
+            'probe',
+            'a required record failure with a secondary declared surface result',
+            Mutation::none(),
+            [new Expectation($required['class'], $required['scope'], exactScope: true)],
+        );
+
+        try {
+            file_put_contents($report, (string) json_encode(['failures' => [
+                $required,
+                ['class' => \QmxFindingGate\FailureClass::DELTA_MISMATCH, 'scope' => $exact],
+            ]], \JSON_THROW_ON_ERROR));
+            $outcome = Outcome::of($control, $run, $report, declaredExactSurfaces: [$exact]);
+            $this->same(true, $outcome->asDeclared, 'an exact-surface delta is declaration noise beside a required red mechanism');
+
+            file_put_contents($report, (string) json_encode(['failures' => [
+                $required,
+                ['class' => \QmxFindingGate\FailureClass::SURFACE_MISMATCH, 'scope' => $exact],
+            ]], \JSON_THROW_ON_ERROR));
+            $outcome = Outcome::of($control, $run, $report, declaredExactSurfaces: [$exact]);
+            $this->same(false, $outcome->asDeclared, 'an exact-surface declaration cannot absorb an unrelated surface mismatch');
+
+            mkdir($directory . '/finding-gate/declared-delta', 0o700, true);
+            mkdir($directory . '/finding-gate/declared-exact-surfaces', 0o700, true);
+            Shell::replace($directory . '/finding-gate/declared-delta/ordinary.diff', "ordinary diff\n");
+            Shell::replace($directory . '/finding-gate/declared-exact-surfaces/exact.diff', "exact diff\n");
+            Shell::replace($directory . '/finding-gate/declared-delta.tsv', Tsv::render(
+                \QmxFindingGate\DeclaredDelta::COLUMNS,
+                [['case:ordinary|rules', 'declared-delta/ordinary.diff', 'An ordinary fixture.']],
+            ));
+            Shell::replace($directory . '/finding-gate/declared-exact-surfaces.tsv', Tsv::render(
+                \QmxFindingGate\DeclaredExactSurfaces::COLUMNS,
+                [['alpha', 'baseline-file', 'declared-exact-surfaces/exact.diff', 'An exact fixture.']],
+            ));
+
+            $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
+            (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $directory);
+            $runHarness = new ReflectionMethod(Harness::class, 'run');
+            foreach (['case:alpha|baseline-file' => false, 'case:ordinary|rules' => true] as $surface => $ordinary) {
+                $pinned = Control::red(
+                    'preflight-probe',
+                    'a surface expectation before cloning',
+                    Mutation::none(),
+                    [new Expectation(\QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'case:alpha|format:json', exactScope: true)],
+                    [new Expectation(\QmxFindingGate\FailureClass::SURFACE_MISMATCH, $surface, exactScope: true)],
+                );
+                $failure = '';
+                try {
+                    // The temporary repository has no Git metadata, so an admitted control stops before cloning.
+                    $runHarness->invoke($harness, [$pinned], [], 1);
+                } catch (RuntimeException $error) {
+                    $failure = $error->getMessage();
+                }
+                $this->same(
+                    true,
+                    str_starts_with($failure, $ordinary ? 'Control "preflight-probe" expects' : 'git status --porcelain failed'),
+                    $ordinary
+                        ? 'an ordinary structural delta still blocks an equality expectation before cloning'
+                        : 'an exact intention admits an equality expectation past preflight',
+                );
+            }
+        } finally {
+            Shell::removeRecursively($directory);
+        }
     }
 
     private function inheritedPermissionsAreClearedOnlyInThePrivateTree(): void
@@ -181,6 +251,74 @@ final class HarnessSelfTest
                     ['finding-gate/declared-delta.tsv' => Tsv::render(['surface', 'file', 'reason'], [])],
                     $metadata['restoration'][1],
                     'the derive control restores the identity index bytes',
+                );
+            }
+
+            $unused = ChannelRenamePlants::unusedPrivateRenameDeclarations();
+            $sensitive = (new ReflectionMethod(FingerprintControls::class, 'sensitiveParameterRenameDeclarations'))->invoke(null);
+            $claims = [
+                ['smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
+                ['detectors-smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
+                ['detectors', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
+                ['security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
+                ['detectors-security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
+                ['detectors', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
+            ];
+            foreach ($claims as [$case, $oldClaim, $newClaim, $mutation]) {
+                $relative = 'finding-gate/cases/' . $case . '/case.json';
+                $original = Shell::read($repository . '/' . $relative);
+                $quoted = json_encode($oldClaim, \JSON_THROW_ON_ERROR);
+                $escaped = '"\\u' . \sprintf('%04x', \ord($oldClaim[0])) . substr($quoted, 2);
+                $this->same(1, substr_count($original, $quoted), $case . ' has one claim to escape');
+                Shell::replace($scratch->path($relative), str_replace($quoted, $escaped, $original));
+                $before = json_decode(Shell::read($scratch->path($relative)), true, 512, \JSON_THROW_ON_ERROR);
+                $actions = (new ReflectionProperty(Mutation::class, 'actions'))->getValue($mutation);
+                $caseActions = array_values(array_filter($actions, static fn(array $action): bool => $action['path'] === $relative));
+                $this->same(1, \count($caseActions), $case . ' has one case claim action');
+                if (\count($caseActions) !== 1) {
+                    continue;
+                }
+                $action = $caseActions[0];
+                $claimMutation = match ($action['kind']) {
+                    'edit' => Mutation::edit($relative, $action['replacements'], 'the case claim follows the rename'),
+                    'replace' => Mutation::replace([$relative => $action['contents']], 'the case claim follows the rename'),
+                    default => throw new RuntimeException('A case claim uses no supported mutation action.'),
+                };
+                try {
+                    $claimMutation->apply($scratch, $repository);
+                } catch (RuntimeException $error) {
+                    $this->failures[] = $case . ' escaped claim mutation (' . $error->getMessage() . ')';
+                    continue;
+                }
+                $expected = $before;
+                $oldChannel = \QmxFindingGate\SubjectLevel::channelOf($oldClaim);
+                $newChannel = \QmxFindingGate\SubjectLevel::channelOf($newClaim);
+                foreach ($expected['channels'] as $index => $claim) {
+                    if (\QmxFindingGate\SubjectLevel::channelOf($claim) !== $oldChannel) {
+                        continue;
+                    }
+                    $expected['channels'][$index] = $newChannel . substr($claim, \strlen($oldChannel));
+                }
+                $actual = json_decode(Shell::read($scratch->path($relative)), true, 512, \JSON_THROW_ON_ERROR);
+                $this->same($expected, $actual, $case . ' changes only its semantic channel claim');
+                $this->same(
+                    $expected['channels'],
+                    \QmxFindingGate\CaseDefinition::load($scratch->path('finding-gate/cases/' . $case))->channels,
+                    $case . ' keeps every other native claim and level',
+                );
+            }
+            try {
+                ChannelRenamePlants::renamedCaseClaims(
+                    \QmxFindingGate\CaseDefinition::load($repository . '/finding-gate/cases/smells'),
+                    'code-smell.absent',
+                    'code-smell.renamed',
+                );
+                $this->failures[] = 'a missing semantic claim was accepted';
+            } catch (RuntimeException $error) {
+                $this->same(
+                    'Case smells no longer claims channel code-smell.absent.',
+                    $error->getMessage(),
+                    'a missing semantic claim is refused before mutation',
                 );
             }
         } catch (Throwable $error) {

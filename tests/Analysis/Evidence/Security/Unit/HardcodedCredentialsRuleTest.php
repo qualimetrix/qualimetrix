@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Security\Unit;
 
 use InvalidArgumentException;
+use LogicException;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -203,12 +204,12 @@ final class HardcodedCredentialsRuleTest extends TestCase
             'variable',
             'array_key',
             'class_const',
+            'file_const',
             'define',
             'property',
             'property_assignment',
             'parameter',
             'enum_case',
-            'unknown',
         ];
         $metrics = new MetricBag();
         foreach ($patterns as $line => $pattern) {
@@ -226,15 +227,28 @@ final class HardcodedCredentialsRuleTest extends TestCase
             'Hardcoded credential in variable assignment — use environment variables or a secrets manager',
             'Hardcoded credential in array key — use environment variables or a secrets manager',
             'Hardcoded credential in class constant — use environment variables or a secrets manager',
+            'Hardcoded credential in file constant — use environment variables or a secrets manager',
             'Hardcoded credential in define() call — use environment variables or a secrets manager',
             'Hardcoded credential in property default — use environment variables or a secrets manager',
             'Hardcoded credential in property assignment — use environment variables or a secrets manager',
             'Hardcoded credential in parameter default — use environment variables or a secrets manager',
             'Hardcoded credential in enum case — use environment variables or a secrets manager',
-            'Hardcoded credential found — use environment variables or a secrets manager',
         ], array_map(
             static fn(Finding $finding): string => $finding->message,
             $findings,
+        ));
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownCredentialPattern(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Unknown credential pattern "unknown"');
+
+        (new HardcodedCredentialsRule(new HardcodedCredentialsOptions()))->analyze($this->createContext(
+            (new MetricBag())->withEntry('security.hardcoded-credentials', [
+                'subjectKind' => 'file', 'line' => 1, 'pattern' => 'unknown',
+            ]),
         ));
     }
 

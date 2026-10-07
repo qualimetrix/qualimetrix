@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\ThresholdCrossing;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -100,7 +101,7 @@ final class NocRule extends AbstractRule
             ruleName: $this->getName(),
             code: self::NAME,
             message: \sprintf(
-                'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
+                'NOC (Number of Children) is %d, ' . ThresholdCrossing::of($nocValue, $threshold)->value . ' threshold of %d. Consider using interfaces instead of inheritance',
                 $nocValue,
                 $threshold,
             ),
@@ -122,8 +123,8 @@ final class NocRule extends AbstractRule
     /**
      * `design.noc` reports NOC (`$nocValue` — see the emission above) as
      * `metricValue`, judged worse the higher it goes:
-     * {@see NocOptions::getSeverity()}'s `$value >= $this->error` (line 76)
-     * / `$value >= $this->warning` (line 80).
+     * {@see NocOptions::getSeverity()}'s `$value >= $this->error`
+     * / `$value >= $this->warning`.
      *
      * @return array<string, ChannelDeclaration>
      */
