@@ -1,0 +1,21 @@
+{
+  "id": "drill-down",
+  "description": "Auxiliary: namespace drill-down selects declared occurrences and physical-file findings, with multiple namespaces, a declaration-free copy and whole-run suppressed diagnostics.",
+  "coverage": "auxiliary",
+  "paths": [
+    "src"
+  ],
+  "config": "qmx.yaml",
+  "args": [
+    "--namespace=subtree:Shop",
+    "--show-suppressed"
+  ],
+  "channels": [
+    "annotation.unresolved-directive@file",
+    "code-smell.eval@callable",
+    "duplication.clone@file"
+  ],
+  "explainSubjects": [
+    "file:src/Cart.php"
+  ]
+}
