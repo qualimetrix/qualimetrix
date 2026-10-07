@@ -323,12 +323,17 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Coupling\UnmatchedFrameworkNamespaceRule'
     - name: analysis-evidence-dependencymodel
       patterns:
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuild'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\TypeShape'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation'
@@ -336,6 +341,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\CatchInstanceofHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassMemberDeclarationHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyHandlerTable'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\FunctionLikeHandler'
@@ -347,6 +353,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\NamespaceCouplings'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\StringSet'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling'
     - name: analysis-evidence-design
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Design\DataClass\DataClassExclusionCheck'
@@ -712,34 +719,34 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\SectionSpot'
         - 'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypes'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DiagnosticSampleList'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DoubtedAssignmentDiagnostic'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerDeclarationValidator'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\UnmatchedTypeWarningInterface'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DeclaredLayerReachability'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\DoubtedAssignmentDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationOptions'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerOverlapDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\PotentialShadowDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedExcludeDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\UnmatchedTypeDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerRoutingGuidance'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ClassWalkEvidence'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\EdgeWalkEvidence'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ForbiddenEdge'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidence'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\LayerEvidenceCollector'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\Observation\ShadowedClass'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\PotentialShadowDiagnostic'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassOptions'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassRule'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassSummary'
-        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnmatchedExcludeDiagnostic'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\AnalysedDeclarations'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePatternCompiler'
@@ -762,14 +769,31 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowVerdict'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\NameSpellingIndex'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\NamedType'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeJudgement'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\UnmatchedTypeOccurrence'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\ClassWalkEvidence'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\EdgeWalkEvidence'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\ForbiddenEdge'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Observation\ShadowedClass'
+        - 'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassLayerRequirement'
+        - 'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassMode'
+        - 'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassOptions'
+        - 'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule'
+        - 'Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary'
     - name: analysis-policy-baseline
       patterns:
         - 'Qualimetrix\Analysis\Policy\Baseline\Baseline'
@@ -1070,6 +1094,7 @@ architecture:
     - name: core-symbol
       patterns:
         - 'Qualimetrix\Core\Symbol\CallableKind'
+        - 'Qualimetrix\Core\Symbol\ClassNameSpelling'
         - 'Qualimetrix\Core\Symbol\ClassType'
         - 'Qualimetrix\Core\Symbol\DeclarationKey'
         - 'Qualimetrix\Core\Symbol\DeclarationOrdinal'
@@ -1078,6 +1103,7 @@ architecture:
         - 'Qualimetrix\Core\Symbol\LogicalClassPath'
         - 'Qualimetrix\Core\Symbol\MetricSubject'
         - 'Qualimetrix\Core\Symbol\MetricSubjectCodec'
+        - 'Qualimetrix\Core\Symbol\MixedSpelling'
         - 'Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy'
         - 'Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry'
         - 'Qualimetrix\Core\Symbol\SymbolInfo'
@@ -1115,8 +1141,10 @@ architecture:
         - 'Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface'
         - 'Qualimetrix\Infrastructure\Composer\Contract\ComposerRootOmission'
         - 'Qualimetrix\Infrastructure\Composer\DeclaredParentReader'
+        - 'Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader'
         - 'Qualimetrix\Infrastructure\Composer\GeneratedClassmap'
         - 'Qualimetrix\Infrastructure\Composer\InstallLocator'
+        - 'Qualimetrix\Infrastructure\Composer\InstalledExternalClassSpelling'
         - 'Qualimetrix\Infrastructure\Composer\LocatedComposerRoots'
     - name: infrastructure-console
       patterns:
@@ -1491,6 +1519,7 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-dependencymodel:
+      - core-neutral
       - core-path
       - core-symbol
       - external
@@ -1556,7 +1585,6 @@ architecture:
     analysis-policy-architecture:
       - analysis-configuration
       - analysis-evidence-dependencymodel
-      - analysis-evidence-design
       - analysis-finding
       - core-neutral
       - core-symbol
@@ -1625,9 +1653,13 @@ architecture:
       - infrastructure-serializer
       - external
     infrastructure-composer:
+      - analysis-evidence-dependencymodel
       - analysis-evidence-design
+      - analysis-policy-architecture
       - analysis-projectmanifest
+      - core-neutral
       - core-path
+      - core-symbol
       - external
     infrastructure-console:
       - analysis-configuration

@@ -130,6 +130,7 @@ tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/duplication-repair	Analysis/
 tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/level-narrowed	Analysis/Policy/Baseline	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/level-narrowed/Gone	Analysis/Policy/Baseline	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/level-narrowed/Kept	Analysis/Policy/Baseline	"Retain at the materialized subject-owned path."
+tests/Analysis/Policy/Baseline/Fixtures/LayerViolationMigration	Analysis/Policy/Baseline	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Inline/Fixtures	Analysis/Policy/Inline	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Inline/Fixtures/IgnoreSample	Analysis/Policy/Inline	"Retain at the materialized subject-owned path."
 tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Controller	Analysis/Policy/Inline	"Retain at the materialized subject-owned path."

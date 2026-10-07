@@ -99,6 +99,7 @@ use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
@@ -948,6 +949,7 @@ PHP;
             DistanceRule::class,
             CircularDependencyRule::class,
             LayerViolationRule::class,
+            LayerDeclarationRule::class,
             UnusedDirectiveRule::class,
             UnusedEntryRule::class,
             LongParameterListRule::class,

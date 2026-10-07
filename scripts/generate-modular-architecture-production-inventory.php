@@ -2434,6 +2434,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0100-core-ast-name-resolution-and-superglobal-reads.md' => 'Core.Neutral',
         'docs/adr/0101-class-count-judges-own-namespace.md' => 'Analysis.Evidence.Size',
         'docs/adr/0102-detector-verdicts-and-finding-identity.md' => 'Analysis.Finding',
+        'docs/adr/0103-layer-policy-declaration-evidence-and-selection.md' => 'Analysis.Policy.Architecture',
         'src/Analysis/README.md' => 'Analysis.Run',
         'src/Analysis/Configuration/README.md' => 'Analysis.Configuration',
         'src/Analysis/ProjectManifest/README.md' => 'Analysis.ProjectManifest',

@@ -102,6 +102,6 @@ src/Analysis/Finding/RuleConfiguration/RuleOptionsParser.php	form-deciding, decl
 src/Analysis/Finding/RuleConfiguration/RuleSuppressionSelectorDecoder.php	form-deciding, declares nothing	0	-	2	-	carries 2 subject sites of form-deciding-sites.tsv
 src/Analysis/Finding/SuppressionBinding/UnboundSuppressionOptions.php	form-deciding, declares nothing	0	-	1	-	carries 1 subject sites of form-deciding-sites.tsv
 src/Analysis/Policy/Architecture/LayerViolation/LayerViolationOptions.php	options-class	1	severity	5	promise-docblock:90-110	declares 1 axis-A pairs over 1 key paths; carries 5 subject sites of form-deciding-sites.tsv
-src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassOptions.php	options-class	1	mode	3	-	declares 1 axis-A pairs over 1 key paths; carries 3 subject sites of form-deciding-sites.tsv
+src/Analysis/Policy/Architecture/UnassignedClass/UnassignedClassOptions.php	options-class	1	mode	3	-	declares 1 axis-A pairs over 1 key paths; carries 3 subject sites of form-deciding-sites.tsv
 src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php	options-class	1	unused-directive-severity	5	-	declares 1 axis-A pairs over 1 key paths; carries 5 subject sites of form-deciding-sites.tsv
 src/Analysis/Run/ExcludeBinding/UnmatchedExcludeOptions.php	options-class	1	enabled	1	-	declares 1 axis-A pairs over 1 key paths; carries 1 subject sites of form-deciding-sites.tsv

@@ -72,6 +72,9 @@ final class Population
             static fn(Member $member): bool => !\in_array($member->population . ' ' . $member->name, [
                 'producer baseline.unused-entry',
                 'options-class Qualimetrix\\Analysis\\Policy\\Baseline\\EntryBinding\\UnusedEntryOptions',
+                // LayerDeclarationSelectionDoorsTest owns declaration-producer enablement.
+                'producer architecture.layer-declaration',
+                'options-class Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationOptions',
             ], true),
         ));
     }
