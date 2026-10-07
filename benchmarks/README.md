@@ -77,9 +77,13 @@ Do not record private project names, sizes, or filesystem paths in tracked files
 
 ## Usage
 
+Run these commands from the repository root. The separate benchmark dependency
+tree is lock-file reproducible; repeat the install command whenever
+`benchmarks/composer.lock` changes or the local corpus may be stale.
+
 ```bash
-# Install benchmark dependencies
-cd benchmarks && composer install
+# Install or refresh benchmark dependencies
+composer install --working-dir=benchmarks --no-scripts
 
 # Collect benchmark data
 php scripts/collect-benchmark-data.php [output-file.json]
@@ -98,14 +102,26 @@ Output is written to `docs/internal/benchmark-data.json` by default.
 `composer benchmark:check` runs Qualimetrix on all open-source benchmark projects and compares
 project-level health scores against expected ranges in `docs/internal/benchmark-baselines.json`.
 
+The authoritative regression verdict is the stable `benchmark` CI job. It
+installs both the root and benchmark lock files independently and runs for every
+pull request, push to `main`, and merge queue candidate. A local run is useful
+for diagnosis and calibration, but it is evidence only for the dependency tree
+installed in that checkout.
+
 - Exit code 0: all scores within ranges
 - Exit code 1: regression detected (with details)
-- Use `--update-baselines` to recalibrate ranges after intentional formula changes
+- Re-anchor only the cells moved by an owning semantic change, using a range of
+  ±10 around the freshly measured value. Do not run `benchmark:update` for such
+  a targeted shift because it rewrites every cell.
+- Reserve `benchmark:update` for an intentional full formula recalibration and
+  review every changed cell.
 
-This is NOT included in `composer check` (takes ~3 minutes). Run manually after:
-- Changing health score formulas
-- Modifying metric collectors or aggregation
-- Before releases
+This job catches harms that unit regressions cannot: shifts in metrics after all
+collectors, aggregation, and formulas are composed over real package code, and
+an incomplete package corpus in the environment performing the check. It costs
+about 10 minutes on the Linux runner and stays separate from `composer check`.
+False reds can come from dependency availability, cache service failures, or
+runner infrastructure rather than from a metric regression.
 
 ## Known Issues
 

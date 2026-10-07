@@ -11,10 +11,12 @@ project aggregate of a namespace-collected metric is the unweighted mean over
 is real: a parent namespace publishes a value for its whole subtree, so folding
 parents and children together counts the same classes twice.
 
-What the rule also does was measured on this repository. A parent namespace can
-declare types of its own, and 41 such parents hold **447 of 994 classes — 45%**.
-Those classes are represented in the project figure by no value at all. The
-leaf-only rule does not merely avoid double counting them; it drops them.
+What the rule also does was measured on the repository snapshot used for this
+decision. A parent namespace can declare types of its own, and the historical
+measurement found that **45% of classes** were declared directly in such
+parents. Those classes were represented in the project figure by no value at
+all. The leaf-only rule did not merely avoid double counting them; it dropped
+them.
 
 The obvious repair — fold every namespace that publishes a value — is the double
 counting ADR 0062 named, and measurement said why. `DependencyGraphBuilder`
@@ -26,9 +28,8 @@ The second consequence is a reporting one. [ADR 0062](0062-health-scores-measure
 made every dimension publish what it covers, and coupling's denominator was
 `NamespaceTree::getLeaves()` — the population of the aggregate itself. A
 coverage line whose denominator is the aggregate's own traversal can only ever
-print 100%. On the defect above it would have printed **127 of 168 (76%)**,
-which is the first time that line would have been a witness rather than a
-restatement.
+print 100%. On the same historical snapshot it would have reported **76%**,
+which was the first time that line became a witness rather than a restatement.
 
 Cross-tool reconnaissance was done and its blind spots stated: JDepend, PDepend,
 PhpMetrics and NDepend all treat a package as a **partition**, and none of them
@@ -57,10 +58,17 @@ traversal.** Coupling's unit stops being `LeafNamespaces` and becomes namespaces
 declaring a type, counted by `size.symbol-declaring-namespace-count` — a size
 measurement, not a walk of the tree the aggregate folds. The denominator is
 deliberately **not** equal to the fold's population: using the population would
-restore exactly the defect this record repairs. Two namespaces in this
-repository declare only a bare enum and enter the size count without entering
-the fold, so the line reads `166 of 168` rather than `166 of 166`; that
-permanent gap is by construction and is documented where the reader meets it.
+restore exactly the defect this record repairs. A namespace that declares only
+a bare enum enters the size denominator but publishes no own-scope coupling
+value and therefore does not enter the fold. The resulting gap is by
+construction; its current cardinality belongs to a fresh measurement rather
+than this record. Read the live numerator and denominator from the native JSON
+coverage record:
+
+```bash
+bin/qmx check src/ --format=json --workers=0 > /tmp/qmx-health.json
+php -r '$d = json_decode(file_get_contents("/tmp/qmx-health.json"), true, flags: JSON_THROW_ON_ERROR); print_r($d["health"]["coupling"]["coverage"]);'
+```
 
 **Weighting by class count was rejected**, and not because its argument is weak.
 It was measured: 40% of namespaces hold 9% of classes and contribute 40% of the
@@ -76,9 +84,12 @@ named rather than quietly carried.
 
 - Measured on this repository: `coupling.distance-own.avg` 0.2718897 against
   the old `coupling.distance.avg` 0.2854663, `count` 127 → 166,
-  `health.coupling` 51.16 → 51.28, `health.overall` 76.63 → 76.65, and **0 of
-  152 ratchet entries move**. Across the fifteen-project benchmark corpus no
-  project leaves its band because of this change.
+  `health.coupling` 51.16 → 51.28, `health.overall` 76.63 → 76.65, and no
+  ratchet entry moved. The decision-time benchmark measurement covered fifteen
+  installed projects and none left its band because of this change. A later
+  independent measurement installed the full seventeen-project corpus and
+  likewise found every project in band; that later observation was separate
+  from the original evidence and does not claim a result for the current tree.
 - No namespace-level metric moves. The parent's subtree rollup is still built
   and still feeds `coupling.instability`, `coupling.ca` and `coupling.ce` on
   parents; the own scope is added beside it rather than replacing it, so the
@@ -156,4 +167,4 @@ Measured on this repository with default thresholds: the namespace-level
 findings go from 16 to 30. The 14 added are all parents with classes of their
 own that the leaf rule never judged; every leaf is judged on the value it was
 judged on before, because for a namespace without sub-namespaces the two scopes
-are one (all 127 leaves were compared).
+are one (every historical leaf was compared).
