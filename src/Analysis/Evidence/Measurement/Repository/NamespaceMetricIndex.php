@@ -35,16 +35,22 @@ final class NamespaceMetricIndex
 
         $this->observe($namespace);
         $folded = ClassNameSpelling::fold($namespace);
-        $logicalClass = $info->subject?->logicalClassPath();
-        $canonical = match (true) {
-            $symbol->getType() === SymbolType::Namespace_ => SymbolPath::forNamespace($folded)->toCanonical(),
-            $logicalClass !== null => 'logical-class-folded:' . ClassNameSpelling::fold($logicalClass->symbolPath->toString()),
-            default => $info->subject?->toCanonical() ?? $symbol->toCanonical(),
-        };
+        $canonical = self::attributionKey($info, $folded);
         if ($symbol->getType() === SymbolType::Namespace_) {
             $info = new SymbolInfo(SymbolPath::forNamespace($this->canonical($namespace)), $info->file, $info->line);
         }
         $this->infosByNamespace[$folded][$canonical] = $info;
+    }
+
+    private static function attributionKey(SymbolInfo $info, string $foldedNamespace): string
+    {
+        $logicalClass = $info->subject?->logicalClassPath();
+
+        return match (true) {
+            $info->symbolPath->getType() === SymbolType::Namespace_ => SymbolPath::forNamespace($foldedNamespace)->toCanonical(),
+            $logicalClass !== null => 'logical-class-folded:' . ClassNameSpelling::fold($logicalClass->symbolPath->toString()),
+            default => $info->subject?->toCanonical() ?? $info->symbolPath->toCanonical(),
+        };
     }
 
     public function observe(string $namespace): void
