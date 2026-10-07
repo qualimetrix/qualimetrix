@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,6 +16,9 @@ use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
 
+#[CoversClass(BaselineDocumentReader::class)]
+#[CoversClass(BaselineEntryParser::class)]
+#[CoversClass(BaselineLoader::class)]
 final class RetiredDependencyTypeBaselineTest extends TestCase
 {
     #[Test]

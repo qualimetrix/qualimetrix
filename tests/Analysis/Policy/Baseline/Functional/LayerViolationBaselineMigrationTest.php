@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Functional;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
@@ -18,6 +19,11 @@ use ReflectionProperty;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
+#[CoversClass(BaselineDocumentReader::class)]
+#[CoversClass(BaselineLoader::class)]
+#[CoversClass(BaselineCleanupCommand::class)]
+#[CoversClass(BaselineUpdateCommand::class)]
+#[CoversClass(CheckCommand::class)]
 final class LayerViolationBaselineMigrationTest extends TestCase
 {
     private const string CHANNEL = 'architecture.layer-violation';
