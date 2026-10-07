@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentShadowVerdict;
 use Qualimetrix\Core\ProductIdentity;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Reporting\Formatter\PublishedUtf8;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /** Machine-readable projection of one resolved layer assignment. */
@@ -81,6 +82,6 @@ final readonly class LayerAssignmentJsonPresenter
     /** @param array<string, mixed> $payload */
     private static function encode(array $payload): string
     {
-        return json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
+        return PublishedUtf8::encodeJsonObject($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
     }
 }
