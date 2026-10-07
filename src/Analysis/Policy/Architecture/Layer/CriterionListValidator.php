@@ -10,7 +10,7 @@ use InvalidArgumentException;
  * Internal helper shared by {@see MembershipSpec} and {@see ExcludeSpec} for
  * per-kind validation of a criterion list. Stateless; package-internal.
  *
- * The two specs carry identical criterion lists (five {@code list<string>}
+ * The two specs carry identical criterion lists (six {@code list<string>}
  * fields) with identical invariants (every entry must be a non-empty
  * string). Centralising the check here avoids the structural duplication
  * detector flagging the two near-identical {@code validateList} methods

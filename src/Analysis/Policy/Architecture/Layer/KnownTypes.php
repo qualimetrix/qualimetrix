@@ -78,6 +78,11 @@ final readonly class KnownTypes
         return $known + $this->inInstall(array_diff_key($pending, $known));
     }
 
+    public function met(string $fqn): bool
+    {
+        return isset($this->among([$fqn])[$fqn]);
+    }
+
     /**
      * @param array<string, true> $pending
      *

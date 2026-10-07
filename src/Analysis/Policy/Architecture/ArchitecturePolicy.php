@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture;
 
-use Closure;
 use LogicException;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
@@ -33,18 +32,14 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
     private readonly LayerExpansionStage $expansionStage;
 
     /**
-     * @param ExternalParentSourceInterface|null $install The analysed project's own composer install,
-     *                                                    read as data through the port DIT's ancestor
-     *                                                    walk reads it by. It answers only whether a
-     *                                                    type a criterion names exists at all — see
-     *                                                    {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\KnownTypes};
-     *                                                    membership is still decided from what the run
-     *                                                    analysed. Null reads as "no install found".
+     * @param ExternalSupertypeSourceInterface|null $install The analysed project's Composer install,
+     *                                                       read as data through Architecture's own
+     *                                                       supertype port. Null reads as "no install found".
      */
     public function __construct(
         private readonly ArchitectureConfigurationFactory $factory = new ArchitectureConfigurationFactory(),
         ?LayerExpansionStage $expansionStage = null,
-        private readonly ?ExternalParentSourceInterface $install = null,
+        private readonly ?ExternalSupertypeSourceInterface $install = null,
     ) {
         $this->expansionStage = $expansionStage ?? new LayerExpansionStage();
     }
@@ -93,7 +88,9 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         // goes in with the graph, because a context that knows the graph but
         // not the universe cannot tell an inheritance chain that ended from one
         // that was cut at the edge of the analysed set.
-        $configuration->registry()->bindGraph($graph, $analysedClasses, $this->installDeclares());
+        $contextFactory = $configuration->registry()->contextFactory();
+        $contextFactory->bindExternalSupertypeSource($this->install);
+        $configuration->registry()->bindGraph($graph, $analysedClasses);
 
         if ($configuration->hasTemplates()) {
             // One factory for the whole run. Observation and membership
@@ -131,23 +128,6 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
                 LayerShadowing::reportableShadows($established),
             ),
         );
-    }
-
-    /**
-     * Asked per run rather than once: the install is aimed at each run's
-     * project root before the pipeline starts, and a run that found none
-     * reads as one with no install to consult.
-     *
-     * @return (Closure(string): bool)|null
-     */
-    private function installDeclares(): ?Closure
-    {
-        $install = $this->install;
-        if ($install === null || !$install->isConfigured()) {
-            return null;
-        }
-
-        return static fn(string $fqn): bool => $install->parentOf($fqn)->placed;
     }
 
     private static function assignmentMatch(LayerMatch $match): LayerAssignmentMatch

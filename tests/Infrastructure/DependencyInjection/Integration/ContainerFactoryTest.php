@@ -98,6 +98,7 @@ use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Analysis\Finding\SuppressionBinding\UnboundSuppressionRule;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassRule;
 use Qualimetrix\Analysis\Policy\Baseline\EntryBinding\UnusedEntryRule;
@@ -113,6 +114,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\CheckConfigurationResolvers;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
@@ -279,6 +281,14 @@ final class ContainerFactoryTest extends TestCase
         $command = $container->get(GraphExportCommand::class);
         $commandProjection = (new ReflectionProperty(GraphExportCommand::class, 'projection'))->getValue($command);
         self::assertSame($projection, $commandProjection);
+    }
+
+    #[Test]
+    public function itWiresTheArchitectureExternalSupertypeSource(): void
+    {
+        $source = $this->factory->create()->get(ExternalSupertypeSourceInterface::class);
+
+        self::assertInstanceOf(DeclaredSupertypeReader::class, $source);
     }
 
     #[Test]

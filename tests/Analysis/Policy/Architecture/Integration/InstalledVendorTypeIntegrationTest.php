@@ -20,11 +20,9 @@ use Symfony\Component\Console\Tester\CommandTester;
  * repository extends a vendor base class, the base class implements the
  * vendor interface the layer names, and no analysed code names that interface.
  *
- * The run cannot answer the criterion about the repository — its chain leaves
- * the analysed paths — so what keeps the layer from being called empty is
- * whether the named type is one the run met at all. The analysed project's
- * own composer install places it, read as data, which tells it apart from a
- * mistyped name that nothing places.
+ * The analysed project's Composer install is read as data, so Architecture
+ * follows the vendor chain without loading it and tells the declared interface
+ * apart from a mistyped name that nothing places.
  */
 #[CoversClass(KnownTypes::class)]
 #[CoversClass(LayerDeclarationValidator::class)]
@@ -45,7 +43,9 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
             ]],
         ], \JSON_THROW_ON_ERROR));
         $this->write('vendor/vend/orm/src/ObjectRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\ninterface ObjectRepository {}\n");
-        $this->write('vendor/vend/orm/src/EntityRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\nabstract class EntityRepository implements ObjectRepository {}\n");
+        $this->write('vendor/vend/orm/src/StringTrait.php', "<?php\n\nnamespace Vend\\Orm;\n\ntrait StringTrait { public function __toString(): string { return ''; } }\n");
+        $this->write('vendor/vend/orm/src/NestedStringTrait.php', "<?php\n\nnamespace Vend\\Orm;\n\ntrait NestedStringTrait { use StringTrait; }\n");
+        $this->write('vendor/vend/orm/src/EntityRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\nabstract class EntityRepository implements ObjectRepository { use NestedStringTrait; }\n");
         $this->write('vendor/vend/orm/src/ServiceRepository.php', "<?php\n\nnamespace Vend\\Orm;\n\nabstract class ServiceRepository extends EntityRepository {}\n");
         $this->write('src/Repository/UserRepository.php', "<?php\n\nnamespace Sample\\Repository;\n\nuse Vend\\Orm\\ServiceRepository;\n\nfinal class UserRepository extends ServiceRepository {}\n");
         $this->write('src/Web/Controller.php', "<?php\n\nnamespace Sample\\Web;\n\nuse Sample\\Repository\\UserRepository;\n\nfinal class Controller\n{\n    public function __construct(private UserRepository \$users) {}\n}\n");
@@ -57,15 +57,22 @@ final class InstalledVendorTypeIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itDoesNotCallALayerEmptyWhenTheInstallDeclaresTheTypeItNames(): void
+    public function itFollowsTheInstalledVendorChainToTheTypeTheLayerNames(): void
     {
         $tester = $this->check('Vend\Orm\ObjectRepository');
 
         self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
 
-        $doubt = $this->findingsOn($tester, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME);
-        self::assertCount(1, $doubt, 'The layer kept out of the error is named where the doubt is.');
-        self::assertStringContainsString('"repositories"', (string) ($doubt[0]['message'] ?? ''));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itFollowsNestedInstalledTraitsToImplicitStringable(): void
+    {
+        $tester = $this->check('\\Stringable');
+
+        self::assertSame([], $this->findingsOn($tester, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME));
+        self::assertSame([], $this->findingsOn($tester, ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME));
     }
 
     /**

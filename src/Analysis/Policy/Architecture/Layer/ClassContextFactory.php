@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
 use Closure;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypes;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
+use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -88,7 +92,11 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  */
 final class ClassContextFactory
 {
+    private const int MAX_INHERITANCE_DEPTH = 256;
+
     private ?DependencyGraphInterface $graph = null;
+
+    private ?NameSpellingIndex $nameSpellings = null;
 
     /**
      * Child FQN → list of direct parent-class / parent-interface FQNs.
@@ -136,6 +144,27 @@ final class ClassContextFactory
      */
     private ?array $attributesMap = null;
 
+    /** @var array<string, list<string>>|null */
+    private ?array $memberAttributesMap = null;
+
+    /** @var array<string, list<string>>|null */
+    private ?array $traitUseMap = null;
+
+    /** @var array<string, ClassLikeDeclaration>|null */
+    private ?array $declarations = null;
+
+    /** @var array<string, ExternalSupertypes> */
+    private array $externalFacts = [];
+
+    /** @var array<string, true> */
+    private array $externalRelationsLoaded = [];
+
+    /** @var array<string, bool|null> */
+    private array $implicitStringable = [];
+
+    /** @var array<string, true> */
+    private array $implicitStringableDoubts = [];
+
     /**
      * Memoised contexts keyed by {@see SymbolPath::toCanonical()}. Repeated
      * lookups for the same symbol within one run share the transitive-walk
@@ -158,9 +187,21 @@ final class ClassContextFactory
     /** @var (Closure(string): bool)|null see {@see KnownTypes} */
     private ?Closure $installDeclares = null;
 
+    private ?ExternalSupertypeSourceInterface $externalSupertypes = null;
+
     public function __construct()
     {
         $this->analysed = AnalysedDeclarations::unknown();
+    }
+
+    public function bindExternalSupertypeSource(?ExternalSupertypeSourceInterface $source): void
+    {
+        $this->externalSupertypes = $source;
+        $this->externalFacts = [];
+        $this->externalRelationsLoaded = [];
+        $this->implicitStringable = [];
+        $this->implicitStringableDoubts = [];
+        $this->contextCache = [];
     }
 
     /**
@@ -186,14 +227,25 @@ final class ClassContextFactory
     {
         $this->installDeclares = $installDeclares;
         $this->graph = $graph;
+        $analysedList = $analysedClasses === null
+            ? null
+            : (\is_array($analysedClasses) ? array_values($analysedClasses) : iterator_to_array($analysedClasses, false));
+        $this->nameSpellings = $graph === null ? null : new NameSpellingIndex($graph, $analysedList ?? []);
         $this->extendsMap = null;
         $this->interfaceSources = null;
         $this->implementsMap = null;
         $this->attributesMap = null;
+        $this->memberAttributesMap = null;
+        $this->traitUseMap = null;
+        $this->declarations = null;
+        $this->externalFacts = [];
+        $this->externalRelationsLoaded = [];
+        $this->implicitStringable = [];
+        $this->implicitStringableDoubts = [];
         $this->contextCache = [];
-        $this->analysed = $analysedClasses === null
+        $this->analysed = $analysedList === null
             ? AnalysedDeclarations::unknown()
-            : AnalysedDeclarations::of($analysedClasses);
+            : AnalysedDeclarations::of($analysedList);
     }
 
     /**
@@ -230,23 +282,26 @@ final class ClassContextFactory
         // exact string, so a class PHP declares is named — here and at both
         // ends of every declaration edge — in the one spelling criteria are
         // stored in (LayerCriterionNormalizer::normalizeFqnList()).
-        $fqn = PhpBuiltinClassRegistry::spelling($fqn);
+        $fqn = $this->spellingOf($fqn);
         $shortName = self::deriveShortName($fqn);
         $this->ensureMapsBuilt();
 
         // The subject itself is the first step of the walk. When the run never
-        // analysed it and PHP does not declare it, the chain is cut at the
-        // class, not above it, and its attribute list is silence too — which
-        // is why ClassContext derives `declarationAnalysed` from the parent-
-        // chain cuts rather than carrying a separate flag. A class PHP declares
-        // is answered from PHP, as it is anywhere else on a chain.
+        // analysed it and PHP does not declare it, its attribute lists are
+        // silence. External source facts may still complete the ancestry walk,
+        // so declaration-header completeness is carried separately from cuts.
         $parentCuts = [];
         $interfaceCuts = [];
         $parentOf = PhpBuiltinClassHierarchy::extendsOf(...);
 
         $attributes = $this->attributesMap[$fqn] ?? PhpBuiltinClassHierarchy::attributesOf($fqn) ?? [];
+        $memberAttributes = $this->memberAttributesMap[$fqn] ?? [];
         $parents = $this->bfsClosure($this->supertypesOf($fqn, $parentCuts, $parentOf), $parentCuts, $parentOf);
         $interfaces = $this->collectTransitiveInterfaces($fqn, $parents, $interfaceCuts);
+        $implicitStringableKnown = true;
+        foreach ([$fqn, ...$parents, ...$interfaces] as $visited) {
+            $implicitStringableKnown = $implicitStringableKnown && !isset($this->implicitStringableDoubts[$visited]);
+        }
 
         return $this->contextCache[$cacheKey] = new ClassContext(
             $fqn,
@@ -255,6 +310,9 @@ final class ClassContextFactory
             $interfaces,
             $parents,
             ancestryCuts: ['parentChain' => array_keys($parentCuts), 'interfaces' => array_keys($interfaceCuts)],
+            memberAttributeFqns: $memberAttributes,
+            implicitStringableKnown: $implicitStringableKnown,
+            declarationAnalysed: $this->hasOwnDeclarationFacts($fqn),
         );
     }
 
@@ -264,7 +322,11 @@ final class ClassContextFactory
      */
     public function knownTypes(): KnownTypes
     {
-        return new KnownTypes($this->graph, $this->analysed, $this->installDeclares);
+        $installDeclares = $this->externalSupertypes?->isConfigured() === true
+            ? $this->externalTypeExists(...)
+            : $this->installDeclares;
+
+        return new KnownTypes($this->graph, $this->analysed, $installDeclares);
     }
 
     private function ensureMapsBuilt(): void
@@ -279,8 +341,23 @@ final class ClassContextFactory
             DependencyType::Extends->name => [],
             DependencyType::Implements->name => [],
             DependencyType::Attribute->name => [],
+            DependencyType::TraitUse->name => [],
         ];
+        $memberAttributes = [];
         $interfaceSources = [];
+
+        $declarations = [];
+        foreach ($this->graph->getClassLikeDeclarations() as $declaration) {
+            $fqn = $this->fqnFor($declaration->logical->symbolPath);
+            if ($fqn === null) {
+                continue;
+            }
+            $fqn = $this->spellingOf($fqn);
+            $declarations[$fqn] = $declaration;
+            if ($declaration->type === ClassType::Interface_) {
+                $interfaceSources[$fqn] = true;
+            }
+        }
 
         foreach ($this->graph->getDeclarationDependencies() as $dependency) {
             // An anonymous class's own extends/implements/attribute is
@@ -298,17 +375,36 @@ final class ClassContextFactory
                 continue;
             }
 
-            $sourceFqn = PhpBuiltinClassRegistry::spelling($sourceFqn);
-            $byType[$dependency->type->name][$sourceFqn][] = PhpBuiltinClassRegistry::spelling($targetFqn);
+            $sourceFqn = $this->spellingOf($sourceFqn);
+            $targetFqn = $this->spellingOf($targetFqn);
+            if ($dependency->type === DependencyType::Attribute) {
+                if ($dependency->attributeSite === \Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite::ClassHeader) {
+                    $byType[DependencyType::Attribute->name][$sourceFqn][] = $targetFqn;
+                } elseif ($dependency->attributeSite?->isDeclaredMember() === true) {
+                    $memberAttributes[$sourceFqn][] = $targetFqn;
+                }
+
+                continue;
+            }
+            if (isset($byType[$dependency->type->name])) {
+                $byType[$dependency->type->name][$sourceFqn][] = $targetFqn;
+            }
             if ($dependency->interfaceExtends) {
                 $interfaceSources[$sourceFqn] = true;
             }
         }
 
+        $this->declarations = $declarations;
         $this->extendsMap = self::dedupeListValues($byType[DependencyType::Extends->name]);
         $this->interfaceSources = $interfaceSources;
         $this->implementsMap = self::dedupeListValues($byType[DependencyType::Implements->name]);
         $this->attributesMap = self::dedupeListValues($byType[DependencyType::Attribute->name]);
+        $this->memberAttributesMap = self::dedupeListValues($memberAttributes);
+        $this->traitUseMap = self::dedupeListValues($byType[DependencyType::TraitUse->name]);
+
+        foreach (array_keys($declarations) as $fqn) {
+            $this->applyImplicitStringable($fqn);
+        }
     }
 
     /**
@@ -421,6 +517,15 @@ final class ClassContextFactory
     {
         \assert($this->extendsMap !== null);
 
+        if (
+            !$this->analysed->contains($fqn)
+            && $phpAbove($fqn) === null
+            && !isset($this->externalRelationsLoaded[$fqn])
+        ) {
+            $this->loadExternalDeclaration($fqn);
+            $this->applyImplicitStringable($fqn);
+        }
+
         $also = $alsoAbove[$fqn] ?? [];
         $above = $this->extendsMap[$fqn] ?? $phpAbove($fqn);
         if ($above !== null) {
@@ -432,11 +537,198 @@ final class ClassContextFactory
             return $also;
         }
 
-        if (!$this->analysed->contains($fqn)) {
+        if (!$this->hasReadableDeclaration($fqn)) {
             $unresolved[$fqn] = true;
         }
 
         return [];
+    }
+
+    private function loadExternalDeclaration(string $fqn): void
+    {
+        $source = $this->externalSupertypes;
+        if ($source === null || !$source->isConfigured() || isset($this->externalRelationsLoaded[$fqn])) {
+            return;
+        }
+
+        $facts = $this->externalFactsOf($fqn);
+        $this->externalRelationsLoaded[$fqn] = true;
+        if ($facts->declaredSpelling === null || $facts->classType === null) {
+            return;
+        }
+
+        \assert($this->extendsMap !== null);
+        \assert($this->implementsMap !== null);
+        \assert($this->traitUseMap !== null);
+        \assert($this->interfaceSources !== null);
+
+        if ($facts->parent !== null) {
+            $this->extendsMap[$fqn][] = $facts->parent;
+        }
+        if ($facts->classType === ClassType::Interface_) {
+            $this->interfaceSources[$fqn] = true;
+            foreach ($facts->interfaces as $interface) {
+                $this->extendsMap[$fqn][] = $interface;
+            }
+        } else {
+            foreach ($facts->interfaces as $interface) {
+                $this->implementsMap[$fqn][] = $interface;
+            }
+        }
+        foreach ($facts->traits as $trait) {
+            $this->traitUseMap[$fqn][] = $trait;
+        }
+
+        $this->extendsMap = self::dedupeListValues($this->extendsMap);
+        $this->implementsMap = self::dedupeListValues($this->implementsMap);
+        $this->traitUseMap = self::dedupeListValues($this->traitUseMap);
+    }
+
+    private function applyImplicitStringable(string $fqn): void
+    {
+        $stringable = $this->implicitStringableStatus($fqn, []);
+        if ($stringable === null) {
+            $this->implicitStringableDoubts[$fqn] = true;
+
+            return;
+        }
+        if (!$stringable) {
+            return;
+        }
+
+        $type = $this->classTypeOf($fqn);
+        if ($type === ClassType::Interface_) {
+            \assert($this->extendsMap !== null);
+            $this->extendsMap[$fqn][] = 'Stringable';
+            $this->extendsMap = self::dedupeListValues($this->extendsMap);
+
+            return;
+        }
+        if ($type !== ClassType::Class_) {
+            return;
+        }
+
+        \assert($this->implementsMap !== null);
+        $this->implementsMap[$fqn][] = 'Stringable';
+        $this->implementsMap = self::dedupeListValues($this->implementsMap);
+    }
+
+    /**
+     * @param array<string, true> $visiting
+     */
+    private function implicitStringableStatus(string $fqn, array $visiting): ?bool
+    {
+        if ($fqn === 'Stringable') {
+            return true;
+        }
+        $builtinInterfaces = PhpBuiltinClassHierarchy::interfacesOf($fqn);
+        if ($builtinInterfaces !== null) {
+            return \in_array('Stringable', $builtinInterfaces, true);
+        }
+        if (\array_key_exists($fqn, $this->implicitStringable)) {
+            return $this->implicitStringable[$fqn];
+        }
+        if (isset($visiting[$fqn]) || \count($visiting) >= self::MAX_INHERITANCE_DEPTH) {
+            return null;
+        }
+
+        $facts = $this->declarationFacts($fqn);
+        if ($facts === null) {
+            return $this->implicitStringable[$fqn] = null;
+        }
+        if ($facts->declaresToString) {
+            return $this->implicitStringable[$fqn] = true;
+        }
+
+        $visiting[$fqn] = true;
+        $unknown = $facts->aliasesTraitMethodAsToString;
+        \assert($this->extendsMap !== null);
+        \assert($this->implementsMap !== null);
+        \assert($this->traitUseMap !== null);
+        foreach ([
+            ...($this->traitUseMap[$fqn] ?? []),
+            ...($this->extendsMap[$fqn] ?? []),
+            ...($this->implementsMap[$fqn] ?? []),
+        ] as $related) {
+            $status = $this->implicitStringableStatus($related, $visiting);
+            if ($status === true) {
+                return $this->implicitStringable[$fqn] = true;
+            }
+            $unknown = $unknown || $status === null;
+        }
+
+        return $this->implicitStringable[$fqn] = $unknown ? null : false;
+    }
+
+    private function declarationFacts(string $fqn): ClassLikeDeclaration|ExternalSupertypes|null
+    {
+        \assert($this->declarations !== null);
+        if (isset($this->declarations[$fqn])) {
+            return $this->declarations[$fqn];
+        }
+        if (!isset($this->externalRelationsLoaded[$fqn])) {
+            $this->loadExternalDeclaration($fqn);
+        }
+
+        $facts = $this->externalFacts[$fqn] ?? null;
+
+        return $facts?->declaredSpelling === null ? null : $facts;
+    }
+
+    private function classTypeOf(string $fqn): ?ClassType
+    {
+        $facts = $this->declarationFacts($fqn);
+
+        return $facts instanceof ClassLikeDeclaration ? $facts->type : $facts?->classType;
+    }
+
+    private function hasReadableDeclaration(string $fqn): bool
+    {
+        if ($this->analysed->contains($fqn)) {
+            return true;
+        }
+
+        return ($this->externalFacts[$fqn]->declaredSpelling ?? null) !== null;
+    }
+
+    private function hasOwnDeclarationFacts(string $fqn): bool
+    {
+        \assert($this->declarations !== null);
+        if (isset($this->declarations[$fqn]) || PhpBuiltinClassRegistry::canonicalName($fqn) !== null) {
+            return true;
+        }
+        if (($this->externalFacts[$fqn]->declaredSpelling ?? null) !== null) {
+            return false;
+        }
+
+        return $this->analysed->contains($fqn);
+    }
+
+    private function externalTypeExists(string $fqn): bool
+    {
+        $facts = $this->externalFactsOf($fqn);
+
+        return $facts->placed && $facts->declaredSpelling === ltrim($fqn, '\\');
+    }
+
+    private function externalFactsOf(string $fqn): ExternalSupertypes
+    {
+        if (isset($this->externalFacts[$fqn])) {
+            return $this->externalFacts[$fqn];
+        }
+
+        $source = $this->externalSupertypes;
+
+        return $this->externalFacts[$fqn] = $source === null || !$source->isConfigured()
+            ? ExternalSupertypes::notPlaced()
+            : $source->supertypesOf($fqn);
+    }
+
+    private function spellingOf(string $fqn): string
+    {
+        return PhpBuiltinClassRegistry::canonicalName($fqn)
+            ?? $this->nameSpellings?->spellingOf($fqn)
+            ?? $fqn;
     }
 
     /**

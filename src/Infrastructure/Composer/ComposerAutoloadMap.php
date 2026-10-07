@@ -36,6 +36,9 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
     /** @var list<string> */
     private array $roots = [];
 
+    /** @var array<string, list<string>> */
+    private array $directoryEntries = [];
+
     private readonly GeneratedClassmap $generatedClassmap;
 
     public function __construct(
@@ -60,6 +63,7 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         $this->omissions = $located->omissions;
         $this->psr4 = [];
         $this->classmap = [];
+        $this->directoryEntries = [];
         $this->loaded = false;
     }
 
@@ -115,9 +119,8 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
      */
     private function within(string $path): ?string
     {
-        $resolved = realpath($path);
-
-        if ($resolved === false) {
+        $resolved = $this->exactExistingPath($path);
+        if ($resolved === null) {
             return null;
         }
 
@@ -128,6 +131,60 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         }
 
         return null;
+    }
+
+    /**
+     * Resolves an existing path only when every authored segment has the same
+     * bytes as its directory entry. realpath() alone follows a differently
+     * cased path on a case-insensitive filesystem, which made Composer
+     * placement depend on the host OS.
+     */
+    private function exactExistingPath(string $path): ?string
+    {
+        if ($path === '' || !str_starts_with($path, '/')) {
+            return null;
+        }
+
+        $current = '/';
+        foreach (explode('/', substr($path, 1)) as $segment) {
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+            if ($segment === '..') {
+                $current = \dirname(rtrim($current, '/')) . '/';
+
+                continue;
+            }
+
+            $trimmed = rtrim($current, '/');
+            $parent = $trimmed === '' ? '/' : $trimmed;
+            if (!\in_array($segment, $this->entriesOf($parent), true)) {
+                return null;
+            }
+            $current = ($parent === '/' ? '' : $parent) . '/' . $segment;
+        }
+
+        $resolved = realpath($current);
+
+        return $resolved === false ? null : $resolved;
+    }
+
+    /** @return list<string> */
+    private function entriesOf(string $directory): array
+    {
+        $key = realpath($directory);
+        if ($key === false) {
+            return [];
+        }
+
+        if (!isset($this->directoryEntries[$key])) {
+            $entries = @scandir($key);
+            $this->directoryEntries[$key] = $entries === false
+                ? []
+                : array_values(array_diff($entries, ['.', '..']));
+        }
+
+        return $this->directoryEntries[$key];
     }
 
     private function load(): void
@@ -155,9 +212,16 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
                 $this->logger->warning(\sprintf('Cannot use "%s": %s. Classes rejected by the manifest are treated as external.', $issue->source, $issue->kind->value === 'invalid-json' ? 'invalid JSON — ' . $issue->detail : $issue->detail));
             }
         }
-        $vendor = str_starts_with($manifest->vendorDirectory, '/') ? $manifest->vendorDirectory : $root . '/' . $manifest->vendorDirectory;
+        $vendorPath = str_starts_with($manifest->vendorDirectory, '/')
+            ? $manifest->vendorDirectory
+            : $root . '/' . $manifest->vendorDirectory;
+        $vendor = $this->exactExistingPath($vendorPath);
 
         $this->addPsr4($manifest->psr4Roots(), $root);
+        if ($vendor === null) {
+            return;
+        }
+
         $this->readInstalledPackages($vendor);
 
         foreach ($this->generatedClassmap->read($root, $vendor) as $fqcn => $file) {
@@ -195,10 +259,10 @@ final class ComposerAutoloadMap implements AnalysedInstallAnchorInterface
         foreach ($section as $prefix => $paths) {
             foreach ((array) $paths as $path) {
                 $directory = \is_string($prefix) && \is_string($path)
-                    ? realpath(rtrim($base . '/' . $path, '/'))
-                    : false;
+                    ? $this->exactExistingPath(rtrim($base . '/' . $path, '/'))
+                    : null;
 
-                if ($directory !== false) {
+                if ($directory !== null) {
                     $this->psr4[$prefix][] = $directory;
                 }
             }

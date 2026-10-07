@@ -77,6 +77,56 @@ final class ComposerAutoloadMapTest extends TestCase
     }
 
     #[Test]
+    public function itRefusesAPsr4FileWhoseCaseDiffersFromTheRequestedClass(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $this->write('src/Foo.php', "<?php\n\nnamespace App;\n\nclass Foo {}\n");
+
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertNull($map->fileFor('App\\foo'));
+    }
+
+    #[Test]
+    public function itRefusesAPsr4DirectoryWhoseCaseDiffersFromTheRequestedNamespace(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $this->write('src/sub/Foo.php', "<?php\n\nnamespace App\\sub;\n\nclass Foo {}\n");
+
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertNull($map->fileFor('App\\Sub\\Foo'));
+    }
+
+    #[Test]
+    public function itRefusesAPsr4MappingBaseWhoseAuthoredCaseDiffersFromDisk(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'Lib/']]]);
+        $this->write('lib/Foo.php', "<?php\n\nnamespace App;\n\nclass Foo {}\n");
+
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertNull($map->fileFor('App\\Foo'));
+    }
+
+    #[Test]
+    public function itDropsTheDirectoryListingSnapshotWhenReanchored(): void
+    {
+        $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);
+        $map = new ComposerAutoloadMap(new \Qualimetrix\Infrastructure\Composer\ComposerManifestReader());
+        $map->pointAt($this->root, [$this->root . '/src']);
+        self::assertNull($map->fileFor('App\\AddedLater'));
+
+        $file = $this->write('src/AddedLater.php', "<?php\n\nnamespace App;\n\nclass AddedLater {}\n");
+        $map->pointAt($this->root, [$this->root . '/src']);
+
+        self::assertSame(realpath($file), realpath((string) $map->fileFor('App\\AddedLater')));
+    }
+
+    #[Test]
     public function itPlacesAClassFromAnInstalledPackage(): void
     {
         $this->writeManifest(['autoload' => ['psr-4' => ['App\\' => 'src/']]]);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Core\Unit\Ast;
 
+use PhpParser\Error;
+use PhpParser\ErrorHandler\Throwing;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Namespace_;
@@ -47,5 +49,15 @@ final class NameResolutionTest extends TestCase
         NameResolution::resolve($ast);
 
         self::assertCount(1, $ast);
+    }
+
+    #[Test]
+    public function itLetsAConsumerRefuseNameResolutionErrors(): void
+    {
+        $ast = (new ParserFactory())->createForHostVersion()->parse('<?php namespace App; use Vendor\\One as Alias; use Vendor\\Two as Alias; class Subject extends Alias {}') ?? [];
+
+        $this->expectException(Error::class);
+
+        NameResolution::resolve($ast, new Throwing());
     }
 }

@@ -24,6 +24,10 @@ External owners use only the contracts in `Contract/`:
 - `ShadowExemption` names established first-match exemptions for inspection.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
+- `ExternalSupertypeSourceInterface` and `ExternalSupertypes` expose source
+  facts from the analysed Composer install: exact placement and declaration
+  spelling, declaration kind, parent, interfaces, traits, direct
+  `__toString`, and a direct trait alias to `__toString`.
 - Configuration and preparation failures are surfaced as
   `Qualimetrix\Analysis\Configuration\Contract\Refusal\ConfigurationRefusal`.
   A configuration refusal names the layer that wrote the refused value —
@@ -44,6 +48,8 @@ policy state enters the worker or cache payload.
 ```text
 Architecture/
 ├── Contract/                  # exact external promises and debug values
+│   ├── ExternalSupertypeSourceInterface.php
+│   ├── ExternalSupertypes.php
 │   ├── ShadowExemption.php
 │   └── UnassignedClassLayerRequirementInterface.php
 ├── Configuration/              # the `architecture:` section: its schema and validators
@@ -145,14 +151,21 @@ or namespaces.
 
 ### What the analysed set can and cannot answer
 
-`extends`, `implements` and `attributes` are answered from the declaration
-edges this run recorded, so the answer is bounded by what the run analysed.
+`extends`, `implements`, class `attributes`, and `member_attributes` are
+answered first from the declaration edges this run recorded.
 `ClassContextFactory` is bound to the run's **class universe** alongside its
-graph (`ArchitecturePolicy::prepare()` is the single binding point) and reports
-where the facts ran out: `ClassContext::$declarationAnalysed` says whether the
-subject's own declaration was read, and `ClassContext::$ancestryCuts` names
-where the parent-class chain was cut and, separately, every interface the walk
-reached without facts of its own.
+graph and Architecture's external-supertype source
+(`ArchitecturePolicy::prepare()` is the single binding point). It follows a
+non-analysed link through an exactly placed Composer source file, without
+loading the declaration. An unmapped, unreadable, conditional, or unresolved
+declaration remains a cut: `ClassContext::$declarationAnalysed` says whether
+the subject's own declaration header was read, independently of whether
+external supertype facts completed its ancestry, and `ClassContext::$ancestryCuts`
+names where the parent-class chain was cut and, separately, every interface
+the walk reached without readable facts. Per-run external facts and contexts
+are memoised by the factory and cleared at every binding; Composer placement
+and directory-listing snapshots are cleared when the analysed project is
+reanchored.
 
 A class or interface PHP declares is not a cut. Its parent, interfaces and
 class-level attributes come from `Core\Symbol\PhpBuiltinClassHierarchy`, a
@@ -161,19 +174,27 @@ whichever PHP runs the analysis and whichever extensions it loads. Nothing in
 this slice reads reflection. For an interface, `extends` follows the
 interfaces it extends, as PHP's own keyword does.
 
-The interfaces PHP adds unwritten — `UnitEnum` and `BackedEnum` on an enum,
-`Stringable` on a class or interface declaring `__toString()` — arrive as
-declaration edges from `ClassLikeHandler`. The interface walk also follows an
-interface's own `implements` edge, since that edge can only be the `Stringable`
-PHP gave it. A `__toString()` a class takes from a trait is not seen, and
-`extends: ['\Stringable']` does not see the one an interface gets.
+`UnitEnum` and `BackedEnum` remain declaration edges. Implicit `Stringable` is
+derived from `ClassLikeDeclaration` facts and the same mandatory facts read
+from external declarations. The derivation follows parents, implemented or
+extended interfaces, and nested trait uses, so a direct or inherited
+`__toString()` produces the same answer PHP does. An interface gets
+`Stringable` in both its interface and interface-parent closure; a class gets
+it only in the interface closure. A trait supplies evidence to a class that
+uses it but is not itself `Stringable`. A trait adaptation that
+aliases some method to `__toString` is carried as a narrow doubt until another
+fact proves the result; it does not make unrelated `implements` or `extends`
+criteria undecidable.
 Criterion FQNs are stored without a leading `\`, which is how a class in the
 global namespace is written (`\Throwable`) and how the run records none of
 them. A class PHP declares is one name whatever its case, so both sides of the
 comparison carry it in `PhpBuiltinClassRegistry::spelling()`:
 `LayerCriterionNormalizer` stores a criterion that way, and
-`ClassContextFactory` names a graph-backed class subject and both ends of every
-declaration edge that way. Project and vendor names are compared as written.
+`NameSpellingIndex` chooses one observed spelling for every project class-name
+identity from analysed declarations and graph endpoints; `ClassContextFactory`
+uses it consistently across a closure. Criteria and `KnownTypes::met()` remain
+case-sensitive, and an external type is known only when placement and the
+declaration's spelling both equal the requested name.
 
 `LayerCriteriaMatcher` turns that into a third answer beside match and
 non-match. `CriterionOutcome::Undecidable` is what a declared criterion returns
@@ -186,8 +207,9 @@ decided walk may report a match. A hit found on a truncated chain still counts,
 because truncation can hide evidence but never invent it.
 
 Which kinds this reaches, and why exactly those: `patterns` and `suffix` are
-derived from the FQN and are always decided; `attributes` is decided whenever
-the subject's own declaration was analysed; `extends` is decided when the
+derived from the FQN and are always decided; `attributes` and
+`member_attributes` are decided whenever the subject's own declaration was
+analysed; `extends` is decided when the
 parent-class chain was not cut, and `implements` when neither that chain nor
 the interfaces above it were. The two are kept apart because an unread parent
 class can hide both a parent and an interface, while an unread interface can
@@ -249,16 +271,14 @@ the walk instead of the bare match list. `LayerEvidence::reachedCounts()` is
 the one place that decides which of the `contended` column keeps a layer out of
 `architecture.unreachable-layer`. An analysed class the layer's own criteria
 matched counts. An analysed class the layer could not answer about counts only
-while some type its `attributes:`/`implements:`/`extends:` criteria name is one
+while some type its `attributes:`/`member_attributes:`/`implements:`/`extends:` criteria name is one
 the run met — declared in the analysed paths, built into PHP, at an end of a
 dependency edge, or declared by the analysed project's composer install
 (`KnownTypes`): a class with an unread parent leaves every such criterion
-unanswered, a mistyped name included. The install is read through Design's
-`ExternalParentSourceInterface`, the port DIT's ancestor walk reads it by,
-which `ArchitecturePolicy` takes by autowiring and hands down as a lookup when
-it binds the run; it answers only whether the type exists, so a criterion over
-a vendor chain stays undecidable and the layer is named by
-`architecture.doubted-assignment` rather than called empty. A
+unanswered, a mistyped name included. The install is read through
+Architecture's `ExternalSupertypeSourceInterface`; readable vendor chains are
+answered fully, while an unreadable or unmapped link remains undecidable and
+is named by `architecture.doubted-assignment` rather than called empty. A
 symbol outside the analysed paths never counts, for the same reason. The
 finding says what it left out in the words true of each share: the unanswered
 symbols and the named types the run never met — a typo, or, when no install
@@ -296,20 +316,20 @@ exclude, so an empty layer can name that cause without reparsing canonical keys.
 
 Three declarations that used to be accepted are now refused at config load,
 because there is no correct silent reading of any of them. A template layer may
-not declare `suffix`, `attributes`, `implements` or `extends` under
+not declare `suffix`, `attributes`, `member_attributes`, `implements` or `extends` under
 `match: any`: only `patterns` carries capture variables, so the criterion would
 be copied into every expanded instance as one project-wide net and the instance
 that wins a class would be decided by binding-value order. A non-`ignore`
 `coverage-gap:` requires at least one `layers:` entry, because with no layers
 every class is outside every layer while the walk short-circuits and the run
 exits 0 — the strictest setting producing the quietest outcome. And an `attributes`,
-`implements` or `extends` entry that is nothing but `\` passed the
+`member_attributes`, `implements` or `extends` entry that is nothing but `\` passed the
 namespace-separator check while naming no class; with the leading separator now
 dropped it is refused as such.
 
 `ClassContextFactory` skips a `Dependency` flagged
 `describesNestedAnonymousClass` when it builds `extendsMap`, `implementsMap`
-and `attributesMap`: that edge is a declaration fact about an anonymous class
+and the class/member attribute maps: that edge is a declaration fact about an anonymous class
 nested inside the source, not about the source itself, so counting it would
 match the enclosing class — including transitively, since membership walks
 `extendsMap` as a BFS closure — into a layer whose criteria describe the

@@ -9,6 +9,9 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
@@ -17,6 +20,10 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
@@ -248,6 +255,41 @@ final class TupleExtractorTest extends TestCase
         $tuples = $this->extractor->collect($template, $classes);
 
         self::assertSame([['module' => 'Order']], $tuples);
+    }
+
+    #[Test]
+    public function itNarrowsTheTupleSetByMemberAttributeUnderMatchAll(): void
+    {
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\**'],
+                memberAttributes: ['App\\Route'],
+                mode: MatchMode::All,
+            ),
+        );
+
+        self::assertSame(
+            [['module' => 'Order']],
+            $this->extractor->collect($template, self::classSetWithMemberAttribute('App\\Module\\Order\\Controller', 'App\\Route')),
+        );
+    }
+
+    #[Test]
+    public function itFiltersTupleObservationByAnExcludedMemberAttribute(): void
+    {
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(
+                patterns: ['App\\Module\\{module}\\**'],
+                exclude: new ExcludeSpec(memberAttributes: ['App\\Internal']),
+            ),
+        );
+
+        self::assertSame(
+            [],
+            $this->extractor->collect($template, self::classSetWithMemberAttribute('App\\Module\\Order\\Controller', 'App\\Internal')),
+        );
     }
 
     #[Test]
@@ -507,5 +549,23 @@ final class TupleExtractorTest extends TestCase
         $factory->bindGraph(AdjacencyGraphBuilder::empty());
 
         return new ClassSet($classes, $factory);
+    }
+
+    private static function classSetWithMemberAttribute(string $fqn, string $attribute): ClassSet
+    {
+        $class = SymbolPath::fromClassFqn($fqn);
+        $declaration = DeclarationPath::of($class, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $dependency = Dependency::ofAttribute(
+            $declaration,
+            new LogicalClassPath(SymbolPath::fromClassFqn($attribute)),
+            Location::none(),
+            AttributeSite::Method,
+            false,
+        );
+        $graph = AdjacencyGraphBuilder::fromState([$dependency], [], [], [$class], []);
+        $factory = new ClassContextFactory();
+        $factory->bindGraph($graph, [$class]);
+
+        return new ClassSet([$class], $factory);
     }
 }

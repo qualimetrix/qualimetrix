@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 use LogicException;
 
 /**
- * Stateless evaluator that walks the five criterion kinds (patterns,
- * suffix, attributes, implements, extends) against a {@see ClassContext}
+ * Stateless evaluator that walks the six criterion kinds (patterns,
+ * suffix, attributes, member attributes, implements, extends) against a {@see ClassContext}
  * and returns a {@see CriteriaEvaluation}.
  *
  * Shared between positive ({@see MembershipSpec}) and exclude
@@ -32,9 +32,9 @@ use LogicException;
 final class LayerCriteriaMatcher
 {
     /**
-     * Walks the five criterion kinds against the class context and returns
+     * Walks the six criterion kinds against the class context and returns
      * both halves of the answer: the matched-criterion descriptors (in
-     * declaration order: patterns, suffix, attributes, implements, extends)
+     * declaration order: patterns, suffix, attributes, member attributes, implements, extends)
      * and the declared kinds this run has no facts to decide. Empty/missing
      * criterion kinds appear in neither list.
      *
@@ -52,6 +52,7 @@ final class LayerCriteriaMatcher
      * @param list<string> $patterns Patterns exactly as the user wrote them.
      * @param list<string> $suffix
      * @param list<string> $attributes
+     * @param list<string> $memberAttributes
      * @param list<string> $implements
      * @param list<string> $extends
      */
@@ -60,19 +61,23 @@ final class LayerCriteriaMatcher
         array $patterns,
         array $suffix,
         array $attributes,
+        array $memberAttributes,
         array $implements,
         array $extends,
     ): CriteriaEvaluation {
-        self::refuseUnbackedCriteria($context, $attributes, $implements, $extends);
+        self::refuseUnbackedCriteria($context, $attributes, $memberAttributes, $implements, $extends);
 
-        $parentChainKnown = $context->parentChainKnown();
-        $interfacesKnown = $context->interfacesKnown();
+        $parentChainKnown = $context->parentChainKnown()
+            && ($context->implicitStringableKnown || !\in_array('Stringable', $extends, true));
+        $interfacesKnown = $context->interfacesKnown()
+            && ($context->implicitStringableKnown || !\in_array('Stringable', $implements, true));
 
         /** @var list<array{0: ?MatchedCriterion, 1: list<string>, 2: bool, 3: MatchedCriterionKind}> $kinds */
         $kinds = [
             [self::matchPatterns($context, $patterns), $patterns, true, MatchedCriterionKind::Pattern],
             [self::matchSuffix($context, $suffix), $suffix, true, MatchedCriterionKind::Suffix],
             [self::matchAttributes($context, $attributes), $attributes, $context->declarationAnalysed, MatchedCriterionKind::Attribute],
+            [self::matchMemberAttributes($context, $memberAttributes), $memberAttributes, $context->declarationAnalysed, MatchedCriterionKind::MemberAttribute],
             [self::matchImplements($context, $implements), $implements, $interfacesKnown, MatchedCriterionKind::Implements],
             [self::matchExtends($context, $extends), $extends, $parentChainKnown, MatchedCriterionKind::Extends],
         ];
@@ -95,7 +100,7 @@ final class LayerCriteriaMatcher
     }
 
     /**
-     * Refuses the three criteria that can only be answered from a dependency
+     * Refuses the four criteria that can only be answered from a dependency
      * graph when the context was built without one.
      *
      * Such a context carries three empty lists, which read as "this class has
@@ -106,12 +111,14 @@ final class LayerCriteriaMatcher
      * the FQN alone and stay answerable.
      *
      * @param list<string> $attributes
+     * @param list<string> $memberAttributes
      * @param list<string> $implements
      * @param list<string> $extends
      */
     public static function refuseUnbackedCriteria(
         ClassContext $context,
         array $attributes,
+        array $memberAttributes,
         array $implements,
         array $extends,
     ): void {
@@ -122,6 +129,9 @@ final class LayerCriteriaMatcher
         $declared = [];
         if ($attributes !== []) {
             $declared[] = 'attributes';
+        }
+        if ($memberAttributes !== []) {
+            $declared[] = 'member_attributes';
         }
         if ($implements !== []) {
             $declared[] = 'implements';
@@ -151,6 +161,7 @@ final class LayerCriteriaMatcher
      * @param list<string> $patterns
      * @param list<string> $suffix
      * @param list<string> $attributes
+     * @param list<string> $memberAttributes
      * @param list<string> $implements
      * @param list<string> $extends
      */
@@ -158,6 +169,7 @@ final class LayerCriteriaMatcher
         array $patterns,
         array $suffix,
         array $attributes,
+        array $memberAttributes,
         array $implements,
         array $extends,
     ): int {
@@ -169,6 +181,9 @@ final class LayerCriteriaMatcher
             $count++;
         }
         if ($attributes !== []) {
+            $count++;
+        }
+        if ($memberAttributes !== []) {
             $count++;
         }
         if ($implements !== []) {
@@ -225,6 +240,24 @@ final class LayerCriteriaMatcher
         foreach ($attributes as $attributeFqn) {
             if (isset($context->attributeFqnSet[$attributeFqn])) {
                 return new MatchedCriterion(MatchedCriterionKind::Attribute, $attributeFqn);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param list<string> $memberAttributes
+     */
+    private static function matchMemberAttributes(ClassContext $context, array $memberAttributes): ?MatchedCriterion
+    {
+        if ($memberAttributes === [] || $context->memberAttributeFqnSet === []) {
+            return null;
+        }
+
+        foreach ($memberAttributes as $attributeFqn) {
+            if (isset($context->memberAttributeFqnSet[$attributeFqn])) {
+                return new MatchedCriterion(MatchedCriterionKind::MemberAttribute, $attributeFqn);
             }
         }
 

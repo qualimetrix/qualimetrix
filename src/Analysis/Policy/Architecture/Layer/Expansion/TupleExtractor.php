@@ -184,7 +184,7 @@ final class TupleExtractor
      * Patterns are passed empty on purpose: the capture-producing pattern has
      * already been matched by the caller, and the template's raw {@code {var}}
      * spelling would not match a concrete FQN anyway. What is left is exactly
-     * the {@see MatchMode::All} question over the four non-pattern kinds, and
+     * the {@see MatchMode::All} question over the five non-pattern kinds, and
      * {@see LayerCriteriaMatcher} answers it — a second implementation of this
      * predicate lived here once, and it is how observation and matching came to
      * disagree with each other while each looked right on its own.
@@ -205,6 +205,7 @@ final class TupleExtractor
             [],
             $membership->suffix,
             $membership->attributes,
+            $membership->memberAttributes,
             $membership->implements,
             $membership->extends,
         );
@@ -213,6 +214,7 @@ final class TupleExtractor
             [],
             $membership->suffix,
             $membership->attributes,
+            $membership->memberAttributes,
             $membership->implements,
             $membership->extends,
         ));

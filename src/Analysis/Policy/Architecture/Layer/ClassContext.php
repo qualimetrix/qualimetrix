@@ -8,12 +8,13 @@ namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
  * Read-only view of a class consumed by {@see LayerDefinition::matches()} to
  * evaluate the layer's membership criteria.
  *
- * The five fields back the five criterion kinds documented on
+ * The six fields back the six criterion kinds documented on
  * {@see MembershipSpec}:
  *
  * - {@see fqn} → matched against {@code patterns}.
  * - {@see shortName} → matched against {@code suffix}.
  * - {@see attributeFqns} → matched against {@code attributes}.
+ * - {@see memberAttributeFqns} → matched against {@code member_attributes}.
  * - {@see interfaces} → matched against {@code implements} (already includes
  *   the transitive closure: direct implements + interfaces inherited from
  *   parent classes + interfaces extending other interfaces).
@@ -59,6 +60,9 @@ final readonly class ClassContext
      */
     public array $attributeFqnSet;
 
+    /** @var array<string, true> */
+    public array $memberAttributeFqnSet;
+
     /**
      * Precomputed lookup table for the implements haystack. See
      * {@see $attributeFqnSet}.
@@ -76,14 +80,11 @@ final readonly class ClassContext
     public array $parentClassSet;
 
     /**
-     * Whether the run read this symbol's OWN declaration.
-     *
-     * Derived rather than passed, because the two facts are one: the subject's
-     * own FQN appears in the parent-chain cuts exactly when the run
-     * did not read it. False means {@see $attributeFqns} is silence rather than
-     * an empty answer — attributes sit on the class itself and reach no
-     * further, so this, and not the whole list, is what decides the
-     * {@code attributes} criterion.
+     * Whether the run read this symbol's OWN declaration. False means
+     * {@see $attributeFqns} and {@see $memberAttributeFqns} are silence rather
+     * than empty answers. External supertype facts can complete ancestry
+     * without supplying either attribute fact, so this is independent from
+     * {@see $ancestryCuts}.
      */
     public bool $declarationAnalysed;
 
@@ -116,6 +117,8 @@ final readonly class ClassContext
      *                                                                                 `interfaces` every such interface. Past a cut
      *                                                                                 {@see $parentClasses} and {@see $interfaces} are truncated, so a
      *                                                                                 missing entry proves nothing; a present one still does.
+     * @param list<string> $memberAttributeFqns Attribute FQNs applied to declared members.
+     * @param bool $declarationAnalysed Whether the subject's own declaration header was read.
      */
     public function __construct(
         public string $fqn,
@@ -125,10 +128,14 @@ final readonly class ClassContext
         public array $parentClasses = [],
         public bool $graphBacked = true,
         public array $ancestryCuts = ['parentChain' => [], 'interfaces' => []],
+        public array $memberAttributeFqns = [],
+        public bool $implicitStringableKnown = true,
+        bool $declarationAnalysed = true,
     ) {
-        $this->declarationAnalysed = !\in_array($fqn, $ancestryCuts['parentChain'], true);
+        $this->declarationAnalysed = $declarationAnalysed;
 
         $this->attributeFqnSet = $attributeFqns === [] ? [] : array_fill_keys($attributeFqns, true);
+        $this->memberAttributeFqnSet = $memberAttributeFqns === [] ? [] : array_fill_keys($memberAttributeFqns, true);
         $this->interfaceSet = $interfaces === [] ? [] : array_fill_keys($interfaces, true);
         $this->parentClassSet = $parentClasses === [] ? [] : array_fill_keys($parentClasses, true);
     }

@@ -7,11 +7,13 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
+use Qualimetrix\Infrastructure\Composer\DeclaredSupertypeReader;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflightProfile;
 use Qualimetrix\Infrastructure\Console\Refusal\RefusalPresenter;
@@ -62,6 +64,10 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
 
         $container->register(self::ARCHITECTURE_POLICY)
             ->setAutowired(true);
+        $container->register(DeclaredSupertypeReader::class)
+            ->setAutowired(true);
+        $container->setAlias(ExternalSupertypeSourceInterface::class, DeclaredSupertypeReader::class)
+            ->setPublic(true);
         $container->register(self::ARCHITECTURE_SECTION)
             ->setAutoconfigured(true);
         $container->register(self::UNASSIGNED_CLASS_LAYER_REQUIREMENT);

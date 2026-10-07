@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Composer;
 
+use LogicException;
 use PhpParser\Error as ParserError;
+use PhpParser\ErrorHandler\Throwing;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface;
 use Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup;
+use Qualimetrix\Core\Ast\NameResolution;
+use Qualimetrix\Core\Ast\ResolvedName;
+use Qualimetrix\Core\Symbol\ClassNameSpelling;
 use Qualimetrix\Infrastructure\Composer\Contract\AnalysedInstallAnchorInterface;
 
 /**
@@ -83,16 +86,18 @@ final class DeclaredParentReader implements AnalysedInstallAnchorInterface, Exte
         // parents are written relatively, so this is the common path.
         try {
             $ast = $this->parser->parse($source) ?? [];
-            $traverser = new NodeTraverser();
-            $traverser->addVisitor(new NameResolver());
-            $resolvedAst = $traverser->traverse($ast);
+            NameResolution::resolve($ast, new Throwing());
         } catch (ParserError) {
             // A file this PHP version cannot parse or resolve is a chain that
             // stops being readable, not a depth to report.
             return ParentLookup::notPlaced();
         }
 
-        return $this->declaredParent($resolvedAst, $fqcn);
+        try {
+            return $this->declaredParent($ast, $fqcn);
+        } catch (LogicException) {
+            return ParentLookup::notPlaced();
+        }
     }
 
     /**
@@ -106,10 +111,11 @@ final class DeclaredParentReader implements AnalysedInstallAnchorInterface, Exte
         $classes = $finder->findInstanceOf($ast, Node\Stmt\Class_::class);
 
         foreach ($classes as $class) {
-            if ($class->namespacedName?->toString() === $fqcn) {
+            if (self::sameIdentity($class->namespacedName?->toString(), $fqcn)) {
                 return $class->extends === null
                     ? ParentLookup::root()
-                    : ParentLookup::extending($class->extends->toString());
+                    : ParentLookup::extending(ResolvedName::className($class->extends)
+                        ?? throw new LogicException('A parent class name did not resolve'));
             }
         }
 
@@ -117,17 +123,24 @@ final class DeclaredParentReader implements AnalysedInstallAnchorInterface, Exte
         $interfaces = $finder->findInstanceOf($ast, Node\Stmt\Interface_::class);
 
         foreach ($interfaces as $interface) {
-            if ($interface->namespacedName?->toString() === $fqcn) {
+            if (self::sameIdentity($interface->namespacedName?->toString(), $fqcn)) {
                 // An interface may extend several; DIT is a single chain, so
                 // the first is the one this metric follows.
                 return $interface->extends === []
                     ? ParentLookup::root()
-                    : ParentLookup::extending($interface->extends[0]->toString());
+                    : ParentLookup::extending(ResolvedName::className($interface->extends[0])
+                        ?? throw new LogicException('A parent interface name did not resolve'));
             }
         }
 
         // The file was placed but does not declare this name: the map and the
         // sources disagree, which is not a root.
         return ParentLookup::notPlaced();
+    }
+
+    private static function sameIdentity(?string $declared, string $requested): bool
+    {
+        return $declared !== null
+            && ClassNameSpelling::fold($declared) === ClassNameSpelling::fold(ltrim($requested, '\\'));
     }
 }

@@ -17,6 +17,14 @@ external import in Core is a review decision, and this paragraph is its record.
 > declared-layer policy now belong to
 > [`Analysis\\Policy\\Architecture`](../Analysis/Policy/Architecture/README.md).
 
+`Ast/NameResolution` is the neutral wrapper around PHP-Parser's name resolver.
+It preserves original nodes (`replaceNodes=false`) and uses a collecting error
+handler by default, so collection keeps its established best-effort behaviour.
+Readers that publish declaration metadata may pass PHP-Parser's throwing error
+handler and turn an ambiguous or duplicate import into an explicit unreadable
+answer. Both modes use the same resolver; no consumer implements PHP name
+grammar itself.
+
 ## Structure
 
 ```
