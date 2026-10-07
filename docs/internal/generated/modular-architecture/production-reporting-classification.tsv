@@ -47,7 +47,6 @@ src/Reporting/Formatter/Health/HealthTextFormatter.php	Qualimetrix\Reporting\For
 src/Reporting/Formatter/Html/HtmlDebtCalculator.php	Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlFormatter.php	Qualimetrix\Reporting\Formatter\Html\HtmlFormatter	"output projection"	Reporting
-src/Reporting/Formatter/Html/HtmlMetricAggregator.php	Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlProjectMetadata.php	Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlTreeBuilder.php	Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	"output projection"	Reporting
 src/Reporting/Formatter/Html/HtmlTreeNode.php	Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode	"output projection"	Reporting

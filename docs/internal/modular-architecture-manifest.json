@@ -2791,10 +2791,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlMetricAggregator"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Json\\JsonHealthSection"
         },
         {
@@ -3387,10 +3383,6 @@
         {
           "owner": "Analysis.Evidence.CircularDependency",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance"
         },
         {
           "owner": "Analysis.Policy.Architecture",
@@ -4489,14 +4481,6 @@
         },
         {
           "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlMetricAggregator"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
-        },
-        {
-          "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Health\\SummaryEnricher"
         }
       ]
@@ -5466,14 +5450,6 @@
         {
           "owner": "Reporting",
           "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Health\\HealthTextFormatter"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlMetricAggregator"
-        },
-        {
-          "owner": "Reporting",
-          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder"
         },
         {
           "owner": "Reporting",
@@ -17537,8 +17513,41 @@
       "path": "src/Core/SourceText/SourceBytes.php",
       "kind": "class",
       "owner": "Core.Neutral",
-      "visibility": "internal",
-      "consumers": []
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Duplication",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\Matching\\DuplicateContentMerger"
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\OccurrenceKey"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService"
+        },
+        {
+          "owner": "Core.Symbol",
+          "source_fqcn": "Qualimetrix\\Core\\Symbol\\DeclarationPath"
+        },
+        {
+          "owner": "Core.Symbol",
+          "source_fqcn": "Qualimetrix\\Core\\Symbol\\SymbolPath"
+        },
+        {
+          "owner": "Infrastructure.Logging",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Logging\\LoggerHelperTrait"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\PublishedUtf8"
+        },
+        {
+          "owner": "Reporting",
+          "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter"
+        }
+      ]
     },
     "Qualimetrix\\Core\\Symbol\\CallableKind": {
       "path": "src/Core/Symbol/CallableKind.php",
@@ -19229,6 +19238,14 @@
         {
           "owner": "Analysis.Evidence.Measurement",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\NamespaceMetricIndex"
+        },
+        {
+          "owner": "Analysis.Evidence.ComputedMetrics.Health",
+          "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder"
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineWriter"
         }
       ]
     },
@@ -22463,13 +22480,6 @@
       "visibility": "internal",
       "consumers": []
     },
-    "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlMetricAggregator": {
-      "path": "src/Reporting/Formatter/Html/HtmlMetricAggregator.php",
-      "kind": "class",
-      "owner": "Reporting",
-      "visibility": "internal",
-      "consumers": []
-    },
     "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlProjectMetadata": {
       "path": "src/Reporting/Formatter/Html/HtmlProjectMetadata.php",
       "kind": "class",
@@ -22564,6 +22574,14 @@
         {
           "owner": "Infrastructure.Console",
           "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\Debug\\LayerAssignmentJsonPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\DirectiveAuditPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Refusal\\RefusalPresenter"
         }
       ]
     },
@@ -24438,12 +24456,6 @@
         {
           "owner": "Analysis.Policy.Architecture",
           "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationFinding",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
@@ -24887,12 +24899,6 @@
           "owner": "Analysis.Evidence.CircularDependency",
           "relation": "contract_surface",
           "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
-          "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "relation": "contract_surface",
-          "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance",
           "carrier_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency"
         },
         {

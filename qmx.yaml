@@ -1433,7 +1433,6 @@ architecture:
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlDebtCalculator'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlFormatter'
-        - 'Qualimetrix\Reporting\Formatter\Html\HtmlMetricAggregator'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlProjectMetadata'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder'
         - 'Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode'
@@ -1659,6 +1658,7 @@ architecture:
     core-profiler:
       - external
     core-symbol:
+      - core-neutral
       - core-path
       - external
     infrastructure-ast:
@@ -1746,6 +1746,7 @@ architecture:
       - external
     infrastructure-logging:
       - core-filetarget
+      - core-neutral
       - external
     infrastructure-parallel:
       - analysis-configuration

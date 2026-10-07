@@ -1124,6 +1124,7 @@ Available tests:
  - Qualimetrix\Governance\ProjectScopeCoverage\AnalysisContextScopeArgumentGuardTest::itFindsNoProductionContextBuiltWithoutAMeasuredScopeAnswer
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itAccountsForEveryProductionFileThatNamesThePredicate
  - Qualimetrix\Governance\ProjectScopeCoverage\ProjectScopeReadersTest::itListsExactlyTheChannelsTheReadersWithhold
+ - Qualimetrix\Governance\PublishedText\JsonEncodingPopulationTest::everyDirectJsonEncoderHasAnExaminedOwner
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itPublishesTheDerivedBaselineCountTupleExactlyOnce
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itRejectsBaselineOnlyBaselineCountDrift
  - Qualimetrix\Governance\RatchetArtifact\BaselineCountPublicationTest::itRejectsDocumentationOnlyBaselineCountDrift
@@ -2168,7 +2169,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyDetectorTest::itWalksALongChainWithoutGrowingTheCallStack
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itAssignsErrorSeverityForDirectCycle
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itAssignsWarningSeverityForTransitiveCycle
- - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itContainsStructuredJsonDataInRecommendation
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itCreatesOptionsFromArrayWithCamelCase
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itCreatesOptionsFromArrayWithSnakeCase
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itDistinguishesCyclesWithDifferentCompleteMemberSets
@@ -2178,8 +2178,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itIncludesAbstractionGuidanceForMediumCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itIncludesInterfaceGuidanceForSmallCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsCycleIdentityStableWhenMemberOrderChanges
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsLargeCycleAdviceWithoutEmbeddingCycleData
+ - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeepsRoutingAdviceWithoutEmbeddingCycleData
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itKeysOccurrenceToTheFrozenChannelSpellingNotToName
- - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itLabelsCategoryAsLargeForBigCycles
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRefusesTwoAuthoredSpellingsOfTheCycleLimit
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itRespectsMaxCycleSize
  - Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Unit\CircularDependencyRuleTest::itReturnsCorrectName
@@ -3590,6 +3591,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSkipsNamespaceLevelFindings
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSortedByHealthAscending
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itMatchesRegexSelectors
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itRetainsTheFindingCountAndDensityOfByteClassNames
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itSelectsClassesByNamespaceBoundary
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itSupportsAnExactSelector
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itCarriesEveryOptionalEvidenceFieldThroughFromEvidence
@@ -4882,6 +4884,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockFinderTest::itUnitesSplitEvidenceForTheSameNormalizedContent
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateContentMergerTest::itHashesInvalidTokenBytesWithoutLosingTheirIdentity
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateContentMergerTest::itPreservesTheHashOfValidPercentTokens
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAMatchWhoseCopiesAllLieInsideALongerOne
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itDropsAShorterMatchCoveredByOneConnectedComponent
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\Matching\DuplicateMatchCandidatesTest::itJudgesEqualLengthMatchesWithMoreCopiesFirst
@@ -6173,6 +6177,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itMeasuresClassLocForSingleClass
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itMeasuresClassLocWithoutNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itMeasuresSuppliedBytesEvenWhenTheFileDoesNotExist
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itMeasuresTheOwnSpanOfEveryNamedClassLike
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itProvidesExactSourceSpanMetricsForEveryNamespaceBlock
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itResetsState
@@ -6668,6 +6673,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itStillFiltersANamespaceLevelFindingItsPatternNames
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
+ - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itHashesInvalidSourceBytesWithoutCollapsingThemIntoLiterals
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itPinsTheHashOfFixedInputsAsLiteralHexToCatchMechanismDrift
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itRejectsAnEmptyKindOrEvidenceName
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itTruncatesTheSameSha256ItWouldHaveReturnedInFull
@@ -8338,6 +8344,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownChannel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRejectsAnUnknownSubjectEvenWhenAChannelWasExplicitlyRequested
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itReportsAnIntentionallyEmptyRunWithoutClaimingSubjectRemediation
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itRequiresCanonicalPercentSpellingAndSuggestsTheKnownSubject
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSaysASuppressEntryAcceptsWhateverIsReportedNow
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSaysAnEntryIsNotAppliedWhenAMemberReportsNoFiniteMagnitude
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineExplainCommandTest::itSaysTheChannelWasNotMeasuredWhenItsRuleDidNotRun
@@ -8506,12 +8513,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesADirectoryItCannotWriteIntoWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesALockFileItCannotOpenWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesATargetThatIsADirectoryWithoutAPhpDiagnostic
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination#0
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesRawNonUtf8DiscoveryDefinitionWithoutReplacingTheDestination#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToOverwriteAFileThatChangedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToWriteTwoIdentitiesThatCollapseOnRelativization
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesToWriteWhileAnotherProcessHoldsTheLock
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesWhenAFileAppearedSinceItWasExpectedAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRefusesWhenTheFileVanishedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRelativizesAbsoluteFileKeysAgainstTheProjectRoot
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRelativizesEncodedFileKeysAgainstTheRawProjectRoot
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRewritesAFileItJustReadWithoutMovingAByte
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRoundTripsEdgesAndMultiElementMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Integration\BaselineWriterTest::itRoundTripsMagnitudesExactlyAtEverySerializePrecision
@@ -10784,6 +10794,11 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itRefusesAReportThatNamesItsBaselineInput
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itRefusesAReportThatNamesItsExplicitConfigurationInput
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RunTargetCollisionTest::itRefusesAnImplicitReportAndProfileNamingStandardOutput
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\SourceByteIdentityProcessTest::itPublishesAThresholdRefusalContainingSourceBytes
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\SourceByteIdentityProcessTest::itPublishesBothByteNodesInBothGraphFormats
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\SourceByteIdentityProcessTest::itPublishesByteFindingsAndDistinctSarifFingerprints
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\SourceByteIdentityProcessTest::itWritesABaselineForABytePathOnLinux
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\SourceByteIdentityProcessTest::itWritesAndReadsABaselineForByteMethods
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itKeepsShowSuppressedWorkingOnTextFormat
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itPopulatesTheLedgerHalvesWhenOnlyTheFormatFlagAsksForThem
  - Qualimetrix\Tests\Infrastructure\Console\Functional\SuppressedFormatWiringTest::itReportsTheSameCompositionWhetherTheFormatCameFromTheCliOrFromConfig
@@ -11245,6 +11260,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itClassifiesEveryFileTargetFailureKindIntoItsRefusalFamily
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itFramesAFallbackRefusalLikeACarriedOne
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsAnEnvironmentFailureAfterPublishedReportOnStderr
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsDistinctInputBytesInTheJsonRefusalEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsStdoutToThePublishedReportWhenTheRunEndsAfterIt
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerOutOfTheJsonEnvelope
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itKeepsTheDocumentationPointerVisibleUnderQuiet
@@ -11661,13 +11677,23 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itSupportsAllPsrLogLevels
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\DelegatingLoggerTest::itSupportsStringableMessages
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itAppendsToExistingFile
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itEncodesValidCustomJsonOnlyOnce
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itHandlesEmptyContext
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itInterpolatesPlaceholders
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itKeepsARecordWhoseContextIsNotValidUtf8
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itKeepsNativeObjectEncodingWhenNoUtf8RepairIsNeeded
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itLeavesMissingDirectoriesUntouchedUntilTheTargetIsJudged
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesADirectoryItCannotCreateWithoutAPhpDiagnostic
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesAFileItCannotOpenWithoutAPhpDiagnostic
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesInvalidContextKeysWithoutCollapsingTheLiteralKey"array"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesInvalidContextKeysWithoutCollapsingTheLiteralKey"property container"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesMalformedCustomJsonWithoutAThirdCallback
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesNativeObjectsWhenTheContextNeedsUtf8Repair"backed enum"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesNativeObjectsWhenTheContextNeedsUtf8Repair"native date"
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesRecursiveContextsEvenWhenInvalidUtf8MasksTheRecursion
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesToLeaveATruncatedRecord
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRefusesUserObjectsWhenEscapingSourceBytes
+ - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRepairsStdClassValuesAndPreservesValidPropertyKeys
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itRespectsMinLevel
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itSaysSoWhenAContextCannotBeEncoded
  - Qualimetrix\Tests\Infrastructure\Logging\Unit\FileLoggerTest::itWritesJsonLines
@@ -12109,6 +12135,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\Formatter\Sarif\SarifRuleDescriptorCoverageTest::itKeepsTheHumanisedFallbackAndTheRepositoryUrlForAnUnknownCode
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itAddsNoRepairMarkWhenNothingNeededRepair
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itCountsARepairedSarifRelatedPath
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itKeepsDistinctSourceIdentifiersDistinctInPublishedDocuments
+ - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itKeepsRawPathBytesInSarifUris
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itLeavesAValidNonAsciiSarifPathAsItWas
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"checkstyle"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itPublishesAValidDocumentAndSaysItRepairedOne"gitlab"
@@ -12125,10 +12153,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itRepairsAnInvalidPathInEveryFormat"sarif"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itRepairsAnInvalidPathInEveryFormat"suppressed"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itRepairsAnInvalidSarifBaseBeforeEncodingIt
- - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"github"
- - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"health"
- - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"summary"
- - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"github"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"html"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"sarif"
@@ -12403,6 +12427,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsHintsData
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsJsInline
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsJsonData
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEmbedsRepositoryMetricsForTheGlobalNamespaceAndClass
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itEncodesScopedReportingFlag
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itFormatsWithNullMetrics
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itKeepsAValueSpelledLikeATemplatePlaceholderInTheData
@@ -12413,17 +12438,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itUsesJsonHexTagEncoding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itUsesTheInvocationManifestSnapshotForHtmlMetadata
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlFormatterTest::itUsesTheSameEntryFailureNarrativeInTheBannerAndPreservesCoverageData
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itAggregatesLocSumFromChildren
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itAggregatesMetricsForDeepHierarchy
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itAggregatesMultipleHealthKeys
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itComputesHealthScoresAsWeightedAverageByLoc
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itDefaultsHealthScoreWeightToOneWhenNoLocSum
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itDoesNotOverwriteHealthScoreIfAlreadySet
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itDoesNotOverwriteLocSumIfAlreadySet
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itHandlesEmptyMetricsWithoutError
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itLeavesLeafNodeMetricsUnchanged
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlMetricAggregatorTest::itSkipsChildWithoutHealthScoreInWeighting
- - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAggregatesLocSumBottomUpDuringBuild
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAggregatesTheRootDebtFromEveryAttachedFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAttachesEveryFindingSoTheTreeCountsWhatTheSummaryCounts
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itAttachesFindingToTreeNode
@@ -12445,9 +12459,13 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesProjectMetadataWithScopedReporting
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itIncludesTheDocumentationAddressesInProjectMetadata
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itKeepsMainJsFooterKeysInAgreementWithProjectMetadata
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itLeavesMissingNamespaceAndProjectBagsEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanAndInfMetricValues
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itNullsNanMetricValueInFinding
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itOmitsChildrenFromArrayWhenEmpty
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itPreservesRepositoryMetricsWithoutInventingLocOrHealth
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itPublishesEveryBagInAClasslessNamespaceChain
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itPublishesTheGlobalNamespaceBagWithoutClasses
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Html\HtmlTreeBuilderTest::itSetsScopedReportingFalseByDefault
  - Qualimetrix\Tests\Reporting\Unit\Formatter\JsonShapePreservationTest::itEmitsTheArtifactLocationUriInTheSarifFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\JsonShapePreservationTest::itEmitsTheFileAsAStringFieldInTheMetricsJsonFormatter
@@ -12917,6 +12935,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itAcceptsEveryExistingDeclarationSymbolType"function"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itAcceptsEveryExistingDeclarationSymbolType"method"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itBuildsAStableCanonicalIdentityAndAddsAnOrdinalOnlyForCollisions
+ - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itKeepsFilenameSuffixesDistinctFromDeclarationOrdinals
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsANegativeOrdinalRank
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsAnAggregateLogicalSymbol"file"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsAnAggregateLogicalSymbol"namespace"
@@ -13384,6 +13403,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itKeepsTheNamespaceOfDeclarationsInANamespaceNamedLikeTheFormerSentinel
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itNeverTypesANamespaceAsTheProject
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itPublishesAProjectNamespaceNoPhpNamespaceCanSpell
+ - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itPublishesReversibleCanonicalComponentsWithoutChangingRawSymbols
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itToCanonical"class with namespace"
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itToCanonical"class without namespace"
  - Qualimetrix\Tests\Unit\Core\Symbol\SymbolPathTest::itToCanonical"file"

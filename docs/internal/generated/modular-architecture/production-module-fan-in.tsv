@@ -42,7 +42,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormu
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface	Analysis.Evidence.ComputedMetrics	6	3
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricReachInterface	Analysis.Evidence.ComputedMetrics	1	1
-Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	7	2
+Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension	Analysis.Evidence.ComputedMetrics	6	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions	Analysis.Evidence.ComputedMetrics	5	2
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator	Analysis.Evidence.ComputedMetrics	1	1
 Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricExpression	Analysis.Evidence.ComputedMetrics	2	1
@@ -62,7 +62,7 @@ Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSumm
 Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface	Analysis.Evidence.Coupling	2	2
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\AttributeSite	Analysis.Evidence.DependencyModel	1	1
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration	Analysis.Evidence.DependencyModel	2	1
-Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	6	2
+Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency	Analysis.Evidence.DependencyModel	5	2
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface	Analysis.Evidence.DependencyModel	6	3
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface	Analysis.Evidence.DependencyModel	31	8
 Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface	Analysis.Evidence.DependencyModel	1	1
@@ -72,7 +72,7 @@ Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ExternalClassSpellingInte
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ExternalParentSourceInterface	Analysis.Evidence.Design	2	2
 Qualimetrix\Analysis\Evidence\Design\Inheritance\Contract\ParentLookup	Analysis.Evidence.Design	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector	Analysis.Evidence.Measurement	21	8
-Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	30	9
+Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy	Analysis.Evidence.Measurement	28	9
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface	Analysis.Evidence.Measurement	8	5
 Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics	Analysis.Evidence.Measurement	2	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface	Analysis.Evidence.Measurement	9	6
@@ -90,7 +90,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterfa
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag	Analysis.Evidence.Measurement	44	10
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface	Analysis.Evidence.Measurement	1	1
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition	Analysis.Evidence.Measurement	22	7
-Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	68	13
+Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName	Analysis.Evidence.Measurement	66	13
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReach	Analysis.Evidence.Measurement	3	2
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricReachCatalogInterface	Analysis.Evidence.Measurement	3	3
 Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface	Analysis.Evidence.Measurement	5	3
@@ -347,6 +347,7 @@ Qualimetrix\Core\Pattern\SelectorDefinition	Core.Neutral	11	7
 Qualimetrix\Core\Pattern\SelectorKind	Core.Neutral	8	5
 Qualimetrix\Core\ProductIdentity	Core.Neutral	24	3
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	21	8
+Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	8	6
 Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\ClassNameSpelling	Core.Symbol	9	6
 Qualimetrix\Core\Symbol\ClassType	Core.Symbol	7	3
@@ -363,7 +364,7 @@ Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	9	4
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	27	9
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	139	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	86	20
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	88	20
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	35	12
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Version	Core.Neutral	7	2
@@ -421,7 +422,7 @@ Qualimetrix\Reporting\Formatter\FormatOptionValue	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormattedReport	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	2	2
 Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	4	2
-Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	3	2
+Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	5	2
 Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	Reporting.GraphProjection	1	1
 Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	Reporting.GraphProjection	1	1
