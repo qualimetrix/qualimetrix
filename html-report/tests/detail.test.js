@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatHealthCoverage, coverageRecordFor, findingMessage, escapeHtml } from '../src/detail.js';
+import { formatHealthCoverage, coverageRecordFor, findingMessage, acceptedLevelMessage, escapeHtml } from '../src/detail.js';
 
 // The payload shape asserted here is HealthCoverageNarrator::record() in PHP,
 // carried to the viewer as summary.healthCoverage keyed by the same health.*
@@ -97,19 +97,19 @@ describe('coverageRecordFor', () => {
   });
 });
 
-describe('findingMessage', () => {
+describe('acceptedLevelMessage', () => {
   const base = { message: 'Debt', recommendation: 'Repair it', metricValue: 31, acceptedLevel: { shape: 'magnitude', describe: '25', count: 1 } };
 
   it('states a breach only when the payload explicitly states one', () => {
-    expect(findingMessage({ ...base, baselineVerdict: 'breached' })).toBe('Repair it (accepted at 25, now 31)');
-    expect(findingMessage({ ...base, metricValue: 31.5, baselineVerdict: 'breached' })).toBe('Repair it (accepted at 25, now 31.5)');
-    expect(findingMessage(base)).toBe('Repair it');
-    expect(findingMessage({ ...base, acceptedLevel: null })).toBe('Repair it');
+    expect(acceptedLevelMessage({ ...base, baselineVerdict: 'breached' })).toBe('accepted at 25, now 31');
+    expect(acceptedLevelMessage({ ...base, metricValue: 31.5, baselineVerdict: 'breached' })).toBe('accepted at 25, now 31.5');
+    expect(acceptedLevelMessage(base)).toBe('');
+    expect(acceptedLevelMessage({ ...base, acceptedLevel: null })).toBe('');
   });
 
   it('carries the not-compared reason through the actual escaped message', () => {
-    const rendered = escapeHtml(findingMessage({ ...base, baselineVerdict: 'not-compared', baselineReason: '<unknown & scope>' }));
-    expect(rendered).toBe('Repair it (accepted at 25; not compared: &lt;unknown &amp; scope&gt;)');
+    const rendered = escapeHtml(acceptedLevelMessage({ ...base, baselineVerdict: 'not-compared', baselineReason: '<unknown & scope>' }));
+    expect(rendered).toBe('accepted at 25; not compared: &lt;unknown &amp; scope&gt;');
     expect(rendered).not.toContain(', now ');
   });
 
@@ -120,11 +120,18 @@ describe('findingMessage', () => {
     [30, '30'],
     [31.1234567, '31.123457'],
   ])('preserves the magnitude of %s while trimming fractional zeros', (metricValue, displayed) => {
-    expect(findingMessage({ ...base, metricValue, baselineVerdict: 'breached' })).toBe(`Repair it (accepted at 25, now ${displayed})`);
+    expect(acceptedLevelMessage({ ...base, metricValue, baselineVerdict: 'breached' })).toBe(`accepted at 25, now ${displayed}`);
   });
 
   it('never invents a current count on an occurrence or nonfinite breach', () => {
-    expect(findingMessage({ ...base, baselineVerdict: 'breached', acceptedLevel: { shape: 'occurrence', describe: '3 occurrences' } })).toBe('Repair it (accepted at 3 occurrences)');
-    expect(findingMessage({ ...base, baselineVerdict: 'breached', metricValue: null })).toBe('Repair it (accepted at 25)');
+    expect(acceptedLevelMessage({ ...base, baselineVerdict: 'breached', acceptedLevel: { shape: 'occurrence', describe: '3 occurrences' } })).toBe('accepted at 3 occurrences');
+    expect(acceptedLevelMessage({ ...base, baselineVerdict: 'breached', metricValue: null })).toBe('accepted at 25');
+  });
+});
+
+
+describe('findingMessage', () => {
+  it('keeps the diagnostic independent of advice and baseline state', () => {
+    expect(findingMessage({ message: 'Debt', recommendation: 'Repair it', acceptedLevel: { describe: '25' }, baselineVerdict: 'breached' })).toBe('Debt');
   });
 });

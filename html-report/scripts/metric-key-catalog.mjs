@@ -1,16 +1,6 @@
-// Shared reader for the HTML report's hand-written metric-key literals.
-//
-// Used by tests/metric-key-catalog.test.js (regression guard, run by
-// `vitest`), the only remaining consumer: it imports loadCatalog(),
-// isKeyShaped() and staleLiterals() and does its own AST walk over src/. The literal-collection functions that used to live here
-// (collectCodeLiterals, collectCommentLiterals, scanFile, collectAll, and the
-// listJsFiles/TEMPLATE_ROOT/SRC_DIR/TESTS_DIR plumbing that fed them) had
-// exactly one caller, scripts/collect-metric-keys.mjs, and were deleted with
-// it rather than kept as unreachable exported API — the ADR for that
-// deletion argues an unexecuted script is worth less than the absence of a
-// file that looks like a guard and is not one; dead exports are the same
-// shape, so they went the same way. git history holds them if the
-// investigative view is ever revived.
+// Metric vocabulary read by the viewer's source and test key census.
+// JavaScript syntax belongs to Rollup; these patterns only read the current
+// bounded declaration shape of the three PHP catalog artifacts below.
 //
 // Catalog source: MetricName.php constants + AggregationStrategy.php suffixes
 // + HealthDecompositionCatalog.php dimension keys, read as text with a targeted
