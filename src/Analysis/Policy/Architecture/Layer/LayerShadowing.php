@@ -4,67 +4,59 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
 
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
+
 /**
- * Decides which of the layers a class matched are worth reporting as shadowed.
- *
- * {@see LayerRegistry::resolveAll()} returns every matching layer in
- * declaration order; the first one wins the class and the rest are shadowed
- * *for that class*. Being shadowed is not by itself a defect — first match wins
- * is the declared resolution mechanism, and declaring narrow layers before
- * broad ones (up to a final `**` catch-all) is the documented idiom. The defect
- * is the inverse: a layer that is MORE specific than the one that beat it, and
- * therefore can never win in its own area.
- *
- * The verdict compares the two criteria that actually fired — the one that won
- * the class and the one the shadowed layer matched it with — because layers
- * carry several criteria and only the firing pair explains this class. Only
- * namespace subtrees are comparable ({@see PatternScope}); an undecidable pair
- * stays reported, since a false alarm costs a configuration review while a
- * missed shadow costs a layer that silently owns nothing.
- *
- * A layer repeating the pattern of one that does not take every class it
- * names ({@see MembershipSpec::ownsItsPatterns()}) is not reported either: it
- * is the recipient of what that layer leaves over — a carve-out behind an
- * `exclude:`, or the residue of a `match: all` layer — and being beaten on the
- * rest is what it was declared for. Layer loading accepts exactly these
- * repetitions by the same predicate, so no configuration it loads is reported
- * as a shadow on every run for the repetition alone. Whether the recipient
- * gets anything is `architecture.unreachable-layer`'s question.
- *
- * A shadow is drawn only between the matches the run established, which
- * {@see LayerRegistry::establishedMatches()} decides: a match whose
- * `exclude:` went unanswered may still lose the class, so it neither shadows
- * nor is shadowed — that is a doubt about the assignment, and
- * `architecture.doubted-assignment` publishes it. The first established match
- * shadows every later one whatever those clauses answer, even when it is not
- * the assigned layer itself.
- *
- * @internal Consumed by {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidenceCollector}
- *           and {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::inspect()}.
+ * Judges established matches in declaration order using the criteria that fired.
+ * An unanswered exclude is not an established match and cannot draw a shadow.
+ * A repeating pattern receives what the earlier layer leaves before the universal
+ * pattern exception is considered; otherwise a non-pattern pair is precedence,
+ * whose observed losses remain evidence for overlap and unreachable-layer.
  */
 final class LayerShadowing
 {
-    /**
-     * @param list<LayerMatch> $established As returned by {@see LayerRegistry::establishedMatches()}:
-     *                                      declaration order, the first entry shadowing the rest.
-     *
-     * @return list<LayerMatch> The shadowed matches that indicate a declaration
-     *                          defect, in declaration order.
+    /** @param list<LayerMatch> $established
+     * @return list<LayerShadowVerdict>
+     */
+    public static function verdicts(array $established): array
+    {
+        $earlier = array_shift($established);
+        if ($earlier === null) {
+            return [];
+        }
+        return array_map(
+            static fn(LayerMatch $later): LayerShadowVerdict => new LayerShadowVerdict($earlier, $later, self::exemption($earlier, $later)),
+            $established,
+        );
+    }
+
+    /** @param list<LayerMatch> $established
+     * @return list<LayerMatch>
      */
     public static function reportableShadows(array $established): array
     {
-        $shadowing = array_shift($established);
-        if ($shadowing === null) {
-            return [];
-        }
-
-        $shadowingCriterion = $shadowing->primaryCriterion();
-
-        return array_values(array_filter(
-            $established,
-            static fn(LayerMatch $shadowed): bool => !self::isStrictlyMoreSpecific($shadowingCriterion, $shadowed->primaryCriterion())
-                && !self::receivesWhatItLeaves($shadowing, $shadowed),
+        return array_values(array_map(
+            static fn(LayerShadowVerdict $verdict): LayerMatch => $verdict->later,
+            array_filter(self::verdicts($established), static fn(LayerShadowVerdict $verdict): bool => $verdict->exemption === null),
         ));
+    }
+
+    private static function exemption(LayerMatch $earlier, LayerMatch $later): ?ShadowExemption
+    {
+        $first = $earlier->primaryCriterion();
+        $last = $later->primaryCriterion();
+        if (self::isStrictlyMoreSpecific($first, $last)) {
+            return ShadowExemption::NarrowerDeclaredFirst;
+        }
+        if (self::receivesWhatItLeaves($earlier, $later)) {
+            return ShadowExemption::ReceivesWhatItLeaves;
+        }
+        if ($earlier->ownsItsPatterns && PatternScope::fromCriterion($first)?->isUniversal() === true) {
+            return null;
+        }
+        return $first->kind === MatchedCriterionKind::Pattern && $last->kind === MatchedCriterionKind::Pattern
+            ? null
+            : ShadowExemption::NonPatternPrecedence;
     }
 
     private static function receivesWhatItLeaves(LayerMatch $shadowing, LayerMatch $shadowed): bool

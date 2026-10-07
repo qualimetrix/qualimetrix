@@ -104,7 +104,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
      *
      * An "emitting name" is a real rule's `NAME` constant, one of the five
      * `*_DIAGNOSTIC_NAME` constants {@see LayerDeclarationValidator} emits
-     * under, {@see ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME}, one of the
+     * under, the three ordinary diagnostic names in {@see ArchitectureChannels}, one of the
      * three {@see UnboundSuppressionOptions} channel constants, the LCOM
      * method-exclusion diagnostic, or one of the four inline-directive
      * diagnostic names — these producers all emit under names other
@@ -147,7 +147,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             $findings,
             \sprintf(
                 'Declared channel name(s) that name neither an emitting name (a rule\'s NAME, a'
-                . ' LayerViolationRule diagnostic constant, an inline-directive diagnostic) nor one'
+                . ' Architecture diagnostic constant, an inline-directive diagnostic) nor one'
                 . ' ".suffix" below such a name: %s',
                 implode(', ', $findings),
             ),
@@ -293,6 +293,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerDeclarationValidator::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
         $names[] = ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME;
         $names[] = ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME;
+        $names[] = ArchitectureChannels::LAYER_OVERLAP_DIAGNOSTIC_NAME;
 
         $names[] = UnboundSuppressionOptions::UNMATCHED_PATH;
         $names[] = UnboundSuppressionOptions::UNMATCHED_NAMESPACE;

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ShadowExemption;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\SymbolLevel;
@@ -155,6 +156,9 @@ final class LayerEvidenceCollector
             shadowEvidence: $classWalk->shadowEvidence,
             unassigned: ['classes' => $classWalk->uncoveredClasses, 'analysed' => $classWalk->analysedDeclarations],
             coverageState: $coverageState,
+            excludedNames: $classWalk->excludedNames + $edgeWalk->excludedNames,
+            precedenceEvidence: $classWalk->precedenceEvidence,
+            assignedClassHits: $classWalk->assignedHits,
         );
     }
 
@@ -261,6 +265,7 @@ final class LayerEvidenceCollector
         $assignedHits = [];
         $matchedSymbols = [];
         $excludedSymbols = [];
+        $excludedNames = [];
         $unansweredSymbols = [];
         $undecidedSymbols = [];
         $contendedSymbols = [];
@@ -274,6 +279,7 @@ final class LayerEvidenceCollector
 
         /** @var array<string, array<string, list<ShadowedClass>>> $shadowEvidence */
         $shadowEvidence = [];
+        $precedenceEvidence = [];
         $uncoveredClasses = [];
         $undecidableClasses = [];
         $doubtedClasses = [];
@@ -288,11 +294,11 @@ final class LayerEvidenceCollector
             // is the branch below. Tallying after it would leave every such
             // clause looking like it removed nothing — the exact false finding
             // this evidence exists to avoid.
-            $excludedSymbols = self::tallyExcludedEnd(
-                $excludedSymbols,
-                $registry->excludedLayers($classSymbol->symbolPath),
-                $classSymbol->symbolPath->toCanonical(),
-            );
+            $excludedLayers = $registry->excludedLayers($classSymbol->symbolPath);
+            $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $excludedLayers, $classSymbol->symbolPath->toCanonical());
+            if ($excludedLayers !== []) {
+                $excludedNames[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
+            }
             $unansweredSymbols = self::tallyExcludedEnd(
                 $unansweredSymbols,
                 $registry->unansweredExcludeLayers($classSymbol->symbolPath),
@@ -332,12 +338,13 @@ final class LayerEvidenceCollector
                 continue;
             }
             $classFqn = $classSymbol->symbolPath->toString();
-            foreach (LayerShadowing::reportableShadows($established) as $shadowed) {
-                $shadowEvidence[$shadowing->layerName][$shadowed->layerName][] = new ShadowedClass(
-                    $classFqn,
-                    $shadowing->primaryCriterion(),
-                    $shadowed->primaryCriterion(),
-                );
+            foreach (LayerShadowing::verdicts($established) as $verdict) {
+                $entry = new ShadowedClass($classFqn, $verdict->earlier->primaryCriterion(), $verdict->later->primaryCriterion());
+                if ($verdict->exemption === null) {
+                    $shadowEvidence[$verdict->earlier->layerName][$verdict->later->layerName][] = $entry;
+                } elseif ($verdict->exemption === ShadowExemption::NonPatternPrecedence) {
+                    $precedenceEvidence[$verdict->later->layerName][$verdict->earlier->layerName][$classSymbol->symbolPath->toCanonical()] = $entry;
+                }
             }
         }
 
@@ -356,6 +363,8 @@ final class LayerEvidenceCollector
             analysedDeclarations: $analysedDeclarations,
             undecidableClasses: $undecidableClasses,
             doubtedClasses: $doubtedClasses,
+            excludedNames: $excludedNames,
+            precedenceEvidence: $precedenceEvidence,
         );
     }
 
@@ -442,6 +451,7 @@ final class LayerEvidenceCollector
         $assignedHits = [];
         $matchedSymbols = [];
         $excludedSymbols = [];
+        $excludedNames = [];
         $unansweredSymbols = [];
         $undecidedSymbols = [];
         $contendedSymbols = [];
@@ -454,6 +464,7 @@ final class LayerEvidenceCollector
                 coverageState: ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => [], 'undecidable' => [], 'doubted' => []],
                 assignedHits: $assignedHits,
                 symbolSets: ['matched' => [], 'excluded' => [], 'unanswered' => [], 'undecided' => [], 'contended' => [], 'ownsIfExcluded' => []],
+                excludedNames: [],
             );
         }
 
@@ -467,8 +478,13 @@ final class LayerEvidenceCollector
 
             // Both ends, and before the unmatched-end early return below for
             // the same reason the class walk books before its own.
-            $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $registry->excludedLayers($dependency->sourceLogical()), $dependency->sourceLogical()->toCanonical());
-            $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $registry->excludedLayers($dependency->targetLogical()), $dependency->targetLogical()->toCanonical());
+            foreach ([$dependency->sourceLogical(), $dependency->targetLogical()] as $end) {
+                $excludedLayers = $registry->excludedLayers($end);
+                $excludedSymbols = self::tallyExcludedEnd($excludedSymbols, $excludedLayers, $end->toCanonical());
+                if ($excludedLayers !== []) {
+                    $excludedNames[$end->toCanonical()] = $end->toString();
+                }
+            }
             $unansweredSymbols = self::tallyExcludedEnd($unansweredSymbols, $registry->unansweredExcludeLayers($dependency->sourceLogical()), $dependency->sourceLogical()->toCanonical());
             $unansweredSymbols = self::tallyExcludedEnd($unansweredSymbols, $registry->unansweredExcludeLayers($dependency->targetLogical()), $dependency->targetLogical()->toCanonical());
 
@@ -518,6 +534,7 @@ final class LayerEvidenceCollector
                 'contended' => $contendedSymbols,
                 'ownsIfExcluded' => $ownsIfExcludedSymbols,
             ],
+            excludedNames: $excludedNames,
         );
     }
 

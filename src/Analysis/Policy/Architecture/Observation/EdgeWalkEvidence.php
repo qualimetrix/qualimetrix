@@ -18,11 +18,13 @@ final readonly class EdgeWalkEvidence
      * @param array<string, int> $assignedHits Layer name => dependency-edge ends assigned to it.
      * @param SymbolSets $symbolSets Layer name => set of canonical edge ends, per column; see
      *                               {@see LayerEvidence::__construct()} for what each column holds.
+     * @param array<string, string> $excludedNames Canonical excluded symbol => display FQN.
      */
     public function __construct(
         public array $forbiddenEdges,
         public array $coverageState,
         public array $assignedHits,
         public array $symbolSets,
+        public array $excludedNames,
     ) {}
 }

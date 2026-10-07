@@ -17,6 +17,7 @@ final class ArchitectureChannels
     public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = 'architecture.pending-layer-matched';
     public const string UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME = 'architecture.unmatched-exclude';
     public const string DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME = 'architecture.doubted-assignment';
+    public const string LAYER_OVERLAP_DIAGNOSTIC_NAME = 'architecture.layer-overlap';
 
     /** @var list<string> */
     public const array PRODUCERS = [
@@ -36,5 +37,6 @@ final class ArchitectureChannels
         self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
         self::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME,
         self::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME,
+        self::LAYER_OVERLAP_DIAGNOSTIC_NAME,
     ];
 }

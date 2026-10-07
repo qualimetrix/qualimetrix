@@ -86,6 +86,7 @@ architecture.circular-dependency higher project
 architecture.coverage-gap - project config-error filter-exempt
 architecture.doubted-assignment - project
 architecture.empty-template - project config-error filter-exempt
+architecture.layer-overlap - project
 architecture.layer-violation - class
 architecture.pending-layer-matched - project config-error filter-exempt
 architecture.potential-shadow - project config-error filter-exempt

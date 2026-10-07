@@ -219,13 +219,13 @@ final class DoubtedAssignmentDiagnostic
         $sentences = [];
         if ($analysed > 0) {
             $sentences[] = 'For an analysed class, "qmx debug:layer-assignment <class>" names the unanswered layer and'
-                . ' where its inheritance chain stops; widening paths to include that declaration settles it.';
+                . ' where its inheritance chain stops; the source may be unavailable in the project runtime or dependencies, or outside the analysed paths. Include an available declaration to settle the chain.';
         }
         if ($outside > 0) {
             $sentences[] = 'For a symbol outside the analysed paths, what settles it depends on whose code it is: your own code'
                 . ' is settled by analysing it — widening paths to include it, or running over the whole project rather'
                 . ' than part of it; a dependency\'s class by a patterns layer for its namespace declared before the layer'
-                . ' that could not answer.';
+                . ' that could not answer. If the criterion names a runtime or dependency type, check whether that type is available; otherwise include its source in the analysed paths.';
         }
 
         return implode(' ', $sentences);

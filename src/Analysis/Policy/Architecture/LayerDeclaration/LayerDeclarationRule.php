@@ -51,6 +51,8 @@ final class LayerDeclarationRule extends AbstractRule
                 ->describedAs('Reports a layer\'s exclude clause that removed no class while the layer\'s own criteria matched some.'),
             ArchitectureChannels::DOUBTED_ASSIGNMENT_DIAGNOSTIC_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
                 ->describedAs('Counts the symbols whose layer assignment is in doubt because a layer criterion could not be answered about them.'),
+            ArchitectureChannels::LAYER_OVERLAP_DIAGNOSTIC_NAME => ChannelDeclaration::occurrence(SymbolLevel::Project)
+                ->describedAs('Reports classes taken from a reachable non-pattern layer by an earlier layer.'),
         ];
     }
 
@@ -63,6 +65,7 @@ final class LayerDeclarationRule extends AbstractRule
         }
 
         return [
+            ...LayerOverlapDiagnostic::forPrecedence($evidence),
             ...($context->projectScope->judgesNamespaceClaims()
                 ? UnmatchedExcludeDiagnostic::forInertClauses($evidence, ArchitectureChannels::UNMATCHED_EXCLUDE_DIAGNOSTIC_NAME)
                 : []),

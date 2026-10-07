@@ -22,6 +22,8 @@ final readonly class ClassWalkEvidence
      *                                                  claims while a layer bearing on it went unanswered.
      * @param array<string, string> $doubtedClasses Canonical key => display FQN of every analysed class that is
      *                                              assigned while a layer bearing on the assignment went unanswered.
+     * @param array<string, string> $excludedNames Canonical excluded symbol => display FQN.
+     * @param array<string, array<string, array<string, ShadowedClass>>> $precedenceEvidence Later layer => earlier layer => canonical class => firing pair.
      */
     public function __construct(
         public array $assignedHits,
@@ -31,5 +33,7 @@ final readonly class ClassWalkEvidence
         public int $analysedDeclarations,
         public array $undecidableClasses,
         public array $doubtedClasses,
+        public array $excludedNames,
+        public array $precedenceEvidence,
     ) {}
 }

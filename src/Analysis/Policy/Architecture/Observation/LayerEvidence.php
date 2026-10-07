@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Observation;
 
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind;
 
 /**
  * Everything one run's walk over the classes and the dependency graph
  * observed about the declared layers.
  *
- * It exists because two verdicts read the same walk:
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}
- * judges the edges,
- * {@see \Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator}
- * judges the declaration itself. Before the split both lived in one `analyze()` and shared local
- * variables; a shared collector plus this value object is what replaces those
- * locals without walking the graph twice and without making either verdict
- * depend on the other running first.
+ * Edge, declaration and uncovered-class verdicts share this observation so
+ * they do not depend on another verdict running first or walk the graph again.
  *
  * @phpstan-type SymbolSets array{matched: array<string, array<string, true>>, excluded: array<string, array<string, true>>, unanswered: array<string, array<string, true>>, undecided: array<string, array<string, true>>, contended: array<string, array<string, true>>, ownsIfExcluded: array<string, array<string, true>>}
  */
@@ -64,6 +59,9 @@ final readonly class LayerEvidence
      *                                                                                                                                                                                                                                                                 bearing on the assignment went unanswered. Both are booked in every coverage mode, while the analysed share of `classes` is booked only when a consumer reads it. `undecidableOutsidePaths` and `doubtedOutsidePaths` are the subsets of `undecidable` and `doubted`
      *                                                                                                                                                                                                                                                                 the run did not analyse — dependency-edge ends — kept apart because what settles the doubt
      *                                                                                                                                                                                                                                                                 differs for them.
+     * @param array<string, string> $excludedNames Canonical excluded symbol => display FQN.
+     * @param array<string, array<string, array<string, ShadowedClass>>> $precedenceEvidence Later layer => earlier layer => canonical class => firing pair.
+     * @param array<string, int> $assignedClassHits Layer name => analysed classes assigned to it, excluding edge ends.
      */
     public function __construct(
         public ArchitectureConfiguration $architecture,
@@ -73,7 +71,42 @@ final readonly class LayerEvidence
         public array $shadowEvidence,
         public array $unassigned,
         public array $coverageState,
+        public array $excludedNames,
+        public array $precedenceEvidence,
+        public array $assignedClassHits,
     ) {}
+
+    /** @return list<string> */
+    public function removedByOwnExclude(string $layer): array
+    {
+        return array_values(array_intersect_key($this->excludedNames, $this->symbolSets['excluded'][$layer] ?? []));
+    }
+
+    /** @return list<array{earlier: string, classes: list<string>}> */
+    public function lostByPrecedence(string $layer): array
+    {
+        $pairs = [];
+        foreach ($this->precedenceEvidence[$layer] ?? [] as $earlier => $entries) {
+            $classes = array_values(array_map(
+                static fn(ShadowedClass $entry): string => $entry->fqn,
+                array_filter($entries, static fn(ShadowedClass $entry): bool => $entry->shadowedCriterion->kind !== MatchedCriterionKind::Pattern),
+            ));
+            if ($classes !== []) {
+                $pairs[] = ['earlier' => (string) $earlier, 'classes' => $classes];
+            }
+        }
+        return $pairs;
+    }
+
+    /** @return list<array{earlier: string, classes: list<string>}> */
+    public function takenByPrecedence(string $layer): array
+    {
+        $pairs = [];
+        foreach ($this->precedenceEvidence[$layer] ?? [] as $earlier => $entries) {
+            $pairs[] = ['earlier' => (string) $earlier, 'classes' => array_values(array_map(static fn(ShadowedClass $entry): string => $entry->fqn, $entries))];
+        }
+        return $pairs;
+    }
 
     /**
      * Canonical key => display FQN for every analysed class outside all

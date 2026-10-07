@@ -427,6 +427,8 @@ final class ChannelEmissionStaticGuardTest extends TestCase
             'src/Analysis/Policy/Architecture/LayerDeclaration/DoubtedAssignmentDiagnostic.php' =>
                 'LayerDeclarationRule delegates architecture.doubted-assignment here, the same shape as'
                 . ' UnmatchedExcludeDiagnostic above.',
+            'src/Analysis/Policy/Architecture/LayerDeclaration/LayerOverlapDiagnostic.php' =>
+                'LayerDeclarationRule delegates partial non-pattern precedence findings here.',
             'src/Analysis/Policy/Architecture/LayerDeclaration/DeclaredLayerReachability.php' =>
                 'Reached from LayerDeclarationValidator, a configuration validator rather than a rule, so no'
                 . ' rule class chain leads here at all.',

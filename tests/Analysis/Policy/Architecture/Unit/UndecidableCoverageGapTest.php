@@ -226,9 +226,8 @@ final class UndecidableCoverageGapTest extends TestCase
         self::assertStringContainsString('App\\Web\\OrderController', $doubt->message);
         $recommendation = (string) $doubt->recommendation;
         self::assertStringContainsString('debug:layer-assignment', $recommendation);
-        // Only analysed classes are in doubt here, so the advice for a symbol
-        // outside the analysed paths does not apply and is not given.
-        self::assertStringNotContainsString('outside the analysed paths', $recommendation);
+        self::assertStringContainsString('source may be unavailable in the project runtime or dependencies', $recommendation);
+        self::assertStringContainsString('or outside the analysed paths', $recommendation);
         self::assertStringNotContainsString('Declare layers covering', $recommendation);
     }
 

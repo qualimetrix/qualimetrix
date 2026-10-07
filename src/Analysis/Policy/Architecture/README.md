@@ -18,6 +18,10 @@ External owners use only the contracts in `Contract/`:
   class-universe or template-expansion work.
 - `ArchitectureChannels` owns the literal channel names, the three preparation
   producer names, and their project-scoped subset; it carries no lifecycle.
+- `UnassignedClassLayerRequirementInterface` judges completed Finding options and
+  enablement before Console discovers files. Its implementation and mode semantics
+  stay in `UnassignedClass/`.
+- `ShadowExemption` names established first-match exemptions for inspection.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
 - Configuration and preparation failures are surfaced as
@@ -40,14 +44,19 @@ policy state enters the worker or cache payload.
 ```text
 Architecture/
 ├── Contract/                  # exact external promises and debug values
+│   ├── ShadowExemption.php
+│   └── UnassignedClassLayerRequirementInterface.php
 ├── Configuration/              # the `architecture:` section: its schema and validators
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership, capture-pattern compilation, and registry primitives
+│   ├── LayerShadowVerdict.php
 │   └── Expansion/              # observed-template expansion
 ├── Observation/                # the shared walk, evidence and bounded diagnostic samples
 ├── LayerViolation/             # forbidden dependency edges and routing guidance
 ├── LayerDeclaration/           # declaration diagnostics and configuration validator
+│   └── LayerOverlapDiagnostic.php
 ├── UnassignedClass/            # analysed-class assignment summary and mode
+│   └── UnassignedClassLayerRequirement.php
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
@@ -262,6 +271,24 @@ A layer repeating the pattern of one that does not take every class it names
 another criterion) is the recipient of what that layer leaves over and is not
 shadowed by it; `DuplicatePatternRejector` accepts a repeated pattern by the
 same predicate, so a configuration that loads is never failed for it.
+`LayerShadowing::verdicts()` judges each established late match against the
+first established match. A narrower pattern first and a repeating pattern that
+receives the earlier layer's residue are exempt before the universal `**` case.
+A universal `**` that owns its patterns reports every later match; other
+pattern/pattern pairs retain the existing comparison. A non-pattern side is
+`NonPatternPrecedence`, rather than a declaration error. The internal
+`LayerShadowVerdict` carries the pair and its `ShadowExemption`, if any; the
+inspection shadow list projects the same verdicts.
+
+A later non-pattern layer with its own analysed classes and observed precedence
+losses emits `architecture.layer-overlap` at `info`, one occurrence per pair,
+with the class count and bounded examples. A fully lost layer instead reports
+`unreachable-layer` with the named earlier layers. Late pattern layers, including
+a catch-all, never emit overlap, but their complete precedence losses still
+explain an unreachable layer. An unanswered exclusion establishes no shadow
+pair. The walk also retains display names for symbols removed by a layer's own
+exclude, so an empty layer can name that cause without reparsing canonical keys.
+
 `architecture.doubted-assignment` names every layer a contest keeps out of
 `unreachable-layer`: those that could not answer, and — from the walk's
 `ownsIfExcluded` column — those that would own a symbol if an unanswered
@@ -293,7 +320,9 @@ recorded source is narrowed.
 `Observation/` owns `LayerEvidenceCollector`: one class and dependency-edge
 walk per `AnalysisContext`, memoised weakly so nothing survives into the next
 run. Its `LayerEvidence` carries forbidden edges, assignment/match/exclusion
-tallies, contested symbols, coverage and shadows. `ClassWalkEvidence` and
+tallies, contested symbols, coverage, shadows, own-exclude samples and precedence
+losses. Analysed-class assignments remain separate from dependency-edge hits,
+because overlap requires at least one class owned by the late layer. `ClassWalkEvidence` and
 `EdgeWalkEvidence` carry the two halves of that observation; `ForbiddenEdge`
 and `ShadowedClass` retain their exact dependency and criterion facts.
 `DiagnosticSampleList` formats bounded samples without policy semantics.
@@ -309,7 +338,9 @@ option still govern that producer alone.
 `LayerDeclarationOptions`, and `LayerDeclarationValidator`. The rule emits
 `architecture.unmatched-exclude` at fixed warning when an exclusion removed
 nothing despite positive matches, and `architecture.doubted-assignment` at
-fixed info from the contested population. An undecidable exclusion cannot be
+fixed info from the contested population. `LayerOverlapDiagnostic` emits the
+third ordinary channel, `architecture.layer-overlap`, at fixed info for partial
+non-pattern precedence losses. An undecidable exclusion cannot be
 called inert. These are ordinary occurrence findings a baseline may accept.
 The validator belongs to `architecture.layer-declaration` and emits five
 configuration-error occurrences: `architecture.coverage-gap`,
@@ -319,7 +350,7 @@ configuration-error occurrences: `architecture.coverage-gap`,
 renders the last from observed shadows.
 
 All five validator channels declare `ChannelSelectionRole::FilterExempt`.
-An unrelated `--only-rule` or `--exclude-rule` filter cannot hide them. Selecting
+An unrelated `--only-rule` filter cannot hide them. Selecting
 just one still leaves the other four live; explicitly disabling those four
 isolates it. Disabling a diagnostic, its `:project` cell, the declaration
 producer or its group still works, as does `enabled: false`. Disabled
@@ -333,6 +364,15 @@ named after itself. Existing channel publication order is retained.
 reads `ArchitectureChannels::PRODUCERS` and the final `RuleEnablement::runs`
 answer for all three producers. The collector's disjunction permits declaration
 judgement when the forbidden-edge and unassigned-class consumers are disabled.
+
+`UnassignedClassLayerRequirement` rejects a merged configuration with an enabled
+`warn`/`error` mode and no declared layers, including an explicitly empty list.
+It reads final `RuleEnablement::isEnabled`, so an `only` filter does not conceal
+the invalid document. `ignore`, a disabled producer and a disabled Architecture
+group are accepted. The refusal names the mode's writer and the authored empty
+list, or the merged missing key when no layer wrote it. Console invokes the
+public requirement after options and enablement are complete and before
+discovery; it never reads the private options itself.
 
 `unreachable-layer`, `empty-template` and `unmatched-exclude` infer absence and
 require measured `ProjectScopeJudgement::judgesNamespaceClaims()`. Missing

@@ -1254,10 +1254,8 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsTheDiagnosticWhenTheTwoCriteriaAreNotComparable(): void
+    public function itTreatsAnIncomparableNonPatternPairAsPrecedence(): void
     {
-        // A suffix criterion has no namespace subtree to compare against a
-        // pattern — the pair is undecidable and must stay reported.
         $rule = $this->buildRule(new LayerViolationOptions());
 
         $arch = new ArchitectureConfiguration(
@@ -1272,13 +1270,16 @@ final class LayerViolationRuleTest extends TestCase
         $repo = new InMemoryMetricRepository();
         $this->registerClass($repo, 'App\\Domain', 'UserService');
 
+        $findings = $rule->analyze($this->buildContext(null, $arch, $repo));
         $shadow = $this->filterByRule(
-            $rule->analyze($this->buildContext(null, $arch, $repo)),
+            $findings,
             LayerDeclarationValidator::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         );
 
-        self::assertCount(1, $shadow);
-        self::assertStringContainsString('suffix "UserService"', $shadow[0]->message);
+        self::assertSame([], $shadow);
+        $unreachable = $this->filterByRule($findings, LayerDeclarationValidator::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertStringContainsString('taken by earlier layer "svc"', $unreachable[0]->message);
     }
 
     // -------------------------------------------------------------------------

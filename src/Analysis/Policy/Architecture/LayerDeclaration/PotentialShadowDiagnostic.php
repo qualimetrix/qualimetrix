@@ -14,7 +14,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Builds `architecture.potential-shadow`: a layer that loses the classes its
- * own criteria match to a layer declared earlier.
+ * own criteria match to a layer declared earlier, after first-match exemptions.
+ * Non-pattern precedence losses belong to overlap or unreachable-layer instead.
  *
  * Which matches may draw a shadow at all is decided upstream, by the walk
  * ({@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing}); this

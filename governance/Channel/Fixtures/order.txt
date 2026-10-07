@@ -64,6 +64,7 @@ suppression.unmatched-rule-ledger
 architecture.layer-violation
 architecture.unmatched-exclude
 architecture.doubted-assignment
+architecture.layer-overlap
 architecture.coverage-gap
 architecture.unreachable-layer
 architecture.potential-shadow

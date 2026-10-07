@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Observation\DiagnosticSampleList;
+use Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -253,18 +254,13 @@ final class DeclaredLayerReachability
      * criteria matched symbols outside the paths is told that an earlier
      * layer holds them through an `exclude:` no run can answer.
      *
-     * @param list<LayerDefinition> $definitions In declaration order.
-     * @param array<string, int> $reachedCounts Layer name → number of symbols assigned to the
-     *                                          layer or analysed classes it could still own,
-     *                                          from {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence::reachedCounts()}.
-     * @param array<string, array{matchedAnalysed: int, matchedOutside: int, unansweredAnalysed: int, unansweredOutside: int, unmetTypes: list<string>, installConsulted: bool}> $contests
-     *                                                                                                                                                                                     Every declared layer → what it could still own, from
-     *                                                                                                                                                                                     {@see \Qualimetrix\Analysis\Policy\Architecture\Observation\LayerEvidence::contests()}.
-     *
      * @return list<Finding>
      */
-    public static function unreachableLayers(array $definitions, array $reachedCounts, array $contests): array
+    public static function unreachableLayers(LayerEvidence $evidence): array
     {
+        $definitions = $evidence->architecture->registry()->definitions();
+        $reachedCounts = $evidence->reachedCounts();
+        $contests = $evidence->contests();
         $findings = [];
 
         foreach ($definitions as $definition) {
@@ -273,19 +269,44 @@ final class DeclaredLayerReachability
                 continue;
             }
 
+            $cause = self::observedRemovalCause($layerName, $evidence, $contests[$layerName]['matchedOutside']);
             $findings[] = self::projectDiagnostic(
                 ArchitectureChannels::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                \sprintf(
+                $cause === null ? \sprintf(
                     'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase.%s Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
                     $layerName,
                     $definition->membership()->describe(),
                     self::uncountedContest($contests[$layerName]),
-                ),
-                'Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare "pending: true" if the code it describes has not been written yet.',
+                ) : $cause['message'] . self::uncountedContest($contests[$layerName]),
+                $cause['recommendation'] ?? 'Move the layer above any broader layer that captures its classes, remove the layer if its pattern intentionally covers no class, or declare "pending: true" if the code it describes has not been written yet.',
             );
         }
 
         return $findings;
+    }
+
+    /** @return array{message: string, recommendation: string}|null */
+    private static function observedRemovalCause(string $layer, LayerEvidence $evidence, int $matchedOutside): ?array
+    {
+        $removed = $evidence->removedByOwnExclude($layer);
+        $taken = $evidence->takenByPrecedence($layer);
+        if ($removed === [] && $taken === [] && $matchedOutside === 0) {
+            return null;
+        }
+        $message = \sprintf('Layer "%s" was assigned no symbol during analysis.', $layer);
+        if ($removed !== []) {
+            $message .= \sprintf(' Its criteria matched %d symbol(s) removed by its own "exclude": %s.', \count($removed), DiagnosticSampleList::format($removed));
+        }
+        foreach ($taken as $pair) {
+            $message .= \sprintf(' %d matching class(es) were taken by earlier layer "%s": %s.', \count($pair['classes']), $pair['earlier'], DiagnosticSampleList::format($pair['classes']));
+        }
+        return [
+            'message' => $message,
+            'recommendation' => ($removed === [] ? '' : 'Narrow or remove the layer\'s own exclude if it should retain those symbols. ')
+                . ($taken === [] ? '' : 'Change declaration order if this layer should take those classes before the named earlier layers. ')
+                . ($matchedOutside === 0 ? '' : 'Place this layer before the earlier layer whose unanswered exclude holds those symbols if it should own them. ')
+                . 'Otherwise remove the empty layer or declare "pending: true" when its code has not been written yet.',
+        ];
     }
 
     /**
@@ -311,7 +332,7 @@ final class DeclaredLayerReachability
             $contest['installConsulted']
                 ? ' None of the %d type(s) the criteria name (%s) is declared in the analysed paths, built into PHP,'
                     . ' met at either end of a dependency edge or placed by the analysed project\'s composer install:'
-                    . ' a name is most likely mistyped, or the package declaring it is not installed.'
+                    . ' check the spelling, whether a runtime extension or dependency provides the type, and whether its source is outside the analysed paths.'
                 : ' None of the %d type(s) the criteria name (%s) is declared in the analysed paths, built into PHP or met at'
                     . ' either end of a dependency edge, and the run found no composer install to look it up in: either a'
                     . ' name is mistyped, or the type is reachable only through code the run did not analyse, and'
