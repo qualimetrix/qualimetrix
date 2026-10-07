@@ -158,7 +158,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
     private static ?array $judging = null;
 
     /**
-     * Case directory => class symbol name => the declaration subjects seen carrying it.
+     * Case directory => folded class symbol name => the declaration subjects seen carrying it.
      *
      * Built from every finding of the case, not only the judging ones, because
      * it answers a question about the corpus rather than about a channel: is
@@ -324,7 +324,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
                 $value = $finding['metricValue'] ?? null;
 
                 if (\is_string($subject) && \is_string($symbol) && str_starts_with($subject, 'declaration:class:')) {
-                    $classDeclarations[$directory][$symbol][$subject] = true;
+                    $classDeclarations[$directory][strtolower($symbol)][$subject] = true;
                 }
 
                 if (!\is_string($channel) || !isset($judging[$channel])) {
@@ -378,7 +378,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
             return false;
         }
 
-        return \count(self::$classDeclarations[$finding['case']][$finding['symbol']] ?? []) > 1;
+        return \count(self::$classDeclarations[$finding['case']][strtolower($finding['symbol'])] ?? []) > 1;
     }
 
     /**
@@ -389,6 +389,8 @@ final class ChannelJudgedMetricDriftTest extends TestCase
      * and a wrong join would compare a real number against a real number and
      * look like agreement.
      *
+     * Classes and namespaces use PHP's ASCII name identity: the export has one
+     * canonical spelling while findings retain each declaration's spelling.
      *
      * @return array<string, array<string, int|float>>
      */
@@ -406,7 +408,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
             }
 
             /** @var array<string, int|float> $metrics */
-            $index[$kind . "\0" . $name] = $metrics;
+            $index[self::metricKey($kind, $name)] = $metrics;
         }
 
         return $index;
@@ -428,7 +430,7 @@ final class ChannelJudgedMetricDriftTest extends TestCase
         // The project has one row in the export and a name of its own
         // (`(project)`), which is not the symbol a project-level finding
         // names; every other kind is addressed by its symbol.
-        $key = $kind === 'project' ? $kind . "\0(project)" : $kind . "\0" . $finding['symbol'];
+        $key = self::metricKey($kind, $kind === 'project' ? '(project)' : $finding['symbol']);
         $measured = self::$catalog[$finding['case']][$key] ?? null;
 
         self::assertIsArray($measured, \sprintf(
@@ -441,6 +443,11 @@ final class ChannelJudgedMetricDriftTest extends TestCase
         ));
 
         return $measured;
+    }
+
+    private static function metricKey(string $kind, string $name): string
+    {
+        return $kind . "\0" . (\in_array($kind, ['class', 'namespace'], true) ? strtolower($name) : $name);
     }
 
     /**
