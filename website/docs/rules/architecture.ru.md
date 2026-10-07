@@ -972,11 +972,13 @@ Unreachable-layer и unmatched-exclude сохраняют собственные
 **Rule ID:** `architecture.layer-declaration`
 
 У producer собственный `enabled`, без опций severity и числовых порогов. Он
-владеет пятью каналами ошибок конфигурации (`coverage-gap`, `unreachable-layer`,
-`pending-layer-matched`, `potential-shadow`, `empty-template`) и четырьмя
-обычными (`unmatched-exclude`, `doubted-assignment`, `layer-overlap`,
-`unmatched-type`), все с префиксом `architecture.`. Опубликованная ошибка
+владеет пятью каналами ошибок конфигурации (`architecture.coverage-gap`, `architecture.unreachable-layer`,
+`architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) и четырьмя
+обычными (`architecture.unmatched-exclude`, `architecture.doubted-assignment`, `architecture.layer-overlap`,
+`architecture.unmatched-type`). Опубликованная ошибка
 конфигурации всегда валит прогон; baseline и inline-подавление её не принимают.
+Вместе с `architecture.layer-violation` и `architecture.unassigned-class`
+политика слоёв публикует 11 каналов.
 
 | Дверь выбора                                                 | Пять ошибок конфигурации                      | Четыре обычных канала                        |
 | ------------------------------------------------------------ | --------------------------------------------- | -------------------------------------------- |

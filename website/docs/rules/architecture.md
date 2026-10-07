@@ -964,12 +964,13 @@ subtrees and trailing `\**`, preserving that suffix.
 **Rule ID:** `architecture.layer-declaration`
 
 This producer has its own `enabled` switch and no severity or numeric threshold
-option. It owns five configuration-error channels (`coverage-gap`,
-`unreachable-layer`, `pending-layer-matched`, `potential-shadow`,
-`empty-template`) and four ordinary channels (`unmatched-exclude`,
-`doubted-assignment`, `layer-overlap`, `unmatched-type`), each prefixed
-`architecture.`. Configuration errors always fail when published; baseline and
+option. It owns five configuration-error channels (`architecture.coverage-gap`,
+`architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`,
+`architecture.empty-template`) and four ordinary channels (`architecture.unmatched-exclude`,
+`architecture.doubted-assignment`, `architecture.layer-overlap`, `architecture.unmatched-type`). Configuration errors always fail when published; baseline and
 inline suppression cannot accept them.
+Together with `architecture.layer-violation` and `architecture.unassigned-class`,
+the layer policy publishes 11 channels.
 
 | Selection door                                                   | Five configuration-error channels            | Four ordinary channels                |
 | ---------------------------------------------------------------- | -------------------------------------------- | ------------------------------------- |

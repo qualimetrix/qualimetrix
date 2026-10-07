@@ -360,7 +360,7 @@ writing when the key should say out loud which half of a two-level channel it is
     The option filters findings whose subject is a **namespace**. A rule that reports per
     occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
     (`cohesion.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
-    and then does nothing. The layer-policy diagnostics — `architecture.coverage-gap`,
+    and then does nothing. The five layer-policy diagnostics — `architecture.coverage-gap`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — report against the project as a whole and are likewise
     outside its reach; use the `exclude:` block inside the architecture layer configuration

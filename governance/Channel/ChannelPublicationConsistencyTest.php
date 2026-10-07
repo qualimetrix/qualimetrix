@@ -43,7 +43,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         'один' => 1, 'одна' => 1, 'одной' => 1, 'одну' => 1, 'одного' => 1,
         'два' => 2, 'две' => 2, 'двух' => 2,
         'три' => 3, 'трёх' => 3, 'трех' => 3, 'тремя' => 3,
-        'четыре' => 4, 'четырёх' => 4, 'четырех' => 4,
+        'четыре' => 4, 'четырьмя' => 4, 'четырёх' => 4, 'четырех' => 4,
         'пять' => 5, 'пяти' => 5, 'пятью' => 5,
         'шесть' => 6, 'шести' => 6,
         'семь' => 7, 'семи' => 7,
@@ -68,6 +68,56 @@ final class ChannelPublicationConsistencyTest extends TestCase
      */
     private const PUBLICATIONS = [
         [
+            'path' => 'website/docs/rules/architecture.md',
+            'pattern' => '/\| (?<count>\S+) configuration-error channels\s+\|/su',
+            'set' => 'layer-policy-config-error',
+        ],
+        [
+            'path' => 'website/docs/rules/architecture.md',
+            'pattern' => '/\| (?<count>\S+) ordinary channels\s+\|/su',
+            'set' => 'layer-declaration-ordinary',
+        ],
+        [
+            'path' => 'website/docs/rules/architecture.ru.md',
+            'pattern' => '/\| (?<count>\S+) ошибок конфигурации\s+\|/su',
+            'set' => 'layer-policy-config-error',
+        ],
+        [
+            'path' => 'website/docs/rules/architecture.ru.md',
+            'pattern' => '/\| (?<count>\S+) обычных канала\s+\|/su',
+            'set' => 'layer-declaration-ordinary',
+        ],
+        [
+            'path' => 'website/docs/getting-started/configuration.md',
+            'pattern' => '/has only `enabled`\. Its (?<count>\S+) configuration-error channels remain live under an/su',
+            'set' => 'layer-policy-config-error',
+        ],
+        [
+            'path' => 'website/docs/getting-started/configuration.md',
+            'pattern' => '/unrelated `--only-rule`; its (?<count>\S+) ordinary channels follow channel publication\./su',
+            'set' => 'layer-declaration-ordinary',
+        ],
+        [
+            'path' => 'website/docs/getting-started/configuration.ru.md',
+            'pattern' => '/имеет только `enabled`\. (?<count>\S+) каналов ошибок конфигурации остаются активны при/su',
+            'set' => 'layer-policy-config-error',
+        ],
+        [
+            'path' => 'website/docs/getting-started/configuration.ru.md',
+            'pattern' => '/чужом `--only-rule`; (?<count>\S+) обычных канала следуют выбору публикации\./su',
+            'set' => 'layer-declaration-ordinary',
+        ],
+        [
+            'path' => 'website/docs/rules/architecture.md',
+            'pattern' => '/and (?<count>\S+) ordinary channels \((?<list>[^)]*)\)/su',
+            'set' => 'layer-declaration-ordinary',
+        ],
+        [
+            'path' => 'website/docs/rules/architecture.ru.md',
+            'pattern' => '/и (?<count>\S+)\s+обычными \((?<list>[^)]*)\)/su',
+            'set' => 'layer-declaration-ordinary',
+        ],
+        [
             'path' => 'website/docs/usage/output-formats.md',
             'pattern' => '/(?<count>\S+) channels ask the first question:\s*(?<list>.*?)\.\s*`discovery\.unmatched-exclude`/su',
             'set' => 'project-scope-namespace-claims',
@@ -79,7 +129,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/getting-started/configuration.md',
-            'pattern' => '/apply to the (?<count>\S+) layer-policy diagnostics —(?<list>.*?)— which report/su',
+            'pattern' => '/The (?<count>\S+) layer-policy diagnostics —(?<list>.*?)— report against the project as a whole/su',
             'set' => 'layer-policy-config-error',
         ],
         [
@@ -94,7 +144,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/getting-started/configuration.ru.md',
-            'pattern' => '/(?<count>\S+) диагностик\S*\s+рядом с ним —(?<list>.*?)— сообщают/su',
+            'pattern' => '/(?<count>\S+) диагностик политики слоёв —(?<list>.*?)— сообщают о проекте целиком/su',
             'set' => 'layer-policy-config-error',
         ],
         [
@@ -185,13 +235,12 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.md',
-            'pattern' => '/The layer policy publishes (?<count>\S+) channels, but the other \S+ carry rule names of their own \((?<list>[^)]*)\)/su',
+            'pattern' => '/It owns \S+ configuration-error channels (?<list>.*?)the layer policy publishes (?<count>\S+) channels\./su',
             'set' => 'layer-policy-channels',
-            'omitted' => ['architecture.layer-violation'],
         ],
         [
             'path' => 'website/docs/rules/architecture.md',
-            'pattern' => '/(?<count>\S+) of those eight are configuration errors/su',
+            'pattern' => '/It owns (?<count>\S+) configuration-error channels \((?<list>[^)]*)\) and/su',
             'set' => 'layer-policy-config-error',
         ],
         [
@@ -230,13 +279,12 @@ final class ChannelPublicationConsistencyTest extends TestCase
         ],
         [
             'path' => 'website/docs/rules/architecture.ru.md',
-            'pattern' => '/Политика слоёв публикует (?<count>\S+) каналов, но остальные \S+ несут собственные имена правил \((?<list>[^)]*)\)/su',
+            'pattern' => '/владеет \S+ каналами ошибок конфигурации (?<list>.*?)политика слоёв публикует (?<count>\S+) каналов\./su',
             'set' => 'layer-policy-channels',
-            'omitted' => ['architecture.layer-violation'],
         ],
         [
             'path' => 'website/docs/rules/architecture.ru.md',
-            'pattern' => '/(?<count>\S+) из этих восьми суть ошибки конфигурации/su',
+            'pattern' => '/владеет (?<count>\S+) каналами ошибок конфигурации \((?<list>[^)]*)\) и/su',
             'set' => 'layer-policy-config-error',
         ],
         [
@@ -479,6 +527,7 @@ final class ChannelPublicationConsistencyTest extends TestCase
                 static fn(string $channel): bool => str_starts_with($channel, 'annotation.'),
             )),
             'layer-policy-channels' => $layerPolicy,
+            'layer-declaration-ordinary' => array_keys(LayerDeclarationRule::channelDeclarations()),
             'annotation-channels' => $annotationChannels,
             'project-scope-namespace-claims' => ProjectScopeChannels::NAMESPACE_CLAIM_CHANNELS,
         ];

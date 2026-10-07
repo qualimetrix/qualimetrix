@@ -364,7 +364,7 @@ rules:
     Опция фильтрует нарушения, чей субъект — **неймспейс**. У правила, которое сообщает
     поштучно (`code-smell.*`, `security.*`, `architecture.layer-violation`) или только на
     уровне класса (`cohesion.lcom`), удалять ей нечего: ключ с таким каналом принимается и
-    ничего не делает. Диагностики политики слоёв — `architecture.coverage-gap`,
+    ничего не делает. Пять диагностик политики слоёв — `architecture.coverage-gap`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — сообщают о проекте целиком и тоже вне её досягаемости;
     для них используйте блок `exclude:` внутри конфигурации архитектурных слоёв.

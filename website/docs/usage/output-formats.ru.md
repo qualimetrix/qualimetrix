@@ -1139,13 +1139,14 @@ Skips называют запись, не ставшую единицей ана
   состава кода отдельно. Авторские и generated-исключения не являются входами
   этого вопроса. Уже привязанный selector остаётся `Removed` и при удержанном ответе.
 
-Первый вопрос задают шесть каналов:
+Первый вопрос задают семь каналов:
 `architecture.empty-template`, `architecture.unmatched-exclude`,
-`architecture.unreachable-layer`, `cohesion.unmatched-exclude-method`,
-`coupling.unmatched-framework-namespace`, `suppression.unmatched-namespace`.
+`architecture.unmatched-type`, `architecture.unreachable-layer`,
+`cohesion.unmatched-exclude-method`, `coupling.unmatched-framework-namespace`,
+`suppression.unmatched-namespace`.
 Второй используют `discovery.unmatched-exclude`, `suppression.unmatched-path`
 и `suppression.unmatched-rule-ledger`; namespace-значения последнего также
-спрашивают первый. Всего девять каналов.
+спрашивают первый. Всего десять каналов.
 
 Полный поимённый roster PHP может покрыть известную область. Наблюдённый regular
 `.php` вне выбора — пропущенный файл, даже если он совпал с exclude. Снятый каталог
