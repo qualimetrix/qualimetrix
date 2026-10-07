@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryIn
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\ProjectFilesInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisPreflight;
@@ -33,6 +34,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
     private const string LAYER_VIOLATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule';
     private const string LAYER_DECLARATION_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\LayerDeclaration\\LayerDeclarationRule';
     private const string UNASSIGNED_CLASS_RULE = 'Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassRule';
+    private const string UNASSIGNED_CLASS_LAYER_REQUIREMENT = 'Qualimetrix\\Analysis\\Policy\\Architecture\\UnassignedClass\\UnassignedClassLayerRequirement';
 
     public function __construct(
         private readonly string $srcDir,
@@ -62,6 +64,8 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
             ->setAutowired(true);
         $container->register(self::ARCHITECTURE_SECTION)
             ->setAutoconfigured(true);
+        $container->register(self::UNASSIGNED_CLASS_LAYER_REQUIREMENT);
+        $container->setAlias(UnassignedClassLayerRequirementInterface::class, self::UNASSIGNED_CLASS_LAYER_REQUIREMENT);
 
         $this->registerLayerVerdicts($container);
         $loader->registerClasses(

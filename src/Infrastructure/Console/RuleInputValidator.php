@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionDocumentFormsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Selection\RuleEnablementResolver;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Command\Command;
@@ -29,6 +30,7 @@ final readonly class RuleInputValidator
         private RuleOptionsBuild $optionsBuild,
         private ComputedMetricConfiguratorInterface $computedMetricConfigurator,
         private RuleEnablementResolver $enablementResolver,
+        private UnassignedClassLayerRequirementInterface $unassignedClassLayerRequirement,
     ) {}
 
     public function resolve(ConfigurationDocument $document, InputInterface $input): FindingConfiguration
@@ -38,7 +40,9 @@ final readonly class RuleInputValidator
         $stated = $this->enablementResolver->decide($configuration->document, $channels);
         $configuration = $configuration->withChannelUniverse($channels)->withDiagnostics($stated->diagnostics());
         $options = $this->optionsBuild->build($configuration, $stated);
-        return $configuration->withResolvedOptions($options)->withEnablement($this->enablementResolver->conclude($stated, $options));
+        $configuration = $configuration->withResolvedOptions($options)->withEnablement($this->enablementResolver->conclude($stated, $options));
+        $this->unassignedClassLayerRequirement->assertSatisfied($configuration);
+        return $configuration;
     }
 
     public function validate(

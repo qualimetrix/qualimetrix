@@ -297,6 +297,7 @@ final class RuleInputValidatorTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
             new RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
         $disabled = ['health.complexity:class'];
 
@@ -407,6 +408,7 @@ final class RuleInputValidatorTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class)),
             self::createStub(ComputedMetricConfiguratorInterface::class),
             new RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
     }
 
@@ -433,6 +435,7 @@ final class RuleInputValidatorTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild($execution),
             $computed,
             new RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         ))->resolve($document, $input);
         $snapshot = $validator->validate($input, $resolved, $definitions);
         \assert($snapshot instanceof ChannelUniverse);

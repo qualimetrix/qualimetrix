@@ -168,6 +168,7 @@ final class RuntimeConfiguratorTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\Configuration\RuleOptionsBuild(\Qualimetrix\Tests\Analysis\Finding\Support\ResolvedOptionsFixture::execution($metadata)),
             $computedMetrics,
             new RuleEnablementResolver(),
+            self::createStub(\Qualimetrix\Analysis\Policy\Architecture\Contract\UnassignedClassLayerRequirementInterface::class),
         );
         $analysis = new AnalysisRuntimeConfigurator(
             $this->rules,
