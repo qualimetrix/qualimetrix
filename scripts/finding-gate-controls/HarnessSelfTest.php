@@ -253,6 +253,74 @@ final class HarnessSelfTest
                     'the derive control restores the identity index bytes',
                 );
             }
+
+            $unused = ChannelRenamePlants::unusedPrivateRenameDeclarations();
+            $sensitive = (new ReflectionMethod(FingerprintControls::class, 'sensitiveParameterRenameDeclarations'))->invoke(null);
+            $claims = [
+                ['smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
+                ['detectors-smells', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
+                ['detectors', 'code-smell.unused-private@class', 'code-smell.unused-privat2@class', $unused],
+                ['security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
+                ['detectors-security', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
+                ['detectors', 'security.sensitive-parameter@callable', 'security.sensitive-paramete2@callable', $sensitive],
+            ];
+            foreach ($claims as [$case, $oldClaim, $newClaim, $mutation]) {
+                $relative = 'finding-gate/cases/' . $case . '/case.json';
+                $original = Shell::read($repository . '/' . $relative);
+                $quoted = json_encode($oldClaim, \JSON_THROW_ON_ERROR);
+                $escaped = '"\\u' . \sprintf('%04x', \ord($oldClaim[0])) . substr($quoted, 2);
+                $this->same(1, substr_count($original, $quoted), $case . ' has one claim to escape');
+                Shell::replace($scratch->path($relative), str_replace($quoted, $escaped, $original));
+                $before = json_decode(Shell::read($scratch->path($relative)), true, 512, \JSON_THROW_ON_ERROR);
+                $actions = (new ReflectionProperty(Mutation::class, 'actions'))->getValue($mutation);
+                $caseActions = array_values(array_filter($actions, static fn(array $action): bool => $action['path'] === $relative));
+                $this->same(1, \count($caseActions), $case . ' has one case claim action');
+                if (\count($caseActions) !== 1) {
+                    continue;
+                }
+                $action = $caseActions[0];
+                $claimMutation = match ($action['kind']) {
+                    'edit' => Mutation::edit($relative, $action['replacements'], 'the case claim follows the rename'),
+                    'replace' => Mutation::replace([$relative => $action['contents']], 'the case claim follows the rename'),
+                    default => throw new RuntimeException('A case claim uses no supported mutation action.'),
+                };
+                try {
+                    $claimMutation->apply($scratch, $repository);
+                } catch (RuntimeException $error) {
+                    $this->failures[] = $case . ' escaped claim mutation (' . $error->getMessage() . ')';
+                    continue;
+                }
+                $expected = $before;
+                $oldChannel = \QmxFindingGate\SubjectLevel::channelOf($oldClaim);
+                $newChannel = \QmxFindingGate\SubjectLevel::channelOf($newClaim);
+                foreach ($expected['channels'] as $index => $claim) {
+                    if (\QmxFindingGate\SubjectLevel::channelOf($claim) !== $oldChannel) {
+                        continue;
+                    }
+                    $expected['channels'][$index] = $newChannel . substr($claim, \strlen($oldChannel));
+                }
+                $actual = json_decode(Shell::read($scratch->path($relative)), true, 512, \JSON_THROW_ON_ERROR);
+                $this->same($expected, $actual, $case . ' changes only its semantic channel claim');
+                $this->same(
+                    $expected['channels'],
+                    \QmxFindingGate\CaseDefinition::load($scratch->path('finding-gate/cases/' . $case))->channels,
+                    $case . ' keeps every other native claim and level',
+                );
+            }
+            try {
+                ChannelRenamePlants::renamedCaseClaims(
+                    \QmxFindingGate\CaseDefinition::load($repository . '/finding-gate/cases/smells'),
+                    'code-smell.absent',
+                    'code-smell.renamed',
+                );
+                $this->failures[] = 'a missing semantic claim was accepted';
+            } catch (RuntimeException $error) {
+                $this->same(
+                    'Case smells no longer claims channel code-smell.absent.',
+                    $error->getMessage(),
+                    'a missing semantic claim is refused before mutation',
+                );
+            }
         } catch (Throwable $error) {
             $this->failures[] = 'a private comparison context (' . $error->getMessage() . ')';
         } finally {

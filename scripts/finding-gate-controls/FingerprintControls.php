@@ -265,21 +265,13 @@ final class FingerprintControls
         );
 
         foreach (Corpus::load($root)->cases as $case) {
-            $claims = [];
             foreach ($case->channels as $channel) {
                 if (!str_starts_with($channel, $old . '@')) {
                     continue;
                 }
 
-                $renamed = $new . substr($channel, \strlen($old));
-                $claims[json_encode($channel, \JSON_THROW_ON_ERROR)] = json_encode($renamed, \JSON_THROW_ON_ERROR);
-            }
-            if ($claims !== []) {
-                $mutation = $mutation->and(Mutation::edit(
-                    'finding-gate/cases/' . $case->id . '/case.json',
-                    $claims,
-                    'the case claims the renamed channel',
-                ));
+                $mutation = $mutation->and(ChannelRenamePlants::renamedCaseClaims($case, $old, $new));
+                break;
             }
         }
 

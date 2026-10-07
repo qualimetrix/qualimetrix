@@ -8,6 +8,7 @@ use QmxFindingGate\CaseDefinition;
 use QmxFindingGate\Corpus;
 use QmxFindingGate\DeclaredDelta;
 use QmxFindingGate\FailureClass;
+use QmxFindingGate\SubjectLevel;
 use RuntimeException;
 
 /**
@@ -224,10 +225,10 @@ final class ChannelRenamePlants
                 continue;
             }
 
-            $mutation = $mutation->and(Mutation::edit(
-                'finding-gate/cases/' . $case->id . '/case.json',
-                ['"code-smell.unused-private@class"' => '"code-smell.unused-privat2@class"'],
-                'the case claims the renamed channel',
+            $mutation = $mutation->and(self::renamedCaseClaims(
+                $case,
+                'code-smell.unused-private',
+                'code-smell.unused-privat2',
             ));
         }
 
@@ -235,6 +236,34 @@ final class ChannelRenamePlants
             ['code-smell.unused-private' => 'code-smell.unused-privat2'],
             'any derived declaration that names the channel names the new one',
         ));
+    }
+
+    /** A claim's decoded channel is authoritative, regardless of its JSON spelling. */
+    public static function renamedCaseClaims(CaseDefinition $case, string $old, string $new): Mutation
+    {
+        $relative = 'finding-gate/cases/' . $case->id . '/case.json';
+        $document = json_decode(Shell::read($case->directory . '/case.json'), true, 512, \JSON_THROW_ON_ERROR);
+        if (!\is_array($document) || !\is_array($document['channels'] ?? null)
+            || $document['channels'] !== $case->channels) {
+            throw new RuntimeException('Cannot read the current channel claims of case ' . $case->id . '.');
+        }
+
+        $renamed = 0;
+        foreach ($document['channels'] as $index => $claim) {
+            if (SubjectLevel::channelOf($claim) !== $old) {
+                continue;
+            }
+            $document['channels'][$index] = $new . substr($claim, \strlen($old));
+            ++$renamed;
+        }
+        if ($renamed === 0) {
+            throw new RuntimeException('Case ' . $case->id . ' no longer claims channel ' . $old . '.');
+        }
+
+        return Mutation::replace(
+            [$relative => json_encode($document, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR) . "\n"],
+            'the case claims the renamed channel',
+        );
     }
 
     /**

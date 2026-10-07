@@ -636,9 +636,11 @@ Green controls are held to all declaration counts, not just exit 0.
 
 The config-precedence, threshold-raising and directive-placement controls
 require their finding counts, records and unchanged report surfaces. They do
-not require equality of the whole `directives` surface: its project-scope
-metadata has a declared transition. Directive record values still have exact
-semantic expectations; the ordinary gate judges the declared metadata diff.
+require a whole `directives` surface mismatch when no declaration owns that
+surface. If an ordinary or exact declaration does own it, the gate judges the
+declared transition instead. None of these three current cases has such a
+declaration, so each requires the mismatch. Directive record values retain
+their exact semantic expectations independently.
 
 The failed-derivation control requires an invalid captured publication and
 hashes the declaration index and directory before and after the run. Complete
