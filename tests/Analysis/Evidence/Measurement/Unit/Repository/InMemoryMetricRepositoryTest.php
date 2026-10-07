@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Repository;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -298,7 +299,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             200,
         );
 
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         // Both symbols should exist in merged repository
         self::assertTrue($merged->has(SymbolPath::forMethod('App', 'ServiceA', 'method1')));
@@ -333,7 +334,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             ->with('size.loc', 150); // Override
         $repo2->add($symbol, $metrics2, RelativePath::fromString('Service.php'), 1);
 
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         $result = $merged->get($symbol);
 
@@ -359,7 +360,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         );
 
         // Merge with empty
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         self::assertTrue($merged->has(SymbolPath::forMethod('App', 'Service', 'method')));
         self::assertSame(5, $merged->get(SymbolPath::forMethod('App', 'Service', 'method'))->get('complexity.ccn'));
@@ -415,7 +416,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         // repo2 has line=42
         $repo2->add($symbol, (new MetricBag())->with('size.loc', 100), RelativePath::fromString('Service.php'), 42);
 
-        $merged = $repo1->mergeWith($repo2);
+        $merged = $repo1->mergedWith($repo2) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         $infos = iterator_to_array($merged->all(SymbolLevel::Class_), false);
         $info = $infos[0];
@@ -551,7 +552,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             17,
         ));
 
-        foreach ([$plain->mergeWith($typed), $typed->mergeWith($plain)] as $repository) {
+        foreach ([($plain->mergedWith($typed) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($typed->mergedWith($plain) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $callables = iterator_to_array($repository->allCallables(), false);
             self::assertCount(1, $callables);
             self::assertSame(CallableKind::Method, $callables[0]->callableKind);
@@ -612,7 +613,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $second = new InMemoryMetricRepository();
         $second->addSubject($secondSubject, MetricBag::fromArray(['second' => 2]), $secondPath->file, 22);
 
-        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+        foreach ([($first->mergedWith($second) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $declarations = iterator_to_array($repository->allDeclarations(), false);
             self::assertCount(2, $declarations);
             $locations = [];
@@ -646,7 +647,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         );
         $second->addSubject(MetricSubject::declaration($secondPath), MetricBag::fromArray(['second' => 2]), $secondPath->file, 2);
 
-        $repository = $second->mergeWith($first);
+        $repository = $second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         self::assertCount(2, iterator_to_array($repository->allDeclarations(), false));
         self::assertCount(1, iterator_to_array($repository->allLogicalClasses(), false));
@@ -671,7 +672,10 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $other = new InMemoryMetricRepository();
         $other->add(SymbolPath::fromClassFqn('Other\\Thing'), MetricBag::fromArray(['other' => 3]), null, null);
 
-        $repository = $mixed->mergeWith($other)->mergeWith(new InMemoryMetricRepository());
+        $repository = $mixed->mergedWith($other)
+            ?? throw new LogicException('In-memory repositories must be merge-compatible');
+        $repository = $repository->mergedWith(new InMemoryMetricRepository())
+            ?? throw new LogicException('In-memory repositories must be merge-compatible');
 
         self::assertSame(['class', 'namespace'], array_column($repository->mixedSpellings(), 'kind'));
         self::assertSame(['App', 'Other'], $repository->getNamespaces());
@@ -703,6 +707,25 @@ final class InMemoryMetricRepositoryTest extends TestCase
             MetricBag::fromArray(['size.class-loc' => 5]),
             $declaration->file,
             3,
+        );
+
+        self::assertSame(['App\\Foo'], $repository->getNamespaces());
+        self::assertSame(17, $repository->get($lower)->get('size.loc.sum'));
+        self::assertSame(17, $repository->get(SymbolPath::forNamespace('App\\Foo'))->get('size.loc.sum'));
+    }
+
+    #[Test]
+    public function itRekeysANamespaceAggregateWhenALogicalClassChangesItsCanonicalSpelling(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $lower = SymbolPath::forNamespace('App\\foo');
+        $repository->add($lower, MetricBag::fromArray(['size.loc.sum' => 17]), null, null);
+
+        $repository->addSubject(
+            MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App\\Foo', 'Example'))),
+            MetricBag::fromArray(['size.class-loc' => 5]),
+            null,
+            0,
         );
 
         self::assertSame(['App\\Foo'], $repository->getNamespaces());
@@ -792,7 +815,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $second = new InMemoryMetricRepository();
         $second->addCallable($secondCallable);
 
-        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+        foreach ([($first->mergedWith($second) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $callables = iterator_to_array($repository->allCallables(), false);
             self::assertCount(2, $callables);
             $locations = [];
@@ -913,8 +936,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $typed->addSubject($subject, (new MetricBag())->with('size.loc.sum', 20)->withEntry('source', ['name' => 'typed']), $typedFile, null);
 
         foreach ([
-            [$plain->mergeWith($typed), 20, [['name' => 'plain'], ['name' => 'typed']], $plainFile],
-            [$typed->mergeWith($plain), 10, [['name' => 'typed'], ['name' => 'plain']], $typedFile],
+            [($plain->mergedWith($typed) ?? throw new LogicException('In-memory repositories must be merge-compatible')), 20, [['name' => 'plain'], ['name' => 'typed']], $plainFile],
+            [($typed->mergedWith($plain) ?? throw new LogicException('In-memory repositories must be merge-compatible')), 10, [['name' => 'typed'], ['name' => 'plain']], $typedFile],
         ] as [$repository, $loc, $entries, $expectedFile]) {
             $public = $repository->get($path);
             $typedMetrics = $repository->getSubject($subject);

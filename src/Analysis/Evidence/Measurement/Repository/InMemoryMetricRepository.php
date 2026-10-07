@@ -33,9 +33,24 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         $this->namespaceIndex = new NamespaceMetricIndex();
     }
 
-    public function mergedWith(MetricRepositoryInterface $other): ?MetricRepositoryInterface
+    public function mergedWith(MetricRepositoryInterface $other): ?self
     {
-        return $other instanceof self ? $this->mergeWith($other) : null;
+        if (!$other instanceof self) {
+            return null;
+        }
+
+        $merged = new self();
+        $merged->aggregateIndex = $this->aggregateIndex->mergeWith($other->aggregateIndex);
+        $merged->subjectIndex = $this->subjectIndex->mergeWith($other->subjectIndex);
+        $merged->logicalClassIndex = $this->logicalClassIndex->mergeWith($other->logicalClassIndex);
+        $merged->namespaceIndex->rebuild(
+            $merged->aggregateIndex->infos(),
+            [...$merged->subjectIndex->infos(), ...$merged->logicalClassIndex->infos()],
+        );
+        $merged->namespaceIndex->importSpellings($this->namespaceIndex);
+        $merged->namespaceIndex->importSpellings($other->namespaceIndex);
+
+        return $merged;
     }
 
     public function get(SymbolPath $symbol): MetricBag
@@ -78,7 +93,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
             return;
         }
-        $this->storeAggregate($this->aggregateForWrite($symbol), $metrics, $file, $line);
+        $this->storeAggregate($symbol, $metrics, $file, $line);
     }
 
     public function getSubject(MetricSubject $subject): MetricBag
@@ -96,13 +111,13 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         $line = $line === 0 ? null : $line;
         $aggregate = $subject->aggregatePath();
         if ($aggregate !== null) {
-            $this->storeAggregate($this->aggregateForWrite($aggregate), $metrics, $file, $line);
+            $this->storeAggregate($aggregate, $metrics, $file, $line);
 
             return;
         }
-        if ($subject->logicalClassPath() !== null) {
-            $info = $this->logicalClassIndex->addSubject($subject, $metrics, $file, $line);
-            $this->namespaceIndex->add($info);
+        $logicalClass = $subject->logicalClassPath();
+        if ($logicalClass !== null) {
+            $this->addLogicalClass($logicalClass->symbolPath, $metrics, $file, $line);
 
             return;
         }
@@ -134,12 +149,16 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function addScalar(SymbolPath $symbol, string $key, int|float $value): void
     {
-        $subject = self::subjectOf($symbol);
-        if ($subject === null) {
+        if ($symbol->getType() === SymbolType::Class_) {
+            $this->addSubjectScalar(MetricSubject::logicalClass(new LogicalClassPath($symbol)), $key, $value);
+
+            return;
+        }
+        if (\in_array($symbol->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
             return;
         }
 
-        $this->addSubjectScalar($subject, $key, $value);
+        $this->addSubjectScalar(MetricSubject::aggregate($symbol), $key, $value);
     }
 
     /** @return list<string> */
@@ -158,22 +177,6 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     public function mixedSpellings(): array
     {
         return [...$this->logicalClassIndex->mixedSpellings(), ...$this->namespaceIndex->mixedSpellings()];
-    }
-
-    public function mergeWith(self $other): self
-    {
-        $merged = new self();
-        $merged->aggregateIndex = $this->aggregateIndex->mergeWith($other->aggregateIndex);
-        $merged->subjectIndex = $this->subjectIndex->mergeWith($other->subjectIndex);
-        $merged->logicalClassIndex = $this->logicalClassIndex->mergeWith($other->logicalClassIndex);
-        $merged->namespaceIndex->rebuild(
-            $merged->aggregateIndex->infos(),
-            [...$merged->subjectIndex->infos(), ...$merged->logicalClassIndex->infos()],
-        );
-        $merged->namespaceIndex->importSpellings($this->namespaceIndex);
-        $merged->namespaceIndex->importSpellings($other->namespaceIndex);
-
-        return $merged;
     }
 
     public function addSubjectScalar(MetricSubject $subject, string $key, int|float $value): void
@@ -228,6 +231,10 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     private function storeAggregate(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void
     {
+        if ($symbol->getType() === SymbolType::Namespace_) {
+            $symbol = SymbolPath::forNamespace($this->observeNamespace($symbol->namespace ?? ''));
+        }
+
         $info = $this->aggregateIndex->add($symbol, $metrics, $file, $line);
         $this->namespaceIndex->add($info);
     }
@@ -254,25 +261,6 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
         $this->observeNamespace($symbol->namespace ?? '');
         $info = $this->logicalClassIndex->addLogicalClass($symbol, $metrics, $file, $line === 0 ? null : $line);
         $this->namespaceIndex->add($info);
-    }
-
-    private static function subjectOf(SymbolPath $symbol): ?MetricSubject
-    {
-        if ($symbol->getType() === SymbolType::Class_) {
-            return MetricSubject::logicalClass(new LogicalClassPath($symbol));
-        }
-        if (\in_array($symbol->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
-            return null;
-        }
-
-        return MetricSubject::aggregate($symbol);
-    }
-
-    private function aggregateForWrite(SymbolPath $symbol): SymbolPath
-    {
-        return $symbol->getType() === SymbolType::Namespace_
-            ? SymbolPath::forNamespace($this->observeNamespace($symbol->namespace ?? ''))
-            : $symbol;
     }
 
     private function observeNamespace(string $namespace): string

@@ -334,7 +334,7 @@ final class ComputedMetricRuleTest extends TestCase
         $first = $this->repositoryWithExactClassDeclaration($class, 'src/A.php', 100, 11);
         $second = $this->repositoryWithExactClassDeclaration($class, 'src/B.php', 200, 22);
 
-        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+        foreach ([($first->mergedWith($second) ?? throw new LogicException('In-memory repositories must be merge-compatible')), ($second->mergedWith($first) ?? throw new LogicException('In-memory repositories must be merge-compatible'))] as $repository) {
             $findings = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
 
             self::assertCount(2, $findings);
