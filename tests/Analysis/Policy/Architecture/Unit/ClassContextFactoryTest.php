@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer;
 
 use Closure;
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -13,6 +15,10 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\DependencyModel\UnplacedExternalClassSpelling;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypes;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ExternalSupertypeSourceInterface;
@@ -24,6 +30,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\DeclarationRelat
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\ImplicitStringability;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\KnownTypes;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext\NameSpellingIndex;
+use Qualimetrix\Core\Ast\NameResolution;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
@@ -304,6 +311,43 @@ final class ClassContextFactoryTest extends TestCase
 
         self::assertSame(['App\\Attr\\Entity'], $context->attributeFqns);
         self::assertSame(['App\\Attr\\Route'], $context->memberAttributeFqns);
+    }
+
+    #[Test]
+    public function itExcludesAnonymousMemberAttributesExtractedFromSource(): void
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse(<<<'PHP'
+<?php
+namespace App;
+class Host {
+    public function factory(): object {
+        return new class {
+            #[NestedMark]
+            public function marked(): void {}
+        };
+    }
+    #[OwnMark]
+    public function own(): void {}
+}
+PHP);
+        self::assertNotNull($ast);
+        NameResolution::resolve($ast);
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $visitor = new DependencyVisitor();
+        $visitor->beginFile(RelativePath::fromString('test.php'), $registrar->index());
+        (new NodeTraverser($registrar, $visitor))->traverse($ast);
+        $graph = (new DependencyGraphBuilder(new UnplacedExternalClassSpelling()))->build(
+            $visitor->dependencies(),
+            $visitor->classLikeDeclarations(),
+        )->graph;
+        $host = SymbolPath::fromClassFqn('App\\Host');
+        $factory = new ClassContextFactory();
+        $factory->bindGraph($graph, [$host]);
+
+        self::assertSame(['App\\OwnMark'], $factory->build($host)->memberAttributeFqns);
+        self::assertSame([], $factory->build($host)->attributeFqns);
+        self::assertCount(2, $graph->getClassDependencies($host));
+        self::assertCount(2, $graph->getDeclarationDependencies());
     }
 
     #[Test]

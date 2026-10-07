@@ -9,7 +9,6 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
-use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\ClassLikeDeclaration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
@@ -53,8 +52,8 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
      * Counts nested anonymous-class scopes the traversal is currently inside
      * (0 = not inside one). Raised in {@see consumeAnonymousClass()}, lowered
      * in {@see leaveNode()}. An anonymous class never resets $currentContext
-     * (see below), so a `use T;` reached while this is > 0 is a declaration
-     * fact of the innermost anonymous class, not of $currentContext — see
+     * (see below), so its trait uses and attribute sites describe the
+     * anonymous class rather than $currentContext — see
      * {@see dispatchInCurrentContext()}.
      */
     private int $anonymousClassDepth = 0;
@@ -252,13 +251,9 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return;
         }
 
-        // `use T;` inside an anonymous class body never reaches ClassLikeHandler
-        // (it's a separate Stmt\TraitUse child, dispatched here like any other
-        // node) — so it is the only body-level edge that still needs flagging.
-        // Other body dependencies (new, static calls, type hints) are usages,
-        // not declaration facts, and stay unflagged even at depth > 0.
-        $describesNestedAnonymousClass = $node instanceof TraitUse && $this->anonymousClassDepth > 0;
-        if ($describesNestedAnonymousClass) {
+        // Only the recorder's attribute and class-like operations read this
+        // provenance; ordinary usages keep their existing dependency semantics.
+        if ($this->anonymousClassDepth > 0) {
             $this->currentContext->startDescribingNestedAnonymousClass();
         }
         $this->handlers->dispatch($node, $this->currentContext);

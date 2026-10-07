@@ -863,6 +863,62 @@ PHP;
     }
 
     #[Test]
+    #[DataProvider('provideAnonymousAttributeSites')]
+    public function itPreservesAnonymousProvenanceForEveryAttributeSite(string $member, AttributeSite $site): void
+    {
+        $deps = $this->analyze(<<<PHP
+<?php
+namespace App;
+class Host {
+    #[OwnBefore]
+    public const BEFORE = 1;
+    public function factory(): object {
+        return new class {
+            $member
+            public function nested(): object {
+                return new class { $member };
+            }
+        };
+    }
+    #[OwnAfter]
+    public const AFTER = 2;
+}
+PHP);
+
+        self::assertCount(4, $deps);
+        self::assertSame(
+            ['App\\OwnBefore', 'App\\NestedMark', 'App\\NestedMark', 'App\\OwnAfter'],
+            array_map(static fn($dependency): string => $dependency->targetLogical()->toString(), $deps),
+        );
+        self::assertSame(
+            [AttributeSite::ClassConstant, $site, $site, AttributeSite::ClassConstant],
+            array_map(static fn($dependency): ?AttributeSite => $dependency->attributeSite, $deps),
+        );
+        self::assertSame(
+            [false, true, true, false],
+            array_map(static fn($dependency): bool => $dependency->describesNestedAnonymousClass, $deps),
+        );
+        foreach ($deps as $dependency) {
+            self::assertSame('App\\Host', $dependency->sourceLogical()->toString());
+            self::assertSame(DependencyType::Attribute, $dependency->type);
+        }
+    }
+
+    /** @return iterable<string, array{string, AttributeSite}> */
+    public static function provideAnonymousAttributeSites(): iterable
+    {
+        yield 'method' => ['#[NestedMark] public function marked(): void {}', AttributeSite::Method];
+        yield 'property' => ['#[NestedMark] public string $marked;', AttributeSite::Property];
+        yield 'parameter' => ['public function marked(#[NestedMark] string $value): void {}', AttributeSite::Parameter];
+        yield 'promoted parameter' => ['public function __construct(#[NestedMark] public string $value) {}', AttributeSite::PromotedParameter];
+        yield 'constant' => ['#[NestedMark] public const VALUE = 1;', AttributeSite::ClassConstant];
+        yield 'property hook' => ['public string $marked { #[NestedMark] set(string $value) {} }', AttributeSite::PropertyHook];
+        yield 'hook parameter' => ['public string $marked { set(#[NestedMark] string $value) {} }', AttributeSite::HookParameter];
+        yield 'nested callable' => ['public function marked(): void { $callable = #[NestedMark] function (): void {}; }', AttributeSite::NestedCallable];
+        yield 'nested function' => ['public function marked(): void { #[NestedMark] function inner(): void {} }', AttributeSite::NestedFunction];
+    }
+
+    #[Test]
     public function itFlagsATraitUseInsideAnAnonymousClassBodyAsADeclarationFactOfTheAnonymousClassNotTheEnclosingClass(): void
     {
         // The trait_use edge reaches TraitUseHandler through a different
