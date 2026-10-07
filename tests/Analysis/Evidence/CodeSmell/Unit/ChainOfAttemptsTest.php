@@ -32,6 +32,16 @@ final class ChainOfAttemptsTest extends TestCase
         yield 'try nested below the loop body' => ['<?php foreach ($a as $x) { if ($x) { try { return work($x); } catch (Throwable) {} } }', 0];
         yield 'break after work ends an attempt' => ['<?php foreach ($a as $x) { try { work($x); break; } catch (Throwable) {} }', 1];
         yield 'guard before work is not an attempt' => ['<?php foreach ($a as $x) { try { if ($x === null) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'deferred arrow before guard is not work' => ['<?php foreach ($a as $x) { try { $later = fn () => work($x); if ($x === null) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'deferred closure before guard is not work' => ['<?php foreach ($a as $x) { try { $later = function () use ($x) { work($x); }; if ($x === null) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'returned arrow creates a callback without work' => ['<?php foreach ($a as $x) { try { return fn () => work($x); } catch (Throwable) {} }', 0];
+        yield 'first class function callable before guard is not work' => ['<?php foreach ($a as $x) { try { $later = work(...); if ($x === null) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'first class method callable before guard is not work' => ['<?php foreach ($a as $x) { try { $later = $obj->work(...); if ($x === null) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'first class static callable before guard is not work' => ['<?php foreach ($a as $x) { try { $later = Worker::work(...); if ($x === null) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
+        yield 'outer call with arrow argument is work' => ['<?php foreach ($a as $x) { try { consume(fn () => work($x)); continue; } catch (Throwable) {} fallback($x); }', 1];
+        yield 'outer call with closure argument is work' => ['<?php foreach ($a as $x) { try { consume(function () use ($x) { work($x); }); continue; } catch (Throwable) {} fallback($x); }', 1];
+        yield 'invoking a callback is work' => ['<?php foreach ($a as $x) { try { $later = fn () => work($x); $later(); continue; } catch (Throwable) {} fallback($x); }', 1];
+        yield 'eager receiver creation remains work' => ['<?php foreach ($a as $x) { try { receiver()->work(...); continue; } catch (Throwable) {} fallback($x); }', 1];
         yield 'call in early guard still precedes later work' => ['<?php foreach ($a as $x) { try { if (!supports($x)) { continue; } work($x); } catch (Throwable) {} fallback($x); }', 0];
         yield 'early guard return does not excuse catch' => ['<?php foreach ($a as $x) { try { if (!$x) { return; } work($x); } catch (Throwable) {} }', 0];
         yield 'last condition computes work before continue' => ['<?php foreach ($a as $x) { try { if (work($x)) { continue; } } catch (Throwable) {} fallback($x); }', 1];
