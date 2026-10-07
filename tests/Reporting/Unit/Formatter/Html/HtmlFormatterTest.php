@@ -9,8 +9,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
@@ -37,6 +41,23 @@ final class HtmlFormatterTest extends TestCase
             ),
             new HealthHintProjector(new HealthMetricCatalog()),
         );
+    }
+
+    #[Test]
+    public function itEmbedsRepositoryMetricsForTheGlobalNamespaceAndClass(): void
+    {
+        $metrics = new InMemoryMetricRepository();
+        $namespaceBag = ['size.loc.sum' => 9, 'health.overall' => 92.07, 'coupling.instability' => 0.5];
+        $classBag = ['size.class-loc' => 4];
+        $metrics->add(SymbolPath::forNamespace(''), MetricBag::fromArray($namespaceBag), null, null);
+        $metrics->add(SymbolPath::forClass('', 'Greeter'), MetricBag::fromArray($classBag), RelativePath::fromString('Greeter.php'), 2);
+        $report = ReportBuilder::create()->metrics($metrics)->build();
+
+        $payload = self::payload($this->formatter->format($report, new FormatterContext())->body);
+        $node = $payload['tree']['children'][0];
+        self::assertSame($namespaceBag, $node['metrics']);
+        self::assertSame($classBag, $node['children'][0]['metrics']);
+        self::assertSame([], $payload['summary']['healthScores']);
     }
 
     #[Test]
