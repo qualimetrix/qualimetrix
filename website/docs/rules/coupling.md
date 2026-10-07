@@ -767,3 +767,16 @@ bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
 ## Independent layer bands
 
 CBO and instability spread a top band to class and namespace in its writing layer. Explicit writes to the same expanded leaves conflict in that layer; independent level settings such as enabled are preserved. Configure distinct level bands explicitly or put overlapping overrides in another layer. Effective-band validation includes written and default halves. These forms do not change metric direction, formulas or numeric defaults. A written enabled:true intentionally overrides a lower disable. See [Configuration](../getting-started/configuration.md#declared-rule-forms-and-prepared-execution).
+
+## Dependency position and type shape
+
+An edge type names the reference position: `type_hint` for parameter/return,
+`property_type` for a property or promoted parameter, and `constant_type` for a
+typed constant. Union/intersection/DNF are not separate relation kinds.
+Graph JSON always publishes `shape` as an object mapping each type position
+to its sorted observed shape names (`single`, `nullable`, `union`,
+`intersection`, `dnf`), for example `{"property_type": ["nullable"],
+"type_hint": ["union"]}`. An edge with no type-shape facts has `shape: {}`. Declaration facts (kind, parents/interfaces/traits,
+attribute sites and `__toString`) travel separately from edges. Implicit
+Stringable does not invent dependency edges or increase coupling. Logical PHP
+class identity is ASCII-folded; exact source declarations remain separate.

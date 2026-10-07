@@ -261,6 +261,11 @@ and namespace evidence, deduplicates identities by their folded name, and emits
 one warning per identity. Logging stays at these two run boundaries; the graph
 builder and metric repository only return typed facts.
 
+The declaration warning boundary and its withheld-scope semantics are recorded
+in [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
+Full directive reproducibility executes the producer set before and after its
+sweep; narrow reference and counterfactual runs add no declaration execution.
+
 ## The two entry points
 
 `analyze()` answers what the code is like. `auditDirectives()` answers what the

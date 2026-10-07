@@ -109,6 +109,11 @@ projects logical classes and namespaces. A duplicate FQN declaration is an
 exact fact; a logical-class projection is deliberately deduplicated before
 namespace aggregation.
 
+`Core\Symbol\ClassNameSpelling` supplies ASCII-only identity folding and the
+byte-smallest canonical observed name. Consumers joining logical findings to
+class or namespace measurements use that identity; exact source declaration
+subjects retain their authored paths and ordinals.
+
 Logical class and namespace projections use PHP's case-insensitive class-name
 identity. Each index retains every observed spelling, chooses the byte-smallest
 spelling as its canonical projection, and publishes groups with more than one

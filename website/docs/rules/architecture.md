@@ -322,27 +322,67 @@ architecture:
 
 <!-- llms:skip-end -->
 
+Architecture membership `patterns` and public selectors mutually reject
+the other's form. Write `patterns: ['App\Domain']` here and an explicit
+`subtree:App\Domain` for graph/discovery/suppression selection. A mapping
+`{subtree: ...}` is not a membership pattern; an Architecture DSL string is
+not a public `exact | subtree | regex` selector. Allow selectors are a separate
+language of layer names with their own captures and bindings.
+
+For a template with `match: any`, every positive `patterns` value must produce
+a capture tuple: a captureless pattern is refused. Under `match: all`, a
+captureless pattern may add a condition. Static layers have no such template
+restriction.
+
 ### Membership beyond namespace patterns
 
-Phase 1 decided layer membership purely from class FQN matched against `patterns`. Phase 2 adds four more criteria — `suffix`, `attributes`, `implements`, `extends` — and a `match: any | all` switch that controls how they combine. The default is `any`, which lets the rule meet legacy code where conventions are inconsistent (a `*Repository` that lives under `App\Service\` is still a repository).
+Layer membership has six criterion kinds. Values within one kind are OR'd;
+`match: any` (default) accepts a hit in any kind, while `match: all` requires
+all written kinds. An omitted kind adds no condition.
 
-| Criterion    | Matches when…                                                                                                                 |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `patterns`   | Class FQN matches one of the listed Architecture DSL patterns (Phase 1 behaviour).                                            |
-| `suffix`     | Class short-name ends with one of the listed strings (e.g. `Repository`, `Controller`).                                       |
-| `attributes` | Class is annotated with one of the listed PHP attribute FQNs (use-statement-aware resolution).                                |
-| `implements` | Class implements one of the listed interface FQNs, directly or transitively — as far as the analysed set reaches (see below). |
-| `extends`    | One of the listed class FQNs appears anywhere in the class's parent chain — as far as the analysed set reaches (see below).   |
+| Criterion           | Matches when…                                                                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `patterns`          | The observed class FQN matches the Architecture capture-pattern DSL.                                                                     |
+| `suffix`            | The short class name ends with a listed literal suffix.                                                                                  |
+| `attributes`        | The class's own declaration header carries a listed attribute FQN.                                                                       |
+| `member_attributes` | An own method, property, parameter, class constant, enum case or property hook (including its parameter) carries a listed attribute FQN. |
+| `implements`        | A listed interface occurs in the class or interface's supertype closure.                                                                 |
+| `extends`           | A listed class occurs in the parent chain; for interfaces, a listed interface occurs in its interface-parent closure.                    |
 
-Within one criterion, lists are always OR'd (`attributes: [A, B]` means "has A or B"). `match` controls how the criteria of *different* kinds combine.
+`attributes` and `member_attributes` are separate: a method carrying
+`#[\Override]` does not satisfy class `attributes`. Promoted parameters can
+carry both parameter and property sites; nested callable and anonymous-class
+sites do not become declaration facts of the enclosing named class.
 
-**`attributes` also counts attributes on members.** An attribute written on a method, property or parameter matches the class that declares the member, just as one on the class header does — the criterion does not track where on the class an attribute was written. This holds for PHP's own attributes as well as project ones: `attributes: ['\Override']` matches every class with a method carrying `#[\Override]`, and `attributes: ['\SensitiveParameter']` every class with such a parameter. Name an attribute that is only ever written on the class header when the layer is meant to follow it.
+An ancestry link outside the analysed paths is followed through an exactly
+placed source file from the analysed project's Composer install, without
+loading or executing that file. Unmapped, unreadable, conditional or unresolved
+declarations remain cuts. Each parent/interface branch follows at most 256
+links; a further relation is retained as a cut. A hit before the cut still
+matches, but a missing criterion that the cut could hide remains undecidable.
+External ancestry facts do not prove an external class's own attributes.
 
-**`attributes`, `implements` and `extends` are answered from the analysed set.** These three read declaration facts the run collected, so "transitively" reaches exactly as far as `paths` does. A class's *own* parents and interfaces are always known, even when they are vendor types — the edge was recorded from the analysed class — so a criterion naming a direct parent works normally. A criterion naming something further up the chain needs every intermediate link inside `paths` as well; where a link is missing, the run does not answer the criterion instead of answering "no". Which links matter depends on the criterion: `extends` reads the parent-class chain only, so a vendor *interface* the class implements leaves it answerable, while an unread vendor *parent* leaves both `extends` and `implements` unanswered. The same holds for a class the run never analysed at all — a vendor type reached only as the far end of a dependency edge — since nothing was collected about its supertypes either; a PHP class at the far end of an edge is the exception (see below). An unanswered layer does not withdraw a match from a later one, and an `exclude:` clause the run cannot answer does not withdraw the match its own layer made — the assignment stands, its edges are judged, and the doubt is published beside it (see [Assignments in doubt](#doubted-assignment)) — but when no layer matches at all, such a class is reported as *undecided* rather than unclassified: `architecture.coverage-gap` counts it separately (see [Coverage modes](#coverage-modes)), and `debug:layer-assignment` prints `(undecided)` and where the chain stops (see [Inspecting layer assignment for a single class](#debug-layer-assignment)). `patterns` and `suffix` read only the class's own name and are always decidable.
+An unanswered layer does not withdraw a later match, and an unanswered
+`exclude:` does not withdraw its layer's match. The assignment stands with
+[`architecture.doubted-assignment`](#doubted-assignment). If no layer matches
+and one could not answer, coverage and debug report *undecided*, not
+unclassified. `patterns` and `suffix` use the class name and are always decided.
 
-**PHP's own classes end a chain on known ground.** A class extending `\RuntimeException` has a complete chain: the supertypes (and, for a PHP class met as the far end of an edge, the class-level attributes) of a class or interface PHP itself declares come from a table shipped with Qualimetrix, so `extends: ['\Exception']` and `implements: ['\Throwable']` are answered for it, both ways. The table does not depend on the PHP that runs the analysis: a class extending `\Uri\InvalidUriException` or `\NumberFormatter` gets the same answer on a runner without `uri` or `intl` as on one with every extension built. For an interface, `extends` follows the interfaces it extends, so `extends: ['\Traversable']` matches an interface extending `\IteratorAggregate`. `implements:` counts the same interfaces for an interface, the one it names included, as `getInterfaceNames()` reports them: `implements: ['\IteratorAggregate']` matches that interface too, and so does `implements: ['App\Contract']` for an interface extending `App\Contract`. A class that names a PHP type itself is answered the same way: `implements: ['\JsonSerializable']` matches a class declaring `implements \JsonSerializable`, `attributes: ['\AllowDynamicProperties']` one carrying `#[\AllowDynamicProperties]`, and `implements: ['\Traversable']` one declaring `implements \IteratorAggregate`. The interfaces PHP adds without their being written count too: every enum matches `implements: ['\UnitEnum']`, a backed one `['\BackedEnum']` as well, and a class or interface declaring `__toString()` matches `['\Stringable']`. Two forms are not recognised, and a criterion naming `\Stringable` answers "no" for them: a class whose `__toString()` comes from a trait, and `extends: ['\Stringable']` for an interface declaring `__toString()` (use `implements:`). None of these edges counts toward coupling metrics, and none is checked against the allow-list.
+PHP built-in ancestry comes from a shipped table, independent of the runner's
+extensions. Enums include `UnitEnum` and backed enums include `BackedEnum`.
+Implicit `Stringable` is derived from declaration facts, parents, interfaces
+and nested trait uses: a class inheriting `__toString()` from a trait matches,
+while the trait itself is not Stringable. Interfaces expose Stringable in both
+interface closures; classes expose it through `implements`. An unresolved
+trait adaptation aliasing a method to `__toString` leaves that question in doubt.
+These inferred facts do not invent dependency edges or increase coupling.
 
-**Single-value shorthand.** Any of the five criteria accepts a bare value instead of a one-element list — `suffix: 'Repository'` is equivalent to `suffix: ['Repository']`. The shorthand is the same inside an `exclude:` block (`exclude: { suffix: 'Bridge' }`). Each criterion still enforces its own shape on the value: `attributes` / `implements` / `extends` require an FQN (a value containing `\`), `suffix` refuses one, and `patterns` accepts either. A class in the global namespace is written with a leading backslash — `extends: '\Exception'`; the leading backslash is dropped before matching, so `\App\Foo` and `App\Foo` are the same entry. A class PHP itself declares is one name in any case, as it is to PHP: `extends: '\exception'` matches a class extending `\Exception`, and `implements: ['\IteratorAggregate']` a class that writes `implements \iteratoraggregate`. Your own and vendor class names are compared exactly as written.
+All six kinds accept one string or a list. Attribute and ancestry kinds require
+an FQN; use a leading backslash for a global name, such as `extends: '\Exception'`.
+Leading backslashes are removed. PHP built-ins have their PHP name regardless
+of case; your own and vendor criterion FQNs are compared exactly against the
+observed canonical declaration spelling. Wrong case can receive a did-you-mean
+suggestion; it is not silently accepted.
 
 ```yaml
 # Migration-friendly default (match: any)
@@ -375,23 +415,9 @@ Within one criterion, lists are always OR'd (`attributes: [A, B]` means "has A o
 A criterion that is omitted is **trivially satisfied** under `match: all` — there is no need to write empty `patterns: []` to opt out. Attribute names must be **fully-qualified** (the parser refuses bare `Entity`); `implements` and `extends` traverse the supertype chain, so declaring a base interface or class catches every descendant without listing them.
 
 !!! note
-    `extends` and `implements` never match a class on account of an anonymous
-    class nested inside it. `new class extends Base {}` declares a parent for
-    the anonymous class, not for the class it is instantiated in — so a layer
-    declared `extends: ['Base']` does not pick up the enclosing class, even
-    transitively through `Base`'s own ancestry. The dependency is still
-    recorded and still counted by coupling, ClassRank, cycle detection, and
-    the layer-violation check; only membership reads it as belonging to the
-    anonymous class, which has no name a criterion could name.
-
-    `attributes` is narrower: this only holds for an attribute written on the
-    anonymous class's own header, as in `new #[Mark] class {}`. An attribute
-    on a method, property, or parameter — of an anonymous class or of a named
-    one — still matches the enclosing class, because the criterion does not
-    track where on the class an attribute was written; it is collected from
-    every attribute edge regardless of source. This is a separate,
-    pre-existing gap, wider than anonymous classes, and it is not fixed by
-    the header exclusion above.
+    Declaration facts belong to the declaration that owns their site. A nested
+    anonymous class's header or members do not assign the enclosing class;
+    ordinary dependency edges remain in the graph.
 
 ### Layer templates
 
@@ -486,7 +512,7 @@ architecture:
 
 #### Semantic notes — `match: any | all` and non-pattern criteria
 
-**A template layer may not combine a non-pattern criterion with `match: any`.** Only `patterns` carry the capture variables, so `suffix`, `attributes`, `implements` and `extends` are copied into every expanded layer verbatim. Under `match: all` that is exactly what you want — the criterion narrows each instance inside the scope its own substituted pattern already fixes. Under `match: any` it is OR-ed with that pattern instead, so every instance carries the same project-wide net and the first instance in expansion order — binding-value alphabetical, not anything you wrote — claims every class the net catches. The configuration is therefore refused at load time:
+**A template layer may not combine a non-pattern criterion with `match: any`.** Only `patterns` carry the capture variables, so `suffix`, `attributes`, `member_attributes`, `implements` and `extends` are copied into every expanded layer verbatim. Under `match: all` that is exactly what you want — the criterion narrows each instance inside the scope its own substituted pattern already fixes. Under `match: any` it is OR-ed with that pattern instead, so every instance carries the same project-wide net and the first instance in expansion order — binding-value alphabetical, not anything you wrote — claims every class the net catches. The configuration is therefore refused at load time:
 
 ```
 Configuration error: architecture.layers[0] ("aggregate-{module}"): "suffix" cannot be
@@ -500,12 +526,12 @@ static layer if the criterion really is meant to apply project-wide.
 
 The refusal is deliberate rather than a silent narrowing: scoping the criterion to the instance's own pattern would make it a subset of that pattern and therefore inert — a clause that looks like it does something and does nothing. Add `match: all` if you meant to narrow each instance, or declare a static (non-template) layer if the criterion really is meant to apply project-wide.
 
-| Mode            | Capture-producing patterns                                               | Non-pattern criteria (`suffix` / `attributes` / `implements` / `extends`)                |
-| --------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `any` (default) | At least one must match to bind                                          | Refused — the configuration does not load                                                |
-| `all`           | Every capture-producing pattern must match (bindings union consistently) | Every declared non-pattern criterion must also match — AND filter on top of the bindings |
+| Mode            | Capture-producing patterns                                               | Non-pattern criteria (`suffix` / `attributes` / `member_attributes` / `implements` / `extends`) |
+| --------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `any` (default) | At least one must match to bind                                          | Refused — the configuration does not load                                                       |
+| `all`           | Every capture-producing pattern must match (bindings union consistently) | Every declared non-pattern criterion must also match — AND filter on top of the bindings        |
 
-Non-capture **patterns** (plain globs without `{var}` placeholders) act as a pure AND filter during expansion regardless of mode — they describe where the layer lives and would never widen observation. Note that runtime matching on the *expanded* layer does not read them that way: both spellings end up in the single `patterns` kind, whose entries are OR-ed, so expansion is the narrower of the two in this one shape. To opt into a strict-membership template, declare `match: all`:
+Captureless **patterns** on a template require `match: all`. They filter observed bindings before expansion; `match: any` refuses them rather than expanding a pattern that supplies no tuple. Values in the expanded `patterns` kind still follow its OR semantics. Declare `match: all` when combining a capturing scope with non-pattern criteria:
 
 ```yaml
 - name: 'aggregate-{module}'
@@ -518,7 +544,7 @@ Non-capture **patterns** (plain globs without `{var}` placeholders) act as a pur
 
 ### Excluding subtrees within a layer (`exclude:`)
 
-A layer can carry an `exclude:` block with the same shape as the membership criteria (`patterns`, `suffix`, `attributes`, `implements`, `extends`). Classes that match the exclude block are removed from the layer regardless of positive membership — `exclude:` is a hard filter that runs after the positive criteria.
+A layer can carry an `exclude:` block with the same shape as the membership criteria (`patterns`, `suffix`, `attributes`, `member_attributes`, `implements`, `extends`). Classes that match the exclude block are removed from the layer regardless of positive membership — `exclude:` is a hard filter that runs after the positive criteria.
 
 ```yaml
 - name: service
@@ -600,10 +626,7 @@ What the channel deliberately does not do:
   an arbitrary subset is not assumed to be the project. Reports name the causes
   under [Project scope](../usage/output-formats.md#project-scope-in-every-format).
 
-Unlike the architecture *configuration* diagnostics, this one is an ordinary
-rule finding: it answers to `fail_on`, `--disable-rule`, `@qmx-ignore
-architecture.unmatched-exclude` and the baseline. It is published by
-`architecture.layer-violation`, so disabling that rule silences it too.
+This is an ordinary project finding of `architecture.layer-declaration`: it follows `fail_on`, exact channel selection and the baseline. Inline directives cannot suppress a project aggregate with no declaration subject. Disabling `architecture.layer-violation` does not disable it.
 
 ### Reserving a layer for code not written yet (`pending:`) { #pending-layers }
 
@@ -640,19 +663,19 @@ Available relation tokens come from two sources. **Direct values** mirror `Quali
 extends, implements, trait_use,
 new,
 static_call, static_property_fetch, class_const_fetch,
-type_hint, property_type, intersection_type, union_type,
+type_hint, property_type, constant_type,
 catch, instanceof,
 attribute
 ```
 
 **Aliases** are configuration-layer shorthand that expand to constituent direct values:
 
-| Alias            | Expands to                                                      |
-| ---------------- | --------------------------------------------------------------- |
-| `inheritance`    | `extends`, `implements`, `trait_use`                            |
-| `static_access`  | `static_call`, `static_property_fetch`, `class_const_fetch`     |
-| `type_reference` | `type_hint`, `property_type`, `intersection_type`, `union_type` |
-| `runtime_check`  | `catch`, `instanceof`                                           |
+| Alias            | Expands to                                                  |
+| ---------------- | ----------------------------------------------------------- |
+| `inheritance`    | `extends`, `implements`, `trait_use`                        |
+| `static_access`  | `static_call`, `static_property_fetch`, `class_const_fetch` |
+| `type_reference` | `type_hint`, `property_type`, `constant_type`               |
+| `runtime_check`  | `catch`, `instanceof`                                       |
 
 `attribute` stands alone — there is no group it belongs to. Aliases and direct values can be mixed in the same `relations:` list and are deduplicated after expansion. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML without a release.
 
@@ -670,6 +693,13 @@ does not.
 When multiple allow targets within one source resolve to the same target layer (for instance via overlapping glob selectors), their permissions **union**. If any matching entry uses the bare/short form (no `relations:`), the union is "all relations allowed" — short-form dominates.
 
 > **Note.** There is currently no instance method-call relation kind in the collector — only `static_call`. Track instance calls via the broader `type_reference` alias if your policy needs to constrain them.
+
+Type shape is not a relation token. Nullable, union, intersection and DNF
+retain their position: parameter/return is `type_hint`, a property or promoted
+parameter is `property_type`, and a typed constant is `constant_type`. Graph JSON always publishes `shape` as an object mapping each type position
+to its sorted observed shape names (`single`, `nullable`, `union`,
+`intersection`, `dnf`), for example `{"property_type": ["nullable"],
+"type_hint": ["union"]}`. An edge with no type-shape facts has `shape: {}`. `union_type` and `intersection_type` are no longer accepted in `relations:`.
 
 ### Coverage modes
 
@@ -827,9 +857,27 @@ Unassigned declarations: App\Legacy\Bar, App\Legacy\Baz, App\Legacy\Foo. ...
 ```
 <!-- llms:skip-end -->
 
+An active `architecture.unassigned-class` (`mode: warn|error` and `enabled: true`)
+requires non-empty `architecture.layers`, including when `[]` was written
+explicitly. The refusal precedes Discovery and names the writing source.
+`mode: ignore`, `enabled: false`, or final selection that does not run this
+producer does not impose that requirement.
+
 ### Unreachable-layer diagnostic
 
-`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis, **and** that could not own any analysed class whose assignment the run left in doubt. A layer that would own an analysed class if an earlier layer's unanswered `exclude:` removed it is not reported as matching nothing — that is not a conclusion the run reached. Neither is a layer the run could not answer about an analysed class, as long as some type its `attributes` / `implements` / `extends` criteria name is one the run met: declared in the analysed paths, declared by PHP itself, seen at either end of a dependency edge, or declared by the analysed project's composer install — looked up in `vendor/composer/installed.json`, the project's own `autoload` and the files they map, read as data and never loaded. Both are named by [`architecture.doubted-assignment`](#doubted-assignment) instead. A type the run never met is not enough: a class whose parent is outside the analysed paths leaves every such criterion unanswered, a mistyped name included, so on any project where an analysed class extends vendor code a typo would otherwise never be reported. A symbol outside the analysed paths keeps no layer out of this diagnostic either, since the run never reads it. The finding says what it left out, in the words that hold for it: how many symbols the layer could not answer about and, when it names no type the run met, which types those are and whether the install was asked — a mistyped name, or a package that is not installed; or how many symbols outside the analysed paths its criteria matched while an earlier layer holds them through an `exclude:` the run cannot answer. A criterion naming a type only a vendor chain reaches — `implements: ['Doctrine\Persistence\ObjectRepository']` over repositories extending `ServiceEntityRepository`, with no analysed code naming the interface — therefore keeps its layer while the package is installed: the install declares the interface, and the layer is named by [`architecture.doubted-assignment`](#doubted-assignment) instead. The install tells only that the type exists; whether a repository implements it is still unanswered, because the run does not follow the vendor chain. With the package not installed, the layer is reported. The diagnostic requires complete measured declaration evidence, like
+`architecture.unreachable-layer` reports a layer that owns no analysed class and
+cannot own one from an unresolved assignment. It names complete precedence loss,
+its own exclusions, external-only matches, and unmet named types as applicable.
+`pending: true` exempts that layer. Named types are judged individually; a known
+neighbour does not hide a misspelled name. `member_attributes` is a distinct
+criterion here too.
+
+Vendor inheritance and traits are followed through exactly placed declarations
+read as data. An available chain can establish a match; missing, conflicting or
+cut facts remain undecidable and can keep an analysed class's layer in doubt.
+External existence alone does not establish attributes on the analysed class.
+Unresolved assignments are explained by [`architecture.doubted-assignment`](#doubted-assignment).
+The diagnostic requires complete measured declaration evidence, like
 [`architecture.unmatched-exclude`](#unmatched-exclude). Missing PHP, authored PHP
 removal, generated exclusions and an uncertain universe withhold absence claims.
 A whole-root fallback may establish completeness without a usable Composer
@@ -869,132 +917,152 @@ A template that expands to zero instances **silently disables** the policy attac
 
 ### Potential-shadow diagnostic
 
-`architecture.potential-shadow` detects the quiet failure mode of declaration-order matching: a **more specific layer declared after a broader one**, which can therefore never win in its own area. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`.
+`architecture.potential-shadow` is a configuration error for a comparable
+namespace subtree declared after a broader layer that takes its classes.
+Pairs are drawn only between established matches; an unanswered `exclude:`
+does not establish a shadow. One occurrence names each `(assigned, shadowed)`
+pair with a deterministic sample of up to five classes.
 
-**Overlap alone is not reported.** First match wins is the declared resolution mechanism — the same one deptrac, ArchUnit and `.gitignore` use — so two layers matching the same class is not a defect by itself. In particular, the [narrow-before-broad idiom](#configuration), up to and including a final `**` catch-all, is legal and silent:
+Three first-match exemptions have explicit names:
 
-```yaml
-architecture:
-  layers:
-    - name: service
-      patterns: ['App\Service\**']   # narrow, declared first — wins here
-    - name: catchall
-      patterns: ['**']                # broad, declared last — no diagnostic
-```
+| Exemption                 | Meaning                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------ |
+| `narrower-declared-first` | A narrower declared namespace subtree precedes a broader one, including a final catch-all. |
+| `receives-what-it-leaves` | An equal pattern receives the classes an earlier `exclude:` or `match: all` layer leaves.  |
+| `non-pattern-precedence`  | Suffix, attribute, ancestry or otherwise incomparable criteria resolve by declared order.  |
 
-Detection is **evidence-based**. The rule walks every analysed class, collects all layers whose criteria match, and records `(assigned, shadowed)` pairs that actually occur in the codebase. For each such class it then compares the two criteria that actually matched — the one that won the class for the assigned layer, and the one the shadowed layer matched it with:
+The third is ordinary precedence, not a configuration error. When a reachable
+non-pattern layer loses some classes to an earlier layer,
+`architecture.layer-overlap` reports that partial loss at fixed **info**,
+once per pair. It does not duplicate an unreachable-layer finding for a layer
+that received nothing. Reorder or refine the criteria if that precedence was
+unintended; [debug](#debug-layer-assignment) shows the exact exemption for a class.
 
-| Winning criterion vs. shadowed criterion                 | Behaviour                             |
-| -------------------------------------------------------- | ------------------------------------- |
-| Strictly more specific (`App\Http\**` won over `App\**`) | Silent — the documented idiom         |
-| Broader or equal (`App\**` won over `App\Http\**`)       | Reported (one equal pair is excepted) |
-| Not comparable (see below)                               | Reported (conservative default)       |
+### Unmatched criterion types { #unmatched-type }
 
-One equal pair is silent: the same pattern repeated behind a layer that does not take every class it names — one with an `exclude:`, or a `match: all` layer narrowing its pattern with another criterion. The later layer receives what the earlier one leaves over, which is how a [carve-out](#excluding-subtrees-within-a-layer-exclude) is written, and layer loading accepts exactly these repetitions.
+`architecture.unmatched-type` is an ordinary project-level **warning** from
+`architecture.layer-declaration`. Each authored type in `attributes`,
+`member_attributes`, `implements`, `extends`, or their `exclude:` counterparts
+is judged independently. A known name beside a typo does not hide the typo.
+Different authored positions have distinct occurrences; expansion of one
+template value does not multiply it, even when the template creates no instance.
+The message names the configuration source, path and available line, with a
+case-only did-you-mean when observed or exactly placed spelling is available.
 
-"More specific" is decided only for namespace subtrees: a pattern that is a plain prefix (`App\Http`) or a prefix plus a trailing wildcard (`App\Http\**`, `App\Http\*`), plus the catch-all `**`. Everything else is **not comparable** and keeps the diagnostic — mid-pattern wildcards (`App\**\Foo`), partial-segment globs (`**\*Service`), character classes, unexpanded capture templates, and every non-pattern criterion kind (`suffix`, `attributes`, `implements`, `extends`), including a mix of two different kinds. A false alarm costs a config review; a missed shadow costs a layer that silently owns nothing.
+Absence requires complete measured declaration scope and a read Composer
+install. With narrowed scope or an unread install there is no finding; when
+this exact project channel is selected, stderr instead carries one warning
+naming the reason or both reasons. Foreign `--only-rule`, disabling this channel,
+its project level, its producer or `architecture.*` also withholds that line.
+If every authored type was met, an unread install alone produces no warning.
+Unreachable-layer and unmatched-exclude retain their own predicates and add
+spelling suggestions; pattern suggestions are limited to plain namespace
+subtrees and trailing `\**`, preserving that suffix.
 
-A shadow is drawn only between matches the run established. A layer whose `exclude:` could not be answered about a class may still lose it, so it neither shadows a later layer for that class nor is shadowed there; the doubt is published by [`architecture.doubted-assignment`](#doubted-assignment). The first match the run established still shadows every later one, even when such a layer holds the class in front of it: the later ones lose the class whichever way the clause answers. With `app` carving `App\Repository\**` out by an unanswerable `exclude:`, then `repos` and a narrower `legacy`, the diagnostic reports `repos` → `legacy` and not `app` → `repos`.
+### Declaration diagnostics { #layer-declaration }
 
-This still catches every shape of real shadow — prefix overlap declared broad-first, suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection. A layer that ends up owning no class at all is additionally reported by [`architecture.unreachable-layer`](#unreachable-layer-diagnostic), which is what fires when, for example, an `exclude:` block empties a layer that this diagnostic considered legitimately narrower.
+**Rule ID:** `architecture.layer-declaration`
 
-One diagnostic is emitted per `(assigned, shadowed)` pair, with a sample of up to 5 example class FQNs (sorted lexicographically). Output is **deterministic across runs** — the pair list is sorted before emission so CI diffs are stable.
+This producer has its own `enabled` switch and no severity or numeric threshold
+option. It owns five configuration-error channels (`coverage-gap`,
+`unreachable-layer`, `pending-layer-matched`, `potential-shadow`,
+`empty-template`) and four ordinary channels (`unmatched-exclude`,
+`doubted-assignment`, `layer-overlap`, `unmatched-type`), each prefixed
+`architecture.`. Configuration errors always fail when published; baseline and
+inline suppression cannot accept them.
 
-The fix is either to:
-- Re-order the layers so the more-specific one is declared first (often what the user meant), or
-- Tighten the broader pattern so the layers no longer overlap.
+| Selection door                                                   | Five configuration-error channels            | Four ordinary channels                |
+| ---------------------------------------------------------------- | -------------------------------------------- | ------------------------------------- |
+| Disable `architecture.layer-violation`                           | Still enabled by declaration producer        | Still enabled by declaration producer |
+| Select only a foreign rule                                       | FilterExempt: still published                | Not published                         |
+| Disable a diagnostic channel or its project level                | FilterExempt: still published                | Not published                         |
+| Disable `architecture.*`                                         | Declaration producer disabled: not published | Not published                         |
+| Disable `architecture.layer-declaration` or its `enabled` option | Not published                                | Not published                         |
 
-Use [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) to verify the fix per specific class.
+`architecture.layer-violation` owns only forbidden edges; the independent
+`architecture.unassigned-class` owns the assignment count. Layer policy is
+prepared for any of these three producers that runs, and the evidence walk is
+shared. Selection does not override a channel's measured-scope predicate.
+Ordinary project diagnostics can be disabled or accepted in a baseline; an
+inline directive has no declaration subject to reach for these project findings.
 
 ### Inspecting layer assignment for a single class { #debug-layer-assignment }
 
-When a class ends up in an unexpected layer — or you want to verify a fix for an `architecture.unreachable-layer` or `architecture.potential-shadow` diagnostic — use the `debug:layer-assignment` command for per-class introspection:
-
 ```bash
-bin/qmx debug:layer-assignment 'App\Service\Foo'
-bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
+bin/qmx debug:layer-assignment 'app\service\userservice' --format=json
 ```
 
-The command delegates to the same `LayerRegistry::resolveAll()` API the runtime rule uses, so the assignment it reports is exactly what `architecture.layer-violation` will observe at analysis time — there is no parallel matching path that could drift from runtime semantics. It walks the configured layers in declaration order, reports the layer the class is assigned to, and lists every other layer whose patterns would also have matched (a potential shadow source if it had been declared earlier).
+The command runs Discovery and Collection and uses the same prepared policy
+as analysis. Lookup covers observed declarations and dependency-graph ends,
+not every class in the Composer install. PHP ASCII case variants resolve to
+the observed canonical spelling; high-byte names observed by the parser work
+as well. Before collection only an empty normalized spelling is refused.
+Any other unknown spelling is refused after lookup with exit 3, even when the
+policy is disabled. Informational answers about observed names exit 0.
 
-Example output for a uniquely-assigned class:
-
-```
-Class: App\Service\UserService
-
-  Assigned to: service
-    Matched by: pattern "App\Service\**"
-
-  Would also match (in declaration order):
-    (none — the assignment is unique)
-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
-```
-
-Example output for a shadowed class:
-
-```
-Class: App\Service\Foo
-
-  Assigned to: any-foo
-    Matched by: pattern "App\**\Foo"
-
-  Would also match (in declaration order):
-    - service (matched by: 'pattern "App\Service\**"')
-
-  Diagnostic hint:
-    Class is shadowed: would have matched 'service' if 'any-foo' was declared later.
-    See architecture.potential-shadow diagnostic for the broader picture.
-Docs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt
-```
-
-Example output for a class whose membership the run could not decide — an `extends` / `implements` / `attributes` criterion naming something further up an inheritance chain that leaves `paths` (see [Membership beyond namespace patterns](#membership-beyond-namespace-patterns)):
-
-```
-Class: App\Web\OrderController
-
-  Assigned to: (undecided)
-    Could not be decided: web
-    The chain stops at: Vendor\Lib\Middle
-
-  A declared extends/implements/attributes criterion reads facts this
-  run did not collect: where the chain stops is outside the analysed paths.
-  No layer matched, and a layer could not answer.
-
-  Suggestion: widen paths to include those declarations — for your own code
-  that decides the layer; for vendor code it means analysing that package. A
-  layer declared after the unanswered one, a catch-all included, would assign
-  this class, but as a guess: it may belong to the layer that could not answer.
-  architecture.coverage-gap counts these separately from classes every
-  criterion answered "no" about.
-```
-
-`(undecided)` and `(no layer)` are two different facts and never share a form: the first means the run could not answer, the second that every declared criterion answered "no". When a later layer does match, or the layer matched but its `exclude:` could not be answered, the assignment is reported as usual and the unanswered layer is named beside it on a `Could not be decided:` line, followed by `The chain stops at:`. In the second case the line names the assigned layer itself. A layer the run could not answer that is declared *after* the assigned one is not named: first match wins, so it cannot change the assignment, and [`architecture.doubted-assignment`](#doubted-assignment) does not count the class either. The exception is an assigned layer whose own `exclude:` went unanswered: the clause may remove the class, so a later unanswered layer, up to the first match the run established, is named too. A `Could be owned by:` line beside it names every layer that could own the class once those are answered.
-
-The diagnostic hint follows the rule [`architecture.potential-shadow`](#potential-shadow-diagnostic) draws its pairs by, so it never points at a shadow `check` does not report. It is drawn only between matches the run established, and names the layer the class loses to — the first of them, which is not the assigned layer when an unanswered `exclude:` stands in front of it. A later layer broader than that one is the narrow-before-broad idiom, and a later match whose own `exclude:` went unanswered may not match at all: the hint says so instead of pointing at the diagnostic.
-
-`--format=json` carries the same three states. `undecided` is always present and lists the layers this run could not answer that bear on the assignment — every one of them when no layer matched, otherwise those declared before the first match the run established; a `null` `assigned` alongside a non-empty `undecided` is "could not tell", not "no layer claims this class", so a consumer branching on `assigned` alone must read `undecided` too. `contenders` lists the layers that could own the class once those are answered, and is empty whenever `undecided` is. `chainStopsAt` is always present too: the declarations the run did not read where the class's inheritance chain stopped, empty whenever `undecided` is. `shadowed` lists every match after `shadowedBy`, the first match the run established: each loses the class whichever way the unanswered layers answer, and carries `reported: true` when `architecture.potential-shadow` reports it — never for a match whose own `exclude:` went unanswered, which may not match at all. `shadowedBy` is not `assigned` when an unanswered `exclude:` stands in front of it, and is `null` when `shadowed` is empty. `contendingMatches` lists, in the same form, every other match after `assigned` — each match whose `exclude:` went unanswered and, when one stands in front of it, the first match the run established; which of them owns the class depends on the unanswered clauses, so each carries `reported: false`. `contendingMatches` and `shadowed` together are every match the text report lists under `Would also match`.
+For a project declaring `service` (`App\Service\**`) before `rest` (`App\**`),
+the JSON response has this form:
 
 ```json
 {
-    "fqn": "App\\Web\\OrderController",
-    "assigned": null,
+    "meta": {
+        "version": "dev-main",
+        "package": "qmx",
+        "timestamp": "2026-10-07T13:52:15+00:00",
+        "docs": "https://qualimetrix.dev",
+        "llmsTxt": "https://qualimetrix.dev/llms.txt"
+    },
+    "fqn": "App\\Service\\UserService",
+    "assigned": {
+        "layer": "service",
+        "criteria": [
+            "pattern \"App\\Service\\**\""
+        ]
+    },
     "contendingMatches": [],
-    "shadowed": [],
-    "shadowedBy": null,
-    "undecided": [
-        "web"
+    "shadowed": [
+        {
+            "layer": "rest",
+            "criteria": [
+                "pattern \"App\\**\""
+            ],
+            "reported": false,
+            "exemption": "narrower-declared-first"
+        }
     ],
-    "contenders": [
-        "web"
-    ],
-    "chainStopsAt": [
-        "Vendor\\Lib\\Middle"
-    ],
-    "hasLayers": true
+    "shadowedBy": "service",
+    "undecided": [],
+    "contenders": [],
+    "chainStopsAt": [],
+    "hasLayers": true,
+    "policyDisabled": false,
+    "edgeEndOnly": false
 }
 ```
 
-Exit codes follow the standard convention, and `0` is a statement about a class the run analysed: `0` for any informational result about such a class (including "it matches no declared layer" and "its membership could not be decided" — whether an undecidable membership fails the build is `architecture.coverage-gap`'s to say, not this command's), `3` for a refusal — an empty or malformed FQN, a configuration-load error, or an FQN that names none of the declarations this configuration parsed, which is what an unanalysed class looks like from here — and `1` only for a defect the input could not have caused.
+`meta` contains the tool/version, timestamp and documentation addresses.
+`fqn` is the observed spelling, not the query spelling. `edgeEndOnly` is true
+when the name was observed only in graph state rather than analysed declarations.
+`assigned` is null when no layer matched; with non-empty `undecided`, that
+means the run could not tell, rather than that no layer claims the class.
+`contenders` names the possible owners and `chainStopsAt` names unread links.
+`hasLayers` distinguishes an empty policy from an unclassified observed name.
+
+`shadowed` contains established later matches; `shadowedBy` is the first
+established match, which can differ from the provisional assignment. Each
+shadow verdict carries `reported` and, when exempt, the exact `exemption`
+value from the table above. `contendingMatches` contains the other matches
+whose ownership depends on unanswered criteria, with `reported: false`.
+The text view prints the same facts, including `First-match exemptions:`;
+it gives a potential-shadow hint only for a reported established shadow.
+
+If final enablement runs none of the three layer-policy producers,
+`policyDisabled` is true. Known names still resolve, but text states
+`Architecture layer policy is disabled in this configuration.` and prints no
+diagnostic/docs hint. JSON keeps the observed facts and omits `reported` and
+`exemption` from shadow/contending matches. Configure producer options in YAML;
+this debug command does not add the check command's `--disable-rule` option.
+Errors under `--format=json` replace the response with the standard error envelope.
 
 ### Options { #layer-violation-options }
 
@@ -1111,19 +1179,15 @@ final class LegacyAdminController
 }
 ```
 
-To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and `architecture.layer-violation.*` matches nothing and errors — the rule's second channel is named `architecture.unmatched-exclude`, not something below the `architecture.layer-violation.` prefix, so no channel sits under it. "Every channel of the layer-policy rule" is therefore inexpressible by design. The layer policy publishes nine channels, but the other eight carry rule names of their own (`architecture.coverage-gap`, `architecture.unassigned-class`, `architecture.unmatched-exclude`, `architecture.doubted-assignment`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those eight are configuration errors that no suppression can accept; `architecture.unassigned-class` and `architecture.unmatched-exclude` are ordinary debt, but both are per-run project-level statements, so no inline directive reaches them either — they are declined in configuration or accepted in the baseline. `architecture.doubted-assignment` is information that never gates, declined by listing it under `disabled_rules`.
-
-The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
+To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation` on the source declaration suppresses its outgoing projections. A target annotation does not suppress them and may be unused when its coverage can be judged. `architecture.layer-violation.*` matches nothing; `architecture.*` also reaches independent circular-dependency. Project diagnostics have their separate [selection doors](#layer-declaration).
 
 !!! info "Deviation from original spec"
-    Policy matching remains logical, but finding identity is declaration-scoped.
-    An unowned target produces one finding on the exact source declaration; one
-    or more owned targets produce one finding per exact target declaration.
-    Symbol controls apply independently to each projected declaration, while
-    next-line and file controls still use the physical dependency use-site. A
-    semantic occurrence combines exact source, logical target, dependency type,
-    and projected target, so repeated identical edges share one count-bounded
-    baseline identity without using the presentation line.
+    Layer matching is logical; the finding subject is the exact source declaration.
+    An unowned target produces one finding; an owned target produces one projection
+    per exact target declaration. Targets remain in occurrence identity and
+    cardinality, while symbol/namespace controls judge the source of each projection.
+    Next-line/file controls use the physical dependency site. Repeated identical
+    edges retain one count-bounded baseline identity without using its presentation line.
 
 **Per-rule `suppress_namespaces` / `suppress_paths` also work here.** The [global `suppress_namespaces`](../getting-started/configuration.md#suppress-namespaces) is deliberately exempt for `architecture.*` rules (see the warning there) — a project-wide, metric-shaped exclusion should not double as a silent way to switch off architecture enforcement. The *per-rule* form is a different, explicit mechanism and is **not** exempt:
 
@@ -1143,13 +1207,13 @@ This works because the framework (`RuleOptionsBuild`) extracts `suppress_namespa
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-- **Five membership criteria, default `match: any`.** Membership is decided by `patterns`, `suffix`, `attributes`, `implements`, `extends` — combined per-entry via `match: any` (default) or `match: all`. The default lets the rule meet legacy code where naming and namespace conventions are inconsistent. See [ADR 0059](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0059-declared-layer-policy-and-architecture-governance.md) for the rationale.
+- **Six membership criteria, default `match: any`.** Membership is decided by `patterns`, `suffix`, `attributes`, `member_attributes`, `implements`, `extends` — combined per-entry via `match: any` (default) or `match: all`. The default lets the rule meet legacy code where naming and namespace conventions are inconsistent. See [ADR 0059](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0059-declared-layer-policy-and-architecture-governance.md) for the rationale.
 - **Single layer per class, declaration-order matching.** Every class belongs to at most one layer. When patterns from two layers match the same class, the **layer declared first** in `architecture.layers` wins (the same mechanism used by deptrac, ArchUnit, `.gitignore`, and Apache config). There is no specificity scoring — order is the user's tool to express intent, and the engine does not second-guess it. See [ADR 0006](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0006-architecture-rules-declaration-order.md) for the rationale.
 - **Templates expand by observed binding tuples, after collection.** A template layer like `'domain-{module}'` is expanded by `LayerExpansionStage` (which runs between Collection and RuleExecution), producing one concrete `LayerDefinition` per binding tuple actually observed in the codebase — never the cartesian product of distinct values. Capture-binding in the allow-list (`'app-{m}': ['domain-{m}']`) ships in the same release as the templates themselves, not as a follow-up. See [ADR 0059](https://github.com/qualimetrix/qualimetrix/blob/main/docs/adr/0059-declared-layer-policy-and-architecture-governance.md).
 - **`relations:` is a whitelist; aliases expand reflectively.** Long-form allow targets accept a `relations:` list that constrains which `DependencyType` kinds are permitted. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML. There is no `forbid_relations:` — whitelist-only avoids resolution ambiguity and the maintenance cost of a parallel enum.
-- **Vendor namespaces are first-class layers.** Declare a `doctrine` or `symfony` layer with `Doctrine\**` / `Symfony\**` patterns to write policy against vendor edges (e.g., "only repositories may use Doctrine"). A vendor layer written with `patterns` behaves identically to a project layer, because a pattern reads only the class's own name. A vendor layer written with `extends` / `implements` / `attributes` does not: those criteria are answered from the analysed set, so a vendor type whose own supertypes were never analysed is undecided rather than matched or unmatched — see the note under [Membership beyond namespace patterns](#membership-beyond-namespace-patterns). Naming a *direct* parent or interface still works, because that edge was recorded from the analysed class. A `patterns` vendor layer declared before a criterion layer is also what settles such a vendor type when it appears as the far end of a dependency edge.
+- **Vendor namespaces are first-class layers.** Name patterns work on external edge ends. `extends` and `implements` follow exactly placed installed declarations as data; missing, conflicting or cut branches remain undecidable. Own attributes of an unanalysed external declaration are not inferred from its ancestry. Place a namespace-pattern fallback before an unresolved criterion when that is the intended policy.
 - **Same-layer dependencies are always allowed** in the MVP. Sub-module isolation within a single layer is deferred to Phase 2.
-- **Reporting granularity is per use-site.** Each forbidden dependency edge from `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
+- **Exact source and target occurrences.** A forbidden dependency is attributed to its exact source declaration. Zero owned targets gives one logical-target occurrence; owned targets give one occurrence per exact target declaration. Baseline groups keep this occurrence identity and count.
 - **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage-gap` mode, which splits it: classes every declared criterion answered "no" about, and classes some criterion could not be answered for at all. Assignments that stand on a layer the run could not fully answer are not part of the gap; [`architecture.doubted-assignment`](#doubted-assignment) counts them.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
 - **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this: `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). Both are configuration diagnostics — they fail the run unconditionally and have no severity option (see the note under [Coverage modes](#coverage-modes)). See the dedicated sections above.

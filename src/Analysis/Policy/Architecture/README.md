@@ -52,6 +52,12 @@ name index, so a repeated call cannot retain names from an earlier project.
 It resets before a new configuration and before disabled preparation; no
 policy state enters the worker or cache payload.
 
+The declaration-evidence, producer-selection and consumer migration decisions
+are recorded in [ADR 0103](../../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
+Debug shadow verdicts are mandatory typed projections of the same authority;
+disabled policy output retains observed spelling without claiming a reported
+shadow or publishing a diagnostic hint.
+
 ## Layout
 
 ```text

@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Layer findings now belong to the exact source declaration instead of an owned
+  target. Target occurrences, duplicates and order remain evidence. Move intended
+  outgoing-edge `@qmx-ignore architecture.layer-violation` exceptions to the
+  source. Keep existing baselines: inspect ordinary cleanup, then a read-only
+  cleanup with `--disable-rule=architecture.layer-violation` to obtain old
+  selectors, add new source groups with restricted `--accept-new`, and remove
+  only explicitly selected old entries. Exclusions can keep valid old entries
+  outside coverage; they are not automatically stale. See the website's baseline
+  migration steps. Foreign ceilings/suppressions and scope/exclusions are preserved.
+- Dependency kinds now identify position: promoted properties use `property_type`
+  and typed constants `constant_type`; `union_type`/`intersection_type` are removed
+  from `relations`. `type_reference` covers `type_hint`, `property_type` and
+  `constant_type`. Graph JSON has an always-object `shape` mapping positions to
+  shape lists. Consumers of dependency, collection/worker and graph contracts
+  must carry mandatory class-like declaration facts separately from edges.
+- Declaration diagnostics move from the layer-violation gate/options to the
+  enabled-only `architecture.layer-declaration` producer. Its five configuration
+  validators remain FilterExempt under unrelated `--only-rule` or individual
+  diagnostic disables; ordinary channels follow selection. Disable the declaration
+  producer or `architecture.*` when intending to stop these diagnostics.
+  Active unassigned-class warn/error now refuses an empty final layers list.
+- `attributes` matches the class-like declaration; use `member_attributes` for
+  its own members, in membership or `exclude`. Traits, vendor ancestry and
+  trait-provided Stringable are judged from declaration facts. Layer patterns and
+  public selectors reject the other's grammar with an accepted equivalent;
+  `match: any` templates reject captureless patterns. Review resulting assignments.
+- Logical class/namespace case variants merge using ASCII-folded identity and
+  deterministic canonical spelling while exact declarations remain distinct.
+  Installed spelling may canonicalize a placed external identity. Criteria remain
+  case-sensitive; mixed-spelling warnings cover observed groups, not singletons.
+- `graph:export --exclude-namespace` now refuses unbound selectors with exit 3,
+  like `--namespace`, against the original graph before filtering. Case-only near
+  matches suggest the exact spelling without accepting the wrong case.
+- `debug:layer-assignment` resolves non-empty input against observed declarations
+  and graph ends, including high-byte names and ASCII case variants. Unknown
+  input exits 3 even with disabled policy. JSON adds `policyDisabled` and
+  `edgeEndOnly`, reports the canonical observed `fqn`, and publishes typed shadow
+  exemptions only with enabled policy. Disabled text omits diagnostic guidance.
+
 - `size.class-count` now judges classes declared directly in each namespace,
   including parents, instead of the `size.class-count.sum` subtree value.
   Namespace findings and baselines can change. The `.sum` metric remains
@@ -1224,6 +1263,16 @@ What changes for a configuration you already have:
 - `check --format=json` has a new top-level key, `configurationDiagnostics`:
   the warnings about the configuration the run accepted, `[]` when there are
   none. A consumer comparing the key set exactly must accept it.
+
+### Added
+
+- `architecture.layer-overlap` reports partial non-pattern precedence losses at
+  Info; named shadow exemptions keep intentional first-match precedence silent.
+- `architecture.unmatched-type` reports each unmet authored positive/exclude type
+  at Warning, independently of known neighbours and template expansion. Complete
+  declaration scope and a read install are required; selected withheld judgement
+  prints one warning instead of claiming absence. Unreachable/exclude diagnostics
+  also suggest observed type spellings and compiler-projected plain subtrees.
 
 ### Changed
 

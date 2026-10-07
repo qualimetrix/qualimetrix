@@ -62,9 +62,11 @@ preserves dependency encounter order and coupling semantics.
 
 PHP class identities are folded case-insensitively before the graph is built.
 For analysed declarations, the byte-smallest observed spelling is canonical.
-For external classes, `ExternalClassSpellingInterface` may supply the spelling
-declared by the installation; when it cannot, the same byte-smallest rule is
-used. Both edge endpoints and the logical projection of declaration facts are
+For external classes, `ExternalClassSpellingInterface` supplies an installed
+declaration's spelling only when at least one observed variant places with exact
+case. Otherwise the observed byte-smallest spelling is used. Mixed-spelling
+warnings describe only groups with two or more observed variants; a singleton
+has no placement-status warning. Both edge endpoints and the logical projection of declaration facts are
 rewritten, while every exact `DeclarationPath`, declaration kind and body fact
 is preserved. An edge whose endpoints become the same identity is discarded.
 `DependencyGraphBuild` returns the graph together with deterministic

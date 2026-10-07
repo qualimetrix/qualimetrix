@@ -761,3 +761,17 @@ bin/qmx check src/ --rule-opt="coupling.class-rank:error=0.08"
 ## Независимые пары слоёв
 
 CBO и instability раскрывают верхнюю пару в class и namespace в написавшем слое. Явные записи в те же раскрытые листья этого слоя конфликтуют; независимые настройки уровня, например enabled, сохраняются. Настрой разные пары уровней явно или помести перекрывающий override в другой слой. Effective-band validation учитывает написанные и default halves. Направления метрик, формулы и numeric defaults не меняются. Написанный enabled:true намеренно снимает нижний disable. См. [конфигурацию](../getting-started/configuration.ru.md).
+
+## Позиция и форма dependency type
+
+Тип ребра называет позицию ссылки: `type_hint` для параметра/return,
+`property_type` для property и promoted parameter, `constant_type` для typed
+constant. Union/intersection/DNF не создают отдельные relation kinds.
+Graph JSON всегда публикует `shape` как object, сопоставляющий каждой позиции
+отсортированные наблюдённые формы (`single`, `nullable`, `union`,
+`intersection`, `dnf`), например `{"property_type": ["nullable"],
+"type_hint": ["union"]}`. У ребра без type-shape фактов — `shape: {}`.
+Факты объявления (kind, родители/интерфейсы/traits, сайты attributes,
+`__toString`) переносятся отдельно от рёбер. Неявный Stringable не создаёт
+синтетических dependency edges и не увеличивает coupling. Логическая PHP
+class identity ASCII-folded; точные source declarations остаются отдельными.

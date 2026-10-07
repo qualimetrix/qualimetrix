@@ -6,7 +6,7 @@
             "severity": "warning",
             "source": "Fixtures\\Sample\\Controller\\UserController",
             "target": "Fixtures\\Sample\\Repository\\UserRepository",
-            "type": "type_hint"
+            "type": "property_type"
         }
     ]
 }

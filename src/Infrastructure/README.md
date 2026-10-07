@@ -46,6 +46,8 @@ Infrastructure/
 │   ├── ClassmapPath.php              # Resolves generated classmap path expressions without executing them
 │   ├── ComposerAutoloadMap.php       # Places classes from the analysed project's Composer roots
 │   ├── DeclaredParentReader.php      # Reads external inheritance declarations for Design DIT
+│   ├── DeclaredSupertypeReader.php   # Reads external class-like facts as data for Architecture
+│   ├── InstalledExternalClassSpelling.php # Supplies exact installed spelling to DependencyModel
 │   ├── GeneratedClassmap.php         # Parses Composer's generated classmap without including it
 │   ├── InstallLocator.php            # Finds the bounded set of Composer roots a run may read
 │   └── Contract/

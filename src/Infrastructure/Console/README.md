@@ -190,6 +190,13 @@ query `LayerAssignmentInspectorInterface`; the command retains input validation,
 configuration, error mapping and rendering. This keeps both declarations below
 their constructor-dependency thresholds without introducing a public port.
 
+Debug JSON publishes `meta`, canonical `fqn`, `policyDisabled`, `edgeEndOnly`,
+assignment and contender evidence. An enabled shadow carries `reported` and,
+when exempt, the typed `exemption`; disabled shadow output omits both fields and
+the text omits diagnostic guidance. All arguments other than empty input are
+resolved through observed identities after collection, never an identifier regex.
+See [ADR 0103](../../../docs/adr/0103-layer-policy-declaration-evidence-and-selection.md).
+
 `LayerAssignmentResolver::resolve(RunConfiguration, SymbolPath, bool)` receives the
 captured configuration and final Architecture producer enablement directly and
 delegates to `ProjectFilesInterface` with its universe, aliases and generated

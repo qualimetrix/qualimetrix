@@ -102,10 +102,11 @@ Qualimetrix содержит набор встроенных правил для
 
 ### Правила архитектуры
 
-| Правило                                       | ID                                 | Что проверяет                                                    | Warning | Error   |
-| --------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ------- | ------- |
-| [Циклические зависимости](architecture.ru.md) | `architecture.circular-dependency` | Классы, которые зависят друг от друга по кругу                   | --      | Error   |
-| [Нарушения слоёв](architecture.ru.md)         | `architecture.layer-violation`     | Зависимости между слоями, не разрешённые архитектурной политикой | --      | Warning |
+| Правило                                                        | ID                                 | Что проверяет                                                    | Warning | Error     |
+| -------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------- | ------- | --------- |
+| [Циклические зависимости](architecture.ru.md)                  | `architecture.circular-dependency` | Классы, которые зависят друг от друга по кругу                   | --      | Error     |
+| [Нарушения слоёв](architecture.ru.md)                          | `architecture.layer-violation`     | Зависимости между слоями, не разрешённые архитектурной политикой | --      | Warning   |
+| [Диагностики объявления](architecture.ru.md#layer-declaration) | `architecture.layer-declaration`   | Критерии слоёв, покрытие и установленные эффекты объявления      | —       | По каналу |
 
 [Подробнее о правилах архитектуры --&gt;](architecture.ru.md)
 
@@ -250,7 +251,7 @@ rules:
 - **Cohesion:** `cohesion.lcom` (правило); `cohesion.tcc`, `cohesion.lcc` (только метрики, не правила — используются как входы `design.god-class`)
 - **Coupling:** `coupling.cbo`, `coupling.instability`, `coupling.distance`, `coupling.class-rank`, `coupling.unmatched-framework-namespace`
 - **Maintainability:** `maintainability.mi`
-- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.unassigned-class`
+- **Architecture:** `architecture.circular-dependency`, `architecture.layer-violation`, `architecture.layer-declaration`, `architecture.unassigned-class`
 - **Duplication:** `duplication.clone`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`

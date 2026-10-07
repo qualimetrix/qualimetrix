@@ -1,7 +1,13 @@
 # 0077. Open-Universe Selectors Are Explicit
 
 **Date:** 2026-09-21
-**Status:** Accepted
+**Status:** Accepted; partially superseded by ADR 0103
+
+Architecture's DSL boundary is refined by
+[ADR 0103](0103-layer-policy-declaration-evidence-and-selection.md): membership
+capture patterns and public selectors mutually refuse the other's form and name
+the accepted equivalent. The explicit public selector grammar and closed-identity
+exceptions remain in force. The text below records the original decision.
 
 ## Context
 
