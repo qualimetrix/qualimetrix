@@ -24,6 +24,49 @@ final class BenchmarkCoverageRefusalTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itRunsTheRealCliInsideTheMeasuredProjectWithNeutralConfiguration(): void
+    {
+        $fixtureRoot = $this->createFixtureRoot();
+        $this->copyScript('benchmark-regression.php', $fixtureRoot);
+        $projectPath = $fixtureRoot . '/fixtures/project';
+        mkdir($projectPath, recursive: true);
+        file_put_contents($projectPath . '/Calculator.php', <<<'PHP'
+<?php
+namespace BenchmarkFixture;
+final class Calculator
+{
+    public function add(int $left, int $right): int
+    {
+        return $left + $right;
+    }
+}
+PHP);
+        file_put_contents($fixtureRoot . '/qmx.yaml', "benchmark_poison: true\n");
+        file_put_contents($projectPath . '/qmx.yaml', "benchmark_poison: true\n");
+        mkdir($fixtureRoot . '/bin');
+        self::assertTrue(symlink(\dirname(__DIR__, 3) . '/bin/qmx', $fixtureRoot . '/bin/qmx'));
+
+        $baselinePath = $fixtureRoot . '/docs/internal/benchmark-baselines.json';
+        mkdir(\dirname($baselinePath), recursive: true);
+        $originalBaseline = json_encode([
+            'projects' => [
+                'fixture' => [
+                    'path' => 'fixtures/project',
+                    'expectations' => ['health.typing' => [100, 100]],
+                ],
+            ],
+        ], \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR) . "\n";
+        file_put_contents($baselinePath, $originalBaseline);
+
+        $process = new Process([\PHP_BINARY, 'scripts/benchmark-regression.php'], $fixtureRoot);
+        $process->run();
+
+        self::assertSame(0, $process->getExitCode(), $process->getErrorOutput());
+        self::assertStringContainsString('All 1 projects within expected ranges.', $process->getErrorOutput());
+        self::assertSame($originalBaseline, file_get_contents($baselinePath));
+    }
+
     #[TestWith(['partial'])]
     #[TestWith(['missing'])]
     #[TestWith(['malformed'])]

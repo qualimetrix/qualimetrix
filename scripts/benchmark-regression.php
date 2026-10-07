@@ -184,17 +184,17 @@ $unmeasuredAcrossRun = [];
 $results = [];
 $distributions = [];
 
-// qmx auto-discovers qmx.yaml (and composer.json) from the process working
-// directory. Running from the repo root would leak the repo's own qmx.yaml —
-// its memory_limit: 1G (overriding the -d memory_limit=2G below), its
-// Qualimetrix\** architecture layers, and its coupling framework namespaces —
-// onto every benchmark project. That is conceptually wrong and, combined with
-// a pathological duplication bucket, is what makes the doctrine-dbal run OOM.
-// A fresh, empty working directory turns auto-discovery into a no-op, while the
-// absolute $qmxBin and per-project $path keep the invocation self-contained.
-$neutralDir = sys_get_temp_dir() . '/qmx-benchmark-' . getmypid();
-if (!is_dir($neutralDir) && !mkdir($neutralDir, 0o755, true) && !is_dir($neutralDir)) {
-    fprintf(STDERR, "ERROR: Cannot create neutral working directory: %s\n", $neutralDir);
+// The CLI admits paths only inside its working directory. Each measured target
+// therefore owns the child cwd and its Composer source facts. An explicit empty
+// YAML keeps project/repository configuration out of the calibration.
+$neutralConfig = sys_get_temp_dir() . '/qmx-benchmark-' . bin2hex(random_bytes(6)) . '.yaml';
+register_shutdown_function(static function () use ($neutralConfig): void {
+    if (is_file($neutralConfig)) {
+        unlink($neutralConfig);
+    }
+});
+if (file_put_contents($neutralConfig, "{}\n") !== 3) {
+    fprintf(STDERR, "ERROR: Cannot write neutral configuration: %s\n", $neutralConfig);
     exit(2);
 }
 
@@ -241,6 +241,7 @@ foreach ($projects as $id => $config) {
         $path,
         '--format=metrics',
         '--workers=0',
+        '--config=' . $neutralConfig,
     ];
 
     if (isset($config['disable_rules']) && $config['disable_rules'] !== []) {
@@ -249,13 +250,11 @@ foreach ($projects as $id => $config) {
         }
     }
 
-    // Run from the neutral working directory so qmx does not auto-discover the
-    // repo's qmx.yaml/composer.json (see the comment above $neutralDir).
     // ChildProcess::run() always captures stderr separately; it is discarded
     // below, matching the previous `2>/dev/null` shell redirect — this script
     // never surfaced the child's own stderr.
     try {
-        $result = ChildProcess::run($cmd, $neutralDir);
+        $result = ChildProcess::run($cmd, $path);
     } catch (RuntimeException $exception) {
         fprintf(
             STDERR,
