@@ -54,7 +54,7 @@ final class SurfaceComparisonTest extends TestCase
     }
 
     #[Test]
-    public function itFramesOnlyAnAbsentDeclaredBaselineRefusalAndKeepsAnalysisAuthority(): void
+    public function itFramesOnlyAnEmptyCapturedDeclaredBaselineRefusalAndKeepsAnalysisAuthority(): void
     {
         $tree = \QmxFindingGate\SelfTestOutcomes::fixture();
         $tree['candidateDeclarations'][\QmxFindingGate\DeclaredOutcomes::INDEX] = Tsv::render(\QmxFindingGate\DeclaredOutcomes::COLUMNS, [
@@ -98,9 +98,23 @@ final class SurfaceComparisonTest extends TestCase
             $pair = new SurfacePair($key, 'baseline-file', $baseline, '');
             [$candidateFrame, $referenceFrame] = ExactSurfaceAuthority::pair($pair, ['candidate' => $candidate, 'reference' => $reference], $run);
             self::assertStringContainsString('records ', $candidateFrame);
+            self::assertStringStartsWith("visible 0\n\n", $referenceFrame);
             self::assertStringContainsString('baseline-exit 1' . "\n" . '3', $referenceFrame);
             self::assertStringContainsString('baseline-stderr', $referenceFrame);
             self::assertStringContainsString('refusal ', $referenceFrame);
+            try {
+                ExactSurfaceAuthority::pair(
+                    $pair,
+                    ['candidate' => $candidate, 'reference' => new \QmxFindingGate\CaptureResult(array_replace($reference->artifacts, [$key => '{}']), [])],
+                    $run,
+                );
+                self::fail('A nonempty captured baseline was accepted as a refusal.');
+            } catch (GateError $error) {
+                self::assertSame(
+                    'A declared baseline refusal requires empty captured baseline content, a non-analysis exit, stderr and a JSON refusal.',
+                    $error->getMessage(),
+                );
+            }
             $changedReference = new \QmxFindingGate\CaptureResult([
                 $key => '', 'case:alpha|exit:baseline:generate' => '2',
                 'case:alpha|stderr:baseline-file' => "Different refusal\n",

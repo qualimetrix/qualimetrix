@@ -39,7 +39,7 @@ final class CaseOutcomeCheckTest extends TestCase
     }
 
     #[Test]
-    public function itCreditsOnlyTheDeclaredAbsentBaselineRefusal(): void
+    public function itCreditsOnlyTheDeclaredEmptyCapturedBaselineRefusal(): void
     {
         $tree = SelfTestOutcomes::fixture();
         $tree['candidateDeclarations'][\QmxFindingGate\DeclaredExactSurfaces::INDEX] = \QmxFindingGate\Tsv::render(\QmxFindingGate\DeclaredExactSurfaces::COLUMNS, [
@@ -71,7 +71,7 @@ final class CaseOutcomeCheckTest extends TestCase
             $base['case:alpha|stderr:baseline-file'] = "Refused input\n";
             foreach ([
                 'valid' => [[], true],
-                'unexpected baseline' => [['case:alpha|baseline-file' => '{}'], false],
+                'nonempty captured baseline' => [['case:alpha|baseline-file' => '{}'], false],
                 'successful baseline exit' => [['case:alpha|exit:baseline:generate' => '0'], false],
                 'silent baseline refusal' => [['case:alpha|stderr:baseline-file' => ''], false],
             ] as $label => [$changes, $valid]) {
@@ -97,6 +97,13 @@ final class CaseOutcomeCheckTest extends TestCase
                 ]);
                 self::assertSame($valid, $report->sourceValid('candidate', 'case:alpha|baseline-file', 'outcome'), $label . ': ' . $report->render());
                 self::assertSame(!$valid, \in_array(FailureClass::CASE_OUTCOME_MISMATCH, $report->failureClasses(), true), $label . ': ' . $report->render());
+                if (!$valid) {
+                    self::assertContains(
+                        'The declared refusal must capture empty baseline content, a non-analysis exit and populated stderr.',
+                        array_column($report->raised(), 'detail'),
+                        $label,
+                    );
+                }
             }
         } finally {
             SyntheticTree::remove($root);

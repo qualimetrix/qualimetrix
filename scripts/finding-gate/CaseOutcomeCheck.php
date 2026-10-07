@@ -9,7 +9,7 @@ use WeakReference;
 
 /**
  * Whether each case's run produced what a comparison reads: a findings section that is not truncated, and
- * a baseline file its command wrote.
+ * captured baseline content from its command.
  */
 final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Derivation
 {
@@ -100,7 +100,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
             || !\is_array($payload['violations'] ?? null) || ($payload['coverage']['complete'] ?? null) !== false
             || ($artifacts[Surfaces::key($scope, 'exit:baseline:generate')] ?? null) !== '4'
             || ($artifacts[Surfaces::key($scope, 'baseline-file')] ?? null) !== '') {
-            $this->mismatch($side . ' / ' . $case->id, 'An incomplete analysis must report exit 4, incomplete coverage and no baseline file.');
+            $this->mismatch($side . ' / ' . $case->id, 'An incomplete analysis must report exit 4, incomplete coverage and empty captured baseline content.');
         }
     }
 
@@ -153,7 +153,7 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
                 || !\is_string($baselineStderr = $refused['case:' . $case->id . '|stderr:baseline-file'] ?? null)
                 || $baselineStderr === '')) {
                 $this->report->sourceEvidence($refusalSide, $baselineKey, 'outcome', false);
-                $this->mismatch('case:' . $case->id . ' / baseline:generate', 'The declared refusal did not retain an absent baseline, a non-analysis exit and populated stderr.');
+                $this->mismatch('case:' . $case->id . ' / baseline:generate', 'The declared refusal must capture empty baseline content, a non-analysis exit and populated stderr.');
                 continue;
             }
             if ($needsBaselineRefusal) {
@@ -385,14 +385,12 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
     }
 
     /**
-     * An absent surface must not read as a surface that agrees.
+     * An unpopulated surface must not read as a surface that agrees.
      *
-     * `baseline-file` is captured as the file the command wrote, and a command
-     * that wrote nothing captures as an empty string on both sides — which
-     * compares equal, and would silently retire the whole baseline surface from
-     * the comparison. So the surface's existence is asserted before it is
-     * compared, on each side separately, together with the exit code of the
-     * command that was supposed to produce it.
+     * `baseline-file` captures bytes from the command's output target. No
+     * captured content compares equal on both sides and would silently retire
+     * the whole surface from comparison. Require nonempty content on each side,
+     * together with the exit code of the command that was supposed to produce it.
      *
      * @param array<string, string> $artifacts
      */
@@ -418,8 +416,8 @@ final class CaseOutcomeCheck implements CaseCheck, RunCheck, SurfaceStage, Deriv
             $this->report->fail(
                 FailureClass::RUN_FAILED,
                 $side . ' / ' . $case->id . ' / baseline-file',
-                'baseline:generate wrote no baseline. An empty baseline compares equal to an empty baseline, so the'
-                . ' whole surface would drop out of the comparison unnoticed.',
+                'baseline:generate produced no usable captured baseline content. Without it, the whole surface'
+                . ' could compare equal and drop out of the comparison unnoticed.',
                 [],
                 ['side' => $side, 'key' => $key, 'role' => 'outcome'],
             );

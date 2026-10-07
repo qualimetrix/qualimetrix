@@ -192,7 +192,7 @@ final class ExactSurfaceAuthority
             || (int) $exit < 1 || (int) $exit > 255 || $exit === '70'
             || !\is_string($stderr) || $stderr === '' || !\is_array($envelope)
             || !\is_string($envelope['error'] ?? null) || $envelope['error'] === '') {
-            throw new GateError('A declared baseline refusal has no absent file, non-analysis exit, stderr and JSON refusal.');
+            throw new GateError('A declared baseline refusal requires empty captured baseline content, a non-analysis exit, stderr and a JSON refusal.');
         }
         return self::frame('baseline-exit', $exit)
             . self::frame('baseline-stderr', $run->normalization->normalize('stderr:baseline-file', $stderr))
