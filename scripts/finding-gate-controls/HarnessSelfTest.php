@@ -57,6 +57,36 @@ final class HarnessSelfTest
             }
             $this->same(true, $refused, 'an exact expectation without a scope is refused');
         }
+
+        $directory = Shell::temporaryDirectory('harness-self-test-exact-surface-');
+        $report = $directory . '/report.json';
+        $run = ['stdout' => '', 'stderr' => '', 'exit' => 1];
+        $exact = 'case:alpha|baseline-file';
+        $required = ['class' => \QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'scope' => 'case:alpha|format:json'];
+        $control = Control::red(
+            'probe',
+            'a required record failure with a secondary declared surface result',
+            Mutation::none(),
+            [new Expectation($required['class'], $required['scope'], exactScope: true)],
+        );
+
+        try {
+            file_put_contents($report, (string) json_encode(['failures' => [
+                $required,
+                ['class' => \QmxFindingGate\FailureClass::DELTA_MISMATCH, 'scope' => $exact],
+            ]], \JSON_THROW_ON_ERROR));
+            $outcome = Outcome::of($control, $run, $report, declaredExactSurfaces: [$exact]);
+            $this->same(true, $outcome->asDeclared, 'an exact-surface delta is declaration noise beside a required red mechanism');
+
+            file_put_contents($report, (string) json_encode(['failures' => [
+                $required,
+                ['class' => \QmxFindingGate\FailureClass::SURFACE_MISMATCH, 'scope' => $exact],
+            ]], \JSON_THROW_ON_ERROR));
+            $outcome = Outcome::of($control, $run, $report, declaredExactSurfaces: [$exact]);
+            $this->same(false, $outcome->asDeclared, 'an exact-surface declaration cannot absorb an unrelated surface mismatch');
+        } finally {
+            Shell::removeRecursively($directory);
+        }
     }
 
     private function inheritedPermissionsAreClearedOnlyInThePrivateTree(): void

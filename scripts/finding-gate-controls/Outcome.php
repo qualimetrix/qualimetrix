@@ -89,7 +89,7 @@ final class Outcome
                 $matched[] = $label;
             } elseif (!$control->expectsGreen && $control->tolerates($failureClass, $scope)) {
                 $tolerated[] = $label;
-            } elseif (!$control->expectsGreen && self::isDeclarationNoise($failureClass, $scope, $declaredSurfaces, $declarationReplaced)) {
+            } elseif (!$control->expectsGreen && self::isDeclarationNoise($failureClass, $scope, $declaredSurfaces, $declaredExactSurfaces, $declarationReplaced)) {
                 // The step declares this surface, and this class is a statement
                 // about that declaration rather than about the mechanism under
                 // test. Bounded by class on purpose: see isDeclarationNoise().
@@ -253,6 +253,10 @@ final class Outcome
      * of that argument: scope-only toleration is the same hole facing the other
      * way, and both halves have to be named.
      *
+     * Exact surface declarations also yield delta classes when a red control
+     * moves their bytes. They join this narrow declaration-noise check, but not
+     * the ordinary-delta count that the positive control verifies.
+     *
      * `surface-mismatch` is the one class that needs the third condition. It
      * lands on a declared surface for two unrelated reasons: because the
      * control *replaced* the declaration index, leaving the surface undeclared
@@ -262,14 +266,17 @@ final class Outcome
      * control's own mutation rewrote the index.
      *
      * @param list<string> $declaredSurfaces
+     * @param list<string> $declaredExactSurfaces
      */
     private static function isDeclarationNoise(
         string $failureClass,
         string $scope,
         array $declaredSurfaces,
+        array $declaredExactSurfaces,
         bool $declarationReplaced,
     ): bool {
-        if (!\in_array($scope, $declaredSurfaces, true)) {
+        $ordinary = \in_array($scope, $declaredSurfaces, true);
+        if (!$ordinary && !\in_array($scope, $declaredExactSurfaces, true)) {
             return false;
         }
 
@@ -280,7 +287,7 @@ final class Outcome
         // `declared-field-moves.tsv` reads as stale through no fault of the
         // mechanism under test. With the index intact a stale licence is real.
         if ($failureClass === FailureClass::SURFACE_MISMATCH || $failureClass === FailureClass::FIELD_MOVE_STALE) {
-            return $declarationReplaced;
+            return $ordinary && $declarationReplaced;
         }
 
         return \in_array($failureClass, [
