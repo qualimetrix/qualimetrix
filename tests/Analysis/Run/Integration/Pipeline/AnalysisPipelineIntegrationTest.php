@@ -39,6 +39,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Finding;
@@ -46,6 +47,7 @@ use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -306,6 +308,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new RuleExclusionStats(),
             LevelActivity::empty(),
         ));
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $ruleExecutor->method('publishable')->willReturn([]);
         $producerGate = new RuleSelectorProducerGate($registry);
         $pipeline = TestPipelineBuilder::create()
@@ -688,6 +691,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats(),
             \Qualimetrix\Analysis\Finding\Contract\LevelActivity::empty(),
         ));
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
             $dependencies,

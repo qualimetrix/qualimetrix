@@ -32,6 +32,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureChannels;
+use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationRule;
 use Qualimetrix\Analysis\Policy\Architecture\LayerDeclaration\LayerDeclarationValidator;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Architecture\UnassignedClass\UnassignedClassSummary;
@@ -128,6 +129,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationRule::class)
+            ->setClass(LayerDeclarationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
         $container->register(LayerDeclarationValidator::class)
             ->setClass(LayerDeclarationValidator::class)
             ->addTag(ConfigurationValidatorCompilerPass::TAG);
@@ -139,16 +143,15 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 
         self::assertContains(
             'architecture.coverage-gap',
-            $channelsByProducer[LayerViolationRule::NAME],
+            $channelsByProducer[LayerDeclarationRule::NAME],
         );
     }
 
     /**
      * `architecture.coverage-gap` is emitted by {@see LayerDeclarationValidator}
      * under its own identity, distinct from the producer rule's `NAME`
-     * (`architecture.layer-violation`) — it inherits that rule's declared
-     * `REMEDIATION_MINUTES` rather than needing a constant of its own on a
-     * class that does not exist.
+     * (`architecture.layer-declaration`) — it inherits that rule's declared
+     * `REMEDIATION_MINUTES` rather than defining remediation on the validator.
      */
     #[Test]
     public function itAttributesRemediationMinutesToADiagnosticsOwnChannelName(): void
@@ -157,6 +160,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::registerUniverse($container);
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationRule::class)
+            ->setClass(LayerDeclarationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
         $container->register(LayerDeclarationValidator::class)
             ->setClass(LayerDeclarationValidator::class)
@@ -171,7 +177,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$minutesByRule');
 
         self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule[LayerViolationRule::NAME]);
-        self::assertSame(LayerViolationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage-gap']);
+        self::assertSame(LayerDeclarationRule::REMEDIATION_MINUTES, $minutesByRule['architecture.coverage-gap']);
     }
 
     #[Test]
@@ -478,6 +484,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::registerUniverse($container);
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(LayerDeclarationRule::class)
+            ->setClass(LayerDeclarationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
         $container->register(LayerDeclarationValidator::class)
             ->setClass(LayerDeclarationValidator::class)

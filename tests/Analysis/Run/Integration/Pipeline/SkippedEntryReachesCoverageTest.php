@@ -14,8 +14,10 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMe
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPublication;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\LevelActivity;
+use Qualimetrix\Analysis\Finding\Contract\RuleEnablement;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionResult;
@@ -137,6 +139,7 @@ final class SkippedEntryReachesCoverageTest extends TestCase
         $ruleExecutor->method('execute')->willReturn(
             new RuleExecutionResult([], [], new RuleExclusionStats(), LevelActivity::empty()),
         );
+        $ruleExecutor->method('publication')->willReturn(new ChannelPublication(new RuleEnablement([], null)));
         $ruleExecutor->method('publishable')->willReturnCallback(
             static fn(array $findings): array => $findings,
         );
