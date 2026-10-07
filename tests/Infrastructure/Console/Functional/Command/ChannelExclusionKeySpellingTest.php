@@ -145,7 +145,7 @@ final class ChannelExclusionKeySpellingTest extends TestCase
     {
         self::assertSame(3, $tester->getStatusCode());
         self::assertSame([
-            'error' => 'Configuration error: Option "suppress_namespace_channels" for rule "code-smell.boolean-argument", keyed by "' . $key . '", addresses "code-smell.boolean-argument", and it does not report at level "namespace" — the levels available are "callable". The pair can never match anything.',
+            'error' => 'Configuration error: Option "suppress_namespace_channels" for rule "code-smell.boolean-argument", keyed by "' . $key . '", addresses "code-smell.boolean-argument", and it does not report at level "namespace" — the levels available are "callable", "file". The pair can never match anything.',
             'exit_code' => 3,
             'position' => [
                 'path' => ['rules', 'code-smell.boolean-argument', 'suppress_namespace_channels', $key],
