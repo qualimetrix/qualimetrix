@@ -337,7 +337,7 @@
       {"channel":"health.cohesion","magnitudes":[30]}
     ],
     "project:": [
-      {"channel":"health.coupling","magnitudes":[48.4]},
+      {"channel":"health.coupling","magnitudes":[48.3]},
       {"channel":"architecture.circular-dependency","occurrence":"366eed4cdda70adf","magnitudes":[3]}
     ]
   }

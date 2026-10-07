@@ -12,6 +12,7 @@ use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Throw_;
+use PhpParser\Node\FunctionLike;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
 use PhpParser\NodeVisitorAbstract;
@@ -26,31 +27,28 @@ final class AttemptWork
 
             public function enterNode(Node $node): ?int
             {
-                if ($node instanceof Expr\ArrowFunction || $node instanceof Expr\Closure) {
+                if ($node instanceof FunctionLike) {
                     return NodeVisitor::DONT_TRAVERSE_CHILDREN;
                 }
 
-                if (
-                    ($node instanceof FuncCall || $node instanceof MethodCall || $node instanceof StaticCall)
-                    && $node->isFirstClassCallable()
-                ) {
+                if (!$this->isExecutedWork($node)) {
                     return null;
                 }
 
-                if (
-                    $node instanceof FuncCall
-                    || $node instanceof MethodCall
-                    || $node instanceof StaticCall
-                    || $node instanceof New_
-                    || $node instanceof Include_
-                    || $node instanceof Throw_
-                ) {
-                    $this->found = true;
+                $this->found = true;
 
-                    return NodeVisitor::STOP_TRAVERSAL;
+                return NodeVisitor::STOP_TRAVERSAL;
+            }
+
+            private function isExecutedWork(Node $node): bool
+            {
+                if ($node instanceof FuncCall || $node instanceof MethodCall || $node instanceof StaticCall) {
+                    return !$node->isFirstClassCallable();
                 }
 
-                return null;
+                return $node instanceof New_
+                    || $node instanceof Include_
+                    || $node instanceof Throw_;
             }
         };
 
