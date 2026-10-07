@@ -187,7 +187,7 @@ final class ReportRecords
         }
         $identity = ['target' => $edge['target']];
         if (\array_key_exists('type', $edge)) {
-            if (!\is_string($edge['type']) || !\in_array($edge['type'], ['extends', 'implements', 'trait_use', 'new', 'static_call', 'static_property_fetch', 'class_const_fetch', 'type_hint', 'catch', 'instanceof', 'attribute', 'property_type', 'intersection_type', 'union_type'], true)) {
+            if (!\is_string($edge['type']) || !\in_array($edge['type'], ['extends', 'implements', 'trait_use', 'new', 'static_call', 'static_property_fetch', 'class_const_fetch', 'type_hint', 'catch', 'instanceof', 'attribute', 'property_type', 'constant_type', 'intersection_type', 'union_type'], true)) {
                 throw new GateError('A record edge requires a known dependency type.');
             }
             $identity['type'] = $edge['type'];

@@ -1301,6 +1301,25 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('currentAndHistoricalTypePositionEdges')]
+    public function itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity(string $type): void
+    {
+        $record = array_replace(self::finding(), [
+            'edge' => ['target' => 'class:App\\B', 'type' => $type],
+        ]);
+
+        self::assertSame($type, ReportRecords::decode(ReportRecords::identity('json', $record))['edge']['type']);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function currentAndHistoricalTypePositionEdges(): iterable
+    {
+        yield 'current constant type position' => ['constant_type'];
+        yield 'historical union type position' => ['union_type'];
+        yield 'historical intersection type position' => ['intersection_type'];
+    }
+
+    #[Test]
     public function itMatchesUnprintedProseLinesWhileRefusingPrintedLineAndFindingNeighbours(): void
     {
         $record = self::finding();
