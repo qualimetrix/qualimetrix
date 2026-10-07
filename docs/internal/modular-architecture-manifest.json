@@ -17533,6 +17533,13 @@
         }
       ]
     },
+    "Qualimetrix\\Core\\SourceText\\SourceBytes": {
+      "path": "src/Core/SourceText/SourceBytes.php",
+      "kind": "class",
+      "owner": "Core.Neutral",
+      "visibility": "internal",
+      "consumers": []
+    },
     "Qualimetrix\\Core\\Symbol\\CallableKind": {
       "path": "src/Core/Symbol/CallableKind.php",
       "kind": "enum",
@@ -22219,6 +22226,50 @@
       "visibility": "internal",
       "consumers": []
     },
+    "Qualimetrix\\Reporting\\Formatter\\FormattedReport": {
+      "path": "src/Reporting/Formatter/FormattedReport.php",
+      "kind": "class",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ResultPresenter"
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
+          "carrier_fqcn": "Qualimetrix\\Reporting\\Formatter\\FormatterInterface"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory",
+          "carrier_fqcn": "Qualimetrix\\Reporting\\Formatter\\FormatterInterface"
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\Formatter\\PublicationKind": {
+      "path": "src/Reporting/Formatter/PublicationKind.php",
+      "kind": "enum",
+      "owner": "Reporting",
+      "visibility": "contract",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\FormatterContextFactory",
+          "carrier_fqcn": "Qualimetrix\\Reporting\\Formatter\\FormatterInterface"
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "relation": "contract_surface",
+          "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory",
+          "carrier_fqcn": "Qualimetrix\\Reporting\\Formatter\\FormatterInterface"
+        }
+      ]
+    },
     "Qualimetrix\\Reporting\\FormatterContext": {
       "path": "src/Reporting/FormatterContext.php",
       "kind": "class",
@@ -22581,13 +22632,6 @@
     },
     "Qualimetrix\\Reporting\\Formatter\\TextFormatter": {
       "path": "src/Reporting/Formatter/TextFormatter.php",
-      "kind": "class",
-      "owner": "Reporting",
-      "visibility": "internal",
-      "consumers": []
-    },
-    "Qualimetrix\\Reporting\\Formatter\\TextVerboseFormatter": {
-      "path": "src/Reporting/Formatter/TextVerboseFormatter.php",
       "kind": "class",
       "owner": "Reporting",
       "visibility": "internal",

@@ -2459,6 +2459,7 @@ function documentationDisposition(string $path): array
         'src/Analysis/Policy/Baseline/README.md' => 'Analysis.Policy.Baseline',
         'src/Core/README.md' => 'Architecture.Governance',
         'src/Core/Profiler/README.md' => 'Core.Profiler',
+        'src/Core/SourceText/README.md' => 'Core.Neutral',
         'src/Core/Symbol/README.md' => 'Core.Symbol',
         'src/Infrastructure/Ast/README.md' => 'Infrastructure.Ast',
         'src/Infrastructure/DependencyInjection/README.md' => 'Infrastructure.DependencyInjection',

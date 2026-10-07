@@ -36,6 +36,7 @@ src/Reporting/Formatter/Detail/DetailedFindingRenderer.php	Qualimetrix\Reporting
 src/Reporting/Formatter/Detail/FindingDetailRenderer.php	Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer	"output projection"	Reporting
 src/Reporting/Formatter/FormatOptionKeysInterface.php	Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface	"output projection"	Reporting
 src/Reporting/Formatter/FormatOptionValue.php	Qualimetrix\Reporting\Formatter\FormatOptionValue	"output projection"	Reporting
+src/Reporting/Formatter/FormattedReport.php	Qualimetrix\Reporting\Formatter\FormattedReport	"output projection"	Reporting
 src/Reporting/Formatter/FormatterInterface.php	Qualimetrix\Reporting\Formatter\FormatterInterface	"output projection"	Reporting
 src/Reporting/Formatter/FormatterRegistry.php	Qualimetrix\Reporting\Formatter\FormatterRegistry	"output projection"	Reporting
 src/Reporting/Formatter/FormatterRegistryInterface.php	Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	"output projection"	Reporting
@@ -57,6 +58,7 @@ src/Reporting/Formatter/Json/JsonOffenderSection.php	Qualimetrix\Reporting\Forma
 src/Reporting/Formatter/Json/JsonSanitizer.php	Qualimetrix\Reporting\Formatter\Json\JsonSanitizer	"output projection"	Reporting
 src/Reporting/Formatter/MetricsJsonFormatter.php	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	"output projection"	Reporting
 src/Reporting/Formatter/Ordering/FindingSorter.php	Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	"output projection"	Reporting
+src/Reporting/Formatter/PublicationKind.php	Qualimetrix\Reporting\Formatter\PublicationKind	"output projection"	Reporting
 src/Reporting/Formatter/PublishedFinding.php	Qualimetrix\Reporting\Formatter\PublishedFinding	"output projection"	Reporting
 src/Reporting/Formatter/PublishedUtf8.php	Qualimetrix\Reporting\Formatter\PublishedUtf8	"output projection"	Reporting
 src/Reporting/Formatter/Sarif/SarifFormatter.php	Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	"output projection"	Reporting
@@ -69,7 +71,6 @@ src/Reporting/Formatter/Summary/SummaryFormatter.php	Qualimetrix\Reporting\Forma
 src/Reporting/Formatter/Summary/TopIssuesRenderer.php	Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	"output projection"	Reporting
 src/Reporting/Formatter/Suppressed/SuppressedFormatter.php	Qualimetrix\Reporting\Formatter\Suppressed\SuppressedFormatter	"output projection"	Reporting
 src/Reporting/Formatter/TextFormatter.php	Qualimetrix\Reporting\Formatter\TextFormatter	"output projection"	Reporting
-src/Reporting/Formatter/TextVerboseFormatter.php	Qualimetrix\Reporting\Formatter\TextVerboseFormatter	"output projection"	Reporting
 src/Reporting/GraphProjection/Contract/DependencyGraphProjectionInterface.php	Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface	"output projection"	Reporting
 src/Reporting/GraphProjection/Contract/GraphDirection.php	Qualimetrix\Reporting\GraphProjection\Contract\GraphDirection	"output projection"	Reporting
 src/Reporting/GraphProjection/Contract/GraphExportFormat.php	Qualimetrix\Reporting\GraphProjection\Contract\GraphExportFormat	"output projection"	Reporting

@@ -111,6 +111,7 @@ Available tests:
  - QmxFindingGate\Tests\CaptureTest::itAcceptsObservableDirectivesAndTheirExactMeasuredExitTransition
  - QmxFindingGate\Tests\CaptureTest::itAcceptsOnlyMeasuredDerivedCandidateCaptureExits
  - QmxFindingGate\Tests\CaptureTest::itCapturesCompleteAuthorityWithoutChangingSemanticArguments
+ - QmxFindingGate\Tests\CaptureTest::itCapturesDetailedTextThroughTheExistingTextFormat
  - QmxFindingGate\Tests\CaptureTest::itCapturesEveryPlannedPublicationAndKeepsEmptyStderr
  - QmxFindingGate\Tests\CaptureTest::itChecksCaptureThroughPublicCompareAndDerive
  - QmxFindingGate\Tests\CaptureTest::itComparesCandidateBytesAfterNormalizationAndKeepsEqualPublicationsGreen
@@ -523,7 +524,8 @@ Available tests:
  - QmxFindingGate\Tests\ReportRecordsTest::itDoesNotLicenseVariantResidualsWithAMainViewIntent
  - QmxFindingGate\Tests\ReportRecordsTest::itEditsOnlyLicensedValueSpansAndPreservesUnrelatedJsonBytes
  - QmxFindingGate\Tests\ReportRecordsTest::itJoinsBaselineEdgesByExactNamedFieldsAndPreservesTheirPublishedBytes
- - QmxFindingGate\Tests\ReportRecordsTest::itKeepsClassAndNamespaceFindingInstancesDistinctDespiteMatchingAdviceAndLocation
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsClassAndNamespaceFindingInstancesDistinctDespiteMatchingAdviceAndLocation#0
+ - QmxFindingGate\Tests\ReportRecordsTest::itKeepsClassAndNamespaceFindingInstancesDistinctDespiteMatchingAdviceAndLocation#1
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"current constant type position"
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"historical intersection type position"
  - QmxFindingGate\Tests\ReportRecordsTest::itKeepsCurrentAndHistoricalTypePositionEdgesInRecordIdentity"historical union type position"
@@ -10007,6 +10009,36 @@ Available tests:
  - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsIdentityWithExactlyTheDesignedKeys
  - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsTheDocsUrl
  - Qualimetrix\Tests\Core\Unit\ProductIdentityTest::itReturnsTheLlmsTxtUrlUnderTheDocsUrl
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itDistinguishesInvalidBytesAndLiteralEscapeSequences
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"beyond Unicode"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"forbidden lead"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"four-byte overlong"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"interrupted four-byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"interrupted three-byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"isolated continuation"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"isolated high bytes"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"lead before ASCII"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"mixed Unicode"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"surrogate"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"three-byte overlong"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"truncated four-byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"truncated three-byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"truncated two-byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"two-byte overlong"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesEachInvalidByteAndPreservesAdjacentValidText"valid sequence after invalid lead"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itEscapesReservedAsciiSeparatorsWithoutConfusingOrdinalSuffixes
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesComponentBoundariesAcrossAsciiSeparators
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"ASCII controls"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"empty"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"four-byte boundaries"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"mixed language"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"percent literal"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"three-byte boundaries"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itPreservesValidStringsInPublicationAndFraming"two-byte boundaries"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itRefusesNonAsciiReservedBytesEvenForEmptyValues"continuation byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itRefusesNonAsciiReservedBytesEvenForEmptyValues"invalid high byte"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itRefusesNonAsciiReservedBytesEvenForEmptyValues"valid Unicode"
+ - Qualimetrix\Tests\Core\Unit\SourceText\SourceBytesTest::itRoundTripsArbitraryByteStrings
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReportsTheVersionOfTheQualimetrixPackage
  - Qualimetrix\Tests\Core\Unit\VersionTest::itReturnsANonEmptyVersionString
  - Qualimetrix\Tests\Infrastructure\Ast\Unit\CachedFileParserTest::itCachesAstFromTheSameSnapshotUsedForKeyGeneration
@@ -10679,6 +10711,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\LogTargetFailureTest::itReportsACollectionLogWriteFailureInsteadOfACompletedRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\OutOfMemoryHintProcessTest::itLeavesAnUnrelatedFatalOutsideTheMemoryHint
  - Qualimetrix\Tests\Infrastructure\Console\Functional\OutOfMemoryHintProcessTest::itReportsAControlledMemoryFatalOnStderrWithExitFour
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RetiredOutputFormatTest::itRefusesTheRetiredFormatFromEitherInputDoor#0
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\RetiredOutputFormatTest::itRefusesTheRetiredFormatFromEitherInputDoor#1
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itKeysThePerRuleBreakdownByTheProducerOfTheFindingNotTheRuleThatRan
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itOmitsPerRuleExclusionDetailsWithoutShowSuppressed
  - Qualimetrix\Tests\Infrastructure\Console\Functional\RuleExclusionStatsWiringTest::itSurfacesPerRuleExclusionStatsFromARealRunThroughTheContainer
@@ -11190,7 +11224,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#4
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#5
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#6
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\MachineReadableFormatsTest::itRejectsEveryNonJsonFormat#7
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#0
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#1
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalAsAnEnvelopeOnEveryJsonFormat#2
@@ -11202,7 +11235,6 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat#3
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat#4
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat#5
- - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrUnderEveryNonJsonFormat#6
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAConfigurationRefusalOnStderrWithCodeThree
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorAsAnEnvelopeUnderAJsonFormat
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Refusal\RefusalPresenterTest::itAnswersAnInternalErrorWithTheInternalHeaderAndCodeOne
@@ -12005,12 +12037,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-generated-only"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-named-excluded"
  - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-partial-failure"
- - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-verbose-all-failed"
- - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-verbose-complete"
- - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-verbose-empty"
- - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-verbose-generated-only"
- - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-verbose-named-excluded"
- - Qualimetrix\Tests\Reporting\Integration\CoverageProjectionFormatterTest::itProjectsCoverageInEveryNativeFormat"text-verbose-partial-failure"
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\ConfigurationErrorProjectionTest::itIsNotPartOfTheSetABaselineMeasures
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\ConfigurationErrorProjectionTest::itSurvivesABaselineEntryClaimingToAcceptIt
  - Qualimetrix\Tests\Reporting\Integration\FindingProjection\ConfigurationErrorProjectionTest::itSurvivesAGitScopeThatContainsNothing
@@ -12103,7 +12129,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"health"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"summary"
  - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text"
- - Qualimetrix\Tests\Reporting\Integration\InvalidUtf8PublicationTest::itStillRendersTheProseFormats"text-verbose"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"github"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"html"
  - Qualimetrix\Tests\Reporting\Integration\OutOfScopePublicationTest::itAddsNoEntryWhenNothingLiesOutside"sarif"
@@ -12129,28 +12154,24 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"text"
- - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itAddsNothingForACoveredRun"text-verbose"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"github"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"health"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"html"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"text"
- - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesANarrowedRunAndTheChannelsItDidNotJudge"text-verbose"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"github"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"health"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"html"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"text"
- - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesARunWhosePathsWereTakenAsTheProject"text-verbose"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"github"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"health"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"html"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"sarif"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"summary"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"text"
- - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesTheValuesACoveredRunSkipped"text-verbose"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itNamesUnjudgedChannelsOfACoveredRun
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"json"
  - Qualimetrix\Tests\Reporting\Integration\ProjectScopePublicationTest::itPreservesSourceReasonsWhenPublishingSkippedValues"metrics"
@@ -12240,6 +12261,7 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Ansi\AnsiColorTest::itReturnsCombinedAnsiCodes
  - Qualimetrix\Tests\Reporting\Unit\Formatter\Ansi\AnsiColorTest::itReturnsPlainTextWhenDisabled
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaCheckstyleFormatter
+ - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaDetailedTextFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaGitLabCodeQualityFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaGithubActionsFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaHtmlFormatter
@@ -12247,7 +12269,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaSarifFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaSummaryFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaTextFormatter
- - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRendersArchitectureViolationsViaTextVerboseFormatter
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRunsHealthFormatterOnArchitectureOnlyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\ArchitectureViolationSmokeTest::itRunsMetricsJsonFormatterOnArchitectureOnlyReport
  - Qualimetrix\Tests\Reporting\Unit\Formatter\CheckstyleFormatterTest::itEscapesXmlSpecialCharacters
@@ -12286,7 +12307,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatOptionValueTest::itWritesAGrammarForEveryKeyAFormatterDeclares
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itAcceptsIterableOfFormattersInConstructor
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itAddsFormatterOnRegister
- - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itDeclaresKeysOfFormattersHiddenFromListings
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itDeclaresNoFormatOptionKeysWhenNoFormatterReadsAny
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itHasNoFormattersWhenEmpty
  - Qualimetrix\Tests\Reporting\Unit\Formatter\FormatterRegistryTest::itIncludesAvailableFormattersInExceptionMessage
@@ -12745,18 +12765,6 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itReturnsTextName
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itSortsBySeverityThenFile
  - Qualimetrix\Tests\Reporting\Unit\Formatter\TextFormatterTest::itUsesCodeInBrackets
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itDelegatesToTextFormatterWithDetailEnabled
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFallsBackToMessageWhenHumanMessageNull
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsEmptyReport
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsFlat
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedByFile
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedByRule
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itFormatsGroupedBySeverity
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itInheritsTheDocumentationPointerFromTextFormatter
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itOutputsDebtBreakdown
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itReturnsDefaultGroupByFile
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itReturnsTextVerboseName
- - Qualimetrix\Tests\Reporting\Unit\Formatter\TextVerboseFormatterTest::itUsesHumanMessageWhenAvailable
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlEveryRangedMetricHasLabel
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlFormatTemplateOnlyOnLcom
  - Qualimetrix\Tests\Reporting\Unit\Health\HealthHintProjectorTest::itExportForHtmlHealthDecompositionHasAllDimensions
@@ -12792,8 +12800,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"list"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAMalformedLowerFormatEvenWhenTheCommandLineWins"map"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAnUnexecutableWinningFormat"empty string"
+ - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAnUnexecutableWinningFormat"retired name"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itRefusesAnUnexecutableWinningFormat"unknown name"
- - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"a hidden formatter the listing omits"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"json"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillAcceptsEveryRegisteredFormatter"text"
  - Qualimetrix\Tests\Reporting\Unit\OutputFormatRefusesUnexecutableValuesTest::itStillDefaultsWhenNobodyNamedAFormat

@@ -47,7 +47,7 @@ src/Analysis/Evidence/Measurement/Contract/VisitorCallableScope.php	14	code-smel
 src/Analysis/Finding/Contract/Finding.php	14	code-smell.constructor-overinjection	warning=18 error=18 — Finding is a flat immutable transport VO; its 17 independent published fields do not form a service dependency group. The exclusive boundary allows those 17 fields while keeping the next field visible.
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	21	code-smell.constructor-overinjection	warning=9 error=12 -- One immutable selector
 src/Analysis/Finding/Contract/Rule/RuleOptionShape.php	24	code-smell.constructor-overinjection	warning=9 error=9 -- Eight immutable
-src/Infrastructure/Console/ResultPresenter.php	34	code-smell.constructor-overinjection	warning=10 error=10 -- Raw 9 gets one-edge
+src/Infrastructure/Console/ResultPresenter.php	35	code-smell.constructor-overinjection	warning=10 error=10 -- Raw 9 gets one-edge
 src/Infrastructure/Console/RuntimeConfigurator.php	26	code-smell.constructor-overinjection	warning=9 error=10 -- This class composes a run's unrelated per-run concerns (logging, progress, profiling, cache, parallelism, limits) and the eighth is the autoload anchor DIT's ancestor walk needs before the pipeline starts. Splitting the composition is its own subject, not this metric's campaign; the ceiling is one slot: a ninth parameter reports again.
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/Score/HealthScore.php	12	code-smell.long-parameter-list	warning=9 error=9 — Same reason: the eighth field is what a score covers, which belongs to the score and to nothing else.
 src/Analysis/Evidence/Measurement/Contract/CallableWithMetrics.php	27	code-smell.long-parameter-list	warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
@@ -65,7 +65,7 @@ src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	30	complexity.wmc	warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the `??=` assignment-coalesce operator).
 src/Analysis/Evidence/ComputedMetrics/Health/Contract/Summary/HealthSummaryBuilder.php	31	complexity.wmc	warning=62 error=62 — Publishing what a score covers cost this class one short method, and WMC charges a method's existence: the same code inline scored 60 and the extraction that made each method simpler scored 61. One-method headroom, not a licence to grow.
 src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php	24	complexity.wmc	warning=63 -- The 17-operation repository port and its shared identity routes have WMC 62 after removing duplicate reads, writes and merge entrypoints.
-src/Reporting/Formatter/Health/HealthTextFormatter.php	29	complexity.wmc	warning=60 -- average per-method complexity
+src/Reporting/Formatter/Health/HealthTextFormatter.php	31	complexity.wmc	warning=60 -- average per-method complexity
 src/Analysis/Evidence/Coupling/CboRule.php	40	coupling.cbo	22 -- Raw CBO 21: this hierarchical rule's own dependencies plus
 src/Analysis/Evidence/Coupling/DistanceRule.php	52	coupling.cbo	22 -- Raw CBO 21 includes the ThresholdCrossing wording contract
 src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo	27 -- Measurement collector base is a stable provider-owned extension hub; current raw CBO 26 gets one-edge headroom.

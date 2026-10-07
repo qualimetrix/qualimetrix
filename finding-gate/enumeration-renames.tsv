@@ -30,9 +30,9 @@ code-smell.long-parameter-list	channel	?		19	102	2	2	2	40	0	23	0	0	0	0
 code-smell.superglobals	channel	?		2	7	1	0	0	12	0	91	0	0	1	1
 code-smell.unreachable-code	channel	?		6	52	0	1	0	31	0	11	0	0	0	0
 code-smell.unused-private	channel	?		3	10	0	0	0	16	0	157	0	0	0	0
-cohesion.lcom	channel	?		35	200	2	2	0	45	0	230	0	0	0	0
+cohesion.lcom	channel	?		35	195	2	2	0	45	0	230	0	0	0	0
 cohesion.unmatched-exclude-method	channel	?		8	15	0	0	0	7	0	17	0	0	0	0
-complexity.ccn	channel	?		70	1525	2	3	22	198	0	48	0	0	0	0
+complexity.ccn	channel	?		70	1514	2	3	22	198	0	48	0	0	0	0
 complexity.cognitive	channel	?		20	106	2	2	11	55	0	26	0	0	0	0
 complexity.npath	channel	?		17	123	2	2	3	51	0	20	0	0	0	0
 complexity.wmc	channel	?		21	86	2	2	3	38	0	99	0	0	0	0
@@ -71,10 +71,10 @@ code-smell.unused-private.method	metric-key	?		1	57	0	0	0	0	0	0	0	0	0	0
 code-smell.unused-private.property	metric-key	?		1	22	0	0	0	0	0	0	0	0	0	0
 code-smell.unused-private.total	metric-key	?		1	21	0	0	0	2	0	194	0	0	0	0
 cohesion.lcc	metric-key	?		7	50	0	0	0	6	0	10	0	0	0	0
-cohesion.lcom	metric-key	?		35	200	2	2	0	45	0	230	0	0	0	0
+cohesion.lcom	metric-key	?		35	195	2	2	0	45	0	230	0	0	0	0
 cohesion.pure-method-count	metric-key	?		5	8	0	0	0	2	0	4	0	0	0	0
 cohesion.tcc	metric-key	?		26	114	0	0	0	16	0	19	0	0	0	0
-complexity.ccn	metric-key	?		70	1525	2	3	22	198	0	48	0	0	0	0
+complexity.ccn	metric-key	?		70	1514	2	3	22	198	0	48	0	0	0	0
 complexity.cognitive	metric-key	?		20	106	2	2	11	55	0	26	0	0	0	0
 complexity.npath	metric-key	?		17	123	2	2	3	51	0	20	0	0	0	0
 complexity.wmc	metric-key	?		21	86	2	2	3	38	0	99	0	0	0	0
@@ -171,8 +171,8 @@ code-smell.long-parameter-list	producer	?		19	102	2	2	2	40	0	23	0	0	0	0
 code-smell.superglobals	producer	?		2	7	1	0	0	12	0	91	0	0	0	0
 code-smell.unreachable-code	producer	?		6	52	0	1	0	31	0	11	0	0	0	0
 code-smell.unused-private	producer	?		3	10	0	0	0	16	0	157	0	0	0	0
-cohesion.lcom	producer	?		35	200	2	2	0	45	0	230	0	0	0	0
-complexity.ccn	producer	?		70	1525	2	3	22	198	0	48	0	0	0	0
+cohesion.lcom	producer	?		35	195	2	2	0	45	0	230	0	0	0	0
+complexity.ccn	producer	?		70	1514	2	3	22	198	0	48	0	0	0	0
 complexity.cognitive	producer	?		20	106	2	2	11	55	0	26	0	0	0	0
 complexity.npath	producer	?		17	123	2	2	3	51	0	20	0	0	0	0
 complexity.wmc	producer	?		21	86	2	2	3	38	0	99	0	0	0	0

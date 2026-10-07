@@ -418,6 +418,7 @@ Qualimetrix\Reporting\FindingProjection\SuppressionCompositionBuilder	Reporting	
 Qualimetrix\Reporting\FormatterContext	Reporting	2	1
 Qualimetrix\Reporting\Formatter\CoverageNarrator	Reporting	3	1
 Qualimetrix\Reporting\Formatter\FormatOptionValue	Reporting	1	1
+Qualimetrix\Reporting\Formatter\FormattedReport	Reporting	1	1
 Qualimetrix\Reporting\Formatter\FormatterInterface	Reporting	2	2
 Qualimetrix\Reporting\Formatter\FormatterRegistryInterface	Reporting	4	2
 Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	3	2

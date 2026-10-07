@@ -128,6 +128,7 @@ src/Analysis/Run/README.md	Analysis.Run	"Move or update atomically with the name
 src/Core/Path/README.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
 src/Core/Profiler/README.md	Core.Profiler	"Move or update atomically with the named subject owner."
 src/Core/README.md	Architecture.Governance	"Move or update atomically with the named subject owner."
+src/Core/SourceText/README.md	Core.Neutral	"Move or update atomically with the named subject owner."
 src/Core/Symbol/README.md	Core.Symbol	"Move or update atomically with the named subject owner."
 src/Infrastructure/Ast/README.md	Infrastructure.Ast	"Move or update atomically with the named subject owner."
 src/Infrastructure/Cache/README.md	Architecture.Governance	"Shared repository documentation; retain in place and update only when its governed surface changes."
