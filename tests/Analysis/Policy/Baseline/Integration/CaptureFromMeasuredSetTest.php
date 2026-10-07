@@ -186,13 +186,8 @@ final class CaptureFromMeasuredSetTest extends TestCase
         self::assertFalse($baseline->hasIdentity(BaselineIdentity::forFinding($excluded)));
     }
 
-    /**
-     * `suppress_namespaces` does not silence layer-policy enforcement, so an
-     * architecture finding inside an excluded namespace stays in the measured
-     * set and is captured — the baseline is its sanctioned route.
-     */
     #[Test]
-    public function itWritesAnEntryForAnArchitectureFindingInsideAnExcludedNamespace(): void
+    public function itWritesNoEntryForALayerViolationInsideAnExcludedSourceNamespace(): void
     {
         $architecture = self::finding(
             'src/Generated/Proxy.php',
@@ -206,8 +201,8 @@ final class CaptureFromMeasuredSetTest extends TestCase
 
         $baseline = $this->capture($this->project($pipeline, [$architecture], new FindingProjectionOptions())->measuredFindings);
 
-        self::assertSame(1, $baseline->count());
-        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forFinding($architecture)));
+        self::assertSame(0, $baseline->count());
+        self::assertFalse($baseline->hasIdentity(BaselineIdentity::forFinding($architecture)));
     }
 
     /**

@@ -52,13 +52,13 @@ final class NamespaceExclusionFilterTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsLayerViolationRuleInExcludedNamespace(): void
+    public function itExcludesLayerViolationRuleInExcludedSourceNamespace(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
         $finding = $this->createFinding('App\\Entity', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_namespaces');
+        self::assertFalse($filter->shouldInclude($finding));
     }
 
     #[Test]
@@ -68,7 +68,7 @@ final class NamespaceExclusionFilterTest extends TestCase
 
         $finding = $this->createFinding('App\\Entity', CircularDependencyRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_namespaces');
+        self::assertTrue($filter->shouldInclude($finding), 'Declared project-scoped channels remain exempt from suppress_namespaces');
     }
 
     #[Test]
@@ -76,24 +76,21 @@ final class NamespaceExclusionFilterTest extends TestCase
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
-        // architecture.coverage-gap and friends are project-level (empty namespace) diagnostics,
-        // but the exemption is driven purely by the rule-name prefix — verify it still applies.
+        // A diagnostic's declared scope also protects a located example.
         $finding = $this->createFinding('App\\Entity', LayerDeclarationValidator::COVERAGE_DIAGNOSTIC_NAME);
 
         self::assertTrue($filter->shouldInclude($finding));
     }
 
     #[Test]
-    public function itKeepsArchitectureRuleEvenWhenItIsAFileSymbolFindingInExcludedNamespace(): void
+    public function itExcludesLayerViolationUsingTheDeclarationNamespaceForAFileSymbol(): void
     {
         $filter = new NamespaceExclusionFilter(new NamespaceMatcher([self::namespace(SelectorKind::Subtree, 'App\\Entity')]), self::declaredFileScope());
 
-        // Occurrence-style findings carry a file symbol path; the architecture
-        // exemption is decided before any namespace resolution, so it must hold
-        // even for a file-symbol finding whose subject declares an excluded namespace.
+        // A file symbol has no namespace; the source declaration supplies it.
         $finding = $this->createFileSymbolFinding('App\\Entity', LayerViolationRule::NAME);
 
-        self::assertTrue($filter->shouldInclude($finding), 'architecture.* rules must not be silenced by suppress_namespaces');
+        self::assertFalse($filter->shouldInclude($finding));
     }
 
     #[Test]

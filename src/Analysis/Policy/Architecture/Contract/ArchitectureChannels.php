@@ -29,7 +29,6 @@ final class ArchitectureChannels
 
     /** @var list<string> Channels exempt from path and namespace suppression. */
     public const array PROJECT_SCOPED_CHANNELS = [
-        self::PRODUCER_RULE_NAME,
         self::COVERAGE_DIAGNOSTIC_NAME,
         self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
         self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,

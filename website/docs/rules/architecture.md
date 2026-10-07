@@ -1078,8 +1078,9 @@ rules:
     severity: error
 ```
 
-Layer-violation findings are currently project-scoped and remain visible in Git
-reports, including `--report-strict`, regardless of which files changed.
+Layer-violation findings belong to the source declaration. Git reports,
+including `--report-strict`, retain them only when the source file changed.
+Changing only the target does not retain an outgoing violation.
 
 The five architecture configuration diagnostics — `architecture.coverage-gap`,
 `architecture.unreachable-layer`, `architecture.pending-layer-matched`,
@@ -1189,7 +1190,7 @@ To suppress a layer violation, address the exact channel: `@qmx-ignore architect
     Next-line/file controls use the physical dependency site. Repeated identical
     edges retain one count-bounded baseline identity without using its presentation line.
 
-**Per-rule `suppress_namespaces` / `suppress_paths` also work here.** The [global `suppress_namespaces`](../getting-started/configuration.md#suppress-namespaces) is deliberately exempt for `architecture.*` rules (see the warning there) — a project-wide, metric-shaped exclusion should not double as a silent way to switch off architecture enforcement. The *per-rule* form is a different, explicit mechanism and is **not** exempt:
+**Global and per-rule `suppress_namespaces` / `suppress_paths` apply to the violation's source.** Paths match the physical dependency site; namespaces match the source declaration. Excluding only the target does not suppress a violation. Declared project-scoped channels, including cycles and diagnostics, remain exempt from global filters. The per-rule form limits suppression to the explicitly named producer:
 
 ```yaml
 rules:
@@ -1200,7 +1201,7 @@ rules:
       - src/Legacy
 ```
 
-This works because the framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for any rule name unconditionally, before the rule's own Options class ever sees the config. Naming `architecture.layer-violation` explicitly is an unambiguous, auditable choice — unlike a blanket `suppress_namespaces` entry, it cannot be read as "just exclude this namespace from metrics" and accidentally take architecture violations down with it. Suppressions applied this way are counted and reported the same way as any other per-rule exclusion — see [Visibility](../getting-started/configuration.md#rules) in the configuration guide.
+The framework (`RuleOptionsBuild`) extracts `suppress_namespaces` / `suppress_paths` for any producer before building its Options. Per-rule exclusions are counted and reported like those of other rules; see [Visibility](../getting-started/configuration.md#rules).
 
 <!-- llms:skip-end -->
 

@@ -130,31 +130,21 @@ suppress_paths:
 
 Также доступна как CLI-опция: `--suppress-path` (объединяется с YAML-конфигурацией).
 
-!!! warning "Не действует на архитектурные находки уровня проекта"
-    `suppress_paths` (и `--suppress-path`) никогда не подавляют нарушения `architecture.layer-violation`
-    и `architecture.circular-dependency` — по той же причине, что и `suppress_namespaces` ниже:
-    нарушение архитектурной границы — не метрика, и исключение пути, нацеленное на подавление
-    шумных метрик, не должно незаметно становиться способом выключить контроль архитектуры.
-    Git-отчёт также сохраняет эти project-scoped находки в обычном и strict-режиме;
-    см. [Интеграцию с Git](../usage/git-integration.ru.md).
+!!! warning "Объявленный project scope сохраняется"
+    `suppress_paths` не подавляет циклы `architecture.circular-dependency` и объявленные
+    project-scoped diagnostics. Исключение задаётся для каждого канала отдельно;
+    префикс `architecture.` сам по себе его не даёт.
 
-    Какие находки освобождены — это **объявленное свойство канала**, а не следствие того, как
-    пишется имя правила: правило не получает иммунитет только потому, что называется
-    `architecture.что-то`.
+    `architecture.layer-violation` относится к объявлению-источнику: глобальный
+    `suppress_paths` сравнивается с файлом физического dependency site, а
+    `suppress_namespaces` — с namespace источника. Исключение только цели не
+    подавляет исходящее нарушение. Git-отчёт сохраняет его только при изменении
+    source-файла в обоих режимах; см. [Интеграцию с Git](../usage/git-integration.ru.md).
 
-    Что остаётся для подавления такой находки, зависит от канала.
-    `architecture.layer-violation` — настоящий долг кода, поэтому к нему по-прежнему применимы
-    и `@qmx-ignore architecture.layer-violation`, и запись в baseline. Пять диагностик
-    рядом с ним — `architecture.coverage-gap`, `architecture.unreachable-layer`,
-    `architecture.pending-layer-matched`, `architecture.potential-shadow` и
-    `architecture.empty-template` — сообщают об ошибке в
-    *конфигурации*, поэтому к ним неприменимо ни то, ни другое; см.
-    [«Правила > Архитектура»](../rules/architecture.ru.md). Для них остаются блок `exclude:`
-    внутри самой конфигурации архитектурных слоёв и, отдельно для покрытия, `coverage-gap: ignore`.
-
-    Как и для `suppress_namespaces`, это исключение действует только для **глобального**
-    механизма — исключение на уровне правила `suppress_paths`, описанное ниже, для
-    архитектурных правил по-прежнему работает.
+    Inline-директивы и baseline по-прежнему применимы к нарушениям слоёв,
+    но не к пяти configuration validators. Их отдельные способы настройки
+    описаны в [правилах архитектуры](../rules/architecture.ru.md#layer-declaration).
+    Исключения на уровне правила остаются доступны независимо от глобального scope.
 
 ### Подавление неймспейсов (suppress_namespaces)
 
@@ -171,28 +161,21 @@ suppress_namespaces:
 
 Также доступна как CLI-опция: `--suppress-namespace` (объединяется с YAML-конфигурацией).
 
-!!! warning "Не действует на архитектурные находки уровня проекта"
-    `suppress_namespaces` (и `--suppress-namespace`) никогда не подавляют нарушения
-    `architecture.layer-violation` и `architecture.circular-dependency`. Нарушение архитектурной
-    границы — не метрика: если бы оно тоже подавлялось, исключение шумной метрики незаметно
-    выключало бы контроль архитектуры. Какие находки освобождены — объявленное свойство канала,
-    а не следствие написания имени правила.
+!!! warning "Объявленный project scope сохраняется"
+    `suppress_namespaces` не подавляет циклы `architecture.circular-dependency` и объявленные
+    project-scoped diagnostics. Исключение задаётся для каждого канала отдельно;
+    префикс `architecture.` сам по себе его не даёт.
 
-    К `architecture.layer-violation` по-прежнему применимы `@qmx-ignore
-    architecture.layer-violation` и запись в baseline. К четырём диагностикам —
-    `architecture.coverage-gap`, `architecture.unreachable-layer`, `architecture.potential-shadow`
-    и `architecture.empty-template` — они **неприменимы**: те сообщают об ошибке конфигурации,
-    а не о долге кода. Для них используйте блок `exclude:` внутри конфигурации архитектурных
-    слоёв, а для диагностики покрытия — `coverage-gap: ignore`.
+    `architecture.layer-violation` относится к объявлению-источнику: глобальный
+    `suppress_paths` сравнивается с файлом физического dependency site, а
+    `suppress_namespaces` — с namespace источника. Исключение только цели не
+    подавляет исходящее нарушение. Git-отчёт сохраняет его только при изменении
+    source-файла в обоих режимах; см. [Интеграцию с Git](../usage/git-integration.ru.md).
 
-    Это исключение действует только для **глобального** механизма. Исключение на уровне правила
-    `suppress_namespaces` / `suppress_paths`, описанное ниже
-    (`rules: {architecture.layer-violation: {suppress_namespaces: [...]}}`), для архитектурных
-    правил по-прежнему работает — как и для любого другого правила. См.
-    [«Правила» ниже](#правила-rules) и раздел
-    [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений) архитектурного
-    правила — там объяснено, почему эта асимметрия осознанная: явное указание имени правила —
-    однозначный, проверяемый выбор, а глобальная запись `suppress_namespaces` — нет.
+    Inline-директивы и baseline по-прежнему применимы к нарушениям слоёв,
+    но не к пяти configuration validators. Их отдельные способы настройки
+    описаны в [правилах архитектуры](../rules/architecture.ru.md#layer-declaration).
+    Исключения на уровне правила остаются доступны независимо от глобального scope.
 
 ### Правила (rules)
 
@@ -395,10 +378,9 @@ Namespace. Нарушения уровня класса `health.cohesion` в т�
     `suppress_namespaces`, `suppress_namespace_channels` и `suppress_paths` извлекаются и применяются на уровне фреймворка для
     **любого** имени правила, независимо от того, объявляет ли класс Options этого правила такое
     поле — это намеренно не opt-in для каждого правила по отдельности. Это касается и
-    `architecture.layer-violation`, и `architecture.circular-dependency` — они исключены из
-    *глобальных* `suppress_namespaces` и `suppress_paths` выше, но не из этой формы на уровне правила:
-    явное указание имени правила делает подавление однозначным, проверяемым выбором, а не побочным
-    эффектом project-wide исключения. См. раздел [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений)
+    `architecture.layer-violation`, и `architecture.circular-dependency`. Глобальные
+    исключения применяются к source-owned нарушениям слоёв; циклы остаются project-scoped.
+    Форма на уровне правила явно называет producer, чьи находки нужно подавить. См. раздел [«Подавление нарушений»](../rules/architecture.ru.md#подавление-нарушений)
     архитектурного правила — там объяснена логика.
 
 **Подавление путей для правила:**

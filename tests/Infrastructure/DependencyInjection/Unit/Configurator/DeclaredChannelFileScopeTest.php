@@ -25,11 +25,11 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DeclaredChannelF
 final class DeclaredChannelFileScopeTest extends TestCase
 {
     #[Test]
-    public function itMarksAChannelBothCapabilitiesDeclareAsProjectScoped(): void
+    public function itKeepsDeclaredProjectChannelsExemptAndLayerViolationsFileScoped(): void
     {
         $scope = DeclaredChannelFileScope::create();
 
-        self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.layer-violation')));
+        self::assertTrue($scope->isFileScoped(new FindingChannel('architecture.layer-violation')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.coverage-gap')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('architecture.circular-dependency')));
         self::assertFalse($scope->isFileScoped(new FindingChannel('discovery.unmatched-exclude')));

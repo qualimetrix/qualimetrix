@@ -132,9 +132,9 @@ bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:s
 
 Объединяется с `suppress_paths` из `qmx.yaml` — оба источника суммируются.
 
-!!! warning "Не действует на правила `architecture.*`"
-    Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
-    никогда не подавляет — почему и какие есть альтернативы, см.
+!!! warning "Объявленные project-scoped каналы остаются видимыми"
+    Циклы `architecture.circular-dependency` и project-scoped diagnostics не подавляются.
+    Для `architecture.layer-violation` опция применяется к источнику нарушения; см.
     [Подавление путей в отчёте](../getting-started/configuration.ru.md#подавление-путей-в-отчёте-suppress_paths).
 
 ### `--suppress-namespace`
@@ -147,9 +147,9 @@ bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespac
 
 Объединяется с `suppress_namespaces` из `qmx.yaml` — оба источника суммируются.
 
-!!! warning "Не действует на правила `architecture.*`"
-    Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
-    никогда не подавляет — почему и какие есть альтернативы, см.
+!!! warning "Объявленные project-scoped каналы остаются видимыми"
+    Циклы `architecture.circular-dependency` и project-scoped diagnostics не подавляются.
+    Для `architecture.layer-violation` опция применяется к источнику нарушения; см.
     [Подавление неймспейсов](../getting-started/configuration.ru.md#подавление-неймспейсов-suppress_namespaces).
 
 ---
@@ -652,7 +652,7 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Опции области Git
 
-Публикация находок относительно изменённых файлов с сохранением объявленной project-scoped диагностики, в том числе циклов и нарушений слоёв архитектуры. Полное руководство смотрите в разделе [Интеграция с Git](git-integration.ru.md).
+Публикация находок относительно изменённых файлов с сохранением объявленной project-scoped диагностики, в том числе циклов архитектуры. Нарушение слоя сохраняется только при изменении source-файла в обоих режимах. Полное руководство смотрите в разделе [Интеграция с Git](git-integration.ru.md).
 
 ### `--report`
 
@@ -665,7 +665,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Ограничивает file-scoped находки изменёнными файлами без namespace/project расширения. Объявленные project-scoped находки, включая циклы и нарушения слоёв архитектуры, сохраняются и в strict-режиме:
+Ограничивает file-scoped находки изменёнными файлами без namespace/project расширения. Объявленные project-scoped находки, включая циклы архитектуры, сохраняются и в strict-режиме. Нарушения слоёв фильтруются по source-файлу:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict

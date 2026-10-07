@@ -131,31 +131,21 @@ suppress_paths:
 
 Also available as a CLI option: `--suppress-path` (merged with YAML config).
 
-!!! warning "Does not apply to project-scoped architecture findings"
-    `suppress_paths` (and `--suppress-path`) never suppress `architecture.layer-violation` or
-    `architecture.circular-dependency` violations, for the same reason as `suppress_namespaces`
-    below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
-    metrics must not double as an undocumented way to disable architecture enforcement.
-    Git reporting likewise retains these project-scoped findings in both strict
-    and non-strict mode; see [Git Integration](../usage/git-integration.md).
+!!! warning "Declared project scope remains exempt"
+    `suppress_paths` does not suppress `architecture.circular-dependency` cycles or
+    declared project-scoped diagnostics. Exemption is declared per channel;
+    the `architecture.` prefix alone grants none.
 
-    Which findings are exempt is a **declared property of the channel**, not something read off
-    the spelling of the rule name — a rule is not exempt because it happens to be called
-    `architecture.something`.
+    `architecture.layer-violation` belongs to the source declaration: global
+    `suppress_paths` matches the physical dependency site's file, while
+    `suppress_namespaces` matches the source namespace. Excluding only the target
+    does not suppress an outgoing violation. Git reports retain it only when
+    the source file changed, in both modes; see [Git Integration](../usage/git-integration.md).
 
-    What is left for suppressing such a finding depends on the channel.
-    `architecture.layer-violation` is real code debt, so `@qmx-ignore
-    architecture.layer-violation` and a baseline entry both still apply. The five layer-policy
-    diagnostics beside it — `architecture.coverage-gap`, `architecture.unreachable-layer`,
-    `architecture.potential-shadow`, `architecture.empty-template` and
-    `architecture.pending-layer-matched` — report a mistake in the
-    *configuration*, so neither applies to them; see
-    [Rules > Architecture](../rules/architecture.md). Their remaining answers are the `exclude:`
-    block inside the architecture layer configuration itself and, for coverage specifically,
-    `coverage-gap: ignore`.
-
-    As with `suppress_namespaces`, this exemption is **global-only** — the per-rule
-    `suppress_paths` described below still works for architecture rules.
+    Inline directives and baselines still apply to layer violations, but not
+    to the five configuration validators. Their separate controls are described
+    under [Architecture rules](../rules/architecture.md#layer-declaration).
+    Per-rule exclusions remain available independently of global channel scope.
 
 ### Suppress Namespaces
 
@@ -172,28 +162,21 @@ This is useful when entire namespace subtrees should never produce violations. F
 
 Also available as a CLI option: `--suppress-namespace` (merged with YAML config).
 
-!!! warning "Does not apply to project-scoped architecture findings"
-    `suppress_namespaces` (and `--suppress-namespace`) never suppress `architecture.layer-violation`
-    or `architecture.circular-dependency` violations. A layer-policy violation is not a metric —
-    silently dropping it would let a noisy-metric exclusion double as an undocumented way to
-    disable architecture enforcement. Which findings are exempt is a declared property of the
-    channel, not a consequence of how the rule name is spelled.
+!!! warning "Declared project scope remains exempt"
+    `suppress_namespaces` does not suppress `architecture.circular-dependency` cycles or
+    declared project-scoped diagnostics. Exemption is declared per channel;
+    the `architecture.` prefix alone grants none.
 
-    `@qmx-ignore architecture.layer-violation` and a baseline entry still apply to
-    `architecture.layer-violation`. They do **not** apply to the five layer-policy diagnostics —
-    `architecture.coverage-gap`, `architecture.unreachable-layer`,
-    `architecture.pending-layer-matched`, `architecture.potential-shadow`
-    and `architecture.empty-template` — which report a configuration mistake rather than code
-    debt; for those, use the `exclude:` block inside the architecture layer configuration
-    itself, or `coverage-gap: ignore` for the coverage diagnostic.
+    `architecture.layer-violation` belongs to the source declaration: global
+    `suppress_paths` matches the physical dependency site's file, while
+    `suppress_namespaces` matches the source namespace. Excluding only the target
+    does not suppress an outgoing violation. Git reports retain it only when
+    the source file changed, in both modes; see [Git Integration](../usage/git-integration.md).
 
-    This exemption is **global-only**. The per-rule `suppress_namespaces` / `suppress_paths`
-    described below (`rules: {architecture.layer-violation: {suppress_namespaces: [...]}}`) still
-    works for architecture rules, same as for any other rule — see
-    [Exclude namespaces from a rule](#rules) below and the architecture rule's
-    [Suppression section](../rules/architecture.md#suppression) for why that asymmetry is
-    intentional: naming the rule explicitly is an unambiguous, auditable choice, while a
-    project-wide `suppress_namespaces` entry is not.
+    Inline directives and baselines still apply to layer violations, but not
+    to the five configuration validators. Their separate controls are described
+    under [Architecture rules](../rules/architecture.md#layer-declaration).
+    Per-rule exclusions remain available independently of global channel scope.
 
 ### Rules
 
@@ -390,10 +373,9 @@ unchanged and stays producer-wide across class and namespace findings.
     `suppress_namespaces`, `suppress_namespace_channels`, and `suppress_paths` are extracted and applied at the framework level for
     **any** rule name, regardless of whether that rule's Options class declares such a field —
     this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
-    `architecture.circular-dependency`, which are exempt from the *global* `suppress_namespaces`
-    and `suppress_paths` above but not from this per-rule form: naming the rule explicitly makes
-    the suppression an unambiguous, auditable choice rather than an incidental side effect of a
-    project-wide exclusion. See the architecture rule's
+    `architecture.circular-dependency`. Global exclusions apply to source-owned layer
+    violations; cycles remain project-scoped. The per-rule form explicitly names the producer
+    whose findings should be suppressed. See the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for the reasoning.
 
 **Suppress paths for a rule:**

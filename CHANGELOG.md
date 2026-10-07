@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `architecture.layer-violation` is now file-scoped: global `suppress_paths`
+  follows its physical source dependency site, and `suppress_namespaces` follows
+  the source declaration. Git reports keep it only when its source file changed
+  in both modes. Excluding or changing only the target does not suppress or retain
+  an outgoing violation. Cycles and declaration diagnostics remain project-scoped.
+  Global exclusions also keep those source violations out of baseline capture;
+  Git report narrowing still leaves the measured baseline set unchanged.
+
 - Layer findings now belong to the exact source declaration instead of an owned
   target. Target occurrences, duplicates and order remain evidence. Move intended
   outgoing-edge `@qmx-ignore architecture.layer-violation` exceptions to the
@@ -142,8 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Git reports keep file findings only on changed files, while
   non-strict mode also keeps relevant namespace and project aggregates.
-  Declared project-scoped findings, including architecture cycles and layer
-  violations, pass the Git filter in both modes. An empty range endpoint means
+  Declared project-scoped findings, including architecture cycles and declaration
+  diagnostics, pass the Git filter in both modes. An empty range endpoint means
   HEAD; a changed file becoming a symlink makes the run incomplete (exit 4),
   and Git 2.28 or newer is required. Update report consumers and Git installs.
 

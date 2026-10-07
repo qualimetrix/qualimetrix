@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\FindingChannel;
  * by `suppress_paths` / `suppress_namespaces`.
  *
  * A project-scoped channel reports on the shape of the project itself: a
- * dependency cycle, a layer boundary, a gap in the declared layers. Those
+ * dependency cycle or a gap in the declared layers. Those
  * findings do have a location to print, but the location is an example, not
  * the subject — so "I don't want metrics for this directory" is not an answer
  * to them, and letting it silently be one would turn a noisy-metric exclusion

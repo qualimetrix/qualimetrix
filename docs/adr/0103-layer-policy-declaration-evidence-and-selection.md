@@ -104,6 +104,20 @@ logger, outbox or widened Finding execution result would move publication to the
 wrong owner. Full directive checks retain initial execution and two reproducibility
 executions; narrow counterfactual passes add no declaration execution.
 
+### Source projection scope
+
+Layer violations are file-scoped. Global path exclusions compare the physical
+source dependency site; namespace exclusions compare the source declaration.
+Git publication compares the source file in both strict and non-strict modes.
+Target identity and cardinality remain evidence, so an excluded or changed target
+alone does not control publication of the outgoing source finding. Cycles and
+declaration diagnostics retain their declared project scope.
+
+Projection scope does not make layer-policy evidence local. The channel still
+reads run evidence, so baseline comparability retains whole-run coverage.
+Global exclusions change the measured set before baseline capture; Git narrows
+only publication after that set has been taken.
+
 ### Consumer migration
 
 Upgrade baselines using the existing add-only `--accept-new` and exact cleanup

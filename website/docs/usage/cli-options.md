@@ -132,9 +132,9 @@ bin/qmx check src/ --suppress-path='subtree:src/Entity' --suppress-path='regex:s
 
 Merged with `suppress_paths` from `qmx.yaml` — both sources are combined.
 
-!!! warning "Does not apply to `architecture.*` rules"
-    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
+!!! warning "Declared project-scoped channels remain visible"
+    `architecture.circular-dependency` cycles and project-scoped diagnostics remain exempt.
+    The option applies to the source of `architecture.layer-violation` — see [Suppress Paths](../getting-started/configuration.md#suppress-paths)
     for why and for the alternatives.
 
 ### `--suppress-namespace`
@@ -147,9 +147,9 @@ bin/qmx check src/ --suppress-namespace='subtree:App\Entity' --suppress-namespac
 
 Merged with `suppress_namespaces` from `qmx.yaml` — both sources are combined.
 
-!!! warning "Does not apply to `architecture.*` rules"
-    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
-    suppressed by this option — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
+!!! warning "Declared project-scoped channels remain visible"
+    `architecture.circular-dependency` cycles and project-scoped diagnostics remain exempt.
+    The option applies to the source of `architecture.layer-violation` — see [Suppress Namespaces](../getting-started/configuration.md#suppress-namespaces)
     for why and for the alternatives.
 
 ---
@@ -639,7 +639,7 @@ bin/qmx check src/ --no-suppression-annotations
 
 ## Git scope options
 
-Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle and layer-violation findings. See [Git Integration](git-integration.md) for the full guide.
+Publish findings relative to changed files while retaining declared project-scoped diagnostics, including architecture cycle findings. Layer violations follow the source file in both modes. See [Git Integration](git-integration.md) for the full guide.
 
 ### `--report`
 
@@ -652,7 +652,7 @@ bin/qmx check src/ --report=git:origin/develop..HEAD
 
 ### `--report-strict`
 
-Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles and layer violations, remain visible even in strict mode:
+Limit file-scoped code findings to changed files without namespace/project widening. Declared project-scoped findings, including architecture cycles, remain visible even in strict mode. Layer violations follow the source file:
 
 ```bash
 bin/qmx check src/ --report=git:main..HEAD --report-strict
