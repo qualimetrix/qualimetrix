@@ -23,25 +23,17 @@ use Throwable;
 
 /** Runs the controls and decides whether every one of them behaved as declared. */
 /**
- * PASS means less than it did before a step declared a delta, and that has to be
- * readable rather than inferred.
+ * A red control may produce `delta-mismatch`, `delta-stale` or `delta-overreach`
+ * on an ordinary structural delta or an exact-surface intention. Outcome treats
+ * these narrow classes as declaration noise. `surface-mismatch` and
+ * `field-move-stale` are noise on an ordinary structural delta only when the
+ * control replaced the declaration index. An exact-surface `surface-mismatch`
+ * remains a normal failure and needs an explicit, bounded expectation.
  *
- * Before, every control's every failure was either required or explicitly
- * tolerated at a named surface. Now a red control additionally tolerates
- * `delta-mismatch`, `delta-stale` and `delta-overreach` on the surfaces the step
- * under test declares — and `surface-mismatch` there too, but only for a control
- * that replaced the declaration index itself. Those surfaces are not compared
- * for equality in the first place, so a control can no longer use them as
- * evidence either way. What PASS still asserts, unchanged: the positive control
- * is green with the step's declarations intact and byte-compared, every red
- * control produced its required class at its required surface, and no red
- * control produced anything else anywhere else.
- *
- * And one thing it asserts that it did not before: every toleration a control
- * declares was matched by something. A toleration nothing matches states a blast
- * radius nobody measured, and it silently widens what the control will accept the
- * day the product starts producing it — the same defect `map-stale` and
- * `normalization-stale` fail for. See {@see Outcome::idleTolerations}.
+ * PASS requires the positive control to be green with the declarations
+ * intact and byte-compared, every red control to produce its required failure,
+ * and no undeclared failure anywhere. Every declared toleration must match a
+ * failure produced by the run. See {@see Outcome::idleTolerations}.
  */
 final class Harness
 {
@@ -448,11 +440,12 @@ final class Harness
             throw new RuntimeException('No control selected.');
         }
 
-        $declaredSurfaces = [...$this->declaredSurfaces(), ...$this->declaredExactSurfaces()];
+        $declaredSurfaces = $this->declaredSurfaces();
 
-        // Before the first clone: an expectation pinned to a surface this
-        // repository declares a delta for can never be met, and a twenty-minute
-        // run is a poor way to hear it. See Control::assertNotPinnedToDeclaredDelta().
+        // Before the first clone: an expectation pinned to an ordinary structural
+        // delta surface cannot be met by an equality failure. Exact intentions
+        // may take the equality route after an invalid trial, so they stay eligible.
+        // See Control::assertNotPinnedToDeclaredDelta().
         foreach ($selected as $control) {
             $control->assertNotPinnedToDeclaredDelta($declaredSurfaces, self::replacesDeclaration($control));
         }

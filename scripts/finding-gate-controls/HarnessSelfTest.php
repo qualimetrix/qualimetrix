@@ -84,6 +84,46 @@ final class HarnessSelfTest
             ]], \JSON_THROW_ON_ERROR));
             $outcome = Outcome::of($control, $run, $report, declaredExactSurfaces: [$exact]);
             $this->same(false, $outcome->asDeclared, 'an exact-surface declaration cannot absorb an unrelated surface mismatch');
+
+            mkdir($directory . '/finding-gate/declared-delta', 0o700, true);
+            mkdir($directory . '/finding-gate/declared-exact-surfaces', 0o700, true);
+            Shell::replace($directory . '/finding-gate/declared-delta/ordinary.diff', "ordinary diff\n");
+            Shell::replace($directory . '/finding-gate/declared-exact-surfaces/exact.diff', "exact diff\n");
+            Shell::replace($directory . '/finding-gate/declared-delta.tsv', Tsv::render(
+                \QmxFindingGate\DeclaredDelta::COLUMNS,
+                [['case:ordinary|rules', 'declared-delta/ordinary.diff', 'An ordinary fixture.']],
+            ));
+            Shell::replace($directory . '/finding-gate/declared-exact-surfaces.tsv', Tsv::render(
+                \QmxFindingGate\DeclaredExactSurfaces::COLUMNS,
+                [['alpha', 'baseline-file', 'declared-exact-surfaces/exact.diff', 'An exact fixture.']],
+            ));
+
+            $harness = (new ReflectionClass(Harness::class))->newInstanceWithoutConstructor();
+            (new ReflectionProperty(Harness::class, 'repository'))->setValue($harness, $directory);
+            $runHarness = new ReflectionMethod(Harness::class, 'run');
+            foreach (['case:alpha|baseline-file' => false, 'case:ordinary|rules' => true] as $surface => $ordinary) {
+                $pinned = Control::red(
+                    'preflight-probe',
+                    'a surface expectation before cloning',
+                    Mutation::none(),
+                    [new Expectation(\QmxFindingGate\FailureClass::RECORD_UNDECLARED, 'case:alpha|format:json', exactScope: true)],
+                    [new Expectation(\QmxFindingGate\FailureClass::SURFACE_MISMATCH, $surface, exactScope: true)],
+                );
+                $failure = '';
+                try {
+                    // The temporary repository has no Git metadata, so an admitted control stops before cloning.
+                    $runHarness->invoke($harness, [$pinned], [], 1);
+                } catch (RuntimeException $error) {
+                    $failure = $error->getMessage();
+                }
+                $this->same(
+                    true,
+                    str_starts_with($failure, $ordinary ? 'Control "preflight-probe" expects' : 'git status --porcelain failed'),
+                    $ordinary
+                        ? 'an ordinary structural delta still blocks an equality expectation before cloning'
+                        : 'an exact intention admits an equality expectation past preflight',
+                );
+            }
         } finally {
             Shell::removeRecursively($directory);
         }
