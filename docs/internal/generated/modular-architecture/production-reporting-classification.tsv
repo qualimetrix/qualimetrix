@@ -8,6 +8,7 @@ src/Reporting/CoverageFailure.php	Qualimetrix\Reporting\CoverageFailure	"output 
 src/Reporting/DrillDown/DrillDownBinding.php	Qualimetrix\Reporting\DrillDown\DrillDownBinding	"output projection"	Reporting
 src/Reporting/DrillDown/FindingFilter.php	Qualimetrix\Reporting\DrillDown\FindingFilter	"output projection"	Reporting
 src/Reporting/DrillDown/OutOfScopeFindings.php	Qualimetrix\Reporting\DrillDown\OutOfScopeFindings	"output projection"	Reporting
+src/Reporting/DrillDown/OutOfScopeIdentity.php	Qualimetrix\Reporting\DrillDown\OutOfScopeIdentity	"output projection"	Reporting
 src/Reporting/FindingProjection/BaselineFindingProjection.php	Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection	"output projection"	Reporting
 src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php	Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver	"output projection"	Reporting
 src/Reporting/FindingProjection/ConfiguredExclusionProjection.php	Qualimetrix\Reporting\FindingProjection\ConfiguredExclusionProjection	"output projection"	Reporting
@@ -34,6 +35,8 @@ src/Reporting/Formatter/CoverageNarrator.php	Qualimetrix\Reporting\Formatter\Cov
 src/Reporting/Formatter/Detail/DebtBreakdownRenderer.php	Qualimetrix\Reporting\Formatter\Detail\DebtBreakdownRenderer	"output projection"	Reporting
 src/Reporting/Formatter/Detail/DetailedFindingRenderer.php	Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer	"output projection"	Reporting
 src/Reporting/Formatter/Detail/FindingDetailRenderer.php	Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer	"output projection"	Reporting
+src/Reporting/Formatter/FindingPlace.php	Qualimetrix\Reporting\Formatter\FindingPlace	"output projection"	Reporting
+src/Reporting/Formatter/FindingRecord.php	Qualimetrix\Reporting\Formatter\FindingRecord	"output projection"	Reporting
 src/Reporting/Formatter/FormatOptionKeysInterface.php	Qualimetrix\Reporting\Formatter\FormatOptionKeysInterface	"output projection"	Reporting
 src/Reporting/Formatter/FormatOptionValue.php	Qualimetrix\Reporting\Formatter\FormatOptionValue	"output projection"	Reporting
 src/Reporting/Formatter/FormattedReport.php	Qualimetrix\Reporting\Formatter\FormattedReport	"output projection"	Reporting

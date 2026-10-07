@@ -3165,6 +3165,7 @@ Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Analysis\Evi
 Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Reporting\DrillDown\OutOfScopeFindings	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\DrillDown\OutOfScopeIdentity	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection	Reporting	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract
 Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection	Reporting	Qualimetrix\Analysis\Policy\Baseline\BaselineLoader	Analysis.Policy.Baseline	contract
 Qualimetrix\Reporting\FindingProjection\BaselineFindingProjection	Reporting	Qualimetrix\Analysis\Policy\Baseline\Ceiling\BaselineCeilingStage	Analysis.Policy.Baseline	contract
@@ -3224,8 +3225,12 @@ Qualimetrix\Reporting\Formatter\Detail\DebtBreakdownRenderer	Reporting	Qualimetr
 Qualimetrix\Reporting\Formatter\Detail\DetailedFindingRenderer	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	contract
 Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\FindingPlace	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Reporting\Formatter\FindingRecord	Reporting	Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	contract
+Qualimetrix\Reporting\Formatter\FindingRecord	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Health\HealthCoverageNarrator	Reporting	Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthCoverage	Analysis.Evidence.ComputedMetrics.Health	contract
@@ -3270,7 +3275,11 @@ Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\
 Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	Qualimetrix\Core\Version	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
+Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	contract
+Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	contract
+Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	contract
 Qualimetrix\Reporting\Formatter\PublishedUtf8	Reporting	Qualimetrix\Core\SourceText\SourceBytes	Core.Neutral	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	contract
 Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter	Reporting	Qualimetrix\Analysis\Finding\Contract\Location	Analysis.Finding	contract

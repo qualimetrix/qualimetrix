@@ -107,7 +107,7 @@ Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope	Analysis
 Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait	Analysis.Evidence.Measurement	12	5
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator	Analysis.Evidence.Prioritization	7	1
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary	Analysis.Evidence.Prioritization	3	1
-Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	3	2
+Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	4	2
 Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator	Analysis.Evidence.Prioritization	1	1
 Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue	Analysis.Evidence.Prioritization	1	1
 Qualimetrix\Analysis\Finding\Contract\AcceptedLevel	Analysis.Finding	4	1
@@ -133,7 +133,7 @@ Qualimetrix\Analysis\Finding\Contract\Filter\FindingFilterStageResult	Analysis.F
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	2	1
-Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	77	17
+Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	79	17
 Qualimetrix\Analysis\Finding\Contract\FindingChannel	Analysis.Finding	21	7
 Qualimetrix\Analysis\Finding\Contract\JudgedMetrics	Analysis.Finding	20	7
 Qualimetrix\Analysis\Finding\Contract\LevelActivity	Analysis.Finding	6	2
@@ -362,10 +362,10 @@ Qualimetrix\Core\Symbol\MixedSpelling	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\PhpBuiltinClassHierarchy	Core.Symbol	3	1
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	9	4
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	27	9
-Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	139	22
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	142	22
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	6	4
-Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	88	20
-Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	35	12
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	90	20
+Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	36	12
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	4	2
 Qualimetrix\Core\Version	Core.Neutral	7	2
 Qualimetrix\Infrastructure\Ast\CachedFileParser	Infrastructure.Ast	1	1

@@ -783,6 +783,7 @@ Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary	Analysis.Evidence.
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary	Analysis.Evidence.Prioritization	Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer	Reporting	src/Reporting/Formatter/Summary/FindingSummaryRenderer.php	ast-name
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary	Analysis.Evidence.Prioritization	Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	Reporting	src/Reporting/Formatter/Summary/TopIssuesRenderer.php	ast-name
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass	Infrastructure.DependencyInjection	src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php	ast-name
+Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	Qualimetrix\Reporting\Formatter\FindingRecord	Reporting	src/Reporting/Formatter/FindingRecord.php	ast-name
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	Qualimetrix\Reporting\Formatter\Json\JsonFindingSection	Reporting	src/Reporting/Formatter/Json/JsonFindingSection.php	ast-name
 Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry	Analysis.Evidence.Prioritization	Qualimetrix\Reporting\Formatter\Summary\FindingSummaryRenderer	Reporting	src/Reporting/Formatter/Summary/FindingSummaryRenderer.php	ast-name
 Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator	Analysis.Evidence.Prioritization	Qualimetrix\Reporting\Health\SummaryEnricher	Reporting	src/Reporting/Health/SummaryEnricher.php	ast-name
@@ -1038,6 +1039,7 @@ Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Analy
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Analysis\Run\ExcludeBinding\UnjudgedExcludeFinding	Analysis.Run	src/Analysis/Run/ExcludeBinding/UnjudgedExcludeFinding.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Analysis\Run\ExcludeBinding\UnmatchedExcludeFinding	Analysis.Run	src/Analysis/Run/ExcludeBinding/UnmatchedExcludeFinding.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	src/Reporting/DrillDown/FindingFilter.php	ast-name
+Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\DrillDown\OutOfScopeIdentity	Reporting	src/Reporting/DrillDown/OutOfScopeIdentity.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	src/Reporting/FindingProjection/FindingProjector.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\FindingProjection\GitScopeFindingFilter	Reporting	src/Reporting/FindingProjection/GitScopeFindingFilter.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\FindingProjection\SuppressedFinding	Reporting	src/Reporting/FindingProjection/SuppressedFinding.php	ast-name
@@ -1045,6 +1047,7 @@ Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Repor
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\AcceptedLevelNarrator	Reporting	src/Reporting/Formatter/AcceptedLevelNarrator.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\CheckstyleFormatter	Reporting	src/Reporting/Formatter/CheckstyleFormatter.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\Detail\FindingDetailRenderer	Reporting	src/Reporting/Formatter/Detail/FindingDetailRenderer.php	ast-name
+Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\FindingRecord	Reporting	src/Reporting/Formatter/FindingRecord.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	src/Reporting/Formatter/GitLabCodeQualityFormatter.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\GithubActionsFormatter	Reporting	src/Reporting/Formatter/GithubActionsFormatter.php	ast-name
 Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	Reporting	src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	ast-name
@@ -2960,9 +2963,12 @@ Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Infrastructure\Conso
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Infrastructure\Rule\ChannelUniverse	Infrastructure.Rule	src/Infrastructure/Rule/ChannelUniverse.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\DrillDown\DrillDownBinding	Reporting	src/Reporting/DrillDown/DrillDownBinding.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\FindingProjection\GitScopeFindingFilter	Reporting	src/Reporting/FindingProjection/GitScopeFindingFilter.php	ast-name
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\Formatter\FindingPlace	Reporting	src/Reporting/Formatter/FindingPlace.php	ast-name
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter	Reporting	src/Reporting/Formatter/GitLabCodeQualityFormatter.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	Reporting	src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	src/Reporting/Formatter/MetricsJsonFormatter.php	ast-name
+Qualimetrix\Core\Symbol\SymbolLevel	Core.Symbol	Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	src/Reporting/Formatter/PublishedFinding.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceMetricContributions	Analysis.Evidence.Measurement	src/Analysis/Evidence/Measurement/Aggregation/NamespaceMetricContributions.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository	Analysis.Evidence.Measurement	src/Analysis/Evidence/Measurement/Repository/InMemoryMetricRepository.php	ast-name
 Qualimetrix\Core\Symbol\SymbolLevelProjection	Core.Symbol	Qualimetrix\Analysis\Finding\Contract\Finding	Analysis.Finding	src/Analysis/Finding/Contract/Finding.php	ast-name
@@ -3052,6 +3058,8 @@ Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\DrillDown\D
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	Reporting	src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	ast-name
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder	Reporting	src/Reporting/Formatter/Html/HtmlTreeBuilder.php	ast-name
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\Formatter\Json\JsonHealthSection	Reporting	src/Reporting/Formatter/Json/JsonHealthSection.php	ast-name
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\Formatter\Ordering\FindingSorter	Reporting	src/Reporting/Formatter/Ordering/FindingSorter.php	ast-name
+Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	src/Reporting/Formatter/PublishedFinding.php	ast-name
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer	Reporting	src/Reporting/Formatter/Summary/HealthBarRenderer.php	ast-name
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\GraphProjection\DotExporter	Reporting.GraphProjection	src/Reporting/GraphProjection/DotExporter.php	ast-name
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	Qualimetrix\Reporting\GraphProjection\JsonGraphExporter	Reporting.GraphProjection	src/Reporting/GraphProjection/JsonGraphExporter.php	ast-name
@@ -3090,6 +3098,7 @@ Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Analysis\Policy\Archi
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Reporting\DrillDown\FindingFilter	Reporting	src/Reporting/DrillDown/FindingFilter.php	ast-name
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Reporting\Formatter\Html\HtmlFindingPartitioner	Reporting	src/Reporting/Formatter/Html/HtmlFindingPartitioner.php	ast-name
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Reporting\Formatter\MetricsJsonFormatter	Reporting	src/Reporting/Formatter/MetricsJsonFormatter.php	ast-name
+Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Reporting\Formatter\PublishedFinding	Reporting	src/Reporting/Formatter/PublishedFinding.php	ast-name
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Reporting\Formatter\Summary\TopIssuesRenderer	Reporting	src/Reporting/Formatter/Summary/TopIssuesRenderer.php	ast-name
 Qualimetrix\Core\Symbol\SymbolType	Core.Symbol	Qualimetrix\Reporting\Formatter\TextFormatter	Reporting	src/Reporting/Formatter/TextFormatter.php	ast-name
 Qualimetrix\Core\Time\ClockInterface	Core.Neutral	Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner	Analysis.Policy.Baseline	src/Analysis/Policy/Baseline/BaselineCleaner.php	ast-name
