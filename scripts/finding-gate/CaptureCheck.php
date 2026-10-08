@@ -107,9 +107,12 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The process outcome cannot establish successful population for this command.');
                 }
-                if (!ctype_digit($rawExit) || (int) $rawExit > 255 || $rawExit === '70') {
+                if ($rawExit === '70') {
                     $valid = false;
-                    $this->publicationFailure($side . ' / ' . $key, 'An invalid process exit or unknown replay invocation cannot establish successful population.');
+                    $this->publicationFailure($side . ' / ' . $key, 'An unknown replay invocation cannot establish successful population.');
+                } elseif ($valid && (!ctype_digit($rawExit) || (int) $rawExit > 255)) {
+                    $valid = false;
+                    $this->publicationFailure($side . ' / ' . $key, 'An invalid process exit cannot establish successful population.');
                 }
                 $this->run->report->sourceEvidence($side, $key, 'capture', $valid);
                 foreach ($this->plan->artifactsOf($key) as $artifact) {
