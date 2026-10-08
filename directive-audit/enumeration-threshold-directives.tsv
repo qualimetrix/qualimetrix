@@ -57,7 +57,6 @@ src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	23	code-sm
 src/Analysis/Finding/Contract/ProjectScope/ExcludeSelectorVerdict.php	43	code-smell.long-parameter-list	warning=9 error=12 -- Independent measured facts
 src/Analysis/Finding/Contract/Rule/RuleOptionShape.php	26	code-smell.long-parameter-list	warning=9 error=9 -- Named factories compose
 src/Infrastructure/Console/RuntimeConfigurator.php	27	code-smell.long-parameter-list	warning=9 error=10 -- Same constructor, same reason: the list is the composition, and a ninth parameter reports again.
-src/Infrastructure/Console/Application.php	42	cohesion.lcom	6 -- this is the composition root: wiring
 src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php	52	complexity.ccn	warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
 src/Core/Symbol/MetricSubjectCodec.php	68	complexity.ccn	warning=13 error=13 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
 src/Core/Symbol/MetricSubjectCodec.php	69	complexity.npath	warning=289 error=289 — Canonical finite wire grammar keeps four closed subject shapes and exact validation together.
@@ -71,7 +70,6 @@ src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php	18	coupling.cbo
 src/Analysis/Evidence/Measurement/Contract/AggregationStrategy.php	10	coupling.cbo	38 -- Aggregation definitions and consumers intentionally share this provider-owned enum; current raw CBO 37 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php	16	coupling.cbo	23 -- Every producer of declaration identity implements this one-method promise; its fan-in is the point of it, and raw CBO 22 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Contract/MetricDefinition.php	21	coupling.cbo	33 -- Collector and aggregation consumers intentionally share this provider-owned definition; current raw CBO 32 gets one-edge headroom.
-src/Analysis/Evidence/Measurement/Contract/MetricRepositoryInterface.php	17	coupling.cbo	48 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 47. `Reporting\DrillDown\DrillDownBinding` reads this repository to build the namespace universe a `--namespace` value is judged against. The threshold is inclusive, so 48 keeps today's 47 silent and reports the next dependent.
 src/Analysis/Evidence/Measurement/Contract/ResettableVisitorInterface.php	10	coupling.cbo	23 -- Measurement visitors intentionally share this lifecycle promise; current raw CBO 22 gets one-edge headroom.
 src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php	25	coupling.cbo	22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
 src/Analysis/Policy/Baseline/BaselineUpdater.php	18	coupling.cbo	21 -- BaselineUpdateInvocation adds a third reader; the update lifecycle retains Ce 17
