@@ -193,7 +193,7 @@
         ],
         "gate": [
             "Composer\\Config::disableProcessTimeout",
-            "php scripts/finding-gate.php"
+            "php -d memory_limit=1G scripts/finding-gate.php"
         ],
         "gate:phar": [
             "Composer\\Config::disableProcessTimeout",
