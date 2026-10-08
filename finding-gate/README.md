@@ -789,6 +789,20 @@ native exact-site credit.
 An unexplained source occurrence or stale source exception still fails.
 Controls add corpus evidence; they do not replace observed self-test witnesses.
 
+Control expectations describe their mutation's measured failure classes and
+scopes. A whole invocation whose exact declaration changes produces a
+`delta-mismatch` at the invocation scope, including when only its stderr changed.
+It is not a record or projection witness. The report-value control holds mapped
+JSON record pairs to their comparison and requires that same mutation to remain
+visible on the UTF-8 whole invocation. It no longer promises a GREEN result for
+the entire corpus or the declaration-count guarantees of a GREEN control.
+
+The tuple-member controls remove unavailable ranked-field intentions together
+with their derived rows inside their private trees. An invalid tuple cannot
+provide those measurements. The ordinary gate retains its required-publication
+guard, and a control crash without a diagnostic report does not satisfy a
+semantic failure expectation.
+
 ### Source scanner limits
 
 The refusal-site scanner is a syntactic inventory, not a complete PHP call
