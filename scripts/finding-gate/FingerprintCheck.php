@@ -53,6 +53,7 @@ final class FingerprintCheck
      */
     public function checkFingerprints(string $side, CaseDefinition $case, array $findings, array $artifacts): void
     {
+        $refused = CapturePlan::partialViewRefusal($case, 'format:gitlab', $artifacts);
         $expected = Fingerprints::expected($findings);
         $scope = 'case:' . $case->id;
 
@@ -64,7 +65,7 @@ final class FingerprintCheck
             $artifacts,
             static fn(string $raw): array => Fingerprints::publishedInSarif($raw),
         );
-        $gitlab = $this->decodeFingerprintSurface(
+        $gitlab = $refused ? null : $this->decodeFingerprintSurface(
             $side,
             $case,
             $scope,
@@ -90,6 +91,9 @@ final class FingerprintCheck
         ];
 
         foreach ($comparisons as $label => [$recomputed, $published]) {
+            if ($label === 'gitlab fingerprint' && $refused) {
+                continue;
+            }
             $surface = $label === 'sarif partialFingerprints' ? 'format:sarif' : 'format:gitlab';
             $key = Surfaces::key($scope, $surface);
             // A surface that failed to decode already reported RUN_FAILED

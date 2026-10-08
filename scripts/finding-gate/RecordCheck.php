@@ -134,7 +134,7 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $findings = $this->physical[$case->id]['format:json'][$side];
         foreach (['format:html', 'format:gitlab', 'format:sarif'] as $surface) {
-            if ($this->withdrawn($side, $case, $surface)) {
+            if ($this->withdrawn($side, $case, $surface) || $this->refusal($side, $case, $surface, $artifacts)) {
                 continue;
             }
             $key = $scope . '|' . $surface;
@@ -184,7 +184,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         $key = $scope . '|format:checkstyle';
-        if (isset($artifacts[$key]) && !$this->withdrawn($side, $case, 'format:checkstyle')) {
+        if (isset($artifacts[$key]) && !$this->withdrawn($side, $case, 'format:checkstyle') && !$this->refusal($side, $case, 'format:checkstyle', $artifacts)) {
             try {
                 $actual = ReportRecords::checkstyle($this->mapped($side, 'format:checkstyle', $artifacts[$key]));
                 $expected = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)), $findings);
@@ -257,6 +257,14 @@ final class RecordCheck implements CaseCheck, RunCheck
                 $this->publicationProblem($side, $key, $error);
             }
         }
+    }
+
+    /** @param array<string,string> $artifacts */
+    private function refusal(string $side, CaseDefinition $case, string $surface, array $artifacts): bool
+    {
+        $valid = CapturePlan::partialViewRefusal($case, $surface, $artifacts);
+        $this->run->report->sourceEvidence($side, 'case:' . $case->id . '|' . $surface, 'refusal', $valid);
+        return $valid;
     }
 
     private function withdrawn(string $side, CaseDefinition $case, string $surface): bool

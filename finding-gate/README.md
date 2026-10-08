@@ -359,6 +359,12 @@ exact case names. A withdrawn format is captured only in those cases. Each
 selected reference must analyze: a refusal cannot witness a report's removal.
 Other formats and the excluded cases retain their ordinary comparisons.
 
+GitLab and Checkstyle refuse namespace and class selections on both trees.
+The capture validates their exit 3 and native partial-view refusal reason before
+checking finding projections; the complete stdout, stderr and exit remain
+compared. Another error, malformed envelope or ordinary invocation receives no
+refusal exemption.
+
 Structural maps translate named paths in configuration documents. Their
 closed document and shape vocabularies live in `DeclaredStructuralMaps`;
 the translated input is validated before reference execution.

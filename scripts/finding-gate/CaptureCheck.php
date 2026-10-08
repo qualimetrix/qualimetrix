@@ -72,13 +72,14 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                         $this->publicationFailure($side . ' / ' . $artifact, 'A planned invocation omitted this publication.');
                     }
                 }
+                $refused = $case !== null && CapturePlan::partialViewRefusal($case, $descriptor['surface'], $artifacts);
                 $analyzing = $case === null || CaseOutcome::of($case, $side) === CaseOutcome::ANALYSIS;
                 $file = $descriptor['outputFileKind'];
                 if ($analyzing && $file !== null && ($artifacts[Surfaces::key($descriptor['scope'], $file)] ?? '') === '') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The planned file publication is missing or empty.');
                 }
-                if ($analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
+                if ($analyzing && !$refused && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && $key !== 'tree|graph:export' && $descriptor['surface'] !== 'check:output' && ($artifacts[$key] ?? '') === '') {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The invocation has no populated publication.');
                 }
@@ -96,7 +97,7 @@ final class CaptureCheck implements SurfaceStage, RunCheck, Derivation
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The neutral empty-directory graph must end in its explicit exit-1 outcome.');
                 }
-                if ($analyzing && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($populationExit, $allowed, true)) {
+                if ($analyzing && !$refused && !($change === DeclaredSurfaces::WITHDRAWN && $side === 'candidate') && !\in_array($populationExit, $allowed, true)) {
                     $valid = false;
                     $this->publicationFailure($side . ' / ' . $key, 'The process outcome cannot establish successful population for this command.');
                 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QmxFindingGate;
 
 use FilesystemIterator;
+use JsonException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -161,6 +162,39 @@ final class CapturePlan
         }
 
         return new self($descriptors, $artifacts, $changes);
+    }
+
+    /** @param array<string,string> $artifacts */
+    public static function partialViewRefusal(CaseDefinition $case, string $surface, array $artifacts): bool
+    {
+        if (!\in_array($surface, ['format:gitlab', 'format:checkstyle'], true)) {
+            return false;
+        }
+        $selector = null;
+        foreach ($case->args as $argument) {
+            foreach (['--namespace', '--class'] as $option) {
+                if (str_starts_with($argument, $option . '=') && $argument !== $option . '=') {
+                    $selector = $option;
+                }
+            }
+        }
+        $key = 'case:' . $case->id . '|';
+        if ($selector === null || ($artifacts[$key . 'exit:' . $surface] ?? '') !== '3'
+            || !isset($artifacts[$key . $surface], $artifacts[$key . 'stderr:' . $surface])) {
+            return false;
+        }
+        $message = \sprintf('Configuration error: Format "%s" has no place to say the report is a partial view: its consumer reads every entry as a finding. Drop %s, or use a format that says what the selection left out, such as json, sarif or github.', substr($surface, 7), $selector);
+        $stdout = $artifacts[$key . $surface];
+        $stderr = $artifacts[$key . 'stderr:' . $surface];
+        if ($surface === 'format:checkstyle') {
+            return $stdout === '' && str_starts_with($stderr, $message . "\nSource: option " . $selector . ".\nDocs: ");
+        }
+        try {
+            $document = json_decode($stdout, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return false;
+        }
+        return $stderr === '' && $document === ['error' => $message, 'exit_code' => 3, 'position' => null, 'source' => [['kind' => 'cli', 'name' => $selector, 'imported_by' => null]]];
     }
 
     /** @return list<Descriptor> */

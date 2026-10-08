@@ -86,6 +86,9 @@ final class RecordStage implements SurfaceStage
         };
         $definition = $this->definition($case);
         foreach (['candidate', 'reference'] as $side) {
+            if ($this->run->report->sourceValid($side, $pair->key, 'refusal')) {
+                continue;
+            }
             $outcome = CaseOutcome::of($definition, $side);
             if (!CaseOutcome::applies(CaseOutcome::CHECK_RECORDS, $outcome)
                 || ($pair->surface === 'baseline-file' && !CaseOutcome::applies(CaseOutcome::CHECK_BASELINE_FILE, $outcome))) {

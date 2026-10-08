@@ -29,7 +29,8 @@ final class ExactSurfaceAuthority
     {
         $surface = Surfaces::surfaceClass($key);
         $case = str_starts_with($key, 'case:') ? substr($key, 5, (int) strpos($key, '|') - 5) : null;
-        $bearing = $case !== null && ReportViews::recordBearingSurface($surface);
+        $bearing = $case !== null && ReportViews::recordBearingSurface($surface)
+            && !($run->report->sourceValid('candidate', $key, 'refusal') && $run->report->sourceValid('reference', $key, 'refusal'));
         $refusalSides = [];
         if ($surface === 'baseline-file') {
             foreach (['candidate', 'reference'] as $side) {

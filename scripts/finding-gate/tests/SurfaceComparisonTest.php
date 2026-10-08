@@ -38,6 +38,31 @@ final class SurfaceComparisonTest extends TestCase
 {
     private string $root;
 
+    #[Test]
+    public function itComparesUnchangedPartialViewRefusalsWithoutInventingFindingPublications(): void
+    {
+        $tree = SyntheticTree::clean();
+        foreach (['gitlab', 'checkstyle'] as $format) {
+            $message = 'Configuration error: Format "' . $format . '" has no place to say the report is a partial view: its consumer reads every entry as a finding. Drop --namespace, or use a format that says what the selection left out, such as json, sarif or github.';
+            $tree['answers']['case:alpha|format:' . $format] = [
+                'stdout' => $format === 'gitlab' ? json_encode(['error' => $message, 'exit_code' => 3, 'position' => null, 'source' => [['kind' => 'cli', 'name' => '--namespace', 'imported_by' => null]]], \JSON_THROW_ON_ERROR) : '',
+                'stderr' => $format === 'checkstyle' ? $message . "\nSource: option --namespace.\nDocs: https://qualimetrix.dev · AI agents: https://qualimetrix.dev/llms.txt\n" : '',
+                'exit' => 3,
+            ];
+        }
+        $prepare = static function (string $root): void {
+            $path = $root . '/finding-gate/cases/alpha/case.json';
+            $case = json_decode(Fs::read($path), true, 512, \JSON_THROW_ON_ERROR);
+            $case['args'] = ['--namespace=subtree:App'];
+            Fs::write($path, json_encode($case, \JSON_THROW_ON_ERROR));
+        };
+        self::assertSame([], RecordedComparison::report($tree, $prepare)->raised());
+        $tree['candidateAnswers']['case:alpha|format:gitlab'] = array_replace($tree['answers']['case:alpha|format:gitlab'], ['stdout' => '{"error":"Different failure","exit_code":3,"position":null,"source":null}']);
+        self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, RecordedComparison::report($tree, $prepare)->failureClasses());
+        $tree['candidateAnswers'] = [];
+        self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, RecordedComparison::report($tree)->failureClasses());
+    }
+
     public static function setUpBeforeClass(): void
     {
         require_once \dirname(__DIR__) . '/classes.php';
