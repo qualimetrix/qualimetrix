@@ -65,6 +65,12 @@ final class SelfTestNormalization extends SelfTestGroup
         $this->same("Analysed in " . Normalization::REDACTED . "\nAnalysed nothing else\n", $summary, 'a line-regex rule redacts only the varying part');
 
         $tracked = Normalization::load($this->candidateRoot . '/finding-gate/normalization.tsv');
+        $namespaceRules = array_values(array_filter(
+            $tracked->rules(),
+            static fn(NormalizationRule $rule): bool => $rule->surface === 'format:summary'
+                && str_contains($rule->locator, 'namespace\\: subtree\\:Shop'),
+        ));
+        $this->same(1, \count($namespaceRules), 'the measured namespace summary rule is present exactly once');
         $namespaceSummary = <<<'SUMMARY'
             Qualimetrix dev-main — 6 files analyzed [namespace: subtree:Shop], 0.2s
 
@@ -190,11 +196,31 @@ final class SelfTestNormalization extends SelfTestGroup
             ['case:drill-down|format:summary' => $namespaceSummary],
             ['case:drill-down|format:summary' => $differentClock],
         ]);
-        $this->same(1, \count($derivedSummary), 'the complete namespace summary derives only its measured clock');
-        $this->assert(
-            \in_array($derivedSummary[0]->row(), array_map(static fn(NormalizationRule $rule): array => $rule->row(), $tracked->rules()), true),
-            'the stock derived namespace clock row is present in the tracked table',
+        $this->same(1, \count($derivedSummary), 'the complete namespace summary derives one measured field');
+        $derived = Normalization::fromRules($derivedSummary);
+        $this->same(
+            [$derived->normalize('format:summary', $namespaceSummary), $derived->normalize('format:summary', $differentClock)],
+            [$normalizedSummary, $tracked->normalize('format:summary', $differentClock)],
+            'the measured and tracked rules produce identical bytes for both captured clock values',
         );
+        $activeNamespaceRules = array_values(array_filter(
+            $tracked->activeRules(),
+            static fn(NormalizationRule $rule): bool => $rule->surface === 'format:summary'
+                && str_contains($rule->locator, 'namespace\\: subtree\\:Shop'),
+        ));
+        $this->same(1, \count($activeNamespaceRules), 'the measured tracked namespace rule is active on the full publication');
+
+        foreach ([
+            'before clock' => str_replace('], 0.2s', '], 123 errors, 0.2s', $namespaceSummary),
+            'after clock' => str_replace('], 0.2s', '], 0.2s, 123 skipped files', $namespaceSummary),
+        ] as $position => $semanticSummary) {
+            $normalizedSemantic = $tracked->normalize('format:summary', $semanticSummary);
+            $this->same($semanticSummary, $normalizedSemantic, 'the namespace rule preserves semantic header text ' . $position);
+            $this->assert(
+                $normalizedSummary !== $normalizedSemantic,
+                'semantic header text ' . $position . ' remains compared after normalization',
+            );
+        }
 
         $stale = array_map(static fn(NormalizationRule $rule): string => $rule->locator, $normalization->staleRules());
         $this->same(['meta.absent'], $stale, 'a rule that matched nothing is reported stale, and one that matched is not');
