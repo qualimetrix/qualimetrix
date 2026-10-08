@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Size;
 use LogicException;
 use Override;
 use PhpParser\Node;
+use PhpToken;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
@@ -172,8 +173,6 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
 
         // A "pure comment line" has comment tokens but NO code tokens.
         // Lines with both code and comments (inline comments) are code lines, not CLOC.
-        // Lines that are non-empty and not marked as either code or comment must have
-        // single-character code tokens (braces, semicolons, etc.) — they are code lines.
         // LLOC = LOC - empty lines - pure comment lines
         $emptyCount = $this->countLinesInRange($emptyLines, $startLine, $endLine);
         $pureCommentLineCount = 0;
@@ -204,23 +203,14 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
         /** @var array<int, true> */
         $codeLines = [];
 
-        foreach (@token_get_all($content) as $token) {
-            if (!\is_array($token)) {
-                // Single-character tokens ('{', '}', ';', etc.) don't carry line
-                // information in token_get_all. Lines containing only such tokens
-                // are handled by the caller as non-empty, non-comment lines.
-                continue;
-            }
-
-            [$tokenId, $tokenContent, $tokenLine] = $token;
-
-            if ($tokenId === \T_COMMENT || $tokenId === \T_DOC_COMMENT) {
-                $this->markLines($commentLines, $tokenLine, $tokenContent);
-            } elseif ($tokenId !== \T_WHITESPACE
-                && $tokenId !== \T_OPEN_TAG
-                && $tokenId !== \T_CLOSE_TAG
+        foreach (PhpToken::tokenize($content) as $token) {
+            if ($token->id === \T_COMMENT || $token->id === \T_DOC_COMMENT) {
+                $this->markLines($commentLines, $token->line, $token->text);
+            } elseif ($token->id !== \T_WHITESPACE
+                && $token->id !== \T_OPEN_TAG
+                && $token->id !== \T_CLOSE_TAG
             ) {
-                $this->markLines($codeLines, $tokenLine, $tokenContent);
+                $this->markLines($codeLines, $token->line, $token->text);
             }
         }
 

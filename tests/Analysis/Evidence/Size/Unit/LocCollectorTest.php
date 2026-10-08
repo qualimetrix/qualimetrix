@@ -270,6 +270,63 @@ PHP;
         self::assertSame(1, $metrics->get('size.cloc'));
         // LLOC = 6 - 1 empty - 1 pure comment = 4
         self::assertSame(4, $metrics->get('size.lloc'));
+
+        $punctuation = <<<'PHP'
+<?php
+
+// comment only
+# hash comment only
+/* block comment only */
+/**
+ * docblock body
+ */
+function f(array $a): array
+{
+    { // brace-open + //
+        $b = [ # x
+            1,
+            2, // comma + //
+        ]; // close array + //
+        $c = \count(
+            $a
+        ); /* close call + block */
+        if ($b) {
+            $c++;
+        } // brace-close + //
+        if ($c) {
+            $c--;
+        } # brace-close + hash
+        if ($a) {
+            $c--;
+        } /* brace-close + block */
+        if ($a) {
+            $c--;
+        } /** brace-close + docblock */
+        if ($a) {
+            $c--;
+        }
+        $d = 1; // code + comment
+        /* lead */ $e = 2;
+        $f = [
+        ] // ] + // (statement ends next line)
+        ;
+        $h = f(
+            [] // [] + //
+        );
+        $i = array_map(function ($v) {
+            return $v;
+        }, $a); // }, $a); has code token
+        $j = array_map(static function ($v) {
+            return $v;
+        }); // }); + //
+    /* c */ }
+}
+PHP;
+
+        $punctuationMetrics = $this->collectMetrics($punctuation);
+        self::assertSame(49, $punctuationMetrics->get('size.loc'));
+        self::assertSame(42, $punctuationMetrics->get('size.lloc'));
+        self::assertSame(6, $punctuationMetrics->get('size.cloc'));
     }
 
     #[Test]
