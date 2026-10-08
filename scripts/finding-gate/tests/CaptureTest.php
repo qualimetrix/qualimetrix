@@ -805,33 +805,61 @@ final class CaptureTest extends TestCase
         }
 
         foreach (['candidate', 'reference'] as $side) {
-            $tree = SyntheticTree::captureFixture();
-            $refusal = '{"error":"Refused input","exit_code":1}';
-            $tree['answers']['case:alpha|format:json'] = ['stdout' => $refusal, 'stderr' => 'input refused', 'exit' => 1];
-            $tree['answers']['case:alpha|check:output'] = ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
-            $tree['answers']['case:alpha|baseline-file'] = ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
-            foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
-                $tree['answers']['case:alpha|' . $command] = ['stdout' => 'input refused', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
-            }
-            $root = SyntheticTree::create($tree);
-            $temporary = Fs::temporaryDirectory('whole-ranking-capture-');
-            try {
-                $corpus = Corpus::load($root);
-                $capture = (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
-                self::assertArrayNotHasKey('case:alpha|format:json', $capture->rankings);
-                self::assertArrayNotHasKey('case:alpha|format:json', $capture->baselineEligibility);
-                self::assertSame($refusal, $capture->artifacts['case:alpha|format:json']);
-                self::assertSame('1', $capture->artifacts['case:alpha|exit:format:json']);
-                self::assertSame('input refused', $capture->artifacts['case:alpha|stderr:format:json']);
-                self::assertSame('', $capture->artifacts['case:alpha|check:output:file']);
-                self::assertSame('', $capture->artifacts['case:alpha|baseline-file']);
-                foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
-                    self::assertSame('1', $capture->artifacts['case:alpha|exit:' . $command]);
-                    self::assertSame('', $capture->artifacts['case:alpha|' . $command . ':file']);
+            foreach (['missing file', 'empty file'] as $defect) {
+                $tree = SyntheticTree::captureFixture();
+                $tree['answers']['case:alpha|check:output'] = $defect === 'missing file'
+                    ? ['stdout' => '', 'missingFile' => true]
+                    : ['stdout' => '', 'file' => ''];
+                $root = SyntheticTree::create($tree);
+                $temporary = Fs::temporaryDirectory('successful-output-destination-');
+                try {
+                    $corpus = Corpus::load($root);
+                    try {
+                        (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                        self::fail('A successful output publication with a ' . $defect . ' was accepted for ' . $side . '.');
+                    } catch (GateError $error) {
+                        self::assertSame('The output publication is missing, empty, or does not name exactly the chosen file for case:alpha|check:output.', $error->getMessage());
+                    }
+                } finally {
+                    Fs::removeRecursively($temporary);
+                    SyntheticTree::remove($root);
                 }
-            } finally {
-                Fs::removeRecursively($temporary);
-                SyntheticTree::remove($root);
+            }
+
+            foreach (['missing file', 'empty file'] as $defect) {
+                $tree = SyntheticTree::captureFixture();
+                $refusal = '{"error":"Refused input","exit_code":1}';
+                $tree['answers']['case:alpha|format:json'] = ['stdout' => $refusal, 'stderr' => 'input refused', 'exit' => 1];
+                $tree['answers']['case:alpha|check:output'] = $defect === 'missing file'
+                    ? ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true]
+                    : ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'file' => ''];
+                $tree['answers']['case:alpha|baseline-file'] = ['stdout' => '', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+                foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+                    $tree['answers']['case:alpha|' . $command] = ['stdout' => 'input refused', 'stderr' => 'input refused', 'exit' => 1, 'missingFile' => true];
+                }
+                $root = SyntheticTree::create($tree);
+                $temporary = Fs::temporaryDirectory('whole-ranking-capture-');
+                try {
+                    $corpus = Corpus::load($root);
+                    $capture = (new TreeRun($root, $temporary, $side, RenameMaps::fromPairs([]), false, CapturePlan::forCorpus($corpus, DeclaredSurfaces::load($root . '/finding-gate')), DeclaredStructuralMaps::load($root . '/finding-gate')))->forCase($corpus->cases[0]);
+                    self::assertArrayNotHasKey('case:alpha|format:json', $capture->rankings);
+                    self::assertArrayNotHasKey('case:alpha|format:json', $capture->baselineEligibility);
+                    self::assertSame($refusal, $capture->artifacts['case:alpha|format:json']);
+                    self::assertSame('1', $capture->artifacts['case:alpha|exit:format:json']);
+                    self::assertSame('input refused', $capture->artifacts['case:alpha|stderr:format:json']);
+                    self::assertSame('', $capture->artifacts['case:alpha|check:output']);
+                    self::assertSame('1', $capture->artifacts['case:alpha|exit:check:output']);
+                    self::assertSame('input refused', $capture->artifacts['case:alpha|stderr:check:output']);
+                    self::assertSame('', $capture->artifacts['case:alpha|check:output:file']);
+                    self::assertSame('', $capture->artifacts['case:alpha|baseline-file']);
+                    foreach (['baseline:update', 'baseline:cleanup', 'baseline:rename-channels'] as $command) {
+                        self::assertSame('1', $capture->artifacts['case:alpha|exit:' . $command]);
+                        self::assertSame('', $capture->artifacts['case:alpha|' . $command . ':file']);
+                    }
+                } finally {
+                    Fs::removeRecursively($temporary);
+                    SyntheticTree::remove($root);
+                }
             }
         }
     }

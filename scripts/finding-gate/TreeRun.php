@@ -137,7 +137,7 @@ final class TreeRun
             $form = ReportViews::recordBearingSurface(Surfaces::surfaceClass($populationKey))
                 ? PublicationForms::classify($populationKey, $descriptor['outputFileKind'] === null ? $publication : $fileBytes)
                 : null;
-            if ($surface === 'check:output' && ($form === PublicationForms::RECORDS || $fileBytes !== '')) {
+            if ($surface === 'check:output' && ($result['exit'] === 0 || $form === PublicationForms::RECORDS || $fileBytes !== '')) {
                 preg_match_all('/^Report written to (.+)$/m', $result['stderr'], $destinations);
                 if (!is_file((string) $file) || Fs::read((string) $file) === '' || $destinations[1] !== [$file]) {
                     throw new GateError('The output publication is missing, empty, or does not name exactly the chosen file for ' . $key . '.');
