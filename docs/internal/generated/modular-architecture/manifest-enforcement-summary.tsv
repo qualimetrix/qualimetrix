@@ -3,7 +3,7 @@ declarations	1361
 files	1359
 semantic_owners	41
 contract_consumer_entries	3596
-exact_dependency_edges	6182
+exact_dependency_edges	6180
 cross_owner_imports	3365
 semantic_owner_layers	41
 singleton_seams	0

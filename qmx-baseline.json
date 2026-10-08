@@ -96,9 +96,6 @@
       {"channel":"complexity.ccn","magnitudes":[12]},
       {"channel":"complexity.npath","magnitudes":[480]}
     ],
-    "declaration:callable:Qualimetrix\\Core\\Symbol\\SymbolPath::toCanonical@src/Core/Symbol/SymbolPath.php": [
-      {"channel":"complexity.ccn","magnitudes":[10]}
-    ],
     "declaration:callable:Qualimetrix\\Core\\Symbol\\SymbolPath::toString@src/Core/Symbol/SymbolPath.php": [
       {"channel":"complexity.ccn","magnitudes":[11]}
     ],
@@ -135,26 +132,10 @@
       {"channel":"code-smell.boolean-argument","occurrence":"c7fac59b0cebc45a","count":1}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder::buildTree@src/Reporting/Formatter/Html/HtmlTreeBuilder.php": [
-      {"channel":"complexity.ccn","magnitudes":[15]},
-      {"channel":"complexity.cognitive","magnitudes":[15]}
+      {"channel":"complexity.ccn","magnitudes":[15]}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Json\\JsonOffenderSection::formatWorstOffenders@src/Reporting/Formatter/Json/JsonOffenderSection.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"79aecf1e084dd904","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::render@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderDimensionLines@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderHealthBar@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderOverallLine@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
-    ],
-    "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\HealthBarRenderer::renderScoreLine@src/Reporting/Formatter/Summary/HealthBarRenderer.php": [
-      {"channel":"code-smell.boolean-argument","occurrence":"08ea7896b69c4721","count":1}
     ],
     "declaration:callable:Qualimetrix\\Reporting\\Formatter\\Summary\\OffenderListRenderer::renderOffenderList@src/Reporting/Formatter/Summary/OffenderListRenderer.php": [
       {"channel":"code-smell.boolean-argument","occurrence":"79aecf1e084dd904","count":1}
@@ -236,9 +217,6 @@
     ],
     "declaration:class:Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeNode@src/Reporting/Formatter/Html/HtmlTreeNode.php": [
       {"channel":"design.data-class","magnitudes":[11]}
-    ],
-    "declaration:class:Qualimetrix\\Reporting\\Formatter\\Ordering\\FindingSorter@src/Reporting/Formatter/Ordering/FindingSorter.php": [
-      {"channel":"complexity.wmc","magnitudes":[54]}
     ],
     "file:src/Analysis/Evidence/Cohesion/LcomVisitor.php": [
       {"channel":"duplication.clone","occurrence":"28b4254836c6dbd3","magnitudes":[23]},
@@ -330,7 +308,7 @@
       {"channel":"health.cohesion","magnitudes":[43.7]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Html": [
-      {"channel":"health.cohesion","magnitudes":[42.9]}
+      {"channel":"health.cohesion","magnitudes":[41.7]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Json": [
       {"channel":"health.cohesion","magnitudes":[30]}
