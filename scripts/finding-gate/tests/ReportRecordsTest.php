@@ -66,6 +66,27 @@ final class ReportRecordsTest extends TestCase
     }
 
     #[Test]
+    public function itReadsCurrentShowSuppressedDetailsAsSeparateAdviceAndJudgement(): void
+    {
+        $record = array_replace(self::finding(), ['recommendation' => 'Advice', 'acceptedLevel' => ['shape' => 'magnitude', 'describe' => '3', 'count' => 1]]);
+        foreach (['Advice', 'Different advice'] as $advice) {
+            $run = $this->context(true);
+            $artifacts = self::artifacts([$record]) + [
+                'case:alpha|show-suppressed' => "src/A.php (1 violation)\n  ERROR at line 1  A\n    M  [a.b]\n    Recommendation: " . $advice . "\n    " . \QmxFindingGate\ReportRecords::baselineText($record) . "\n",
+            ];
+            $sarif = ReportRecords::decode($artifacts['case:alpha|format:sarif']);
+            $sarif['runs'][0]['results'][0]['message']['text'] = ReportRecords::message($record, codec: 'current');
+            $artifacts['case:alpha|format:sarif'] = ValueCheck::value($sarif);
+            $this->observeRecords($run, RecordCheck::create($run), 'candidate', $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            if ($advice === 'Advice') {
+                self::assertSame([], $run->report->raised());
+            } else {
+                self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
+            }
+        }
+    }
+
+    #[Test]
     public function itProjectsTheUncomparedBaselineReasonOnBothPublishersWithoutCallingItAMeasuredBreach(): void
     {
         $record = array_replace(self::finding(), ['acceptedLevel' => ['shape' => 'magnitude', 'describe' => '1', 'count' => 1], 'baselineVerdict' => 'not-compared', 'baselineReason' => 'missing dependency']);
@@ -1239,6 +1260,29 @@ final class ReportRecordsTest extends TestCase
         $options = Options::parse(['gate', '--candidate=' . $this->root, '--reference=HEAD'], $this->root);
         $maps = RenameMaps::fromPairs([]);
         return new RunContext($options, new GateReport(), Corpus::load($this->root), $maps, ChannelSplit::of($maps), MetricVocabulary::ofTree($this->root), Normalization::fromRules([]), Declarations::load($this->root), $this->root, $currentReference ? [] : ['candidate' => 'current', 'reference' => 'legacy']);
+    }
+
+    #[Test]
+    #[TestWith(['format:suppressed'])]
+    #[TestWith(['format:text-verbose'])]
+    public function itLeavesWithdrawnCandidatePublicationsToTheirRefusalCheck(string $surface): void
+    {
+        Fs::write($this->root . '/finding-gate/declared-surfaces/refusal.json', '{"stdout":"","stderr":"Unsupported format.","exit":"3"}');
+        Fs::write($this->root . '/finding-gate/' . \QmxFindingGate\DeclaredSurfaces::INDEX, Tsv::render(\QmxFindingGate\DeclaredSurfaces::COLUMNS, [
+            ['withdrawn', $surface, 'declared-surfaces/refusal.json', '["alpha"]', 'Withdraw the format and require its exact refusal.'],
+        ]));
+        foreach (['candidate', 'reference'] as $side) {
+            $run = $this->context(true);
+            $key = 'case:alpha|' . $surface;
+            $artifacts = array_replace(self::artifacts([self::finding()]), [$key => '', 'case:alpha|exit:' . $surface => '3', 'case:alpha|stderr:' . $surface => 'Unsupported format.']);
+            $this->observeRecords($run, RecordCheck::create($run), $side, $run->corpus->cases[0], CaseOutcome::ANALYSIS, $artifacts);
+            if ($side === 'candidate') {
+                self::assertSame([], $run->report->raised());
+                self::assertFalse($run->report->sourceValid($side, $key, 'records'));
+            } else {
+                self::assertContains(FailureClass::RECORD_PROJECTION_MISMATCH, $run->report->failureClasses());
+            }
+        }
     }
 
     #[Test]

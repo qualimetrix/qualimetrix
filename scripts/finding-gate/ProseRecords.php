@@ -66,7 +66,7 @@ final class ProseRecords
                 if ($locationFile === null) {
                     throw new GateError('A detailed finding line has no observed file or project group.');
                 }
-                $extra = $codec === 'current' && $surface !== 'show-suppressed' && $surface !== 'format:text-verbose' ? self::extraLines($lines, $end) : [];
+                $extra = $codec === 'current' && $surface !== 'format:text-verbose' ? self::extraLines($lines, $end) : [];
                 $records[] = ['lines' => range($index, $end), 'fields' => $extra + ['code' => $detail[2], 'file' => $locationFile, 'line' => $atLine, 'message' => $detail[1], 'severity' => match ($head[1]) {
                     'ERROR' => 'error', 'WARN' => 'warning', default => 'info',
                 }, 'symbol' => $head[3] ?? '']];
@@ -95,7 +95,7 @@ final class ProseRecords
     public static function fieldsOf(string $surface, string $codec): array
     {
         $fields = self::FIELDS[$surface] ?? [];
-        return $codec === 'current' && \in_array($surface, ['format:summary', 'format:text-detail'], true)
+        return $codec === 'current' && \in_array($surface, ['format:summary', 'format:text-detail', 'show-suppressed'], true)
             ? [...$fields, 'recommendation', 'acceptedLevel'] : $fields;
     }
 
@@ -178,7 +178,7 @@ final class ProseRecords
             return false;
         }
         $detailed = isset($prose['symbol']);
-        $separate = $codec === 'current' && \in_array($surface, ['format:text', 'format:text-detail', 'format:summary'], true) && ($detailed || $surface === 'format:summary');
+        $separate = $codec === 'current' && \in_array($surface, ['format:text', 'format:text-detail', 'format:summary', 'show-suppressed'], true) && ($detailed || $surface === 'format:summary');
         $message = $separate ? $finding['message'] : ReportRecords::message($finding, $detailed || $surface === 'format:summary', $codec);
         if ($separate && (($prose['recommendation'] ?? null) !== $finding['recommendation']
             || ($prose['acceptedLevel'] ?? null) !== ReportRecords::baselineText($finding))) {

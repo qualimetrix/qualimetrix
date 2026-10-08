@@ -80,6 +80,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $scope = 'case:' . $case->id;
         foreach (ReportViews::forCase($case) as $surface => $report) {
+            if ($this->withdrawn($side, $case, $surface)) {
+                continue;
+            }
             $key = $scope . '|' . $surface;
             try {
                 if (!isset($artifacts[$key])) {
@@ -131,6 +134,9 @@ final class RecordCheck implements CaseCheck, RunCheck
         }
         $findings = $this->physical[$case->id]['format:json'][$side];
         foreach (['format:html', 'format:gitlab', 'format:sarif'] as $surface) {
+            if ($this->withdrawn($side, $case, $surface)) {
+                continue;
+            }
             $key = $scope . '|' . $surface;
             try {
                 if (!isset($artifacts[$key])) {
@@ -178,7 +184,7 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         $key = $scope . '|format:checkstyle';
-        if (isset($artifacts[$key])) {
+        if (isset($artifacts[$key]) && !$this->withdrawn($side, $case, 'format:checkstyle')) {
             try {
                 $actual = ReportRecords::checkstyle($this->mapped($side, 'format:checkstyle', $artifacts[$key]));
                 $expected = array_map(fn(array $record): array => ReportRecords::projection('format:checkstyle', $record, $this->run->publicationCodec($side)), $findings);
@@ -191,6 +197,9 @@ final class RecordCheck implements CaseCheck, RunCheck
             }
         }
         foreach (ProseRecords::SURFACES as $surface) {
+            if ($this->withdrawn($side, $case, $surface)) {
+                continue;
+            }
             $key = $scope . '|' . $surface;
             if (!isset($artifacts[$key])) {
                 continue;
@@ -248,6 +257,11 @@ final class RecordCheck implements CaseCheck, RunCheck
                 $this->publicationProblem($side, $key, $error);
             }
         }
+    }
+
+    private function withdrawn(string $side, CaseDefinition $case, string $surface): bool
+    {
+        return $side === 'candidate' && $this->run->declarations->surfaces->changeFor($surface, $case->id) === DeclaredSurfaces::WITHDRAWN;
     }
 
     private function publicationProblem(string $side, string $key, GateError $error): void

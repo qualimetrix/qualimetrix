@@ -349,7 +349,9 @@ refusal uses an exact surface delta.
 An outcome declaration names the transition and its refusal file. Repeated
 refusal outputs are still compared. A withdrawn surface is still invoked on
 the reference and must meet its exact declared candidate refusal. Declaring a
-withdrawal does not suppress a broken reference. Introduced and withdrawn
+withdrawal does not suppress a broken reference. The candidate owes the exact
+refusal instead of a finding projection for that withdrawn invocation; the
+reference still owes its complete projection. Introduced and withdrawn
 surface rows never disable neighbouring publications.
 
 Surface declarations use `cases=*` for every case, or a nonempty JSON list of
